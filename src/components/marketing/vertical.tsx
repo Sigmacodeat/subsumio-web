@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SigmaMark } from "@/components/brand/logo";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
@@ -114,7 +113,7 @@ export default function VerticalPage({
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
           <Link href={signupHref}>
             <Button size="xl" variant="glow" className="min-w-[220px]">
-              {isSubsumio ? <SubsumioMark size={18} tile={false} /> : <SigmaMark size={18} tile={false} />} {t.ctaButton}
+              <SigmaMark size={18} tile={false} /> {t.ctaButton}
             </Button>
           </Link>
           <a href={isSubsumio ? "#pricing" : "#demo"}>
@@ -317,7 +316,7 @@ export default function VerticalPage({
       {/* CTA — dark spotlight close */}
       <Section tone="dark" className="py-24 px-6 text-center">
         <div className="max-w-3xl mx-auto">
-          {isSubsumio ? <SubsumioMark size={56} className="mx-auto mb-7" /> : <SigmaMark size={64} className="mx-auto mb-8 rounded-[15px] glow-purple" />}
+          <SigmaMark size={56} className="mx-auto mb-7" />
           <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
           <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
           <Link href={signupHref}>

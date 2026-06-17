@@ -57,7 +57,7 @@ export const INDUSTRY_PROFILES = {
     label: { en: "Law firm / legal team", de: "Kanzlei / Rechtsabteilung" },
     brand: "Subsumio",
     dashboardHref: "/dashboard",
-    marketingHref: "/subsumio",
+    marketingHref: "/",
     pack: "gbrain-legal",
     signature: {
       title: { en: "Matter memory with procedural discipline", de: "Aktegedächtnis mit Verfahrensdisziplin" },

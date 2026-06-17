@@ -21,7 +21,7 @@ export function isExternalUrl(url: string): boolean {
 }
 
 /** Canonical public URL for the Subsumio product. */
-export const SUBSUMIO_SITE_URL = process.env.NEXT_PUBLIC_SUBSUMIO_URL || "/subsumio";
+export const SUBSUMIO_SITE_URL = process.env.NEXT_PUBLIC_SUBSUMIO_URL || "/";
 
 /** Canonical URL for the Subsumio page in a given language. */
 export function subsumioCanonical(lang: "en" | "de"): string {
@@ -29,5 +29,5 @@ export function subsumioCanonical(lang: "en" | "de"): string {
     const root = SUBSUMIO_SITE_URL.replace(/\/$/, "");
     return lang === "de" ? `${root}/de` : root;
   }
-  return lang === "de" ? "/de/subsumio" : "/subsumio";
+  return lang === "de" ? "/de" : "/";
 }

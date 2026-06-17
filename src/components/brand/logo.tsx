@@ -44,15 +44,22 @@ export function SigmaMark({
 export function SigmaLogo({
   size = 30,
   wordmarkClassName = "text-lg font-bold text-[#e8e8f0] tracking-tight",
+  subtitle,
 }: {
   size?: number;
   wordmarkClassName?: string;
+  subtitle?: string;
 }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <SigmaMark size={size} />
-      <span className={`font-display ${wordmarkClassName}`}>
-        Subsum<span className="text-[#3b82f6]">•</span>io
+      <span className="flex flex-col leading-none">
+        <span className={`font-display ${wordmarkClassName}`}>
+          Subsum<span className="text-[#3b82f6]">•</span>io
+        </span>
+        {subtitle && (
+          <span className="text-[8px] font-medium tracking-[0.22em] [color:var(--mk-text-subtle)] mt-1">{subtitle}</span>
+        )}
       </span>
     </span>
   );

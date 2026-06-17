@@ -41,9 +41,9 @@ export const NAV = {
     cta: "Get started",
     comingSoonLabel: "Coming soon",
     subsumioItems: [
-      { label: "Product", href: "/subsumio/produkt" },
-      { label: "WhatsApp copilot", href: "/subsumio/whatsapp" },
-      { label: "Security", href: "/subsumio/sicherheit" },
+      { label: "Product", href: "/produkt" },
+      { label: "WhatsApp copilot", href: "/whatsapp" },
+      { label: "Security", href: "/sicherheit" },
       { label: "Pricing", href: "/pricing" },
     ],
   },
@@ -58,9 +58,9 @@ export const NAV = {
     cta: "Jetzt starten",
     comingSoonLabel: "Bald verfügbar",
     subsumioItems: [
-      { label: "Produkt", href: "/subsumio/produkt" },
-      { label: "WhatsApp-Copilot", href: "/subsumio/whatsapp" },
-      { label: "Sicherheit", href: "/subsumio/sicherheit" },
+      { label: "Produkt", href: "/produkt" },
+      { label: "WhatsApp-Copilot", href: "/whatsapp" },
+      { label: "Sicherheit", href: "/sicherheit" },
       { label: "Preise", href: "/pricing" },
     ],
   },
@@ -84,9 +84,9 @@ export const FOOTER = {
         title: "Subsumio",
         links: [
           { label: "Overview", href: "/" },
-          { label: "Product", href: "/subsumio/produkt" },
-          { label: "WhatsApp copilot", href: "/subsumio/whatsapp" },
-          { label: "Security & GDPR", href: "/subsumio/sicherheit" },
+          { label: "Product", href: "/produkt" },
+          { label: "WhatsApp copilot", href: "/whatsapp" },
+          { label: "Security & GDPR", href: "/sicherheit" },
         ],
       },
       {
@@ -125,9 +125,9 @@ export const FOOTER = {
         title: "Subsumio",
         links: [
           { label: "Übersicht", href: "/" },
-          { label: "Produkt", href: "/subsumio/produkt" },
-          { label: "WhatsApp-Copilot", href: "/subsumio/whatsapp" },
-          { label: "Sicherheit & DSGVO", href: "/subsumio/sicherheit" },
+          { label: "Produkt", href: "/produkt" },
+          { label: "WhatsApp-Copilot", href: "/whatsapp" },
+          { label: "Sicherheit & DSGVO", href: "/sicherheit" },
         ],
       },
       {

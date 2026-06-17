@@ -41,8 +41,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SigmaMark } from "@/components/brand/logo";
-import { SubsumioLogo } from "@/components/brand/subsumio-logo";
+import { SigmaMark, SigmaLogo } from "@/components/brand/logo";
 import { NAV, FOOTER, p, altPath, type Lang } from "@/content/site";
 import { type SiteBrand } from "@/lib/brand";
 
@@ -60,7 +59,7 @@ export function useSiteBrand(): SiteBrand {
 
 // Subsumio-only logo lockup.
 function BrandLogo() {
-  return <SubsumioLogo size={34} />;
+  return <SigmaLogo size={34} wordmarkClassName="text-[19px] font-extrabold tracking-tight [color:var(--mk-text)]" />;
 }
 
 // Content files store icon names as strings; resolve them here.
@@ -312,7 +311,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
           <div className="col-span-2">
             <div className="mb-3">
-              <SubsumioLogo size={28} />
+              <SigmaLogo size={28} wordmarkClassName="text-sm font-semibold [color:var(--mk-text)]" />
             </div>
             <p className="text-sm [color:var(--mk-text-muted)] mb-4">
               {lang === "de"

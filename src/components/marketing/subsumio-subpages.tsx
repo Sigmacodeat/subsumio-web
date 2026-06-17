@@ -14,7 +14,7 @@ import {
   MessageSquare, Clock, Paperclip, Mic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SubsumioMark } from "@/components/brand/subsumio-logo";
+import { SigmaMark } from "@/components/brand/logo";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
@@ -66,10 +66,10 @@ function Hero({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href={primaryHref}>
               <Button size="xl" variant="glow" className="min-w-[220px]">
-                <SubsumioMark size={18} tile={false} /> {primaryLabel}
+                <SigmaMark size={18} tile={false} /> {primaryLabel}
               </Button>
             </Link>
-            <Link href={p(lang, "/subsumio")}>
+            <Link href={p(lang, "/")}>
               <Button size="xl" variant="secondary" className="min-w-[180px]">
                 {lang === "de" ? "Zur Übersicht" : "Back to overview"} <ArrowRight size={16} />
               </Button>
@@ -85,7 +85,7 @@ function CtaClose({ lang, title, sub, href, label }: { lang: Lang; title: string
   return (
     <Section tone="dark" className="py-24 px-6 text-center">
       <div className="max-w-3xl mx-auto">
-        <SubsumioMark size={56} className="mx-auto mb-7" />
+        <SigmaMark size={56} className="mx-auto mb-7" />
         <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{title}</h2>
         <p className="text-lg [color:var(--mk-text-muted)] mb-9">{sub}</p>
         <Link href={href}>

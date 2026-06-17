@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { SigmaLogo, SigmaMark } from "@/components/brand/logo";
-import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
 import { Button } from "@/components/ui/button";
 import { type Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
@@ -51,42 +50,38 @@ interface AgentResponse {
 }
 
 const ROUTE_INDUSTRY: Record<string, string> = {
-  "/subsumio": "legal",
-  "/taxumio": "tax",
-  "/compliance": "compliance",
-  "/insurance": "insurance",
-  "/realestate": "realestate",
-  "/vc": "vc",
-  "/consulting": "consulting",
-  "/recruiting": "recruiting",
+  "/": "legal",
+  "/produkt": "legal",
+  "/sicherheit": "legal",
+  "/whatsapp": "legal",
 };
 
 const intro = {
   en: {
-    title: "Ask Sigmabrain",
+    title: "Ask Subsumio",
     subtitle: "Product advisor · answers, qualifies, routes",
-    starter: "Hi, I can help you choose the right Sigmabrain product and plan. What are you trying to solve?",
+    starter: "Hi, I can help you choose the right Subsumio plan. What are you trying to solve?",
     placeholder: "Ask about pricing, security, product fit…",
-    open: "Ask Sigmabrain",
+    open: "Ask Subsumio",
     privacy: "No confidential client data here",
-    consent: "Send this conversation to the Sigmabrain team",
+    consent: "Send this conversation to the Subsumio team",
     score: "Lead fit",
     fields: "Qualification",
     empty: "Start with one of these:",
-    chips: ["Which product fits us?", "Pricing?", "Self-hosting?", "Compare to ChatGPT"],
+    chips: ["Which plan fits us?", "Pricing?", "Self-hosting?", "Compare to ChatGPT"],
   },
   de: {
-    title: "Sigmabrain fragen",
+    title: "Subsumio fragen",
     subtitle: "Produktberater · qualifiziert · routet",
-    starter: "Hi, ich helfe dir, das richtige Sigmabrain-Produkt und den passenden Plan zu wählen. Was wollt ihr lösen?",
+    starter: "Hi, ich helfe dir, den passenden Subsumio-Plan zu wählen. Was wollt ihr lösen?",
     placeholder: "Frag zu Preisen, Sicherheit, Produkt-Fit…",
-    open: "Sigmabrain fragen",
+    open: "Subsumio fragen",
     privacy: "Keine vertraulichen Mandantendaten hier",
-    consent: "Diesen Verlauf ans Sigmabrain-Team übergeben",
+    consent: "Diesen Verlauf ans Subsumio-Team übergeben",
     score: "Lead-Fit",
     fields: "Qualifikation",
     empty: "Starte hiermit:",
-    chips: ["Welches Produkt passt?", "Preise?", "Self-hosting?", "Vergleich mit ChatGPT"],
+    chips: ["Welcher Plan passt?", "Preise?", "Self-hosting?", "Vergleich mit ChatGPT"],
   },
 } as const;
 
@@ -112,11 +107,10 @@ function formatFields(fields: Partial<Record<FieldKey, string>>, lang: Lang) {
 
 /* Brand lockup reuses the exact same marks the chrome nav displays */
 function BrandHeader({ brand, label }: { brand: string; label: string }) {
-  const isLegal = brand === "Subsumio";
   return (
     <div className="flex items-center gap-3 min-w-0">
       <div className="shrink-0">
-        {isLegal ? <SubsumioMark size={34} /> : <SigmaMark size={34} />}
+        <SigmaMark size={34} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-bold tracking-tight [color:var(--mk-text)] truncate">
@@ -503,11 +497,7 @@ export default function SalesAgentWidget({ lang }: { lang: Lang }) {
         aria-label={activeProfile ? `${activeProfile.brand} Advisor` : t.open}
       >
         <div className="shrink-0">
-          {routeIndustry === "legal" ? (
-            <SubsumioLogo size={24} subtitle="" />
-          ) : (
-            <SigmaLogo size={24} wordmarkClassName="text-[14px] font-bold tracking-tight [color:var(--mk-text)]" />
-          )}
+          <SigmaLogo size={24} wordmarkClassName="text-[14px] font-bold tracking-tight [color:var(--mk-text)]" />
         </div>
         <span className="hidden sm:inline [color:var(--mk-text-muted)]">
           {activeProfile ? `${activeProfile.brand} Advisor` : t.open}
