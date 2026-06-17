@@ -240,30 +240,26 @@ const EN: DocsContent = {
   cta: { title: "Something unclear?", sub: "Every feature can be tried in the dashboard — not just documented.", button: "Open Dashboard" },
 };
 
-export function getDocs(lang: Lang, brand?: "sigmabrain" | "subsumio" | "taxumio"): DocsContent {
+export function getDocs(lang: Lang, brand?: "subsumio"): DocsContent {
   const base = lang === "de" ? DE : EN;
-  if (!brand || brand === "sigmabrain") return base;
+  if (!brand) return base;
 
-  if (brand === "subsumio") {
-    return {
-      ...base,
-      categories: base.categories.map((cat) => {
-        if (cat.id === "specialized") {
-          return {
-            ...cat,
-            features: cat.features.filter(
-              (f) =>
-                !f.title.includes("Taxumio") &&
-                !f.title.includes("Investumio") &&
-                !f.title.includes("Tax Advisor") &&
-                !f.title.includes("Private Equity")
-            ),
-          };
-        }
-        return cat;
-      }),
-    };
-  }
-
-  return base;
+  return {
+    ...base,
+    categories: base.categories.map((cat) => {
+      if (cat.id === "specialized") {
+        return {
+          ...cat,
+          features: cat.features.filter(
+            (f) =>
+              !f.title.includes("Taxumio") &&
+              !f.title.includes("Investumio") &&
+              !f.title.includes("Tax Advisor") &&
+              !f.title.includes("Private Equity")
+          ),
+        };
+      }
+      return cat;
+    }),
+  };
 }

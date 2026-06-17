@@ -1,22 +1,28 @@
 import type { Metadata } from "next";
-import LandingPage from "@/components/marketing/landing";
-import { JsonLd, organizationLd, softwareApplicationLd, faqPageLd } from "@/components/seo/jsonld";
-import { LANDING } from "@/content/site";
+import VerticalPage from "@/components/marketing/vertical";
+import { PRODUCTS } from "@/content/products";
+import { VERTICALS } from "@/content/verticals";
+import { JsonLd, faqPageLd, organizationLd, verticalSoftwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
+
+const product = PRODUCTS.en.subsumio;
 
 export const metadata: Metadata = {
-  title: "Sigmabrain — the brain your firm never had",
-  description:
-    "Every meeting, deal, email and document — turned into one answer instead of ten search results. Self-hosted or EU cloud, built on an open-source engine.",
-  alternates: { canonical: "/", languages: { en: "/", de: "/de" } },
+  title: { absolute: product.metaTitle },
+  description: product.metaDesc,
+  alternates: {
+    canonical: "/",
+    languages: { en: "/", de: "/de" },
+  },
 };
 
 export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd("en")} />
-      <JsonLd data={faqPageLd(LANDING.en.faq)} />
-      <LandingPage lang="en" />
+      <JsonLd data={verticalSoftwareApplicationLd({ name: product.name, description: product.metaDesc, url: "/", price: "299" })} />
+      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/" }])} />
+      <JsonLd data={faqPageLd(VERTICALS.en[product.vertical].faq)} />
+      <VerticalPage lang="en" slug={product.vertical} product={product} />
     </>
   );
 }

@@ -1,86 +1,42 @@
-// Sigmabrain brand mark — the "Sigma Synapse".
-//
-// The letterform Σ drawn as a knowledge graph: five nodes joined by four
-// edges trace the sigma's stroke path. It reads as the letter AND as the
-// product (typed nodes + edges) in one glyph. This duality is the brand:
-// nobody else can wear it.
-//
-// Usage: <SigmaMark size={32} /> for the tile, <SigmaLogo /> for mark+wordmark.
+// Subsumio brand mark — scales of justice in a royal-blue app tile.
+// This is the ONLY logo file for the subsumio-web codebase.
+// Every component that previously imported SigmaMark/SigmaLogo now gets the
+// Subsumio mark automatically, because we replace the exports here.
 
-const NODES: [number, number, number][] = [
-  // x, y, radius — stroke path: top-right → top-left → core → bottom-left → bottom-right
-  [80, 19, 7],
-  [27, 19, 7],
-  [56, 50, 9.5], // the core node, slightly heavier — the "brain"
-  [27, 81, 7],
-  [80, 81, 7],
-];
+import { Scale } from "lucide-react";
 
-const EDGE_PATH = "M80 19 L27 19 L56 50 L27 81 L80 81";
-
+/** Subsumio mark — scales of justice icon. */
 export function SigmaMark({
   size = 32,
   tile = true,
   className,
 }: {
   size?: number;
-  /** true → violet rounded tile behind the glyph (app-icon look). false → bare glyph. */
   tile?: boolean;
   className?: string;
 }) {
-  const glyph = (
-    <>
-      <path
-        d={EDGE_PATH}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        opacity={0.55}
-      />
-      {NODES.map(([x, y, r]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="currentColor" />
-      ))}
-    </>
-  );
-
   if (!tile) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 100 100"
-        className={className}
-        aria-hidden="true"
-        focusable="false"
-      >
-        {glyph}
-      </svg>
-    );
+    return <Scale size={size} className={`text-[#3b82f6] ${className}`} strokeWidth={2} aria-hidden />;
   }
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      className={className}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <linearGradient id="sb-tile" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--brand-secondary, #20d3c2)" />
-          <stop offset="52%" stopColor="var(--brand-primary, #2f6bff)" />
-          <stop offset="100%" stopColor="var(--brand-tertiary, #8b5cf6)" />
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#sb-tile)" />
-      <g transform="translate(50 50) scale(0.72) translate(-53.5 -50)" color="#ffffff">
-        {glyph}
-      </g>
-    </svg>
+    <span className={`relative inline-flex shrink-0 ${className}`} style={{ width: size, height: size }}>
+      <span
+        aria-hidden
+        className="absolute -inset-1 rounded-[34%] blur-md opacity-50"
+        style={{ background: "radial-gradient(circle, rgba(37,99,235,0.55), transparent 70%)" }}
+      />
+      <span
+        className="relative inline-flex items-center justify-center rounded-[30%] ring-1 ring-white/15 shadow-lg shadow-blue-950/50"
+        style={{
+          width: size,
+          height: size,
+          background: "linear-gradient(150deg, #1e3a8a 0%, #1d4ed8 52%, #0ea5e9 100%)",
+        }}
+      >
+        <Scale size={Math.round(size * 0.56)} className="text-white" strokeWidth={2} aria-hidden />
+      </span>
+    </span>
   );
 }
 
@@ -96,7 +52,7 @@ export function SigmaLogo({
     <span className="inline-flex items-center gap-2.5">
       <SigmaMark size={size} />
       <span className={`font-display ${wordmarkClassName}`}>
-        Sigma<span className="text-[var(--brand-secondary)]">brain</span>
+        Subsum<span className="text-[#3b82f6]">•</span>io
       </span>
     </span>
   );

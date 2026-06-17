@@ -41,11 +41,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SigmaLogo, SigmaMark } from "@/components/brand/logo";
+import { SigmaMark } from "@/components/brand/logo";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
-import { TaxumioLogo } from "@/components/brand/taxumio-logo";
 import { NAV, FOOTER, p, altPath, type Lang } from "@/content/site";
-import { brandForHost, SUBSUMIO_SITE_URL, isExternalUrl, type SiteBrand } from "@/lib/brand";
+import { type SiteBrand } from "@/lib/brand";
 
 // Resolve the active brand from the request host on the client. On a Subsumio
 // domain (subsum.io / subsumio.com) the chrome renders Subsumio-scoped: a
@@ -54,52 +53,14 @@ import { brandForHost, SUBSUMIO_SITE_URL, isExternalUrl, type SiteBrand } from "
 //
 // Path-based fallback: on the platform site (localhost / sigmabrain.com), the
 // /subsumio/* and /taxumio/* routes always render their own brand without
-// needing the standalone domain, so local development matches production.
+// Subsumio-only: brand is always "subsumio" in this codebase.
 export function useSiteBrand(): SiteBrand {
-  const [brand, setBrand] = useState<SiteBrand>("sigmabrain");
-  useEffect(() => {
-    const override = new URLSearchParams(window.location.search).get("brand");
-    if (override === "subsumio" || override === "sigmabrain" || override === "taxumio") {
-      setBrand(override);
-      return;
-    }
-    const hostBrand = brandForHost(window.location.host);
-    if (hostBrand !== "sigmabrain") {
-      setBrand(hostBrand);
-      return;
-    }
-    // Path-based detection for dev + platform hosting (no dedicated domain).
-    const path = window.location.pathname;
-    if (
-      path === "/subsumio" || path.startsWith("/subsumio/") ||
-      path === "/de/subsumio" || path.startsWith("/de/subsumio/")
-    ) {
-      setBrand("subsumio");
-      return;
-    }
-    if (
-      path === "/taxumio" || path.startsWith("/taxumio/") ||
-      path === "/de/taxumio" || path.startsWith("/de/taxumio/")
-    ) {
-      setBrand("taxumio");
-      return;
-    }
-    setBrand("sigmabrain");
-  }, []);
-  return brand;
+  return "subsumio";
 }
 
-// Brand-aware logo lockup for the nav. Subsumio is "powered by Sigmabrain", so
-// it keeps the Sigma mark and adds the attribution line.
-function BrandLogo({ brand }: { brand: SiteBrand }) {
-  if (brand === "subsumio") return <SubsumioLogo size={34} />;
-  if (brand === "taxumio") return <TaxumioLogo size={34} />;
-  return (
-    <SigmaLogo
-      size={32}
-      wordmarkClassName="text-lg font-bold tracking-tight [color:var(--mk-text)]"
-    />
-  );
+// Subsumio-only logo lockup.
+function BrandLogo() {
+  return <SubsumioLogo size={34} />;
 }
 
 // Content files store icon names as strings; resolve them here.
@@ -255,12 +216,7 @@ export function MarketingBackground() {
 
 export function MarketingNav({ lang, theme = "dark" }: { lang: Lang; theme?: "light" | "slate" | "dark" }) {
   const nav = NAV[lang];
-  const brand = useSiteBrand();
-  const isSubsumio = brand === "subsumio";
-  const isTaxumio = brand === "taxumio";
-  const isStandalone = isSubsumio || isTaxumio;
   const pathname = usePathname() || "/";
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   // Tone-driven: text resolves from --mk-* against the header's data-tone.
@@ -294,87 +250,15 @@ export function MarketingNav({ lang, theme = "dark" }: { lang: Lang; theme?: "li
     >
     <nav className="max-w-7xl mx-auto px-6 py-4">
       <div className="flex items-center justify-between">
-        <Link href={p(lang, "")} aria-label={isSubsumio ? "Subsumio home" : isTaxumio ? "Taxumio home" : "Sigmabrain home"}>
-          <BrandLogo brand={brand} />
+        <Link href={p(lang, "")} aria-label="Subsumio home">
+          <BrandLogo />
         </Link>
 
         <div className="hidden md:flex items-center gap-7">
-          {isSubsumio ? (
-            nav.subsumioItems.map((item) => (
-              <Link key={item.href} href={p(lang, item.href)} className={isActive(item.href) ? linkActive : linkInactive}>{item.label}</Link>
-            ))
-          ) : isTaxumio ? (
-            nav.taxumioItems.map((item) => (
-              <Link key={item.href} href={p(lang, item.href)} className={isActive(item.href) ? linkActive : linkInactive}>{item.label}</Link>
-            ))
-          ) : (
-            <Link href={p(lang, "/features")} className={isActive("/features") ? linkActive : linkInactive}>{nav.features}</Link>
-          )}
-          {!isStandalone && (
-          <div
-            className="relative"
-            onMouseEnter={() => setSolutionsOpen(true)}
-            onMouseLeave={() => setSolutionsOpen(false)}
-          >
-            <button
-              className={`flex items-center gap-1 text-sm ${linkCls} py-2`}
-              aria-expanded={solutionsOpen}
-              aria-haspopup="true"
-              onClick={() => setSolutionsOpen((o) => !o)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") setSolutionsOpen(false);
-              }}
-            >
-              {nav.solutions} <ChevronDown size={13} className={solutionsOpen ? "rotate-180" : ""} />
-            </button>
-            {solutionsOpen && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-80">
-                <div className="rounded-2xl p-1.5 backdrop-blur-xl shadow-2xl shadow-black/15 [background:color-mix(in_srgb,var(--mk-surface)_94%,transparent)]">
-                  {nav.solutionItems.map((item) => {
-                    const comingSoon = "comingSoon" in item && item.comingSoon;
-                    if (comingSoon) {
-                      return (
-                        <div
-                          key={item.href}
-                          className="block px-3 py-2.5 rounded-lg cursor-default opacity-55"
-                          aria-disabled="true"
-                        >
-                          <p className="text-sm font-medium [color:var(--mk-text)] flex items-center gap-2">
-                            {item.label}
-                            <span className="text-[10px] font-semibold uppercase tracking-wide brand-text brand-soft px-1.5 py-0.5 rounded">
-                              {nav.comingSoonLabel}
-                            </span>
-                          </p>
-                          <p className="text-xs [color:var(--mk-text-muted)] mt-0.5">{item.desc}</p>
-                        </div>
-                      );
-                    }
-                    const resolvedHref = item.href === "/subsumio" ? SUBSUMIO_SITE_URL : item.href;
-                    const external = isExternalUrl(resolvedHref);
-                    const inner = (
-                      <>
-                        <p className="text-sm font-medium [color:var(--mk-text)] group-hover:brand-text">{item.label}</p>
-                        <p className="text-xs [color:var(--mk-text-muted)] mt-0.5">{item.desc}</p>
-                      </>
-                    );
-                    const cls = "block px-3 py-2.5 rounded-lg hover:[background:var(--mk-hover)] group";
-                    return external ? (
-                      <a key={item.href} href={resolvedHref} className={cls} onClick={() => setSolutionsOpen(false)}>
-                        {inner}
-                      </a>
-                    ) : (
-                      <Link key={item.href} href={p(lang, resolvedHref)} className={cls} onClick={() => setSolutionsOpen(false)}>
-                        {inner}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-          )}
-          {!isStandalone && <Link href={p(lang, "/pricing")} className={isActive("/pricing") ? linkActive : linkInactive}>{nav.pricing}</Link>}
-          {!isStandalone && <Link href={p(lang, "/compare")} className={isActive("/compare") ? linkActive : linkInactive}>{nav.compare}</Link>}
+          {nav.subsumioItems.map((item) => (
+            <Link key={item.href} href={p(lang, item.href)} className={isActive(item.href) ? linkActive : linkInactive}>{item.label}</Link>
+          ))}
+          <Link href={p(lang, "/pricing")} className={isActive("/pricing") ? linkActive : linkInactive}>{nav.pricing}</Link>
           <Link href={p(lang, "/docs")} className={isActive("/docs") ? linkActive : linkInactive}>{nav.docs}</Link>
         </div>
 
@@ -385,9 +269,6 @@ export function MarketingNav({ lang, theme = "dark" }: { lang: Lang; theme?: "li
             aria-label={lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
           >
             <Globe size={12} /> {lang.toUpperCase()}
-          </Link>
-          <Link href={p(lang, "/login")} className="hidden sm:block">
-            <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">{nav.signIn}</Button>
           </Link>
           <Link href={p(lang, "/signup")}>
             <Button size="sm" variant="glow" className="group">
@@ -407,37 +288,10 @@ export function MarketingNav({ lang, theme = "dark" }: { lang: Lang; theme?: "li
 
       {mobileOpen && (
         <div className="md:hidden mt-3 rounded-2xl p-4 space-y-1 backdrop-blur-xl [background:color-mix(in_srgb,var(--mk-bg)_96%,transparent)] shadow-2xl shadow-black/10">
-          {isSubsumio && nav.subsumioItems.map((item) => (
+          {nav.subsumioItems.map((item) => (
             <Link key={item.href} href={p(lang, item.href)} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive(item.href) ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{item.label}</Link>
           ))}
-          {isTaxumio && nav.taxumioItems.map((item) => (
-            <Link key={item.href} href={p(lang, item.href)} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive(item.href) ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{item.label}</Link>
-          ))}
-          {!isStandalone && <Link href={p(lang, "/features")} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/features") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.features}</Link>}
-          {!isStandalone && nav.solutionItems.map((item) => {
-            const comingSoon = "comingSoon" in item && item.comingSoon;
-            if (comingSoon) {
-              return (
-                <div key={item.href} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm [color:var(--mk-text-muted)] opacity-60" aria-disabled="true">
-                  {item.label}
-                  <span className="text-[10px] font-semibold uppercase tracking-wide brand-text">{nav.comingSoonLabel}</span>
-                </div>
-              );
-            }
-            const resolvedHref = item.href === "/subsumio" ? SUBSUMIO_SITE_URL : item.href;
-            const cls = "block px-3 py-2 rounded-lg text-sm transition-colors [color:var(--mk-text)] hover:[background:var(--mk-hover)]";
-            return isExternalUrl(resolvedHref) ? (
-              <a key={item.href} href={resolvedHref} className={cls} onClick={() => setMobileOpen(false)}>
-                {item.label}
-              </a>
-            ) : (
-              <Link key={item.href} href={p(lang, resolvedHref)} className={cls} onClick={() => setMobileOpen(false)}>
-                {item.label}
-              </Link>
-            );
-          })}
-          {!isStandalone && <Link href={p(lang, "/pricing")} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/pricing") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.pricing}</Link>}
-          {!isStandalone && <Link href={p(lang, "/compare")} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/compare") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.compare}</Link>}
+          <Link href={p(lang, "/pricing")} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/pricing") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.pricing}</Link>
           <Link href={p(lang, "/docs")} className={`block px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/docs") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.docs}</Link>
           <Link href={altPath(lang, pathname)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors [color:var(--mk-text-muted)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)]" onClick={() => setMobileOpen(false)}>
             <Globe size={13} /> {lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
@@ -452,29 +306,18 @@ export function MarketingNav({ lang, theme = "dark" }: { lang: Lang; theme?: "li
 
 export function MarketingFooter({ lang }: { lang: Lang }) {
   const footer = FOOTER[lang];
-  const brand = useSiteBrand();
-  const isSubsumio = brand === "subsumio";
-  const isTaxumio = brand === "taxumio";
   return (
     <footer className="relative z-10 border-t [border-color:var(--mk-border)] py-14 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
           <div className="col-span-2">
             <div className="mb-3">
-              {isSubsumio ? (
-                <SubsumioLogo size={28} />
-              ) : isTaxumio ? (
-                <TaxumioLogo size={28} />
-              ) : (
-                <SigmaLogo size={24} wordmarkClassName="text-sm font-semibold [color:var(--mk-text)]" />
-              )}
+              <SubsumioLogo size={28} />
             </div>
             <p className="text-sm [color:var(--mk-text-muted)] mb-4">
-              {isSubsumio
-                ? (lang === "de" ? "Das Kanzlei-Gehirn — angetrieben von Sigmabrain." : "The law firm's brain — powered by Sigmabrain.")
-                : isTaxumio
-                ? (lang === "de" ? "Das Kanzleigedächtnis — angetrieben von Sigmabrain." : "The tax firm's memory — powered by Sigmabrain.")
-                : footer.tagline}
+              {lang === "de"
+                ? "Das Kanzlei-Gehirn — KI-gestützte Kanzleisoftware für Österreich & Deutschland."
+                : "The law firm's brain — AI case management for Austria & Germany."}
             </p>
             <p className="text-xs [color:var(--mk-text-subtle)] leading-relaxed max-w-xs">{footer.note}</p>
           </div>
@@ -484,13 +327,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
               <ul className="space-y-2">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    {"external" in link && link.external ? (
-                      <a href={link.href} target="_blank" rel="noreferrer" className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]">{link.label}</a>
-                    ) : (
-                      // App-Routen (/dashboard…) sind nicht lokalisiert —
-                      // niemals den Sprachpräfix anhängen (/de/dashboard = 404).
-                      <Link href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)} className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]">{link.label}</Link>
-                    )}
+                    <Link href={p(lang, link.href)} className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]">{link.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -498,7 +335,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
           ))}
         </div>
         <div className="pt-6 border-t [border-color:var(--mk-border)] flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs [color:var(--mk-text-subtle)]">© 2026 Sigmabrain</p>
+          <p className="text-xs [color:var(--mk-text-subtle)]">© 2026 Subsumio</p>
           <p className="text-xs [color:var(--mk-text-subtle)]">
             {lang === "en" ? "EU-hosted or self-hosted · GDPR-ready · confidentiality-first" : "EU-gehostet oder self-hosted · DSGVO-konform · vertraulichkeitskritisch"}
           </p>

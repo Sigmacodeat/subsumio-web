@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { SigmaMark } from "@/components/brand/logo";
 import { p, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
-import { brandForHost, type SiteBrand } from "@/lib/brand";
 import SubsumioShowcase from "./subsumio-showcase";
 import {
   MarketingBackground,
@@ -30,20 +29,6 @@ import {
   MarketingFooter,
   ICONS,
 } from "./chrome";
-
-// Detect the active brand from the host (post-mount → keeps the page static).
-function useSiteBrand(): SiteBrand {
-  const [brand, setBrand] = useState<SiteBrand>("sigmabrain");
-  useEffect(() => {
-    const override = new URLSearchParams(window.location.search).get("brand");
-    if (override === "subsumio" || override === "sigmabrain" || override === "taxumio") {
-      setBrand(override);
-      return;
-    }
-    setBrand(brandForHost(window.location.host));
-  }, []);
-  return brand;
-}
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -254,8 +239,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
 
 export default function FeaturesPage({ lang }: { lang: Lang }) {
   const t = FEATURES_PAGE[lang];
-  const brand = useSiteBrand();
-  const isSubsumio = brand === "subsumio";
+  const isSubsumio = true;
   const [active, setActive] = useState(t.categories[0].id);
   const cat = t.categories.find((c) => c.id === active) ?? t.categories[0];
   const CatIcon = ICONS[cat.icon];

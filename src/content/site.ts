@@ -26,7 +26,7 @@ export function altPath(lang: Lang, pathname: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Navigation + Footer
+// Navigation + Footer — Subsumio-only
 // ---------------------------------------------------------------------------
 
 export const NAV = {
@@ -40,28 +40,11 @@ export const NAV = {
     signIn: "Sign in",
     cta: "Get started",
     comingSoonLabel: "Coming soon",
-    // Subsumio-host nav (brand === "subsumio"): the standalone product site has
-    // its own pages, not the platform's Solutions dropdown.
     subsumioItems: [
       { label: "Product", href: "/subsumio/produkt" },
       { label: "WhatsApp copilot", href: "/subsumio/whatsapp" },
       { label: "Security", href: "/subsumio/sicherheit" },
       { label: "Pricing", href: "/pricing" },
-    ],
-    // Taxumio-host nav (brand === "taxumio").
-    taxumioItems: [
-      { label: "Pricing", href: "/pricing" },
-      { label: "All solutions", href: "/" },
-    ],
-    solutionItems: [
-      { label: "Law Firms — Subsumio", href: "/subsumio", desc: "Matters, deadlines, WhatsApp intake, time, expenses and invoicing" },
-      { label: "Tax & Accounting — Taxumio", href: "/taxumio", desc: "The practice memory next to DATEV", comingSoon: true },
-      { label: "Compliance & GRC — Compliumio", href: "/compliance", desc: "GDPR, AML, EU AI Act — obligations, controls and the evidence trail", comingSoon: true },
-      { label: "Insurance Brokers — Versumio", href: "/insurance", desc: "Coverage, claims history, renewals — the agency's memory", comingSoon: true },
-      { label: "Real Estate — Immumio", href: "/realestate", desc: "Leases, tenants, renewals, due diligence — the property memory", comingSoon: true },
-      { label: "VC & Private Equity — Investumio", href: "/vc", desc: "Deal memory, founder tracking, the relationship graph", comingSoon: true },
-      { label: "Consulting & Agencies — Consultumio", href: "/consulting", desc: "Institutional memory: reuse past work, onboard fast", comingSoon: true },
-      { label: "Executive Search — Talentumio", href: "/recruiting", desc: "Your proprietary, queryable talent graph", comingSoon: true },
     ],
   },
   de: {
@@ -80,26 +63,12 @@ export const NAV = {
       { label: "Sicherheit", href: "/subsumio/sicherheit" },
       { label: "Preise", href: "/pricing" },
     ],
-    taxumioItems: [
-      { label: "Preise", href: "/pricing" },
-      { label: "Alle Lösungen", href: "/" },
-    ],
-    solutionItems: [
-      { label: "Kanzleien — Subsumio", href: "/subsumio", desc: "Akten, Fristen, WhatsApp-Eingang, Zeiten, Auslagen und Rechnungen" },
-      { label: "Steuerberater & WP — Taxumio", href: "/taxumio", desc: "Das Kanzleigedächtnis neben DATEV", comingSoon: true },
-      { label: "Compliance & GRC — Compliumio", href: "/compliance", desc: "DSGVO, GwG, EU AI Act — Pflichten, Kontrollen und der Nachweis", comingSoon: true },
-      { label: "Versicherungsmakler — Versumio", href: "/insurance", desc: "Deckung, Schadenhistorie, Verlängerungen — das Makler-Gedächtnis", comingSoon: true },
-      { label: "Immobilien — Immumio", href: "/realestate", desc: "Mietverträge, Mieter, Verlängerungen, Due Diligence — das Objekt-Gedächtnis", comingSoon: true },
-      { label: "VC & Private Equity — Investumio", href: "/vc", desc: "Deal-Gedächtnis, Founder-Tracking, Beziehungsgraph", comingSoon: true },
-      { label: "Beratung & Agenturen — Consultumio", href: "/consulting", desc: "Institutional Memory: Vorarbeit wiederverwenden, schnell onboarden", comingSoon: true },
-      { label: "Executive Search — Talentumio", href: "/recruiting", desc: "Euer proprietärer, abfragbarer Talent-Graph", comingSoon: true },
-    ],
   },
 } as const;
 
 export const FOOTER = {
   en: {
-    tagline: "The brain your firm never had.",
+    tagline: "The law firm's brain — AI case management for Austria & Germany.",
     columns: [
       {
         title: "Product",
@@ -107,7 +76,6 @@ export const FOOTER = {
           { label: "Features", href: "/features" },
           { label: "Pricing", href: "/pricing" },
           { label: "Compare us honestly", href: "/compare" },
-          { label: "Dashboard", href: "/dashboard", external: false },
           { label: "Download the app", href: "/download" },
           { label: "Docs", href: "/docs" },
         ],
@@ -115,7 +83,7 @@ export const FOOTER = {
       {
         title: "Subsumio",
         links: [
-          { label: "Overview", href: "/subsumio" },
+          { label: "Overview", href: "/" },
           { label: "Product", href: "/subsumio/produkt" },
           { label: "WhatsApp copilot", href: "/subsumio/whatsapp" },
           { label: "Security & GDPR", href: "/subsumio/sicherheit" },
@@ -138,10 +106,10 @@ export const FOOTER = {
         ],
       },
     ],
-    note: "Your data, your keys — self-hosted on your hardware or our EU cloud. Built for confidentiality-first work.",
+    note: "Your data, your keys — self-hosted on your hardware or our EU cloud. Built for confidentiality-first legal work.",
   },
   de: {
-    tagline: "Das Gedächtnis deiner Firma.",
+    tagline: "Das Kanzlei-Gehirn — KI-Kanzleisoftware für Österreich & Deutschland.",
     columns: [
       {
         title: "Produkt",
@@ -149,7 +117,6 @@ export const FOOTER = {
           { label: "Features", href: "/features" },
           { label: "Preise", href: "/pricing" },
           { label: "Ehrlicher Vergleich", href: "/compare" },
-          { label: "Dashboard", href: "/dashboard", external: false },
           { label: "App herunterladen", href: "/download" },
           { label: "Docs", href: "/docs" },
         ],
@@ -157,7 +124,7 @@ export const FOOTER = {
       {
         title: "Subsumio",
         links: [
-          { label: "Übersicht", href: "/subsumio" },
+          { label: "Übersicht", href: "/" },
           { label: "Produkt", href: "/subsumio/produkt" },
           { label: "WhatsApp-Copilot", href: "/subsumio/whatsapp" },
           { label: "Sicherheit & DSGVO", href: "/subsumio/sicherheit" },
@@ -180,7 +147,7 @@ export const FOOTER = {
         ],
       },
     ],
-    note: "Deine Daten, deine Keys — self-hosted auf eurer Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
+    note: "Deine Daten, deine Keys — self-hosted auf eurer Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Kanzlei-Arbeit.",
   },
 } as const;
 
