@@ -1,0 +1,6 @@
+{"intent": "What is the status of project Alpha", "expected_skill": "pm-status"}
+{"intent": "Give me a project status update", "expected_skill": "pm-status"}
+{"intent": "Where are we on the migration", "expected_skill": "pm-status"}
+{"intent": "Statusbericht für Projekt X", "expected_skill": "pm-status"}
+{"intent": "Wie ist der aktuelle Projektstatus", "expected_skill": "pm-status"}
+{"intent": "Was ist der Fortschritt beim Release", "expected_skill": "pm-status"}

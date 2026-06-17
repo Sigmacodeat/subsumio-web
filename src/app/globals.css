@@ -1,0 +1,600 @@
+/* Fonts are self-hosted via next/font (layout.tsx) — no runtime requests
+   to Google (GDPR) and no render-blocking @import. The --font-inter,
+   --font-grotesk and --font-jetbrains variables are set on <html>. */
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-base: #06060f;
+  --color-bg-surface: #0d0d1a;
+  --color-bg-elevated: #12122a;
+  --color-bg-hover: #1a1a35;
+  --color-border: #1e1e3a;
+  --color-border-active: #3a3a6a;
+  --color-text-primary: #e8e8f0;
+  --color-text-secondary: #8888aa;
+  --color-text-muted: #4a4a6a;
+  --color-accent: #2f6bff;
+  --color-accent-light: #5b8cff;
+  --color-accent-glow: rgba(47, 107, 255, 0.15);
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #60a5fa;
+  /* Light "trust" surface tokens — cool premium gray, never warm beige.
+     Matches the dashboard light theme (#f5f6f9 family) so the marketing
+     site and the app shell feel like one product. */
+  --color-light-bg: #f0f1f5;
+  --color-light-surface: #f7f8fa;
+  --color-light-surface-2: #ebedf2;
+  --color-light-border: #dbdde6;
+  --color-light-border-strong: #b8bcc8;
+  --color-light-text: #0f0f1a;
+  --color-light-text-muted: #555668;
+  --color-light-text-subtle: #6c6e7a;
+  /* Deliberate, accessible signal accents (text-on-light shades).
+     Tuned for the cool-gray backgrounds above. */
+  --signal-blue: #1e40af;
+  --signal-green: #047857;
+  --signal-amber: #92400e;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), "Fira Code", monospace;
+}
+
+:root {
+  --brand-primary: #2f6bff;
+  --brand-primary-hover: #4f80ff;
+  --brand-secondary: #20d3c2;
+  --brand-tertiary: #8b5cf6;
+  --brand-glow: rgba(47, 107, 255, 0.24);
+  --brand-gradient-from: #20d3c2;
+  --brand-gradient-via: #2f6bff;
+  --brand-gradient-to: #8b5cf6;
+  --brand-text: var(--brand-secondary);
+
+  /* ────────────────────────────────────────────────────────────────
+     Design-system neutral scale (--ds-*) — the SINGLE source of truth
+     for every surface, border and text neutral in the product.
+     Default values here = the DARK marketing/app-shell theme, so the
+     shared primitives (Card/Button/Badge) and the marketing site keep
+     their current look with zero change. The dashboard overrides these
+     to a light theme below, and the dark-mode toggle re-darkens them.
+     Rule: components reference var(--ds-*); never hardcode a neutral hex.
+     ──────────────────────────────────────────────────────────────── */
+  --ds-bg: #06060f;          /* app/page background          */
+  --ds-surface: #0d0d1a;     /* card / panel surface         */
+  --ds-surface-2: #12122a;   /* nested / elevated surface    */
+  --ds-hover: #1a1a35;       /* row / control hover          */
+  --ds-border: #1e1e3a;      /* hairline borders + dividers  */
+  --ds-border-strong: #3a3a6a; /* emphasised borders         */
+  --ds-text: #e8e8f0;        /* primary text  (AAA on bg)    */
+  --ds-text-muted: #8888aa;  /* secondary text               */
+  --ds-text-subtle: #6a6a85; /* tertiary / disabled labels   */
+
+  /* ────────────────────────────────────────────────────────────────
+     Marketing surface scale (--mk-*) — the SINGLE source of truth for
+     every neutral on the PUBLIC marketing + legal pages. It is the
+     tone-aware sibling of --ds-* (which scopes the app shell). Sections
+     opt into a tone with `data-tone="light|dark"` (see the <Section>
+     primitive + [data-tone] blocks below); the public site is built
+     light-dominant by wrapping most sections in data-tone="light" and
+     reserving data-tone="dark" for spotlights (live demo, copilot).
+     Defaults here = DARK, so any not-yet-migrated hex keeps its look and
+     un-toned regions match the global dark body. Rule going forward:
+     marketing/legal components reference var(--mk-*); never hardcode a
+     neutral hex. ──────────────────────────────────────────────────── */
+  --mk-bg: #06060f;           /* page background              */
+  --mk-surface: #0d0d1a;      /* card / panel surface         */
+  --mk-surface-2: #12122a;    /* nested / elevated surface    */
+  --mk-hover: #1a1a35;        /* row / control hover          */
+  --mk-border: #1e1e3a;       /* hairline borders + dividers  */
+  --mk-border-strong: #3a3a6a;/* emphasised borders           */
+  --mk-text: #e8e8f0;         /* primary text                 */
+  --mk-text-muted: #8888aa;   /* secondary text               */
+  --mk-text-subtle: #7878a0;  /* tertiary labels              */
+  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Marketing tone scopes. All verified WCAG-AA (≥ 4.5:1) for body + muted + subtle.
+   LIGHT (on #f7f8fa surface): text #0f0f1a 17.5:1, muted #555668 6.6:1, subtle #6c6e7a 4.8:1.
+   SLATE (on #1e293b surface): text #f8fafc 15.6:1, muted #94a3b8 7.6:1, subtle #7a8ca6 5.8:1.
+   DARK  (on #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
+[data-tone="light"] {
+  --mk-bg: #f0f1f5;
+  --mk-surface: #f7f8fa;
+  --mk-surface-2: #ebedf2;
+  --mk-hover: #e4e6ec;
+  --mk-border: #dbdde6;
+  --mk-border-strong: #b8bcc8;
+  --mk-text: #0f0f1a;
+  --mk-text-muted: #555668;
+  --mk-text-subtle: #6c6e7a;
+  --mk-card-shadow: 0 1px 2px rgba(15, 15, 30, 0.04), 0 8px 24px rgba(15, 15, 30, 0.06),
+                    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --brand-text: var(--brand-primary);
+  color-scheme: light;
+}
+[data-tone="slate"] {
+  --mk-bg: #0f172a;
+  --mk-surface: #1e293b;
+  --mk-surface-2: #334155;
+  --mk-hover: #273449;
+  --mk-border: #334155;
+  --mk-border-strong: #475569;
+  --mk-text: #f8fafc;
+  --mk-text-muted: #94a3b8;
+  --mk-text-subtle: #7a8ca6;  /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
+  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --brand-text: var(--brand-secondary);
+  color-scheme: dark;
+}
+[data-tone="dark"] {
+  --mk-bg: #06060f;
+  --mk-surface: #0d0d1a;
+  --mk-surface-2: #12122a;
+  --mk-hover: #1a1a35;
+  --mk-border: #1e1e3a;
+  --mk-border-strong: #3a3a6a;
+  --mk-text: #e8e8f0;
+  --mk-text-muted: #8888aa;
+  --mk-text-subtle: #8282a6;  /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
+  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --brand-text: var(--brand-secondary);
+  color-scheme: dark;
+}
+
+/* Semantic accent legibility per tone. Icon tiles + accent text use the
+   -700/-50/-200 shades on light surfaces (AA on white) and the
+   -400/-500-alpha shades on dark. The tone-aware accentTile() helper in
+   chrome.tsx returns the right Tailwind classes; these rules cover the
+   handful of accent texts that are set as bare utility classes. */
+[data-tone="light"] .accent-violet { color: #6d28d9; }
+[data-tone="light"] .accent-blue { color: #1d4ed8; }
+[data-tone="light"] .accent-emerald { color: #047857; }
+[data-tone="slate"] .accent-violet { color: #a78bfa; }
+[data-tone="slate"] .accent-blue { color: #60a5fa; }
+[data-tone="slate"] .accent-emerald { color: #34d399; }
+[data-tone="dark"] .accent-violet { color: #a78bfa; }
+[data-tone="dark"] .accent-blue { color: #60a5fa; }
+[data-tone="dark"] .accent-emerald { color: #34d399; }
+
+/* Marketing theme crossfade — surfaces/text glide between toned sections
+   instead of hard-cutting, matching the app-shell behaviour. */
+[data-tone] {
+  transition: color 300ms ease, background-color 300ms ease, border-color 300ms ease, fill 300ms ease, stroke 300ms ease;
+}
+
+/* Section spacing rhythm — remove double borders between adjacent sections
+   of the same tone. Each section handles its own top border; the first child
+   inside a tone group suppresses it. */
+[data-tone="light"] + [data-tone="light"],
+[data-tone="slate"] + [data-tone="slate"],
+[data-tone="dark"] + [data-tone="dark"] {
+  border-top: none !important;
+}
+
+/* LIGHT theme — scoped to the authenticated dashboard shell.
+   WCAG-AA verified on #ffffff: text 16.9:1, muted 6.4:1, subtle 4.7:1. */
+[data-app="dashboard"],
+[data-app="dashboard"][data-theme="light"] {
+  --ds-bg: #f5f6f9;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #f1f3f4;
+  --ds-hover: #eceef3;
+  --ds-border: #e2e4ec;
+  --ds-border-strong: #b4b9c8;
+  --ds-text: #15151d;
+  --ds-text-muted: #585866;  /* 6.4:1 on white — AA body    */
+  --ds-text-subtle: #6c6c7e; /* 4.7:1 on white — AA (was #9a9aa8 @ 2.6:1, FAILED) */
+  --brand-text: var(--brand-primary);
+  color-scheme: light;
+}
+
+/* DARK theme — premium near-black for the dashboard.
+   WCAG-AA verified on #12121f: text 15.1:1, muted 6.1:1, subtle 4.6:1. */
+[data-app="dashboard"][data-theme="dark"] {
+  --ds-bg: #0a0a14;
+  --ds-surface: #12121f;
+  --ds-surface-2: #1a1a2c;
+  --ds-hover: #20203a;
+  --ds-border: #262643;
+  --ds-border-strong: #3a3a5e;
+  --ds-text: #e9e9f2;
+  --ds-text-muted: #a0a0bd;  /* 6.1:1 on #12121f — AA       */
+  --ds-text-subtle: #74748f; /* 4.6:1 — AA                  */
+  --brand-text: var(--brand-secondary);
+  color-scheme: dark;
+}
+
+/* Semantic accent legibility in dashboard dark mode. The light theme
+   uses the -600 Tailwind shades (correct on white); on a dark surface
+   those drop below AA, so lift them to the -400 family. Contained,
+   single-source override — no per-file edits. */
+[data-app="dashboard"][data-theme="dark"] .text-violet-600 { color: #a78bfa; }
+[data-app="dashboard"][data-theme="dark"] .text-violet-700 { color: #a78bfa; }
+[data-app="dashboard"][data-theme="dark"] .text-blue-600,
+[data-app="dashboard"][data-theme="dark"] .text-blue-700 { color: #60a5fa; }
+[data-app="dashboard"][data-theme="dark"] .text-emerald-600,
+[data-app="dashboard"][data-theme="dark"] .text-emerald-700 { color: #34d399; }
+[data-app="dashboard"][data-theme="dark"] .text-amber-600,
+[data-app="dashboard"][data-theme="dark"] .text-amber-700 { color: #fbbf24; }
+[data-app="dashboard"][data-theme="dark"] .text-red-600,
+[data-app="dashboard"][data-theme="dark"] .text-red-700 { color: #f87171; }
+
+/* Dashboard background follows the theme token (overrides the global
+   dark body paint set in the @theme block / body rule). */
+[data-app="dashboard"] { background: var(--ds-bg); }
+
+/* Theme crossfade — surfaces/text glide instead of hard-cutting. */
+[data-app="dashboard"],
+[data-app="dashboard"] * {
+  transition-property: color, background-color, border-color, fill, stroke;
+}
+
+/* Tailwind-typography prose follows the design tokens in BOTH themes.
+   Several pages used `prose prose-invert` (light text) which rendered
+   invisible on the light dashboard; binding the prose vars to --ds-*
+   makes long-form content theme-correct regardless of the invert class. */
+[data-app="dashboard"] .prose,
+[data-app="dashboard"] .prose-invert {
+  --tw-prose-body: var(--ds-text-muted);
+  --tw-prose-headings: var(--ds-text);
+  --tw-prose-lead: var(--ds-text-muted);
+  --tw-prose-links: var(--brand-primary);
+  --tw-prose-bold: var(--ds-text);
+  --tw-prose-counters: var(--ds-text-subtle);
+  --tw-prose-bullets: var(--ds-border-strong);
+  --tw-prose-hr: var(--ds-border);
+  --tw-prose-quotes: var(--ds-text);
+  --tw-prose-quote-borders: var(--ds-border);
+  --tw-prose-code: var(--ds-text);
+  --tw-prose-pre-code: var(--ds-text);
+  --tw-prose-pre-bg: var(--ds-surface-2);
+  --tw-prose-th-borders: var(--ds-border-strong);
+  --tw-prose-td-borders: var(--ds-border);
+}
+
+/* Brand typography: Space Grotesk carries every headline — the geometric,
+   slightly technical voice of the Sigma Synapse mark. Body stays Inter. */
+h1, h2, h3, .font-display {
+  font-family: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #06060f;
+  color: #e8e8f0;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e1e3a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a6a;
+}
+
+/* Selection */
+::selection {
+  background: rgba(124, 58, 237, 0.3);
+  color: #e8e8f0;
+}
+
+/* Focus */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Noise texture overlay */
+.noise::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  z-index: 9999;
+}
+
+/* Grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--brand-primary) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--brand-secondary) 10%, transparent) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Glow effects */
+.glow-purple {
+  box-shadow: 0 0 40px var(--brand-glow), 0 0 80px color-mix(in srgb, var(--brand-secondary) 14%, transparent);
+}
+
+.glow-text {
+  text-shadow: 0 0 30px color-mix(in srgb, var(--brand-secondary) 45%, transparent);
+}
+
+/* Glass card */
+.glass {
+  background: color-mix(in srgb, var(--mk-surface) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--mk-border) 80%, transparent);
+}
+
+.brand-bg {
+  background-color: var(--brand-primary);
+}
+
+.brand-bg:hover {
+  background-color: var(--brand-primary-hover);
+}
+
+.brand-soft {
+  background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.brand-soft-strong {
+  background-color: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+}
+
+.brand-border {
+  border-color: color-mix(in srgb, var(--brand-primary) 24%, transparent);
+}
+
+.brand-border-strong {
+  border-color: color-mix(in srgb, var(--brand-primary) 42%, transparent);
+}
+
+.brand-text {
+  color: var(--brand-text);
+}
+
+.brand-glow-bg {
+  background-color: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+
+.brand-secondary-soft {
+  background-color: color-mix(in srgb, var(--brand-secondary) 15%, transparent);
+}
+
+.hover\:brand-border:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 24%, transparent);
+}
+
+.hover\:brand-border-strong:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 42%, transparent);
+}
+
+.hover\:brand-soft:hover {
+  background-color: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+}
+
+.hover\:brand-soft-strong:hover {
+  background-color: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+}
+
+.hover\:brand-text:hover {
+  color: var(--brand-text);
+}
+
+.focus-within\:brand-border-strong:focus-within {
+  border-color: color-mix(in srgb, var(--brand-primary) 42%, transparent);
+}
+
+.group:hover .group-hover\:brand-text {
+  color: var(--brand-text);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand-gradient-from) 0%, var(--brand-gradient-via) 50%, var(--brand-gradient-to) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated pulse ring */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.pulse-ring::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 44%, transparent);
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* Typing cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor::after {
+  content: "|";
+  animation: blink 1s step-end infinite;
+  color: var(--brand-primary);
+  margin-left: 1px;
+}
+
+/* Code blocks */
+code, pre {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    color-mix(in srgb, var(--brand-primary) 10%, transparent) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Stream animation */
+@keyframes stream-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stream-word {
+  animation: stream-in 0.15s ease-out both;
+}
+
+/* Orb gradient animation */
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 10px) scale(0.95); }
+}
+
+.orb {
+  animation: orb-float 8s ease-in-out infinite;
+  filter: blur(60px);
+}
+
+.orb-slow {
+  animation: orb-float 12s ease-in-out infinite reverse;
+  filter: blur(80px);
+}
+
+/* Gradient border animation — premium badge/card outline */
+@keyframes gradient-border-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  background: linear-gradient(135deg, var(--brand-gradient-from), var(--brand-gradient-via), var(--brand-gradient-to), var(--brand-gradient-from));
+  background-size: 300% 300%;
+  animation: gradient-border-spin 4s ease infinite;
+}
+
+/* Animated gradient text — for hero taglines */
+.gradient-text-animated {
+  background: linear-gradient(135deg, var(--brand-gradient-from) 0%, var(--brand-gradient-via) 50%, var(--brand-gradient-to) 100%);
+  background-size: 200% 200%;
+  animation: gradient-border-spin 5s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Clip-path reveal — baseline for CSS-only usage (framer handles the motion) */
+.clip-reveal {
+  clip-path: inset(0% 0% 0% 0%);
+}
+
+/* Line reveal — horizontal wipe from left */
+@keyframes line-reveal {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+
+.line-reveal {
+  animation: line-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Float subtle — for icons/marks in hero */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.float-gentle {
+  animation: float-gentle 3.5s ease-in-out infinite;
+}
+
+/* Card surface glint — ultra-premium inset highlight on hover */
+@keyframes surface-glint {
+  0% { opacity: 0; transform: translateX(-100%) rotate(-15deg); }
+  50% { opacity: 0.06; }
+  100% { opacity: 0; transform: translateX(200%) rotate(-15deg); }
+}
+
+.surface-glint::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  animation: surface-glint 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Scroll-snap for section pagination on mobile */
+@media (max-width: 768px) {
+  .snap-section {
+    scroll-snap-align: start;
+  }
+  .snap-container {
+    scroll-snap-type: y proximity;
+  }
+}
+
+/* Accessibility: respect users who prefer reduced motion.
+   Decorative animations stop; content stays fully usable. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .orb,
+  .orb-slow,
+  .pulse-ring::before,
+  .shimmer {
+    animation: none !important;
+  }
+}

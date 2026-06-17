@@ -1,0 +1,120 @@
+# gbrain-consulting — Consulting / agency lens pack
+#
+# v0.42+ vertical pack for consultancies and agencies. Extends gbrain-base with
+# engagement page types (project, client, proposal, deliverable, learning) and
+# project/proposal calibration. The wedge is institutional memory: past work,
+# reusable assets and learnings, queryable so nobody reinvents.
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-consulting
+version: 1.0.0
+description: "Consulting / agency vertical. Adds project, client, proposal, deliverable, learning types with engagement link verbs and project/proposal calibration. Institutional memory, not a PSA/time-tracking tool."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+page_types:
+  - name: project
+    primitive: temporal
+    path_prefixes:
+      - consulting/projects/
+      - projects/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: active
+        when:
+          frontmatter_field: project_status
+          frontmatter_value: active
+      - name: closed
+        when:
+          frontmatter_field: project_status
+          frontmatter_value: closed
+
+  - name: client
+    primitive: entity
+    path_prefixes:
+      - consulting/clients/
+      - clients/
+    aliases:
+      - company
+    extractable: true
+    expert_routing: false
+
+  - name: proposal
+    primitive: temporal
+    path_prefixes:
+      - consulting/proposals/
+      - proposals/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: won
+        when:
+          frontmatter_field: proposal_status
+          frontmatter_value: won
+      - name: lost
+        when:
+          frontmatter_field: proposal_status
+          frontmatter_value: lost
+
+  - name: deliverable
+    primitive: entity
+    path_prefixes:
+      - consulting/deliverables/
+      - deliverables/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  - name: learning
+    primitive: entity
+    path_prefixes:
+      - consulting/learnings/
+      - learnings/
+    aliases:
+      - concept
+    extractable: true
+    expert_routing: false
+
+link_types:
+  - name: for_client
+    inverse: has_project
+    inference:
+      regex: '(?:für|for client|Kunde)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: project
+      target_type: client
+
+  - name: produced
+    inverse: produced_in
+    inference:
+      regex: '(?:Ergebnis|deliverable|produziert)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: project
+      target_type: deliverable
+
+  - name: yielded
+    inverse: learned_in
+    inference:
+      regex: '(?:Learning|Erkenntnis|lesson)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: project
+      target_type: learning
+
+phases: []
+
+calibration_domains:
+  - name: project_outcome
+    aggregator: scalar_brier
+    page_types:
+      - project
+  - name: proposal_win
+    aggregator: scalar_brier
+    page_types:
+      - proposal

@@ -1,0 +1,70 @@
+# Subsumio engine — single-box production stack for Hetzner Cloud (EU).
+#   db     — Postgres 16 + pgvector (the brain: pages, embeddings, tenants)
+#   engine — the gbrain HTTP API + in-process ingestion worker (parses PDFs,
+#            builds embeddings, answers queries) on :3131
+#   caddy  — reverse proxy with automatic Let's Encrypt HTTPS for ENGINE_DOMAIN
+#
+# Bring up:  cd server/deploy/hetzner && cp .env.example .env && <edit .env> &&
+#            docker compose up -d --build
+# All secrets come from .env (never committed). Files live on named volumes;
+# point ENGINE_DOMAIN's DNS A-record at this box first so Caddy can issue TLS.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sigmabrain
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: sigmabrain
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sigmabrain -d sigmabrain"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    # Not published to the host — only the engine reaches it over the compose network.
+
+  engine:
+    build:
+      context: ../..          # = server/  (where the Dockerfile lives)
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://sigmabrain:${POSTGRES_PASSWORD}@db:5432/sigmabrain
+      PORT: "3131"
+      GBRAIN_HOME: /data
+    volumes:
+      - engine-data:/data     # uploaded files / vault on durable volume
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3131/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ENGINE_DOMAIN: ${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - engine
+
+volumes:
+  db-data:
+  engine-data:
+  caddy-data:
+  caddy-config:

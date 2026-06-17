@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+  <Id>sigmabrain-word-addin</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>SigmaBrain</ProviderName>
+  <DefaultLocale>de-DE</DefaultLocale>
+  <DisplayName DefaultValue="SigmaBrain für Word"/>
+  <Description DefaultValue="Schriftsätze und Dokumente aus SigmaBrain direkt in Word einfügen."/>
+  <IconUrl DefaultValue="https://sigmabrain.com/icon-192.png"/>
+  <SupportUrl DefaultValue="https://sigmabrain.com/support"/>
+  <AppDomains>
+    <AppDomain>https://sigmabrain.com</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://sigmabrain.com/word-addin/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="SigmaBrain.Group">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="SigmaBrain.OpenPane">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.SupertipTitle"/>
+                    <Description resid="Button.SupertipDesc"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>SigmaBrainPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://sigmabrain.com/icon-192.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://sigmabrain.com/icon-192.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://sigmabrain.com/icon-192.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://sigmabrain.com/support"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://sigmabrain.com/word-addin/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="SigmaBrain für Word"/>
+        <bt:String id="Group.Label" DefaultValue="SigmaBrain"/>
+        <bt:String id="Button.Label" DefaultValue="SigmaBrain"/>
+        <bt:String id="Button.SupertipTitle" DefaultValue="SigmaBrain öffnen"/>
+        <bt:String id="Button.SupertipDesc" DefaultValue="Schriftsätze und Dokumente aus Ihrem Brain in Word einfügen."/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Schriftsätze und Dokumente aus SigmaBrain direkt in Word einfügen."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

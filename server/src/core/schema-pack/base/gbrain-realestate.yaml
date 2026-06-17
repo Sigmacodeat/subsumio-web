@@ -1,0 +1,209 @@
+# gbrain-realestate — Real estate / property lens pack
+#
+# v0.42+ vertical pack for property managers, real-estate firms, brokers and
+# asset/portfolio managers. Extends gbrain-base with property page types
+# (property, unit, lease, tenant, landlord, transaction), link verbs, and
+# lease-renewal / deal calibration.
+#
+# Designed for: property management firms, commercial/residential agencies,
+# asset managers. The wedge is the property MEMORY — leases, tenant history,
+# obligations, renewals, transactions — next to the management system.
+# Confidentiality-first (tenant data is GDPR-relevant). Not a CRM or an
+# accounting/ERP system.
+#
+# Core types:
+#   - property: a building / asset (filed at realestate/properties/)
+#   - unit: a rentable unit within a property (filed at realestate/units/)
+#   - lease: a lease / tenancy contract (filed at realestate/leases/)
+#   - tenant: the lessee (aliases person, company)
+#   - landlord: the owner / lessor (aliases person, company)
+#   - transaction: a purchase / sale / valuation event
+#
+# Link verbs:
+#   - located_in (unit → property)
+#   - leased_to (unit → tenant)
+#   - owns (landlord → property)
+#   - managed_by (property → company)
+#   - valued_in (property → transaction)
+#
+# Calibration domains:
+#   - lease_renewal (was the lease renewed/retained?)
+#   - deal_close (did the transaction close as advised?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-realestate
+version: 1.0.0
+description: "Real estate / property vertical. Adds property, unit, lease, tenant, landlord, transaction types with location/lease link verbs and lease-renewal/deal calibration. Property memory, not a CRM or ERP."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+page_types:
+  # ── property ────────────────────────────────────────────────────────
+  - name: property
+    primitive: entity
+    path_prefixes:
+      - realestate/properties/
+      - properties/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: residential
+        when:
+          frontmatter_field: asset_class
+          frontmatter_value: residential
+      - name: commercial
+        when:
+          frontmatter_field: asset_class
+          frontmatter_value: commercial
+      - name: mixed_use
+        when:
+          frontmatter_field: asset_class
+          frontmatter_value: mixed_use
+      - name: industrial
+        when:
+          frontmatter_field: asset_class
+          frontmatter_value: industrial
+
+  # ── unit ────────────────────────────────────────────────────────────
+  - name: unit
+    primitive: entity
+    path_prefixes:
+      - realestate/units/
+      - units/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  # ── lease ───────────────────────────────────────────────────────────
+  - name: lease
+    primitive: entity
+    path_prefixes:
+      - realestate/leases/
+      - leases/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: fixed_term
+        when:
+          frontmatter_field: lease_type
+          frontmatter_value: fixed_term
+      - name: indefinite
+        when:
+          frontmatter_field: lease_type
+          frontmatter_value: indefinite
+      - name: commercial_lease
+        when:
+          frontmatter_field: lease_type
+          frontmatter_value: commercial
+
+  # ── tenant ──────────────────────────────────────────────────────────
+  - name: tenant
+    primitive: entity
+    path_prefixes:
+      - realestate/tenants/
+      - tenants/
+    aliases:
+      - person
+      - company
+    extractable: true
+    expert_routing: false
+
+  # ── landlord ────────────────────────────────────────────────────────
+  - name: landlord
+    primitive: entity
+    path_prefixes:
+      - realestate/landlords/
+      - landlords/
+    aliases:
+      - person
+      - company
+    extractable: true
+    expert_routing: false
+
+  # ── transaction ─────────────────────────────────────────────────────
+  - name: transaction
+    primitive: temporal
+    path_prefixes:
+      - realestate/transactions/
+      - transactions/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: purchase
+        when:
+          frontmatter_field: deal_type
+          frontmatter_value: purchase
+      - name: sale
+        when:
+          frontmatter_field: deal_type
+          frontmatter_value: sale
+      - name: valuation
+        when:
+          frontmatter_field: deal_type
+          frontmatter_value: valuation
+
+# Real-estate-specific link verbs
+link_types:
+  - name: located_in
+    inverse: contains_unit
+    inference:
+      regex: '(?:im Objekt|located in|Liegenschaft)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: unit
+      target_type: property
+
+  - name: leased_to
+    inverse: leases
+    inference:
+      regex: '(?:vermietet an|leased to|Mieter)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: unit
+      target_type: tenant
+
+  - name: owns
+    inverse: owned_by
+    inference:
+      regex: '(?:Eigentümer|owned by|owns)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: landlord
+      target_type: property
+
+  - name: managed_by
+    inverse: manages
+    inference:
+      regex: '(?:verwaltet von|managed by|Hausverwaltung)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: property
+      target_type: company
+
+  - name: valued_in
+    inverse: values
+    inference:
+      regex: '(?:bewertet in|valued in|Kaufpreis|Verkehrswert)\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: property
+      target_type: transaction
+
+# No new cycle phases. Real-estate work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for property work
+calibration_domains:
+  - name: lease_renewal
+    aggregator: scalar_brier
+    page_types:
+      - lease
+
+  - name: deal_close
+    aggregator: scalar_brier
+    page_types:
+      - transaction
+
+# Renewal/notice context (documentation; runtime enforcement via Skill/CLI):
+# Lease expiry + break-option + notice-period deadlines; rent-review dates;
+# under German law: §§ 573 ff. BGB (Kündigung), §§ 558 ff. (Mieterhöhung).

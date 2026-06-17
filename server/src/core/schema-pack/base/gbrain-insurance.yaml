@@ -1,0 +1,197 @@
+# gbrain-insurance — Insurance broker / agency lens pack
+#
+# v0.42+ vertical pack for insurance brokers and agencies (NOT carriers).
+# Extends gbrain-base with broker-side page types (policy, claim, coverage,
+# insured_party, insurer, risk), link verbs, and claim/renewal calibration.
+#
+# Designed for: insurance brokers (Versicherungsmakler), agencies, MGAs.
+# The wedge is the agency's MEMORY — coverage, claims history, advice given,
+# renewals — next to the agency management system. Not an underwriting/rating
+# engine and not a carrier policy-admin system.
+#
+# Core types:
+#   - policy: an insurance policy / contract (filed at insurance/policies/)
+#   - claim: a claim against a policy (filed at insurance/claims/)
+#   - coverage: a coverage line / endorsement (filed at insurance/coverages/)
+#   - insured_party: the client / policyholder (aliases person, company)
+#   - insurer: the carrier / risk bearer (aliases company)
+#   - risk: an insurable risk / exposure (filed at insurance/risks/)
+#
+# Link verbs:
+#   - insured_by (insured_party → insurer)
+#   - covers (policy → risk)
+#   - has_claim (policy → claim)
+#   - underwritten_by (policy → insurer)
+#   - endorses (coverage → policy)
+#
+# Calibration domains:
+#   - claim_outcome (was the claim paid as advised?)
+#   - renewal_retention (was the renewal retained?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-insurance
+version: 1.0.0
+description: "Insurance broker / agency vertical. Adds policy, claim, coverage, insured_party, insurer, risk types with coverage link verbs and claim/renewal calibration. Broker-side memory, not an underwriting engine."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+page_types:
+  # ── policy ──────────────────────────────────────────────────────────
+  - name: policy
+    primitive: entity
+    path_prefixes:
+      - insurance/policies/
+      - policies/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: liability
+        when:
+          frontmatter_field: line
+          frontmatter_value: liability
+      - name: property
+        when:
+          frontmatter_field: line
+          frontmatter_value: property
+      - name: cyber
+        when:
+          frontmatter_field: line
+          frontmatter_value: cyber
+      - name: fleet
+        when:
+          frontmatter_field: line
+          frontmatter_value: fleet
+      - name: life_health
+        when:
+          frontmatter_field: line
+          frontmatter_value: life_health
+
+  # ── claim ───────────────────────────────────────────────────────────
+  - name: claim
+    primitive: temporal
+    path_prefixes:
+      - insurance/claims/
+      - claims/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: open
+        when:
+          frontmatter_field: claim_status
+          frontmatter_value: open
+      - name: paid
+        when:
+          frontmatter_field: claim_status
+          frontmatter_value: paid
+      - name: denied
+        when:
+          frontmatter_field: claim_status
+          frontmatter_value: denied
+
+  # ── coverage ────────────────────────────────────────────────────────
+  - name: coverage
+    primitive: entity
+    path_prefixes:
+      - insurance/coverages/
+      - coverages/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  # ── insured_party ───────────────────────────────────────────────────
+  - name: insured_party
+    primitive: entity
+    path_prefixes:
+      - insurance/clients/
+      - clients/
+    aliases:
+      - person
+      - company
+    extractable: true
+    expert_routing: false
+
+  # ── insurer ─────────────────────────────────────────────────────────
+  - name: insurer
+    primitive: entity
+    path_prefixes:
+      - insurance/insurers/
+      - insurers/
+    aliases:
+      - company
+    extractable: true
+    expert_routing: false
+
+  # ── risk ────────────────────────────────────────────────────────────
+  - name: risk
+    primitive: entity
+    path_prefixes:
+      - insurance/risks/
+      - risks/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+# Insurance-specific link verbs
+link_types:
+  - name: insured_by
+    inverse: insures
+    inference:
+      regex: '(?:versichert bei|insured by|Versicherer)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: insured_party
+      target_type: insurer
+
+  - name: covers
+    inverse: covered_by
+    inference:
+      regex: '(?:deckt|covers|Deckung für)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: policy
+      target_type: risk
+
+  - name: has_claim
+    inverse: claim_on
+    inference:
+      regex: '(?:Schaden|Claim)\s*(?:Nr\.?|No\.?)?\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: policy
+      target_type: claim
+
+  - name: underwritten_by
+    inverse: underwrites
+    inference:
+      regex: '(?:gezeichnet von|underwritten by|Risikoträger)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: policy
+      target_type: insurer
+
+  - name: endorses
+    inverse: endorsed_in
+    inference:
+      regex: '(?:Nachtrag zu|endorsement to|Zusatz zu)\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: coverage
+      target_type: policy
+
+# No new cycle phases. Insurance work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for broker work
+calibration_domains:
+  - name: claim_outcome
+    aggregator: scalar_brier
+    page_types:
+      - claim
+
+  - name: renewal_retention
+    aggregator: scalar_brier
+    page_types:
+      - policy
+
+# Renewal/claim context (documentation; runtime enforcement via Skill/CLI):
+# Renewal deadlines per policy line; claim notification windows per policy terms;
+# duty-of-care: flag under-insurance on material changes (move, new assets, headcount).

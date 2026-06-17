@@ -1,0 +1,242 @@
+# gbrain-medical — Medical / Healthcare / Clinical lens pack
+#
+# v0.42+ vertical pack for medical professionals, healthcare providers,
+# and clinical researchers. Extends gbrain-base with medical-specific page
+# types, link verbs, and entity extraction targets.
+#
+# Designed for: doctors, clinics, hospitals, medical research teams,
+# healthcare compliance officers, pharmaceutical teams.
+# Integrates with: document-ingest skill (medical record OCR pipeline).
+#
+# Core types:
+#   - patient_record: a patient's clinical record (filed at medical/patients/)
+#   - diagnosis: an ICD-coded diagnosis (filed at medical/diagnoses/)
+#   - treatment_plan: prescribed therapy or surgery plan (filed at medical/treatments/)
+#   - medication: a prescribed or administered drug (filed at medical/medications/)
+#   - medical_document: lab reports, imaging, discharge summaries (filed at documents/medical/)
+#   - healthcare_provider: hospital, clinic, or physician (filed at medical/providers/)
+#
+# Link verbs:
+#   - diagnosed_with (patient → diagnosis)
+#   - prescribed (patient → medication)
+#   - treated_by (patient → healthcare_provider)
+#   - has_plan (patient → treatment_plan)
+#   - documented_in (diagnosis → medical_document)
+#   - administered_at (medication → healthcare_provider)
+#
+# Privacy rules:
+#   - Patient identifiers are pseudonymized by default (patient_id hash)
+#   - Real names must NOT appear in public artifacts (Privacy rule from CLAUDE.md)
+#   - DICOM/HL7 data stays in `.raw/` sidecar; brain page contains summary only
+#
+# Calibration domains:
+#   - diagnosis_accuracy (was the diagnosis correct?)
+#   - treatment_outcome (did the treatment achieve desired result?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-medical
+version: 1.0.0
+description: "Medical / healthcare / clinical vertical. Adds patient_record, diagnosis, treatment_plan, medication, medical_document, healthcare_provider types with ICD-coded diagnosis support, medication link verbs, and diagnosis/treatment calibration."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+# Borrow person + company from gbrain-base — healthcare_provider aliases
+# person or company; patient_record uses person primitive for privacy.
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+# Medical-specific page types
+page_types:
+  # ── patient_record ──────────────────────────────────────────────────
+  - name: patient_record
+    primitive: entity
+    path_prefixes:
+      - medical/patients/
+      - patients/
+    aliases:
+      - person
+    extractable: true
+    expert_routing: false
+    # Privacy: patient_id is pseudonymized; real names never in brain pages.
+    subtypes:
+      - name: inpatient
+        when:
+          frontmatter_field: care_setting
+          frontmatter_value: inpatient
+      - name: outpatient
+        when:
+          frontmatter_field: care_setting
+          frontmatter_value: outpatient
+      - name: emergency
+        when:
+          frontmatter_field: care_setting
+          frontmatter_value: emergency
+
+  # ── diagnosis ─────────────────────────────────────────────────────────
+  - name: diagnosis
+    primitive: concept
+    path_prefixes:
+      - medical/diagnoses/
+      - diagnoses/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: primary
+        when:
+          frontmatter_field: diagnosis_type
+          frontmatter_value: primary
+      - name: secondary
+        when:
+          frontmatter_field: diagnosis_type
+          frontmatter_value: secondary
+      - name: differential
+        when:
+          frontmatter_field: diagnosis_type
+          frontmatter_value: differential
+
+  # ── treatment_plan ────────────────────────────────────────────────────
+  - name: treatment_plan
+    primitive: temporal
+    path_prefixes:
+      - medical/treatments/
+      - treatments/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: surgical
+        when:
+          frontmatter_field: treatment_type
+          frontmatter_value: surgical
+      - name: pharmacological
+        when:
+          frontmatter_field: treatment_type
+          frontmatter_value: pharmacological
+      - name: radiological
+        when:
+          frontmatter_field: treatment_type
+          frontmatter_value: radiological
+      - name: physical_therapy
+        when:
+          frontmatter_field: treatment_type
+          frontmatter_value: physical_therapy
+
+  # ── medication ────────────────────────────────────────────────────────
+  - name: medication
+    primitive: concept
+    path_prefixes:
+      - medical/medications/
+      - medications/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  # ── medical_document ────────────────────────────────────────────────
+  - name: medical_document
+    primitive: media
+    path_prefixes:
+      - documents/medical/
+      - medical/documents/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: lab_report
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: lab_report
+      - name: imaging
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: imaging
+      - name: discharge_summary
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: discharge_summary
+      - name: referral
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: referral
+      - name: prescription
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: prescription
+
+  # ── healthcare_provider ─────────────────────────────────────────────
+  - name: healthcare_provider
+    primitive: entity
+    path_prefixes:
+      - medical/providers/
+      - providers/
+    aliases:
+      - company
+    extractable: false
+    expert_routing: false
+
+# Medical-specific link verbs
+link_types:
+  - name: diagnosed_with
+    inverse: diagnosis_for
+    inference:
+      regex: '(?:ICD-10|Diagnose)\s*:?\s*([A-Z]\d{2}(?:\.\d{1,2})?)\s*[-–]\s*(.+)'
+      page_type: patient_record
+      target_type: diagnosis
+
+  - name: prescribed
+    inverse: prescribed_for
+    inference:
+      regex: '(?:Medikament|Medication|Med\.?)\s*:?\s*([A-Z][a-z]+(?:\s+[a-z]+)*)\s*(\d+(?:\.\d+)?\s*(?:mg|g|ml|IE))'
+      page_type: patient_record
+      target_type: medication
+
+  - name: treated_by
+    inverse: treats
+    inference:
+      regex: '(?:Arzt|Ärztin|Physician|Doctor|Dr\.?)\s*:?\s*([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      page_type: patient_record
+      target_type: healthcare_provider
+
+  - name: has_plan
+    inverse: plan_for
+    inference:
+      regex: '(?:Behandlungsplan|Treatment Plan|Plan)\s*:?\s*(.+)'
+      page_type: patient_record
+      target_type: treatment_plan
+
+  - name: documented_in
+    inverse: documents
+    inference:
+      regex: '(?:Befund|Report|Dokument)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+      page_type: diagnosis
+      target_type: medical_document
+
+  - name: administered_at
+    inverse: administers
+    inference:
+      regex: '(?:Klinik|Hospital|Krankenhaus|Praxis|Clinic)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+      page_type: medication
+      target_type: healthcare_provider
+
+# No new cycle phases. Medical work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for medical work
+calibration_domains:
+  - name: diagnosis_accuracy
+    aggregator: scalar_brier
+    page_types:
+      - diagnosis
+
+  - name: treatment_outcome
+    aggregator: scalar_brier
+    page_types:
+      - treatment_plan
+
+# Retention rules (DE) — Kept as pack documentation; runtime enforcement via Skill / CLI.
+# § 630f BGB: 10 Jahre Patientenunterlagen, 30 Jahre Röntgen/CT/MRT (RöV)
+# ICD-10-GM-2024 extraction from medical_document, diagnosis, patient_record

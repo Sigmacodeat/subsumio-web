@@ -1,0 +1,251 @@
+# gbrain-tax — Tax / Accounting / Finance lens pack
+#
+# v0.42+ vertical pack for tax professionals, accountants, and finance teams.
+# Extends gbrain-base with tax-specific page types, link verbs, and entity
+# extraction targets.
+#
+# Designed for: tax advisors (Steuerberater), accounting firms, CFO offices,
+# startups managing their own books, self-employed professionals.
+# Integrates with: document-ingest skill (invoice/statement OCR pipeline).
+#
+# Core types:
+#   - tax_return: a filed or draft tax return (filed at tax/returns/)
+#   - tax_invoice: an incoming or outgoing invoice (filed at documents/invoices/)
+#   - tax_filing: a tax office filing / declaration (filed at tax/filings/)
+#   - tax_deadline: a jurisdiction-aware tax deadline (filed at tax/deadlines/)
+#   - tax_document: receipts, statements, bank docs (filed at tax/documents/)
+#   - taxpayer: a person or entity liable for tax (filed at tax/taxpayers/)
+#
+# Link verbs:
+#   - has_invoice (taxpayer → tax_invoice)
+#   - filed_return (taxpayer → tax_return)
+#   - has_deadline (taxpayer → tax_deadline)
+#   - issued_by (tax_invoice → company)
+#   - received_by (tax_document → tax_authority)
+#   - belongs_to_period (tax_return → tax_period)
+#
+# Deadline rules:
+#   - Jurisdiction-aware (DE, AT, CH, US-Federal, US-State)
+#   - Tax-specific recurrence: monthly, quarterly, annual
+#   - Holiday/weekend push-forward
+#   - GoBD / IRS retention rules
+#
+# Calibration domains:
+#   - filing_accuracy (was the filing correct and accepted?)
+#   - deadline_met (were deadlines met or properly extended?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-tax
+version: 1.0.0
+description: "Tax / accounting / finance vertical. Adds tax_return, tax_invoice, tax_filing, tax_deadline, tax_document, taxpayer types with jurisdiction-aware tax deadlines, invoice link verbs, and filing/deadline calibration."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+# Borrow person + company from gbrain-base — taxpayer aliases person,
+# vendor/client companies are still company type.
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+# Tax-specific page types
+page_types:
+  # ── tax_return ──────────────────────────────────────────────────────
+  - name: tax_return
+    primitive: temporal
+    path_prefixes:
+      - tax/returns/
+      - returns/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: einkommensteuer
+        when:
+          frontmatter_field: tax_type
+          frontmatter_value: ESt
+      - name: umsatzsteuer
+        when:
+          frontmatter_field: tax_type
+          frontmatter_value: USt
+      - name: koerperschaftsteuer
+        when:
+          frontmatter_field: tax_type
+          frontmatter_value: KSt
+      - name: gewerbesteuer
+        when:
+          frontmatter_field: tax_type
+          frontmatter_value: GewSt
+      - name: einkommensteuer_auslaendisch
+        when:
+          frontmatter_field: tax_type
+          frontmatter_value: foreign_income_tax
+
+  # ── tax_invoice ─────────────────────────────────────────────────────
+  - name: tax_invoice
+    primitive: entity
+    path_prefixes:
+      - documents/invoices/
+      - tax/invoices/
+      - invoices/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: incoming
+        when:
+          frontmatter_field: direction
+          frontmatter_value: incoming
+      - name: outgoing
+        when:
+          frontmatter_field: direction
+          frontmatter_value: outgoing
+      - name: credit_note
+        when:
+          frontmatter_field: invoice_type
+          frontmatter_value: credit_note
+      - name: proforma
+        when:
+          frontmatter_field: invoice_type
+          frontmatter_value: proforma
+
+  # ── tax_filing ──────────────────────────────────────────────────────
+  - name: tax_filing
+    primitive: temporal
+    path_prefixes:
+      - tax/filings/
+      - filings/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: umsatzsteuer_voranmeldung
+        when:
+          frontmatter_field: filing_type
+          frontmatter_value: USt-Voranmeldung
+      - name: zusammenfassende_meldung
+        when:
+          frontmatter_field: filing_type
+          frontmatter_value: ZM
+      - name: gewerbesteuererklärung
+        when:
+          frontmatter_field: filing_type
+          frontmatter_value: GewSt-Erklärung
+
+  # ── tax_deadline ────────────────────────────────────────────────────
+  - name: tax_deadline
+    primitive: temporal
+    path_prefixes:
+      - tax/deadlines/
+      - deadlines/
+    aliases: []
+    extractable: false
+    expert_routing: false
+
+  # ── tax_document ────────────────────────────────────────────────────
+  - name: tax_document
+    primitive: media
+    path_prefixes:
+      - tax/documents/
+      - documents/tax/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: receipt
+        when:
+          frontmatter_field: document_subtype
+          frontmatter_value: receipt
+      - name: bank_statement
+        when:
+          frontmatter_field: document_subtype
+          frontmatter_value: bank_statement
+      - name: payroll
+        when:
+          frontmatter_field: document_subtype
+          frontmatter_value: payroll
+      - name: customs
+        when:
+          frontmatter_field: document_subtype
+          frontmatter_value: customs
+
+  # ── taxpayer ────────────────────────────────────────────────────────
+  - name: taxpayer
+    primitive: entity
+    path_prefixes:
+      - tax/taxpayers/
+      - taxpayers/
+    aliases:
+      - person
+      - company
+    extractable: true
+    expert_routing: false
+
+# Tax-specific link verbs
+link_types:
+  - name: has_invoice
+    inverse: invoice_of
+    inference:
+      regex: '(?:Rechnung|Invoice)\s*(?:Nr\.?|No\.?)?\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: taxpayer
+      target_type: tax_invoice
+
+  - name: filed_return
+    inverse: return_for
+    inference:
+      regex: '(?:Steuererklärung|Tax Return|Erklärung)\s*:?\s*(\d{4})'
+      page_type: taxpayer
+      target_type: tax_return
+
+  - name: has_deadline
+    inverse: deadline_for
+    inference:
+      regex: '(?:Frist|Deadline)\s*:?\s*(\d{1,2}\.\s*[A-Z][a-z]+\s*\d{4})'
+      page_type: taxpayer
+      target_type: tax_deadline
+
+  - name: issued_by
+    inverse: issued
+    inference:
+      regex: '(?:Rechnungssteller|Vendor|Seller)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+      page_type: tax_invoice
+      target_type: company
+
+  - name: received_by
+    inverse: received
+    inference:
+      regex: '(?:Finanzamt|Tax Office|IRS)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)'
+      page_type: tax_document
+      target_type: company
+
+  - name: belongs_to_period
+    inverse: contains
+    inference:
+      regex: '(?:Zeitraum|Period|Wirtschaftsjahr)\s*:?\s*(\d{4}|\d{2}\/\d{2})'
+      page_type: tax_return
+      target_type: tax_deadline
+
+# No new cycle phases. Tax work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for tax work
+calibration_domains:
+  - name: filing_accuracy
+    aggregator: scalar_brier
+    page_types:
+      - tax_return
+      - tax_filing
+
+  - name: deadline_met
+    aggregator: scalar_brier
+    page_types:
+      - tax_deadline
+
+# Jurisdiction-aware tax deadline rules (DE, AT, CH) —
+# Kept as pack documentation; runtime enforcement via Skill / CLI layer.
+# DE: USt-Voranmeldung (10. Folgemonat), USt-Erklärung (31.05.),
+#     ESt/KSt/GewSt (31.05.), ZM (quartalsweise), GoBD (10 Jahre)
+# AT: USt-Voranmeldung (15. Folgemonat), ESt (30.04.)
+# CH: MWST-Abrechnung (25. Folgemonat)

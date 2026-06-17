@@ -1,0 +1,8 @@
+{"intent": "Create a project task for the migration", "expected_skill": "pm-task"}
+{"intent": "Add a case task for discovery", "expected_skill": "pm-task"}
+{"intent": "Mark project task as done", "expected_skill": "pm-task"}
+{"intent": "What are the project action items from the meeting", "expected_skill": "pm-task"}
+{"intent": "Create a task dependency for the case", "expected_skill": "pm-task"}
+{"intent": "Aufgabe für Projekt erstellen", "expected_skill": "pm-task"}
+{"intent": "Fallaufgabe anlegen", "expected_skill": "pm-task"}
+{"intent": "What are my tasks for today", "expected_skill": "daily-task-manager"}

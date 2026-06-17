@@ -1,0 +1,327 @@
+# gbrain-legal — Legal / Law firm lens pack
+#
+# v0.42+ vertical pack for legal professionals. Extends gbrain-base with
+# legal-specific page types, link verbs, and entity extraction targets.
+#
+# Designed for: law firms, legal departments, compliance teams, courts.
+# Integrates with: document-ingest skill (PDF/DOCX/OCR pipeline).
+#
+# Core types:
+#   - legal_case: a matter / case / proceeding (filed at legal/cases/)
+#   - legal_deadline: a jurisdiction-aware deadline (filed at legal/deadlines/)
+#   - legal_actor: a person in a legal role (judge, prosecutor, attorney, client)
+#   - legal_document: contracts, briefs, motions, filings (filed at documents/legal/)
+#   - court: a judicial body (filed at legal/courts/)
+#
+# Link verbs:
+#   - presided_by (case → judge)
+#   - represented_by (case → attorney)
+#   - has_deadline (case → deadline)
+#   - filed_at (document → court)
+#   - cites (document → document)
+#   - part_of_case (document → case)
+#
+# Deadline rules:
+#   - Jurisdiction-aware (DE, AT, CH, US-Federal, US-State)
+#   - Holiday exclusion (Bundesfeiertage, Landesfeiertage)
+#   - Automatic weekend/holiday push-forward
+#
+# Calibration domains:
+#   - case_outcome (did the case resolve favorably?)
+#   - deadline_accuracy (were deadlines met?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-legal
+version: 1.0.0
+description: "Legal / law firm vertical. Adds legal_case, legal_deadline, legal_actor, legal_document, court types with jurisdiction-aware deadline rules, legal-specific link verbs, and case-outcome calibration."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+# Borrow person + company from gbrain-base — legal_actor aliases person,
+# client companies are still company type.
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+# Legal-specific page types
+page_types:
+  # ── legal_case ─────────────────────────────────────────────────────
+  - name: legal_case
+    primitive: entity
+    path_prefixes:
+      - legal/cases/
+      - cases/
+    aliases:
+      - case
+    extractable: true
+    expert_routing: false
+    # Subtype detection: if frontmatter has case_number or court, it's a case.
+    subtypes:
+      - name: litigation
+        when:
+          frontmatter_field: case_type
+          frontmatter_value: litigation
+      - name: contract_dispute
+        when:
+          frontmatter_field: case_type
+          frontmatter_value: contract_dispute
+      - name: administrative
+        when:
+          frontmatter_field: case_type
+          frontmatter_value: administrative
+
+  # ── legal_deadline ──────────────────────────────────────────────────
+  - name: legal_deadline
+    primitive: temporal
+    path_prefixes:
+      - legal/deadlines/
+      - deadlines/
+    aliases: []
+    extractable: false
+    expert_routing: false
+
+  # ── legal_actor ─────────────────────────────────────────────────────
+  - name: legal_actor
+    primitive: entity
+    path_prefixes:
+      - legal/actors/
+    aliases:
+      - person
+    extractable: true
+    expert_routing: false
+
+  # ── legal_document ──────────────────────────────────────────────────
+  - name: legal_document
+    primitive: media
+    path_prefixes:
+      - documents/legal/
+      - legal/documents/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: contract
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: contract
+      - name: court_filing
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: court_filing
+      - name: brief
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: brief
+      - name: opinion
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: opinion
+      - name: statute
+        when:
+          frontmatter_field: document_type
+          frontmatter_value: statute
+
+  # ── court ───────────────────────────────────────────────────────────
+  - name: court
+    primitive: entity
+    path_prefixes:
+      - legal/courts/
+      - courts/
+    aliases: []
+    extractable: false
+    expert_routing: false
+
+  # ── evidence ──────────────────────────────────────────────────────
+  - name: evidence
+    primitive: media
+    path_prefixes:
+      - legal/evidence/
+      - evidence/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: expert_report
+        when:
+          frontmatter_field: evidence_type
+          frontmatter_value: expert_report
+      - name: witness_statement
+        when:
+          frontmatter_field: evidence_type
+          frontmatter_value: witness_statement
+      - name: document
+        when:
+          frontmatter_field: evidence_type
+          frontmatter_value: document
+      - name: audio_visual
+        when:
+          frontmatter_field: evidence_type
+          frontmatter_value: audio_visual
+
+  # ── opponent ──────────────────────────────────────────────────────
+  - name: opponent
+    primitive: entity
+    path_prefixes:
+      - legal/opponents/
+      - opponents/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  # ── statute ───────────────────────────────────────────────────────
+  - name: statute
+    primitive: concept
+    path_prefixes:
+      - legal/statutes/
+      - statutes/
+      - law/
+    aliases:
+      - law
+      - norm
+      - regulation
+    extractable: false
+    expert_routing: true
+
+  # ── judgement ─────────────────────────────────────────────────────
+  - name: judgement
+    primitive: temporal
+    path_prefixes:
+      - legal/judgements/
+      - judgements/
+      - rulings/
+    aliases:
+      - ruling
+      - decision
+      - verdict
+    extractable: true
+    expert_routing: false
+
+  # ── agent_run ─────────────────────────────────────────────────────
+  # v0.43+: Persistierte Agent-Analyse-Ergebnisse. Wird automatisch
+  # vom Supervisor-Handler geschrieben und landet im normalen Brain-
+  # Zyklus (sync → extract → embed → patterns).
+  - name: agent_run
+    primitive: annotation
+    path_prefixes:
+      - agent-runs/
+    aliases: []
+    extractable:
+      prompt_template: |
+        Extrahiere aus dieser Agent-Analyse folgende Informationen:
+        1. Referenzierte Akten (case_slug falls vorhanden)
+        2. Erwähnte Fristen und Deadlines mit Datum
+        3. Erwähnte Normen/Gesetze (§-Zitate)
+        4. Erwähnte Rechtsprechung (Gericht + Datum)
+        5. Schlüssel-Empfehlungen des Agenten
+        6. Risiken und Warnungen
+        Gib das Ergebnis als JSON mit den Feldern: cases[], deadlines[], statutes[], judgements[], recommendations[], risks[]
+      eval_dimensions:
+        - case_reference_recall
+        - statute_citation_precision
+        - deadline_extraction_accuracy
+        - risk_detection
+      benchmark_min_recall: 0.85
+    expert_routing: false
+
+# Legal-specific link verbs
+link_types:
+  - name: presided_by
+    inverse: presided_over
+    inference:
+      regex: '(?:Richter|Judge)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      page_type: legal_case
+      target_type: legal_actor
+
+  - name: represented_by
+    inverse: represents
+    inference:
+      regex: '(?:Rechtsanwalt|Anwalt|Attorney|Counsel)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      page_type: legal_case
+      target_type: legal_actor
+
+  - name: has_deadline
+    inverse: deadline_of
+    inference:
+      regex: '(?:Frist|Deadline|Termin)\s*:?\s*(\d{1,2}\.\s*[A-Z][a-z]+\s*\d{4})'
+      page_type: legal_case
+      target_type: legal_deadline
+
+  - name: filed_at
+    inverse: received_from
+    inference:
+      regex: '(?:Gericht|Court)\s*:?\s*([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      page_type: legal_document
+      target_type: court
+
+  - name: cites
+    inverse: cited_by
+    inference:
+      regex: '§\s*\d+[a-z]?\s+(?:[A-Z][a-z]+\s+)*[A-Z]{2,}'
+      page_type: legal_document
+      target_type: legal_document
+
+  - name: part_of_case
+    inverse: contains_document
+    inference:
+      regex: '(?:Akte|Case|Az\.?)\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: legal_document
+      target_type: legal_case
+
+  - name: evidence_of
+    inverse: has_evidence
+    inference:
+      regex: '(?:Beweis|Evidence)\s*(?:Nr\.?|Nr\.)?\s*:?\s*([A-Z0-9\-/]+)'
+      page_type: evidence
+      target_type: legal_case
+
+  - name: opponent_in
+    inverse: has_opponent
+    inference:
+      regex: '(?:Gegner|Opponent|Gegenpartei)\s*:?\s*([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      page_type: opponent
+      target_type: legal_case
+
+  - name: governed_by
+    inverse: governs
+    inference:
+      regex: '§\s*\d+[a-z]?\s+(?:[A-Z][a-z]+\s+)*[A-Z]{2,}'
+      page_type: legal_case
+      target_type: statute
+
+  - name: applied_in
+    inverse: based_on
+    inference:
+      regex: '(?:OGH|OLG|BGH|BVerwG|BAG)\s+[A-Z0-9\-/]+'
+      page_type: legal_case
+      target_type: judgement
+
+  - name: agent_analyzed_case
+    inverse: analyzed_by_agent
+    inference:
+      regex: 'agent-runs/supervisor-\d+-\d+'
+      page_type: agent_run
+      target_type: legal_case
+
+# No new cycle phases. Legal work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for legal work
+calibration_domains:
+  - name: case_outcome
+    aggregator: scalar_brier
+    page_types:
+      - legal_case
+
+  - name: deadline_accuracy
+    aggregator: scalar_brier
+    page_types:
+      - legal_deadline
+
+# Jurisdiction-aware deadline rules (DE, AT, CH baseline) —
+# Kept as pack documentation; runtime enforcement via Skill / CLI layer.
+# DE: § 335 ZPO (Klageerwiderung, 14 Tage), § 517 ZPO (Berufung, 14 Tage),
+#     § 548 ZPO (Revision, 30 Tage)
+# AT: § 89 ZPO (14 Tage), CH: Art. 90 ZPO (30 Tage)

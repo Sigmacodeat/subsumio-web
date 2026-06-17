@@ -1,0 +1,7 @@
+{
+  "name": "sigmabrain-legal",
+  "version": "1.0.0",
+  "plugin_version": "gbrain-plugin-v1",
+  "description": "SigmaBrain Legal Specialist Subagents — hierarchical agent roles for legal workflows",
+  "subagents": "subagents"
+}

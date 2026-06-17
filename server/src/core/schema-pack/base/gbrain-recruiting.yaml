@@ -1,0 +1,111 @@
+# gbrain-recruiting — Executive search / recruiting lens pack
+#
+# v0.42+ vertical pack for executive search firms and recruiting agencies.
+# Extends gbrain-base with talent page types (candidate, role, client,
+# placement, search) and placement calibration. The wedge is the proprietary
+# talent graph: candidates, who-knows-whom, history — queryable and confidential.
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-recruiting
+version: 1.0.0
+description: "Executive search / recruiting vertical. Adds candidate, role, client, placement, search types with talent link verbs and placement/time-to-fill calibration. The proprietary talent graph, not an ATS."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+page_types:
+  - name: candidate
+    primitive: entity
+    path_prefixes:
+      - recruiting/candidates/
+      - candidates/
+    aliases:
+      - person
+    extractable: true
+    expert_routing: false
+
+  - name: role
+    primitive: entity
+    path_prefixes:
+      - recruiting/roles/
+      - roles/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: open
+        when:
+          frontmatter_field: role_status
+          frontmatter_value: open
+      - name: filled
+        when:
+          frontmatter_field: role_status
+          frontmatter_value: filled
+
+  - name: client
+    primitive: entity
+    path_prefixes:
+      - recruiting/clients/
+      - clients/
+    aliases:
+      - company
+    extractable: true
+    expert_routing: false
+
+  - name: placement
+    primitive: temporal
+    path_prefixes:
+      - recruiting/placements/
+      - placements/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+  - name: search
+    primitive: temporal
+    path_prefixes:
+      - recruiting/searches/
+      - searches/
+    aliases: []
+    extractable: true
+    expert_routing: false
+
+link_types:
+  - name: candidate_for
+    inverse: has_candidate
+    inference:
+      regex: '(?:Kandidat für|candidate for|vorgeschlagen für)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: candidate
+      target_type: role
+
+  - name: role_at
+    inverse: has_role
+    inference:
+      regex: '(?:bei|role at|Auftraggeber)\s*:?\s*([A-Z][A-Za-z0-9\s\-&]+)'
+      page_type: role
+      target_type: client
+
+  - name: placed_in
+    inverse: placement_of
+    inference:
+      regex: '(?:platziert in|placed in|besetzt)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: candidate
+      target_type: placement
+
+phases: []
+
+calibration_domains:
+  - name: placement_success
+    aggregator: scalar_brier
+    page_types:
+      - placement
+  - name: search_filled
+    aggregator: scalar_brier
+    page_types:
+      - search

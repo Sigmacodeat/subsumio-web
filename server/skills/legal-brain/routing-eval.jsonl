@@ -1,0 +1,12 @@
+{"intent": "legal brain create case", "expected_skill": "legal-brain"}
+{"intent": "create a case for litigation", "expected_skill": "legal-brain"}
+{"intent": "analyze opponent in court", "expected_skill": "legal-brain"}
+{"intent": "assess chances of winning", "expected_skill": "legal-brain"}
+{"intent": "legal strategy for my case", "expected_skill": "legal-brain"}
+{"intent": "search precedent in rulings", "expected_skill": "legal-brain"}
+{"intent": "new legal case for client", "expected_skill": "legal-brain"}
+{"intent": "Rechtsfall erstellen", "expected_skill": "legal-brain"}
+{"intent": "Gegneranalyse durchführen", "expected_skill": "legal-brain"}
+{"intent": "Chancenbewertung", "expected_skill": "legal-brain"}
+{"intent": "Rechtsstrategie entwickeln", "expected_skill": "legal-brain"}
+{"intent": "Präjudizien suchen", "expected_skill": "legal-brain"}

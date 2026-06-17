@@ -1,0 +1,229 @@
+# gbrain-compliance — Compliance / GRC lens pack
+#
+# v0.42+ vertical pack for compliance officers, data-protection officers (DSB),
+# AML/GwG officers, and GRC / audit teams. Extends gbrain-base with
+# compliance-specific page types (controls, policies, obligations, assessments,
+# incidents, regulations), link verbs, and effectiveness calibration.
+#
+# Designed for: compliance & GRC teams in regulated SMBs (banks, insurance,
+# any GDPR-regulated company), data-protection officers, AML officers, auditors.
+# Integrates with: dsgvo-compliance + aml-screener skills, the EU AI Act
+# inventory (ai-act.ts), the four-eyes approval queue, and the audit trail.
+#
+# Core types:
+#   - control: an internal control (filed at compliance/controls/)
+#   - policy: a policy or procedure (filed at compliance/policies/)
+#   - obligation: a regulatory obligation/requirement with a deadline
+#   - compliance_assessment: an audit / control-effectiveness assessment
+#   - compliance_incident: a breach / incident record
+#   - regulation: an external framework/regulation (GDPR, AMLD6, EU AI Act, ISO)
+#
+# Link verbs:
+#   - implements (policy → obligation)
+#   - covers (control → obligation)
+#   - assessed_by (control → compliance_assessment)
+#   - mandated_by (obligation → regulation)
+#   - reported_in (compliance_incident → compliance_assessment)
+#
+# Calibration domains:
+#   - control_effectiveness (is the control demonstrably effective?)
+#   - obligation_met (was the obligation met by its deadline?)
+
+api_version: gbrain-schema-pack-v1
+name: gbrain-compliance
+version: 1.0.0
+description: "Compliance / GRC vertical. Adds control, policy, obligation, compliance_assessment, compliance_incident, regulation types with GDPR/AML/EU-AI-Act obligation tracking, control link verbs, and control-effectiveness calibration."
+gbrain_min_version: 0.42.0
+extends: gbrain-base
+
+borrow_from:
+  - pack: gbrain-base
+    types:
+      - person
+      - company
+      - concept
+
+page_types:
+  # ── control ─────────────────────────────────────────────────────────
+  - name: control
+    primitive: entity
+    path_prefixes:
+      - compliance/controls/
+      - controls/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: preventive
+        when:
+          frontmatter_field: control_type
+          frontmatter_value: preventive
+      - name: detective
+        when:
+          frontmatter_field: control_type
+          frontmatter_value: detective
+      - name: corrective
+        when:
+          frontmatter_field: control_type
+          frontmatter_value: corrective
+
+  # ── policy ──────────────────────────────────────────────────────────
+  - name: policy
+    primitive: entity
+    path_prefixes:
+      - compliance/policies/
+      - policies/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: data_protection
+        when:
+          frontmatter_field: policy_domain
+          frontmatter_value: gdpr
+      - name: aml
+        when:
+          frontmatter_field: policy_domain
+          frontmatter_value: aml
+      - name: ai_governance
+        when:
+          frontmatter_field: policy_domain
+          frontmatter_value: ai_act
+
+  # ── obligation ──────────────────────────────────────────────────────
+  - name: obligation
+    primitive: temporal
+    path_prefixes:
+      - compliance/obligations/
+      - obligations/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: gdpr
+        when:
+          frontmatter_field: framework
+          frontmatter_value: gdpr
+      - name: aml
+        when:
+          frontmatter_field: framework
+          frontmatter_value: amld6
+      - name: ai_act
+        when:
+          frontmatter_field: framework
+          frontmatter_value: eu_ai_act
+      - name: iso27001
+        when:
+          frontmatter_field: framework
+          frontmatter_value: iso27001
+
+  # ── compliance_assessment ───────────────────────────────────────────
+  - name: compliance_assessment
+    primitive: temporal
+    path_prefixes:
+      - compliance/assessments/
+      - assessments/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: internal_audit
+        when:
+          frontmatter_field: assessment_type
+          frontmatter_value: internal_audit
+      - name: external_audit
+        when:
+          frontmatter_field: assessment_type
+          frontmatter_value: external_audit
+      - name: dpia
+        when:
+          frontmatter_field: assessment_type
+          frontmatter_value: dpia
+
+  # ── compliance_incident ─────────────────────────────────────────────
+  - name: compliance_incident
+    primitive: temporal
+    path_prefixes:
+      - compliance/incidents/
+      - incidents/
+    aliases: []
+    extractable: true
+    expert_routing: false
+    subtypes:
+      - name: data_breach
+        when:
+          frontmatter_field: incident_type
+          frontmatter_value: data_breach
+      - name: aml_sar
+        when:
+          frontmatter_field: incident_type
+          frontmatter_value: sar
+
+  # ── regulation ──────────────────────────────────────────────────────
+  - name: regulation
+    primitive: entity
+    path_prefixes:
+      - compliance/regulations/
+      - regulations/
+    aliases: []
+    extractable: false
+    expert_routing: false
+
+# Compliance-specific link verbs
+link_types:
+  - name: implements
+    inverse: implemented_by
+    inference:
+      regex: '(?:setzt um|implements|erfüllt)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: policy
+      target_type: obligation
+
+  - name: covers
+    inverse: covered_by
+    inference:
+      regex: '(?:deckt ab|covers|mitigates)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: control
+      target_type: obligation
+
+  - name: assessed_by
+    inverse: assesses
+    inference:
+      regex: '(?:geprüft durch|assessed by|Prüfung)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: control
+      target_type: compliance_assessment
+
+  - name: mandated_by
+    inverse: mandates
+    inference:
+      regex: '(?:nach|per|gemäß|under|pursuant to)\s*:?\s*(GDPR|DSGVO|AMLD6|GwG|EU AI Act|ISO\s?27001)'
+      page_type: obligation
+      target_type: regulation
+
+  - name: reported_in
+    inverse: reports
+    inference:
+      regex: '(?:gemeldet in|reported in|Bericht)\s*:?\s*([A-Z][A-Za-z0-9\s\-]+)'
+      page_type: compliance_incident
+      target_type: compliance_assessment
+
+# No new cycle phases. Compliance work consumes the existing pipeline.
+phases: []
+
+# v0.42+ calibration domains for compliance work
+calibration_domains:
+  - name: control_effectiveness
+    aggregator: scalar_brier
+    page_types:
+      - control
+      - compliance_assessment
+
+  - name: obligation_met
+    aggregator: scalar_brier
+    page_types:
+      - obligation
+
+# Obligation deadline context (documentation; runtime enforcement via Skill/CLI):
+# EU AI Act: Art. 50 transparency + most Annex-III duties from 02.08.2026.
+# GDPR: breach notification 72h (Art. 33); records of processing (Art. 30).
+# AMLD6 / GwG: periodic CDD review; SAR filing without delay.
+# ISO 27001: annual management review + surveillance audits.

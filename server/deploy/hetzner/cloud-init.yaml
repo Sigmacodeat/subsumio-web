@@ -1,0 +1,14 @@
+#cloud-config
+# Runs once on first boot of the Hetzner VM: installs Docker + compose plugin so
+# the box is ready for `docker compose up`. Secrets are NOT here — you set them
+# in .env after cloning the repo (see README.md).
+package_update: true
+packages:
+  - git
+  - curl
+  - ca-certificates
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - systemctl enable --now docker
+  - mkdir -p /opt/subsumio
+  - printf 'Docker is ready.\nNext:\n 1. git clone <repo> /opt/subsumio\n 2. cd /opt/subsumio/server/deploy/hetzner && cp .env.example .env && nano .env\n 3. docker compose up -d --build\n' > /opt/subsumio/NEXT_STEPS.txt
