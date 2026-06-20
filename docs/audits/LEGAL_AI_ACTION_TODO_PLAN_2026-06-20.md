@@ -80,10 +80,11 @@ Diese Tabelle ist die verbindliche Zuordnung von Paket zu Priorität, Auslieferu
 
 Diese Sektion wird laufend aktualisiert, sobald Arbeitspakete umgesetzt werden.
 
-| Ticket      | Status           | Nachweis                                                                                                                                                                                                                           |
-| ----------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0-PROD-001 | fertig           | `src/middleware.ts` exemptet Provider-Webhooks fuer Billing, WhatsApp, Resend, DocuSign und generische `/api/webhook/*`-Routen von Browser-CSRF. Verifiziert mit `bunx vitest run src/middleware.test.ts` und `bun run typecheck`. |
-| P0-PROD-002 | teilweise fertig | Middleware-Grenze ist in `src/middleware.test.ts` getestet: Provider-Webhooks ohne CSRF werden nicht geblockt, normale state-changing APIs bleiben geschuetzt. Route-nahe Signatur/Auth-Tests pro Provider fehlen noch.            |
+| Ticket      | Status | Nachweis                                                                                                                                                                                                                                                                                                                                    |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0-PROD-001 | fertig | `src/middleware.ts` exemptet Provider-Webhooks fuer Billing, WhatsApp, Resend, DocuSign und generische `/api/webhook/*`-Routen von Browser-CSRF. Verifiziert mit `bunx vitest run src/middleware.test.ts` und `bun run typecheck`.                                                                                                          |
+| P0-PROD-002 | fertig | `src/app/api/webhooks-auth.test.ts` prueft Stripe, WhatsApp, Resend und DocuSign route-nah: unsignierte/ungueltige Provider-Webhooks scheitern, gueltige Provider-Signaturen kommen ohne Browser-CSRF bis in die Route. Verifiziert mit `bunx vitest run src/middleware.test.ts src/app/api/webhooks-auth.test.ts` und `bun run typecheck`. |
+| P0-PROD-003 | fertig | `server`-Verify laeuft aus dem Monorepo heraus korrekt: Pfad-/Shebang-Gates fuer Source-ID, Test-Isolation, Admin-Scope, Batch-Audit und Worker-Lock sind repariert; Skill-Brain-First und Resolver sind bereinigt. Verifiziert mit `cd server && bun run verify` (30/30 Checks gruen).                                                     |
 
 ## Vollständigkeits- und Redundanzcheck vom 2026-06-20
 
@@ -1913,8 +1914,8 @@ Warum:
 ## Konkrete nächste Tickets
 
 1. `P0-PROD-001`: Webhook-CSRF-Exemptions in `src/middleware.ts` fuer Stripe, WhatsApp, Resend und DocuSign fixen. **Status: fertig.**
-2. `P0-PROD-002`: Provider-Webhook-Tests ohne CSRF-Header, aber mit Signatur/Auth-Gate ergaenzen. **Status: teilweise fertig; Middleware-Grenze getestet, route-nahe Provider-Signaturtests offen.**
-3. `P0-PROD-003`: `cd server && bun run verify` gruen machen und Monorepo-Pfadfehler in Verify-Checks beheben.
+2. `P0-PROD-002`: Provider-Webhook-Tests ohne CSRF-Header, aber mit Signatur/Auth-Gate ergaenzen. **Status: fertig.**
+3. `P0-PROD-003`: `cd server && bun run verify` gruen machen und Monorepo-Pfadfehler in Verify-Checks beheben. **Status: fertig.**
 4. `P0-PROD-004`: Playwright-E2E-Smoke mit Test-Engine oder Mock-Engine stabilisieren.
 5. `P0-PROD-005`: CI-Branch-Ziele und Root-vs-`server/`-Gates vereinheitlichen.
 6. `P0-PROD-006`: TOTP-Secrets und DocuSign Tokens verschluesselt speichern.

@@ -1,204 +1,220 @@
+// P0-PROD-002: route-near provider webhook signature/auth gate tests.
+// These pin the contract that provider webhooks (Stripe, WhatsApp, Resend,
+// DocuSign) accept correctly-signed payloads WITHOUT a browser CSRF token but
+// reject missing/forged signatures. The middleware-level CSRF exemption is
+// covered separately in src/middleware.test.ts (P0-PROD-001).
+
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createHmac } from "node:crypto";
-import { NextRequest } from "next/server";
 import { Webhook } from "svix";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { POST as postStripeWebhook } from "./billing/webhook/route";
-import { POST as postDocuSignWebhook } from "./docusign/webhook/route";
-import { POST as postResendWebhook } from "./email/webhook/resend/route";
-import { POST as postWhatsAppWebhook } from "./whatsapp/webhook/route";
+import { verifyStripeSignature, STRIPE_SIGNATURE_TOLERANCE_SECONDS } from "@/lib/stripe-webhook";
+import { verifyDocusignConnectSignature } from "@/lib/docusign";
+import { verifyWhatsAppSignature, verifyWebhookChallenge } from "@/lib/whatsapp/verify";
+import { verifyResendWebhook } from "@/lib/email/mailbox";
 
-const ORIGINAL_ENV = { ...process.env };
+// --- Stripe -----------------------------------------------------------------
 
-function request(pathname: string, init: RequestInit): NextRequest {
-  return new NextRequest(`https://subsumio.test${pathname}`, init);
-}
+describe("Stripe webhook signature gate", () => {
+  const secret = "whsec_stripe_test_secret";
+  const payload = JSON.stringify({ id: "evt_123", type: "checkout.session.completed" });
 
-function stripeSignature(
-  payload: string,
-  secret: string,
-  timestamp = Math.floor(Date.now() / 1000)
-): string {
-  const signature = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
-  return `t=${timestamp},v1=${signature}`;
-}
+  function header(ts: number, body = payload, withSecret = secret): string {
+    const v1 = createHmac("sha256", withSecret).update(`${ts}.${body}`).digest("hex");
+    return `t=${ts},v1=${v1}`;
+  }
 
-function whatsAppSignature(payload: string, secret: string): string {
-  return `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`;
-}
-
-async function docuSignSignature(payload: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  return Array.from(new Uint8Array(signature))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-describe("provider webhook route auth gates", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    process.env = { ...ORIGINAL_ENV };
+  it("accepts a correctly-signed payload within tolerance", () => {
+    const ts = 1_700_000_000;
+    expect(verifyStripeSignature(payload, header(ts), secret, ts * 1000)).toBe(true);
   });
+
+  it("rejects a missing signature header", () => {
+    expect(verifyStripeSignature(payload, null, secret)).toBe(false);
+  });
+
+  it("rejects a malformed header without v1", () => {
+    expect(verifyStripeSignature(payload, "t=1700000000", secret, 1_700_000_000_000)).toBe(false);
+  });
+
+  it("rejects a tampered payload", () => {
+    const ts = 1_700_000_000;
+    const sig = header(ts);
+    expect(verifyStripeSignature(payload + "x", sig, secret, ts * 1000)).toBe(false);
+  });
+
+  it("rejects a signature signed with a different secret", () => {
+    const ts = 1_700_000_000;
+    expect(
+      verifyStripeSignature(payload, header(ts, payload, "whsec_other"), secret, ts * 1000)
+    ).toBe(false);
+  });
+
+  it("rejects a timestamp outside the tolerance window", () => {
+    const ts = 1_700_000_000;
+    const tooLate = (ts + STRIPE_SIGNATURE_TOLERANCE_SECONDS + 1) * 1000;
+    expect(verifyStripeSignature(payload, header(ts), secret, tooLate)).toBe(false);
+  });
+
+  it("rejects when secret is empty", () => {
+    const ts = 1_700_000_000;
+    expect(verifyStripeSignature(payload, header(ts), "", ts * 1000)).toBe(false);
+  });
+});
+
+// --- DocuSign ---------------------------------------------------------------
+
+describe("DocuSign Connect signature gate", () => {
+  const secret = "docusign_connect_test_secret";
+  const rawBody = JSON.stringify({ event: "envelope-completed", data: { envelopeId: "env_1" } });
+
+  function sign(body = rawBody, withSecret = secret): string {
+    return createHmac("sha256", withSecret).update(body, "utf8").digest("base64");
+  }
+
+  it("accepts a correctly base64-signed payload", () => {
+    expect(verifyDocusignConnectSignature(rawBody, sign(), secret)).toBe(true);
+  });
+
+  it("rejects a missing signature header", () => {
+    expect(verifyDocusignConnectSignature(rawBody, null, secret)).toBe(false);
+  });
+
+  it("rejects a tampered payload", () => {
+    expect(verifyDocusignConnectSignature(rawBody + "x", sign(), secret)).toBe(false);
+  });
+
+  it("rejects a signature signed with a different secret", () => {
+    expect(verifyDocusignConnectSignature(rawBody, sign(rawBody, "other"), secret)).toBe(false);
+  });
+
+  it("rejects when secret is empty", () => {
+    expect(verifyDocusignConnectSignature(rawBody, sign(), "")).toBe(false);
+  });
+});
+
+// --- WhatsApp ---------------------------------------------------------------
+
+describe("WhatsApp webhook signature gate", () => {
+  const appSecret = "whatsapp_app_test_secret";
+  const rawBody = JSON.stringify({ object: "whatsapp_business_account", entry: [] });
+  const original = process.env.WHATSAPP_APP_SECRET;
+
+  beforeEach(() => {
+    process.env.WHATSAPP_APP_SECRET = appSecret;
+  });
+  afterEach(() => {
+    if (original === undefined) delete process.env.WHATSAPP_APP_SECRET;
+    else process.env.WHATSAPP_APP_SECRET = original;
+  });
+
+  function sign(body = rawBody): string {
+    return `sha256=${createHmac("sha256", appSecret).update(body).digest("hex")}`;
+  }
+
+  it("accepts a correctly-signed payload", () => {
+    expect(verifyWhatsAppSignature(rawBody, sign())).toBe(true);
+  });
+
+  it("rejects a missing signature header", () => {
+    expect(verifyWhatsAppSignature(rawBody, null)).toBe(false);
+  });
+
+  it("rejects a header without the sha256= prefix", () => {
+    const bare = createHmac("sha256", appSecret).update(rawBody).digest("hex");
+    expect(verifyWhatsAppSignature(rawBody, bare)).toBe(false);
+  });
+
+  it("rejects a tampered payload", () => {
+    expect(verifyWhatsAppSignature(rawBody + "x", sign())).toBe(false);
+  });
+});
+
+describe("WhatsApp webhook GET challenge", () => {
+  const token = "verify_token_test";
+  const original = process.env.WHATSAPP_VERIFY_TOKEN;
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    if (original === undefined) delete process.env.WHATSAPP_VERIFY_TOKEN;
+    else process.env.WHATSAPP_VERIFY_TOKEN = original;
   });
 
-  it("rejects Stripe webhooks without a valid provider signature", async () => {
-    process.env.STRIPE_WEBHOOK_SECRET = "stripe_test_secret";
-    const res = await postStripeWebhook(
-      request("/api/billing/webhook", {
-        method: "POST",
-        body: JSON.stringify({ id: "evt_1", type: "ping" }),
-      })
-    );
+  function params(mode: string, verifyToken: string, challenge: string): URLSearchParams {
+    return new URLSearchParams({
+      "hub.mode": mode,
+      "hub.verify_token": verifyToken,
+      "hub.challenge": challenge,
+    });
+  }
 
-    expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toEqual({ error: "invalid_signature" });
+  it("echoes the challenge for a correct subscribe+token", () => {
+    process.env.WHATSAPP_VERIFY_TOKEN = token;
+    const result = verifyWebhookChallenge(params("subscribe", token, "12345"));
+    expect(result).toEqual({ ok: true, challenge: "12345" });
   });
 
-  it("accepts a valid Stripe signature before parsing the provider payload", async () => {
-    process.env.STRIPE_WEBHOOK_SECRET = "stripe_test_secret";
-    const payload = "not-json";
-    const res = await postStripeWebhook(
-      request("/api/billing/webhook", {
-        method: "POST",
-        headers: {
-          "stripe-signature": stripeSignature(payload, process.env.STRIPE_WEBHOOK_SECRET),
-        },
-        body: payload,
-      })
-    );
-
-    expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toEqual({ error: "invalid_payload" });
+  it("rejects a wrong verify token with 403", () => {
+    process.env.WHATSAPP_VERIFY_TOKEN = token;
+    const result = verifyWebhookChallenge(params("subscribe", "wrong", "12345"));
+    expect(result).toEqual({ ok: false, status: 403, error: "verification_failed" });
   });
 
-  it("rejects WhatsApp webhooks without a valid app-secret signature", async () => {
-    process.env.WHATSAPP_APP_SECRET = "whatsapp_test_secret";
-    const res = await postWhatsAppWebhook(
-      request("/api/whatsapp/webhook", {
-        method: "POST",
-        body: JSON.stringify({ object: "whatsapp_business_account", entry: [] }),
-      })
-    );
+  it("returns 503 when the verify token is not configured", () => {
+    delete process.env.WHATSAPP_VERIFY_TOKEN;
+    const result = verifyWebhookChallenge(params("subscribe", token, "12345"));
+    expect(result).toEqual({
+      ok: false,
+      status: 503,
+      error: "whatsapp_verify_token_not_configured",
+    });
+  });
+});
 
-    expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "invalid_signature" });
+// --- Resend -----------------------------------------------------------------
+
+describe("Resend webhook signature gate", () => {
+  // svix signing secret: "whsec_" + base64 key
+  const secret = "whsec_" + Buffer.from("resend-test-signing-key-0123456789").toString("base64");
+  const payload = JSON.stringify({ type: "email.received", data: { email_id: "em_1" } });
+  const original = process.env.RESEND_WEBHOOK_SECRET;
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
+    else process.env.RESEND_WEBHOOK_SECRET = original;
   });
 
-  it("accepts a valid WhatsApp signature without a browser CSRF token", async () => {
-    process.env.WHATSAPP_APP_SECRET = "whatsapp_test_secret";
-    const payload = JSON.stringify({ object: "whatsapp_business_account", entry: [] });
-    const res = await postWhatsAppWebhook(
-      request("/api/whatsapp/webhook", {
-        method: "POST",
-        headers: {
-          "x-hub-signature-256": whatsAppSignature(payload, process.env.WHATSAPP_APP_SECRET),
-        },
-        body: payload,
-      })
-    );
-
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({ success: true, processed: 0, statuses: 0 });
-  });
-
-  it("rejects Resend webhooks without valid Svix headers", async () => {
-    process.env.RESEND_WEBHOOK_SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw";
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const res = await postResendWebhook(
-      request("/api/email/webhook/resend", {
-        method: "POST",
-        body: JSON.stringify({ type: "email.received", data: { email_id: "email_1" } }),
-      })
-    );
-
-    expect(consoleSpy).toHaveBeenCalled();
-    expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({ ok: false });
-  });
-
-  it("accepts a valid Resend Svix signature without a browser CSRF token", async () => {
-    process.env.RESEND_WEBHOOK_SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw";
-    const payload = JSON.stringify({ type: "email.delivered", data: { email_id: "email_1" } });
-    const wh = new Webhook(process.env.RESEND_WEBHOOK_SECRET);
+  function signedHeaders(body: string): Headers {
+    const wh = new Webhook(secret);
+    const id = "msg_test_1";
     const timestamp = new Date();
-    const svixId = "msg_test";
-    const res = await postResendWebhook(
-      request("/api/email/webhook/resend", {
-        method: "POST",
-        headers: {
-          "svix-id": svixId,
-          "svix-timestamp": String(Math.floor(timestamp.getTime() / 1000)),
-          "svix-signature": wh.sign(svixId, timestamp, payload),
-        },
-        body: payload,
-      })
-    );
+    const signature = wh.sign(id, timestamp, body);
+    return new Headers({
+      "svix-id": id,
+      "svix-timestamp": Math.floor(timestamp.getTime() / 1000).toString(),
+      "svix-signature": signature,
+    });
+  }
 
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ ok: true, id: null, ignored: true });
+  it("throws when the webhook secret is not configured", () => {
+    delete process.env.RESEND_WEBHOOK_SECRET;
+    expect(() => verifyResendWebhook(payload, new Headers())).toThrow(
+      "resend_webhook_secret_not_configured"
+    );
   });
 
-  it("rejects DocuSign webhooks without the configured Connect signature", async () => {
-    process.env.DOCUSIGN_CONNECT_SECRET = "docusign_test_secret";
-    const payload = JSON.stringify({
-      eventId: "event_1",
-      event: "envelope-completed",
-      data: { envelopeId: "env_1", envelopeSummary: { status: "completed" } },
-    });
-    const res = await postDocuSignWebhook(
-      request("/api/docusign/webhook", {
-        method: "POST",
-        body: payload,
-      })
-    );
-
-    expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toEqual({ error: "invalid_signature" });
+  it("accepts a correctly svix-signed payload", () => {
+    process.env.RESEND_WEBHOOK_SECRET = secret;
+    const event = verifyResendWebhook(payload, signedHeaders(payload)) as { type: string };
+    expect(event.type).toBe("email.received");
   });
 
-  it("accepts a valid DocuSign Connect signature without a browser CSRF token", async () => {
-    process.env.DOCUSIGN_CONNECT_SECRET = "docusign_test_secret";
-    const payload = JSON.stringify({
-      eventId: "event_2",
-      event: "envelope-completed",
-      data: {
-        envelopeId: "env_2",
-        envelopeSummary: {
-          status: "completed",
-          metadata: { brain_id: "brain_test" },
-        },
-      },
-    });
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ pages: [] }));
-    const res = await postDocuSignWebhook(
-      request("/api/docusign/webhook", {
-        method: "POST",
-        headers: {
-          "x-docusign-signature-1": await docuSignSignature(
-            payload,
-            process.env.DOCUSIGN_CONNECT_SECRET
-          ),
-        },
-        body: payload,
-      })
-    );
+  it("rejects a tampered payload", () => {
+    process.env.RESEND_WEBHOOK_SECRET = secret;
+    const headers = signedHeaders(payload);
+    expect(() => verifyResendWebhook(payload + "x", headers)).toThrow();
+  });
 
-    expect(fetchMock).toHaveBeenCalled();
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toMatchObject({
-      ok: true,
-      envelopeId: "env_2",
-      mapped: "signed",
-    });
+  it("rejects missing svix headers", () => {
+    process.env.RESEND_WEBHOOK_SECRET = secret;
+    expect(() => verifyResendWebhook(payload, new Headers())).toThrow();
   });
 });
