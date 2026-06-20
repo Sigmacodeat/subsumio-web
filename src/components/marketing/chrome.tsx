@@ -1,9 +1,9 @@
 "use client";
 
-// Shared marketing chrome: Nav (with language switcher + solutions dropdown),
-// Footer, and small shared primitives used across all marketing pages.
+// Shared marketing chrome: Nav (with language switcher), Footer,
+// and small shared primitives used across all marketing pages.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,7 +43,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
 import { NAV, FOOTER, p, altPath, type Lang } from "@/content/site";
-import { isExternalUrl, type SiteBrand } from "@/lib/brand";
+import { type SiteBrand } from "@/lib/brand";
 
 export function useSiteBrand(): SiteBrand {
   return "subsumio";
@@ -55,10 +55,31 @@ function BrandLogo() {
 
 // Content files store icon names as strings; resolve them here.
 export const ICONS: Record<string, LucideIcon> = {
-  Brain, Database, GitBranch, Search, Zap, Shield, Layers, Network,
-  Megaphone, Gift, Handshake,
-  CalendarClock, Mail, ShieldAlert, Calculator, Landmark, FileText, FolderOpen, MessageSquare, Users,
-  EyeOff, ShieldCheck, FileSignature, Lock, ScanSearch,
+  Brain,
+  Database,
+  GitBranch,
+  Search,
+  Zap,
+  Shield,
+  Layers,
+  Network,
+  Megaphone,
+  Gift,
+  Handshake,
+  CalendarClock,
+  Mail,
+  ShieldAlert,
+  Calculator,
+  Landmark,
+  FileText,
+  FolderOpen,
+  MessageSquare,
+  Users,
+  EyeOff,
+  ShieldCheck,
+  FileSignature,
+  Lock,
+  ScanSearch,
 };
 
 // Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades
@@ -137,14 +158,14 @@ interface ParallaxIconDef {
   speed: number;
 }
 const BG_ICONS: ParallaxIconDef[] = [
-  { Icon: Brain,     x: "8%",  y: "12%",  size: 180, opacity: 0.035, speed: 0.4 },
-  { Icon: Database,  x: "85%", y: "18%",  size: 140, opacity: 0.03,  speed: -0.3 },
-  { Icon: GitBranch, x: "72%", y: "55%",  size: 200, opacity: 0.025, speed: 0.5 },
-  { Icon: Shield,    x: "15%", y: "62%",  size: 160, opacity: 0.03,  speed: -0.45 },
-  { Icon: Network,   x: "92%", y: "78%",  size: 120, opacity: 0.035, speed: 0.35 },
-  { Icon: Search,    x: "5%",  y: "85%",  size: 100, opacity: 0.025, speed: -0.25 },
-  { Icon: Zap,       x: "45%", y: "8%",   size: 90,  opacity: 0.02,  speed: 0.55 },
-  { Icon: Layers,    x: "55%", y: "92%",  size: 130, opacity: 0.03,  speed: -0.4 },
+  { Icon: Brain, x: "8%", y: "12%", size: 180, opacity: 0.035, speed: 0.4 },
+  { Icon: Database, x: "85%", y: "18%", size: 140, opacity: 0.03, speed: -0.3 },
+  { Icon: GitBranch, x: "72%", y: "55%", size: 200, opacity: 0.025, speed: 0.5 },
+  { Icon: Shield, x: "15%", y: "62%", size: 160, opacity: 0.03, speed: -0.45 },
+  { Icon: Network, x: "92%", y: "78%", size: 120, opacity: 0.035, speed: 0.35 },
+  { Icon: Search, x: "5%", y: "85%", size: 100, opacity: 0.025, speed: -0.25 },
+  { Icon: Zap, x: "45%", y: "8%", size: 90, opacity: 0.02, speed: 0.55 },
+  { Icon: Layers, x: "55%", y: "92%", size: 130, opacity: 0.03, speed: -0.4 },
 ];
 
 function ParallaxIcon({
@@ -159,10 +180,7 @@ function ParallaxIcon({
   const yIcon = useTransform(scrollY, [0, 2400], [0, 180 * def.speed * span]);
   const { Icon, x, y, size, opacity } = def;
   return (
-    <motion.div
-      style={{ y: yIcon, left: x, top: y }}
-      className="absolute will-change-transform"
-    >
+    <motion.div style={{ y: yIcon, left: x, top: y }} className="absolute will-change-transform">
       <Icon
         size={size}
         strokeWidth={1}
@@ -180,21 +198,30 @@ export function MarketingBackground() {
   const { scrollY } = useScroll();
   const span = reduce ? 0 : 1;
   const yViolet = useTransform(scrollY, [0, 2400], [0, 240 * span]);
-  const yBlue   = useTransform(scrollY, [0, 2400], [0, -190 * span]);
-  const yGrid   = useTransform(scrollY, [0, 2400], [0, 110 * span]);
+  const yBlue = useTransform(scrollY, [0, 2400], [0, -190 * span]);
+  const yGrid = useTransform(scrollY, [0, 2400], [0, 110 * span]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
       {/* Gradient orbs (existing) */}
-      <motion.div style={{ y: yViolet }} className="absolute top-[-20%] left-[-10%] will-change-transform">
-        <div className="orb w-[600px] h-[600px] rounded-full brand-glow-bg" />
+      <motion.div
+        style={{ y: yViolet }}
+        className="absolute top-[-20%] left-[-10%] will-change-transform"
+      >
+        <div className="orb brand-glow-bg h-[600px] w-[600px] rounded-full" />
       </motion.div>
-      <motion.div style={{ y: yBlue }} className="absolute bottom-[-20%] right-[-10%] will-change-transform">
-        <div className="orb-slow w-[500px] h-[500px] rounded-full brand-secondary-soft" />
+      <motion.div
+        style={{ y: yBlue }}
+        className="absolute right-[-10%] bottom-[-20%] will-change-transform"
+      >
+        <div className="orb-slow brand-secondary-soft h-[500px] w-[500px] rounded-full" />
       </motion.div>
 
       {/* Subtle grid (existing, lowered opacity for calmer look) */}
-      <motion.div style={{ y: yGrid }} className="grid-bg absolute inset-0 opacity-[0.22] will-change-transform" />
+      <motion.div
+        style={{ y: yGrid }}
+        className="grid-bg absolute inset-0 opacity-[0.22] will-change-transform"
+      />
 
       {/* Parallax icon silhouettes */}
       {BG_ICONS.map((def, i) => (
@@ -204,210 +231,219 @@ export function MarketingBackground() {
   );
 }
 
-export function MarketingNav({ lang, theme = "light" }: { lang: Lang; theme?: "light" | "slate" | "dark" }) {
+// --- Shared nav link styles (DRY — desktop + mobile use the same definitions) --
+const NAV_LINK_FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)]";
+const NAV_LINK_BORDER = "border border-transparent";
+const NAV_LINK_INACTIVE =
+  "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]";
+const NAV_LINK_ACTIVE =
+  "[color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border-color:color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]";
+
+/** Shared link class helper — used by both desktop and mobile nav. */
+function navLinkCls(isActive: boolean): string {
+  return `text-sm px-3 py-2 rounded-lg transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+    isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
+  }`;
+}
+
+/** Mobile link helper — same active/inactive styles, block + 44px touch target. */
+function mobileLinkCls(isActive: boolean): string {
+  return `block text-sm px-3 py-2.5 rounded-lg transition-colors ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} min-h-[44px] flex items-center ${
+    isActive ? NAV_LINK_ACTIVE : NAV_LINK_INACTIVE
+  }`;
+}
+
+export function MarketingNav({ lang }: { lang: Lang }) {
   const nav = NAV[lang];
-  const isStandalone = false;
   const pathname = usePathname() || "/";
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  // Tone-driven: text resolves from --mk-* against the header's data-tone.
-  const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
-  const linkBase = "text-sm px-3 py-1.5 rounded-lg transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)]";
-  const linkCls = `${linkBase} [color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]`;
-  const linkActive = `${linkBase} [color:var(--brand-text)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]`;
-  const linkInactive = linkCls;
+  const reduceMotion = useReducedMotion();
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const firstMobileLinkRef = useRef<HTMLAnchorElement>(null);
 
+  const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
+
+  // Scroll detection — backdrop blur after 8px.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  return (
-    <>
-    <header
-      data-tone={theme}
-      className={`sticky top-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "backdrop-blur-2xl shadow-[0_1px_0_rgba(0,0,0,0.06),0_4px_24px_rgba(0,0,0,0.06)] border-b [border-color:var(--mk-border)]"
-          : "border-b border-transparent"
-      }`}
-      style={
-        scrolled
-          ? { background: "color-mix(in srgb, var(--mk-bg) 88%, transparent)" }
-          : undefined
-      }
-    >
-    <nav className="max-w-7xl mx-auto px-6 py-4">
-      <div className="flex items-center justify-between">
-        <Link href={p(lang, "")} aria-label="Subsumio home">
-          <BrandLogo />
-        </Link>
+  // Close mobile menu on route change.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
-        <div className="hidden md:flex items-center gap-7">
-          {nav.subsumioItems.map((item) => (
-            <Link key={item.href} href={p(lang, item.href)} className={isActive(item.href) ? linkActive : linkInactive}>{item.label}</Link>
-          ))}
-          {!isStandalone && (
-          <div
-            className="relative"
-            onMouseEnter={() => setSolutionsOpen(true)}
-            onMouseLeave={() => setSolutionsOpen(false)}
-          >
-            <button
-              className={`flex items-center gap-1 text-sm ${linkCls} py-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] rounded-lg`}
-              aria-expanded={solutionsOpen}
-              aria-haspopup="true"
-              aria-label={nav.solutions}
-              onClick={() => setSolutionsOpen((o) => !o)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSolutionsOpen(false);
-                  (e.target as HTMLElement).focus();
-                }
-                if (e.key === "ArrowDown" && !solutionsOpen) {
-                  e.preventDefault();
-                  setSolutionsOpen(true);
-                }
-              }}
+  // Body scroll lock + focus management when mobile menu is open.
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+      // Move focus to first nav link.
+      const t = setTimeout(() => firstMobileLinkRef.current?.focus(), 50);
+      return () => {
+        document.body.style.overflow = "";
+        clearTimeout(t);
+      };
+    }
+    document.body.style.overflow = "";
+  }, [mobileOpen]);
+
+  // Escape closes mobile menu and returns focus to hamburger.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        hamburgerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
+  // Click-outside closes mobile menu.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [mobileOpen]);
+
+  return (
+    <header
+      data-tone="light"
+      className={`sticky top-0 z-50 border-b transition-[background,box-shadow,border-color] duration-300 ${
+        scrolled
+          ? "[border-color:var(--mk-border)] shadow-[0_1px_0_rgba(0,0,0,0.06),0_2px_12px_rgba(0,0,0,0.04)] backdrop-blur-xl"
+          : "[border-color:transparent]"
+      }`}
+      style={{
+        background: scrolled ? "color-mix(in srgb, var(--mk-bg) 92%, transparent)" : "var(--mk-bg)",
+      }}
+    >
+      <nav className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <Link href={p(lang, "")} aria-label="Subsumio home" className="shrink-0">
+            <BrandLogo />
+          </Link>
+
+          {/* Desktop nav — flat list from navItems */}
+          <div className="hidden items-center gap-1 lg:flex">
+            {nav.navItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={p(lang, item.href)}
+                  className={navLinkCls(active)}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Action area */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={altPath(lang, pathname)}
+              className="hidden min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] lg:flex"
+              aria-label={lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
             >
-              {nav.solutions} <ChevronDown size={13} className={solutionsOpen ? "rotate-180" : ""} aria-hidden />
+              <Globe size={12} /> {lang.toUpperCase()}
+            </Link>
+            <Link href={p(lang, "/login")} className="hidden lg:block">
+              <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">
+                {nav.signIn}
+              </Button>
+            </Link>
+            <Link href={p(lang, "/signup")}>
+              <Button size="sm" variant="glow" className="group min-h-[44px]">
+                {nav.cta}
+                <ChevronRight
+                  size={14}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Button>
+            </Link>
+            <button
+              ref={hamburgerRef}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={lang === "de" ? "Menü" : "Menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-menu"
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            {solutionsOpen && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-80" role="menu" aria-label={nav.solutions}>
-                <div className="rounded-2xl p-1.5 backdrop-blur-xl shadow-2xl shadow-black/15 [background:var(--mk-surface)]" onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setSolutionsOpen(false);
-                  }
-                }}>
-                  {nav.solutionItems.map((item) => {
-                    const comingSoon = "comingSoon" in item && item.comingSoon;
-                    if (comingSoon) {
-                      return (
-                        <div
-                          key={item.href}
-                          className="block px-3 py-2.5 rounded-lg cursor-default opacity-55"
-                          aria-disabled="true"
-                          role="menuitem"
-                        >
-                          <p className="text-sm font-medium [color:var(--mk-text)] flex items-center gap-2">
-                            {item.label}
-                            <span className="text-[10px] font-semibold uppercase tracking-wide brand-text brand-soft px-1.5 py-0.5 rounded">
-                              {nav.comingSoonLabel}
-                            </span>
-                          </p>
-                          <p className="text-xs [color:var(--mk-text-muted)] mt-0.5">{item.desc}</p>
-                        </div>
-                      );
-                    }
-                    const resolvedHref = item.href;
-                    const external = isExternalUrl(resolvedHref);
-                    const inner = (
-                      <>
-                        <p className="text-sm font-medium [color:var(--mk-text)] group-hover:brand-text">{item.label}</p>
-                        <p className="text-xs [color:var(--mk-text-muted)] mt-0.5">{item.desc}</p>
-                      </>
-                    );
-                    const cls = "block px-3 py-2.5 rounded-lg hover:[background:var(--mk-hover)] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] rounded-lg";
-                    return external ? (
-                      <a key={item.href} href={resolvedHref} className={cls} onClick={() => setSolutionsOpen(false)} role="menuitem">
-                        {inner}
-                      </a>
-                    ) : (
-                      <Link key={item.href} href={p(lang, resolvedHref)} className={cls} onClick={() => setSolutionsOpen(false)} role="menuitem">
-                        {inner}
-                      </Link>
-                    );
-                  })}
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              ref={mobileMenuRef}
+              id="mobile-nav-menu"
+              role="navigation"
+              aria-label="Mobile navigation"
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden lg:hidden"
+            >
+              <div className="mt-3 space-y-0.5 rounded-2xl p-4 shadow-2xl shadow-black/10 [background:var(--mk-bg)]">
+                {nav.navItems.map((item, i) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      ref={i === 0 ? firstMobileLinkRef : undefined}
+                      href={p(lang, item.href)}
+                      className={mobileLinkCls(active)}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+
+                {/* Language switcher + Sign-in — always visible in mobile menu */}
+                <div className="mt-2 space-y-0.5 border-t [border-color:var(--mk-border)] pt-2">
+                  <Link
+                    href={altPath(lang, pathname)}
+                    className={mobileLinkCls(false)}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Globe size={13} /> {lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
+                    </span>
+                  </Link>
+                  <Link
+                    href={p(lang, "/login")}
+                    className={mobileLinkCls(false)}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {nav.signIn}
+                  </Link>
                 </div>
               </div>
-            )}
-          </div>
+            </motion.div>
           )}
-          {!isStandalone && <Link href={p(lang, "/pricing")} className={isActive("/pricing") ? linkActive : linkInactive}>{nav.pricing}</Link>}
-          {!isStandalone && <Link href={p(lang, "/compare")} className={isActive("/compare") ? linkActive : linkInactive}>{nav.compare}</Link>}
-          <Link href={p(lang, "/docs")} className={isActive("/docs") ? linkActive : linkInactive}>{nav.docs}</Link>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href={altPath(lang, pathname)}
-            className="hidden sm:flex items-center gap-1.5 text-xs rounded-full px-3 py-1.5 transition-colors duration-200 [color:var(--mk-text-muted)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] [background:var(--mk-surface)]"
-            aria-label={lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
-          >
-            <Globe size={12} /> {lang.toUpperCase()}
-          </Link>
-          <Link href={p(lang, "/login")} className="hidden sm:block">
-            <Button variant="ghost" size="sm" className="[color:var(--mk-text)]">{nav.signIn}</Button>
-          </Link>
-          <Link href={p(lang, "/signup")}>
-            <Button size="sm" variant="glow" className="group">
-              {nav.cta}
-              <ChevronRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Button>
-          </Link>
-          <button
-            className={`md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] ${linkCls}`}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={lang === "de" ? "Menü" : "Menu"}
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="md:hidden overflow-hidden"
-          >
-        <div className="mt-3 rounded-2xl p-4 space-y-1 backdrop-blur-xl [background:var(--mk-bg)] shadow-2xl shadow-black/10">
-          {nav.subsumioItems.map((item) => (
-            <Link key={item.href} href={p(lang, item.href)} className={`block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] ${isActive(item.href) ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{item.label}</Link>
-          ))}
-          {!isStandalone && <Link href={p(lang, "/features")} className={`block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] ${isActive("/features") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.features}</Link>}
-          {!isStandalone && nav.solutionItems.map((item) => {
-            const comingSoon = "comingSoon" in item && item.comingSoon;
-            if (comingSoon) {
-              return (
-                <div key={item.href} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm [color:var(--mk-text-muted)] opacity-60" aria-disabled="true">
-                  {item.label}
-                  <span className="text-[10px] font-semibold uppercase tracking-wide brand-text">{nav.comingSoonLabel}</span>
-                </div>
-              );
-            }
-            const resolvedHref = item.href;
-            const cls = "block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] [color:var(--mk-text)] hover:[background:var(--mk-hover)]";
-            return isExternalUrl(resolvedHref) ? (
-              <a key={item.href} href={resolvedHref} className={cls} onClick={() => setMobileOpen(false)}>
-                {item.label}
-              </a>
-            ) : (
-              <Link key={item.href} href={p(lang, resolvedHref)} className={cls} onClick={() => setMobileOpen(false)}>
-                {item.label}
-              </Link>
-            );
-          })}
-          {!isStandalone && <Link href={p(lang, "/pricing")} className={`block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] ${isActive("/pricing") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.pricing}</Link>}
-          {!isStandalone && <Link href={p(lang, "/compare")} className={`block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] ${isActive("/compare") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.compare}</Link>}
-          <Link href={p(lang, "/docs")} className={`block px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] ${isActive("/docs") ? "[color:var(--brand-primary)] [background:color-mix(in_srgb,var(--brand-primary)_10%,var(--mk-hover))] font-medium [border:1px_solid_color-mix(in_srgb,var(--brand-primary)_20%,var(--mk-border))]" : "[color:var(--mk-text-muted)] hover:[color:var(--brand-primary)] hover:[background:var(--mk-hover)]"}`} onClick={() => setMobileOpen(false)}>{nav.docs}</Link>
-          <Link href={altPath(lang, pathname)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] [color:var(--mk-text-muted)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)]" onClick={() => setMobileOpen(false)}>
-            <Globe size={13} /> {lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
-          </Link>
-        </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </nav>
+        </AnimatePresence>
+      </nav>
     </header>
-    </>
   );
 }
 
@@ -438,41 +474,80 @@ function SocialX({ size = 16 }: { size?: number }) {
 export function MarketingFooter({ lang }: { lang: Lang }) {
   const footer = FOOTER[lang];
   return (
-    <footer className="relative z-10 border-t [border-color:var(--mk-border)] py-14 px-6" style={{ background: "var(--mk-surface)" }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-10">
+    <footer
+      className="relative z-10 border-t [border-color:var(--mk-border)] px-6 py-14"
+      style={{ background: "var(--mk-surface)" }}
+    >
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-10 grid grid-cols-2 gap-8 md:grid-cols-6">
           <div className="col-span-2">
             <div className="mb-3">
               <SubsumioLogo size={28} />
             </div>
-            <p className="text-sm [color:var(--mk-text-muted)] mb-4">
-              {lang === "de" ? "Das Gedächtnis Ihrer Kanzlei — für AT, DE und CH." : "The memory layer for your law firm — built for AT, DE and CH."}
+            <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
+              {lang === "de"
+                ? "Das Gedächtnis Ihrer Kanzlei — für AT, DE und CH."
+                : "The memory layer for your law firm — built for AT, DE and CH."}
             </p>
-            <p className="text-xs [color:var(--mk-text-subtle)] leading-relaxed max-w-xs">{footer.note}</p>
-            <div className="flex items-center gap-3 mt-4">
-              <a href="https://www.linkedin.com/company/subsumio" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="[color:var(--mk-text-subtle)] hover:brand-text transition-colors">
+            <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+              {footer.note}
+            </p>
+            <div className="mt-4 flex items-center gap-3">
+              <a
+                href="https://www.linkedin.com/company/subsumio"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="LinkedIn"
+                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+              >
                 <SocialLinkedIn size={16} />
               </a>
-              <a href="https://github.com/subsumio" target="_blank" rel="noreferrer" aria-label="GitHub" className="[color:var(--mk-text-subtle)] hover:brand-text transition-colors">
+              <a
+                href="https://github.com/subsumio"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="GitHub"
+                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+              >
                 <SocialGitHub size={16} />
               </a>
-              <a href="https://x.com/subsumio" target="_blank" rel="noreferrer" aria-label="X (Twitter)" className="[color:var(--mk-text-subtle)] hover:brand-text transition-colors">
+              <a
+                href="https://x.com/subsumio"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="X (Twitter)"
+                className="hover:brand-text [color:var(--mk-text-subtle)] transition-colors"
+              >
                 <SocialX size={16} />
               </a>
             </div>
           </div>
           {footer.columns.map((col) => (
             <div key={col.title}>
-              <p className="text-xs font-semibold [color:var(--mk-text-muted)] uppercase tracking-wider mb-3">{col.title}</p>
+              <p className="mb-3 text-xs font-semibold tracking-wider [color:var(--mk-text-muted)] uppercase">
+                {col.title}
+              </p>
               <ul className="space-y-2">
                 {col.links.map((link) => (
                   <li key={link.label}>
                     {"external" in link && link.external ? (
-                      <a href={link.href} target="_blank" rel="noreferrer" className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]">{link.label}</a>
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                      >
+                        {link.label}
+                      </a>
                     ) : (
                       // App-Routen (/dashboard…) sind nicht lokalisiert —
                       // niemals den Sprachpräfix anhängen (/de/dashboard = 404).
-                      <Link href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)} className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]">{link.label}</Link>
+                      <Link
+                        href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)}
+                        className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"
+                      >
+                        {link.label}
+                      </Link>
                     )}
                   </li>
                 ))}
@@ -480,10 +555,17 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
             </div>
           ))}
         </div>
-        <div className="pt-6 border-t [border-color:var(--mk-border)] flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs [color:var(--mk-text-subtle)]">© 2026 Subsumio · {lang === "de" ? "Legal Intelligence für Kanzleien" : "Legal intelligence for law firms"}</p>
+        <div className="flex flex-col items-center justify-between gap-2 border-t [border-color:var(--mk-border)] pt-6 sm:flex-row">
           <p className="text-xs [color:var(--mk-text-subtle)]">
-            {lang === "en" ? "EU-hosted or self-hosted · GDPR-ready · confidentiality-first" : "EU-gehostet oder self-hosted · DSGVO-konform · vertraulichkeitskritisch"}
+            © 2026 Subsumio ·{" "}
+            {lang === "de"
+              ? "Legal Intelligence für Kanzleien"
+              : "Legal intelligence for law firms"}
+          </p>
+          <p className="text-xs [color:var(--mk-text-subtle)]">
+            {lang === "en"
+              ? "EU-hosted or self-hosted · GDPR-ready · confidentiality-first"
+              : "EU-gehostet oder self-hosted · DSGVO-konform · vertraulichkeitskritisch"}
           </p>
         </div>
       </div>
@@ -493,13 +575,23 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
 
 // --- Shared section primitives -------------------------------------------
 
-export function SectionHeading({ badge, title, sub, tone }: { badge?: string; title: string; sub?: string; tone?: Tone }) {
+export function SectionHeading({
+  badge,
+  title,
+  sub,
+  tone,
+}: {
+  badge?: string;
+  title: string;
+  sub?: string;
+  tone?: Tone;
+}) {
   // `tone` is optional: when set it makes the heading self-contained (resolves
   // its own --mk-* tokens), otherwise it inherits the surrounding section tone.
   return (
     <motion.div
       data-tone={tone}
-      className="text-center mb-14"
+      className="mb-14 text-center"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
@@ -507,19 +599,21 @@ export function SectionHeading({ badge, title, sub, tone }: { badge?: string; ti
     >
       {badge && (
         <motion.span
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold brand-soft brand-text border brand-border mb-5"
+          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
           transition={{ duration: 0.4, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="w-1.5 h-1.5 rounded-full brand-bg animate-pulse" />
+          <span className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full" />
           {badge}
         </motion.span>
       )}
-      <h2 className="text-3xl md:text-4xl font-black mb-4 [color:var(--mk-text)] tracking-tight">{title}</h2>
+      <h2 className="mb-4 text-3xl font-black tracking-tight [color:var(--mk-text)] md:text-4xl">
+        {title}
+      </h2>
       {sub && (
-        <p className="text-lg max-w-2xl mx-auto [color:var(--mk-text-muted)] leading-relaxed">
+        <p className="mx-auto max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
           {sub}
         </p>
       )}
@@ -529,38 +623,52 @@ export function SectionHeading({ badge, title, sub, tone }: { badge?: string; ti
 
 /** Terminal-style demo window with a typewriter answer. */
 export function DemoWindow({
-  windowTitle, you, q, a, sourcesLabel, sources,
+  windowTitle,
+  you,
+  q,
+  a,
+  sourcesLabel,
+  sources,
 }: {
-  windowTitle: string; you: string; q: string; a: string; sourcesLabel: string; sources: readonly string[];
+  windowTitle: string;
+  you: string;
+  q: string;
+  a: string;
+  sourcesLabel: string;
+  sources: readonly string[];
 }) {
   return (
-    <div className="rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/20 overflow-hidden text-left">
-      <div className="flex items-center gap-2 px-4 py-3 border-b [border-color:var(--mk-border)] [background:var(--mk-bg)]">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-        <div className="flex-1 ml-4 text-xs [color:var(--mk-text)] opacity-60 font-mono">{windowTitle}</div>
+    <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] text-left shadow-2xl shadow-black/20 [background:var(--mk-surface)]">
+      <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
+        <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+        <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+        <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+        <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text)] opacity-60">
+          {windowTitle}
+        </div>
       </div>
       <div className="px-6 pt-6 pb-4">
         <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-full bg-[var(--brand-primary)]/15 border border-[var(--brand-primary)]/20 flex items-center justify-center shrink-0 mt-0.5">
-            <span className="text-[10px] brand-text font-semibold">{you}</span>
+          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/15">
+            <span className="brand-text text-[10px] font-semibold">{you}</span>
           </div>
           <p className="text-sm [color:var(--mk-text)]">{q}</p>
         </div>
       </div>
       <div className="px-6 pb-6">
         <div className="flex items-start gap-3">
-          <SubsumioMark size={28} className="shrink-0 mt-0.5" />
-          <div className="flex-1 text-sm [color:var(--mk-text-muted)] leading-relaxed whitespace-pre-line">
+          <SubsumioMark size={28} className="mt-0.5 shrink-0" />
+          <div className="flex-1 text-sm leading-relaxed whitespace-pre-line [color:var(--mk-text-muted)]">
             <TypewriterText text={a} speed={8} />
           </div>
         </div>
       </div>
-      <div className="px-6 py-3 border-t [border-color:var(--mk-border)] [background:var(--mk-bg)] flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-6 py-3 [background:var(--mk-bg)]">
         <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
         {sources.map((slug) => (
-          <span key={slug} className="text-xs font-mono brand-text brand-soft px-2 py-0.5 rounded">{slug}</span>
+          <span key={slug} className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-xs">
+            {slug}
+          </span>
         ))}
       </div>
     </div>
@@ -592,7 +700,7 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
     <span>
       {displayed}
       {!reduce && displayed.length < text.length && started && (
-        <span className="inline-block w-0.5 h-4 bg-[var(--brand-text)] animate-pulse ml-0.5 align-text-bottom" />
+        <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[var(--brand-text)] align-text-bottom" />
       )}
     </span>
   );
@@ -601,14 +709,20 @@ export function TypewriterText({ text, speed = 12 }: { text: string; speed?: num
 /** Renders **bold** spans inside demo answers (simple, no markdown lib). */
 export function FaqList({ items }: { items: readonly { q: string; a: string }[] }) {
   return (
-    <div className="max-w-3xl mx-auto space-y-3">
+    <div className="mx-auto max-w-3xl space-y-3">
       {items.map((item) => (
-        <details key={item.q} className="group rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] open:[border-color:var(--mk-border-strong)]">
-          <summary className="flex items-center justify-between cursor-pointer list-none px-5 py-4 text-sm font-medium [color:var(--mk-text)]">
+        <details
+          key={item.q}
+          className="group rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] open:[border-color:var(--mk-border-strong)]"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-medium [color:var(--mk-text)]">
             {item.q}
-            <ChevronDown size={15} className="[color:var(--mk-text-subtle)] shrink-0 ml-4 group-open:rotate-180 transition-transform" />
+            <ChevronDown
+              size={15}
+              className="ml-4 shrink-0 [color:var(--mk-text-subtle)] transition-transform group-open:rotate-180"
+            />
           </summary>
-          <p className="px-5 pb-4 text-sm [color:var(--mk-text-muted)] leading-relaxed">{item.a}</p>
+          <p className="px-5 pb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">{item.a}</p>
         </details>
       ))}
     </div>

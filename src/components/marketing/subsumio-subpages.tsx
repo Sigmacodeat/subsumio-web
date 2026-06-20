@@ -9,15 +9,17 @@
 
 import Link from "next/link";
 import { motion, MotionConfig } from "framer-motion";
-import {
-  ArrowRight, MessageSquare, Clock, Paperclip, Mic,
-} from "lucide-react";
+import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
-  MarketingBackground, MarketingNav, MarketingFooter, Section, SectionHeading,
+  MarketingBackground,
+  MarketingNav,
+  MarketingFooter,
+  Section,
+  SectionHeading,
 } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
 import { Reveal, ScrollProgress } from "./motion-system";
@@ -35,10 +37,15 @@ const reveal = {
 function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
-      <div data-tone="slate" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang} style={styleForIndustry("legal")}>
+      <div
+        data-tone="slate"
+        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+        lang={lang}
+        style={styleForIndustry("legal")}
+      >
         <ScrollProgress />
         <MarketingBackground />
-        <MarketingNav lang={lang} theme="slate" />
+        <MarketingNav lang={lang} />
         {children}
         <MarketingFooter lang={lang} />
         <BackToTop lang={lang} />
@@ -48,24 +55,39 @@ function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
 }
 
 function Hero({
-  lang, eyebrow, title, claim, sub, primaryHref, primaryLabel,
+  lang,
+  eyebrow,
+  title,
+  claim,
+  sub,
+  primaryHref,
+  primaryLabel,
 }: {
-  lang: Lang; eyebrow: string; title: string; claim: string; sub: string;
-  primaryHref: string; primaryLabel: string;
+  lang: Lang;
+  eyebrow: string;
+  title: string;
+  claim: string;
+  sub: string;
+  primaryHref: string;
+  primaryLabel: string;
 }) {
   return (
-    <Section tone="light" className="pt-16 pb-20 px-6">
-      <div className="max-w-4xl mx-auto text-center">
+    <Section tone="light" className="px-6 pt-16 pb-20">
+      <div className="mx-auto max-w-4xl text-center">
         <motion.div {...reveal}>
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border brand-border brand-soft text-xs brand-text font-semibold mb-7">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-secondary)] animate-pulse" /> {eyebrow}
+          <span className="brand-border brand-soft brand-text mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--brand-secondary)]" />{" "}
+            {eyebrow}
           </span>
-          <h1 className="text-4xl md:text-6xl font-black [color:var(--mk-text)] leading-[1.07] tracking-tight mb-5">
-            {title}<br />
+          <h1 className="mb-5 text-4xl leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+            {title}
+            <br />
             <span className="gradient-text">{claim}</span>
           </h1>
-          <p className="text-lg [color:var(--mk-text-muted)] max-w-2xl mx-auto mb-9 leading-relaxed">{sub}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <p className="mx-auto mb-9 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
+            {sub}
+          </p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link href={primaryHref}>
               <Button size="xl" variant="glow" className="min-w-[220px]">
                 <SubsumioMark size={18} tile={false} /> {primaryLabel}
@@ -83,15 +105,28 @@ function Hero({
   );
 }
 
-function CtaClose({ title, sub, href, label }: { lang?: Lang; title: string; sub: string; href: string; label: string }) {
+function CtaClose({
+  title,
+  sub,
+  href,
+  label,
+}: {
+  lang?: Lang;
+  title: string;
+  sub: string;
+  href: string;
+  label: string;
+}) {
   return (
-    <Section tone="dark" className="py-24 px-6 text-center">
-      <Reveal variant="upLg" className="max-w-3xl mx-auto">
+    <Section tone="dark" className="px-6 py-24 text-center">
+      <Reveal variant="upLg" className="mx-auto max-w-3xl">
         <SubsumioMark size={56} className="mx-auto mb-7" />
-        <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{title}</h2>
-        <p className="text-lg [color:var(--mk-text-muted)] mb-9">{sub}</p>
+        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
+        <p className="mb-9 text-lg [color:var(--mk-text-muted)]">{sub}</p>
         <Link href={href}>
-          <Button size="xl" variant="glow">{label} <ArrowRight size={18} /></Button>
+          <Button size="xl" variant="glow">
+            {label} <ArrowRight size={18} />
+          </Button>
         </Link>
       </Reveal>
     </Section>
@@ -133,22 +168,51 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
   const c = COPY[lang].whatsapp;
   const signup = p(lang, "/signup?industry=legal");
   const flows = [
-    { icon: Clock, t: lang === "de" ? "Zeit & Auslagen in Sekunden" : "Time & expenses in seconds", d: lang === "de" ? "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen." : "\"Time 0.5h matter Müller, call\" → captured, linked to the matter, one tap to confirm." },
-    { icon: Paperclip, t: lang === "de" ? "Beleg-Foto → richtige Akte" : "Receipt photo → right matter", d: lang === "de" ? "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault." : "A document or photo with the case reference in the caption lands in the vault, audit-ready." },
-    { icon: Mic, t: lang === "de" ? "Sprachnotiz unterwegs" : "Voice note on the go", d: lang === "de" ? "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist." : "Dictate after the hearing — transcribed and attached before you're back at the office." },
+    {
+      icon: Clock,
+      t: lang === "de" ? "Zeit & Auslagen in Sekunden" : "Time & expenses in seconds",
+      d:
+        lang === "de"
+          ? "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen."
+          : '"Time 0.5h matter Müller, call" → captured, linked to the matter, one tap to confirm.',
+    },
+    {
+      icon: Paperclip,
+      t: lang === "de" ? "Beleg-Foto → richtige Akte" : "Receipt photo → right matter",
+      d:
+        lang === "de"
+          ? "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault."
+          : "A document or photo with the case reference in the caption lands in the vault, audit-ready.",
+    },
+    {
+      icon: Mic,
+      t: lang === "de" ? "Sprachnotiz unterwegs" : "Voice note on the go",
+      d:
+        lang === "de"
+          ? "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist."
+          : "Dictate after the hearing — transcribed and attached before you're back at the office.",
+    },
   ];
   return (
     <Shell lang={lang}>
-      <Hero lang={lang} eyebrow={c.eyebrow} title={c.title} claim={c.claim} sub={c.sub} primaryHref={signup} primaryLabel={c.ctaLabel} />
-      <Section tone="dark" className="py-16 px-6">
-        <div className="max-w-md mx-auto">
+      <Hero
+        lang={lang}
+        eyebrow={c.eyebrow}
+        title={c.title}
+        claim={c.claim}
+        sub={c.sub}
+        primaryHref={signup}
+        primaryLabel={c.ctaLabel}
+      />
+      <Section tone="dark" className="px-6 py-16">
+        <div className="mx-auto max-w-md">
           <PhoneCopilot lang={lang} />
         </div>
       </Section>
-      <Section tone="light" className="py-20 px-6">
-        <div className="max-w-5xl mx-auto">
+      <Section tone="light" className="px-6 py-20">
+        <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.flowsTitle} />
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid gap-5 md:grid-cols-3">
             {flows.map((f, i) => (
               <motion.div
                 key={f.t}
@@ -156,18 +220,18 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="p-6 rounded-2xl border [background:var(--mk-surface)] [border-color:var(--mk-border)]"
+                className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
                 style={{ boxShadow: "var(--mk-card-shadow)" }}
               >
-                <div className="w-10 h-10 rounded-lg brand-soft border brand-border flex items-center justify-center mb-4">
+                <div className="brand-soft brand-border mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
                   <f.icon size={18} className="brand-text" />
                 </div>
-                <h3 className="text-base font-semibold [color:var(--mk-text)] mb-2">{f.t}</h3>
-                <p className="text-sm [color:var(--mk-text-muted)] leading-relaxed">{f.d}</p>
+                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">{f.t}</h3>
+                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{f.d}</p>
               </motion.div>
             ))}
           </div>
-          <p className="text-center text-sm [color:var(--mk-text-subtle)] mt-8 max-w-2xl mx-auto inline-flex items-center gap-2 justify-center w-full">
+          <p className="mx-auto mt-8 inline-flex w-full max-w-2xl items-center justify-center gap-2 text-center text-sm [color:var(--mk-text-subtle)]">
             <MessageSquare size={14} className="brand-text shrink-0" />
             {lang === "de"
               ? "Alles bestätigungspflichtig — nichts landet ungesehen in der Akte."
@@ -179,5 +243,3 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
     </Shell>
   );
 }
-
-

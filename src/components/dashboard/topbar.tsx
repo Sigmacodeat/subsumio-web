@@ -40,7 +40,15 @@ interface TopbarProps {
   onMobileMenuClose: () => void;
 }
 
-export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, onMobileMenuOpen, onMobileMenuClose }: TopbarProps) {
+export function Topbar({
+  theme,
+  toggleTheme,
+  userName,
+  userEmail,
+  mobileOpen,
+  onMobileMenuOpen,
+  onMobileMenuClose,
+}: TopbarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -65,7 +73,9 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
 
   const searchItems = useMemo(() => searchResults.data ?? [], [searchResults.data]);
   const [searchActiveIdx, setSearchActiveIdx] = useState(0);
-  useEffect(() => { setSearchActiveIdx(0); }, [debouncedQuery]);
+  useEffect(() => {
+    setSearchActiveIdx(0);
+  }, [debouncedQuery]);
 
   useEffect(() => {
     if (!notifOpen && !userMenuOpen && !brainOpen && !searchOpen) return;
@@ -97,7 +107,15 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
   const logoutMutation = useLogout();
 
   // API-based notifications (mentions, replies, system)
-  const [apiNotifications, setApiNotifications] = useState<Array<{ id: string; title: string; message: string; type: "deadline" | "dream" | "system" | "mention" | "reply"; read: boolean }>>([]);
+  const [apiNotifications, setApiNotifications] = useState<
+    Array<{
+      id: string;
+      title: string;
+      message: string;
+      type: "deadline" | "dream" | "system" | "mention" | "reply";
+      read: boolean;
+    }>
+  >([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
 
   const fetchNotifications = async () => {
@@ -105,13 +123,18 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
       const res = await csrfFetch("/api/notifications?unread=true&limit=20");
       if (res.ok) {
         const data = await res.json();
-        const mapped = (data.notifications || []).map((n: { id: string; type: string; data: Record<string, unknown>; createdAt: string }) => ({
-          id: n.id,
-          title: n.type === "mention" ? "Erwähnung" : n.type === "reply" ? "Antwort" : "System",
-          message: String(n.data?.message ?? ""),
-          type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as "mention" | "reply" | "system",
-          read: false,
-        }));
+        const mapped = (data.notifications || []).map(
+          (n: { id: string; type: string; data: Record<string, unknown>; createdAt: string }) => ({
+            id: n.id,
+            title: n.type === "mention" ? "Erwähnung" : n.type === "reply" ? "Antwort" : "System",
+            message: String(n.data?.message ?? ""),
+            type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as
+              | "mention"
+              | "reply"
+              | "system",
+            read: false,
+          })
+        );
         setApiNotifications(mapped);
       }
     } catch {
@@ -122,7 +145,11 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
   const markAllRead = async () => {
     setLoadingNotifs(true);
     try {
-      await csrfFetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markAll: true }) });
+      await csrfFetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAll: true }),
+      });
       setApiNotifications([]);
     } catch {
       // non-critical
@@ -146,16 +173,34 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
     const stats = statsQuery.data;
     if (!Array.isArray(pages)) return apiNotifications;
     const now = new Date();
-    const notifs: Array<{ id: string; title: string; message: string; type: "deadline" | "dream" | "system" | "mention" | "reply"; read: boolean }> = [...apiNotifications];
+    const notifs: Array<{
+      id: string;
+      title: string;
+      message: string;
+      type: "deadline" | "dream" | "system" | "mention" | "reply";
+      read: boolean;
+    }> = [...apiNotifications];
     for (const p of pages) {
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
       const dueStr = (fm.due_date || fm.date || p.created_at) as string | number | undefined;
       const due = dueStr ? new Date(dueStr) : new Date();
       const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       if (days <= 3 && days >= 0 && fm.status !== "done") {
-        notifs.push({ id: `dl-${p.slug}`, title: t("topbar.notif_deadline_soon"), message: `${p.title} — ${days} ${t("topbar.notif_days")}`, type: "deadline", read: false });
+        notifs.push({
+          id: `dl-${p.slug}`,
+          title: t("topbar.notif_deadline_soon"),
+          message: `${p.title} — ${days} ${t("topbar.notif_days")}`,
+          type: "deadline",
+          read: false,
+        });
       } else if (days < 0 && fm.status !== "done") {
-        notifs.push({ id: `dl-${p.slug}`, title: t("topbar.notif_deadline_overdue"), message: `${p.title} — ${Math.abs(days)} ${t("topbar.notif_days_overdue")}`, type: "deadline", read: false });
+        notifs.push({
+          id: `dl-${p.slug}`,
+          title: t("topbar.notif_deadline_overdue"),
+          message: `${p.title} — ${Math.abs(days)} ${t("topbar.notif_days_overdue")}`,
+          type: "deadline",
+          read: false,
+        });
       }
     }
     const dcStr = stats?.dream_cycle_last;
@@ -163,7 +208,13 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
       const dc = new Date(dcStr);
       const hours = (now.getTime() - dc.getTime()) / (1000 * 60 * 60);
       if (hours > 24) {
-        notifs.push({ id: "dream", title: "Dream Cycle", message: `${t("topbar.notif_dream_last")} ${Math.round(hours)} ${t("topbar.notif_dream_hours")}`, type: "dream", read: false });
+        notifs.push({
+          id: "dream",
+          title: "Dream Cycle",
+          message: `${t("topbar.notif_dream_last")} ${Math.round(hours)} ${t("topbar.notif_dream_hours")}`,
+          type: "dream",
+          read: false,
+        });
       }
     }
     return notifs;
@@ -175,32 +226,54 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
 
   const { brains, activeBrain, selectBrain, loading: brainLoading } = useBrainSelector();
 
-  const selectBrainIdx = useCallback((idx: number) => {
-    const b = brains[idx];
-    if (b) { selectBrain(b); setBrainOpen(false); }
-  }, [brains, selectBrain]);
+  const selectBrainIdx = useCallback(
+    (idx: number) => {
+      const b = brains[idx];
+      if (b) {
+        selectBrain(b);
+        setBrainOpen(false);
+      }
+    },
+    [brains, selectBrain]
+  );
 
   function BrainSelector() {
     if (brainLoading || brains.length <= 1) return null;
     return (
       <div className="relative" ref={brainRef}>
         <button
-          onClick={() => { setBrainOpen((o) => !o); setBrainActiveIdx(brains.findIndex((b) => b.slug === activeBrain?.slug)); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)]"
+          onClick={() => {
+            setBrainOpen((o) => !o);
+            setBrainActiveIdx(brains.findIndex((b) => b.slug === activeBrain?.slug));
+          }}
+          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
           aria-label={t("topbar.brain_selector_aria")}
           aria-expanded={brainOpen}
           aria-haspopup="listbox"
         >
-          <BrainIcon size={13} className="shrink-0 brand-text" />
+          <BrainIcon size={13} className="brand-text shrink-0" />
           <span className="max-w-[100px] truncate">{activeBrain?.name ?? "—"}</span>
-          <ChevronDown size={11} className={`shrink-0 transition-transform ${brainOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            size={11}
+            className={`shrink-0 transition-transform ${brainOpen ? "rotate-180" : ""}`}
+          />
         </button>
         {brainOpen && (
-          <div className="absolute right-0 top-9 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow-elevated z-50 overflow-hidden p-1" role="listbox" aria-label={t("topbar.brain_selector_aria")}
+          <div
+            className="card-shadow-elevated absolute top-9 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
+            role="listbox"
+            aria-label={t("topbar.brain_selector_aria")}
             onKeyDown={(e) => {
-              if (e.key === "ArrowDown") { e.preventDefault(); setBrainActiveIdx((i) => Math.min(i + 1, brains.length - 1)); }
-              else if (e.key === "ArrowUp") { e.preventDefault(); setBrainActiveIdx((i) => Math.max(i - 1, 0)); }
-              else if (e.key === "Enter") { e.preventDefault(); selectBrainIdx(brainActiveIdx); }
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setBrainActiveIdx((i) => Math.min(i + 1, brains.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setBrainActiveIdx((i) => Math.max(i - 1, 0));
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                selectBrainIdx(brainActiveIdx);
+              }
             }}
           >
             {brains.map((b, i) => (
@@ -208,7 +281,7 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
                 key={b.slug}
                 onClick={() => selectBrainIdx(i)}
                 onMouseEnter={() => setBrainActiveIdx(i)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 role="option"
                 aria-selected={b.slug === activeBrain?.slug}
               >
@@ -226,25 +299,36 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="h-16 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] flex items-center justify-between px-4 md:px-6 shrink-0">
-      <div className="flex items-center gap-3 flex-1 max-w-lg">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 md:px-6">
+      <div className="flex max-w-sm min-w-0 flex-1 items-center gap-3 md:max-w-md lg:max-w-lg">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
-          className="md:hidden w-11 h-11 rounded-lg flex items-center justify-center text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)]"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
           {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <div className="relative flex-1 group hidden sm:block" ref={searchRef}>
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] z-10" />
+        <div className="group relative hidden flex-1 sm:block" ref={searchRef}>
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 z-10 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+          />
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && searchQuery.trim()) {
-                if (searchOpen && searchItems.length > 0 && searchActiveIdx >= 0 && searchActiveIdx < searchItems.length) {
+                if (
+                  searchOpen &&
+                  searchItems.length > 0 &&
+                  searchActiveIdx >= 0 &&
+                  searchActiveIdx < searchItems.length
+                ) {
                   router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
                   setSearchQuery("");
                   setSearchOpen(false);
@@ -261,26 +345,36 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
                 setSearchActiveIdx((i) => Math.max(i - 1, 0));
               }
             }}
-            onFocus={(e) => { e.target.select(); if (searchQuery.trim()) setSearchOpen(true); }}
+            onFocus={(e) => {
+              e.target.select();
+              if (searchQuery.trim()) setSearchOpen(true);
+            }}
             placeholder={t("topbar.search_placeholder")}
             aria-label={t("topbar.search_aria")}
             aria-expanded={searchOpen && searchItems.length > 0}
             aria-controls="topbar-search-results"
             role="combobox"
             autoComplete="off"
-            className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-16 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-3 pr-16 pl-9 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[10px] font-mono text-[color:var(--ds-text-subtle)] pointer-events-none">
+          <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
           </kbd>
           {searchOpen && searchQuery.trim().length >= 2 && (
-            <div id="topbar-search-results" className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow-elevated z-50 overflow-hidden" role="listbox" aria-label={t("topbar.search_aria")}>
+            <div
+              id="topbar-search-results"
+              className="card-shadow-elevated absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              role="listbox"
+              aria-label={t("topbar.search_aria")}
+            >
               {searchResults.isLoading ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
                   <Loader2 size={13} className="animate-spin" /> Suche…
                 </div>
               ) : searchItems.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">Keine Treffer für „{searchQuery}“</div>
+                <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
+                  Keine Treffer für „{searchQuery}“
+                </div>
               ) : (
                 <>
                   {searchItems.map((item, i) => (
@@ -292,19 +386,28 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
                         setSearchOpen(false);
                       }}
                       onMouseEnter={() => setSearchActiveIdx(i)}
-                      className={`w-full flex items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${i === searchActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                      className={`flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${i === searchActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                       role="option"
                       aria-selected={i === searchActiveIdx}
                     >
-                      <Search size={13} className="shrink-0 mt-0.5 opacity-50" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{item.title}</div>
-                        {item.snippet && <div className="text-xs text-[color:var(--ds-text-subtle)] truncate mt-0.5">{item.snippet}</div>}
+                      <Search size={13} className="mt-0.5 shrink-0 opacity-50" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{item.title}</div>
+                        {item.snippet && (
+                          <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                            {item.snippet}
+                          </div>
+                        )}
                       </div>
-                      {i === searchActiveIdx && <CornerDownLeft size={12} className="shrink-0 text-[color:var(--ds-text-subtle)]" />}
+                      {i === searchActiveIdx && (
+                        <CornerDownLeft
+                          size={12}
+                          className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                        />
+                      )}
                     </button>
                   ))}
-                  <div className="border-t border-[color:var(--ds-border)] px-4 py-2 text-[10px] text-[color:var(--ds-text-subtle)] flex items-center justify-between">
+                  <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-[10px] text-[color:var(--ds-text-subtle)]">
                     <span>↵ für alle Ergebnisse</span>
                     <span>{searchItems.length} Treffer</span>
                   </div>
@@ -319,76 +422,116 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
             // Dispatch ⌘K to trigger command palette
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
-          className="sm:hidden w-11 h-11 rounded-lg flex items-center justify-center text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)]"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:hidden"
           aria-label={t("topbar.search_aria")}
         >
           <Search size={18} />
         </button>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <button
           onClick={toggleTheme}
           title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
           aria-label={theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")}
-          className="w-11 h-11 rounded-lg flex items-center justify-center text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)]"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
         >
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            aria-label={unreadCount > 0 ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}` : t("topbar.notifications")}
+            aria-label={
+              unreadCount > 0
+                ? `${t("topbar.notifications")} — ${unreadCount} ${t("topbar.unread_count")}`
+                : t("topbar.notifications")
+            }
             aria-expanded={notifOpen}
             aria-haspopup="menu"
-            className="w-11 h-11 rounded-lg flex items-center justify-center text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] relative"
+            className="relative flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 ring-2 ring-[var(--ds-surface)] text-[9px] font-bold text-white flex items-center justify-center leading-none" aria-hidden>
+              <span
+                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+                aria-hidden
+              >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </button>
           {notifOpen && (
-                       <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow-elevated z-50 overflow-hidden" role="menu" aria-label={t("topbar.notifications")}>
-              <div className="flex items-center justify-between px-4 py-3.5 border-b border-[color:var(--ds-border)]">
-                <span className="text-sm font-semibold text-[color:var(--ds-text)]">{t("topbar.notifications")}</span>
+            <div
+              className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              role="menu"
+              aria-label={t("topbar.notifications")}
+            >
+              <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("topbar.notifications")}
+                </span>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
                       disabled={loadingNotifs}
-                      className="text-[11px] text-[color:var(--brand-primary)] hover:opacity-80 transition-opacity disabled:opacity-50"
+                      className="text-[11px] text-[color:var(--brand-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
                     >
                       {t("topbar.mark_all_read")}
                     </button>
                   )}
-                  <button onClick={() => setNotifOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-colors" aria-label={t("topbar.close")}><X size={14} /></button>
+                  <button
+                    onClick={() => setNotifOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    aria-label={t("topbar.close")}
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               </div>
-              <div className="max-h-80 overflow-y-auto p-2 space-y-1.5">
+              <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
                 {notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <Bell size={20} className="text-[color:var(--ds-border-strong)] mb-3" aria-hidden />
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">{t("topbar.no_notifications")}</p>
+                    <Bell
+                      size={20}
+                      className="mb-3 text-[color:var(--ds-border-strong)]"
+                      aria-hidden
+                    />
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("topbar.no_notifications")}
+                    </p>
                   </div>
                 ) : (
                   notifications.map((n) => (
-                    <div key={n.id} className={`rounded-lg border p-3 ${n.type === "deadline" ? "border-amber-500/20 bg-amber-500/5" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-blue-500/20 bg-blue-500/5" : n.type === "reply" ? "border-purple-500/20 bg-purple-500/5" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}>
+                    <div
+                      key={n.id}
+                      className={`rounded-lg border p-3 ${n.type === "deadline" ? "border-amber-500/20 bg-amber-500/5" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-blue-500/20 bg-blue-500/5" : n.type === "reply" ? "border-purple-500/20 bg-purple-500/5" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                    >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-[color:var(--ds-text)] leading-snug">{n.title}</div>
-                          <div className="text-[11px] text-[color:var(--ds-text-muted)] mt-1 leading-relaxed">{n.message}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                            {n.title}
+                          </div>
+                          <div className="mt-1 text-[11px] leading-relaxed text-[color:var(--ds-text-muted)]">
+                            {n.message}
+                          </div>
                         </div>
                         {!n.read && (
                           <button
                             onClick={async () => {
                               try {
-                                await csrfFetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) });
-                                setApiNotifications((prev) => prev.map((item) => item.id === n.id ? { ...item, read: true } : item));
+                                await csrfFetch("/api/notifications", {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ id: n.id }),
+                                });
+                                setApiNotifications((prev) =>
+                                  prev.map((item) =>
+                                    item.id === n.id ? { ...item, read: true } : item
+                                  )
+                                );
                               } catch {}
                             }}
-                            className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                             aria-label="Als gelesen markieren"
                           >
                             <Check size={12} />
@@ -409,30 +552,38 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
           <NetworkStatusBadge />
         </div>
         {/* User menu */}
-        <div className="relative ml-1" ref={userMenuRef}>
+        <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[color:var(--ds-hover)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)]"
+            className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-all hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
             aria-label={t("topbar.user_menu")}
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
           >
-            <div className="w-9 h-9 rounded-full brand-soft border brand-border flex items-center justify-center shrink-0">
+            <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
               <User size={15} className="brand-text" />
             </div>
-            <ChevronDown size={14} className="text-[color:var(--ds-text-subtle)] hidden md:block" />
+            <ChevronDown size={14} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
           </button>
           {userMenuOpen && (
-            <div className="absolute right-0 top-12 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow-elevated z-50 overflow-hidden" role="menu" aria-label={t("topbar.user_menu")}>
-              <div className="px-4 py-3.5 border-b border-[color:var(--ds-border)]">
-                <p className="text-sm font-medium text-[color:var(--ds-text)] truncate">{userName ?? t("topbar.user_fallback")}</p>
-                <p className="text-xs text-[color:var(--ds-text-subtle)] truncate mt-0.5">{userEmail ?? ""}</p>
+            <div
+              className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              role="menu"
+              aria-label={t("topbar.user_menu")}
+            >
+              <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                  {userName ?? t("topbar.user_fallback")}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                  {userEmail ?? ""}
+                </p>
               </div>
               <div className="p-1.5">
                 <Link
                   href="/dashboard/settings"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   role="menuitem"
                 >
                   <Settings size={15} className="shrink-0" />
@@ -443,15 +594,19 @@ export function Topbar({ theme, toggleTheme, userName, userEmail, mobileOpen, on
                     toggleTheme();
                     setUserMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   role="menuitem"
                 >
-                  {theme === "dark" ? <Sun size={15} className="shrink-0" /> : <Moon size={15} className="shrink-0" />}
+                  {theme === "dark" ? (
+                    <Sun size={15} className="shrink-0" />
+                  ) : (
+                    <Moon size={15} className="shrink-0" />
+                  )}
                   {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
                 </button>
                 <button
                   onClick={logout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
                   role="menuitem"
                 >
                   <LogOut size={15} className="shrink-0" />

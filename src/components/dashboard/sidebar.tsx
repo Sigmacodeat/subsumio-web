@@ -66,7 +66,12 @@ import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
-type NavItem = { href: string; icon: typeof LayoutDashboard; labelKey: DashboardKey; comingSoon?: boolean };
+type NavItem = {
+  href: string;
+  icon: typeof LayoutDashboard;
+  labelKey: DashboardKey;
+  comingSoon?: boolean;
+};
 type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -107,9 +112,17 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
       { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
       { href: "/dashboard/judgements-sync", icon: RefreshCw, labelKey: "nav.judgements_sync" },
-      { href: "/dashboard/kollisionspruefung", icon: ShieldAlert, labelKey: "nav.kollisionspruefung" },
+      {
+        href: "/dashboard/kollisionspruefung",
+        icon: ShieldAlert,
+        labelKey: "nav.kollisionspruefung",
+      },
       { href: "/dashboard/tabular-review", icon: Table2, labelKey: "nav.tabular_review" },
-      { href: "/dashboard/obligation-tracking", icon: ListChecks, labelKey: "nav.obligation_tracking" },
+      {
+        href: "/dashboard/obligation-tracking",
+        icon: ListChecks,
+        labelKey: "nav.obligation_tracking",
+      },
       { href: "/dashboard/case-scanner", icon: Radar, labelKey: "nav.case_scanner" },
       { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
@@ -147,10 +160,20 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.industries",
     items: [
-      { href: "/dashboard/consulting", icon: Building2, labelKey: "nav.consulting", comingSoon: true },
+      {
+        href: "/dashboard/consulting",
+        icon: Building2,
+        labelKey: "nav.consulting",
+        comingSoon: true,
+      },
       { href: "/dashboard/insurance", icon: Shield, labelKey: "nav.insurance", comingSoon: true },
       { href: "/dashboard/medical", icon: FileText, labelKey: "nav.medical", comingSoon: true },
-      { href: "/dashboard/realestate", icon: Landmark, labelKey: "nav.realestate", comingSoon: true },
+      {
+        href: "/dashboard/realestate",
+        icon: Landmark,
+        labelKey: "nav.realestate",
+        comingSoon: true,
+      },
       { href: "/dashboard/recruiting", icon: Users, labelKey: "nav.recruiting", comingSoon: true },
       { href: "/dashboard/tax", icon: FileSpreadsheet, labelKey: "nav.tax", comingSoon: true },
       { href: "/dashboard/vc", icon: Network, labelKey: "nav.vc", comingSoon: true },
@@ -176,13 +199,15 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { t } = useLang();
   if (collapsed || pendingCount === 0) return null;
   return (
-    <div className="mx-3 mt-2 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+    <div className="mx-3 mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-amber-600 font-medium">{pendingCount} {t("sidebar.changes_pending")}</span>
+        <span className="text-xs font-medium text-amber-600">
+          {pendingCount} {t("sidebar.changes_pending")}
+        </span>
         <button
           onClick={() => void syncPending()}
           disabled={syncing}
-          className="text-xs brand-text disabled:opacity-50 transition-all"
+          className="brand-text text-xs transition-all disabled:opacity-50"
         >
           {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
         </button>
@@ -196,7 +221,12 @@ export function NetworkStatusBadge() {
   const { t } = useLang();
   if (online) return null;
   return (
-    <div role="status" aria-live="polite" className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-red-500/20 bg-red-500/5 text-red-600 text-xs font-medium" title={t("sidebar.offline_tooltip")}>
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs font-medium text-red-600"
+      title={t("sidebar.offline_tooltip")}
+    >
       <CloudOff size={12} aria-hidden />
       {t("sidebar.offline")}
     </div>
@@ -215,17 +245,20 @@ interface SidebarProps {
   userEmail: string | null;
 }
 
-export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
-  collapsed,
-  mobileOpen,
-  setCollapsed,
-  setMobileOpen,
-  pages,
-  entities,
-  dreamCycle,
-  userName,
-  userEmail,
-}, ref) {
+export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
+  {
+    collapsed,
+    mobileOpen,
+    setCollapsed,
+    setMobileOpen,
+    pages,
+    entities,
+    dreamCycle,
+    userName,
+    userEmail,
+  },
+  ref
+) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const { t } = useLang();
@@ -255,7 +288,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
     return (
       <>
         {text.slice(0, idx)}
-        <mark className="bg-[var(--brand-primary)]/20 text-[color:var(--ds-text)] rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
+        <mark className="rounded bg-[var(--brand-primary)]/20 px-0.5 text-[color:var(--ds-text)]">
+          {text.slice(idx, idx + q.length)}
+        </mark>
         {text.slice(idx + q.length)}
       </>
     );
@@ -264,10 +299,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
   return (
     <aside
       className={cn(
-        "flex flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] sidebar-shadow transition-all duration-200 shrink-0 z-50",
+        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200",
         "fixed inset-y-0 left-0 md:static",
         collapsed ? "md:w-16" : "md:w-64",
-        mobileOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0",
+        mobileOpen ? "w-64 translate-x-0" : "-translate-x-full md:translate-x-0",
         "w-64"
       )}
       onKeyDown={(e) => {
@@ -275,7 +310,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
         const active = document.activeElement;
         if (!(active instanceof HTMLAnchorElement)) return;
         e.preventDefault();
-        const links = Array.from(e.currentTarget.querySelectorAll<HTMLAnchorElement>('a[href]'));
+        const links = Array.from(e.currentTarget.querySelectorAll<HTMLAnchorElement>("a[href]"));
         const idx = links.indexOf(active);
         if (idx === -1) return;
         if (e.key === "ArrowDown") {
@@ -286,22 +321,32 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
       }}
     >
       {/* Logo */}
-      <div className={cn(
-        "flex items-center gap-2.5 border-b border-[color:var(--ds-border)] h-16 px-4",
-        collapsed && "md:justify-center md:px-0"
-      )}>
+      <div
+        className={cn(
+          "flex h-16 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
+          collapsed && "md:justify-center md:px-0"
+        )}
+      >
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden w-11 h-11 rounded-lg flex items-center justify-center text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:hidden"
           aria-label={t("sidebar.close_menu")}
         >
           <X size={18} />
         </button>
-        <Link href="/dashboard" aria-label="Subsumio Dashboard" onClick={() => setMobileOpen(false)}>
+        <Link
+          href="/dashboard"
+          aria-label="Subsumio Dashboard"
+          onClick={() => setMobileOpen(false)}
+        >
           <SubsumioMark size={32} />
         </Link>
         {!collapsed && (
-          <Link href="/dashboard" className="font-display text-base font-bold text-[color:var(--ds-text)] tracking-tight" onClick={() => setMobileOpen(false)}>
+          <Link
+            href="/dashboard"
+            className="font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)]"
+            onClick={() => setMobileOpen(false)}
+          >
             Subsum<span className="brand-text">•io</span>
           </Link>
         )}
@@ -310,23 +355,33 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
       {/* Brain status */}
       {!collapsed && (
         <div
-          className="mx-3 mt-4 px-3 py-2.5 rounded-xl bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)]"
+          className="mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5"
           role="status"
           aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">{t("sidebar.brain_status")}</span>
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              {t("sidebar.brain_status")}
+            </span>
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden />
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
               <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
             </div>
           </div>
-          <div className="text-xs text-[color:var(--ds-text-subtle)] font-mono tabular-nums">{pages} pages · {entities} entities</div>
+          <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+            {pages} pages · {entities} entities
+          </div>
         </div>
       )}
       {collapsed && (
-        <div className="hidden md:flex items-center justify-center mt-4" title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`} />
+        <div
+          className="mt-4 hidden items-center justify-center md:flex"
+          title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+        >
+          <span
+            className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+          />
         </div>
       )}
 
@@ -337,19 +392,22 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
       {!collapsed && (
         <div className="px-3 pt-3">
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] pointer-events-none" />
+            <Search
+              size={14}
+              className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("sidebar.filter_placeholder")}
-              className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
               aria-label={t("sidebar.filter_placeholder")}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] transition-colors"
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
                 aria-label={t("sidebar.filter_placeholder")}
               >
                 <X size={12} />
@@ -360,17 +418,21 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
       )}
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto" aria-label={t("sidebar.main_nav")}>
+      <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label={t("sidebar.main_nav")}>
         {!hasResults && !collapsed && (
           <div className="px-3 py-8 text-center">
-            <p className="text-xs text-[color:var(--ds-text-subtle)]">{t("sidebar.no_results")} „{searchQuery}&quot;</p>
+            <p className="text-xs text-[color:var(--ds-text-subtle)]">
+              {t("sidebar.no_results")} „{searchQuery}&quot;
+            </p>
           </div>
         )}
         {filteredSections.map((section) => (
           <div key={section.titleKey} className="mb-5">
             {!collapsed && (
-              <div className="px-3 mb-2">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-[color:var(--ds-text-subtle)] font-semibold">{t(section.titleKey)}</span>
+              <div className="mb-2 px-3">
+                <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  {t(section.titleKey)}
+                </span>
               </div>
             )}
             <div className="space-y-0.5">
@@ -382,23 +444,29 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
                       key={item.href}
                       disabled
                       className={cn(
-                        "flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[color:var(--ds-text-subtle)] cursor-not-allowed select-none",
+                        "flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none",
                         collapsed && "justify-center px-0"
                       )}
-                      title={collapsed ? `${t(item.labelKey)} — ${t("sidebar.coming_soon")}` : undefined}
+                      title={
+                        collapsed ? `${t(item.labelKey)} — ${t("sidebar.coming_soon")}` : undefined
+                      }
                       aria-disabled="true"
                     >
                       <Icon size={17} className="shrink-0 opacity-50" />
                       {!collapsed && (
-                        <span className="flex items-center justify-between flex-1">
+                        <span className="flex flex-1 items-center justify-between">
                           {t(item.labelKey)}
-                          <span className="text-[9px] font-semibold uppercase tracking-wide text-[color:var(--ds-text-subtle)] border border-[color:var(--ds-border-strong)] rounded px-1 py-0.5">{t("sidebar.coming_soon")}</span>
+                          <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-[9px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("sidebar.coming_soon")}
+                          </span>
                         </span>
                       )}
                     </button>
                   );
                 }
-                const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
@@ -407,11 +475,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
                     aria-label={collapsed ? t(item.labelKey) : undefined}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] transition-all duration-150",
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       collapsed && "justify-center px-0",
                       active
-                        ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)] hover:brand-soft-strong"
-                        : "text-[color:var(--ds-text-muted)] hover:brand-text hover:bg-[color:var(--ds-hover)]"
+                        ? "brand-soft brand-text hover:brand-soft-strong border-l-2 border-[var(--brand-primary)]"
+                        : "hover:brand-text text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
                     )}
                     title={collapsed ? t(item.labelKey) : undefined}
                   >
@@ -427,15 +495,29 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
 
       {/* Dream Cycle indicator */}
       {!collapsed && (
-        <div className={cn(
-          "mx-3 mt-2 mb-4 px-3 py-3 rounded-xl border",
-          dreamCycle ? "border-emerald-500/20 bg-emerald-500/[0.06]" : "border-amber-500/20 bg-amber-500/[0.06]"
-        )}>
+        <div
+          className={cn(
+            "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3",
+            dreamCycle
+              ? "border-emerald-500/20 bg-emerald-500/[0.06]"
+              : "border-amber-500/20 bg-amber-500/[0.06]"
+          )}
+        >
           <div className="flex items-center gap-2">
-            <Zap size={12} className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")} />
-            <span className={cn("text-xs font-semibold", dreamCycle ? "text-emerald-700" : "text-amber-700")}>{t("sidebar.dream_cycle")}</span>
+            <Zap
+              size={12}
+              className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
+            />
+            <span
+              className={cn(
+                "text-xs font-semibold",
+                dreamCycle ? "text-emerald-700" : "text-amber-700"
+              )}
+            >
+              {t("sidebar.dream_cycle")}
+            </span>
           </div>
-          <p className="text-[11px] text-[color:var(--ds-text-muted)] mt-1.5 leading-snug">
+          <p className="mt-1.5 text-[11px] leading-snug text-[color:var(--ds-text-muted)]">
             {dreamCycle
               ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
               : t("sidebar.dream_not_scheduled")}
@@ -444,10 +526,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
       )}
 
       {/* Bottom — Verwaltung + User Profile */}
-      <div className="px-3 pb-4 space-y-0.5 border-t border-[color:var(--ds-border)] pt-4">
+      <div className="space-y-0.5 border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
         {!collapsed && (
-          <div className="px-3 mb-2">
-            <span className="text-[10px] uppercase tracking-[0.08em] text-[color:var(--ds-text-subtle)] font-semibold">{t("nav.section.admin")}</span>
+          <div className="mb-2 px-3">
+            <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+              {t("nav.section.admin")}
+            </span>
           </div>
         )}
         {filteredBottomItems.map((item) => {
@@ -461,11 +545,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
               aria-label={collapsed ? t(item.labelKey) : undefined}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] transition-all duration-150",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                 collapsed && "justify-center px-0",
                 active
-                  ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)] hover:brand-soft-strong"
-                  : "text-[color:var(--ds-text-muted)] hover:brand-text hover:bg-[color:var(--ds-hover)]"
+                  ? "brand-soft brand-text hover:brand-soft-strong border-l-2 border-[var(--brand-primary)]"
+                  : "hover:brand-text text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
               )}
               title={collapsed ? t(item.labelKey) : undefined}
             >
@@ -477,18 +561,22 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
 
         {/* User profile section */}
         {!collapsed && (
-          <div className="mt-4 pt-4 border-t border-[color:var(--ds-border)]">
+          <div className="mt-4 border-t border-[color:var(--ds-border)] pt-4">
             <Link
               href="/dashboard/settings"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[color:var(--ds-hover)] transition-all group"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-[color:var(--ds-hover)]"
             >
-              <div className="w-9 h-9 rounded-full brand-soft border brand-border flex items-center justify-center shrink-0">
+              <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
                 <User size={15} className="brand-text" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[color:var(--ds-text)] truncate">{userName ?? t("sidebar.user")}</p>
-                <p className="text-[11px] text-[color:var(--ds-text-subtle)] truncate mt-0.5">{userEmail ?? ""}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                  {userName ?? t("sidebar.user")}
+                </p>
+                <p className="mt-0.5 truncate text-[11px] text-[color:var(--ds-text-subtle)]">
+                  {userEmail ?? ""}
+                </p>
               </div>
             </Link>
           </div>
@@ -499,11 +587,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({
           aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
           aria-expanded={!collapsed}
           className={cn(
-            "hidden md:flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all duration-150 mt-2",
+            "mt-2 hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-all duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
             collapsed && "justify-center px-0"
           )}
         >
-          {collapsed ? <ChevronRight size={16} /> : <><ChevronLeft size={16} /><span>{t("sidebar.collapse")}</span></>}
+          {collapsed ? (
+            <ChevronRight size={16} />
+          ) : (
+            <>
+              <ChevronLeft size={16} />
+              <span>{t("sidebar.collapse")}</span>
+            </>
+          )}
         </button>
       </div>
     </aside>
