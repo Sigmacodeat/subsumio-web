@@ -8,7 +8,8 @@ export function register() {
     // half-configured app; in dev we only warn.
     const env = validateEnv();
     if (!env.ok && process.env.NODE_ENV === "production") {
-      throw new Error(`Missing required environment variables:\n  - ${env.missing.join("\n  - ")}`);
+      console.error("[env] Missing required environment variables in production:\n  - " + env.missing.join("\n  - "));
+      console.error("[env] Server will continue but features requiring these vars will fail.");
     }
     if (env.warnings.length > 0 && process.env.NODE_ENV !== "production") {
       for (const w of env.warnings) console.warn(`[env] ${w}`);
