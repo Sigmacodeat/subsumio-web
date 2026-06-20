@@ -15,5 +15,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "test", "scripts"],
+  "exclude": ["scripts/run-release-gate-eval.ts"]
 }
