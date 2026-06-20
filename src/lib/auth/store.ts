@@ -101,7 +101,7 @@ import { env } from "@/lib/env";
 import { encryptFields, decryptFields } from "@/lib/encryption";
 
 /** Fields that must be encrypted at rest in production. */
-const SENSITIVE_USER_FIELDS = [
+export const SENSITIVE_USER_FIELDS = [
   "twoFactorSecret",
   "pendingTwoFactorSecret",
   "docusignAccessToken",
@@ -113,12 +113,16 @@ const SENSITIVE_USER_FIELDS = [
 
 /** Encrypt sensitive fields before persisting to storage. */
 async function encryptUser(user: User): Promise<User> {
-  return (await encryptFields(user as unknown as Record<string, unknown>, [...SENSITIVE_USER_FIELDS])) as unknown as User;
+  return (await encryptFields(user as unknown as Record<string, unknown>, [
+    ...SENSITIVE_USER_FIELDS,
+  ])) as unknown as User;
 }
 
 /** Decrypt sensitive fields after loading from storage. */
 async function decryptUser(user: User): Promise<User> {
-  return (await decryptFields(user as unknown as Record<string, unknown>, [...SENSITIVE_USER_FIELDS])) as unknown as User;
+  return (await decryptFields(user as unknown as Record<string, unknown>, [
+    ...SENSITIVE_USER_FIELDS,
+  ])) as unknown as User;
 }
 
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
@@ -434,7 +438,13 @@ class PostgresUserStore implements UserStore {
               data = $5::jsonb,
               updated_at = now()
         WHERE id = $1`,
-      [id, encrypted.email, encrypted.referralCode, encrypted.passwordHash, JSON.stringify(encrypted)]
+      [
+        id,
+        encrypted.email,
+        encrypted.referralCode,
+        encrypted.passwordHash,
+        JSON.stringify(encrypted),
+      ]
     );
     return next;
   }

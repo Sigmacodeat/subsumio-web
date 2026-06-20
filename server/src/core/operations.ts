@@ -4487,6 +4487,13 @@ const forget_fact: Operation = {
     if (!result.ok && result.path === "already_expired") {
       throw new OperationError("fact_already_expired", `Fact id ${id} already expired.`);
     }
+    if (!result.ok && result.path === "legal_hold") {
+      throw new OperationError(
+        "legal_hold_active",
+        `Fact id ${id} cannot be forgotten: its case/document is under legal hold.`,
+        "Lift the legal hold (frontmatter legal_hold: false) before forgetting this fact."
+      );
+    }
     return { id, expired: true, path: result.path, reason: result.reason };
   },
 };
