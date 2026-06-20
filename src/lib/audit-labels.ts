@@ -64,7 +64,18 @@ export type AuditAction =
   | "scim.sync_manual"
   | "query.submit"
   | "data.export"
-  | "data.delete";
+  | "data.delete"
+  | "legal.sources_list"
+  | "legal.sources_refresh"
+  | "whatsapp.identity_created"
+  | "whatsapp.identity_updated"
+  | "whatsapp.identity_revoked"
+  | "whatsapp.sender_denied"
+  | "whatsapp.consent_granted"
+  | "whatsapp.consent_revoked"
+  | "whatsapp.outbound_sent"
+  | "whatsapp.outbound_blocked"
+  | "whatsapp.briefing_feedback";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -110,6 +121,17 @@ const ACTION_LABELS: Record<string, string> = {
   "query.submit": "KI-Query",
   "data.export": "Datenexport (DSGVO)",
   "data.delete": "Datenlöschung (DSGVO)",
+  "legal.sources_list": "Quellen-Registry abgefragt",
+  "legal.sources_refresh": "Quelle synchronisiert",
+  "whatsapp.identity_created": "WhatsApp-Identität angelegt",
+  "whatsapp.identity_updated": "WhatsApp-Identität aktualisiert",
+  "whatsapp.identity_revoked": "WhatsApp-Identität widerrufen",
+  "whatsapp.sender_denied": "WhatsApp-Absender abgewiesen",
+  "whatsapp.consent_granted": "WhatsApp-Einwilligung erteilt",
+  "whatsapp.consent_revoked": "WhatsApp-Einwilligung widerrufen",
+  "whatsapp.outbound_sent": "WhatsApp proaktiv gesendet",
+  "whatsapp.outbound_blocked": "WhatsApp-Versand geblockt",
+  "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
 };
 
 export function auditLabel(action: string): string {

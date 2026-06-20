@@ -6,6 +6,31 @@ export interface WhatsAppSenderBinding {
   role?: "admin" | "lawyer" | "assistant";
 }
 
+/**
+ * DB-backed identity for a WhatsApp sender (Paket 33, P0-SECR-002).
+ *
+ * Superset of {@link WhatsAppSenderBinding} — every legacy field stays so existing
+ * webhook handlers keep working. Adds the security fields the env-based binding
+ * never had: stable id, explicit tenant (`orgId`), verification state, lifecycle
+ * `status`, and the permission-aware `matterScope`. The raw phone is never the key —
+ * lookups go through the SHA-256 `phoneHash`.
+ */
+export interface WhatsAppIdentity extends WhatsAppSenderBinding {
+  id: string;
+  /** Tenant key. Defaults to brainId when org and brain are 1:1. */
+  orgId: string;
+  /** SHA-256 of the normalized phone — the lookup key. Raw phone is not persisted. */
+  phoneHash: string;
+  /** Matters this sender may reach. `"all"` = role-scoped, no per-matter restriction. */
+  matterScope: string[] | "all";
+  /** Lifecycle. Only `active` identities resolve. */
+  status: "active" | "suspended" | "revoked";
+  /** ISO timestamp of identity verification (OTP / portal link), or null if unverified. */
+  verifiedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WhatsAppTextMessage {
   id: string;
   from: string;
@@ -72,7 +97,14 @@ export interface WhatsAppMessageStatus {
   errors?: Array<{ code: string; title: string; message: string }>;
 }
 
-export type WhatsAppIncomingMessage = WhatsAppTextMessage | WhatsAppMediaMessage | WhatsAppButtonReplyMessage | WhatsAppListReplyMessage | WhatsAppReactionMessage | WhatsAppLocationMessage | WhatsAppContactMessage;
+export type WhatsAppIncomingMessage =
+  | WhatsAppTextMessage
+  | WhatsAppMediaMessage
+  | WhatsAppButtonReplyMessage
+  | WhatsAppListReplyMessage
+  | WhatsAppReactionMessage
+  | WhatsAppLocationMessage
+  | WhatsAppContactMessage;
 
 // ── Button & List Reply (interactive message responses) ──────────────────
 
@@ -154,7 +186,9 @@ export interface WhatsAppInteractiveListMessage {
   footer?: { text: string };
 }
 
-export type WhatsAppInteractiveMessage = WhatsAppInteractiveButtonMessage | WhatsAppInteractiveListMessage;
+export type WhatsAppInteractiveMessage =
+  | WhatsAppInteractiveButtonMessage
+  | WhatsAppInteractiveListMessage;
 
 // ── Outbound Media Send ───────────────────────────────────────────────────
 
@@ -190,7 +224,13 @@ export interface WhatsAppWebhookChange {
       image?: { id?: string; mime_type?: string; sha256?: string; caption?: string };
       audio?: { id?: string; mime_type?: string; sha256?: string; voice?: boolean };
       video?: { id?: string; mime_type?: string; sha256?: string; caption?: string };
-      document?: { id?: string; mime_type?: string; sha256?: string; filename?: string; caption?: string };
+      document?: {
+        id?: string;
+        mime_type?: string;
+        sha256?: string;
+        filename?: string;
+        caption?: string;
+      };
       sticker?: { id?: string; mime_type?: string; sha256?: string; animated?: boolean };
       interactive?: {
         type?: string;
@@ -218,7 +258,12 @@ export interface WhatsAppWebhookChange {
       recipient_id?: string;
       status?: "sent" | "delivered" | "read" | "failed";
       timestamp?: string;
-      errors?: Array<{ code?: string; title?: string; message?: string; error_data?: { detail?: string } }>;
+      errors?: Array<{
+        code?: string;
+        title?: string;
+        message?: string;
+        error_data?: { detail?: string };
+      }>;
     }>;
   };
 }
@@ -232,10 +277,14 @@ export interface WhatsAppWebhookPayload {
 }
 
 export function extractTextMessages(payload: WhatsAppWebhookPayload): WhatsAppTextMessage[] {
-  return extractIncomingMessages(payload).filter((message): message is WhatsAppTextMessage => message.type === "text");
+  return extractIncomingMessages(payload).filter(
+    (message): message is WhatsAppTextMessage => message.type === "text"
+  );
 }
 
-export function extractIncomingMessages(payload: WhatsAppWebhookPayload): WhatsAppIncomingMessage[] {
+export function extractIncomingMessages(
+  payload: WhatsAppWebhookPayload
+): WhatsAppIncomingMessage[] {
   const messages: WhatsAppIncomingMessage[] = [];
   for (const entry of payload.entry ?? []) {
     for (const change of entry.changes ?? []) {
@@ -251,7 +300,10 @@ export function extractIncomingMessages(payload: WhatsAppWebhookPayload): WhatsA
 
         // Interactive button reply
         if (msg.type === "interactive" && (msg as Record<string, unknown>).interactive) {
-          const interactive = (msg as Record<string, unknown>).interactive as Record<string, unknown>;
+          const interactive = (msg as Record<string, unknown>).interactive as Record<
+            string,
+            unknown
+          >;
           if (interactive.type === "button_reply") {
             const br = interactive.button_reply as Record<string, unknown> | undefined;
             messages.push({
@@ -314,17 +366,25 @@ export function extractIncomingMessages(payload: WhatsAppWebhookPayload): WhatsA
 
         // Media messages
         const media =
-          msg.type === "image" ? msg.image
-          : msg.type === "audio" ? msg.audio
-          : msg.type === "video" ? msg.video
-          : msg.type === "document" ? msg.document
-          : msg.type === "sticker" ? msg.sticker
-          : undefined;
+          msg.type === "image"
+            ? msg.image
+            : msg.type === "audio"
+              ? msg.audio
+              : msg.type === "video"
+                ? msg.video
+                : msg.type === "document"
+                  ? msg.document
+                  : msg.type === "sticker"
+                    ? msg.sticker
+                    : undefined;
         if (!media?.id) continue;
         const mediaRecord = media as Record<string, unknown>;
         messages.push({
           ...base,
-          type: msg.type === "audio" && msg.audio?.voice ? "voice" : msg.type as WhatsAppMediaMessage["type"],
+          type:
+            msg.type === "audio" && msg.audio?.voice
+              ? "voice"
+              : (msg.type as WhatsAppMediaMessage["type"]),
           mediaId: media.id,
           mimeType: media.mime_type,
           sha256: media.sha256,

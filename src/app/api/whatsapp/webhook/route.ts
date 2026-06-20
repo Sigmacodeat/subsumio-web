@@ -5,9 +5,19 @@ import { downloadAndStoreWhatsAppMedia } from "@/lib/whatsapp/media";
 import { sendWhatsAppText } from "@/lib/whatsapp/send";
 import { transcribeVoiceMessage } from "@/lib/whatsapp/transcribe";
 import { isMessageProcessed, markMessageProcessed } from "@/lib/whatsapp/dedup";
-import { extractIncomingMessages, extractMessageStatuses, type WhatsAppWebhookPayload, type WhatsAppIncomingMessage, type WhatsAppMessageStatus } from "@/lib/whatsapp/types";
-import { resolveSender, verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
+import {
+  extractIncomingMessages,
+  extractMessageStatuses,
+  type WhatsAppWebhookPayload,
+  type WhatsAppIncomingMessage,
+  type WhatsAppMessageStatus,
+  type WhatsAppIdentity,
+} from "@/lib/whatsapp/types";
+import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/lib/whatsapp/verify";
+import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
+import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -47,11 +57,18 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const sender = resolveSender(message.from);
+    const sender = await resolveSenderIdentity(message.from);
     if (!sender) {
+      // Deny unknown/suspended/revoked senders. Audit by phone hash only — never log the raw number.
+      await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
+        details: { phoneHash: phoneHash(message.from), messageId: message.id },
+      });
       results.push({ id: message.id, status: "ignored", error: "sender_not_allowed" });
       continue;
     }
+
+    // Inbound message (re)opens the 24h customer-service window for this recipient.
+    await getWhatsAppWindowStore().touch(phoneHash(message.from));
 
     try {
       const reply = await processMessage(message, sender);
@@ -64,14 +81,22 @@ export async function POST(req: NextRequest) {
       const error = err instanceof Error ? err.message : String(err);
       console.error("[whatsapp-webhook] message failed:", error);
       try {
-        await sendWhatsAppText(message.from, `Kanzlei OS konnte die Nachricht nicht verarbeiten: ${error}`);
+        await sendWhatsAppText(
+          message.from,
+          `Kanzlei OS konnte die Nachricht nicht verarbeiten: ${error}`
+        );
       } catch {}
       await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
       results.push({ id: message.id, status: "failed", error });
     }
   }
 
-  return Response.json({ success: true, processed: results.length, statuses: statuses.length, results });
+  return Response.json({
+    success: true,
+    processed: results.length,
+    statuses: statuses.length,
+    results,
+  });
 }
 
 /** Store outbound message status updates in the brain as chat_outbox pages. */
@@ -107,14 +132,17 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
         }),
       });
     } catch (err) {
-      console.error("[whatsapp-webhook] status update failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[whatsapp-webhook] status update failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 }
 
 async function processMessage(
   message: WhatsAppIncomingMessage,
-  sender: ReturnType<typeof resolveSender> & {},
+  sender: WhatsAppIdentity
 ): Promise<string | null> {
   // Text message → legal chat handler
   if (message.type === "text") {
@@ -178,7 +206,7 @@ async function processMessage(
 
     return handleLegalChatMedia(
       { sender, fromPhone: message.from, messageId: message.id, caption: message.caption },
-      media,
+      media
     );
   }
 
@@ -186,14 +214,14 @@ async function processMessage(
   const media = await downloadAndStoreWhatsAppMedia(message);
   return handleLegalChatMedia(
     { sender, fromPhone: message.from, messageId: message.id, caption: message.caption },
-    media,
+    media
   );
 }
 
 /** Handle emoji reactions: 👍 = confirm pending action, 👎 = cancel. */
 async function handleReaction(
   message: WhatsAppIncomingMessage & { type: "reaction"; emoji: string; messageId: string },
-  sender: ReturnType<typeof resolveSender> & {},
+  sender: WhatsAppIdentity
 ): Promise<string | null> {
   if (message.emoji === "👍") {
     return handleLegalChatMessage({
@@ -225,13 +253,20 @@ async function handleReaction(
 
 /** Handle inbound location messages — store in brain and acknowledge. */
 async function handleLocation(
-  message: WhatsAppIncomingMessage & { type: "location"; latitude: number; longitude: number; name?: string; address?: string },
-  sender: ReturnType<typeof resolveSender> & {},
+  message: WhatsAppIncomingMessage & {
+    type: "location";
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  },
+  sender: WhatsAppIdentity
 ): Promise<string> {
   const slug = `legal/chat/whatsapp-locations/${randomUUID()}`;
-  const locationText = message.name || message.address
-    ? `${message.name ?? ""} ${message.address ?? ""}`.trim()
-    : `${message.latitude}, ${message.longitude}`;
+  const locationText =
+    message.name || message.address
+      ? `${message.name ?? ""} ${message.address ?? ""}`.trim()
+      : `${message.latitude}, ${message.longitude}`;
 
   try {
     await fetch(`${ENGINE_URL}/api/pages`, {
@@ -266,7 +301,10 @@ async function handleLocation(
       }),
     });
   } catch (err) {
-    console.error("[whatsapp-webhook] location storage failed:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[whatsapp-webhook] location storage failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 
   return `Standort empfangen: ${locationText}\nGoogle Maps: https://maps.google.com/?q=${message.latitude},${message.longitude}`;
@@ -274,12 +312,24 @@ async function handleLocation(
 
 /** Handle inbound contact messages — store in brain and try to match to existing cases. */
 async function handleContact(
-  message: WhatsAppIncomingMessage & { type: "contact"; contacts: Array<{ formattedName: string; firstName?: string; lastName?: string; phones: string[]; emails?: string[] }> },
-  sender: ReturnType<typeof resolveSender> & {},
+  message: WhatsAppIncomingMessage & {
+    type: "contact";
+    contacts: Array<{
+      formattedName: string;
+      firstName?: string;
+      lastName?: string;
+      phones: string[];
+      emails?: string[];
+    }>;
+  },
+  sender: WhatsAppIdentity
 ): Promise<string> {
-  const contactSummary = message.contacts.map((c) =>
-    `${c.formattedName}${c.phones.length ? ` (${c.phones.join(", ")})` : ""}${c.emails?.length ? ` ${c.emails.join(", ")}` : ""}`,
-  ).join("; ");
+  const contactSummary = message.contacts
+    .map(
+      (c) =>
+        `${c.formattedName}${c.phones.length ? ` (${c.phones.join(", ")})` : ""}${c.emails?.length ? ` ${c.emails.join(", ")}` : ""}`
+    )
+    .join("; ");
 
   const slug = `legal/chat/whatsapp-contacts/${randomUUID()}`;
   try {
@@ -310,10 +360,11 @@ async function handleContact(
       }),
     });
   } catch (err) {
-    console.error("[whatsapp-webhook] contact storage failed:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[whatsapp-webhook] contact storage failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 
   return `Kontakt empfangen: ${contactSummary}. Im Dashboard unter WhatsApp → Inbox verfügbar.`;
 }
-
-

@@ -1,0 +1,102 @@
+import { NextRequest, NextResponse } from "next/server";
+import { validateCronAuth } from "@/lib/cron-auth";
+import { fetchPages, createDailyDedup } from "@/lib/cron-utils";
+import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
+import { buildDailyBriefing, type BriefingCase } from "@/lib/whatsapp/daily-briefing";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * Proactive daily briefing (Paket 33, P1-SECR-004).
+ *
+ * For each configured WhatsApp sender (a lawyer, with their E.164 number), build a
+ * "Guten Morgen" digest of upcoming deadlines from their brain's case pages and
+ * push it through the gated outbound path. The gate enforces consent + the 24h
+ * window / template rule, so this cron can never bypass compliance.
+ *
+ * Delivery requires the recipient to hold an active `daily_briefing` consent; the
+ * E.164 number comes from the configured sender list. When the 24h window is
+ * closed, an approved template (env `WHATSAPP_BRIEFING_TEMPLATE`) is required —
+ * otherwise the send is gated and audited as `outbound_blocked` (honest no-op).
+ */
+
+const dedupBriefing = createDailyDedup("subsumio_daily_briefing_sent");
+
+function quietHoursFromEnv(now: Date): QuietHours | undefined {
+  const raw = process.env.WHATSAPP_BRIEFING_QUIET_HOURS; // e.g. "21-7"
+  if (!raw) return undefined;
+  const m = raw.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
+  if (!m) return undefined;
+  return {
+    startHour: parseInt(m[1], 10),
+    endHour: parseInt(m[2], 10),
+    localHour: now.getHours(),
+  };
+}
+
+export async function GET(req: NextRequest) {
+  const authError = validateCronAuth(req);
+  if (authError) return authError;
+
+  const now = new Date();
+  const senders = loadAllowedSenders().filter((s) => s.role !== "assistant");
+  const briefingTemplate = process.env.WHATSAPP_BRIEFING_TEMPLATE;
+  const quietHours = quietHoursFromEnv(now);
+
+  let sent = 0;
+  let blocked = 0;
+  let empty = 0;
+  const errors: string[] = [];
+
+  for (const sender of senders) {
+    try {
+      // Dedup per recipient per day so a re-run can't double-brief.
+      const key = `${sender.brainId}:${phoneHash(sender.phone)}`;
+      if (await dedupBriefing(key)) continue;
+
+      const pages = await fetchPages(sender.brainId, "case", 1000);
+      const cases: BriefingCase[] = pages.map((p) => {
+        const fm = p.frontmatter ?? {};
+        return {
+          caseNumber: String(fm.case_number ?? p.slug),
+          title: String(fm.title ?? p.title ?? ""),
+          deadlines: Array.isArray(fm.deadlines) ? (fm.deadlines as BriefingCase["deadlines"]) : [],
+        };
+      });
+
+      const text = buildDailyBriefing({ anwaltName: sender.name, cases, now });
+      if (!text) {
+        empty++;
+        continue;
+      }
+
+      const result = await sendProactiveMessage({
+        to: sender.phone,
+        brainId: sender.brainId,
+        scope: "daily_briefing",
+        freeform: text,
+        template: briefingTemplate
+          ? { name: briefingTemplate, language: { code: "de" } }
+          : undefined,
+        quietHours,
+        now,
+      });
+
+      if (result.sent) sent++;
+      else blocked++;
+    } catch (err) {
+      errors.push(String(err instanceof Error ? err.message : err));
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    recipients: senders.length,
+    sent,
+    blocked,
+    empty,
+    errors: errors.length > 0 ? errors : undefined,
+  });
+}
