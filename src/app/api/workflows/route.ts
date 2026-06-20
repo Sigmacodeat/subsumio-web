@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   WORKFLOW_TEMPLATES,
   getTemplate,

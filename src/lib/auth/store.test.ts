@@ -86,7 +86,7 @@ describe("toPublic", () => {
   test("removes passwordHash", () => {
     const user = makeUser({ passwordHash: "secret-hash" });
     const pub = toPublic(user);
-    expect((pub as any).passwordHash).toBeUndefined();
+    expect((pub as Record<string, unknown>).passwordHash).toBeUndefined();
   });
 
   test("preserves other fields", () => {
@@ -242,7 +242,7 @@ describe("FileUserStore (dev mode)", () => {
     const store = getStore();
     const user = makeUser({ id: "test-upd-id", email: "updid@test.com" });
     await store.create(user);
-    const updated = await store.update("test-upd-id", { id: "different-id" } as any);
+    const updated = await store.update("test-upd-id", { id: "different-id" } as unknown as Parameters<typeof store.update>[1]);
     expect(updated?.id).toBe("test-upd-id");
   });
 

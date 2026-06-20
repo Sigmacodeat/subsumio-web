@@ -96,6 +96,45 @@ export interface MatterCommunicationEntry {
   has_attachments: boolean;
 }
 
+export interface MatterDocumentRequestSummary {
+  slug: string;
+  status: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+  channel: "whatsapp" | "portal" | "email" | "manual";
+  created_at: string;
+  updated_at: string;
+  sent_at?: string;
+  portal_url?: string;
+  open_items: Array<{ key: string; label: string; required: boolean }>;
+  fulfilled_items: Array<{ key: string; label: string; document_slug: string }>;
+}
+
+export interface MatterIntakeSummary {
+  slug: string;
+  status: "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
+  source: "whatsapp" | "portal" | "web" | "email" | "manual";
+  summary: string;
+  client_name?: string;
+  legal_area?: string;
+  conflict_check_status: "pending" | "clear" | "conflict" | "needs_review";
+  missing_documents: string[];
+  converted_case_slug?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatterConversationEventSummary {
+  slug: string;
+  channel: "whatsapp" | "portal" | "email" | "phone" | "other";
+  direction: "inbound" | "outbound";
+  role?: string;
+  actor_name?: string;
+  intent?: string;
+  risk_level?: string;
+  status?: string;
+  normalized_text?: string;
+  created_at: string;
+}
+
 // ── Permission Summary ────────────────────────────────────────────────
 
 export interface MatterPermissionSummary {
@@ -119,6 +158,9 @@ export interface MatterContextBundle {
   recent_activity: MatterActivityEntry[];
   facts: MatterFactEntry[];
   communications: MatterCommunicationEntry[];
+  document_requests: MatterDocumentRequestSummary[];
+  intake_requests: MatterIntakeSummary[];
+  conversation_events: MatterConversationEventSummary[];
   permissions: MatterPermissionSummary;
   coverage: MatterCoverageStatus;
   gaps: MatterGap[];

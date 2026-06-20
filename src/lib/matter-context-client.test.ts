@@ -58,6 +58,9 @@ const sampleBundle: MatterContextBundleResponse = {
   facts: [
     { id: "f1", statement: "Test fact", source: "case_frontmatter", confidence: "high" },
   ],
+  document_requests: [],
+  intake_requests: [],
+  conversation_events: [],
   coverage: {
     sources: [],
     total_sources: 0,

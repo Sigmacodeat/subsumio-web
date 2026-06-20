@@ -14,7 +14,7 @@ interface CaseSuggestion {
 
 const API_BASE = "https://subsum.eu";
 let token = "";
-let tokenName = "";
+const tokenName = "";
 let connected = false;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
@@ -282,18 +282,45 @@ function setMode(mode: "conservative" | "balanced" | "tokenmax") {
 }
 
 function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Wire every handler via addEventListener instead of inline onclick=""
+ * attributes. This is what lets taskpane.html ship a CSP with no
+ * 'unsafe-inline' in script-src — the load-bearing defense for the
+ * sk_live_ API key held in localStorage (see connect()/tryRestoreSession()):
+ * a strict script-src means an injected <script> or onerror= payload can't
+ * execute even if it lands in the DOM somewhere, since no inline JS runs.
+ */
+function wireUpHandlers() {
+  document.getElementById("connectBtn")?.addEventListener("click", connect);
+  document.getElementById("disconnectBtn")?.addEventListener("click", disconnect);
+  document.getElementById("importBtn")?.addEventListener("click", importMail);
+  document.getElementById("queryBtn")?.addEventListener("click", runQuery);
+
+  document.querySelectorAll<HTMLElement>(".tab").forEach((el) => {
+    el.addEventListener("click", () => {
+      const tab = el.dataset.tab;
+      if (tab) switchTab(tab);
+    });
+  });
+
+  document.querySelectorAll<HTMLElement>(".mode-btn").forEach((el) => {
+    el.addEventListener("click", () => {
+      const mode = el.dataset.mode as "conservative" | "balanced" | "tokenmax" | undefined;
+      if (mode) setMode(mode);
+    });
+  });
 }
 
 // Office initialization
 Office.onReady(() => {
+  wireUpHandlers();
   tryRestoreSession();
 });
-
-// Expose to global scope for inline onclick handlers
-(window as unknown as Record<string, unknown>).connect = connect;
-(window as unknown as Record<string, unknown>).disconnect = disconnect;
-(window as unknown as Record<string, unknown>).importMail = importMail;
-(window as unknown as Record<string, unknown>).runQuery = runQuery;
-(window as unknown as Record<string, unknown>).switchTab = switchTab;
-(window as unknown as Record<string, unknown>).setMode = setMode;

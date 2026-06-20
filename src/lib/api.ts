@@ -454,9 +454,66 @@ export const api = {
         role?: string;
         phoneLast4: string;
       }>;
+      identities: Array<{
+        id: string;
+        brainId: string;
+        userId?: string;
+        name?: string;
+        role?: string;
+        status: string;
+        verifiedAt: string | null;
+        phoneHash: string;
+        phoneLast4: string;
+      }>;
       webhookUrl: string;
     }> {
       return request("/api/whatsapp/status");
+    },
+
+    identities(): Promise<{ identities: Array<{
+      id: string;
+      brainId: string;
+      userId?: string;
+      name?: string;
+      role?: string;
+      status: string;
+      verifiedAt: string | null;
+      phoneHash: string;
+    }> }> {
+      return request("/api/whatsapp/identities");
+    },
+
+    createIdentity(input: {
+      phone: string;
+      name?: string;
+      role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
+      status?: "active" | "suspended" | "revoked";
+      matter_scope?: "all" | string[];
+    }): Promise<{ identity: unknown }> {
+      return request("/api/whatsapp/identities", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+    },
+
+    updateIdentity(input: {
+      id: string;
+      name?: string;
+      role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
+      status?: "active" | "suspended" | "revoked";
+      matter_scope?: "all" | string[];
+    }): Promise<{ identity: unknown }> {
+      return request("/api/whatsapp/identities", {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      });
+    },
+
+    deleteIdentity(id: string): Promise<{ ok: boolean }> {
+      return request("/api/whatsapp/identities", {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
     },
 
     sendText(to: string, message: string): Promise<{ ok: boolean; type: string; sentTo: string }> {
@@ -631,6 +688,17 @@ export const api = {
       summary?: string;
     }): Promise<Record<string, unknown>> {
       return request("/api/intake", { method: "PATCH", body: JSON.stringify(input) });
+    },
+
+    convert(input: {
+      slug: string;
+      case_slug?: string;
+      case_number?: string;
+      title?: string;
+      priority?: "low" | "medium" | "high" | "critical";
+      portal_enabled?: boolean;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/intake/convert", { method: "POST", body: JSON.stringify(input) });
     },
   },
 

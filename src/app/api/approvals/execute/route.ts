@@ -26,6 +26,7 @@ export const POST = createHandler(
   async (ctx, body) => {
     try {
       const result = await executeApprovedAction({
+        brainId: ctx.brainId,
         getPage: api.brain.getPage,
         createPage: api.brain.createPage,
         updatePage: api.brain.updatePage,

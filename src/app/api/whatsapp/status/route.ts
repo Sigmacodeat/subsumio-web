@@ -1,20 +1,23 @@
 
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { createHandler } from "@/lib/api-handler";
+import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 
 export const GET = createHandler(
   {
     action: "settings.read",
     rateTier: "standard",
   },
-  async (_ctx, _body, _query, _req) => {
+  async (ctx, _body, _query, _req) => {
     const allowed = loadAllowedSenders();
+    const identities = await getWhatsAppIdentityStore().listByOrg(ctx.user.orgId || ctx.brainId).catch(() => []);
+    const activeIdentities = identities.filter((identity) => identity.status === "active");
     return Response.json({
       configured: Boolean(
         process.env.WHATSAPP_VERIFY_TOKEN &&
         process.env.WHATSAPP_ACCESS_TOKEN &&
         process.env.WHATSAPP_PHONE_NUMBER_ID &&
-        allowed.length > 0,
+        (allowed.length > 0 || activeIdentities.length > 0),
       ),
       verifyToken: Boolean(process.env.WHATSAPP_VERIFY_TOKEN),
       appSecret: Boolean(process.env.WHATSAPP_APP_SECRET),
@@ -36,6 +39,17 @@ export const GET = createHandler(
         name: sender.name,
         role: sender.role,
         phoneLast4: sender.phone.slice(-4),
+      })),
+      identities: identities.map((identity) => ({
+        id: identity.id,
+        brainId: identity.brainId,
+        userId: identity.userId,
+        name: identity.name,
+        role: identity.role,
+        status: identity.status,
+        verifiedAt: identity.verifiedAt,
+        phoneHash: identity.phoneHash,
+        phoneLast4: identity.phone ? identity.phone.slice(-4) : "",
       })),
       webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/api/whatsapp/webhook`,
     });

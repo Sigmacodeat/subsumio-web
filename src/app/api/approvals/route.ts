@@ -150,6 +150,7 @@ export const PATCH = createHandler(
     if (body.decision === "approved" && body.execute === true) {
       try {
         const result = await executeApprovedAction({
+          brainId: ctx.brainId,
           getPage: api.brain.getPage,
           createPage: api.brain.createPage,
           updatePage: api.brain.updatePage,

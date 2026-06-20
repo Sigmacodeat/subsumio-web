@@ -11,6 +11,7 @@ import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
+import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 
 const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
@@ -35,7 +36,6 @@ function createSignedIdentityToken(
   if (!secret) return undefined;
   // Minimal HMAC-SHA256 token — no external dependency, matches the
   // engine's verifyIdentityToken in server/src/core/identity-token.ts
-  const { createHmac } = require("node:crypto");
   const payload = JSON.stringify({
     sourceId,
     matterScope,

@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- No 'unsafe-inline'/'unsafe-eval' in script-src: every handler is wired via
+       addEventListener in taskpane.ts, not inline onclick attributes, so a
+       strict script-src stays enforceable. style-src keeps 'unsafe-inline'
+       for the existing inline style="" display toggles — those aren't a
+       script-execution vector, so tightening only script-src is what matters
+       against XSS reaching the localStorage-held API key. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://appsforoffice.microsoft.com; connect-src https://subsum.eu; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none';">
   <title>Subsumio für Outlook</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
   <style>
@@ -56,7 +63,7 @@
   <div class="section" id="authSection">
     <div class="section-title">API-Key</div>
     <input type="password" id="token" placeholder="sk_live_...">
-    <button id="connectBtn" onclick="connect()">Verbinden</button>
+    <button id="connectBtn">Verbinden</button>
     <div style="font-size:11px;color:#4a4a6a;margin-top:8px;line-height:1.5">
       Sie benötigen einen API-Key aus Ihrem Subsumio-Dashboard
       (<a href="https://subsum.eu/dashboard/settings" target="_blank" style="color:#6366f1;text-decoration:none">Einstellungen → API-Keys</a>).
@@ -66,15 +73,15 @@
   <div id="connectedSection" style="display:none;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;border:1px solid #10b98130;border-radius:8px;background:#10b98110">
     <div style="width:8px;height:8px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
     <span style="font-size:12px;color:#34d399;flex:1">Verbunden</span>
-    <button class="secondary" style="width:auto;padding:4px 12px;font-size:11px" onclick="disconnect()">Trennen</button>
+    <button id="disconnectBtn" class="secondary" style="width:auto;padding:4px 12px;font-size:11px">Trennen</button>
   </div>
 
   <div id="status" class="status" style="display:none"></div>
 
   <div id="mainSection" style="display:none">
     <div class="tab-bar">
-      <div class="tab active" data-tab="import" onclick="switchTab('import')">Mail-Import</div>
-      <div class="tab" data-tab="query" onclick="switchTab('query')">Brain-Query</div>
+      <div class="tab active" data-tab="import">Mail-Import</div>
+      <div class="tab" data-tab="query">Brain-Query</div>
     </div>
 
     <div id="tab-import" class="tab-content active">
@@ -85,7 +92,7 @@
           <div class="from" id="mailFrom">—</div>
           <div class="body" id="mailBody">E-Mail wird geladen…</div>
         </div>
-        <button id="importBtn" onclick="importMail()">
+        <button id="importBtn">
           <span id="importBtnText">In Akte importieren</span>
         </button>
       </div>
@@ -99,12 +106,12 @@
       <div class="section">
         <div class="section-title">Brain-Query</div>
         <div class="mode-select">
-          <div class="mode-btn active" data-mode="balanced" onclick="setMode('balanced')">Balanced</div>
-          <div class="mode-btn" data-mode="conservative" onclick="setMode('conservative')">Konservativ</div>
-          <div class="mode-btn" data-mode="tokenmax" onclick="setMode('tokenmax')">Token-Max</div>
+          <div class="mode-btn active" data-mode="balanced">Balanced</div>
+          <div class="mode-btn" data-mode="conservative">Konservativ</div>
+          <div class="mode-btn" data-mode="tokenmax">Token-Max</div>
         </div>
         <textarea id="queryInput" placeholder="Frage an Ihr Brain stellen…"></textarea>
-        <button id="queryBtn" onclick="runQuery()">
+        <button id="queryBtn">
           <span id="queryBtnText">Abfragen</span>
         </button>
         <div id="queryResult" class="query-result" style="display:none"></div>

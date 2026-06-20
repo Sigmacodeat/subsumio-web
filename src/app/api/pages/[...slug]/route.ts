@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiNotFound } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 function buildPath(slug: string[]): string | null {
   const path = slug.join("/");

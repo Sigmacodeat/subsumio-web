@@ -385,7 +385,7 @@ export default function RagEvalPage() {
           <div>
             <p className="text-[color:var(--ds-text-muted)]">Noch kein Eval durchgeführt.</p>
             <p className="text-[color:var(--ds-text-muted)] text-sm mt-1">
-              Klicke „Eval starten", um die Retrieval-Qualität Ihres Brains zu benchmarken.
+              Klicke „Eval starten&ldquo;, um die Retrieval-Qualität Ihres Brains zu benchmarken.
             </p>
           </div>
         </div>

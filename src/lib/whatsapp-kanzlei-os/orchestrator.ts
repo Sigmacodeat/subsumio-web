@@ -120,6 +120,7 @@ export async function orchestrateWhatsAppMessage(
       const caseSlug = caseSlugFromText(normalizedText);
       if (caseSlug) {
         const request = await buildDocumentRequest({
+          brainId: sender.brainId,
           caseSlug,
           items: extractRequestedDocumentItems(normalizedText),
           channel: "whatsapp",

@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { createHmac } from "node:crypto";
 import {
   verifyDocusignConnectSignature,
   isConfigured,
@@ -13,8 +14,7 @@ describe("verifyDocusignConnectSignature", () => {
   const rawBody = '{"test":"data"}';
 
   test("returns true for valid HMAC signature", () => {
-    const crypto = require("node:crypto");
-    const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
+    const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
     expect(verifyDocusignConnectSignature(rawBody, expected, secret)).toBe(true);
   });
 
@@ -35,8 +35,7 @@ describe("verifyDocusignConnectSignature", () => {
   });
 
   test("returns false for tampered body", () => {
-    const crypto = require("node:crypto");
-    const expected = crypto.createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
+    const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("base64");
     expect(verifyDocusignConnectSignature('{"test":"tampered"}', expected, secret)).toBe(false);
   });
 
@@ -46,15 +45,13 @@ describe("verifyDocusignConnectSignature", () => {
 
   test("handles unicode body correctly", () => {
     const unicodeBody = '{"name":"Müller & Söhne"}';
-    const crypto = require("node:crypto");
-    const expected = crypto.createHmac("sha256", secret).update(unicodeBody, "utf8").digest("base64");
+    const expected = createHmac("sha256", secret).update(unicodeBody, "utf8").digest("base64");
     expect(verifyDocusignConnectSignature(unicodeBody, expected, secret)).toBe(true);
   });
 
   test("handles large body", () => {
     const largeBody = JSON.stringify({ data: "x".repeat(10000) });
-    const crypto = require("node:crypto");
-    const expected = crypto.createHmac("sha256", secret).update(largeBody, "utf8").digest("base64");
+    const expected = createHmac("sha256", secret).update(largeBody, "utf8").digest("base64");
     expect(verifyDocusignConnectSignature(largeBody, expected, secret)).toBe(true);
   });
 });

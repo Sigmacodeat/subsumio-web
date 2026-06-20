@@ -29,6 +29,7 @@ export interface DocumentRequestFrontmatter {
 }
 
 export interface DocumentRequestInput {
+  brainId?: string;
   caseSlug: string;
   items: Array<string | Partial<DocumentRequestItem>>;
   channel?: DocumentRequestFrontmatter["channel"];
@@ -97,7 +98,7 @@ export async function buildDocumentRequest(
   let portalTokenId: string | undefined;
 
   if (input.includePortalLink) {
-    const token = await signPortalToken(input.caseSlug);
+    const token = await signPortalToken(input.caseSlug, undefined, input.brainId);
     portalTokenId = token.slice(-12);
     portalUrl = `/portal/${token}`;
   }

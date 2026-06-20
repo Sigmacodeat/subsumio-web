@@ -134,6 +134,9 @@ describe("Type instantiation", () => {
       recent_activity: [],
       facts: [],
       communications: [],
+      document_requests: [],
+      intake_requests: [],
+      conversation_events: [],
       permissions: {
         visibility: "full",
         privileged: false,

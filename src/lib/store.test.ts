@@ -24,8 +24,8 @@ describe("useStore", () => {
     });
 
     test("setStats updates stats", () => {
-      const stats = { totalCases: 10, totalDeadlines: 5 } as any;
-      useStore.getState().setStats(stats);
+      const stats = { totalCases: 10, totalDeadlines: 5 } as Record<string, unknown>;
+      useStore.getState().setStats(stats as never);
       expect(useStore.getState().stats).toEqual(stats);
     });
   });
@@ -36,8 +36,8 @@ describe("useStore", () => {
     });
 
     test("setRecentQueries updates list", () => {
-      const queries = [{ id: "1", query: "test", createdAt: new Date().toISOString() }] as any;
-      useStore.getState().setRecentQueries(queries);
+      const queries = [{ id: "1", query: "test", createdAt: new Date().toISOString() }] as unknown[];
+      useStore.getState().setRecentQueries(queries as never);
       expect(useStore.getState().recentQueries).toEqual(queries);
     });
   });
@@ -48,8 +48,8 @@ describe("useStore", () => {
     });
 
     test("setSearchResults updates list", () => {
-      const results = [{ slug: "cases/1", title: "Case 1" }] as any;
-      useStore.getState().setSearchResults(results);
+      const results = [{ slug: "cases/1", title: "Case 1" }] as unknown[];
+      useStore.getState().setSearchResults(results as never);
       expect(useStore.getState().searchResults).toEqual(results);
     });
   });

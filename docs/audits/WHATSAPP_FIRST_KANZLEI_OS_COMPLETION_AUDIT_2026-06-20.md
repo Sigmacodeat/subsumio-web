@@ -2,7 +2,7 @@
 
 Stand: 2026-06-20  
 Scope: WhatsApp -> Superbrain -> Kanzlei-OS -> Approval -> Portal/Billing/Matter Context.  
-Audit-Fazit: Der technische Spine steht, aber der vollstaendige End-to-End-Kanzleiworkflow ist noch nicht produktreif.
+Audit-Fazit: Der technische Spine steht und die wichtigsten operativen Bruecken sind gebaut. Der Workflow ist demo-nahe, aber fuer "vollstaendig produktreif" fehlen noch echte WhatsApp-Template-Policy/E2E und Workflow-Run-Telemetrie.
 
 ## Executive Summary
 
@@ -15,15 +15,20 @@ Subsumio hat jetzt eine belastbare Grundlage fuer den USP:
 - Intake Requests als Brain Pages.
 - Document Requests als Brain Pages.
 - Approval Bridge fuer riskante WhatsApp-Aktionen.
+- Approval Execution fuer Akte, Frist, Dokumentenanfrage, Rechnung, Nachricht.
+- Intake Workspace mit Conversion zu Akte.
+- Document Request Workspace.
+- Portal Upload Fulfillment: Upload -> Akte -> Document Request Status.
+- Portal Checklist fuer angeforderte Unterlagen mit Upload pro Item.
+- Matter Context kennt Document Requests, Intake Requests und Conversation Events als First-Class-Kontext.
 - Legacy Legal-Chat-Tools bleiben fuer interne Low-Risk-Kommandos nutzbar.
 
-Aber: Vollstaendig ist der Workflow noch nicht. Der kritische fehlende Teil ist nicht das Empfangen, sondern das **kontrollierte Weiterfuehren nach Draft/Approval**:
+Aber: Vollstaendig ist der Workflow noch nicht. Der kritische fehlende Teil ist jetzt nicht mehr Draft/Approval/Context, sondern **Outbound-Policy, Workflow-Spur und echte E2E-Betriebsreife**:
 
-1. Approvals markieren derzeit vor allem Status; neue Action Types fuehren noch keine Zielaktion aus.
-2. Document Requests koennen erstellt werden, aber Mandanten koennen sie im Portal noch nicht erfuellen.
-3. Intakes koennen erstellt werden, aber es gibt noch keinen Intake Workspace und keine Conversion zu Akte mit Conflict Gate.
-4. Mandanten-WhatsApp ist sicher, aber noch nicht interaktiv genug fuer echte Intake-Automation.
-5. Matter Context kennt die neuen Page-Typen noch nicht voll als First-Class-Kontext.
+1. WhatsApp outbound nutzt noch Text/Template-Ansatz ohne vollstaendige Template-Verwaltung pro Kanzlei.
+2. Workflow Runs fehlen als durchgehende Spur ueber received -> approval -> sent -> fulfilled.
+3. Mandanten-WhatsApp ist sicher, aber noch nicht interaktiv genug fuer echte Intake-Automation.
+4. Echte Meta-/Storage-/Browser-E2E-Verifikation fehlt noch.
 
 Realistischer Reifegrad:
 
@@ -32,15 +37,16 @@ Realistischer Reifegrad:
 | WhatsApp Inbound Security | 80% |
 | Internal Lawyer WhatsApp Commands | 70% |
 | Conversation Event / Audit Substrate | 70% |
-| Intake Request Backend | 55% |
-| Document Request Backend | 55% |
-| Approval Safety | 65% |
-| Approval Execution | 20% |
-| Mandantenportal Fulfillment | 25% |
-| UI/Operations Workspace | 35% |
-| End-to-End Demo Readiness | 50% |
+| Matter Context / Superbrain Context | 80% |
+| Intake Request Backend | 80% |
+| Document Request Backend | 80% |
+| Approval Safety | 80% |
+| Approval Execution | 70% |
+| Mandantenportal Fulfillment | 80% |
+| UI/Operations Workspace | 70% |
+| End-to-End Demo Readiness | 80% |
 
-Gesamt: ca. 55-60% auf dem Weg zum vollstaendigen WhatsApp-first Kanzlei-OS.
+Gesamt: ca. 80% auf dem Weg zum vollstaendigen WhatsApp-first Kanzlei-OS.
 
 ## Was bereits da ist
 
@@ -106,11 +112,15 @@ Bewertung:
 - API kann Intake listen, erstellen, patchen.
 - Missing Documents werden grob inferred.
 
+Neu umgesetzt:
+
+- Dashboard Workspace fuer Intake Queue.
+- Manuelle Intake-Erstellung, Statuspflege und Missing-Document-Pflege.
+- Conversion zu `legal_case`.
+- Conflict-Gate: Conversion erfordert `conflict_check_status=clear`.
+
 Offen:
 
-- Kein Dashboard Workspace fuer Intake Queue.
-- Keine Conversion zu `legal_case`.
-- Keine verpflichtende Kollisionspruefung im Conversion-Flow.
 - Keine rechtsgebietsspezifischen Intake-Fragen.
 - Kein Mandanten-Consent/Datenschutz-Opt-in Flow.
 
@@ -129,13 +139,17 @@ Bewertung:
 - Portal Token kann beim Draft erzeugt werden.
 - Items wie Vollmacht/Bescheid/Zustellnachweis werden erkannt.
 
+Neu umgesetzt:
+
+- Document Request Dashboard.
+- Portal-Link-Erzeugung mit Brain-Kontext.
+- Portal Upload kann Dokumente an die Akte haengen.
+- `received_document_slug` wird automatisch gesetzt.
+- Statuswechsel zu `partially_fulfilled` oder `fulfilled` erfolgt beim Upload.
+
 Offen:
 
-- Portal zeigt Document Requests nicht an.
-- Portal kann angefragte Dokumente nicht hochladen/erfuellen.
-- `received_document_slug` wird noch nirgends automatisch gesetzt.
-- Kein Statuswechsel `draft -> sent -> partially_fulfilled -> fulfilled` durch echte Events.
-- WhatsApp Versand nach Approval fehlt.
+- WhatsApp Template-Policy fuer Versand ausserhalb des 24h-Fensters ist noch nicht voll konfigurierbar.
 
 ### Approval
 
@@ -157,13 +171,18 @@ Bewertung:
 - Approval Payload kann Source Event, Workflow und Target Slug tragen.
 - Dashboard zeigt Freigaben.
 
+Neu umgesetzt:
+
+- `PATCH /api/approvals` kann bei `execute=true` freigegebene Actions ausfuehren.
+- `POST /api/approvals/execute` existiert als expliziter Executor.
+- Dashboard nutzt "Freigeben & ausfuehren".
+- Execution Status/Result/Error werden an der Approval Page gespeichert.
+- `document_request_send`, `case_create`, `deadline_confirm`, `invoice_create`, `case_close` und Nachrichten-Actions haben Ausfuehrungspfade.
+
 Offen:
 
-- `PATCH /api/approvals` setzt nur Status, fuehrt aber neue Actions nicht aus.
-- UI nutzt teilweise direkte Brain-Updates statt zentrale Approval API.
-- Approval nach `document_request_send` sendet noch keine WhatsApp/Portal-Nachricht.
-- Approval nach `case_create` erstellt noch keine Akte.
-- Approval nach `deadline_confirm` schreibt noch keine Frist final in Kalender.
+- Einige Execution-Pfade sind bewusst konservativ und brauchen echte E2E-Seeds.
+- WhatsApp Template-Versand ausserhalb 24h braucht Kanzlei-Konfiguration.
 
 ### Portal
 
@@ -179,12 +198,17 @@ Bewertung:
 - Portal kann Aktenstatus, Dokumentliste, Fristen und Nachrichten anzeigen.
 - Mandant kann Nachrichten senden.
 
+Neu umgesetzt:
+
+- Public Portal Case API nutzt den Brain-Kontext aus signierten Tokens.
+- Portal-Nachrichten nutzen serverseitige Engine-Headers statt Browser-Session.
+- Public Portal Upload nutzt Upload-Pipeline und Engine Upload.
+- Upload -> Case Documents -> Case Communication -> `document_request.items[].received_document_slug`.
+- Document Request Status wechselt automatisch zu `partially_fulfilled` oder `fulfilled`.
+
 Offen:
 
-- Kein Portal Upload.
-- Kein Document Request Fulfillment.
-- Keine Anzeige offener Document Requests.
-- Kein Upload -> Vault -> Case Documents -> `document_request.items[].received_document_slug`.
+- Kein oeffentlicher Dokumenten-Download fuer interne Dokument-Slugs.
 
 ### Billing / Time
 
@@ -229,7 +253,7 @@ Completion: 75%.
 
 ### Szenario B: Mandant schreibt per WhatsApp
 
-Status: sicher, aber noch nicht vollautomatisiert.
+Status: sicher und operativ sichtbar, aber noch nicht vollautomatisiert.
 
 Flow:
 
@@ -239,19 +263,21 @@ Flow:
 4. Orchestrator erzeugt `agent_action`.
 5. Mandant bekommt sichere Empfangsbestaetigung.
 
-Fehlt:
+Neu umgesetzt:
 
 - Intake UI.
-- Follow-up Fragen.
-- Conflict Check.
 - Conversion zu Akte.
+
+Fehlt:
+
+- Follow-up Fragen.
 - Mandanten-Consent.
 
-Completion: 45%.
+Completion: 70%.
 
 ### Szenario C: Anwalt fordert Dokumente per WhatsApp an
 
-Status: Draft/Approval vorhanden, Versand/Fulfillment fehlt.
+Status: Draft/Approval/Fulfillment technisch vorhanden, Outbound-Policy noch zu haerten.
 
 Flow:
 
@@ -260,18 +286,22 @@ Flow:
 3. Document Request Draft wird erstellt.
 4. Approval wird erstellt.
 
+Neu umgesetzt:
+
+- Approval kann `document_request_send` ausfuehren.
+- Portal Upload erfuellt angefragte Items.
+- Fulfillment haengt Dokumente an Akten und setzt Request-Status.
+
 Fehlt:
 
-- Approval fuehrt `document_request_send` nicht aus.
-- Kein WhatsApp Template Send.
-- Kein Portal Upload.
-- Kein Fulfillment.
+- Voll konfigurierbarer WhatsApp Template Send ausserhalb 24h.
+- Browser-E2E fuer Portal Checklist.
 
-Completion: 45%.
+Completion: 75%.
 
 ### Szenario D: Frist aus WhatsApp
 
-Status: intern teilweise vorhanden, End-to-End noch unvollstaendig.
+Status: intern teilweise vorhanden, Approval-Ausfuehrung vorhanden, Orchestrator-Draft noch unvollstaendig.
 
 Vorhanden:
 
@@ -281,14 +311,13 @@ Vorhanden:
 Fehlt:
 
 - Orchestrator leitet High-Risk Fristen noch nicht in strukturierte Deadline-Drafts.
-- Approval schreibt keine finale Frist.
 - Kein UI fuer Fristen-Review aus WhatsApp.
 
-Completion: 40%.
+Completion: 55%.
 
 ### Szenario E: Intake-to-Invoice
 
-Status: noch nicht vollstaendig.
+Status: strukturell deutlich weiter, aber noch nicht vollstaendig.
 
 Vorhanden:
 
@@ -301,16 +330,16 @@ Vorhanden:
 Fehlt:
 
 - Workflow Run ueber alle Phasen.
-- Intake Conversion zu Case.
-- Document Fulfillment.
 - Work log aggregation.
-- Invoice Approval Execution.
+- Matter Context Aktualisierung fuer neue Page-Typen.
 
-Completion: 30%.
+Completion: 55%.
 
 ## Critical Gaps
 
 ### P0-1 Approval Execution Engine
+
+Status: umgesetzt, weiter E2E zu haerten.
 
 Problem:
 
@@ -342,6 +371,8 @@ Akzeptanzkriterien:
 
 ### P0-2 Intake Workspace
 
+Status: umgesetzt, Playbooks/Consent offen.
+
 Problem:
 
 `intake_request` existiert, aber Anwender koennen ihn nicht operativ bearbeiten.
@@ -366,16 +397,18 @@ Akzeptanzkriterien:
 
 ### P0-3 Document Request Fulfillment
 
+Status: technisch umgesetzt, Browser-E2E offen.
+
 Problem:
 
 Document Requests koennen nicht durch Mandanten erfuellt werden.
 
 Umsetzung:
 
-- Portal zeigt offene `document_request` fuer die Case.
+- Portal zeigt offene `document_request` fuer die Case als Checklist.
 - Public API:
-  - `GET /api/portal/document-requests?token=...`
-  - `POST /api/portal/document-requests/upload`
+  - `GET /api/portal/case?token=...`
+  - `POST /api/portal/upload`
 - Upload nutzt bestehende Upload-Pipeline / Engine Upload.
 - Nach Upload:
   - Dokument an Akte haengen.
@@ -390,6 +423,8 @@ Akzeptanzkriterien:
 - Matter Context beruecksichtigt neue Dokumente.
 
 ### P0-4 WhatsApp Outbound for Approved Requests
+
+Status: teilweise umgesetzt, Template-Policy offen.
 
 Problem:
 
@@ -410,9 +445,11 @@ Akzeptanzkriterien:
 
 ### P0-5 Matter Context Integration
 
+Status: umgesetzt, E2E-Verifikation offen.
+
 Problem:
 
-Neue Page-Typen existieren, sind aber nicht first-class im Matter Context.
+Neue Page-Typen muessen first-class im Matter Context sein, damit das Superbrain Fragen wie "Was fehlt noch?" aus echten Kanzlei-Artefakten beantworten kann.
 
 Umsetzung:
 
@@ -424,6 +461,7 @@ Umsetzung:
   - offene Document Requests.
   - unfulfilled required docs.
   - pending approvals.
+- Client-Vertrag und Tests erweitert.
 
 Akzeptanzkriterien:
 
@@ -478,20 +516,19 @@ Akzeptanzkriterien:
 
 Zuletzt verifiziert:
 
-- `bunx vitest run src/lib/intake.test.ts src/lib/document-requests.test.ts src/lib/approval.test.ts src/lib/whatsapp-kanzlei-os/risk.test.ts src/lib/whatsapp-kanzlei-os/events.test.ts src/lib/whatsapp-kanzlei-os/approvals.test.ts src/lib/whatsapp-kanzlei-os/orchestrator.test.ts`
-  - Ergebnis: 52 Tests gruen.
+- `bunx vitest run src/lib/portal-fulfillment.test.ts src/lib/document-requests.test.ts src/lib/portal-token.test.ts src/lib/intake-conversion.test.ts src/lib/intake.test.ts src/lib/approval-execution.test.ts src/lib/whatsapp-kanzlei-os/orchestrator.test.ts src/lib/whatsapp-kanzlei-os/approvals.test.ts src/lib/realtime.test.ts`
+  - Ergebnis: 92 Tests gruen.
 - `bun run typecheck`
   - Ergebnis: gruen.
-- ESLint auf beruehrten Pfaden
-  - Ergebnis: gruen.
+- ESLint auf beruehrten produktiven Pfaden
+  - Ergebnis: keine Fehler.
 
 Noch nicht verifiziert:
 
 - Echter Meta Webhook E2E.
 - Echter WhatsApp outbound send.
-- Portal upload.
-- Approval execution.
-- Browser-Screenshot fuer neue Workflows, da noch keine Intake/Document Request UI existiert.
+- Browser-Screenshot fuer Portal Upload und neue Workspaces.
+- Echter Upload gegen produktive Engine/Storage.
 
 ## Definition of Done fuer "vollstaendig"
 
@@ -513,46 +550,36 @@ Der Workflow gilt erst als vollstaendig, wenn diese Demo ohne manuelle DB/Page-E
 14. Offene Zeit/Auslagen werden zu Rechnungsentwurf.
 15. Approval erzeugt finalen Rechnungsentwurf, aber versendet nicht autonom.
 
-Heute funktionieren die Schritte 1-2 teilweise, 3-4 technisch, 6-7 technisch. Die Schritte 5, 8-11 und 13-15 sind die groessten offenen Luecken.
+Heute funktionieren die Schritte 1-2 teilweise, 3-8 technisch, 10-13 technisch. Die Schritte 9, 14-15 und die echte WhatsApp/Portal-E2E-Verifikation sind die groessten offenen Luecken.
 
 ## 14-Tage Vervollstaendigungsplan
 
-### Tag 1-2: Approval Execution Engine
+### Tag 1-2: WhatsApp Template/Outbound Hardening
 
-- `src/lib/approval-execution.ts`
-- `POST /api/approvals/execute`
-- Execution Status Felder:
-  - `execution_status`
-  - `executed_at`
-  - `execution_error`
-- Tests fuer idempotency.
+- Kanzlei-Template-Konfiguration.
+- 24h Window Policy fuer Approved Requests.
+- Outbox/conversation event bei jedem Send.
 
-### Tag 3-4: Document Request Send
+### Tag 3-4: Workflow Runs
 
-- `document_request_send` Execution.
-- WhatsApp outbound gate.
-- Status `sent`.
-- Outbox/conversation event.
+- received -> resolved -> drafted -> approved -> sent -> fulfilled.
+- Workflows-Seite zeigt echte Runs.
 
-### Tag 5-6: Portal Document Request Fulfillment
+### Tag 5-6: Intake Automation
 
-- Public list API.
-- Public upload API.
-- Portal UI fuer offene Unterlagen.
-- Fulfillment Status.
+- Rechtsgebietsspezifische Follow-up Fragen.
+- Consent/Opt-in speichern.
+- Unknown sender feature flag.
 
-### Tag 7-8: Intake Workspace
+### Tag 7-8: Superbrain Query E2E
 
-- Dashboard Page.
-- List/detail/status.
-- Conflict Check Action.
-- Convert to Case.
+- "Was fehlt noch?" mit echten Document Requests testen.
+- Quellenbelege fuer offene Unterlagen anzeigen.
 
-### Tag 9-10: Matter Context Integration
+### Tag 9-10: Portal/WhatsApp Browser E2E
 
-- Document Requests, Intakes, Conversation Events in Context Bundle.
-- Gaps fuer fehlende Unterlagen.
-- Query "was fehlt noch?" testen.
+- Portal Checklist Upload per Browser testen.
+- Approved Document Request bis Portal Fulfillment testen.
 
 ### Tag 11-12: End-to-End Tests
 
@@ -570,10 +597,10 @@ Heute funktionieren die Schritte 1-2 teilweise, 3-4 technisch, 6-7 technisch. Di
 
 ## Produkturteil
 
-Nein, der gesamte Workflow ist noch nicht vollstaendig. Ja, die Codebasis ist jetzt klar auf dem richtigen Pfad: Der zentrale Spine ist da, die Datenmodelle sind nicht redundant, und neue Features nutzen Brain Pages, Portal Tokens, Approvals und bestehende Legal-Chat/Upload-Infrastruktur.
+Nein, der gesamte Workflow ist noch nicht vollstaendig produktreif. Ja, die Codebasis kommt jetzt deutlich in die Naehe: Der zentrale Spine ist da, die Datenmodelle sind nicht redundant, und neue Features nutzen Brain Pages, Portal Tokens, Approvals und bestehende Legal-Chat/Upload-Infrastruktur.
 
 Der naechste harte Produkt-Meilenstein ist nicht "mehr AI", sondern:
 
-> Approval Execution + Portal Fulfillment + Intake Workspace.
+> WhatsApp Template Policy + Workflow Runs + echtes E2E.
 
-Wenn diese drei Stuecke sitzen, wird aus dem technischen Spine ein vorfuehrbares WhatsApp-first Kanzlei-OS.
+Approval Execution, Portal Fulfillment, Portal Checklist, Intake Workspace und Matter Context sind jetzt nicht mehr die Hauptblocker, sondern die Basis fuer den naechsten E2E-Haertungsschritt.

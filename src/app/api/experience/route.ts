@@ -9,23 +9,17 @@ import {
   type ExperienceProfile,
   type WhoKnowsQuery,
   type FirmExperiencePolicy,
-  type VisibilityPolicy,
 } from "@/lib/experience-layer";
-import { getStore, getOrgStore } from "@/lib/auth/store";
 
 // ── In-memory profile store (Phase 1 — will migrate to DB) ────────────
 
 const profileStore = new Map<string, ExperienceProfile>();
 
-export function upsertProfile(profile: ExperienceProfile): void {
-  profileStore.set(profile.user_id, profile);
-}
-
-export function getProfile(userId: string): ExperienceProfile | undefined {
+function getProfile(userId: string): ExperienceProfile | undefined {
   return profileStore.get(userId);
 }
 
-export function getAllProfiles(): ExperienceProfile[] {
+function getAllProfiles(): ExperienceProfile[] {
   return Array.from(profileStore.values());
 }
 

@@ -12,6 +12,7 @@ export interface ApprovalExecutionPage {
 }
 
 export interface ApprovalExecutionDeps {
+  brainId?: string;
   getPage(slug: string): Promise<BrainPage | ApprovalExecutionPage>;
   createPage(page: {
     slug: string;
@@ -223,6 +224,7 @@ async function executeDocumentRequestSend(
     const caseSlug = asString(payload.case_slug);
     if (!caseSlug) throw new Error("document_request_send_requires_case_slug_or_target_slug");
     const request = await buildDocumentRequest({
+      brainId: deps.brainId,
       caseSlug,
       items: asStringArray(payload.items).length ? asStringArray(payload.items) : ["Unterlagen"],
       channel: "whatsapp",

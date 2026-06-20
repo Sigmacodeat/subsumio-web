@@ -15,6 +15,7 @@ import {
   normalizeCaseSlug,
   buildCommunications,
   buildPermissionSummary,
+  buildDocumentRequestSummaries,
 } from "@/lib/matter-context";
 import type {
   MatterCoverageStatus,
@@ -25,6 +26,7 @@ import type {
   MatterCommunicationEntry,
   MatterPermissionSummary,
   QueryMode,
+  MatterDocumentRequestSummary,
 } from "@/lib/matter-context-types";
 import type { CaseFrontmatter, DeadlineEntry, DocumentEntry, AuditLogEntry, CommunicationEntry } from "@/lib/legal-types";
 
@@ -116,6 +118,35 @@ describe("detectGaps", () => {
     ];
     const gaps = detectGaps({}, [], deadlines, [], emptyCoverage, true);
     expect(gaps.some((g) => g.type === "missing_deadline_confirmation")).toBe(true);
+  });
+
+  it("detects missing required document request items", () => {
+    const requests: MatterDocumentRequestSummary[] = [{
+      slug: "legal/document-requests/1",
+      status: "sent",
+      channel: "whatsapp",
+      created_at: "2026-06-20T10:00:00.000Z",
+      updated_at: "2026-06-20T10:00:00.000Z",
+      open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
+      fulfilled_items: [],
+    }];
+    const gaps = detectGaps({}, [], [], [], emptyCoverage, true, [], null, requests);
+    const gap = gaps.find((g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1");
+    expect(gap?.title).toContain("Vollmacht");
+  });
+
+  it("does not detect fulfilled document request items as missing", () => {
+    const requests: MatterDocumentRequestSummary[] = [{
+      slug: "legal/document-requests/1",
+      status: "fulfilled",
+      channel: "portal",
+      created_at: "2026-06-20T10:00:00.000Z",
+      updated_at: "2026-06-20T10:00:00.000Z",
+      open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
+      fulfilled_items: [],
+    }];
+    const gaps = detectGaps({}, [], [], [], emptyCoverage, true, [], null, requests);
+    expect(gaps.some((g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1")).toBe(false);
   });
 
   it("detects unreviewed documents with extraction_status ocr_needed", () => {
@@ -239,6 +270,42 @@ describe("buildDocumentSummaries", () => {
     expect(result[0].slug).toBe("docs/contract");
     expect(result[0].name).toBe("contract.pdf");
     expect(result[0].size).toBe(1024);
+  });
+});
+
+// ── buildDocumentRequestSummaries ────────────────────────────────────
+
+describe("buildDocumentRequestSummaries", () => {
+  it("maps open and fulfilled document request items for a case", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      pages: [{
+        slug: "legal/document-requests/1",
+        title: "Dokumentenanfrage",
+        content: "Bitte Vollmacht und Bescheid hochladen",
+        frontmatter: {
+          type: "document_request",
+          case_slug: "legal/cases/1",
+          status: "partially_fulfilled",
+          channel: "whatsapp",
+          created_at: "2026-06-20T10:00:00.000Z",
+          updated_at: "2026-06-20T11:00:00.000Z",
+          items: [
+            { key: "vollmacht", label: "Vollmacht", required: true },
+            { key: "bescheid", label: "Bescheid", required: true, received_document_slug: "uploads/bescheid" },
+          ],
+        },
+      }],
+    }), { status: 200 }));
+    const originalFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await buildDocumentRequestSummaries("http://engine", {}, "legal/cases/1");
+      expect(result).toHaveLength(1);
+      expect(result[0].open_items[0].label).toBe("Vollmacht");
+      expect(result[0].fulfilled_items[0].document_slug).toBe("uploads/bescheid");
+    } finally {
+      vi.stubGlobal("fetch", originalFetch);
+    }
   });
 });
 

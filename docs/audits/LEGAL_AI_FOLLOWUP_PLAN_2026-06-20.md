@@ -52,8 +52,22 @@ Diese vier sind die günstigsten Fixes im ganzen Plan: kein Neubau, nur Verkabel
    importiert) — entweder an einen echten Aufrufer anbinden oder als bewusst
    archivierte Referenzimplementierung kennzeichnen, damit niemand fälschlich
    annimmt, es sei der aktive Schutzmechanismus.
-3. **Vault-Verschlüsselung** — `src/app/dashboard/vault/` hat trotz Namen/Zweck keinen
-   Bezug zu `encryption.ts`. Sensible Mandantendaten liegen unverschlüsselt.
+3. ~~**Vault-Verschlüsselung**~~ — **Korrektur nach Prüfung: kein App-Code-Fix möglich/sinnvoll.**
+   "Vault" ist keine eigene Speicherschicht — `src/app/dashboard/vault/page.tsx` ist nur
+   eine gefilterte Ansicht auf normale Brain-Pages (`api.ts`/`compiled_truth`). Beim
+   Upload (`src/app/api/upload/route.ts` → Engine `/api/upload` in `web-api.ts`) wird
+   **kein separates Roh-Datei-Blob** gespeichert — `importFromContent()` extrahiert nur
+   Text in `compiled_truth`/Frontmatter derselben `pages`-Tabelle wie jede andere Seite.
+   Es gibt also keinen abgrenzbaren "Vault-Blob", den man gezielt verschlüsseln könnte.
+   Feld-Verschlüsselung wie bei DocuSign-Tokens scheidet aus, weil `compiled_truth` für
+   Volltextsuche + Embeddings (RAG) im Klartext durchsuchbar bleiben MUSS — Verschlüsseln
+   würde die Kernsuche brechen. Die korrekte Antwort auf "sind Mandantendaten beim
+   Hoster verschlüsselt" ist eine **Infrastruktur-/Hosting-Entscheidung** (Disk-Encryption-
+   at-Rest beim Postgres-Provider, z. B. Neon/Supabase/RDS aktivieren — bei den meisten
+   Managed-Anbietern bereits Standard), keine Anwendungscode-Aufgabe. `DATABASE_URL` ist
+   in `.env.example`/`server/.env.example` provider-agnostisch — **offen**: dokumentieren,
+   welcher Postgres-Provider in Produktion läuft, und bestätigen, dass dessen
+   Encryption-at-Rest aktiv ist (Betriebs-Checkliste, kein Code-Ticket).
 4. **Outlook-Add-in: API-Key aus Klartext-localStorage entfernen** —
    `outlook-addin/src/taskpane.ts` speichert den API-Key im Klartext im Browser
    (XSS-Angriffsfläche auf Anwaltszugang). Auf token-basierten/verschlüsselten

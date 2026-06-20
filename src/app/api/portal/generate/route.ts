@@ -19,8 +19,8 @@ export const POST = createHandler(
       details: { action: "generate" },
     }),
   },
-  async (_ctx, body, _query, _req) => {
-    const token = await signPortalToken(body.caseSlug);
+  async (ctx, body, _query, _req) => {
+    const token = await signPortalToken(body.caseSlug, undefined, ctx.brainId);
     return Response.json({ token, url: `/portal/${token}` });
   },
 );

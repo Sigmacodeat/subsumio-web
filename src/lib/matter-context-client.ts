@@ -24,13 +24,15 @@
  */
 
 import type {
-  MatterContextBundle,
   MatterCoverageStatus,
   MatterFactEntry,
   MatterActivityEntry,
   MatterParty,
   MatterDeadlineSummary,
   MatterDocumentSummary,
+  MatterDocumentRequestSummary,
+  MatterIntakeSummary,
+  MatterConversationEventSummary,
   MatterGap,
   ExplainedSearchResult,
   BrainQualitySummary,
@@ -51,13 +53,16 @@ export interface MatterContextBundleResponse {
   documents: MatterDocumentSummary[];
   recent_activity: MatterActivityEntry[];
   facts: MatterFactEntry[];
+  document_requests: MatterDocumentRequestSummary[];
+  intake_requests: MatterIntakeSummary[];
+  conversation_events: MatterConversationEventSummary[];
   coverage: MatterCoverageStatus;
   gaps: MatterGap[];
   generated_at: string;
   engine_reachable: boolean;
 }
 
-export interface MatterCoverageResponse extends MatterCoverageStatus {}
+export type MatterCoverageResponse = MatterCoverageStatus;
 
 export interface MatterGapsResponse {
   case_slug: string;
@@ -120,9 +125,9 @@ export interface MatterExplainResponse {
   generated_at: string;
 }
 
-export interface MatterQualityResponse extends BrainQualitySummary {}
+export type MatterQualityResponse = BrainQualitySummary;
 
-export interface MatterUnderstandingResponse extends MatterUnderstandingPanel {}
+export type MatterUnderstandingResponse = MatterUnderstandingPanel;
 
 // ── Client ────────────────────────────────────────────────────────────
 

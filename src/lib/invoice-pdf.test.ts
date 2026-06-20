@@ -27,8 +27,8 @@ vi.mock("jspdf", () => {
 });
 
 vi.mock("jspdf-autotable", () => ({
-  default: vi.fn((doc: any) => {
-    (doc as any).lastAutoTable = { finalY: 100 };
+  default: vi.fn((doc: unknown) => {
+    (doc as Record<string, unknown>).lastAutoTable = { finalY: 100 };
   }),
 }));
 

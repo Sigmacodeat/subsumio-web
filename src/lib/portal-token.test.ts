@@ -50,6 +50,14 @@ describe("Portal Token — Sign + Verify Roundtrip", () => {
     expect(payload!.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
   });
 
+  test("verifyPortalToken round-trips optional brain id", async () => {
+    const token = await signPortalToken("case-abc", undefined, "brain-abc");
+    const payload = await verifyPortalToken(token);
+    expect(payload).not.toBeNull();
+    expect(payload!.case_slug).toBe("case-abc");
+    expect(payload!.brain_id).toBe("brain-abc");
+  });
+
   test("verifyPortalToken rejects null/undefined/empty", async () => {
     expect(await verifyPortalToken(null)).toBeNull();
     expect(await verifyPortalToken(undefined)).toBeNull();

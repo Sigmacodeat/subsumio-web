@@ -28,7 +28,7 @@ vi.mock("./store", () => ({
       scimExternalId: null, ssoProvider: null,
     })),
   })),
-  toPublic: vi.fn((user: any) => ({
+  toPublic: vi.fn((user: { id: string; email: string; name: string; role: string; brainId: string }) => ({
     id: user.id, email: user.email, name: user.name, role: user.role, brainId: user.brainId,
   })),
 }));
@@ -69,7 +69,7 @@ describe("server auth helpers", () => {
     });
     vi.mocked(getStore).mockReturnValueOnce({
       getById: vi.fn(async () => null),
-    } as any);
+    } as unknown as ReturnType<typeof getStore>);
     const user = await getSessionUser();
     expect(user).toBeNull();
   });

@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 const pagesQuerySchema = z.object({
   limit: z.string().optional(),

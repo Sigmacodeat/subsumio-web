@@ -9,7 +9,6 @@
  * Engine-Calls und Source-Registry, ohne Engine-Interna zu kennen.
  */
 
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import {
   buildSourceRegistry,
   type SourceRegistryEntry,
@@ -24,7 +23,6 @@ import {
   type PermissionInfo,
 } from "@/lib/legal-types";
 import { inferInitialExtractionStatus } from "@/lib/extraction-status";
-import type { BrainPage } from "@/lib/types";
 import type {
   MatterContextBundle,
   MatterParty,
@@ -33,6 +31,9 @@ import type {
   MatterActivityEntry,
   MatterFactEntry,
   MatterCommunicationEntry,
+  MatterConversationEventSummary,
+  MatterDocumentRequestSummary,
+  MatterIntakeSummary,
   MatterPermissionSummary,
   MatterCoverageStatus,
   SourceCoverageEntry,
@@ -123,14 +124,21 @@ export async function buildMatterContext(
   // 7. Build communication summaries
   const communications = buildCommunications(fm.communications ?? []);
 
-  // 8. Build permission summary
+  // 8. Build WhatsApp/Kanzlei OS operational summaries
+  const [documentRequests, intakeRequests, conversationEvents] = await Promise.all([
+    buildDocumentRequestSummaries(engineUrl, engineHeaders, normalizedSlug),
+    buildIntakeSummaries(engineUrl, engineHeaders, normalizedSlug),
+    buildConversationEventSummaries(engineUrl, engineHeaders, normalizedSlug),
+  ]);
+
+  // 9. Build permission summary
   const permissions = buildPermissionSummary(fm.permissions);
 
-  // 9. Check coverage
+  // 10. Check coverage
   const coverage = await checkCoverage(engineUrl, engineHeaders, fm);
 
-  // 10. Detect gaps
-  const gaps = detectGaps(fm, parties, deadlines, documents, coverage, engineReachable, communications, permissions);
+  // 11. Detect gaps
+  const gaps = detectGaps(fm, parties, deadlines, documents, coverage, engineReachable, communications, permissions, documentRequests);
 
   return {
     case_slug: normalizedSlug,
@@ -144,6 +152,9 @@ export async function buildMatterContext(
     recent_activity: recentActivity,
     facts,
     communications,
+    document_requests: documentRequests,
+    intake_requests: intakeRequests,
+    conversation_events: conversationEvents,
     permissions,
     coverage,
     gaps,
@@ -253,6 +264,7 @@ export function detectGaps(
   engineReachable: boolean,
   communications: MatterCommunicationEntry[] = [],
   permissions: MatterPermissionSummary | null = null,
+  documentRequests: MatterDocumentRequestSummary[] = [],
 ): MatterGap[] {
   const gaps: MatterGap[] = [];
   const now = new Date();
@@ -307,6 +319,21 @@ export function detectGaps(
       "Vollmacht hochladen oder deren Vorliegen bestätigen.",
       now,
     ));
+  }
+
+  for (const request of documentRequests) {
+    if (request.status === "fulfilled" || request.status === "expired") continue;
+    for (const item of request.open_items.filter((openItem) => openItem.required)) {
+      gaps.push(makeGap(
+        "missing_document",
+        "high",
+        `Angeforderte Unterlage fehlt: ${item.label}`,
+        `Die Dokumentenanfrage ${request.slug} ist ${request.status}; die Pflichtunterlage "${item.label}" wurde noch nicht eingereicht.`,
+        "Mandant an die offene Unterlage erinnern oder Dokument im Portal hochladen lassen.",
+        now,
+        request.slug,
+      ));
+    }
   }
 
   // Overdue deadlines
@@ -563,6 +590,26 @@ async function fetchEnginePage(
   }
 }
 
+async function fetchEnginePagesByType(
+  engineUrl: string,
+  headers: Record<string, string>,
+  type: string,
+  limit = 200,
+): Promise<EnginePageResponse[]> {
+  try {
+    const params = new URLSearchParams({ type, limit: String(limit) });
+    const res = await fetch(`${engineUrl}/api/pages?${params.toString()}`, { headers });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (Array.isArray(data)) return data as EnginePageResponse[];
+    if (Array.isArray(data?.pages)) return data.pages as EnginePageResponse[];
+    if (Array.isArray(data?.items)) return data.items as EnginePageResponse[];
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 async function buildParties(
   engineUrl: string,
   headers: Record<string, string>,
@@ -708,6 +755,118 @@ export function buildDocumentSummaries(documents: DocumentEntry[]): MatterDocume
     ocr_status: inferOcrStatus(d),
     extraction_status: inferInitialExtractionStatus(d.name, d.kind ?? ""),
   }));
+}
+
+export async function buildDocumentRequestSummaries(
+  engineUrl: string,
+  headers: Record<string, string>,
+  caseSlug: string,
+): Promise<MatterDocumentRequestSummary[]> {
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "document_request", 200);
+  return pages
+    .map((page): MatterDocumentRequestSummary | null => {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      const items = Array.isArray(fm.items) ? fm.items as Array<Record<string, unknown>> : [];
+      if (fm.type !== "document_request" || fm.case_slug !== caseSlug) return null;
+      const summary: MatterDocumentRequestSummary = {
+        slug: page.slug,
+        status: asString(fm.status, "draft") as MatterDocumentRequestSummary["status"],
+        channel: asString(fm.channel, "manual") as MatterDocumentRequestSummary["channel"],
+        created_at: asString(fm.created_at, page.created_at ?? new Date(0).toISOString()),
+        updated_at: asString(fm.updated_at, page.updated_at ?? page.created_at ?? new Date(0).toISOString()),
+        open_items: items
+          .filter((item) => !optionalString(item.received_document_slug))
+          .map((item) => ({
+            key: asString(item.key, "unterlage"),
+            label: asString(item.label, asString(item.key, "Unterlage")),
+            required: item.required !== false,
+          })),
+        fulfilled_items: items
+          .filter((item) => optionalString(item.received_document_slug))
+          .map((item) => ({
+            key: asString(item.key, "unterlage"),
+            label: asString(item.label, asString(item.key, "Unterlage")),
+            document_slug: optionalString(item.received_document_slug) ?? "",
+          })),
+      };
+      const sentAt = optionalString(fm.sent_at);
+      const portalUrl = optionalString(fm.portal_url);
+      if (sentAt) summary.sent_at = sentAt;
+      if (portalUrl) summary.portal_url = portalUrl;
+      return summary;
+    })
+    .filter((item): item is MatterDocumentRequestSummary => item !== null)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function buildIntakeSummaries(
+  engineUrl: string,
+  headers: Record<string, string>,
+  caseSlug: string,
+): Promise<MatterIntakeSummary[]> {
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "intake_request", 200);
+  return pages
+    .map((page): MatterIntakeSummary | null => {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      if (fm.type !== "intake_request" || fm.converted_case_slug !== caseSlug) return null;
+      const missing = Array.isArray(fm.missing_documents)
+        ? fm.missing_documents.filter((item): item is string => typeof item === "string")
+        : [];
+      const summary: MatterIntakeSummary = {
+        slug: page.slug,
+        status: asString(fm.status, "new") as MatterIntakeSummary["status"],
+        source: asString(fm.source, "manual") as MatterIntakeSummary["source"],
+        summary: asString(fm.summary, page.content ?? page.title),
+        conflict_check_status: asString(fm.conflict_check_status, "pending") as MatterIntakeSummary["conflict_check_status"],
+        missing_documents: missing,
+        created_at: asString(fm.created_at, page.created_at ?? new Date(0).toISOString()),
+        updated_at: asString(fm.updated_at, page.updated_at ?? page.created_at ?? new Date(0).toISOString()),
+      };
+      const clientName = optionalString(fm.client_name);
+      const legalArea = optionalString(fm.legal_area);
+      const convertedCaseSlug = optionalString(fm.converted_case_slug);
+      if (clientName) summary.client_name = clientName;
+      if (legalArea) summary.legal_area = legalArea;
+      if (convertedCaseSlug) summary.converted_case_slug = convertedCaseSlug;
+      return summary;
+    })
+    .filter((item): item is MatterIntakeSummary => item !== null)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function buildConversationEventSummaries(
+  engineUrl: string,
+  headers: Record<string, string>,
+  caseSlug: string,
+): Promise<MatterConversationEventSummary[]> {
+  const pages = await fetchEnginePagesByType(engineUrl, headers, "conversation_event", 200);
+  return pages
+    .map((page): MatterConversationEventSummary | null => {
+      const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+      if (fm.type !== "conversation_event" || fm.case_slug !== caseSlug) return null;
+      const summary: MatterConversationEventSummary = {
+        slug: page.slug,
+        channel: asString(fm.channel, "other") as MatterConversationEventSummary["channel"],
+        direction: asString(fm.direction, "inbound") as MatterConversationEventSummary["direction"],
+        created_at: asString(fm.created_at, page.created_at ?? new Date(0).toISOString()),
+      };
+      const role = optionalString(fm.role);
+      const actorName = optionalString(fm.actor_name);
+      const intent = optionalString(fm.intent);
+      const riskLevel = optionalString(fm.risk_level);
+      const status = optionalString(fm.status);
+      const normalizedText = optionalString(fm.normalized_text);
+      if (role) summary.role = role;
+      if (actorName) summary.actor_name = actorName;
+      if (intent) summary.intent = intent;
+      if (riskLevel) summary.risk_level = riskLevel;
+      if (status) summary.status = status;
+      if (normalizedText) summary.normalized_text = normalizedText;
+      return summary;
+    })
+    .filter((item): item is MatterConversationEventSummary => item !== null)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 50);
 }
 
 export function inferOcrStatus(doc: DocumentEntry): MatterDocumentSummary["ocr_status"] {
@@ -1007,6 +1166,14 @@ function makeGap(
   };
 }
 
+function optionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function asString(value: unknown, fallback: string): string {
+  return optionalString(value) ?? fallback;
+}
+
 function emptyContext(
   normalizedSlug: string,
   originalSlug: string,
@@ -1022,6 +1189,9 @@ function emptyContext(
     recent_activity: [],
     facts: [],
     communications: [],
+    document_requests: [],
+    intake_requests: [],
+    conversation_events: [],
     permissions: buildPermissionSummary(undefined),
     coverage: {
       sources: [],

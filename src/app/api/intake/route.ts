@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { buildIntakeRequest, intakeFromPage, type IntakeRequestFrontmatter } from "@/lib/intake";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { api } from "@/lib/api";
 import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 import {
   markEntriesBilled,
   type TimeEntryWithCase,

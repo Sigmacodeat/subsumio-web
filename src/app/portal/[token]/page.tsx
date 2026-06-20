@@ -10,9 +10,9 @@ import {
   AlertTriangle,
   Loader2,
   CalendarClock,
+  Upload,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,7 @@ interface PortalCase {
   facts: string;
   claims: string[];
   deadlines: Array<{ title?: string; date?: string; due_date?: string; status?: string }>;
-  documents: Array<{ name?: string; url?: string; uploadedAt?: string }>;
+  documents: Array<{ name?: string; url?: string; slug?: string; uploadedAt?: string }>;
 }
 
 interface PortalMessage {
@@ -36,6 +36,19 @@ interface PortalMessage {
   text: string;
   sender: "client" | "lawyer";
   createdAt: string;
+}
+
+interface PortalDocumentRequest {
+  slug: string;
+  frontmatter: {
+    status: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+    items: Array<{
+      key: string;
+      label: string;
+      required: boolean;
+      received_document_slug?: string;
+    }>;
+  };
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -66,6 +79,11 @@ export default function PortalPage() {
   const [messages, setMessages] = useState<PortalMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [documentRequests, setDocumentRequests] = useState<PortalDocumentRequest[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,7 +97,8 @@ export default function PortalPage() {
         }
         if (!cancelled) {
           setVerifying(false);
-          await loadCase(verifyData.caseSlug);
+          await loadCase();
+          await loadDocumentRequests();
           await loadMessages(verifyData.caseSlug);
         }
       } catch (err) {
@@ -99,6 +118,17 @@ export default function PortalPage() {
       setMessages(data.messages || []);
     } catch (err) {
       console.error("[portal] load messages failed:", err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function loadDocumentRequests() {
+    try {
+      const res = await fetch(`/api/portal/document-requests?token=${encodeURIComponent(token)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setDocumentRequests(data.requests || []);
+    } catch (err) {
+      console.error("[portal] load document requests failed:", err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -122,10 +152,18 @@ export default function PortalPage() {
     }
   }
 
-  async function loadCase(slug: string) {
+  async function loadCase() {
     setLoadingCase(true);
     try {
-      const page = await api.brain.getPage(slug);
+      const res = await fetch(`/api/portal/case?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error === "new_portal_link_required"
+          ? "Dieser Portal-Link muss erneuert werden. Bitte kontaktieren Sie Ihre Kanzlei."
+          : data.message || "Akte konnte nicht geladen werden.");
+        return;
+      }
+      const page = data.page;
       const fm = caseFrontmatter(page);
       if (!fm.portal_enabled) {
         setError("Diese Akte ist derzeit nicht für das Mandantenportal freigegeben.");
@@ -148,9 +186,10 @@ export default function PortalPage() {
           due_date: d.due_date,
           status: d.status,
         })),
-        documents: (fm.documents || []).map((d: { name?: string; url?: string; uploadedAt?: string }) => ({
+        documents: (fm.documents || []).map((d: { name?: string; url?: string; slug?: string; uploadedAt?: string }) => ({
           name: d.name,
           url: d.url,
+          slug: d.slug,
           uploadedAt: d.uploadedAt,
         })),
       });
@@ -159,6 +198,38 @@ export default function PortalPage() {
       setError("Akte konnte nicht geladen werden.");
     } finally {
       setLoadingCase(false);
+    }
+  }
+
+  async function uploadDocument(file: File, requestSlug?: string, itemKey?: string) {
+    if (!caseData) return;
+    setUploading(true);
+    setUploadingKey(itemKey ? `${requestSlug}:${itemKey}` : "general");
+    setUploadError(null);
+    setUploadMessage(null);
+    try {
+      const formData = new FormData();
+      formData.append("token", token);
+      formData.append("file", file);
+      if (requestSlug) formData.append("document_request_slug", requestSlug);
+      if (itemKey) formData.append("item_key", itemKey);
+      const res = await fetch("/api/portal/upload", { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setUploadError(data.message || "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");
+        return;
+      }
+      setUploadMessage(data.documentRequestStatus === "fulfilled"
+        ? "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt."
+        : "Dokument hochgeladen und an die Akte übermittelt.");
+      await loadCase();
+      await loadDocumentRequests();
+    } catch (err) {
+      console.error("[portal] upload failed:", err instanceof Error ? err.message : String(err));
+      setUploadError("Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");
+    } finally {
+      setUploading(false);
+      setUploadingKey(null);
     }
   }
 
@@ -285,17 +356,88 @@ export default function PortalPage() {
           </div>
         )}
 
-        {/* Documents */}
-        {caseData.documents.length > 0 && (
+        {/* Requested documents */}
+        {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (
           <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+            <h3 className="text-sm font-semibold">Angeforderte Unterlagen</h3>
+            <div className="space-y-2">
+              {documentRequests
+                .filter((request) => request.frontmatter.status !== "fulfilled")
+                .flatMap((request) => request.frontmatter.items.map((item) => ({ request, item })))
+                .map(({ request, item }) => {
+                  const done = Boolean(item.received_document_slug);
+                  const key = `${request.slug}:${item.key}`;
+                  return (
+                    <div key={key} className="flex items-center gap-3 rounded-lg border border-[#1e1e3a] bg-[#0a0a18] px-3 py-2">
+                      <FileText size={14} className={done ? "text-emerald-400" : "text-amber-400"} />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-[#e8e8f0] truncate">{item.label}</div>
+                        <div className="text-[11px] text-[#8a8aa8]">
+                          {done ? "Eingereicht" : item.required ? "Erforderlich" : "Optional"}
+                        </div>
+                      </div>
+                      {!done && (
+                        <label className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer">
+                          <input
+                            type="file"
+                            className="hidden"
+                            disabled={uploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              e.currentTarget.value = "";
+                              if (file) void uploadDocument(file, request.slug, item.key);
+                            }}
+                          />
+                          {uploadingKey === key ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                          Hochladen
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* Documents */}
+        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">Dokumente</h3>
+            <label className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg px-3 py-2 text-xs font-medium transition-colors cursor-pointer">
+              <input
+                type="file"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.currentTarget.value = "";
+                  if (file) void uploadDocument(file);
+                }}
+              />
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              {uploading ? "Lädt…" : "Hochladen"}
+            </label>
+          </div>
+          {uploadError && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+              {uploadError}
+            </div>
+          )}
+          {uploadMessage && (
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+              {uploadMessage}
+            </div>
+          )}
+          {caseData.documents.length === 0 ? (
+            <p className="text-xs text-[#8a8aa8]">Noch keine Dokumente hinterlegt.</p>
+          ) : (
             <div className="space-y-2">
               {caseData.documents.map((doc, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
                   <FileText size={14} className="text-[#8a8aa8]" />
                   <div className="flex-1 min-w-0">
                     <div className="text-[#e8e8f0] truncate">{doc.name || "Dokument"}</div>
-                    {doc.url && (
+                    {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
                       <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:underline">
                         Herunterladen →
                       </a>
@@ -304,8 +446,8 @@ export default function PortalPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Messages */}
         <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">

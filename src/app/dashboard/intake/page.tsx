@@ -100,6 +100,14 @@ export default function IntakePage() {
     },
   });
 
+  const convertMutation = useMutation({
+    mutationFn: api.intake.convert,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["intake", "list"] });
+      qc.invalidateQueries({ queryKey: ["brain", "pages"] });
+    },
+  });
+
   const items = useMemo(() => listFromResponse(listQuery.data), [listQuery.data]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -132,6 +140,19 @@ export default function IntakePage() {
       slug: item.slug,
       status,
       ...(convertedCaseSlug ? { converted_case_slug: convertedCaseSlug } : {}),
+    });
+  }
+
+  async function convertToCase(item: IntakeRecord) {
+    const desiredSlug = conversionTargets[item.slug]?.trim();
+    await convertMutation.mutateAsync({
+      slug: item.slug,
+      case_slug: desiredSlug || undefined,
+      title: item.frontmatter.client_name
+        ? `${item.frontmatter.client_name}${item.frontmatter.legal_area ? ` - ${item.frontmatter.legal_area}` : ""}`
+        : undefined,
+      priority: "medium",
+      portal_enabled: false,
     });
   }
 
@@ -389,16 +410,12 @@ export default function IntakePage() {
                       className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
                     />
                     <button
-                      onClick={() =>
-                        void updateStatus(
-                          item,
-                          "converted",
-                          conversionTargets[item.slug]?.trim() || item.frontmatter.converted_case_slug,
-                        )
-                      }
-                      className="inline-flex items-center gap-2 rounded-lg brand-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90"
+                      onClick={() => void convertToCase(item)}
+                      disabled={convertMutation.isPending}
+                      className="inline-flex items-center gap-2 rounded-lg brand-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                     >
-                      Konvertieren
+                      {convertMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+                      Akte anlegen
                     </button>
                   </div>
                 </div>

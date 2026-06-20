@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { addComment, listComments, deleteComment } from "@/lib/comments";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 export const dynamic = "force-dynamic";
 

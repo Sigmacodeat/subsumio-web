@@ -14,6 +14,7 @@ const encoder = new TextEncoder();
 
 export interface PortalTokenPayload {
   case_slug: string;
+  brain_id?: string;
   exp: number; // unix seconds
 }
 
@@ -30,9 +31,11 @@ export function getPortalSecret(): string {
 export async function signPortalToken(
   caseSlug: string,
   ttlSeconds: number = 30 * 24 * 3600, // 30 Tage
+  brainId?: string,
 ): Promise<string> {
   const payload: PortalTokenPayload = {
     case_slug: caseSlug,
+    ...(brainId ? { brain_id: brainId } : {}),
     exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
   const body = b64url(JSON.stringify(payload));

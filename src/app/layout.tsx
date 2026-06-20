@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import RefConsentBanner from "@/components/marketing/ref-consent";
+import AnalyticsConsentBanner from "@/components/marketing/analytics-consent";
+import { MonitoringProvider } from "@/components/providers/monitoring-provider";
 import SubsumioTheme from "@/components/brand/subsumio-theme";
 import LangSetter from "@/components/brand/lang-setter";
 import { ToastProvider } from "@/components/ui/toast";
@@ -86,13 +88,16 @@ export default async function RootLayout({
         <LangSetter />
         <SubsumioTheme />
         <QueryProvider>
-          <ToastProvider>
-            <ConfirmProvider>
-              {hasOwnMain ? children : <main role="main">{children}</main>}
-            </ConfirmProvider>
-          </ToastProvider>
+          <MonitoringProvider>
+            <ToastProvider>
+              <ConfirmProvider>
+                {hasOwnMain ? children : <main role="main">{children}</main>}
+              </ConfirmProvider>
+            </ToastProvider>
+          </MonitoringProvider>
         </QueryProvider>
         <RefConsentBanner />
+        <AnalyticsConsentBanner />
         <ServiceWorkerRegister />
       </body>
     </html>

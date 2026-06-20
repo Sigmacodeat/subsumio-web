@@ -22,7 +22,7 @@ vi.mock("./kanzlei-settings", () => ({
     taxNumber: "TN123",
     logoUrl: undefined,
   })),
-  normalizeKanzleiSettings: vi.fn((input: any) => input),
+  normalizeKanzleiSettings: vi.fn((input: unknown) => input),
   readLocalKanzleiSettings: vi.fn(() => ({
     kanzleiName: "Local Kanzlei",
     anwaltName: "",

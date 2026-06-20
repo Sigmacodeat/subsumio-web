@@ -115,7 +115,7 @@ describe("iManageConnector", () => {
 
   test("importToBrain delegates to importToBrainCommon", async () => {
     const doc = { id: "d1", name: "Test", type: "pdf", author: "Max", modifiedDate: "2024-01-01" };
-    const result = await iManageConnector.importToBrain(doc as any, "brain-1", { "x-test": "1" });
+    const result = await iManageConnector.importToBrain(doc as unknown as Parameters<typeof iManageConnector.importToBrain>[0], "brain-1", { "x-test": "1" });
     expect(result.slug).toBe("dms/doc-1");
     expect(result.success).toBe(true);
   });

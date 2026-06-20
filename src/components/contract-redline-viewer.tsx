@@ -415,8 +415,8 @@ export function ContractRedlineViewer({
               const riskCfg = RISK_CONFIG[clause.risk] || RISK_CONFIG.medium;
               const RiskIcon = riskCfg.icon;
               const isActive = idx === activeClause;
-              const diff = useMemo(() => diffWords(clause.original || "", clause.revised || ""), [clause.original, clause.revised]);
-              const stats = useMemo(() => diffStats(clause.original || "", clause.revised || ""), [clause.original, clause.revised]);
+              const diff = diffWords(clause.original || "", clause.revised || "");
+              const stats = diffStats(clause.original || "", clause.revised || "");
               return (
                 <div
                   key={idx}

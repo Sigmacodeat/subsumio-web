@@ -87,7 +87,7 @@ describe("useLang", () => {
     await waitFor(() => {
       expect(result.current.lang).toBe("de");
     });
-    const translated = result.current.t("nav.overview" as any);
+    const translated = result.current.t("nav.overview" as unknown as Parameters<typeof result.current.t>[0]);
     expect(typeof translated).toBe("string");
     expect(translated.length).toBeGreaterThan(0);
   });

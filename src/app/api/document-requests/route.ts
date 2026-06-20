@@ -7,7 +7,7 @@ import {
   extractRequestedDocumentItems,
   type DocumentRequestFrontmatter,
 } from "@/lib/document-requests";
-import { broadcastSseEvent } from "@/app/api/realtime/sse/route";
+import { broadcastSseEvent } from "@/lib/realtime-bus";
 import type { BrainPage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -101,6 +101,7 @@ export const POST = createHandler(
       ? body.items
       : extractRequestedDocumentItems(body.text || body.message_draft || "");
     const request = await buildDocumentRequest({
+      brainId: ctx.brainId,
       caseSlug: body.case_slug,
       items,
       channel: body.channel,

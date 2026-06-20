@@ -1,7 +1,9 @@
 
 import { z } from "zod";
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import type { BrainPage } from "@/lib/types";
 
 const messagesSchema = z.object({
   token: z.string().min(1, "token_and_caseSlug_required"),
@@ -18,10 +20,23 @@ export const GET = createPublicHandler(
     if (!payload || payload.case_slug !== query.caseSlug) {
       return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
     }
+    if (!payload.brain_id) {
+      return apiError("new_portal_link_required", "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.", 403);
+    }
 
     try {
-      const { api } = await import("@/lib/api");
-      const pages = await api.brain.listPages({ type: "portal_message", limit: 100 });
+      const res = await fetch(`${ENGINE_URL}/api/pages?type=portal_message&limit=100`, {
+        headers: engineHeadersForBrain(payload.brain_id),
+      });
+      if (!res.ok) return apiError("load_failed", "Nachrichten konnten nicht geladen werden", 502);
+      const data = await res.json();
+      const pages: BrainPage[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.pages)
+          ? data.pages
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
       const messages = pages
         .filter((p) => (p.frontmatter as Record<string, unknown>).case_slug === query.caseSlug)
         .map((p) => {

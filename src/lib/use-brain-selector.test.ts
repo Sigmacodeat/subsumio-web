@@ -116,7 +116,7 @@ describe("useBrainSelector", () => {
   });
 
   test("falls back when fetch returns null (caught)", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(null as any);
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(null as unknown as Response);
     const { result } = renderHook(() => useBrainSelector());
 
     await act(async () => {

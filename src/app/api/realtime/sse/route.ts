@@ -1,4 +1,5 @@
 import { createHandler } from "@/lib/api-handler";
+import { addSseConnection, removeSseConnection } from "@/lib/realtime-bus";
 
 export const maxDuration = 300;
 
@@ -40,14 +41,14 @@ export const GET = createHandler(
 
         // Register this connection in the global SSE registry
         const conn = { brainId, send };
-        sseConnections.add(conn);
+        addSseConnection(conn);
 
         // Cleanup on abort
         const cleanup = () => {
           if (closed) return;
           closed = true;
           clearInterval(heartbeat);
-          sseConnections.delete(conn);
+          removeSseConnection(conn);
           try {
             controller.close();
           } catch {}
@@ -74,33 +75,3 @@ export const GET = createHandler(
     });
   },
 );
-
-// ── SSE Connection Registry ──────────────────────────────────────────────
-// In-memory registry of active SSE connections per brainId.
-// Used by other parts of the app to push real-time events to connected clients.
-
-interface SseConnection {
-  brainId: string;
-  send: (event: string, data: unknown) => void;
-}
-
-const sseConnections = new Set<SseConnection>();
-
-/**
- * Broadcast an event to all SSE clients connected to a specific brain.
- * Call this from API routes after mutations (case update, deadline change, etc.)
- */
-export function broadcastSseEvent(brainId: string, event: string, data: unknown): void {
-  for (const conn of sseConnections) {
-    if (conn.brainId === brainId) {
-      conn.send(event, data);
-    }
-  }
-}
-
-/**
- * Get count of active SSE connections (for monitoring/debugging).
- */
-export function getSseConnectionCount(): number {
-  return sseConnections.size;
-}
