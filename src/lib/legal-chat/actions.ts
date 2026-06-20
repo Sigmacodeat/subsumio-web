@@ -2,13 +2,15 @@ import { randomUUID } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
-import type { WhatsAppSenderBinding } from "@/lib/whatsapp/types";
+import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
+import { identityCanAccessMatter } from "@/lib/whatsapp/identity";
+import { logAudit } from "@/lib/audit";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
 
 interface ChatContext {
-  sender: WhatsAppSenderBinding;
+  sender: WhatsAppIdentity;
   fromPhone: string;
   messageId: string;
   text: string;
@@ -44,7 +46,13 @@ type ParsedIntent =
   | { kind: "search"; query: string }
   | { kind: "financial_overview" }
   | { kind: "case_activity"; caseRef: string }
-  | { kind: "create_case"; clientName: string; opponentName: string; legalArea: string; description: string }
+  | {
+      kind: "create_case";
+      clientName: string;
+      opponentName: string;
+      legalArea: string;
+      description: string;
+    }
   | { kind: "create_client"; name: string; phone?: string; email?: string; note?: string }
   | { kind: "close_case"; caseRef: string }
   | { kind: "create_invoice"; caseRef: string; amount: number; description: string }
@@ -77,7 +85,10 @@ async function engineRequest<T>(brainId: string, path: string, init?: RequestIni
 }
 
 async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  return engineRequest<BrainPage[]>(brainId, `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`);
+  return engineRequest<BrainPage[]>(
+    brainId,
+    `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
+  );
 }
 
 async function getPage(brainId: string, slug: string): Promise<BrainPage> {
@@ -92,13 +103,15 @@ async function putPage(brainId: string, page: EnginePageInput): Promise<void> {
 }
 
 function safeSlugPart(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80) || "item";
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80) || "item"
+  );
 }
 
 export function parseIntent(text: string): ParsedIntent {
@@ -112,20 +125,34 @@ export function parseIntent(text: string): ParsedIntent {
   if (minutesMatch) {
     const raw = parseFloat(minutesMatch[1].replace(",", "."));
     const unit = minutesMatch[2].toLowerCase();
-    const minutes = Math.max(1, Math.round(unit.startsWith("h") || unit.startsWith("std") || unit.startsWith("stunde") ? raw * 60 : raw));
+    const minutes = Math.max(
+      1,
+      Math.round(
+        unit.startsWith("h") || unit.startsWith("std") || unit.startsWith("stunde") ? raw * 60 : raw
+      )
+    );
     const caseMatch = trimmed.match(/\b(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9\-\/_.]+)/i);
     const caseRef = (caseMatch?.[1] ?? "").trim();
-    const description = trimmed
-      .replace(minutesMatch[0], "")
-      .replace(caseMatch?.[0] ?? "", "")
-      .replace(/^\s*zeit\s*/i, "")
-      .trim() || "Zeiterfassung via WhatsApp";
+    const description =
+      trimmed
+        .replace(minutesMatch[0], "")
+        .replace(caseMatch?.[0] ?? "", "")
+        .replace(/^\s*zeit\s*/i, "")
+        .trim() || "Zeiterfassung via WhatsApp";
     return caseRef
-      ? { kind: "time_entry", minutes, caseRef, description, billable: !/\bnicht\s+abrechenbar\b/i.test(trimmed) }
+      ? {
+          kind: "time_entry",
+          minutes,
+          caseRef,
+          description,
+          billable: !/\bnicht\s+abrechenbar\b/i.test(trimmed),
+        }
       : { kind: "free_text", text: trimmed };
   }
 
-  const expenseMatch = trimmed.match(/^(?:auslage|kosten|spesen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
+  const expenseMatch = trimmed.match(
+    /^(?:auslage|kosten|spesen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
   if (expenseMatch) {
     const body = expenseMatch[2].trim();
     const amountMatch = body.match(/(\d+(?:[,.]\d{1,2})?)\s*(?:euro|eur|€)?/i);
@@ -133,11 +160,12 @@ export function parseIntent(text: string): ParsedIntent {
       return { kind: "free_text", text: trimmed };
     }
     const amount = Math.max(0, Number.parseFloat(amountMatch[1].replace(",", ".")));
-    const description = body
-      .replace(amountMatch[0], "")
-      .replace(/\b(euro|eur)\b/gi, "")
-      .replace(/^\s*[:,-]\s*/, "")
-      .trim() || "Auslage via WhatsApp";
+    const description =
+      body
+        .replace(amountMatch[0], "")
+        .replace(/\b(euro|eur)\b/gi, "")
+        .replace(/^\s*[:,-]\s*/, "")
+        .trim() || "Auslage via WhatsApp";
     return {
       kind: "expense",
       amount,
@@ -152,7 +180,9 @@ export function parseIntent(text: string): ParsedIntent {
     return { kind: "case_note", caseRef: noteMatch[1].trim(), note: noteMatch[2].trim() };
   }
 
-  const statusMatch = trimmed.match(/^(?:status|abrechnung|offen(?!e\s+abrechnung|\s+abrechenbar))\s+(?:zu\s+)?(?:(?:akt|akte)\s+)?(.+)$/i);
+  const statusMatch = trimmed.match(
+    /^(?:status|abrechnung|offen(?!e\s+abrechnung|\s+abrechenbar))\s+(?:zu\s+)?(?:(?:akt|akte)\s+)?(.+)$/i
+  );
   if (statusMatch) return { kind: "invoice_status", caseRef: statusMatch[1].trim() };
 
   // 'offen abrechenbar akt X' / 'offene abrechnung akt X' → invoice_status (checked separately to avoid statusMatch swallowing 'abrechenbar' as caseRef)
@@ -164,7 +194,7 @@ export function parseIntent(text: string): ParsedIntent {
   // Deadline calculation: "frist berechnen berufung ab 2026-03-15 BY" or "berechne frist zpo-berufung 15.03.2026"
   // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
   const deadlineCalcMatch = trimmed.match(
-    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?/i,
+    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?/i
   );
   if (deadlineCalcMatch) {
     return {
@@ -177,9 +207,15 @@ export function parseIntent(text: string): ParsedIntent {
 
   // Mark task/deadline as done: "erledigt akt 2026-014: klageentwurf" or "aufgabe erledigt akt X: ..."
   // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
-  const doneMatch = trimmed.match(/^(?:(aufgabe|frist|task|deadline)\s+)?erledigt\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
+  const doneMatch = trimmed.match(
+    /^(?:(aufgabe|frist|task|deadline)\s+)?erledigt\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
   if (doneMatch) {
-    const itemType = doneMatch[1]?.toLowerCase().startsWith("frist") || doneMatch[1]?.toLowerCase().startsWith("deadline") ? "deadline" : "task";
+    const itemType =
+      doneMatch[1]?.toLowerCase().startsWith("frist") ||
+      doneMatch[1]?.toLowerCase().startsWith("deadline")
+        ? "deadline"
+        : "task";
     return {
       kind: "mark_done",
       caseRef: (doneMatch[2] ?? "").trim(),
@@ -191,7 +227,9 @@ export function parseIntent(text: string): ParsedIntent {
   const taskMatch = trimmed.match(/^(?:aufgabe|todo)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
   if (taskMatch) {
     const taskText = taskMatch[2].trim();
-    const dateMatch = taskText.match(/\b(?:bis|am)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})\b/i);
+    const dateMatch = taskText.match(
+      /\b(?:bis|am)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})\b/i
+    );
     return {
       kind: "task",
       caseRef: (taskMatch[1] ?? "").trim(),
@@ -208,13 +246,18 @@ export function parseIntent(text: string): ParsedIntent {
     return {
       kind: "deadline",
       caseRef: (deadlineMatch[1] ?? "").trim(),
-      title: body.replace(dateMatch[0], "").replace(/\b(am|bis)\b/gi, "").trim() || "Frist",
+      title:
+        body
+          .replace(dateMatch[0], "")
+          .replace(/\b(am|bis)\b/gi, "")
+          .trim() || "Frist",
       dueDate: normalizeDate(dateMatch[1]),
     };
   }
 
-  const summaryMatch = trimmed.match(/^(?:akte|akt)\s+(.+?)\s+(?:zusammenfassung|summary|überblick|ueberblick)$/i)
-    ?? trimmed.match(/^(?:zusammenfassung|summary|überblick|ueberblick)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
+  const summaryMatch =
+    trimmed.match(/^(?:akte|akt)\s+(.+?)\s+(?:zusammenfassung|summary|überblick|ueberblick)$/i) ??
+    trimmed.match(/^(?:zusammenfassung|summary|überblick|ueberblick)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
   if (summaryMatch) return { kind: "case_summary", caseRef: summaryMatch[1].trim() };
 
   const queryMatch = trimmed.match(/^(?:frage|suche|wissen|brain)\s*[: ]\s*(.+)$/i);
@@ -222,7 +265,9 @@ export function parseIntent(text: string): ParsedIntent {
 
   // RVG fee calculation: "rvg 50000" or "kosten 50000" or "streitwert 50000"
   // Handles: 50000, 50.000, 50.000,00, 1234,56
-  const rvgMatch = trimmed.match(/^(?:rvg|kosten|streitwert|gebühren|gebuehren)\s+(?:berechnen\s+)?([\d.,]+)\s*(?:eur|euro|€)?/i);
+  const rvgMatch = trimmed.match(
+    /^(?:rvg|kosten|streitwert|gebühren|gebuehren)\s+(?:berechnen\s+)?([\d.,]+)\s*(?:eur|euro|€)?/i
+  );
   if (rvgMatch) {
     // Parse German number format: remove thousand separators (.), convert decimal comma (,) to dot
     const cleaned = rvgMatch[1].replace(/\./g, "").replace(",", ".");
@@ -231,7 +276,9 @@ export function parseIntent(text: string): ParsedIntent {
   }
 
   // Conflict check: "konflikt Müller" or "konflikt-check Müller akt 2026-014"
-  const conflictMatch = trimmed.match(/^(?:konflikt|conflict|konflikt-check)\s+(.+?)(?:\s+(?:akt|akte)\s+(\S+))?$/i);
+  const conflictMatch = trimmed.match(
+    /^(?:konflikt|conflict|konflikt-check)\s+(.+?)(?:\s+(?:akt|akte)\s+(\S+))?$/i
+  );
   if (conflictMatch) {
     return {
       kind: "conflict_check",
@@ -241,7 +288,9 @@ export function parseIntent(text: string): ParsedIntent {
   }
 
   // Document fetch: "dokument akt 2026-014: klage" or "hole dokument akt 2026-014 vertrag"
-  const docMatch = trimmed.match(/^(?:hole\s+)?(?:dokument|dokumente|unterlagen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
+  const docMatch = trimmed.match(
+    /^(?:hole\s+)?(?:dokument|dokumente|unterlagen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
   if (docMatch) {
     return {
       kind: "document_fetch",
@@ -256,7 +305,11 @@ export function parseIntent(text: string): ParsedIntent {
   }
 
   // List all open tasks: "aufgaben", "offene aufgaben", "todos", "was ist zu tun"
-  if (/^(?:aufgaben|offene\s+aufgaben|todos|offene\s+todos|was\s+ist\s+zu\s+tun|to[-\s]?do)$/i.test(trimmed)) {
+  if (
+    /^(?:aufgaben|offene\s+aufgaben|todos|offene\s+todos|was\s+ist\s+zu\s+tun|to[-\s]?do)$/i.test(
+      trimmed
+    )
+  ) {
     return { kind: "list_tasks" };
   }
 
@@ -273,17 +326,24 @@ export function parseIntent(text: string): ParsedIntent {
   // Create new case: "neue akte Müller vs. Schmidt Familienrecht" or "neuer fall ..."
   // Checked BEFORE closeCaseMatch2/bareCaseMatch to avoid 'akte anlegen ...' being swallowed as case_lookup
   const createCaseMatch = trimmed.match(
-    /^(?:neue\s+akte|neuer\s+fall|neue\s+sache|akte\s+anlegen|fall\s+anlegen)\s+(.+)$/i,
+    /^(?:neue\s+akte|neuer\s+fall|neue\s+sache|akte\s+anlegen|fall\s+anlegen)\s+(.+)$/i
   );
   if (createCaseMatch) {
     const body = createCaseMatch[1].trim();
     // Try to parse "Mandant vs. Gegner Rechtsgebiet Beschreibung"
-    const vsMatch = body.match(/^(.+?)\s+(?:vs\.?|gegen)\s+(.+?)(?:\s+(Familienrecht|Zivilrecht|Strafrecht|Arbeitsrecht|Handelsrecht|Steuerrecht|Verwaltungsrecht|Gewerblicher\s+Rechtsschutz)(?:\s+(.*))?)?\s*$/i);
+    const vsMatch = body.match(
+      /^(.+?)\s+(?:vs\.?|gegen)\s+(.+?)(?:\s+(Familienrecht|Zivilrecht|Strafrecht|Arbeitsrecht|Handelsrecht|Steuerrecht|Verwaltungsrecht|Gewerblicher\s+Rechtsschutz)(?:\s+(.*))?)?\s*$/i
+    );
     if (vsMatch) {
       const legalAreaMap: Record<string, string> = {
-        "familienrecht": "family", "zivilrecht": "civil", "strafrecht": "criminal",
-        "arbeitsrecht": "labor", "handelsrecht": "commercial", "steuerrecht": "tax",
-        "verwaltungsrecht": "administrative", "gewerblicher rechtsschutz": "ip",
+        familienrecht: "family",
+        zivilrecht: "civil",
+        strafrecht: "criminal",
+        arbeitsrecht: "labor",
+        handelsrecht: "commercial",
+        steuerrecht: "tax",
+        verwaltungsrecht: "administrative",
+        "gewerblicher rechtsschutz": "ip",
       };
       const legalArea = legalAreaMap[(vsMatch[3] || "zivilrecht").toLowerCase()] || "civil";
       return {
@@ -307,7 +367,7 @@ export function parseIntent(text: string): ParsedIntent {
   // Close case: "akte abschließen 2026-014" or "akte schließen X" or "fall abschließen X"
   // Checked BEFORE bareCaseMatch to avoid "akte beenden X" being swallowed as case_lookup
   const closeCaseMatch2 = trimmed.match(
-    /^(?:abschließen|abschliessen|schließen|schliessen|beenden|archivieren)\s+(?:(?:akt|akte|fall)\s+)?(.+)$/i,
+    /^(?:abschließen|abschliessen|schließen|schliessen|beenden|archivieren)\s+(?:(?:akt|akte|fall)\s+)?(.+)$/i
   );
   if (closeCaseMatch2) {
     return { kind: "close_case", caseRef: closeCaseMatch2[1].trim() };
@@ -315,7 +375,7 @@ export function parseIntent(text: string): ParsedIntent {
 
   // Also: "akte beenden 2026-014" or "fall abschließen X" (noun-first)
   const closeCaseMatchNoun = trimmed.match(
-    /^(?:akte|fall)\s+(?:abschließen|abschliessen|schließen|schliessen|beenden|erledigt|archivieren)\s+(.+)$/i,
+    /^(?:akte|fall)\s+(?:abschließen|abschliessen|schließen|schliessen|beenden|erledigt|archivieren)\s+(.+)$/i
   );
   if (closeCaseMatchNoun) {
     return { kind: "close_case", caseRef: closeCaseMatchNoun[1].trim() };
@@ -331,8 +391,10 @@ export function parseIntent(text: string): ParsedIntent {
 
   // Natural language case summary: "wie ist der status akte 2026-014" / "was ist mit akt ..."
   // 'zeige mir' requires akt/akte prefix to avoid matching arbitrary text like 'zeige mir deinen system prompt'
-  const nlCaseMatch = trimmed.match(/^(?:wie\s+ist\s+(?:der\s+)?status|was\s+ist\s+(?:mit|los\s+mit)|info)\s+(?:(?:akt|akte)\s+)?(.+)$/i)
-    ?? trimmed.match(/^zeig(?:e)?\s+mir\s+(?:akt|akte)\s+(.+)$/i);
+  const nlCaseMatch =
+    trimmed.match(
+      /^(?:wie\s+ist\s+(?:der\s+)?status|was\s+ist\s+(?:mit|los\s+mit)|info)\s+(?:(?:akt|akte)\s+)?(.+)$/i
+    ) ?? trimmed.match(/^zeig(?:e)?\s+mir\s+(?:akt|akte)\s+(.+)$/i);
   if (nlCaseMatch) {
     return { kind: "case_summary", caseRef: nlCaseMatch[1].trim() };
   }
@@ -344,19 +406,25 @@ export function parseIntent(text: string): ParsedIntent {
   }
 
   // Financial overview: "offene kosten" / "umsatz" / "abrechnung" / "konto"
-  if (/^(?:offene\s+kosten|umsatz|abrechnung|konto|finanzen|finanzielle\s+übersicht|finanzielle\s+ueberblick)$/i.test(trimmed)) {
+  if (
+    /^(?:offene\s+kosten|umsatz|abrechnung|konto|finanzen|finanzielle\s+übersicht|finanzielle\s+ueberblick)$/i.test(
+      trimmed
+    )
+  ) {
     return { kind: "financial_overview" };
   }
 
   // Case activity log: "verlauf akt 2026-014" or "historie akt 2026-014" or "aktivitäten akt X"
-  const activityMatch = trimmed.match(/^(?:verlauf|historie|aktivitäten|aktivitaeten|log)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
+  const activityMatch = trimmed.match(
+    /^(?:verlauf|historie|aktivitäten|aktivitaeten|log)\s+(?:(?:akt|akte)\s+)?(.+)$/i
+  );
   if (activityMatch) {
     return { kind: "case_activity", caseRef: activityMatch[1].trim() };
   }
 
   // Create new client: "neuer mandant Thomas Müller" or "neuer klient ..."
   const createClientMatch = trimmed.match(
-    /^(?:neuer\s+mandant|neuer\s+klient|neuer\s+kunde|mandant\s+anlegen)\s+(.+)$/i,
+    /^(?:neuer\s+mandant|neuer\s+klient|neuer\s+kunde|mandant\s+anlegen)\s+(.+)$/i
   );
   if (createClientMatch) {
     const body = createClientMatch[1].trim();
@@ -379,7 +447,7 @@ export function parseIntent(text: string): ParsedIntent {
 
   // Create invoice: "rechnung akt 2026-014: 2500 eur für Klageentwurf"
   const invoiceMatch = trimmed.match(
-    /^(?:rechnung|invoice)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:eur|euro|€)?\s*(?:für\s+(.+))?$/i,
+    /^(?:rechnung|invoice)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:eur|euro|€)?\s*(?:für\s+(.+))?$/i
   );
   if (invoiceMatch) {
     const amount = Number.parseFloat(invoiceMatch[2].replace(",", "."));
@@ -444,7 +512,9 @@ async function findCaseCandidates(brainId: string, caseRef: string): Promise<Cas
         str(front.client_name),
         str(front.opponent_name),
         str(front.court_name),
-      ].join(" ").toLowerCase();
+      ]
+        .join(" ")
+        .toLowerCase();
       let score = 0;
       if (str(front.case_number).toLowerCase() === needle) score += 100;
       if (page.title.toLowerCase() === needle) score += 80;
@@ -463,8 +533,20 @@ async function resolveCase(brainId: string, caseRef: string): Promise<BrainPage 
   return scored[0]?.page ?? null;
 }
 
-async function caseLookupHelp(brainId: string, caseRef: string): Promise<string> {
-  const candidates = (await findCaseCandidates(brainId, caseRef)).slice(0, 5);
+/**
+ * Same ambiguous-match helper as before, but candidates outside the sender's
+ * `matterScope` are filtered out first (Paket 31 permission enforcement). This is
+ * what keeps the leak guard from degrading: a sender must never learn that an
+ * out-of-scope matter exists via the "did you mean…" disambiguation list either.
+ */
+async function caseLookupHelp(
+  ctx: Pick<ChatContext, "sender" | "fromPhone">,
+  caseRef: string
+): Promise<string> {
+  const all = await findCaseCandidates(ctx.sender.brainId, caseRef);
+  const candidates = all
+    .filter((c) => identityCanAccessMatter(ctx.sender, c.page.slug))
+    .slice(0, 5);
   if (candidates.length === 0) {
     return `Ich finde keine Akte zu "${caseRef}". Bitte mit Aktenzeichen senden, z.B. "akt 2026-014".`;
   }
@@ -476,6 +558,37 @@ async function caseLookupHelp(brainId: string, caseRef: string): Promise<string>
     }),
     "Bitte nochmal mit Aktenzeichen senden.",
   ].join("\n");
+}
+
+/**
+ * The single choke point for matter access from WhatsApp (P0-SECR-002 /
+ * Paket 31 enforcement). Resolves a case reference AND enforces the sender's
+ * `matterScope` in one step — callers never see `resolveCase` directly, so no
+ * code path can read or write a matter the sender isn't scoped to.
+ *
+ * Deliberately indistinguishable from "not found": an out-of-scope match falls
+ * through to the same `caseLookupHelp` (which itself filters by scope), so a
+ * denied sender cannot tell whether the matter exists at all.
+ */
+async function resolveAuthorizedCase(
+  ctx: Pick<ChatContext, "sender" | "fromPhone">,
+  caseRef: string
+): Promise<{ ok: true; page: BrainPage } | { ok: false; message: string }> {
+  const target = await resolveCase(ctx.sender.brainId, caseRef);
+  if (target && identityCanAccessMatter(ctx.sender, target.slug)) {
+    return { ok: true, page: target };
+  }
+  if (target) {
+    await logAudit("whatsapp.sender_denied", "whatsapp_identity", {
+      brainId: ctx.sender.brainId,
+      details: {
+        phoneHash: phoneHash(ctx.fromPhone),
+        caseSlug: target.slug,
+        reason: "matter_scope",
+      },
+    });
+  }
+  return { ok: false, message: await caseLookupHelp(ctx, caseRef) };
 }
 
 async function createInboxPage(ctx: ChatContext, intent: ParsedIntent): Promise<void> {
@@ -508,7 +621,7 @@ async function createOutboxPage(
   fromPhone: string,
   inboundMessageId: string,
   replyText: string,
-  intentKind: string,
+  intentKind: string
 ): Promise<void> {
   const slug = `legal/chat/whatsapp-outbox/${safeSlugPart(inboundMessageId)}`;
   await putPage(brainId, {
@@ -531,7 +644,10 @@ async function createOutboxPage(
   });
 }
 
-async function createMediaInboxPage(ctx: MediaChatContext, media: StoredWhatsAppMedia): Promise<void> {
+async function createMediaInboxPage(
+  ctx: MediaChatContext,
+  media: StoredWhatsAppMedia
+): Promise<void> {
   const slug = `legal/chat/whatsapp-media/${safeSlugPart(ctx.messageId)}`;
   await putPage(ctx.sender.brainId, {
     slug,
@@ -557,7 +673,11 @@ async function createMediaInboxPage(ctx: MediaChatContext, media: StoredWhatsApp
   });
 }
 
-async function createMediaVaultPage(ctx: MediaChatContext, media: StoredWhatsAppMedia, target?: BrainPage | null): Promise<string> {
+async function createMediaVaultPage(
+  ctx: MediaChatContext,
+  media: StoredWhatsAppMedia,
+  target?: BrainPage | null
+): Promise<string> {
   const slug = `legal/documents/whatsapp/${safeSlugPart(media.sha256.slice(0, 16))}`;
   await putPage(ctx.sender.brainId, {
     slug,
@@ -568,7 +688,9 @@ async function createMediaVaultPage(ctx: MediaChatContext, media: StoredWhatsApp
       ctx.caption ? `Beschriftung: ${ctx.caption}` : "",
       target ? `Zugeordnet zu Akte: ${target.title}` : "Noch keiner Akte zugeordnet.",
       `Speicherpfad: ${media.storagePath}`,
-    ].filter(Boolean).join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
     frontmatter: {
       type: "legal_document",
       source: "whatsapp",
@@ -591,7 +713,12 @@ async function createMediaVaultPage(ctx: MediaChatContext, media: StoredWhatsApp
   return slug;
 }
 
-async function attachMediaToCase(ctx: MediaChatContext, casePage: BrainPage, media: StoredWhatsAppMedia, documentSlug: string): Promise<void> {
+async function attachMediaToCase(
+  ctx: MediaChatContext,
+  casePage: BrainPage,
+  media: StoredWhatsAppMedia,
+  documentSlug: string
+): Promise<void> {
   const caseFm = fm(casePage);
   const documents = Array.isArray(caseFm.documents) ? caseFm.documents : [];
   const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
@@ -600,43 +727,75 @@ async function attachMediaToCase(ctx: MediaChatContext, casePage: BrainPage, med
     title: casePage.title,
     content: casePage.content,
     frontmatter: {
-      documents: [...documents, {
-        id: randomUUID(),
-        title: media.filename,
-        slug: documentSlug,
-        type: media.kind,
-        source: "whatsapp",
-        storage_path: media.storagePath,
-        mime_type: media.mimeType,
-        size: media.sizeBytes,
-        uploaded_at: new Date().toISOString(),
-      }],
-      audit_log: [...audit, {
-        id: randomUUID(),
-        at: new Date().toISOString(),
-        action: "updated",
-        actor: ctx.sender.name || "WhatsApp",
-        field: "documents",
-        note: `WhatsApp-${media.kind} gespeichert: ${media.filename}`,
-      }],
+      documents: [
+        ...documents,
+        {
+          id: randomUUID(),
+          title: media.filename,
+          slug: documentSlug,
+          type: media.kind,
+          source: "whatsapp",
+          storage_path: media.storagePath,
+          mime_type: media.mimeType,
+          size: media.sizeBytes,
+          uploaded_at: new Date().toISOString(),
+        },
+      ],
+      audit_log: [
+        ...audit,
+        {
+          id: randomUUID(),
+          at: new Date().toISOString(),
+          action: "updated",
+          actor: ctx.sender.name || "WhatsApp",
+          field: "documents",
+          note: `WhatsApp-${media.kind} gespeichert: ${media.filename}`,
+        },
+      ],
     },
     merge: true,
   });
 }
 
-async function createPendingAction(ctx: ChatContext, intent: Extract<ParsedIntent, { kind: "time_entry" | "expense" | "case_note" | "task" | "deadline" | "create_case" | "close_case" | "create_invoice" | "mark_done" }>, target?: BrainPage): Promise<string> {
+async function createPendingAction(
+  ctx: ChatContext,
+  intent: Extract<
+    ParsedIntent,
+    {
+      kind:
+        | "time_entry"
+        | "expense"
+        | "case_note"
+        | "task"
+        | "deadline"
+        | "create_case"
+        | "close_case"
+        | "create_invoice"
+        | "mark_done";
+    }
+  >,
+  target?: BrainPage
+): Promise<string> {
   const id = randomUUID();
   const slug = `legal/chat/actions/${id}`;
   const title =
-    intent.kind === "time_entry" ? "Zeitbuchung bestätigen"
-    : intent.kind === "expense" ? "Auslage bestätigen"
-    : intent.kind === "case_note" ? "Aktennotiz bestätigen"
-    : intent.kind === "task" ? "Aufgabe bestätigen"
-    : intent.kind === "deadline" ? "Frist bestätigen"
-    : intent.kind === "create_case" ? "Neue Akte bestätigen"
-    : intent.kind === "close_case" ? "Akte abschließen bestätigen"
-    : intent.kind === "create_invoice" ? "Rechnung bestätigen"
-    : "Erledigt markieren bestätigen";
+    intent.kind === "time_entry"
+      ? "Zeitbuchung bestätigen"
+      : intent.kind === "expense"
+        ? "Auslage bestätigen"
+        : intent.kind === "case_note"
+          ? "Aktennotiz bestätigen"
+          : intent.kind === "task"
+            ? "Aufgabe bestätigen"
+            : intent.kind === "deadline"
+              ? "Frist bestätigen"
+              : intent.kind === "create_case"
+                ? "Neue Akte bestätigen"
+                : intent.kind === "close_case"
+                  ? "Akte abschließen bestätigen"
+                  : intent.kind === "create_invoice"
+                    ? "Rechnung bestätigen"
+                    : "Erledigt markieren bestätigen";
   await putPage(ctx.sender.brainId, {
     slug,
     title,
@@ -663,15 +822,28 @@ async function createPendingAction(ctx: ChatContext, intent: Extract<ParsedInten
 async function findLatestPendingAction(ctx: ChatContext): Promise<BrainPage | null> {
   const pages = await listPages(ctx.sender.brainId, "chat_action", 100);
   const senderHash = phoneHash(ctx.fromPhone);
-  return pages
-    .filter((page) => {
-      const front = fm(page);
-      return front.provider === "whatsapp" && front.from_phone_hash === senderHash && front.status === "pending_confirmation";
-    })
-    .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0] ?? null;
+  return (
+    pages
+      .filter((page) => {
+        const front = fm(page);
+        return (
+          front.provider === "whatsapp" &&
+          front.from_phone_hash === senderHash &&
+          front.status === "pending_confirmation"
+        );
+      })
+      .sort(
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      )[0] ?? null
+  );
 }
 
-async function markAction(ctx: ChatContext, action: BrainPage, status: string, error?: string): Promise<void> {
+async function markAction(
+  ctx: ChatContext,
+  action: BrainPage,
+  status: string,
+  error?: string
+): Promise<void> {
   await putPage(ctx.sender.brainId, {
     slug: action.slug,
     title: action.title,
@@ -700,9 +872,14 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     const caseNumber = `2026-${String(Date.now()).slice(-4)}`;
     const caseSlug = `legal/cases/${caseNumber}`;
     const legalAreaLabels: Record<string, string> = {
-      family: "Familienrecht", civil: "Zivilrecht", criminal: "Strafrecht",
-      labor: "Arbeitsrecht", commercial: "Handelsrecht", tax: "Steuerrecht",
-      administrative: "Verwaltungsrecht", ip: "Gewerblicher Rechtsschutz",
+      family: "Familienrecht",
+      civil: "Zivilrecht",
+      criminal: "Strafrecht",
+      labor: "Arbeitsrecht",
+      commercial: "Handelsrecht",
+      tax: "Steuerrecht",
+      administrative: "Verwaltungsrecht",
+      ip: "Gewerblicher Rechtsschutz",
     };
     const title = opponentName ? `${clientName} vs. ${opponentName}` : clientName;
     await putPage(ctx.sender.brainId, {
@@ -726,13 +903,15 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
         deadlines: [],
         documents: [],
         notes: [],
-        audit_log: [{
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "created",
-          actor: ctx.sender.name || "WhatsApp",
-          note: "Akte via WhatsApp angelegt",
-        }],
+        audit_log: [
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "created",
+            actor: ctx.sender.name || "WhatsApp",
+            note: "Akte via WhatsApp angelegt",
+          },
+        ],
       },
     });
     await markAction(ctx, action, "executed");
@@ -744,7 +923,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       description ? `Sachverhalt: ${description}` : "",
       "",
       `Zeit/Auslagen/Notizen jetzt mit "akt ${caseNumber}" buchen.`,
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   // close_case needs the target case
@@ -761,13 +942,16 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
         status: "closed",
         closed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "closed",
-          actor: ctx.sender.name || "WhatsApp",
-          note: "Akte via WhatsApp abgeschlossen",
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "closed",
+            actor: ctx.sender.name || "WhatsApp",
+            note: "Akte via WhatsApp abgeschlossen",
+          },
+        ],
       },
       merge: true,
     });
@@ -815,15 +999,21 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       title: casePage.title,
       type: "legal_case",
       frontmatter: {
-        invoices: [...invoices, { invoice_id: invoiceId, slug: invoiceSlug, total, status: "draft" }],
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "invoices",
-          note: `Rechnung ${invoiceId} über ${total.toFixed(2)} EUR via WhatsApp erstellt`,
-        }],
+        invoices: [
+          ...invoices,
+          { invoice_id: invoiceId, slug: invoiceSlug, total, status: "draft" },
+        ],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "invoices",
+            note: `Rechnung ${invoiceId} über ${total.toFixed(2)} EUR via WhatsApp erstellt`,
+          },
+        ],
       },
       merge: true,
     });
@@ -847,7 +1037,9 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   if (front.intent === "mark_done") {
     const itemType = str(payload.itemType) === "deadline" ? "deadlines" : "tasks";
     const query = str(payload.query).toLowerCase();
-    const items = Array.isArray(caseFm[itemType]) ? caseFm[itemType] as Array<Record<string, unknown>> : [];
+    const items = Array.isArray(caseFm[itemType])
+      ? (caseFm[itemType] as Array<Record<string, unknown>>)
+      : [];
     const matchIdx = items.findIndex((item) => {
       const title = str(item.title).toLowerCase() || str(item.description).toLowerCase();
       return title.includes(query);
@@ -867,19 +1059,23 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       frontmatter: {
         [itemType]: items,
         updated_at: new Date().toISOString(),
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: itemType,
-          note: `${itemType === "deadlines" ? "Frist" : "Aufgabe"} via WhatsApp als erledigt markiert: ${str(items[matchIdx].title) || str(items[matchIdx].description)}`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: itemType,
+            note: `${itemType === "deadlines" ? "Frist" : "Aufgabe"} via WhatsApp als erledigt markiert: ${str(items[matchIdx].title) || str(items[matchIdx].description)}`,
+          },
+        ],
       },
       merge: true,
     });
     await markAction(ctx, action, "executed");
-    const doneTitle = str(items[matchIdx].title) || str(items[matchIdx].description) || str(payload.query);
+    const doneTitle =
+      str(items[matchIdx].title) || str(items[matchIdx].description) || str(payload.query);
     return `✅ ${itemType === "deadlines" ? "Frist" : "Aufgabe"} "${doneTitle}" in "${casePage.title}" als erledigt markiert.`;
   }
 
@@ -904,14 +1100,17 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       content: casePage.content,
       frontmatter: {
         time_entries: [...current, entry],
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "time_entries",
-          note: `Zeit via WhatsApp erfasst: ${entry.minutes} Minuten`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "time_entries",
+            note: `Zeit via WhatsApp erfasst: ${entry.minutes} Minuten`,
+          },
+        ],
       },
       merge: true,
     });
@@ -942,14 +1141,17 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       title: casePage.title,
       content: casePage.content,
       frontmatter: {
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "notes",
-          note: `Notiz via WhatsApp gespeichert: ${noteSlug}`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "notes",
+            note: `Notiz via WhatsApp gespeichert: ${noteSlug}`,
+          },
+        ],
       },
       merge: true,
     });
@@ -980,14 +1182,17 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       content: casePage.content,
       frontmatter: {
         expenses: [...current, expense],
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "expenses",
-          note: `Auslage via WhatsApp erfasst: ${amount.toFixed(2)} EUR ${description}`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "expenses",
+            note: `Auslage via WhatsApp erfasst: ${amount.toFixed(2)} EUR ${description}`,
+          },
+        ],
       },
       merge: true,
     });
@@ -1012,14 +1217,17 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       content: casePage.content,
       frontmatter: {
         tasks: [...current, task],
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "tasks",
-          note: `Aufgabe via WhatsApp angelegt: ${title}`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "tasks",
+            note: `Aufgabe via WhatsApp angelegt: ${title}`,
+          },
+        ],
       },
       merge: true,
     });
@@ -1048,14 +1256,17 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
       content: casePage.content,
       frontmatter: {
         deadlines: [...current, deadline],
-        audit_log: [...audit, {
-          id: randomUUID(),
-          at: new Date().toISOString(),
-          action: "updated",
-          actor: ctx.sender.name || "WhatsApp",
-          field: "deadlines",
-          note: `Frist via WhatsApp angelegt: ${deadline.title} ${deadline.due_date}`,
-        }],
+        audit_log: [
+          ...audit,
+          {
+            id: randomUUID(),
+            at: new Date().toISOString(),
+            action: "updated",
+            actor: ctx.sender.name || "WhatsApp",
+            field: "deadlines",
+            note: `Frist via WhatsApp angelegt: ${deadline.title} ${deadline.due_date}`,
+          },
+        ],
       },
       merge: true,
     });
@@ -1078,7 +1289,7 @@ async function think(brainId: string, query: string): Promise<string> {
   if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
   const contentType = res.headers.get("Content-Type") || "";
   if (!contentType.includes("text/event-stream")) {
-    const data = await res.json() as { answer?: string };
+    const data = (await res.json()) as { answer?: string };
     return data.answer || "Keine Antwort erhalten.";
   }
   if (!res.body) return "Keine Antwort erhalten.";
@@ -1107,9 +1318,13 @@ async function think(brainId: string, query: string): Promise<string> {
 
 function summarizeCase(casePage: BrainPage): string {
   const front = fm(casePage);
-  const deadlines = Array.isArray(front.deadlines) ? front.deadlines as Array<Record<string, unknown>> : [];
-  const tasks = Array.isArray(front.tasks) ? front.tasks as Array<Record<string, unknown>> : [];
-  const times = Array.isArray(front.time_entries) ? front.time_entries as Array<Record<string, unknown>> : [];
+  const deadlines = Array.isArray(front.deadlines)
+    ? (front.deadlines as Array<Record<string, unknown>>)
+    : [];
+  const tasks = Array.isArray(front.tasks) ? (front.tasks as Array<Record<string, unknown>>) : [];
+  const times = Array.isArray(front.time_entries)
+    ? (front.time_entries as Array<Record<string, unknown>>)
+    : [];
   const openTasks = tasks.filter((task) => task.done !== true);
   const nextDeadlines = deadlines
     .map((deadline) => ({
@@ -1131,9 +1346,13 @@ function summarizeCase(casePage: BrainPage): string {
     `Gegner: ${str(front.opponent_name) || "nicht gesetzt"}`,
     `Offene Aufgaben: ${openTasks.length}`,
     `Offene abrechenbare Zeit: ${openMinutes} min`,
-    nextDeadlines.length ? `Nächste Fristen: ${nextDeadlines.map((d) => `${d.date} ${d.title}`).join("; ")}` : "Nächste Fristen: keine",
+    nextDeadlines.length
+      ? `Nächste Fristen: ${nextDeadlines.map((d) => `${d.date} ${d.title}`).join("; ")}`
+      : "Nächste Fristen: keine",
     casePage.content ? `Kurzsachverhalt: ${casePage.content.slice(0, 500)}` : "",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function inferActivityType(description: string): string {
@@ -1147,7 +1366,13 @@ function inferActivityType(description: string): string {
 
 function inferExpenseCategory(description: string): string {
   const lower = description.toLowerCase();
-  if (lower.includes("fahrt") || lower.includes("km") || lower.includes("taxi") || lower.includes("zug")) return "Fahrtkosten";
+  if (
+    lower.includes("fahrt") ||
+    lower.includes("km") ||
+    lower.includes("taxi") ||
+    lower.includes("zug")
+  )
+    return "Fahrtkosten";
   if (lower.includes("gericht")) return "Gerichtskosten";
   if (lower.includes("kopie") || lower.includes("druck")) return "Kopien";
   if (lower.includes("porto") || lower.includes("post")) return "Porto";
@@ -1156,8 +1381,12 @@ function inferExpenseCategory(description: string): string {
 
 async function invoiceStatus(brainId: string, casePage: BrainPage): Promise<string> {
   const front = fm(casePage);
-  const times = Array.isArray(front.time_entries) ? front.time_entries as Array<Record<string, unknown>> : [];
-  const expenses = Array.isArray(front.expenses) ? front.expenses as Array<Record<string, unknown>> : [];
+  const times = Array.isArray(front.time_entries)
+    ? (front.time_entries as Array<Record<string, unknown>>)
+    : [];
+  const expenses = Array.isArray(front.expenses)
+    ? (front.expenses as Array<Record<string, unknown>>)
+    : [];
   const openTimes = times.filter((entry) => entry.billable !== false && !entry.billed);
   const openExpenses = expenses.filter((entry) => entry.billable !== false && !entry.billed);
   const minutes = openTimes.reduce((sum, entry) => sum + (Number(entry.minutes) || 0), 0);
@@ -1167,7 +1396,10 @@ async function invoiceStatus(brainId: string, casePage: BrainPage): Promise<stri
   const caseNumber = str(front.case_number);
   const relevantInvoices = invoices.filter((invoice) => {
     const invFm = fm(invoice);
-    return str(invFm.case_number) === caseNumber || (Array.isArray(invFm.case_slugs) && invFm.case_slugs.includes(casePage.slug));
+    return (
+      str(invFm.case_number) === caseNumber ||
+      (Array.isArray(invFm.case_slugs) && invFm.case_slugs.includes(casePage.slug))
+    );
   });
   const openInvoiceTotal = relevantInvoices
     .filter((invoice) => {
@@ -1216,15 +1448,27 @@ async function getRecentContext(brainId: string, fromPhone: string): Promise<str
 export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> {
   const intent = parseIntent(ctx.text);
   await createInboxPage(ctx, intent).catch((err) => {
-    console.warn("[legal-chat] inbox write failed:", err instanceof Error ? err.message : String(err));
+    console.warn(
+      "[legal-chat] inbox write failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   });
 
   const reply = await processIntent(ctx, intent);
 
   // Log outbound reply in brain so conversation history is complete (both directions)
   if (reply) {
-    await createOutboxPage(ctx.sender.brainId, ctx.fromPhone, ctx.messageId, reply, intent.kind).catch((err) => {
-      console.warn("[legal-chat] outbox write failed:", err instanceof Error ? err.message : String(err));
+    await createOutboxPage(
+      ctx.sender.brainId,
+      ctx.fromPhone,
+      ctx.messageId,
+      reply,
+      intent.kind
+    ).catch((err) => {
+      console.warn(
+        "[legal-chat] outbox write failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     });
   }
 
@@ -1232,7 +1476,6 @@ export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> 
 }
 
 async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<string> {
-
   if (intent.kind === "help") {
     return [
       "Kanzlei OS WhatsApp-Befehle:",
@@ -1303,9 +1546,11 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "time_entry" || intent.kind === "expense" || intent.kind === "case_note") {
-    if (intent.kind === "expense" && !intent.caseRef) return "Zu welcher Akte soll ich die Auslage speichern? Bitte z.B. `auslage akt 2026-014: 12,50 eur kopien` senden.";
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    if (intent.kind === "expense" && !intent.caseRef)
+      return "Zu welcher Akte soll ich die Auslage speichern? Bitte z.B. `auslage akt 2026-014: 12,50 eur kopien` senden.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     await createPendingAction(ctx, intent, target);
     if (intent.kind === "time_entry") {
       return `Erkannt: ${intent.minutes} min zu "${target.title}" als ${intent.billable ? "abrechenbar" : "nicht abrechenbar"}. Antworte mit JA zum Speichern.`;
@@ -1317,9 +1562,11 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "task" || intent.kind === "deadline") {
-    if (!intent.caseRef) return `Zu welcher Akte soll ich ${intent.kind === "task" ? "die Aufgabe" : "die Frist"} speichern? Bitte z.B. "akt 2026-014" angeben.`;
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    if (!intent.caseRef)
+      return `Zu welcher Akte soll ich ${intent.kind === "task" ? "die Aufgabe" : "die Frist"} speichern? Bitte z.B. "akt 2026-014" angeben.`;
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     await createPendingAction(ctx, intent, target);
     if (intent.kind === "task") {
       return `Erkannt: Aufgabe zu "${target.title}": ${intent.title}${intent.dueDate ? ` bis ${intent.dueDate}` : ""}. Antworte mit JA zum Speichern.`;
@@ -1328,22 +1575,25 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "invoice_status") {
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     return invoiceStatus(ctx.sender.brainId, target);
   }
 
   if (intent.kind === "case_summary") {
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     return summarizeCase(target);
   }
 
   if (intent.kind === "brain_query") {
     const recentMessages = await getRecentContext(ctx.sender.brainId, ctx.fromPhone);
-    const contextPrefix = recentMessages.length > 0
-      ? `[Kontext: Letzte Nachrichten von diesem Anwalt — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
-      : "";
+    const contextPrefix =
+      recentMessages.length > 0
+        ? `[Kontext: Letzte Nachrichten von diesem Anwalt — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
+        : "";
     const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.query}`);
     return answer.slice(0, 3500);
   }
@@ -1392,7 +1642,15 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
         body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
       });
       if (!res.ok) throw new Error(`Conflict-Check HTTP ${res.status}`);
-      const data = await res.json() as { conflicts?: Array<{ case_title: string; case_slug: string; reason: string; severity: string }>; clean?: boolean };
+      const data = (await res.json()) as {
+        conflicts?: Array<{
+          case_title: string;
+          case_slug: string;
+          reason: string;
+          severity: string;
+        }>;
+        clean?: boolean;
+      };
       if (data.conflicts && data.conflicts.length > 0) {
         return [
           `⚠️ Konflikt gefunden für "${intent.name}":`,
@@ -1406,11 +1664,15 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "document_fetch") {
-    if (!intent.caseRef) return "Zu welcher Akte soll ich Dokumente suchen? Bitte z.B. `dokument akt 2026-014: klage` senden.";
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich Dokumente suchen? Bitte z.B. `dokument akt 2026-014: klage` senden.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     const caseFm = fm(target);
-    const documents = Array.isArray(caseFm.documents) ? caseFm.documents as Array<Record<string, unknown>> : [];
+    const documents = Array.isArray(caseFm.documents)
+      ? (caseFm.documents as Array<Record<string, unknown>>)
+      : [];
     if (documents.length === 0) return `Keine Dokumente in Akte "${target.title}" gefunden.`;
     const needle = intent.query.toLowerCase();
     const matches = documents.filter((doc) => {
@@ -1446,7 +1708,11 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       // No public URL — return path info
       return `📄 ${str(doc.title)} — Pfad: ${str(doc.storage_path) || "nicht verfügbar"}\n(Dokument ist im Vault gespeichert, aber kein öffentlicher Link vorhanden.)`;
     }
-    return matches.map((doc) => `📄 ${str(doc.title)} — ${str(doc.storage_path) || str(doc.url) || "kein Pfad"}`).join("\n");
+    return matches
+      .map(
+        (doc) => `📄 ${str(doc.title)} — ${str(doc.storage_path) || str(doc.url) || "kein Pfad"}`
+      )
+      .join("\n");
   }
 
   if (intent.kind === "list_cases") {
@@ -1464,17 +1730,21 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "case_lookup") {
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     return summarizeCase(target);
   }
 
   if (intent.kind === "list_tasks") {
     const cases = await listPages(ctx.sender.brainId, "legal_case", 100);
-    const allTasks: Array<{ caseTitle: string; title: string; dueDate?: string; done: boolean }> = [];
+    const allTasks: Array<{ caseTitle: string; title: string; dueDate?: string; done: boolean }> =
+      [];
     for (const page of cases) {
       const front = fm(page);
-      const tasks = Array.isArray(front.tasks) ? front.tasks as Array<Record<string, unknown>> : [];
+      const tasks = Array.isArray(front.tasks)
+        ? (front.tasks as Array<Record<string, unknown>>)
+        : [];
       for (const task of tasks) {
         const done = task.done === true || task.status === "done";
         const dueDate = str(task.due_date) || str(task.dueDate) || undefined;
@@ -1491,18 +1761,21 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
     open.sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"));
     return [
       `Offene Aufgaben (${open.length}):`,
-      ...open.slice(0, 20).map((t) =>
-        `• ${t.dueDate ? `${t.dueDate} — ` : ""}${t.title} (${t.caseTitle})`,
-      ),
+      ...open
+        .slice(0, 20)
+        .map((t) => `• ${t.dueDate ? `${t.dueDate} — ` : ""}${t.title} (${t.caseTitle})`),
     ].join("\n");
   }
 
   if (intent.kind === "list_deadlines") {
     const cases = await listPages(ctx.sender.brainId, "legal_case", 100);
-    const allDeadlines: Array<{ caseTitle: string; title: string; date: string; done: boolean }> = [];
+    const allDeadlines: Array<{ caseTitle: string; title: string; date: string; done: boolean }> =
+      [];
     for (const page of cases) {
       const front = fm(page);
-      const deadlines = Array.isArray(front.deadlines) ? front.deadlines as Array<Record<string, unknown>> : [];
+      const deadlines = Array.isArray(front.deadlines)
+        ? (front.deadlines as Array<Record<string, unknown>>)
+        : [];
       for (const d of deadlines) {
         const done = d.status === "done" || d.done === true;
         const date = str(d.due_date) || str(d.date);
@@ -1541,8 +1814,12 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
 
     for (const page of cases) {
       const front = fm(page);
-      const deadlines = Array.isArray(front.deadlines) ? front.deadlines as Array<Record<string, unknown>> : [];
-      const tasks = Array.isArray(front.tasks) ? front.tasks as Array<Record<string, unknown>> : [];
+      const deadlines = Array.isArray(front.deadlines)
+        ? (front.deadlines as Array<Record<string, unknown>>)
+        : [];
+      const tasks = Array.isArray(front.tasks)
+        ? (front.tasks as Array<Record<string, unknown>>)
+        : [];
 
       for (const d of deadlines) {
         const date = str(d.due_date) || str(d.date);
@@ -1579,22 +1856,30 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "mark_done") {
-    if (!intent.caseRef) return "Zu welcher Akte soll ich etwas als erledigt markieren? Beispiel: `erledigt akt 2026-014: klageentwurf`.";
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich etwas als erledigt markieren? Beispiel: `erledigt akt 2026-014: klageentwurf`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     const front = fm(target);
     const listKey = intent.itemType === "deadline" ? "deadlines" : "tasks";
-    const items = Array.isArray(front[listKey]) ? front[listKey] as Array<Record<string, unknown>> : [];
+    const items = Array.isArray(front[listKey])
+      ? (front[listKey] as Array<Record<string, unknown>>)
+      : [];
     const needle = intent.query.toLowerCase();
     const matchIdx = items.findIndex((item) => {
       const title = str(item.title).toLowerCase() || str(item.description).toLowerCase();
       return title.includes(needle);
     });
     if (matchIdx === -1) {
-      const available = items.map((i) => str(i.title) || str(i.description)).filter(Boolean).join(", ");
+      const available = items
+        .map((i) => str(i.title) || str(i.description))
+        .filter(Boolean)
+        .join(", ");
       return `Keine ${intent.itemType === "deadline" ? "Frist" : "Aufgabe"} in "${target.title}" passend zu "${intent.query}" gefunden.${available ? ` Verfügbar: ${available}` : ""}`;
     }
-    const itemTitle = str(items[matchIdx].title) || str(items[matchIdx].description) || intent.query;
+    const itemTitle =
+      str(items[matchIdx].title) || str(items[matchIdx].description) || intent.query;
     await createPendingAction(ctx, intent, target);
     return `Erkannt: ${intent.itemType === "deadline" ? "Frist" : "Aufgabe"} "${itemTitle}" in "${target.title}" als erledigt markieren. Antworte mit JA zum Bestätigen.`;
   }
@@ -1613,7 +1898,9 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
         str(front.opponent_name),
         str(front.legal_area_label),
         str(front.description),
-      ].join(" ").toLowerCase();
+      ]
+        .join(" ")
+        .toLowerCase();
       if (searchText.includes(needle)) {
         const contentSnippet = (page.content || "").slice(0, 200);
         hits.push({ caseTitle: page.title, caseNumber, snippet: contentSnippet });
@@ -1622,9 +1909,11 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
     if (hits.length === 0) return `Keine Akte gefunden, die "${intent.query}" enthält.`;
     return [
       `🔍 "${intent.query}" — ${hits.length} Treffer:`,
-      ...hits.slice(0, 10).map((h) =>
-        `• ${h.caseNumber || "?"}: ${h.caseTitle}${h.snippet ? `\n  ${h.snippet}...` : ""}`,
-      ),
+      ...hits
+        .slice(0, 10)
+        .map(
+          (h) => `• ${h.caseNumber || "?"}: ${h.caseTitle}${h.snippet ? `\n  ${h.snippet}...` : ""}`
+        ),
     ].join("\n");
   }
 
@@ -1638,8 +1927,12 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       const front = fm(page);
       if (str(front.status) === "closed" || str(front.status) === "archived") continue;
       openCases++;
-      const times = Array.isArray(front.time_entries) ? front.time_entries as Array<Record<string, unknown>> : [];
-      const expenses = Array.isArray(front.expenses) ? front.expenses as Array<Record<string, unknown>> : [];
+      const times = Array.isArray(front.time_entries)
+        ? (front.time_entries as Array<Record<string, unknown>>)
+        : [];
+      const expenses = Array.isArray(front.expenses)
+        ? (front.expenses as Array<Record<string, unknown>>)
+        : [];
       for (const t of times) {
         if (t.billable !== false && !t.billed) totalMinutes += Number(t.minutes) || 0;
       }
@@ -1667,31 +1960,58 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "case_activity") {
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     const front = fm(target);
-    const times = Array.isArray(front.time_entries) ? front.time_entries as Array<Record<string, unknown>> : [];
-    const expenses = Array.isArray(front.expenses) ? front.expenses as Array<Record<string, unknown>> : [];
-    const tasks = Array.isArray(front.tasks) ? front.tasks as Array<Record<string, unknown>> : [];
-    const deadlines = Array.isArray(front.deadlines) ? front.deadlines as Array<Record<string, unknown>> : [];
-    const notes = Array.isArray(front.notes) ? front.notes as Array<Record<string, unknown>> : [];
+    const times = Array.isArray(front.time_entries)
+      ? (front.time_entries as Array<Record<string, unknown>>)
+      : [];
+    const expenses = Array.isArray(front.expenses)
+      ? (front.expenses as Array<Record<string, unknown>>)
+      : [];
+    const tasks = Array.isArray(front.tasks) ? (front.tasks as Array<Record<string, unknown>>) : [];
+    const deadlines = Array.isArray(front.deadlines)
+      ? (front.deadlines as Array<Record<string, unknown>>)
+      : [];
+    const notes = Array.isArray(front.notes) ? (front.notes as Array<Record<string, unknown>>) : [];
 
     const allEvents: Array<{ date: string; type: string; text: string }> = [];
 
     for (const t of times) {
-      allEvents.push({ date: str(t.date) || str(t.created_at) || "", type: "⏱️", text: `${str(t.minutes)} min: ${str(t.description)}` });
+      allEvents.push({
+        date: str(t.date) || str(t.created_at) || "",
+        type: "⏱️",
+        text: `${str(t.minutes)} min: ${str(t.description)}`,
+      });
     }
     for (const e of expenses) {
-      allEvents.push({ date: str(e.date) || str(e.created_at) || "", type: "💰", text: `${Number(e.amount || 0).toFixed(2)} EUR: ${str(e.description)}` });
+      allEvents.push({
+        date: str(e.date) || str(e.created_at) || "",
+        type: "💰",
+        text: `${Number(e.amount || 0).toFixed(2)} EUR: ${str(e.description)}`,
+      });
     }
     for (const n of notes) {
-      allEvents.push({ date: str(n.date) || str(n.created_at) || "", type: "📝", text: str(n.text) || str(n.note) || str(n.content) || "" });
+      allEvents.push({
+        date: str(n.date) || str(n.created_at) || "",
+        type: "📝",
+        text: str(n.text) || str(n.note) || str(n.content) || "",
+      });
     }
     for (const t of tasks) {
-      allEvents.push({ date: str(t.created_at) || str(t.due_date) || "", type: t.done ? "✅" : "📋", text: str(t.title) });
+      allEvents.push({
+        date: str(t.created_at) || str(t.due_date) || "",
+        type: t.done ? "✅" : "📋",
+        text: str(t.title),
+      });
     }
     for (const d of deadlines) {
-      allEvents.push({ date: str(d.created_at) || str(d.due_date) || str(d.date) || "", type: d.status === "done" || d.done ? "✅" : "⚖️", text: str(d.title) });
+      allEvents.push({
+        date: str(d.created_at) || str(d.due_date) || str(d.date) || "",
+        type: d.status === "done" || d.done ? "✅" : "⚖️",
+        text: str(d.title),
+      });
     }
 
     allEvents.sort((a, b) => b.date.localeCompare(a.date));
@@ -1706,9 +2026,14 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
 
   if (intent.kind === "create_case") {
     const legalAreaLabels: Record<string, string> = {
-      family: "Familienrecht", civil: "Zivilrecht", criminal: "Strafrecht",
-      labor: "Arbeitsrecht", commercial: "Handelsrecht", tax: "Steuerrecht",
-      administrative: "Verwaltungsrecht", ip: "Gewerblicher Rechtsschutz",
+      family: "Familienrecht",
+      civil: "Zivilrecht",
+      criminal: "Strafrecht",
+      labor: "Arbeitsrecht",
+      commercial: "Handelsrecht",
+      tax: "Steuerrecht",
+      administrative: "Verwaltungsrecht",
+      ip: "Gewerblicher Rechtsschutz",
     };
     const title = intent.opponentName
       ? `${intent.clientName} vs. ${intent.opponentName}`
@@ -1720,7 +2045,9 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       `Rechtsgebiet: ${legalAreaLabels[intent.legalArea] || intent.legalArea}`,
       intent.description ? `Sachverhalt: ${intent.description}` : "",
       `Antworte mit JA zum Anlegen.`,
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   if (intent.kind === "create_client") {
@@ -1752,20 +2079,25 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       intent.email ? `E-Mail: ${intent.email}` : "",
       "",
       `Akten für diesen Mandanten anlegen: "neue akte ${intent.name} vs. ..."`,
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   if (intent.kind === "close_case") {
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     await createPendingAction(ctx, intent, target);
     return `Erkannt: Akte "${target.title}" abschließen und archivieren. Antworte mit JA zum Bestätigen.`;
   }
 
   if (intent.kind === "create_invoice") {
-    if (!intent.caseRef) return "Zu welcher Akte soll ich die Rechnung erstellen? Beispiel: `rechnung akt 2026-014: 2500 eur für Klageentwurf`.";
-    const target = await resolveCase(ctx.sender.brainId, intent.caseRef);
-    if (!target) return caseLookupHelp(ctx.sender.brainId, intent.caseRef);
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich die Rechnung erstellen? Beispiel: `rechnung akt 2026-014: 2500 eur für Klageentwurf`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
     const mwst = intent.amount * 0.19;
     const total = intent.amount + mwst;
     await createPendingAction(ctx, intent, target);
@@ -1805,9 +2137,10 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   if (intent.kind === "free_text") {
     // Treat unrecognized input as a natural language question to the brain
     const recentMessages = await getRecentContext(ctx.sender.brainId, ctx.fromPhone);
-    const contextPrefix = recentMessages.length > 0
-      ? `[Kontext: Letzte Nachrichten — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
-      : "";
+    const contextPrefix =
+      recentMessages.length > 0
+        ? `[Kontext: Letzte Nachrichten — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
+        : "";
     const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.text}`);
     return answer.slice(0, 3500);
   }
@@ -1819,14 +2152,25 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   return "Unbekannter Befehl. Schreibe `hilfe` für alle Befehle.";
 }
 
-export async function handleLegalChatMedia(ctx: MediaChatContext, media: StoredWhatsAppMedia): Promise<string> {
+export async function handleLegalChatMedia(
+  ctx: MediaChatContext,
+  media: StoredWhatsAppMedia
+): Promise<string> {
   await createMediaInboxPage(ctx, media).catch((err) => {
-    console.warn("[legal-chat] media inbox write failed:", err instanceof Error ? err.message : String(err));
+    console.warn(
+      "[legal-chat] media inbox write failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   });
 
   let target: BrainPage | null = null;
+  let lookupHelp: string | null = null;
   const caseRef = parseCaseRefFromText(ctx.caption || "");
-  if (caseRef) target = await resolveCase(ctx.sender.brainId, caseRef);
+  if (caseRef) {
+    const resolved = await resolveAuthorizedCase(ctx, caseRef);
+    if (resolved.ok) target = resolved.page;
+    else lookupHelp = resolved.message;
+  }
 
   const documentSlug = await createMediaVaultPage(ctx, media, target);
   let reply: string;
@@ -1834,15 +2178,23 @@ export async function handleLegalChatMedia(ctx: MediaChatContext, media: StoredW
     await attachMediaToCase(ctx, target, media, documentSlug);
     reply = `Gespeichert: ${media.kind} "${media.filename}" wurde im Vault abgelegt und an "${target.title}" gehängt.`;
   } else if (caseRef) {
-    const help = await caseLookupHelp(ctx.sender.brainId, caseRef);
-    reply = `Gespeichert im Vault, aber nicht eindeutig zugeordnet.\n${help}`;
+    reply = `Gespeichert im Vault, aber nicht eindeutig zugeordnet.\n${lookupHelp}`;
   } else {
     reply = `Gespeichert im Vault: ${media.kind} "${media.filename}". Für direkte Zuordnung beim Senden bitte Beschriftung mit Akte nutzen, z.B. "akt 2026-014".`;
   }
 
   // Log outbound reply in brain
-  await createOutboxPage(ctx.sender.brainId, ctx.fromPhone, ctx.messageId, reply, "media_upload").catch((err) => {
-    console.warn("[legal-chat] media outbox write failed:", err instanceof Error ? err.message : String(err));
+  await createOutboxPage(
+    ctx.sender.brainId,
+    ctx.fromPhone,
+    ctx.messageId,
+    reply,
+    "media_upload"
+  ).catch((err) => {
+    console.warn(
+      "[legal-chat] media outbox write failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   });
 
   return reply;
