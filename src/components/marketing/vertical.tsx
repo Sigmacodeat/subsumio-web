@@ -3,7 +3,7 @@
 // Vertical funnel page template — one component, three industries, two languages.
 
 import Link from "next/link";
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -12,9 +12,6 @@ import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   Section,
   SectionHeading,
   ICONS,
@@ -25,8 +22,6 @@ import IndustryHeroMotif from "./industry-hero-motif";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import { AnimatedFaqList } from "./animated-faq";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 /** Subsumio product branding — funnel body, hero, and signup deep-links. */
 export interface ProductBrand {
@@ -94,17 +89,12 @@ export default function VerticalPage({
   const sub = (path: string) => p(lang, `/subsumio${path}`);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="slate"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-        style={styleForIndustry(industry)}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-
+    <div
+      data-tone="slate"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+      style={styleForIndustry(industry)}
+    >
         {/* HERO — slate editorial surface for stronger contrast */}
         <Section tone="slate" className="px-6 pt-16 pb-24">
           <div className="relative mx-auto max-w-7xl text-center">
@@ -381,9 +371,6 @@ export default function VerticalPage({
           </div>
         </Section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,6 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs, type Lang } from "@/content/docs";
 import { p } from "@/content/site";
 import { ICONS } from "./chrome";
-import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
@@ -61,16 +58,11 @@ export default function DocsPage({ lang }: { lang: Lang }) {
   const d = getDocs(lang);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="dark"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-
+    <div
+      data-tone="dark"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+    >
         {/* Hero */}
         <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16 text-center">
           <motion.div
@@ -170,9 +162,6 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           </Link>
         </motion.section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

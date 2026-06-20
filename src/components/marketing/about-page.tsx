@@ -6,14 +6,9 @@ import { ArrowRight, Shield, Brain, Globe, Heart, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   Section,
   SectionHeading,
 } from "./chrome";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 const CONTENT = {
   en: {
@@ -108,9 +103,6 @@ export default function AboutPage({ lang }: { lang: Lang }) {
   const c = CONTENT[lang];
   return (
     <>
-      <ScrollProgress />
-      <MarketingNav lang={lang} />
-      <MarketingBackground />
 
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -231,8 +223,6 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         </motion.div>
       </Section>
 
-      <MarketingFooter lang={lang} />
-      <BackToTop lang={lang} />
     </>
   );
 }

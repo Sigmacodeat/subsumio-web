@@ -10,16 +10,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, MotionConfig, useInView, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
-import { MarketingBackground, MarketingNav, MarketingFooter, ICONS, useSiteBrand } from "./chrome";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
+import { ICONS, useSiteBrand } from "./chrome";
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -309,16 +307,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         ];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="light"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+    >
         {/* Hero — copy left, animated graph right */}
         <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -621,9 +614,6 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
           </Link>
         </section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

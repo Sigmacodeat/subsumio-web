@@ -4,26 +4,21 @@
 // MotionConfig wraps the whole page; ScrollProgress shows reading position;
 // every section scroll-reveals; value-props use signal-colored tiles.
 
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRICING, PRICING_FAQ, p, type Lang } from "@/content/site";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   SectionHeading,
   FaqList,
 } from "./chrome";
 import { PricingGrid } from "./pricing-grid";
 import {
   Reveal,
-  ScrollProgress,
   StaggerContainer,
   StaggerItem,
 } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 const VALUE_PROPS = {
   de: [
@@ -47,12 +42,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
   const valueProps = VALUE_PROPS[lang];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-
+    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
         {/* Hero */}
         <section className="relative z-10 pt-20 pb-16 px-6">
           <div className="max-w-4xl mx-auto text-center">
@@ -137,9 +127,6 @@ export default function PricingPage({ lang }: { lang: Lang }) {
           </Reveal>
         </section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

@@ -6,7 +6,7 @@
 // decorative motion respects prefers-reduced-motion via MotionConfig.
 
 import Link from "next/link";
-import { motion, MotionConfig, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -17,16 +17,12 @@ import DashboardReel from "./dashboard-reel";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   SectionHeading,
   FaqList,
   ICONS,
   accentTile,
 } from "./chrome";
-import { GlowCard, StaggerContainer, StaggerItem, ScrollProgress, EASE } from "./motion-system";
-import BackToTop from "./back-to-top";
+import { GlowCard, StaggerContainer, StaggerItem, EASE } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -59,19 +55,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
   const pricing = PRICING[lang];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="light"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        {/* Hero band — nav + hero on the light page surface */}
-        <div className="relative">
-          <MarketingNav lang={lang} />
-
-          {/* Hero */}
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+    >
+      {/* Hero band — hero on the light page surface */}
+      <div className="relative">
+        {/* Hero */}
           <section className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-24 text-center md:pt-36 md:pb-28">
             <motion.div
               className="relative z-10"
@@ -378,9 +369,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </motion.section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

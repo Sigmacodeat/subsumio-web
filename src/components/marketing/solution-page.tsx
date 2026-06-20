@@ -7,24 +7,16 @@ import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import type { SolutionContent } from "@/content/solutions";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   Section,
   SectionHeading,
   ICONS,
   accentTile,
   type Tone,
 } from "./chrome";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
   return (
     <>
-      <ScrollProgress />
-      <MarketingNav lang={lang} />
-      <MarketingBackground />
 
       {/* Hero */}
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
@@ -218,8 +210,6 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
         </motion.div>
       </Section>
 
-      <MarketingFooter lang={lang} />
-      <BackToTop lang={lang} />
     </>
   );
 }

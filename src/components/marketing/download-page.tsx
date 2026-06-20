@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Apple,
@@ -26,14 +26,9 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   SectionHeading,
   FaqList,
 } from "./chrome";
-import { ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -163,16 +158,11 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="light"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-
+    <div
+      data-tone="light"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+    >
         {/* Hero — copy left, phone mockup right */}
         <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -353,9 +343,6 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
           </Link>
         </section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }

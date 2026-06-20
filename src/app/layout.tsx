@@ -10,6 +10,7 @@ import LangSetter from "@/components/brand/lang-setter";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { QueryProvider } from "@/components/providers/query-provider";
+import MarketingShell from "@/components/marketing/marketing-shell";
 import "./globals.css";
 
 // next/font self-hosts at build time — zero runtime requests to Google
@@ -97,6 +98,19 @@ export default async function RootLayout({
   // Dashboard and portal render their own <main> landmark; wrap other routes here.
   const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
+  // Marketing pages get the shared shell (nav, background, footer) so the
+  // header persists across client-side navigations instead of remounting.
+  const isMarketingPage =
+    !hasOwnMain &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/login") &&
+    !pathname.startsWith("/signup") &&
+    !pathname.startsWith("/reset") &&
+    !pathname.startsWith("/forgot") &&
+    !pathname.startsWith("/api");
+
+  const pageContent = hasOwnMain ? children : <main role="main">{children}</main>;
+
   return (
     <html
       lang={lang}
@@ -110,7 +124,11 @@ export default async function RootLayout({
           <MonitoringProvider>
             <ToastProvider>
               <ConfirmProvider>
-                {hasOwnMain ? children : <main role="main">{children}</main>}
+                {isMarketingPage ? (
+                  <MarketingShell lang={lang}>{pageContent}</MarketingShell>
+                ) : (
+                  pageContent
+                )}
               </ConfirmProvider>
             </ToastProvider>
           </MonitoringProvider>

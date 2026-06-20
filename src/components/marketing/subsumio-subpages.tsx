@@ -8,22 +8,18 @@
 // VERTICALS[lang].legal so claims stay consistent with the engine.
 
 import Link from "next/link";
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   Section,
   SectionHeading,
 } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
-import { Reveal, ScrollProgress } from "./motion-system";
-import BackToTop from "./back-to-top";
+import { Reveal } from "./motion-system";
 
 const reveal = {
   initial: { opacity: 0, y: 22 },
@@ -36,21 +32,14 @@ const reveal = {
 
 function Shell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
-    <MotionConfig reducedMotion="user">
-      <div
-        data-tone="slate"
-        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-        lang={lang}
-        style={styleForIndustry("legal")}
-      >
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
-        {children}
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    <div
+      data-tone="slate"
+      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      lang={lang}
+      style={styleForIndustry("legal")}
+    >
+      {children}
+    </div>
   );
 }
 

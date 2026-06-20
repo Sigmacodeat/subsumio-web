@@ -4,21 +4,16 @@
 // MotionConfig wraps the page; ScrollProgress shows reading position;
 // every section scroll-reveals with reduced-motion safety.
 
-import { MotionConfig } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   SectionHeading,
   FaqList,
 } from "./chrome";
-import { Reveal, ScrollProgress, StaggerContainer, StaggerItem } from "./motion-system";
-import BackToTop from "./back-to-top";
+import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -26,11 +21,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
   const t = SECURITY[lang];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
+    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
 
       {/* Hero */}
       <section className="relative z-10 pt-20 pb-16 px-6">
@@ -172,9 +163,6 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
         </Reveal>
       </section>
 
-      <MarketingFooter lang={lang} />
-      <BackToTop lang={lang} />
     </div>
-    </MotionConfig>
   );
 }

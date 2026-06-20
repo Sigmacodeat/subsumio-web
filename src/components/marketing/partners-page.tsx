@@ -4,38 +4,29 @@
 // Full motion: MotionConfig, ScrollProgress, scroll-reveal on every section,
 // GlowCards on tiers, StaggerContainer on grids, reduced-motion safe.
 
-import { motion, MotionConfig } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
 import {
-  MarketingBackground,
-  MarketingNav,
-  MarketingFooter,
   SectionHeading,
   FaqList,
   ICONS,
 } from "./chrome";
 import {
   Reveal,
-  ScrollProgress,
   StaggerContainer,
   StaggerItem,
   GlowCard,
 } from "./motion-system";
-import BackToTop from "./back-to-top";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
   const t = PARTNERS[lang];
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
-        <ScrollProgress />
-        <MarketingBackground />
-        <MarketingNav lang={lang} />
+    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
 
         {/* Hero — animate on mount */}
         <section className="relative z-10 pt-20 pb-20 px-6 max-w-7xl mx-auto text-center">
@@ -170,9 +161,6 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
           </Reveal>
         </section>
 
-        <MarketingFooter lang={lang} />
-        <BackToTop lang={lang} />
-      </div>
-    </MotionConfig>
+    </div>
   );
 }
