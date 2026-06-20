@@ -331,14 +331,14 @@ export default function BeaPage() {
                         </span>
                         <Badge
                           variant="default"
-                          className="border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-600"
+                          className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
                         >
                           Entwurf
                         </Badge>
                         {msg.aiGenerated && (
                           <Badge
                             variant="default"
-                            className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700"
+                            className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-700"
                           >
                             {AI_BADGE_LABEL}
                           </Badge>

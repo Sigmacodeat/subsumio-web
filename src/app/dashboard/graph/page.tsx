@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Network, ZoomIn, ZoomOut, Maximize2, RefreshCw, Users, Building2, Lightbulb, FileText, Loader2 } from "lucide-react";
+import {
+  Network,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  RefreshCw,
+  Users,
+  Building2,
+  Lightbulb,
+  FileText,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -86,7 +97,8 @@ export default function GraphPage() {
 
     // Canvas can't read CSS variables, so resolve the design tokens from the
     // dashboard root and re-read only when the theme attribute flips.
-    const themeRoot = (canvas.closest("[data-app=\"dashboard\"]") as HTMLElement | null) ?? document.documentElement;
+    const themeRoot =
+      (canvas.closest('[data-app="dashboard"]') as HTMLElement | null) ?? document.documentElement;
     let lastTheme = "";
     const palette = { text: "#15151d", subtle: "#8a8a98" };
     const readPalette = () => {
@@ -98,7 +110,10 @@ export default function GraphPage() {
 
     const draw = () => {
       const theme = themeRoot.getAttribute("data-theme") || "";
-      if (theme !== lastTheme) { lastTheme = theme; readPalette(); }
+      if (theme !== lastTheme) {
+        lastTheme = theme;
+        readPalette();
+      }
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.translate(offsetX, offsetY);
@@ -197,76 +212,97 @@ export default function GraphPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="flex-1 relative bg-[color:var(--ds-bg)]">
+      <div className="relative flex-1 bg-[color:var(--ds-bg)]">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <Loader2 size={32} className="animate-spin text-[color:var(--ds-text-muted)] mb-3" />
+          <div className="flex h-full flex-col items-center justify-center">
+            <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />
             <p className="text-sm text-[color:var(--ds-text-muted)]">Graph wird geladen…</p>
           </div>
         ) : isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
               <Network size={28} className="text-[color:var(--ds-border-strong)]" />
             </div>
-            <h3 className="text-lg font-semibold text-[color:var(--ds-text)] mb-2 tracking-tight">Graph ist leer</h3>
-            <p className="text-sm text-[color:var(--ds-text-muted)] mb-2 leading-relaxed">Lade Dokumente hoch um den Wissensgraph zu befüllen</p>
-            {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+            <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
+              Graph ist leer
+            </h3>
+            <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+              Lade Dokumente hoch um den Wissensgraph zu befüllen
+            </p>
+            {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
           </div>
         ) : (
           <>
             <canvas
               ref={canvasRef}
-              className="w-full h-full cursor-crosshair"
+              className="h-full w-full cursor-crosshair"
               style={{ width: "100%", height: "100%" }}
             />
 
             <div className="absolute top-4 left-4 flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-[color:var(--ds-surface)]/90 backdrop-blur border border-[color:var(--ds-border)] rounded-lg p-1">
+              <div className="flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-1 backdrop-blur">
                 <button
                   onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
-                  className="p-2 rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-border)] transition-all"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <ZoomIn size={14} />
                 </button>
-                <span className="text-xs text-[color:var(--ds-text-muted)] px-2 font-mono">{Math.round(zoom * 100)}%</span>
+                <span className="px-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
+                  {Math.round(zoom * 100)}%
+                </span>
                 <button
                   onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
-                  className="p-2 rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-border)] transition-all"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <ZoomOut size={14} />
                 </button>
                 <button
                   onClick={() => setZoom(1)}
-                  className="p-2 rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-border)] transition-all"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <Maximize2 size={14} />
                 </button>
               </div>
               <button
                 onClick={loadGraph}
-                className="p-2 bg-[color:var(--ds-surface)]/90 backdrop-blur border border-[color:var(--ds-border)] rounded-lg text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               >
                 <RefreshCw size={14} />
               </button>
             </div>
 
-            <div className="absolute bottom-4 left-4 bg-[color:var(--ds-surface)]/90 backdrop-blur border border-[color:var(--ds-border)] rounded-xl p-4">
-              <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-3">Legende</p>
+            <div className="absolute bottom-4 left-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 backdrop-blur">
+              <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                Legende
+              </p>
               <div className="space-y-2">
-                {Object.entries(NODE_COLORS).slice(0, 4).map(([type, color]) => (
-                  <div key={type} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full border-2" style={{ borderColor: color, backgroundColor: color + "20" }} />
-                    <span className="text-xs text-[color:var(--ds-text-muted)] capitalize">{type}</span>
-                  </div>
-                ))}
+                {Object.entries(NODE_COLORS)
+                  .slice(0, 4)
+                  .map(([type, color]) => (
+                    <div key={type} className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full border-2"
+                        style={{ borderColor: color, backgroundColor: color + "20" }}
+                      />
+                      <span className="text-xs text-[color:var(--ds-text-muted)] capitalize">
+                        {type}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
 
-            <div className="absolute top-4 right-4 bg-[color:var(--ds-surface)]/90 backdrop-blur border border-[color:var(--ds-border)] rounded-xl p-4 text-right">
-              <div className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-2">Graph</div>
+            <div className="absolute top-4 right-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 text-right backdrop-blur">
+              <div className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                Graph
+              </div>
               <div className="space-y-1">
-                <div className="text-sm font-mono text-[color:var(--ds-text)]">{nodes.length} <span className="text-[color:var(--ds-text-muted)]">Knoten</span></div>
-                <div className="text-sm font-mono text-[color:var(--ds-text)]">{links.length} <span className="text-[color:var(--ds-text-muted)]">Kanten</span></div>
+                <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                  {nodes.length} <span className="text-[color:var(--ds-text-muted)]">Knoten</span>
+                </div>
+                <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                  {links.length} <span className="text-[color:var(--ds-text-muted)]">Kanten</span>
+                </div>
               </div>
             </div>
           </>
@@ -274,17 +310,30 @@ export default function GraphPage() {
       </div>
 
       {selected && (
-        <div className="w-72 shrink-0 border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] overflow-y-auto p-5">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: (NODE_COLORS[selected.type] || "#585866") + "20", border: `1px solid ${(NODE_COLORS[selected.type] || "#585866")}40` }}>
+        <div className="w-72 shrink-0 overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+          <div className="mb-5 flex items-start gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              style={{
+                backgroundColor: (NODE_COLORS[selected.type] || "#585866") + "20",
+                border: `1px solid ${NODE_COLORS[selected.type] || "#585866"}40`,
+              }}
+            >
               {(() => {
                 const Icon = typeIconMap[selected.type] || FileText;
-                return <Icon size={17} style={{ color: NODE_COLORS[selected.type] || "#585866" }} />;
+                return (
+                  <Icon size={17} style={{ color: NODE_COLORS[selected.type] || "#585866" }} />
+                );
               })()}
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[color:var(--ds-text)] tracking-tight">{selected.name}</h3>
-              <Badge variant={(selected.type as Parameters<typeof Badge>[0]["variant"]) || "default"} className="mt-1.5">
+              <h3 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
+                {selected.name}
+              </h3>
+              <Badge
+                variant={(selected.type as Parameters<typeof Badge>[0]["variant"]) || "default"}
+                className="mt-1.5"
+              >
                 {selected.type}
               </Badge>
             </div>
@@ -292,36 +341,59 @@ export default function GraphPage() {
 
           <div className="space-y-4">
             <div>
-              <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-2">Slug</p>
-              <p className="text-sm font-mono brand-text brand-soft px-3 py-2 rounded-lg">{selected.id}</p>
+              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                Slug
+              </p>
+              <p className="brand-text brand-soft rounded-lg px-3 py-2 font-mono text-sm">
+                {selected.id}
+              </p>
             </div>
             <div>
-              <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-2">Verbindungen</p>
-              <p className="text-2xl font-bold text-[color:var(--ds-text)] font-mono tabular-nums">{selected.connections}</p>
+              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                Verbindungen
+              </p>
+              <p className="font-mono text-2xl font-bold text-[color:var(--ds-text)] tabular-nums">
+                {selected.connections}
+              </p>
             </div>
 
             <div>
-              <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-2">Kanten</p>
-              {links.filter((l) => {
-                const src = typeof l.source === "string" ? l.source : l.source.id;
-                const tgt = typeof l.target === "string" ? l.target : l.target.id;
-                return src === selected.id || tgt === selected.id;
-              }).map((link, i) => {
-                const src = typeof link.source === "string" ? link.source : link.source.id;
-                const tgt = typeof link.target === "string" ? link.target : link.target.id;
-                const other = src === selected.id ? tgt : src;
-                const otherNode = nodes.find((n) => n.id === other);
-                return (
-                  <div key={i} className="flex items-center gap-2 text-xs mb-2">
-                    <span className="font-mono brand-text brand-soft px-2 py-0.5 rounded">{link.type}</span>
-                    <span className="text-[color:var(--ds-text-muted)]">→</span>
-                    <span className="text-[color:var(--ds-text)]">{otherNode?.name || other}</span>
-                  </div>
-                );
-              })}
+              <p className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                Kanten
+              </p>
+              {links
+                .filter((l) => {
+                  const src = typeof l.source === "string" ? l.source : l.source.id;
+                  const tgt = typeof l.target === "string" ? l.target : l.target.id;
+                  return src === selected.id || tgt === selected.id;
+                })
+                .map((link, i) => {
+                  const src = typeof link.source === "string" ? link.source : link.source.id;
+                  const tgt = typeof link.target === "string" ? link.target : link.target.id;
+                  const other = src === selected.id ? tgt : src;
+                  const otherNode = nodes.find((n) => n.id === other);
+                  return (
+                    <div key={i} className="mb-2 flex items-center gap-2 text-xs">
+                      <span className="brand-text brand-soft rounded px-2 py-0.5 font-mono">
+                        {link.type}
+                      </span>
+                      <span className="text-[color:var(--ds-text-muted)]">→</span>
+                      <span className="text-[color:var(--ds-text)]">
+                        {otherNode?.name || other}
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
 
-            <Button variant="outline" size="md" className="w-full" onClick={() => window.location.href = `/dashboard/brain/${selected.id.split("/").map(encodeURIComponent).join("/")}`}>
+            <Button
+              variant="outline"
+              size="md"
+              className="w-full"
+              onClick={() =>
+                (window.location.href = `/dashboard/brain/${selected.id.split("/").map(encodeURIComponent).join("/")}`)
+              }
+            >
               Seite öffnen
             </Button>
           </div>

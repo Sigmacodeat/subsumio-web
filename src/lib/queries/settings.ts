@@ -216,6 +216,7 @@ export interface ModelPreferenceResponse {
     description: string;
     capabilities: string[];
     brainScoped: boolean;
+    dataResidency: "eu" | "non_eu";
   }>;
   preferredModelId: string;
   preferredModel: {
@@ -229,15 +230,19 @@ export interface ModelPreferenceResponse {
     description: string;
     capabilities: string[];
     brainScoped: boolean;
+    dataResidency: "eu" | "non_eu";
   } | null;
   brainId: string;
+  modelPolicy: "any" | "eu_only";
 }
 
 export function useModelPreference() {
   return useQuery({
     queryKey: ["settings", "model"],
     queryFn: () =>
-      fetch("/api/settings/model").then((r) => r.json()) as Promise<{ data: ModelPreferenceResponse }>,
+      fetch("/api/settings/model").then((r) => r.json()) as Promise<{
+        data: ModelPreferenceResponse;
+      }>,
   });
 }
 

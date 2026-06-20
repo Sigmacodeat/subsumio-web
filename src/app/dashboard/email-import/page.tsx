@@ -44,7 +44,7 @@ export default function EmailImportPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="E-Mail-Import"
         description="Mandanten-E-Mails automatisch Akten zuordnen"
@@ -55,21 +55,28 @@ export default function EmailImportPage() {
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          const files = Array.from(e.dataTransfer.files).filter((f) => f.name.endsWith(".eml") || f.name.endsWith(".msg"));
+          const files = Array.from(e.dataTransfer.files).filter(
+            (f) => f.name.endsWith(".eml") || f.name.endsWith(".msg")
+          );
           void onDrop(files);
         }}
-        className="rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all duration-300 cursor-pointer"
+        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-all duration-300 hover:border-blue-500/30 hover:bg-blue-500/[0.02]"
         onClick={() => document.getElementById("email-file-input")?.click()}
       >
-        <Upload size={32} className="mx-auto text-[color:var(--ds-border)] mb-3" />
-        <p className="text-sm text-[color:var(--ds-text-muted)]">.eml-Dateien hierher ziehen oder klicken</p>
+        <Upload size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
+        <p className="text-sm text-[color:var(--ds-text-muted)]">
+          .eml-Dateien hierher ziehen oder klicken
+        </p>
         <input
           id="email-file-input"
           type="file"
           multiple
           accept=".eml"
           className="hidden"
-          onChange={(e) => { const files = Array.from(e.target.files || []); void onDrop(files); }}
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            void onDrop(files);
+          }}
         />
       </div>
 
@@ -82,10 +89,12 @@ export default function EmailImportPage() {
       {parsed.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{parsed.length} E-Mail(s) erkannt</h2>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {parsed.length} E-Mail(s) erkannt
+            </h2>
             <Button
               variant="primary"
-              className="bg-blue-600 hover:bg-blue-500 text-white gap-2 text-sm"
+              className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
               onClick={importEmails}
               disabled={importing}
             >
@@ -96,20 +105,29 @@ export default function EmailImportPage() {
 
           {imported > 0 && (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700">
-              <CheckCircle2 size={14} className="inline mr-1" />
+              <CheckCircle2 size={14} className="mr-1 inline" />
               {imported} E-Mail(s) erfolgreich zugeordnet.
             </div>
           )}
 
           <div className="space-y-2">
             {parsed.map((email, i) => (
-              <div key={i} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2">
+              <div
+                key={i}
+                className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+              >
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{email.subject}</span>
+                  <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                    {email.subject}
+                  </span>
                   {email.confidence === "high" ? (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-600">Hoch</span>
+                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-600">
+                      Hoch
+                    </span>
                   ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600">Unsicher</span>
+                    <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
+                      Unsicher
+                    </span>
                   )}
                 </div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
@@ -122,7 +140,9 @@ export default function EmailImportPage() {
                   </div>
                 )}
                 {email.attachments.length > 0 && (
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">{email.attachments.length} Anhänge</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                    {email.attachments.length} Anhänge
+                  </div>
                 )}
               </div>
             ))}

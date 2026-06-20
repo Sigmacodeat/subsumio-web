@@ -32,7 +32,12 @@ interface DocumentRequestRecord {
     recipient_role: "client" | "lawyer" | "assistant" | "other";
     channel: "whatsapp" | "portal" | "email" | "manual";
     status: RequestStatus;
-    items: Array<{ key: string; label: string; required: boolean; received_document_slug?: string }>;
+    items: Array<{
+      key: string;
+      label: string;
+      required: boolean;
+      received_document_slug?: string;
+    }>;
     portal_token_id?: string;
     portal_url?: string;
     source_event_slug?: string;
@@ -154,7 +159,7 @@ export default function DocumentRequestsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Dokumentenanfragen"
         description="Offene Unterlagenanforderungen, Versandstatus und Fulfillment im Blick"
@@ -162,7 +167,7 @@ export default function DocumentRequestsPage() {
         actions={
           <button
             onClick={() => void qc.invalidateQueries({ queryKey: ["document-requests", "list"] })}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[color:var(--ds-border)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
           >
             <RefreshCw size={16} />
             Aktualisieren
@@ -170,53 +175,60 @@ export default function DocumentRequestsPage() {
         }
       />
 
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border brand-border brand-soft/5" role="note">
-        <AlertCircle size={16} className="brand-text shrink-0 mt-0.5" aria-hidden="true" />
-        <p className="text-xs brand-text/90 leading-relaxed">
+      <div
+        className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
+        role="note"
+      >
+        <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="brand-text/90 text-xs leading-relaxed">
           Dokumentenanfragen sind der Fulfillment-Teil des WhatsApp-Workflows: hier wird sichtbar,
           was angefordert, gesendet und später tatsächlich erfüllt wurde.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Metric label="Entwürfe" value={metrics.draft || 0} tone="amber" />
         <Metric label="Gesendet" value={metrics.sent || 0} tone="blue" />
         <Metric label="Teilweise" value={metrics.partially_fulfilled || 0} tone="slate" />
         <Metric label="Erledigt" value={metrics.fulfilled || 0} tone="emerald" />
       </div>
 
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-center gap-2">
           <Plus size={14} className="text-[color:var(--ds-text-muted)]" />
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Dokumentenanfrage anlegen</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            Dokumentenanfrage anlegen
+          </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <input
             value={createForm.case_slug}
             onChange={(e) => setCreateForm((prev) => ({ ...prev, case_slug: e.target.value }))}
             placeholder="Akte, z. B. legal/cases/2026-014"
-            className="md:col-span-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
           />
           <textarea
             value={createForm.items}
             onChange={(e) => setCreateForm((prev) => ({ ...prev, items: e.target.value }))}
             placeholder="Unterlagen, eine pro Zeile"
             rows={3}
-            className="md:col-span-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
           />
           <textarea
             value={createForm.message_draft}
             onChange={(e) => setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))}
             placeholder="Nachrichtenentwurf"
             rows={3}
-            className="md:col-span-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
           />
         </div>
         <label className="inline-flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
           <input
             type="checkbox"
             checked={createForm.include_portal_link}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, include_portal_link: e.target.checked }))}
+            onChange={(e) =>
+              setCreateForm((prev) => ({ ...prev, include_portal_link: e.target.checked }))
+            }
           />
           Portal-Link mit erzeugen
         </label>
@@ -227,15 +239,19 @@ export default function DocumentRequestsPage() {
           <button
             onClick={() => void createRequest()}
             disabled={createMutation.isPending || !createForm.case_slug.trim()}
-            className="inline-flex items-center gap-2 rounded-lg brand-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
-            {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            {createMutation.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
             Anlegen
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((entry) => (
             <button
@@ -244,8 +260,8 @@ export default function DocumentRequestsPage() {
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
                 filter === entry.key
-                  ? "brand-bg text-white border-transparent"
-                  : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]",
+                  ? "brand-bg border-transparent text-white"
+                  : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
               )}
             >
               {entry.label}
@@ -253,50 +269,69 @@ export default function DocumentRequestsPage() {
           ))}
         </div>
         <div className="relative w-full md:w-80">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Dokumentenanfrage suchen…"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
           />
         </div>
       </div>
 
       {listQuery.isLoading ? (
         <div className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]">
-          <Loader2 size={20} className="animate-spin mr-2" /> Lade Dokumentenanfragen…
+          <Loader2 size={20} className="mr-2 animate-spin" /> Lade Dokumentenanfragen…
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-10 text-center">
           <FileClock size={20} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Dokumentenanfragen für den aktuellen Filter.</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Keine Dokumentenanfragen für den aktuellen Filter.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((item) => (
-            <div key={item.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+            <div
+              key={item.slug}
+              className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="default" className="text-[10px] border brand-soft brand-border brand-text">
+                    <Badge
+                      variant="default"
+                      className="brand-soft brand-border brand-text border text-xs"
+                    >
                       {item.frontmatter.channel}
                     </Badge>
-                    <Badge variant="default" className="text-[10px] border bg-amber-500/10 border-amber-500/20 text-amber-600">
+                    <Badge
+                      variant="default"
+                      className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                    >
                       {item.frontmatter.status}
                     </Badge>
-                    <Badge variant="default" className="text-[10px] border bg-slate-500/10 border-slate-500/20 text-slate-600">
+                    <Badge
+                      variant="default"
+                      className="border border-slate-500/20 bg-slate-500/10 text-xs text-slate-600"
+                    >
                       {item.frontmatter.recipient_role}
                     </Badge>
                   </div>
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)] truncate">
+                  <h3 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2">
-                    {item.frontmatter.message_draft || item.content || "Keine Nachricht gespeichert."}
+                  <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                    {item.frontmatter.message_draft ||
+                      item.content ||
+                      "Keine Nachricht gespeichert."}
                   </p>
                 </div>
-                <div className="text-right text-xs text-[color:var(--ds-text-muted)] shrink-0">
+                <div className="shrink-0 text-right text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex items-center justify-end gap-1">
                     <Clock size={12} />
                     {createdLabel(item.frontmatter.created_at)}
@@ -305,16 +340,18 @@ export default function DocumentRequestsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto]">
                 <div className="space-y-2 text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex flex-wrap gap-2">
                     <span>Akte: {item.frontmatter.case_slug}</span>
-                    {item.frontmatter.sent_at && <span>Gesendet: {createdLabel(item.frontmatter.sent_at)}</span>}
+                    {item.frontmatter.sent_at && (
+                      <span>Gesendet: {createdLabel(item.frontmatter.sent_at)}</span>
+                    )}
                   </div>
                   {item.frontmatter.source_event_slug && (
                     <a
                       href={`/dashboard/brain/${encodeURIComponent(item.frontmatter.source_event_slug)}`}
-                      className="inline-flex items-center gap-1 text-[color:var(--ds-text)] hover:underline font-mono"
+                      className="inline-flex items-center gap-1 font-mono text-[color:var(--ds-text)] hover:underline"
                     >
                       <Send size={12} />
                       {item.frontmatter.source_event_slug}
@@ -322,8 +359,10 @@ export default function DocumentRequestsPage() {
                   )}
                   {item.frontmatter.portal_url && (
                     <button
-                      onClick={() => void navigator.clipboard.writeText(item.frontmatter.portal_url || "")}
-                      className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-mono break-all"
+                      onClick={() =>
+                        void navigator.clipboard.writeText(item.frontmatter.portal_url || "")
+                      }
+                      className="inline-flex items-center gap-1 font-mono break-all text-emerald-700 hover:underline"
                     >
                       <Copy size={12} />
                       Portal: {item.frontmatter.portal_url}
@@ -331,7 +370,11 @@ export default function DocumentRequestsPage() {
                   )}
                   <div className="flex flex-wrap gap-2">
                     {item.frontmatter.items.map((doc) => (
-                      <Badge key={doc.key} variant="default" className="text-[10px] border bg-blue-500/10 border-blue-500/20 text-blue-700">
+                      <Badge
+                        key={doc.key}
+                        variant="default"
+                        className="border border-blue-500/20 bg-blue-500/10 text-xs text-blue-700"
+                      >
                         {doc.label}
                         {doc.required ? " *" : ""}
                       </Badge>
@@ -339,7 +382,7 @@ export default function DocumentRequestsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 min-w-[280px]">
+                <div className="grid min-w-[280px] grid-cols-2 gap-2">
                   <ActionButton
                     label="Als gesendet"
                     icon={Send}
@@ -375,7 +418,15 @@ export default function DocumentRequestsPage() {
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone: "emerald" | "amber" | "blue" | "slate" }) {
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "emerald" | "amber" | "blue" | "slate";
+}) {
   const toneClass =
     tone === "emerald"
       ? "text-emerald-600"
@@ -413,7 +464,7 @@ function ActionButton({
         "inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50",
         danger
           ? "border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10"
-          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]",
+          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
       )}
     >
       <Icon size={12} />

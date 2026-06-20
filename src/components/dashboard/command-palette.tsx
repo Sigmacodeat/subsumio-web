@@ -66,64 +66,350 @@ interface CommandItem {
 
 const COMMANDS: CommandItem[] = [
   // Gehirn
-  { id: "dashboard", label: "Übersicht", icon: LayoutDashboard, href: "/dashboard", section: "Gehirn" },
-  { id: "assistant", label: "Assistant", icon: Bot, href: "/dashboard/assistant", section: "Gehirn" },
-  { id: "query", label: "Brain fragen", icon: MessageSquare, href: "/dashboard/query", section: "Gehirn", keywords: "search ask question" },
+  {
+    id: "dashboard",
+    label: "Übersicht",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+    section: "Gehirn",
+  },
+  {
+    id: "assistant",
+    label: "Assistant",
+    icon: Bot,
+    href: "/dashboard/assistant",
+    section: "Gehirn",
+  },
+  {
+    id: "query",
+    label: "Brain fragen",
+    icon: MessageSquare,
+    href: "/dashboard/query",
+    section: "Gehirn",
+    keywords: "search ask question",
+  },
   { id: "agents", label: "Agenten", icon: Sparkles, href: "/dashboard/agents", section: "Gehirn" },
-  { id: "approvals", label: "Freigaben", icon: Gavel, href: "/dashboard/approvals", section: "Gehirn" },
-  { id: "workflows", label: "Workflows", icon: Workflow, href: "/dashboard/workflows", section: "Gehirn", keywords: "workflow template automation" },
-  { id: "brain", label: "Brain erkunden", icon: BookOpen, href: "/dashboard/brain", section: "Gehirn", keywords: "pages entities" },
-  { id: "graph", label: "Graph ansehen", icon: Network, href: "/dashboard/graph", section: "Gehirn", keywords: "knowledge network edges" },
-  { id: "upload", label: "Dokument hochladen", icon: Upload, href: "/dashboard/upload", section: "Gehirn", keywords: "file import pdf" },
-  { id: "rag-eval", label: "RAG-Eval", icon: BarChart3, href: "/dashboard/rag-eval", section: "Gehirn", keywords: "evaluation metrics" },
+  {
+    id: "approvals",
+    label: "Freigaben",
+    icon: Gavel,
+    href: "/dashboard/approvals",
+    section: "Gehirn",
+  },
+  {
+    id: "workflows",
+    label: "Workflows",
+    icon: Workflow,
+    href: "/dashboard/workflows",
+    section: "Gehirn",
+    keywords: "workflow template automation",
+  },
+  {
+    id: "brain",
+    label: "Brain erkunden",
+    icon: BookOpen,
+    href: "/dashboard/brain",
+    section: "Gehirn",
+    keywords: "pages entities",
+  },
+  {
+    id: "graph",
+    label: "Graph ansehen",
+    icon: Network,
+    href: "/dashboard/graph",
+    section: "Gehirn",
+    keywords: "knowledge network edges",
+  },
+  {
+    id: "upload",
+    label: "Dokument hochladen",
+    icon: Upload,
+    href: "/dashboard/upload",
+    section: "Gehirn",
+    keywords: "file import pdf",
+  },
+  {
+    id: "rag-eval",
+    label: "RAG-Eval",
+    icon: BarChart3,
+    href: "/dashboard/rag-eval",
+    section: "Gehirn",
+    keywords: "evaluation metrics",
+  },
 
   // Akten & Fristen
-  { id: "cases", label: "Akten", icon: Briefcase, href: "/dashboard/cases", section: "Akten & Fristen", keywords: "matters" },
-  { id: "contacts", label: "Kontakte", icon: Users, href: "/dashboard/contacts", section: "Akten & Fristen", keywords: "people clients" },
-  { id: "contracts", label: "Verträge", icon: ShieldCheck, href: "/dashboard/contracts", section: "Akten & Fristen" },
-  { id: "playbooks", label: "Playbooks", icon: ClipboardList, href: "/dashboard/playbooks", section: "Akten & Fristen", keywords: "contract review rules playbook" },
-  { id: "vault", label: "Dokumenten-Vault", icon: FolderOpen, href: "/dashboard/vault", section: "Akten & Fristen", keywords: "documents files" },
-  { id: "deadlines", label: "Fristen", icon: CalendarClock, href: "/dashboard/deadlines", section: "Akten & Fristen", keywords: "dates due" },
-  { id: "opponents", label: "Gegner", icon: Swords, href: "/dashboard/opponents", section: "Akten & Fristen" },
-  { id: "client-portal", label: "Mandanten-Portal", icon: UserCircle, href: "/dashboard/client-portal", section: "Akten & Fristen" },
+  {
+    id: "cases",
+    label: "Akten",
+    icon: Briefcase,
+    href: "/dashboard/cases",
+    section: "Akten & Fristen",
+    keywords: "matters",
+  },
+  {
+    id: "contacts",
+    label: "Kontakte",
+    icon: Users,
+    href: "/dashboard/contacts",
+    section: "Akten & Fristen",
+    keywords: "people clients",
+  },
+  {
+    id: "contracts",
+    label: "Verträge",
+    icon: ShieldCheck,
+    href: "/dashboard/contracts",
+    section: "Akten & Fristen",
+  },
+  {
+    id: "playbooks",
+    label: "Playbooks",
+    icon: ClipboardList,
+    href: "/dashboard/playbooks",
+    section: "Akten & Fristen",
+    keywords: "contract review rules playbook",
+  },
+  {
+    id: "vault",
+    label: "Dokumenten-Vault",
+    icon: FolderOpen,
+    href: "/dashboard/vault",
+    section: "Akten & Fristen",
+    keywords: "documents files",
+  },
+  {
+    id: "deadlines",
+    label: "Fristen",
+    icon: CalendarClock,
+    href: "/dashboard/deadlines",
+    section: "Akten & Fristen",
+    keywords: "dates due",
+  },
+  {
+    id: "opponents",
+    label: "Gegner",
+    icon: Swords,
+    href: "/dashboard/opponents",
+    section: "Akten & Fristen",
+  },
+  {
+    id: "client-portal",
+    label: "Mandanten-Portal",
+    icon: UserCircle,
+    href: "/dashboard/client-portal",
+    section: "Akten & Fristen",
+  },
 
   // Recherche
-  { id: "research", label: "Legal Research", icon: Globe, href: "/dashboard/research", section: "Recherche" },
-  { id: "rechtsprechung", label: "Rechtsprechung", icon: Landmark, href: "/dashboard/rechtsprechung", section: "Recherche", keywords: "judgments cases" },
-  { id: "norms", label: "Normen", icon: BookOpen, href: "/dashboard/norms", section: "Recherche", keywords: "statutes laws" },
-  { id: "judgements-sync", label: "Urteile-Sync", icon: RefreshCw, href: "/dashboard/judgements-sync", section: "Recherche" },
-  { id: "kollisionspruefung", label: "Kollisionsprüfung", icon: ShieldAlert, href: "/dashboard/kollisionspruefung", section: "Recherche", keywords: "conflict check" },
-  { id: "tabular-review", label: "Massen-Review", icon: Table2, href: "/dashboard/tabular-review", section: "Recherche" },
-  { id: "monitoring", label: "Monitoring", icon: Bell, href: "/dashboard/monitoring", section: "Recherche" },
+  {
+    id: "research",
+    label: "Legal Research",
+    icon: Globe,
+    href: "/dashboard/research",
+    section: "Recherche",
+  },
+  {
+    id: "rechtsprechung",
+    label: "Rechtsprechung",
+    icon: Landmark,
+    href: "/dashboard/rechtsprechung",
+    section: "Recherche",
+    keywords: "judgments cases",
+  },
+  {
+    id: "norms",
+    label: "Normen",
+    icon: BookOpen,
+    href: "/dashboard/norms",
+    section: "Recherche",
+    keywords: "statutes laws",
+  },
+  {
+    id: "judgements-sync",
+    label: "Urteile-Sync",
+    icon: RefreshCw,
+    href: "/dashboard/judgements-sync",
+    section: "Recherche",
+  },
+  {
+    id: "kollisionspruefung",
+    label: "Kollisionsprüfung",
+    icon: ShieldAlert,
+    href: "/dashboard/kollisionspruefung",
+    section: "Recherche",
+    keywords: "conflict check",
+  },
+  {
+    id: "tabular-review",
+    label: "Massen-Review",
+    icon: Table2,
+    href: "/dashboard/tabular-review",
+    section: "Recherche",
+  },
+  {
+    id: "monitoring",
+    label: "Monitoring",
+    icon: Bell,
+    href: "/dashboard/monitoring",
+    section: "Recherche",
+  },
 
   // Schriftsätze & Abrechnung
-  { id: "drafting", label: "Schriftsatz", icon: PenTool, href: "/dashboard/drafting", section: "Schriftsätze & Abrechnung", keywords: "draft writing" },
-  { id: "cost-calculator", label: "Kostenrechner", icon: Scale, href: "/dashboard/cost-calculator", section: "Schriftsätze & Abrechnung" },
-  { id: "invoicing", label: "Rechnungen", icon: FileText, href: "/dashboard/invoicing", section: "Schriftsätze & Abrechnung", keywords: "invoices billing" },
-  { id: "datev-export", label: "DATEV-Export", icon: FileSpreadsheet, href: "/dashboard/datev-export", section: "Schriftsätze & Abrechnung" },
-  { id: "signature", label: "e-Signatur", icon: FileSignature, href: "/dashboard/signature", section: "Schriftsätze & Abrechnung" },
+  {
+    id: "drafting",
+    label: "Schriftsatz",
+    icon: PenTool,
+    href: "/dashboard/drafting",
+    section: "Schriftsätze & Abrechnung",
+    keywords: "draft writing",
+  },
+  {
+    id: "cost-calculator",
+    label: "Kostenrechner",
+    icon: Scale,
+    href: "/dashboard/cost-calculator",
+    section: "Schriftsätze & Abrechnung",
+  },
+  {
+    id: "invoicing",
+    label: "Rechnungen",
+    icon: FileText,
+    href: "/dashboard/invoicing",
+    section: "Schriftsätze & Abrechnung",
+    keywords: "invoices billing",
+  },
+  {
+    id: "datev-export",
+    label: "DATEV-Export",
+    icon: FileSpreadsheet,
+    href: "/dashboard/datev-export",
+    section: "Schriftsätze & Abrechnung",
+  },
+  {
+    id: "signature",
+    label: "e-Signatur",
+    icon: FileSignature,
+    href: "/dashboard/signature",
+    section: "Schriftsätze & Abrechnung",
+  },
 
   // Daten & Integration
-  { id: "connectors", label: "Konnektoren", icon: Plug, href: "/dashboard/connectors", section: "Daten & Integration" },
-  { id: "whatsapp", label: "WhatsApp", icon: MessageSquare, href: "/dashboard/whatsapp", section: "Daten & Integration" },
-  { id: "import-kanzlei", label: "Kanzlei-Import", icon: FileSpreadsheet, href: "/dashboard/import-kanzlei", section: "Daten & Integration" },
+  {
+    id: "connectors",
+    label: "Konnektoren",
+    icon: Plug,
+    href: "/dashboard/connectors",
+    section: "Daten & Integration",
+  },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    icon: MessageSquare,
+    href: "/dashboard/whatsapp",
+    section: "Daten & Integration",
+  },
+  {
+    id: "import-kanzlei",
+    label: "Kanzlei-Import",
+    icon: FileSpreadsheet,
+    href: "/dashboard/import-kanzlei",
+    section: "Daten & Integration",
+  },
   { id: "bea", label: "beA", icon: Mail, href: "/dashboard/bea", section: "Daten & Integration" },
-  { id: "email-import", label: "E-Mail-Import", icon: Mail, href: "/dashboard/email-import", section: "Daten & Integration" },
-  { id: "calendar-export", label: "Kalender", icon: CalendarClock, href: "/dashboard/calendar-export", section: "Daten & Integration" },
-  { id: "compliance", label: "Compliance", icon: ShieldCheck, href: "/dashboard/compliance", section: "Daten & Integration" },
-  { id: "anonymize", label: "Anonymisierung", icon: EyeOff, href: "/dashboard/anonymize", section: "Daten & Integration" },
-  { id: "verfahrensdoku", label: "Verfahrensdoku", icon: ScrollText, href: "/dashboard/verfahrensdoku", section: "Daten & Integration" },
-  { id: "data-export", label: "Datenexport", icon: Archive, href: "/dashboard/data-export", section: "Daten & Integration" },
+  {
+    id: "email-import",
+    label: "E-Mail-Import",
+    icon: Mail,
+    href: "/dashboard/email-import",
+    section: "Daten & Integration",
+  },
+  {
+    id: "calendar-export",
+    label: "Kalender",
+    icon: CalendarClock,
+    href: "/dashboard/calendar-export",
+    section: "Daten & Integration",
+  },
+  {
+    id: "compliance",
+    label: "Compliance",
+    icon: ShieldCheck,
+    href: "/dashboard/compliance",
+    section: "Daten & Integration",
+  },
+  {
+    id: "anonymize",
+    label: "Anonymisierung",
+    icon: EyeOff,
+    href: "/dashboard/anonymize",
+    section: "Daten & Integration",
+  },
+  {
+    id: "verfahrensdoku",
+    label: "Verfahrensdoku",
+    icon: ScrollText,
+    href: "/dashboard/verfahrensdoku",
+    section: "Daten & Integration",
+  },
+  {
+    id: "data-export",
+    label: "Datenexport",
+    icon: Archive,
+    href: "/dashboard/data-export",
+    section: "Daten & Integration",
+  },
 
   // Verwaltung
   { id: "team", label: "Team", icon: Users, href: "/dashboard/team", section: "Verwaltung" },
-  { id: "controlling", label: "Controlling", icon: BarChart3, href: "/dashboard/controlling", section: "Verwaltung" },
-  { id: "api-keys", label: "API-Keys", icon: Key, href: "/dashboard/api-keys", section: "Verwaltung" },
-  { id: "billing", label: "Abrechnung", icon: CreditCard, href: "/dashboard/billing", section: "Verwaltung" },
-  { id: "mobile", label: "Mobile", icon: Smartphone, href: "/dashboard/mobile", section: "Verwaltung" },
-  { id: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings", section: "Verwaltung" },
-  { id: "settings-kanzlei", label: "Kanzlei-Einstellungen", icon: Building2, href: "/dashboard/settings/kanzlei", section: "Verwaltung" },
-  { id: "settings-security", label: "Sicherheit", icon: Shield, href: "/dashboard/settings/security", section: "Verwaltung" },
+  {
+    id: "controlling",
+    label: "Controlling",
+    icon: BarChart3,
+    href: "/dashboard/controlling",
+    section: "Verwaltung",
+  },
+  {
+    id: "api-keys",
+    label: "API-Keys",
+    icon: Key,
+    href: "/dashboard/api-keys",
+    section: "Verwaltung",
+  },
+  {
+    id: "billing",
+    label: "Abrechnung",
+    icon: CreditCard,
+    href: "/dashboard/billing",
+    section: "Verwaltung",
+  },
+  {
+    id: "mobile",
+    label: "Mobile",
+    icon: Smartphone,
+    href: "/dashboard/mobile",
+    section: "Verwaltung",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: Settings,
+    href: "/dashboard/settings",
+    section: "Verwaltung",
+  },
+  {
+    id: "settings-kanzlei",
+    label: "Kanzlei-Einstellungen",
+    icon: Building2,
+    href: "/dashboard/settings/kanzlei",
+    section: "Verwaltung",
+  },
+  {
+    id: "settings-security",
+    label: "Sicherheit",
+    icon: Shield,
+    href: "/dashboard/settings/security",
+    section: "Verwaltung",
+  },
 ];
 
 interface CommandPaletteProps {
@@ -153,7 +439,12 @@ function saveRecent(id: string) {
   } catch {}
 }
 
-export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }: CommandPaletteProps) {
+export function CommandPalette({
+  open,
+  onClose,
+  onToggleTheme,
+  onToggleSidebar,
+}: CommandPaletteProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -165,15 +456,59 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
   const allCommands = useMemo(() => {
     const cmds: CommandItem[] = [...COMMANDS];
     if (onToggleTheme) {
-      cmds.push({ id: "action-toggle-theme", label: "Theme wechseln", icon: Sun, action: onToggleTheme, section: "Aktionen", keywords: "dark light theme mode farbe hell dunkel" });
+      cmds.push({
+        id: "action-toggle-theme",
+        label: "Theme wechseln",
+        icon: Sun,
+        action: onToggleTheme,
+        section: "Aktionen",
+        keywords: "dark light theme mode farbe hell dunkel",
+      });
     }
     if (onToggleSidebar) {
-      cmds.push({ id: "action-toggle-sidebar", label: "Sidebar ein-/ausklappen", icon: PanelLeft, action: onToggleSidebar, section: "Aktionen", keywords: "collapse expand sidebar menu seitenleiste" });
+      cmds.push({
+        id: "action-toggle-sidebar",
+        label: "Sidebar ein-/ausklappen",
+        icon: PanelLeft,
+        action: onToggleSidebar,
+        section: "Aktionen",
+        keywords: "collapse expand sidebar menu seitenleiste",
+      });
     }
-    cmds.push({ id: "action-refresh", label: "Daten aktualisieren", icon: RefreshCw, action: () => window.location.reload(), section: "Aktionen", keywords: "reload refresh neu laden aktualisieren" });
-    cmds.push({ id: "help-docs", label: "Dokumentation", icon: BookOpen, href: "/docs", section: "Hilfe", keywords: "help docs manual anleitung doku" });
-    cmds.push({ id: "help-shortcuts", label: "Tastaturkürzel anzeigen", icon: Keyboard, href: "/docs#shortcuts", section: "Hilfe", keywords: "keyboard shortcuts hotkeys tastatur" });
-    cmds.push({ id: "help-support", label: "Support kontaktieren", icon: LifeBuoy, action: () => { window.location.href = "mailto:support@subsumio.com"; }, section: "Hilfe", keywords: "help contact support hilfe kontakt" });
+    cmds.push({
+      id: "action-refresh",
+      label: "Daten aktualisieren",
+      icon: RefreshCw,
+      action: () => window.location.reload(),
+      section: "Aktionen",
+      keywords: "reload refresh neu laden aktualisieren",
+    });
+    cmds.push({
+      id: "help-docs",
+      label: "Dokumentation",
+      icon: BookOpen,
+      href: "/docs",
+      section: "Hilfe",
+      keywords: "help docs manual anleitung doku",
+    });
+    cmds.push({
+      id: "help-shortcuts",
+      label: "Tastaturkürzel anzeigen",
+      icon: Keyboard,
+      href: "/docs#shortcuts",
+      section: "Hilfe",
+      keywords: "keyboard shortcuts hotkeys tastatur",
+    });
+    cmds.push({
+      id: "help-support",
+      label: "Support kontaktieren",
+      icon: LifeBuoy,
+      action: () => {
+        window.location.href = "mailto:support@subsumio.com";
+      },
+      section: "Hilfe",
+      keywords: "help contact support hilfe kontakt",
+    });
     return cmds;
   }, [onToggleTheme, onToggleSidebar]);
 
@@ -211,10 +546,10 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
     return Array.from(map.entries());
   }, [filtered]);
 
-  const flatList = useMemo(() => [
-    ...recentItems,
-    ...grouped.flatMap(([, items]) => items),
-  ], [grouped, recentItems]);
+  const flatList = useMemo(
+    () => [...recentItems, ...grouped.flatMap(([, items]) => items)],
+    [grouped, recentItems]
+  );
 
   const navigate = useCallback(
     (cmd: CommandItem) => {
@@ -227,7 +562,7 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
         onClose();
       }
     },
-    [router, onClose],
+    [router, onClose]
   );
 
   useEffect(() => {
@@ -279,7 +614,7 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-[100] backdrop-blur-sm"
+        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -288,12 +623,12 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
         role="dialog"
         aria-modal="true"
         aria-label="Command Palette"
-        className="fixed left-1/2 top-[20%] -translate-x-1/2 w-full max-w-xl z-[101] px-4 md:px-0"
+        className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 px-4 md:px-0"
       >
-        <div className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow-elevated overflow-hidden">
+        <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {/* Search input */}
-          <div className="flex items-center gap-3 px-4 h-14 border-b border-[color:var(--ds-border)]">
-            <Search size={18} className="text-[color:var(--ds-text-subtle)] shrink-0" />
+          <div className="flex h-14 items-center gap-3 border-b border-[color:var(--ds-border)] px-4">
+            <Search size={18} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
             <input
               ref={inputRef}
               type="text"
@@ -309,114 +644,136 @@ export function CommandPalette({ open, onClose, onToggleTheme, onToggleSidebar }
               aria-expanded="true"
               aria-controls="command-list"
             />
-            <kbd className="text-[10px] font-mono text-[color:var(--ds-text-muted)] border border-[color:var(--ds-border)] rounded px-1.5 py-0.5 shrink-0">
+            <kbd className="shrink-0 rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
               ESC
             </kbd>
           </div>
 
           {/* Results */}
-          <div ref={listRef} className="max-h-[60vh] overflow-y-auto py-2" id="command-list" role="listbox">
+          <div
+            ref={listRef}
+            className="max-h-[60vh] overflow-y-auto py-2"
+            id="command-list"
+            role="listbox"
+          >
             {flatList.length === 0 ? (
               <div className="px-4 py-10 text-center">
-                <Search size={22} className="text-[color:var(--ds-border-strong)] mx-auto mb-3" />
-                <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Treffer für „{query}{"\u201C"}</p>
+                <Search size={22} className="mx-auto mb-3 text-[color:var(--ds-border-strong)]" />
+                <p className="text-sm text-[color:var(--ds-text-muted)]">
+                  Keine Treffer für „{query}
+                  {"\u201C"}
+                </p>
               </div>
             ) : (
               <>
-              {recentItems.length > 0 && !query.trim() && (
-                <div className="mb-1.5">
-                  <div className="px-4 py-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.08em] text-[color:var(--ds-text-subtle)] font-semibold">
-                      Zuletzt verwendet
-                    </span>
+                {recentItems.length > 0 && !query.trim() && (
+                  <div className="mb-1.5">
+                    <div className="px-4 py-1.5">
+                      <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                        Zuletzt verwendet
+                      </span>
+                    </div>
+                    {recentItems.map((cmd) => {
+                      runningIdx++;
+                      const idx = runningIdx;
+                      const Icon = cmd.icon;
+                      const isActive = idx === activeIndex;
+                      return (
+                        <button
+                          key={`recent-${cmd.id}`}
+                          data-idx={idx}
+                          onClick={() => navigate(cmd)}
+                          onMouseEnter={() => setActiveIndex(idx)}
+                          className={cn(
+                            "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
+                            isActive
+                              ? "brand-soft brand-text"
+                              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                          )}
+                          role="option"
+                          aria-selected={isActive}
+                        >
+                          <Icon size={16} className="shrink-0" />
+                          <span className="flex-1 text-sm font-medium">{cmd.label}</span>
+                          {isActive && (
+                            <CornerDownLeft
+                              size={14}
+                              className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                  {recentItems.map((cmd) => {
-                    runningIdx++;
-                    const idx = runningIdx;
-                    const Icon = cmd.icon;
-                    const isActive = idx === activeIndex;
-                    return (
-                      <button
-                        key={`recent-${cmd.id}`}
-                        data-idx={idx}
-                        onClick={() => navigate(cmd)}
-                        onMouseEnter={() => setActiveIndex(idx)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors rounded-lg mx-0",
-                          isActive
-                            ? "brand-soft brand-text"
-                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]",
-                        )}
-                        role="option"
-                        aria-selected={isActive}
-                      >
-                        <Icon size={16} className="shrink-0" />
-                        <span className="text-sm font-medium flex-1">{cmd.label}</span>
-                        {isActive && (
-                          <CornerDownLeft size={14} className="text-[color:var(--ds-text-subtle)] shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              {grouped.map(([section, items]) => (
-                <div key={section} className="mb-1.5">
-                  <div className="px-4 py-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.08em] text-[color:var(--ds-text-subtle)] font-semibold">
-                      {section}
-                    </span>
+                )}
+                {grouped.map(([section, items]) => (
+                  <div key={section} className="mb-1.5">
+                    <div className="px-4 py-1.5">
+                      <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                        {section}
+                      </span>
+                    </div>
+                    {items.map((cmd) => {
+                      runningIdx++;
+                      const idx = runningIdx;
+                      const Icon = cmd.icon;
+                      const isActive = idx === activeIndex;
+                      return (
+                        <button
+                          key={cmd.id}
+                          data-idx={idx}
+                          onClick={() => navigate(cmd)}
+                          onMouseEnter={() => setActiveIndex(idx)}
+                          className={cn(
+                            "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
+                            isActive
+                              ? "brand-soft brand-text"
+                              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                          )}
+                          role="option"
+                          aria-selected={isActive}
+                        >
+                          <Icon size={16} className="shrink-0" />
+                          <span className="flex-1 text-sm font-medium">{cmd.label}</span>
+                          {cmd.hint && (
+                            <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                              {cmd.hint}
+                            </span>
+                          )}
+                          {isActive && (
+                            <CornerDownLeft
+                              size={14}
+                              className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                  {items.map((cmd) => {
-                    runningIdx++;
-                    const idx = runningIdx;
-                    const Icon = cmd.icon;
-                    const isActive = idx === activeIndex;
-                    return (
-                      <button
-                        key={cmd.id}
-                        data-idx={idx}
-                        onClick={() => navigate(cmd)}
-                        onMouseEnter={() => setActiveIndex(idx)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors rounded-lg mx-0",
-                          isActive
-                            ? "brand-soft brand-text"
-                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]",
-                        )}
-                        role="option"
-                        aria-selected={isActive}
-                      >
-                        <Icon size={16} className="shrink-0" />
-                        <span className="text-sm font-medium flex-1">{cmd.label}</span>
-                        {cmd.hint && (
-                          <span className="text-xs text-[color:var(--ds-text-subtle)]">{cmd.hint}</span>
-                        )}
-                        {isActive && (
-                          <CornerDownLeft size={14} className="text-[color:var(--ds-text-subtle)] shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+                ))}
               </>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 h-11 border-t border-[color:var(--ds-border)] text-[10px] text-[color:var(--ds-text-subtle)]">
+          <div className="flex h-11 items-center justify-between border-t border-[color:var(--ds-border)] px-4 text-xs text-[color:var(--ds-text-subtle)]">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
-                <kbd className="font-mono border border-[color:var(--ds-border)] rounded px-1 py-0.5">↑↓</kbd>
+                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                  ↑↓
+                </kbd>
                 navigieren
               </span>
               <span className="flex items-center gap-1.5">
-                <kbd className="font-mono border border-[color:var(--ds-border)] rounded px-1 py-0.5">↵</kbd>
+                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                  ↵
+                </kbd>
                 öffnen
               </span>
               <span className="flex items-center gap-1.5">
-                <kbd className="font-mono border border-[color:var(--ds-border)] rounded px-1 py-0.5">ESC</kbd>
+                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                  ESC
+                </kbd>
                 schließen
               </span>
             </div>

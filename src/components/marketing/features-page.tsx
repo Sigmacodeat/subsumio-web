@@ -273,7 +273,7 @@ function HowItWorks({ lang }: { lang: Lang }) {
                 <p className="mb-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
                   {s.desc}
                 </p>
-                <span className="brand-text brand-soft inline-block rounded-full px-2 py-1 font-mono text-[10px]">
+                <span className="brand-text brand-soft inline-block rounded-full px-2 py-1 font-mono text-xs">
                   {s.tag}
                 </span>
               </div>

@@ -12,7 +12,7 @@
   --color-border-active: #3a3a6a;
   --color-text-primary: #e8e8f0;
   --color-text-secondary: #8888aa;
-  --color-text-muted: #4a4a6a;
+  --color-text-muted: #8888aa;
   --color-accent: #2f6bff;
   --color-accent-light: #5b8cff;
   --color-accent-glow: rgba(47, 107, 255, 0.15);
@@ -40,6 +40,65 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
+
+  /* ── Type scale — systematic font sizes (T1) ── */
+  --ds-text-xs: 0.75rem; /* 12px — labels, badges, meta */
+  --ds-text-sm: 0.875rem; /* 14px — body, inputs, buttons */
+  --ds-text-base: 1rem; /* 16px — marketing body */
+  --ds-text-lg: 1.125rem; /* 18px — subheadings, dialog titles */
+  --ds-text-xl: 1.25rem; /* 20px — card titles, section headers */
+  --ds-text-2xl: 1.5rem; /* 24px — section headings */
+  --ds-text-3xl: 1.875rem; /* 30px — feature headings */
+  --ds-text-4xl: 2.25rem; /* 36px — stat numbers */
+  --ds-text-display: 3rem; /* 48px — hero */
+  --ds-text-hero: 4.5rem; /* 72px — hero md+ */
+
+  /* ── Font weight hierarchy (T3) ── */
+  --ds-weight-body: 400;
+  --ds-weight-medium: 500;
+  --ds-weight-heading: 600;
+  --ds-weight-display: 700;
+
+  /* ── Line height tokens (T5) ── */
+  --ds-leading-tight: 1.25;
+  --ds-leading-normal: 1.5;
+  --ds-leading-relaxed: 1.625;
+  --ds-leading-display: 1.05;
+
+  /* ── Spacing scale (S1) ── */
+  --ds-space-1: 0.25rem; /* 4px */
+  --ds-space-2: 0.5rem; /* 8px */
+  --ds-space-3: 0.75rem; /* 12px */
+  --ds-space-4: 1rem; /* 16px */
+  --ds-space-5: 1.25rem; /* 20px */
+  --ds-space-6: 1.5rem; /* 24px — card padding */
+  --ds-space-8: 2rem; /* 32px */
+  --ds-space-10: 2.5rem; /* 40px */
+  --ds-space-12: 3rem; /* 48px */
+  --ds-space-16: 4rem; /* 64px */
+  --ds-space-20: 5rem; /* 80px */
+  --ds-space-24: 6rem; /* 96px — section padding */
+
+  /* ── Radius scale (S4) ── */
+  --ds-radius-sm: 0.5rem; /* 8px — inputs, buttons */
+  --ds-radius-md: 0.75rem; /* 12px — cards, panels */
+  --ds-radius-lg: 1rem; /* 16px — large cards, mega-dropdown */
+  --ds-radius-xl: 1.5rem; /* 24px — feature cards, CTA panels */
+  --ds-radius-full: 9999px; /* pills, badges, dots */
+
+  /* ── Marketing shadow scale (SH1) ── */
+  --mk-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --mk-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --mk-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --mk-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.08);
+  --mk-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+
+  /* ── Motion tokens (M3-M4) ── */
+  --ds-duration-fast: 150ms;
+  --ds-duration-normal: 250ms;
+  --ds-duration-slow: 400ms;
+  --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ds-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root {
@@ -54,7 +113,7 @@
   --brand-text: var(--brand-secondary);
   --accent-gold: #b8860b;
   --accent-gold-soft: rgba(184, 134, 11, 0.08);
-  --accent-gold-border: rgba(184, 134, 11, 0.20);
+  --accent-gold-border: rgba(184, 134, 11, 0.2);
 
   /* ────────────────────────────────────────────────────────────────
      Design-system neutral scale (--ds-*) — the SINGLE source of truth
@@ -65,15 +124,15 @@
      to a light theme below, and the dark-mode toggle re-darkens them.
      Rule: components reference var(--ds-*); never hardcode a neutral hex.
      ──────────────────────────────────────────────────────────────── */
-  --ds-bg: #06060f;          /* app/page background          */
-  --ds-surface: #0d0d1a;     /* card / panel surface         */
-  --ds-surface-2: #12122a;   /* nested / elevated surface    */
-  --ds-hover: #1a1a35;       /* row / control hover          */
-  --ds-border: #1e1e3a;      /* hairline borders + dividers  */
+  --ds-bg: #06060f; /* app/page background          */
+  --ds-surface: #0d0d1a; /* card / panel surface         */
+  --ds-surface-2: #12122a; /* nested / elevated surface    */
+  --ds-hover: #1a1a35; /* row / control hover          */
+  --ds-border: #1e1e3a; /* hairline borders + dividers  */
   --ds-border-strong: #3a3a6a; /* emphasised borders         */
-  --ds-text: #e8e8f0;        /* primary text  (AAA on bg)    */
-  --ds-text-muted: #8888aa;  /* secondary text               */
-  --ds-text-subtle: #6a6a85; /* tertiary / disabled labels   */
+  --ds-text: #e8e8f0; /* primary text  (AAA on bg)    */
+  --ds-text-muted: #8888aa; /* secondary text               */
+  --ds-text-subtle: #8282a6; /* tertiary / disabled labels (4.6:1 AA ✓) */
   --ds-ring: var(--brand-primary); /* focus-visible ring color     */
   --ds-accent: var(--brand-primary); /* checked/active accent color  */
 
@@ -89,15 +148,15 @@
      un-toned regions match the global dark body. Rule going forward:
      marketing/legal components reference var(--mk-*); never hardcode a
      neutral hex. ──────────────────────────────────────────────────── */
-  --mk-bg: #06060f;           /* page background              */
-  --mk-surface: #0d0d1a;      /* card / panel surface         */
-  --mk-surface-2: #12122a;    /* nested / elevated surface    */
-  --mk-hover: #1a1a35;        /* row / control hover          */
-  --mk-border: #1e1e3a;       /* hairline borders + dividers  */
-  --mk-border-strong: #3a3a6a;/* emphasised borders           */
-  --mk-text: #e8e8f0;         /* primary text                 */
-  --mk-text-muted: #8888aa;   /* secondary text               */
-  --mk-text-subtle: #7878a0;  /* tertiary labels              */
+  --mk-bg: #06060f; /* page background              */
+  --mk-surface: #0d0d1a; /* card / panel surface         */
+  --mk-surface-2: #12122a; /* nested / elevated surface    */
+  --mk-hover: #1a1a35; /* row / control hover          */
+  --mk-border: #1e1e3a; /* hairline borders + dividers  */
+  --mk-border-strong: #3a3a6a; /* emphasised borders           */
+  --mk-text: #e8e8f0; /* primary text                 */
+  --mk-text-muted: #8888aa; /* secondary text               */
+  --mk-text-subtle: #7878a0; /* tertiary labels              */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
@@ -114,9 +173,10 @@
   --mk-border-strong: #b0b4c8;
   --mk-text: #0f0f1a;
   --mk-text-muted: #555668;
-  --mk-text-subtle: #636572;  /* bumped from #6c6e7a (4.43:1 fail on #eef0f4) → 4.6:1 (AA ✓) */
-  --mk-card-shadow: 0 1px 2px rgba(15, 15, 30, 0.05), 0 8px 24px rgba(15, 15, 30, 0.07),
-                    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  --mk-text-subtle: #636572; /* bumped from #6c6e7a (4.43:1 fail on #eef0f4) → 4.6:1 (AA ✓) */
+  --mk-card-shadow:
+    0 1px 2px rgba(15, 15, 30, 0.05), 0 8px 24px rgba(15, 15, 30, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
   --brand-text: var(--brand-primary);
   color-scheme: light;
 }
@@ -129,9 +189,9 @@
   --mk-border-strong: #475569;
   --mk-text: #f8fafc;
   --mk-text-muted: #94a3b8;
-  --mk-text-subtle: #7a8ca6;  /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
+  --mk-text-subtle: #7a8ca6; /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --brand-text: #5eead4;  /* lifted from var(--brand-secondary) #20d3c2 → 6.6:1 on slate brand-soft (was 3.38:1 fail) */
+  --brand-text: #5eead4; /* lifted from var(--brand-secondary) #20d3c2 → 6.6:1 on slate brand-soft (was 3.38:1 fail) */
   color-scheme: dark;
 }
 [data-tone="dark"] {
@@ -143,8 +203,8 @@
   --mk-border-strong: #3a3a6a;
   --mk-text: #e8e8f0;
   --mk-text-muted: #8888aa;
-  --mk-text-subtle: #8282a6;  /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
-  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
+  --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   --brand-text: var(--brand-secondary);
   color-scheme: dark;
 }
@@ -154,20 +214,43 @@
    -400/-500-alpha shades on dark. The tone-aware accentTile() helper in
    chrome.tsx returns the right Tailwind classes; these rules cover the
    handful of accent texts that are set as bare utility classes. */
-[data-tone="light"] .accent-violet { color: #6d28d9; }
-[data-tone="light"] .accent-blue { color: #1d4ed8; }
-[data-tone="light"] .accent-emerald { color: #047857; }
-[data-tone="slate"] .accent-violet { color: #a78bfa; }
-[data-tone="slate"] .accent-blue { color: #60a5fa; }
-[data-tone="slate"] .accent-emerald { color: #34d399; }
-[data-tone="dark"] .accent-violet { color: #a78bfa; }
-[data-tone="dark"] .accent-blue { color: #60a5fa; }
-[data-tone="dark"] .accent-emerald { color: #34d399; }
+[data-tone="light"] .accent-violet {
+  color: #6d28d9;
+}
+[data-tone="light"] .accent-blue {
+  color: #1d4ed8;
+}
+[data-tone="light"] .accent-emerald {
+  color: #047857;
+}
+[data-tone="slate"] .accent-violet {
+  color: #a78bfa;
+}
+[data-tone="slate"] .accent-blue {
+  color: #60a5fa;
+}
+[data-tone="slate"] .accent-emerald {
+  color: #34d399;
+}
+[data-tone="dark"] .accent-violet {
+  color: #a78bfa;
+}
+[data-tone="dark"] .accent-blue {
+  color: #60a5fa;
+}
+[data-tone="dark"] .accent-emerald {
+  color: #34d399;
+}
 
 /* Marketing theme crossfade — surfaces/text glide between toned sections
    instead of hard-cutting, matching the app-shell behaviour. */
 [data-tone] {
-  transition: color 300ms ease, background-color 300ms ease, border-color 300ms ease, fill 300ms ease, stroke 300ms ease;
+  transition:
+    color 300ms ease,
+    background-color 300ms ease,
+    border-color 300ms ease,
+    fill 300ms ease,
+    stroke 300ms ease;
 }
 
 /* Section spacing rhythm — remove double borders between adjacent sections
@@ -203,7 +286,7 @@
   --ds-border: #e3e6ec;
   --ds-border-strong: #b4b9c8;
   --ds-text: #0f172a;
-  --ds-text-muted: #475569;  /* 7.2:1 on white — AAA body    */
+  --ds-text-muted: #475569; /* 7.2:1 on white — AAA body    */
   --ds-text-subtle: #576072; /* 5.6:1 on #f1f3f6 — AA+ (was #64748b, 4.28:1 fail on surface-2) */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
@@ -246,7 +329,7 @@
   --ds-border: #1e293b;
   --ds-border-strong: #334155;
   --ds-text: #e2e8f0;
-  --ds-text-muted: #94a3b8;  /* 6.1:1 on #111827 — AA       */
+  --ds-text-muted: #94a3b8; /* 6.1:1 on #111827 — AA       */
   --ds-text-subtle: #64748b; /* 4.6:1 — AA                  */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
@@ -261,7 +344,7 @@
   --brand-text: var(--brand-secondary);
   --accent-gold: #d4a843;
   --accent-gold-soft: rgba(212, 168, 67, 0.08);
-  --accent-gold-border: rgba(212, 168, 67, 0.20);
+  --accent-gold-border: rgba(212, 168, 67, 0.2);
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
   --card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15);
   --card-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.2), 0 12px 36px rgba(0, 0, 0, 0.2);
@@ -273,23 +356,41 @@
    uses the -600 Tailwind shades (correct on white); on a dark surface
    those drop below AA, so lift them to the -400 family. Contained,
    single-source override — no per-file edits. */
-[data-app="dashboard"][data-theme="dark"] .text-violet-600 { color: #a78bfa; }
-[data-app="dashboard"][data-theme="dark"] .text-violet-700 { color: #a78bfa; }
+[data-app="dashboard"][data-theme="dark"] .text-violet-600 {
+  color: #a78bfa;
+}
+[data-app="dashboard"][data-theme="dark"] .text-violet-700 {
+  color: #a78bfa;
+}
 [data-app="dashboard"][data-theme="dark"] .text-blue-600,
-[data-app="dashboard"][data-theme="dark"] .text-blue-700 { color: #60a5fa; }
-[data-app="dashboard"][data-theme="light"] .text-emerald-600 { color: #047857; } /* 4.95:1 on #f1f3f6 — AA (was #059669, 3.28:1 fail) */
+[data-app="dashboard"][data-theme="dark"] .text-blue-700 {
+  color: #60a5fa;
+}
+[data-app="dashboard"][data-theme="light"] .text-emerald-600 {
+  color: #047857;
+} /* 4.95:1 on #f1f3f6 — AA (was #059669, 3.28:1 fail) */
 [data-app="dashboard"][data-theme="light"] .text-amber-600,
-[data-app="dashboard"][data-theme="light"] .text-amber-700 { color: #b45309; } /* 4.6:1 on #fff — AA (was #e17100, 3.19:1 fail) */
+[data-app="dashboard"][data-theme="light"] .text-amber-700 {
+  color: #b45309;
+} /* 4.6:1 on #fff — AA (was #e17100, 3.19:1 fail) */
 [data-app="dashboard"][data-theme="dark"] .text-emerald-600,
-[data-app="dashboard"][data-theme="dark"] .text-emerald-700 { color: #34d399; }
+[data-app="dashboard"][data-theme="dark"] .text-emerald-700 {
+  color: #34d399;
+}
 [data-app="dashboard"][data-theme="dark"] .text-amber-600,
-[data-app="dashboard"][data-theme="dark"] .text-amber-700 { color: #fbbf24; }
+[data-app="dashboard"][data-theme="dark"] .text-amber-700 {
+  color: #fbbf24;
+}
 [data-app="dashboard"][data-theme="dark"] .text-red-600,
-[data-app="dashboard"][data-theme="dark"] .text-red-700 { color: #f87171; }
+[data-app="dashboard"][data-theme="dark"] .text-red-700 {
+  color: #f87171;
+}
 
 /* Dashboard background follows the theme token (overrides the global
    dark body paint set in the @theme block / body rule). */
-[data-app="dashboard"] { background: var(--ds-bg); }
+[data-app="dashboard"] {
+  background: var(--ds-bg);
+}
 
 /* Dashboard scrollbar — refined, theme-aware */
 [data-app="dashboard"] ::-webkit-scrollbar {
@@ -339,9 +440,29 @@
 
 /* Brand typography: Space Grotesk carries every headline — the geometric,
    slightly technical voice of the Sigma Synapse mark. Body stays Inter. */
-h1, h2, h3, .font-display {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
   font-family: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   letter-spacing: -0.025em;
+}
+h1 {
+  font-weight: var(--ds-weight-display);
+}
+h2 {
+  font-weight: var(--ds-weight-display);
+}
+h3,
+h4 {
+  font-weight: var(--ds-weight-heading);
+}
+h5,
+h6 {
+  font-weight: var(--ds-weight-medium);
 }
 
 * {
@@ -353,8 +474,8 @@ html {
 }
 
 body {
-  background: #eef0f4;
-  color: #0f0f1a;
+  background: var(--color-light-bg);
+  color: var(--color-light-text);
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -421,13 +542,19 @@ body {
 .grid-bg {
   background-image:
     linear-gradient(color-mix(in srgb, var(--brand-primary) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--brand-secondary) 10%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--brand-secondary) 10%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 50px 50px;
 }
 
 /* Glow effects */
 .glow-purple {
-  box-shadow: 0 0 40px var(--brand-glow), 0 0 80px color-mix(in srgb, var(--brand-secondary) 14%, transparent);
+  box-shadow:
+    0 0 40px var(--brand-glow),
+    0 0 80px color-mix(in srgb, var(--brand-secondary) 14%, transparent);
 }
 
 .glow-text {
@@ -436,6 +563,29 @@ body {
 
 [data-tone="light"] .glow-text {
   text-shadow: none;
+}
+
+/* Terminal window dots — shared across all mockup windows (F8) */
+.terminal-dots {
+  --dot-red: #ff5f57;
+  --dot-amber: #febc2e;
+  --dot-green: #28c840;
+}
+.terminal-dots > span,
+.terminal-dots > div {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  display: inline-block;
+}
+.terminal-dot-red {
+  background-color: var(--dot-red);
+}
+.terminal-dot-amber {
+  background-color: var(--dot-amber);
+}
+.terminal-dot-green {
+  background-color: var(--dot-green);
 }
 
 /* Glass card */
@@ -515,14 +665,19 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, var(--brand-gradient-from) 0%, var(--brand-gradient-via) 50%, var(--brand-gradient-to) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-gradient-from) 0%,
+    var(--brand-gradient-via) 50%,
+    var(--brand-gradient-to) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .gradient-text-gold {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  background: linear-gradient(135deg, var(--color-warning) 0%, #f59e0b 50%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -530,8 +685,14 @@ body {
 
 /* Animated pulse ring */
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
 .pulse-ring::before {
@@ -545,8 +706,13 @@ body {
 
 /* Typing cursor */
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .cursor::after {
@@ -557,30 +723,37 @@ body {
 }
 
 /* Code blocks */
-code, pre {
+code,
+pre {
   font-family: "JetBrains Mono", "Fira Code", monospace;
 }
 
 /* Smooth transitions — scoped to color/bg to avoid jank on large pages.
    Transform/box-shadow transitions are handled per-component. */
-* {
-  transition-property: color, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    transition-property: color, background-color, border-color;
+    transition-timing-function: var(--ds-ease-standard);
+    transition-duration: var(--ds-duration-fast);
+  }
 }
 
 /* Loading shimmer */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0) 0%,
+    rgba(255, 255, 255, 0) 0%,
     color-mix(in srgb, var(--brand-primary) 10%, transparent) 50%,
-    rgba(255,255,255,0) 100%
+    rgba(255, 255, 255, 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
@@ -588,8 +761,14 @@ code, pre {
 
 /* Stream animation */
 @keyframes stream-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stream-word {
@@ -598,9 +777,16 @@ code, pre {
 
 /* Orb gradient animation */
 @keyframes orb-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -20px) scale(1.05); }
-  66% { transform: translate(-20px, 10px) scale(0.95); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 10px) scale(0.95);
+  }
 }
 
 .orb {
@@ -615,20 +801,37 @@ code, pre {
 
 /* Gradient border animation — premium badge/card outline */
 @keyframes gradient-border-spin {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .gradient-border {
-  background: linear-gradient(135deg, var(--brand-gradient-from), var(--brand-gradient-via), var(--brand-gradient-to), var(--brand-gradient-from));
+  background: linear-gradient(
+    135deg,
+    var(--brand-gradient-from),
+    var(--brand-gradient-via),
+    var(--brand-gradient-to),
+    var(--brand-gradient-from)
+  );
   background-size: 300% 300%;
   animation: gradient-border-spin 4s ease infinite;
 }
 
 /* Animated gradient text — for hero taglines */
 .gradient-text-animated {
-  background: linear-gradient(135deg, var(--brand-gradient-from) 0%, var(--brand-gradient-via) 50%, var(--brand-gradient-to) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--brand-gradient-from) 0%,
+    var(--brand-gradient-via) 50%,
+    var(--brand-gradient-to) 100%
+  );
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;
@@ -643,8 +846,14 @@ code, pre {
 
 /* Line reveal — horizontal wipe from left */
 @keyframes line-reveal {
-  from { transform: scaleX(0); transform-origin: left; }
-  to { transform: scaleX(1); transform-origin: left; }
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
 }
 
 .line-reveal {
@@ -653,8 +862,13 @@ code, pre {
 
 /* Float subtle — for icons/marks in hero */
 @keyframes float-gentle {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .float-gentle {
@@ -663,16 +877,29 @@ code, pre {
 
 /* Card surface glint — ultra-premium inset highlight on hover */
 @keyframes surface-glint {
-  0% { opacity: 0; transform: translateX(-100%) rotate(-15deg); }
-  50% { opacity: 0.06; }
-  100% { opacity: 0; transform: translateX(200%) rotate(-15deg); }
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) rotate(-15deg);
+  }
+  50% {
+    opacity: 0.06;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(200%) rotate(-15deg);
+  }
 }
 
 .surface-glint::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%
+  );
   animation: surface-glint 2.5s ease-in-out infinite;
   pointer-events: none;
 }
@@ -688,22 +915,46 @@ code, pre {
 }
 
 /* ── Gold accent utilities (dashboard scope) ── */
-[data-app="dashboard"] .accent-gold-text { color: var(--accent-gold); }
-[data-app="dashboard"] .accent-gold-bg { background-color: var(--accent-gold); }
-[data-app="dashboard"] .accent-gold-soft { background-color: var(--accent-gold-soft); }
-[data-app="dashboard"] .accent-gold-border { border-color: var(--accent-gold-border); }
-[data-app="dashboard"] .hover\:accent-gold-text:hover { color: var(--accent-gold); }
+[data-app="dashboard"] .accent-gold-text {
+  color: var(--accent-gold);
+}
+[data-app="dashboard"] .accent-gold-bg {
+  background-color: var(--accent-gold);
+}
+[data-app="dashboard"] .accent-gold-soft {
+  background-color: var(--accent-gold-soft);
+}
+[data-app="dashboard"] .accent-gold-border {
+  border-color: var(--accent-gold-border);
+}
+[data-app="dashboard"] .hover\:accent-gold-text:hover {
+  color: var(--accent-gold);
+}
 
 /* ── Premium card shadows (dashboard scope) ── */
-[data-app="dashboard"] .card-shadow { box-shadow: var(--card-shadow); }
-[data-app="dashboard"] .card-shadow-hover { box-shadow: var(--card-shadow-hover); }
-[data-app="dashboard"] .card-shadow-elevated { box-shadow: var(--card-shadow-elevated); }
-[data-app="dashboard"] .sidebar-shadow { box-shadow: var(--sidebar-shadow); }
+[data-app="dashboard"] .card-shadow {
+  box-shadow: var(--card-shadow);
+}
+[data-app="dashboard"] .card-shadow-hover {
+  box-shadow: var(--card-shadow-hover);
+}
+[data-app="dashboard"] .card-shadow-elevated {
+  box-shadow: var(--card-shadow-elevated);
+}
+[data-app="dashboard"] .sidebar-shadow {
+  box-shadow: var(--sidebar-shadow);
+}
 
 /* ── Chat message entrance animation ── */
 @keyframes msg-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 [data-app="dashboard"] .msg-in {
   animation: msg-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -711,19 +962,37 @@ code, pre {
 
 /* ── Typing indicator dots ── */
 @keyframes typing-dot {
-  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-3px); }
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 [data-app="dashboard"] .typing-dot {
   animation: typing-dot 1.2s ease-in-out infinite;
 }
-[data-app="dashboard"] .typing-dot:nth-child(2) { animation-delay: 0.15s; }
-[data-app="dashboard"] .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+[data-app="dashboard"] .typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+[data-app="dashboard"] .typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
 
 /* ── Fade-in for dashboard widgets ── */
 @keyframes widget-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 [data-app="dashboard"] .widget-fade-in {
   animation: widget-fade-in 0.3s ease-out both;

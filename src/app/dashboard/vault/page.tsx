@@ -72,7 +72,10 @@ function parseDoc(page: BrainPage): VaultDoc {
     source: (fm.source as string) || undefined,
     tags: page.tags || [],
     size: (fm.size as number) || undefined,
-    createdAt: (page as unknown as Record<string, unknown>).createdAt as string || (page as unknown as Record<string, unknown>).created_at as string || new Date().toISOString(),
+    createdAt:
+      ((page as unknown as Record<string, unknown>).createdAt as string) ||
+      ((page as unknown as Record<string, unknown>).created_at as string) ||
+      new Date().toISOString(),
     content: page.content || "",
   };
 }
@@ -104,7 +107,10 @@ export default function VaultPage() {
         throw new Error("Mindestens ein Dokument auswählen.");
       }
       const qs = data.questions.map((q) => q.trim()).filter(Boolean);
-      const res = await api.legal.tabularReview({ slugs: Array.from(selectedSlugs), questions: qs });
+      const res = await api.legal.tabularReview({
+        slugs: Array.from(selectedSlugs),
+        questions: qs,
+      });
       setReviewResult(res);
       if (res.rows.length === 0) {
         throw new Error("Keine Ergebnisse.");
@@ -118,10 +124,13 @@ export default function VaultPage() {
     name: "questions",
   });
 
-  useEffect(() => { loadDocs(); }, []);
+  useEffect(() => {
+    loadDocs();
+  }, []);
 
   async function loadDocs() {
-    setLoading(true); setLoadError(null);
+    setLoading(true);
+    setLoadError(null);
     try {
       const pages = await api.brain.listPages({ limit: 200 });
       const nextDocs = pages.map(parseDoc);
@@ -131,11 +140,17 @@ export default function VaultPage() {
       const cached = await getCache<VaultDoc[]>(OFFLINE_KEYS.vault);
       if (cached) {
         setDocs(cached);
-        setLoadError("Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt.");
+        setLoadError(
+          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt."
+        );
       } else {
-        setLoadError(err instanceof Error ? err.message : "Dokumente konnten nicht geladen werden.");
+        setLoadError(
+          err instanceof Error ? err.message : "Dokumente konnten nicht geladen werden."
+        );
       }
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   const allTags = useMemo(() => {
@@ -154,7 +169,9 @@ export default function VaultPage() {
     let result = docs;
     if (query.trim()) {
       const q = query.toLowerCase();
-      result = result.filter((d) => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q));
+      result = result.filter(
+        (d) => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q)
+      );
     }
     if (typeFilter) result = result.filter((d) => d.type === typeFilter);
     if (tagFilter) result = result.filter((d) => d.tags.includes(tagFilter));
@@ -163,7 +180,14 @@ export default function VaultPage() {
 
   const reviewLoading = reviewForm.status === "submitting";
 
-  const { items: paginatedDocs, page, totalPages, setPage, startIndex, endIndex } = usePaginatedList(filtered, 24);
+  const {
+    items: paginatedDocs,
+    page,
+    totalPages,
+    setPage,
+    startIndex,
+    endIndex,
+  } = usePaginatedList(filtered, 24);
 
   async function deleteDoc(slug: string) {
     const ok = await confirm({
@@ -182,13 +206,23 @@ export default function VaultPage() {
       const nextDocs = docs.filter((d) => d.slug !== slug);
       setDocs(nextDocs);
       await setCache(OFFLINE_KEYS.vault, nextDocs);
-      setSelectedSlugs((s) => { const ns = new Set(s); ns.delete(slug); return ns; });
+      setSelectedSlugs((s) => {
+        const ns = new Set(s);
+        ns.delete(slug);
+        return ns;
+      });
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
     }
-    catch (err) { setLoadError(err instanceof Error ? err.message : "Löschen fehlgeschlagen."); }
   }
 
   function toggleSelect(slug: string) {
-    setSelectedSlugs((s) => { const ns = new Set(s); if (ns.has(slug)) ns.delete(slug); else ns.add(slug); return ns; });
+    setSelectedSlugs((s) => {
+      const ns = new Set(s);
+      if (ns.has(slug)) ns.delete(slug);
+      else ns.add(slug);
+      return ns;
+    });
   }
 
   function selectAll() {
@@ -200,14 +234,18 @@ export default function VaultPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Dokumenten-Vault"
         description="Zentraler Dokumentenspeicher mit Bulk-Analyse und Review Tables"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokumenten-Vault" }]}
         actions={
           selectedSlugs.size > 0 ? (
-            <Button variant="secondary" className="bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] gap-2" onClick={() => setShowReview(!showReview)}>
+            <Button
+              variant="secondary"
+              className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+              onClick={() => setShowReview(!showReview)}
+            >
               <Table2 size={14} /> Bulk-Review ({selectedSlugs.size})
             </Button>
           ) : undefined
@@ -215,10 +253,21 @@ export default function VaultPage() {
       />
 
       {showReview && (
-        <form onSubmit={reviewForm.handleSubmit} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">
+        <form
+          onSubmit={reviewForm.handleSubmit}
+          className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5"
+        >
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Bulk-Analyse über {selectedSlugs.size} ausgewählte Dokumente</h3>
-            <button type="button" onClick={() => setShowReview(false)} className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"><X size={16} /></button>
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Bulk-Analyse über {selectedSlugs.size} ausgewählte Dokumente
+            </h3>
+            <button
+              type="button"
+              onClick={() => setShowReview(false)}
+              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            >
+              <X size={16} />
+            </button>
           </div>
           {reviewForm.error && (
             <div className="flex items-center gap-2 text-xs text-red-600">
@@ -231,52 +280,149 @@ export default function VaultPage() {
                 <Input
                   {...reviewForm.form.register(`questions.${i}`)}
                   placeholder={`Frage ${i + 1}`}
-                  className="flex-1 bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                  className="flex-1 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                 />
-                <button type="button" onClick={() => remove(i)} className="text-[color:var(--ds-text-muted)] hover:text-red-600"><X size={14} /></button>
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                >
+                  <X size={14} />
+                </button>
               </div>
             ))}
             {fields.length < 8 && (
-              <button type="button" onClick={() => append("")} className="text-xs brand-text hover:underline">+ Frage hinzufügen</button>
+              <button
+                type="button"
+                onClick={() => append("")}
+                className="brand-text text-xs hover:underline"
+              >
+                + Frage hinzufügen
+              </button>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <Button type="submit" disabled={reviewLoading} className="brand-bg brand-bg text-white gap-2">
-              {reviewLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            <Button
+              type="submit"
+              disabled={reviewLoading}
+              className="brand-bg brand-bg gap-2 text-white"
+            >
+              {reviewLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} />
+              )}
               {reviewLoading ? "Wird analysiert…" : "Bulk-Review starten"}
             </Button>
             {reviewResult && reviewResult.rows.length > 0 && (
-              <Button type="button" variant="secondary" className="bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] gap-2" onClick={() => {
-                const csv = [["Dokument", ...reviewResult.questions].join(";"), ...reviewResult.rows.map((r) => [r.title, ...r.cells.map((cell) => cell.answer.replace(/"/g, '""'))].join(";"))].join("\n");
-                const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `vault-review-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
-              }}><Download size={14} /> CSV Export</Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                onClick={() => {
+                  const csv = [
+                    ["Dokument", ...reviewResult.questions].join(";"),
+                    ...reviewResult.rows.map((r) =>
+                      [r.title, ...r.cells.map((cell) => cell.answer.replace(/"/g, '""'))].join(";")
+                    ),
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `vault-review-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                <Download size={14} /> CSV Export
+              </Button>
             )}
           </div>
           {reviewResult && reviewResult.rows.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-[color:var(--ds-border)]"><th className="text-left px-3 py-2 text-[color:var(--ds-text-muted)] font-medium">Dokument</th>{reviewResult.questions.map((q, i) => <th key={i} className="text-left px-3 py-2 text-[color:var(--ds-text-muted)] font-medium min-w-[200px]">{q}</th>)}</tr></thead>
-                <tbody>{reviewResult.rows.map((row, i) => <tr key={i} className="border-b border-[color:var(--ds-border)]/50 hover:bg-[color:var(--ds-hover)]"><td className="px-3 py-2 text-[color:var(--ds-text)] whitespace-nowrap">{row.title}</td>{row.cells.map((cell, j) => <td key={j} className="px-3 py-2 text-[color:var(--ds-text-muted)] max-w-xs truncate" title={cell.answer}>{cell.answer}</td>)}</tr>)}</tbody>
+                <thead>
+                  <tr className="border-b border-[color:var(--ds-border)]">
+                    <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
+                      Dokument
+                    </th>
+                    {reviewResult.questions.map((q, i) => (
+                      <th
+                        key={i}
+                        className="min-w-[200px] px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]"
+                      >
+                        {q}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {reviewResult.rows.map((row, i) => (
+                    <tr
+                      key={i}
+                      className="border-b border-[color:var(--ds-border)]/50 hover:bg-[color:var(--ds-hover)]"
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap text-[color:var(--ds-text)]">
+                        {row.title}
+                      </td>
+                      {row.cells.map((cell, j) => (
+                        <td
+                          key={j}
+                          className="max-w-xs truncate px-3 py-2 text-[color:var(--ds-text-muted)]"
+                          title={cell.answer}
+                        >
+                          {cell.answer}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           )}
         </form>
       )}
 
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+      <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Dokumente durchsuchen…" aria-label="Dokumente durchsuchen" className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all" />
+          <Search
+            size={15}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Dokumente durchsuchen…"
+            aria-label="Dokumente durchsuchen"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+          />
         </div>
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-[color:var(--ds-text-subtle)]" />
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+          >
             <option value="">Alle Typen</option>
-            {allTypes.map((t) => <option key={t} value={t}>{TYPE_LABELS[t] || t}</option>)}
+            {allTypes.map((t) => (
+              <option key={t} value={t}>
+                {TYPE_LABELS[t] || t}
+              </option>
+            ))}
           </select>
-          <select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className="bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all">
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+          >
             <option value="">Alle Tags</option>
-            {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+            {allTags.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -284,15 +430,24 @@ export default function VaultPage() {
       {selectedSlugs.size > 0 && (
         <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
           <span>{selectedSlugs.size} ausgewählt</span>
-          <button onClick={selectAll} className="brand-text hover:underline">Alle auswählen</button>
-          <button onClick={deselectAll} className="brand-text hover:underline">Alle abwählen</button>
+          <button onClick={selectAll} className="brand-text hover:underline">
+            Alle auswählen
+          </button>
+          <button onClick={deselectAll} className="brand-text hover:underline">
+            Alle abwählen
+          </button>
         </div>
       )}
 
       {loadError && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
           <span>{loadError}</span>
-          <Button variant="ghost" size="sm" onClick={() => void loadDocs()} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void loadDocs()}
+            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+          >
             <RotateCcw size={13} /> Erneut versuchen
           </Button>
         </div>
@@ -303,53 +458,90 @@ export default function VaultPage() {
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)]">
-          <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
             <FileText size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
-          <h3 className="text-sm font-semibold text-[color:var(--ds-text)] tracking-tight">Keine Dokumente gefunden</h3>
-          <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] max-w-sm leading-relaxed">
-            {docs.length === 0 ? "Lade Dokumente über den Upload-Bereich hoch." : "Passe deine Suche oder Filter an."}
+          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
+            Keine Dokumente gefunden
+          </h3>
+          <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+            {docs.length === 0
+              ? "Lade Dokumente über den Upload-Bereich hoch."
+              : "Passe deine Suche oder Filter an."}
           </p>
         </div>
       ) : (
         <>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {paginatedDocs.map((doc) => (
-            <div key={doc.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2.5 group hover:border-[color:var(--ds-border-strong)] transition-colors">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={selectedSlugs.has(doc.slug)} onChange={() => toggleSelect(doc.slug)} className="accent-[var(--brand-primary)]" />
-                  <Badge variant="default" className={`text-[10px] border ${TYPE_COLORS[doc.type] || "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]"}`}>
-                    {TYPE_LABELS[doc.type] || doc.type}
-                  </Badge>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+            {paginatedDocs.map((doc) => (
+              <div
+                key={doc.slug}
+                className="group space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedSlugs.has(doc.slug)}
+                      onChange={() => toggleSelect(doc.slug)}
+                      className="accent-[var(--brand-primary)]"
+                    />
+                    <Badge
+                      variant="default"
+                      className={`border text-xs ${TYPE_COLORS[doc.type] || "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"}`}
+                    >
+                      {TYPE_LABELS[doc.type] || doc.type}
+                    </Badge>
+                  </div>
+                  <button
+                    onClick={() => deleteDoc(doc.slug)}
+                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
+                    title="Löschen"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-                <button onClick={() => deleteDoc(doc.slug)} className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all" title="Löschen">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-              <div className="text-sm font-medium text-[color:var(--ds-text)] truncate" title={doc.title}>{doc.title}</div>
-              <div className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2 leading-relaxed">{doc.content.slice(0, 120)}…</div>
-              {doc.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {doc.tags.map((t) => <span key={t} className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]"><Tag size={9} />{t}</span>)}
+                <div
+                  className="truncate text-sm font-medium text-[color:var(--ds-text)]"
+                  title={doc.title}
+                >
+                  {doc.title}
                 </div>
-              )}
-              <div className="flex items-center justify-between text-[10px] text-[color:var(--ds-text-muted)]">
-                <span className="flex items-center gap-1"><Clock size={10} />{new Date(doc.createdAt).toLocaleDateString("de-DE")}</span>
-                {doc.size && <span>{(doc.size / 1024).toFixed(0)} KB</span>}
+                <div className="line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                  {doc.content.slice(0, 120)}…
+                </div>
+                {doc.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {doc.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center gap-1 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]"
+                      >
+                        <Tag size={9} />
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
+                  <span className="flex items-center gap-1">
+                    <Clock size={10} />
+                    {new Date(doc.createdAt).toLocaleDateString("de-DE")}
+                  </span>
+                  {doc.size && <span>{(doc.size / 1024).toFixed(0)} KB</span>}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-4 px-1 py-3 text-sm">
-            <span className="text-[color:var(--ds-text-muted)]">
-              {startIndex + 1}–{endIndex} von {filtered.length}
-            </span>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            ))}
           </div>
-        )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 px-1 py-3 text-sm">
+              <span className="text-[color:var(--ds-text-muted)]">
+                {startIndex + 1}–{endIndex} von {filtered.length}
+              </span>
+              <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          )}
         </>
       )}
     </div>

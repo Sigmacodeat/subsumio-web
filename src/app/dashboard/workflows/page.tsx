@@ -148,7 +148,7 @@ export default function WorkflowsPage() {
   const filtered = useMemo(() => filterWorkflows(instances, filter), [instances, filter]);
 
   const activeCount = instances.filter(
-    (w) => w.frontmatter.status === "running" || w.frontmatter.status === "paused",
+    (w) => w.frontmatter.status === "running" || w.frontmatter.status === "paused"
   ).length;
 
   async function handleStart(templateId: string) {
@@ -185,7 +185,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Workflows"
         description="Kanzlei-Workflows — verkettete Agenten-Aktionen mit Vier-Augen-Freigabe"
@@ -193,7 +193,7 @@ export default function WorkflowsPage() {
         actions={
           <button
             onClick={() => setSelectedTemplate("due_diligence")}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg brand-bg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             <Plus size={16} />
             Neuer Workflow
@@ -202,9 +202,12 @@ export default function WorkflowsPage() {
       />
 
       {/* Honest framing */}
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border brand-border brand-soft/5" role="note">
-        <Info size={16} className="brand-text shrink-0 mt-0.5" aria-hidden="true" />
-        <p className="text-xs brand-text/90 leading-relaxed">
+      <div
+        className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
+        role="note"
+      >
+        <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="brand-text/90 text-xs leading-relaxed">
           Workflows verketten Agenten-Aktionen (Dokumentanalyse, Fristnotierung, Versand) zu
           wiederkehrenden Kanzlei-Prozessen. Jede risikoreiche Aktion benötigt eine
           <strong> menschliche Freigabe</strong> — berufsrechtliche Letztverantwortung +
@@ -213,10 +216,16 @@ export default function WorkflowsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20" role="alert">
-          <AlertCircle size={16} className="text-red-600 shrink-0" />
+        <div
+          className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3"
+          role="alert"
+        >
+          <AlertCircle size={16} className="shrink-0 text-red-600" />
           <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto text-red-600 hover:text-red-700">
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-red-600 hover:text-red-700"
+          >
             <XCircle size={16} />
           </button>
         </div>
@@ -233,7 +242,7 @@ export default function WorkflowsPage() {
           </div>
 
           {selectedTemplate ? (
-            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
               {(() => {
                 const template = getTemplate(selectedTemplate);
                 if (!template) return null;
@@ -242,12 +251,20 @@ export default function WorkflowsPage() {
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">{template.icon}</span>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{template.label}</h3>
-                        <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">{template.description}</p>
+                        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                          {template.label}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                          {template.description}
+                        </p>
                       </div>
                       <button
-                        onClick={() => { setSelectedTemplate(null); setCustomPrompt(""); setCaseSlug(""); }}
-                        className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] text-xs"
+                        onClick={() => {
+                          setSelectedTemplate(null);
+                          setCustomPrompt("");
+                          setCaseSlug("");
+                        }}
+                        className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                       >
                         Abbrechen
                       </button>
@@ -259,8 +276,10 @@ export default function WorkflowsPage() {
                         const Icon = actionIcons[step.action_type];
                         return (
                           <div key={i} className="flex items-center gap-1">
-                            {i > 0 && <ArrowRight size={12} className="text-[color:var(--ds-text-muted)]" />}
-                            <Badge variant="default" className="text-[10px] gap-1">
+                            {i > 0 && (
+                              <ArrowRight size={12} className="text-[color:var(--ds-text-muted)]" />
+                            )}
+                            <Badge variant="default" className="gap-1 text-xs">
                               <Icon size={10} />
                               {step.label}
                             </Badge>
@@ -271,7 +290,10 @@ export default function WorkflowsPage() {
 
                     {/* Custom prompt */}
                     <div className="space-y-2">
-                      <label htmlFor="wf-prompt" className="text-xs font-medium text-[color:var(--ds-text)]">
+                      <label
+                        htmlFor="wf-prompt"
+                        className="text-xs font-medium text-[color:var(--ds-text)]"
+                      >
                         Aufgabe (optional anpassen)
                       </label>
                       <textarea
@@ -280,13 +302,16 @@ export default function WorkflowsPage() {
                         onChange={(e) => setCustomPrompt(e.target.value)}
                         rows={3}
                         placeholder={template.prompt}
-                        className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:brand-border/40 resize-y"
+                        className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
                       />
                     </div>
 
                     {/* Case slug */}
                     <div className="space-y-2">
-                      <label htmlFor="wf-case" className="text-xs font-medium text-[color:var(--ds-text)]">
+                      <label
+                        htmlFor="wf-case"
+                        className="text-xs font-medium text-[color:var(--ds-text)]"
+                      >
                         Zugehörige Akte (optional)
                       </label>
                       <input
@@ -294,16 +319,20 @@ export default function WorkflowsPage() {
                         value={caseSlug}
                         onChange={(e) => setCaseSlug(e.target.value)}
                         placeholder="z.B. cases/2024-001"
-                        className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:brand-border/40 font-mono"
+                        className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
                       />
                     </div>
 
                     <button
                       onClick={() => handleStart(selectedTemplate)}
                       disabled={starting}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg brand-bg text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 transition-opacity"
+                      className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                     >
-                      {starting ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                      {starting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Play size={16} />
+                      )}
                       {starting ? "Starte..." : "Workflow starten"}
                     </button>
                   </>
@@ -311,26 +340,33 @@ export default function WorkflowsPage() {
               })()}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {WORKFLOW_TEMPLATES.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => setSelectedTemplate(template.id)}
-                  className="text-left rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 hover:brand-border hover:brand-soft/5 transition-all space-y-2"
+                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-all"
                 >
                   <div className="flex items-start gap-2">
-                    <span className="text-xl shrink-0">{template.icon}</span>
+                    <span className="shrink-0 text-xl">{template.icon}</span>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{template.label}</h3>
-                      <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5 leading-relaxed">
+                      <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                        {template.label}
+                      </h3>
+                      <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                         {template.description}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-[color:var(--ds-text-muted)]">
+                  <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                     <span>{template.steps.length} Schritte</span>
                     <span>·</span>
-                    <span>{template.steps.map((s) => getActionTypeLabel(s.action_type)).filter((v, i, a) => a.indexOf(v) === i).join(", ")}</span>
+                    <span>
+                      {template.steps
+                        .map((s) => getActionTypeLabel(s.action_type))
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .join(", ")}
+                    </span>
                   </div>
                 </button>
               ))}
@@ -343,17 +379,17 @@ export default function WorkflowsPage() {
       {instances.length > 0 && (
         <section className="space-y-3">
           {/* Filter bar */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
               {FILTERS.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                     filter === f.key
-                      ? "brand-soft brand-text border brand-border"
-                      : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] border border-transparent",
+                      ? "brand-soft brand-text brand-border border"
+                      : "border border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                   )}
                 >
                   {f.label}
@@ -361,7 +397,7 @@ export default function WorkflowsPage() {
               ))}
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
               <span className="text-xs text-[color:var(--ds-text-muted)]">{activeCount} aktiv</span>
             </div>
           </div>
@@ -371,7 +407,7 @@ export default function WorkflowsPage() {
               <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="py-12 text-center">
               <p className="text-sm text-[color:var(--ds-text-muted)]">
                 Keine Workflows in diesem Filter.
               </p>
@@ -383,9 +419,7 @@ export default function WorkflowsPage() {
                   key={wf.slug}
                   instance={wf}
                   expanded={expandedSlug === wf.slug}
-                  onToggle={() =>
-                    setExpandedSlug((prev) => (prev === wf.slug ? null : wf.slug))
-                  }
+                  onToggle={() => setExpandedSlug((prev) => (prev === wf.slug ? null : wf.slug))}
                 />
               ))}
             </div>
@@ -417,55 +451,52 @@ function WorkflowCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-[color:var(--ds-surface)] overflow-hidden transition-all",
+        "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-all",
         fm.status === "failed"
           ? "border-red-500/20"
           : fm.status === "completed"
             ? "border-emerald-500/20"
-            : "border-[color:var(--ds-border)]",
+            : "border-[color:var(--ds-border)]"
       )}
     >
       {/* Header row */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 p-4 text-left hover:bg-[color:var(--ds-surface-2)]/50 transition-colors"
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[color:var(--ds-surface-2)]/50"
         aria-expanded={expanded}
       >
         {expanded ? (
-          <ChevronDown size={16} className="text-[color:var(--ds-text-muted)] shrink-0" />
+          <ChevronDown size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
         ) : (
-          <ChevronRight size={16} className="text-[color:var(--ds-text-muted)] shrink-0" />
+          <ChevronRight size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
         )}
 
-        <span className="text-lg shrink-0">{template?.icon ?? "⚙️"}</span>
+        <span className="shrink-0 text-lg">{template?.icon ?? "⚙️"}</span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
               {template?.label ?? fm.template_id}
             </span>
-            <Badge variant={statusBadge.variant} className="text-[10px] gap-1">
-              <StatusIcon
-                size={10}
-                className={fm.status === "running" ? "animate-spin" : ""}
-              />
+            <Badge variant={statusBadge.variant} className="gap-1 text-xs">
+              <StatusIcon size={10} className={fm.status === "running" ? "animate-spin" : ""} />
               {getWorkflowStatusLabel(fm.status)}
             </Badge>
           </div>
-          <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5 truncate">
+          <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
             {fm.prompt || "Keine Beschreibung"}
           </p>
         </div>
 
         {/* Progress */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="text-right">
             <div className="text-xs font-semibold text-[color:var(--ds-text)]">
               {progress.completed}/{progress.total}
             </div>
-            <div className="text-[10px] text-[color:var(--ds-text-muted)]">Schritte</div>
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Schritte</div>
           </div>
-          <div className="w-16 h-1.5 rounded-full bg-[color:var(--ds-surface-2)] overflow-hidden">
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
                 "h-full rounded-full transition-all",
@@ -473,7 +504,7 @@ function WorkflowCard({
                   ? "bg-red-500"
                   : fm.status === "completed"
                     ? "bg-emerald-500"
-                    : "brand-bg",
+                    : "brand-bg"
               )}
               style={{ width: `${progress.percentage}%` }}
             />
@@ -483,9 +514,9 @@ function WorkflowCard({
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-[color:var(--ds-border)] p-4 space-y-3">
+        <div className="space-y-3 border-t border-[color:var(--ds-border)] p-4">
           {/* Meta */}
-          <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)] flex-wrap">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
             <span>
               Gestartet: {fm.started_at ? new Date(fm.started_at).toLocaleString("de-DE") : "—"}
             </span>
@@ -496,7 +527,7 @@ function WorkflowCard({
                 <span>·</span>
                 <a
                   href={`/dashboard/cases/${encodeURIComponent(fm.case_slug)}`}
-                  className="brand-text hover:underline font-mono"
+                  className="brand-text font-mono hover:underline"
                 >
                   {fm.case_slug}
                 </a>
@@ -515,23 +546,29 @@ function WorkflowCard({
           {pendingApprovals.length > 0 && (
             <a
               href="/dashboard/approvals"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-500/[0.08] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/[0.04] px-3 py-1.5 text-xs text-amber-700 transition-colors hover:bg-amber-500/[0.08] dark:text-amber-400"
             >
               <Clock size={13} />
-              {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu den Freigaben
+              {pendingApprovals.length} Freigabe{pendingApprovals.length > 1 ? "n" : ""} offen — zu
+              den Freigaben
             </a>
           )}
 
           {/* Error display for failed steps */}
-          {fm.steps.filter((s) => s.error).map((s) => (
-            <div key={`err-${s.id}`} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
-              <AlertCircle size={14} className="text-red-600 shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-red-700 dark:text-red-400">{s.label}</p>
-                <p className="text-xs text-red-600/80 mt-0.5">{s.error}</p>
+          {fm.steps
+            .filter((s) => s.error)
+            .map((s) => (
+              <div
+                key={`err-${s.id}`}
+                className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2"
+              >
+                <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-600" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-red-700 dark:text-red-400">{s.label}</p>
+                  <p className="mt-0.5 text-xs text-red-600/80">{s.error}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       )}
     </div>
@@ -546,29 +583,26 @@ function StepRow({ step, index }: { step: WorkflowStep; index: number }) {
   const statusColor = stepStatusColors[step.status];
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[color:var(--ds-surface-2)]/30">
+    <div className="flex items-center gap-3 rounded-lg bg-[color:var(--ds-surface-2)]/30 px-3 py-2">
       {/* Step number */}
-      <span className="text-[10px] font-mono text-[color:var(--ds-text-muted)] w-5 text-center shrink-0">
+      <span className="w-5 shrink-0 text-center font-mono text-xs text-[color:var(--ds-text-muted)]">
         {index + 1}
       </span>
 
       {/* Action icon */}
-      <Icon size={14} className="text-[color:var(--ds-text-muted)] shrink-0" />
+      <Icon size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
 
       {/* Label + action type */}
       <div className="min-w-0 flex-1">
         <span className="text-sm text-[color:var(--ds-text)]">{step.label}</span>
-        <span className="text-[10px] text-[color:var(--ds-text-muted)] ml-2">
+        <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
           {getActionTypeLabel(step.action_type)}
         </span>
       </div>
 
       {/* Status */}
-      <div className={cn("flex items-center gap-1.5 shrink-0", statusColor)}>
-        <StatusIcon
-          size={13}
-          className={step.status === "running" ? "animate-spin" : ""}
-        />
+      <div className={cn("flex shrink-0 items-center gap-1.5", statusColor)}>
+        <StatusIcon size={13} className={step.status === "running" ? "animate-spin" : ""} />
         <span className="text-xs">{getStepStatusLabel(step.status)}</span>
       </div>
 
@@ -576,7 +610,7 @@ function StepRow({ step, index }: { step: WorkflowStep; index: number }) {
       {step.agent_action_slug && (
         <a
           href={`/dashboard/brain/${encodeURIComponent(step.agent_action_slug)}`}
-          className="text-[10px] brand-text hover:underline font-mono shrink-0"
+          className="brand-text shrink-0 font-mono text-xs hover:underline"
           title="Agent-Action ansehen"
         >
           →

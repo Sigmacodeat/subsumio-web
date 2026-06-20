@@ -35,9 +35,10 @@ describe("AI_MODELS", () => {
     }
   });
 
-  test("Mistral is the only EU-hosted entry (documented EU infra)", () => {
+  test("Mistral is the only EU-hosted provider (documented EU infra)", () => {
     const euModels = AI_MODELS.filter((m) => m.dataResidency === "eu");
-    expect(euModels.map((m) => m.provider)).toEqual(["mistral"]);
+    expect(euModels.length).toBeGreaterThan(0);
+    expect(euModels.every((m) => m.provider === "mistral")).toBe(true);
   });
 
   test("has unique model IDs", () => {
@@ -46,19 +47,19 @@ describe("AI_MODELS", () => {
   });
 
   test("includes Claude Sonnet 4", () => {
-    const sonnet = AI_MODELS.find((m) => m.id === "claude-sonnet-4-20250514");
+    const sonnet = AI_MODELS.find((m) => m.id === "claude-sonnet-4-6");
     expect(sonnet).toBeDefined();
     expect(sonnet!.provider).toBe("anthropic");
   });
 
-  test("includes GPT-4o", () => {
-    const gpt4o = AI_MODELS.find((m) => m.id === "gpt-4o-2024-11-20");
-    expect(gpt4o).toBeDefined();
-    expect(gpt4o!.provider).toBe("openai");
+  test("includes GPT-5.5", () => {
+    const gpt = AI_MODELS.find((m) => m.id === "gpt-5.5");
+    expect(gpt).toBeDefined();
+    expect(gpt!.provider).toBe("openai");
   });
 
   test("includes Gemini 2.0 Flash with 1M context", () => {
-    const gemini = AI_MODELS.find((m) => m.id === "gemini-2-0-flash-001");
+    const gemini = AI_MODELS.find((m) => m.id === "gemini-2.0-flash");
     expect(gemini).toBeDefined();
     expect(gemini!.contextWindow).toBe(1_000_000);
   });
@@ -66,9 +67,9 @@ describe("AI_MODELS", () => {
 
 describe("getModelById", () => {
   test("returns model for valid ID", () => {
-    const model = getModelById("claude-sonnet-4-20250514");
+    const model = getModelById("claude-sonnet-4-6");
     expect(model).toBeDefined();
-    expect(model!.name).toBe("Claude Sonnet 4");
+    expect(model!.name).toBe("Claude Sonnet 4.6");
   });
 
   test("returns undefined for unknown ID", () => {
@@ -82,7 +83,7 @@ describe("getModelById", () => {
 
 describe("isValidModelId", () => {
   test("returns true for valid model ID", () => {
-    expect(isValidModelId("claude-sonnet-4-20250514")).toBe(true);
+    expect(isValidModelId("claude-sonnet-4-6")).toBe(true);
   });
 
   test("returns false for unknown model ID", () => {
@@ -123,6 +124,10 @@ describe("getProviderLabel", () => {
 
   test("returns 'Meta' for meta", () => {
     expect(getProviderLabel("meta")).toBe("Meta");
+  });
+
+  test("returns 'DeepSeek' for deepseek", () => {
+    expect(getProviderLabel("deepseek")).toBe("DeepSeek");
   });
 
   test("returns 'ZeroEntropy' for zero-entropy", () => {

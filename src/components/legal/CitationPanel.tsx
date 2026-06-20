@@ -16,12 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness } from "@/lib/groundedness";
@@ -59,11 +54,7 @@ interface CitationPanelProps {
 
 // ── Main Component ────────────────────────────────────────────────────
 
-export function CitationPanel({
-  data,
-  compact = false,
-  className,
-}: CitationPanelProps) {
+export function CitationPanel({ data, compact = false, className }: CitationPanelProps) {
   const [expanded, setExpanded] = useState(!compact);
 
   const ground = useMemo(
@@ -85,20 +76,20 @@ export function CitationPanel({
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] overflow-hidden",
+        "overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]",
         className
       )}
       data-testid="citation-panel"
     >
       {/* Header row: badges */}
-      <div className="flex items-center gap-2 flex-wrap px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3">
         {/* AI Act Art. 50 badge */}
         {!data.isStreaming && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                   aria-label={AI_NOTICE}
                 >
                   <Info size={10} aria-hidden="true" />
@@ -118,7 +109,7 @@ export function CitationPanel({
             title={ground.hint}
             aria-label={`Quellendeckung: ${ground.label}. ${ground.hint}`}
             className={cn(
-              "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+              "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
               ground.cls
             )}
           >
@@ -142,7 +133,7 @@ export function CitationPanel({
         {/* Attorney review warning */}
         {requiresReview && !data.isStreaming && (
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400"
+            className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400"
             title="Diese AI-Ausgabe erfordert anwaltliche Prüfung, bevor sie verwendet wird."
           >
             <ShieldAlert size={10} aria-hidden="true" />
@@ -152,7 +143,7 @@ export function CitationPanel({
 
         {/* Jurisdiction badge */}
         {data.jurisdiction && (
-          <Badge variant="accent" className="text-[10px]">
+          <Badge variant="accent" className="text-xs">
             {data.jurisdiction.toUpperCase()}
           </Badge>
         )}
@@ -161,7 +152,7 @@ export function CitationPanel({
         {(hasCitations || hasGaps || hasGroundedCitations) && (
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="ml-auto inline-flex items-center gap-1 text-[10px] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] transition-colors"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
             aria-expanded={expanded}
             aria-label={expanded ? "Details ausblenden" : "Details einblenden"}
           >
@@ -173,11 +164,11 @@ export function CitationPanel({
 
       {/* Expanded details */}
       {expanded && (hasCitations || hasGaps || hasGroundedCitations) && (
-        <div className="border-t border-[color:var(--ds-border)] px-4 py-3 space-y-3">
+        <div className="space-y-3 border-t border-[color:var(--ds-border)] px-4 py-3">
           {/* Grounded citations list (corpus-verified) */}
           {hasGroundedCitations && (
             <div>
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="mb-2 flex items-center gap-1.5">
                 <Scale size={12} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                   Corpus-Grounding ({data.grounding!.grounded_citations.length})
@@ -190,9 +181,9 @@ export function CitationPanel({
                     className="flex items-start gap-2 text-xs"
                   >
                     {gc.verified ? (
-                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 size={12} className="mt-0.5 shrink-0 text-emerald-500" />
                     ) : (
-                      <AlertCircle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                      <AlertCircle size={12} className="mt-0.5 shrink-0 text-amber-500" />
                     )}
                     <div className="min-w-0 flex-1">
                       <CitationLink
@@ -201,13 +192,14 @@ export function CitationPanel({
                         className="text-xs"
                       />
                       {gc.verified && gc.source_text && (
-                        <p className="mt-0.5 text-[10px] text-[color:var(--ds-text-subtle)] line-clamp-2">
+                        <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-subtle)]">
                           {gc.source_text}
                         </p>
                       )}
                       {!gc.verified && (
-                        <p className="mt-0.5 text-[10px] text-amber-600 dark:text-amber-500">
-                          Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des abgedeckten Rechtskreises.
+                        <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-500">
+                          Nicht im Corpus gefunden — möglicherweise erfunden oder außerhalb des
+                          abgedeckten Rechtskreises.
                         </p>
                       )}
                     </div>
@@ -220,7 +212,7 @@ export function CitationPanel({
           {/* Brain citations (source pages) */}
           {hasCitations && (
             <div>
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="mb-2 flex items-center gap-1.5">
                 <FileText size={12} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                   Brain-Quellen ({data.citations!.length})
@@ -231,7 +223,7 @@ export function CitationPanel({
                   <a
                     key={c.slug}
                     href={`/dashboard/brain/${c.slug.split("/").map(encodeURIComponent).join("/")}`}
-                    className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:brand-text hover:brand-border transition-all"
+                    className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-all"
                     target="_blank"
                     rel="noopener noreferrer"
                     title={c.title}
@@ -247,7 +239,7 @@ export function CitationPanel({
           {/* Gaps */}
           {hasGaps && (
             <div>
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="mb-2 flex items-center gap-1.5">
                 <AlertTriangle size={12} className="text-amber-600" />
                 <span className="text-xs font-medium text-amber-600">
                   Lücken im Brain ({data.gaps!.length})
@@ -255,8 +247,11 @@ export function CitationPanel({
               </div>
               <ul className="space-y-1">
                 {data.gaps!.map((gap, i) => (
-                  <li key={i} className="text-xs text-amber-700 dark:text-amber-500 flex items-start gap-2">
-                    <span className="text-amber-500 shrink-0">⚠</span>
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-500"
+                  >
+                    <span className="shrink-0 text-amber-500">⚠</span>
                     {gap}
                   </li>
                 ))}
@@ -266,7 +261,7 @@ export function CitationPanel({
 
           {/* Grounding timestamp */}
           {hasGrounding && data.grounding!.analyzed_at && (
-            <div className="text-[10px] text-[color:var(--ds-text-subtle)] pt-1 border-t border-[color:var(--ds-border)]">
+            <div className="border-t border-[color:var(--ds-border)] pt-1 text-xs text-[color:var(--ds-text-subtle)]">
               Corpus geprüft am {new Date(data.grounding!.analyzed_at).toLocaleString("de-DE")}
             </div>
           )}
@@ -289,10 +284,10 @@ export function CitationBadgesInline({
   const hasGrounding = data.grounding && data.grounding.corpus_checked;
 
   return (
-    <div className={cn("inline-flex items-center gap-1.5 flex-wrap", className)}>
+    <div className={cn("inline-flex flex-wrap items-center gap-1.5", className)}>
       {!data.isStreaming && (
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
           title={AI_NOTICE}
         >
           <Info size={9} />
@@ -303,7 +298,7 @@ export function CitationBadgesInline({
         <span
           title={ground.hint}
           className={cn(
-            "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+            "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
             ground.cls
           )}
         >

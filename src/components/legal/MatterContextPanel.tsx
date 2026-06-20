@@ -63,10 +63,9 @@ export function MatterContextPanel({
     setLoading(true);
     setError(null);
     try {
-      const res = await csrfFetch(
-        `/api/matter-context/${encodeURIComponent(caseSlug)}`,
-        { method: "GET" },
-      );
+      const res = await csrfFetch(`/api/matter-context/${encodeURIComponent(caseSlug)}`, {
+        method: "GET",
+      });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -93,8 +92,8 @@ export function MatterContextPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] overflow-hidden",
-        className,
+        "overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+        className
       )}
     >
       {/* Header */}
@@ -115,17 +114,17 @@ export function MatterContextPanel({
           {bundle && (
             <div className="flex items-center gap-1.5">
               {criticalGaps.length > 0 && (
-                <Badge className="border border-red-500/20 bg-red-500/10 text-red-600 text-[10px]">
+                <Badge className="border border-red-500/20 bg-red-500/10 text-xs text-red-600">
                   {criticalGaps.length} kritisch
                 </Badge>
               )}
               {overdueDeadlines.length > 0 && (
-                <Badge className="border border-red-500/20 bg-red-500/10 text-red-600 text-[10px]">
+                <Badge className="border border-red-500/20 bg-red-500/10 text-xs text-red-600">
                   {overdueDeadlines.length} überfällig
                 </Badge>
               )}
               {criticalGaps.length === 0 && overdueDeadlines.length === 0 && (
-                <Badge className="border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 text-[10px]">
+                <Badge className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600">
                   OK
                 </Badge>
               )}
@@ -138,7 +137,9 @@ export function MatterContextPanel({
               {Math.round(bundle.coverage.completeness_score * 100)}% Coverage
             </span>
           )}
-          {loading && <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />}
+          {loading && (
+            <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
+          )}
         </div>
       </button>
 
@@ -381,7 +382,7 @@ function PartyRow({ party }: { party: MatterParty }) {
           <span className="truncate text-sm text-[color:var(--ds-text)]">{party.name}</span>
         </div>
         {party.contact_info && (
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-[color:var(--ds-text-subtle)]">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[color:var(--ds-text-subtle)]">
             {party.contact_info.email && (
               <span className="flex items-center gap-0.5">
                 <Mail size={9} /> {party.contact_info.email}
@@ -405,28 +406,62 @@ function PartyRow({ party }: { party: MatterParty }) {
 }
 
 function DeadlineRow({ deadline }: { deadline: MatterDeadlineSummary }) {
-  const urgencyConfig: Record<MatterDeadlineSummary["urgency"], { color: string; bg: string; border: string; label: string }> = {
-    overdue: { color: "text-red-600", bg: "bg-red-500/5", border: "border-red-500/20", label: "ÜBERFÄLLIG" },
-    critical: { color: "text-orange-600", bg: "bg-orange-500/5", border: "border-orange-500/20", label: "≤3 Tage" },
-    upcoming: { color: "text-amber-600", bg: "bg-amber-500/5", border: "border-amber-500/20", label: "≤14 Tage" },
-    normal: { color: "text-[color:var(--ds-text-muted)]", bg: "", border: "border-[color:var(--ds-border)]", label: "" },
-    done: { color: "text-emerald-600", bg: "bg-emerald-500/5", border: "border-emerald-500/20", label: "Erledigt" },
+  const urgencyConfig: Record<
+    MatterDeadlineSummary["urgency"],
+    { color: string; bg: string; border: string; label: string }
+  > = {
+    overdue: {
+      color: "text-red-600",
+      bg: "bg-red-500/5",
+      border: "border-red-500/20",
+      label: "ÜBERFÄLLIG",
+    },
+    critical: {
+      color: "text-orange-600",
+      bg: "bg-orange-500/5",
+      border: "border-orange-500/20",
+      label: "≤3 Tage",
+    },
+    upcoming: {
+      color: "text-amber-600",
+      bg: "bg-amber-500/5",
+      border: "border-amber-500/20",
+      label: "≤14 Tage",
+    },
+    normal: {
+      color: "text-[color:var(--ds-text-muted)]",
+      bg: "",
+      border: "border-[color:var(--ds-border)]",
+      label: "",
+    },
+    done: {
+      color: "text-emerald-600",
+      bg: "bg-emerald-500/5",
+      border: "border-emerald-500/20",
+      label: "Erledigt",
+    },
   };
   const cfg = urgencyConfig[deadline.urgency];
   return (
-    <div className={cn("flex items-center justify-between gap-2 rounded-lg border px-3 py-2", cfg.bg, cfg.border)}>
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-lg border px-3 py-2",
+        cfg.bg,
+        cfg.border
+      )}
+    >
       <div className="min-w-0 flex-1">
         <span className="truncate text-sm text-[color:var(--ds-text)]">{deadline.title}</span>
         {deadline.court && (
-          <span className="ml-2 text-[10px] text-[color:var(--ds-text-subtle)]">@ {deadline.court}</span>
+          <span className="ml-2 text-xs text-[color:var(--ds-text-subtle)]">
+            @ {deadline.court}
+          </span>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-xs text-[color:var(--ds-text-muted)]">{deadline.date}</span>
         {cfg.label && (
-          <Badge className={cn("border text-[9px]", cfg.bg, cfg.color, cfg.border)}>
-            {cfg.label}
-          </Badge>
+          <Badge className={cn("border text-xs", cfg.bg, cfg.color, cfg.border)}>{cfg.label}</Badge>
         )}
       </div>
     </div>
@@ -436,10 +471,10 @@ function DeadlineRow({ deadline }: { deadline: MatterDeadlineSummary }) {
 function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
   const extractionIcons: Record<ExtractionStatus, React.ReactNode> = {
     uploaded: <Clock size={11} className="text-blue-500" />,
-    processing: <Loader2 size={11} className="text-blue-500 animate-spin" />,
+    processing: <Loader2 size={11} className="animate-spin text-blue-500" />,
     text_layer: <CheckCircle2 size={11} className="text-emerald-500" />,
     ocr_needed: <AlertTriangle size={11} className="text-amber-500" />,
-    ocr_processing: <Loader2 size={11} className="text-amber-500 animate-spin" />,
+    ocr_processing: <Loader2 size={11} className="animate-spin text-amber-500" />,
     ocr_complete: <CheckCircle2 size={11} className="text-emerald-500" />,
     ocr_failed: <XCircle size={11} className="text-red-500" />,
     ready: <CheckCircle2 size={11} className="text-emerald-500" />,
@@ -457,14 +492,14 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
     : ocrIcons[doc.ocr_status ?? "not_applicable"];
   const statusText = doc.extraction_status
     ? statusLabel(doc.extraction_status)
-    : doc.ocr_status ?? "";
+    : (doc.ocr_status ?? "");
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
-      <div className="flex min-w-0 items-center gap-2 flex-1">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         <FileText size={13} className="shrink-0 text-[color:var(--ds-text-muted)]" />
         <span className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</span>
         {doc.extraction_unverified && (
-          <Badge className="text-[9px] border border-amber-500/20 bg-amber-500/5 text-amber-700">
+          <Badge className="border border-amber-500/20 bg-amber-500/5 text-xs text-amber-700">
             unverified
           </Badge>
         )}
@@ -475,7 +510,9 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
             {statusIcon}
           </span>
         )}
-        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">{doc.uploaded_at.slice(0, 10)}</span>
+        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+          {doc.uploaded_at.slice(0, 10)}
+        </span>
       </div>
     </div>
   );
@@ -483,7 +520,8 @@ function DocumentRow({ doc }: { doc: MatterDocumentSummary }) {
 
 function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
   const score = Math.round(coverage.completeness_score * 100);
-  const scoreColor = score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
+  const scoreColor =
+    score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
   return (
     <div className="space-y-3">
       {/* Score Bar */}
@@ -497,7 +535,7 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500",
+                score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"
               )}
               style={{ width: `${score}%` }}
             />
@@ -569,13 +607,13 @@ function SourceRow({ source }: { source: SourceCoverageEntry }) {
           <XCircle size={11} className="text-[color:var(--ds-text-subtle)]" />
         )}
         {source.index_fresh && source.connected && (
-          <span className="text-[9px] text-emerald-600">frisch</span>
+          <span className="text-xs text-emerald-600">frisch</span>
         )}
         {!source.index_fresh && source.connected && (
-          <span className="text-[9px] text-amber-600">stale</span>
+          <span className="text-xs text-amber-600">stale</span>
         )}
         {source.document_count > 0 && (
-          <span className="text-[9px] text-[color:var(--ds-text-subtle)]">
+          <span className="text-xs text-[color:var(--ds-text-subtle)]">
             {source.document_count} docs
           </span>
         )}
@@ -585,12 +623,35 @@ function SourceRow({ source }: { source: SourceCoverageEntry }) {
 }
 
 function GapRow({ gap }: { gap: MatterGap }) {
-  const severityConfig: Record<MatterGap["severity"], { color: string; bg: string; border: string; icon: React.ElementType }> = {
-    critical: { color: "text-red-600", bg: "bg-red-500/5", border: "border-red-500/20", icon: ShieldAlert },
-    high: { color: "text-orange-600", bg: "bg-orange-500/5", border: "border-orange-500/20", icon: AlertTriangle },
-    medium: { color: "text-amber-600", bg: "bg-amber-500/5", border: "border-amber-500/20", icon: AlertTriangle },
+  const severityConfig: Record<
+    MatterGap["severity"],
+    { color: string; bg: string; border: string; icon: React.ElementType }
+  > = {
+    critical: {
+      color: "text-red-600",
+      bg: "bg-red-500/5",
+      border: "border-red-500/20",
+      icon: ShieldAlert,
+    },
+    high: {
+      color: "text-orange-600",
+      bg: "bg-orange-500/5",
+      border: "border-orange-500/20",
+      icon: AlertTriangle,
+    },
+    medium: {
+      color: "text-amber-600",
+      bg: "bg-amber-500/5",
+      border: "border-amber-500/20",
+      icon: AlertTriangle,
+    },
     low: { color: "text-blue-600", bg: "bg-blue-500/5", border: "border-blue-500/20", icon: Eye },
-    info: { color: "text-[color:var(--ds-text-muted)]", bg: "", border: "border-[color:var(--ds-border)]", icon: Eye },
+    info: {
+      color: "text-[color:var(--ds-text-muted)]",
+      bg: "",
+      border: "border-[color:var(--ds-border)]",
+      icon: Eye,
+    },
   };
   const cfg = severityConfig[gap.severity];
   const Icon = cfg.icon;
@@ -600,17 +661,13 @@ function GapRow({ gap }: { gap: MatterGap }) {
         <Icon size={14} className={cn("mt-0.5 shrink-0", cfg.color)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className={cn("text-[10px] font-semibold uppercase", cfg.color)}>
-              {gap.severity}
-            </span>
+            <span className={cn("text-xs font-semibold uppercase", cfg.color)}>{gap.severity}</span>
             <span className="text-sm font-medium text-[color:var(--ds-text)]">{gap.title}</span>
           </div>
           <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
             {gap.description}
           </p>
-          <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-            → {gap.recommendation}
-          </p>
+          <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">→ {gap.recommendation}</p>
         </div>
       </div>
     </div>
@@ -640,11 +697,16 @@ function FactRow({ fact }: { fact: MatterFactEntry }) {
     <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-[color:var(--ds-text)]">{fact.statement}</p>
-        <span className={cn("shrink-0 text-[9px] font-semibold uppercase", confidenceColors[fact.confidence])}>
+        <span
+          className={cn(
+            "shrink-0 text-xs font-semibold uppercase",
+            confidenceColors[fact.confidence]
+          )}
+        >
           {fact.confidence}
         </span>
       </div>
-      <div className="mt-1 flex items-center gap-2 text-[10px] text-[color:var(--ds-text-subtle)]">
+      <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
         <span>Quelle: {fact.source}</span>
         {fact.date && <span>· {fact.date.slice(0, 10)}</span>}
       </div>

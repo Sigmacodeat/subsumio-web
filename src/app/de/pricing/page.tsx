@@ -6,13 +6,13 @@ import { PRICING } from "@/content/site";
 export const metadata: Metadata = {
   title: "Subsumio — Kanzleisoftware Preise, pro Seat",
   description:
-    "Gehostete Pläne ab 290 €/Seat/Mon., jährlich abgerechnet. Self-hosted oder EU-Cloud. Keine Überraschungsrechnung, kein Lock-in, 14-Tage-Reverse-Trial.",
+    "Gehostete Pläne ab 890 €/Seat/Mon., jährlich abgerechnet. Self-hosted oder EU-Cloud. Keine Überraschungsrechnung, kein Lock-in, 14-Tage-Reverse-Trial.",
   alternates: { canonical: "/de/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
 };
 
 export default function Page() {
   const offers = PRICING.de.tiers
-    .filter((t) => t.price !== "Individuell")
+    .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
       name: t.name,

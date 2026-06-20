@@ -261,9 +261,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     setMobileOpen,
     pages,
     entities,
-  dreamCycle,
-  userName,
-  userEmail,
+    dreamCycle,
+    userName,
+    userEmail,
   },
   _ref
 ) {
@@ -438,7 +438,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           <div key={section.titleKey} className="mb-5">
             {!collapsed && (
               <div className="mb-2 px-3">
-                <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
                   {t(section.titleKey)}
                 </span>
               </div>
@@ -464,7 +464,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       {!collapsed && (
                         <span className="flex flex-1 items-center justify-between">
                           {t(item.labelKey)}
-                          <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-[9px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                          <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                             {t("sidebar.coming_soon")}
                           </span>
                         </span>
@@ -525,7 +525,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               {t("sidebar.dream_cycle")}
             </span>
           </div>
-          <p className="mt-1.5 text-[11px] leading-snug text-[color:var(--ds-text-muted)]">
+          <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
             {dreamCycle
               ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
               : t("sidebar.dream_not_scheduled")}
@@ -537,7 +537,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       <div className="space-y-0.5 border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
         {!collapsed && (
           <div className="mb-2 px-3">
-            <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+            <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
               {t("nav.section.admin")}
             </span>
           </div>
@@ -582,7 +582,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
                   {userName ?? t("sidebar.user")}
                 </p>
-                <p className="mt-0.5 truncate text-[11px] text-[color:var(--ds-text-subtle)]">
+                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
                   {userEmail ?? ""}
                 </p>
               </div>

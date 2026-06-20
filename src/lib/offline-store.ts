@@ -118,7 +118,7 @@ export async function clearCache(): Promise<void> {
 
 /** Is the browser online? */
 export function isOnline(): boolean {
-  return typeof navigator !== "undefined" && navigator.onLine;
+  return typeof navigator !== "undefined" && navigator.onLine === true;
 }
 
 /** Cache keys */

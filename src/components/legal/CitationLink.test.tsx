@@ -12,8 +12,14 @@ import type { GroundedCitation } from "@/lib/types";
 
 // Mock next/link to render as plain <a>
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    children,
+    href,
+    ...props
+  }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -91,7 +97,9 @@ describe("GroundingBadge", () => {
   });
 
   it("renders nothing when both counts are 0 and corpus was checked", () => {
-    const { container } = render(<GroundingBadge verified={0} unverified={0} corpusChecked={true} />);
+    const { container } = render(
+      <GroundingBadge verified={0} unverified={0} corpusChecked={true} />
+    );
     expect(container.firstChild).toBeNull();
   });
 });
@@ -152,7 +160,7 @@ describe("AIBadge", () => {
   it("renders size variants", () => {
     const { container: smContainer } = render(<AIBadge size="sm" showTooltip={false} />);
     const smBadge = smContainer.querySelector("span");
-    expect(smBadge?.className).toContain("text-[10px]");
+    expect(smBadge?.className).toContain("text-xs");
 
     const { container: mdContainer } = render(<AIBadge size="md" showTooltip={false} />);
     const mdBadge = mdContainer.querySelector("span");

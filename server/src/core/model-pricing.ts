@@ -34,7 +34,7 @@
  * per-MTok, char-based).
  */
 
-import { splitProviderModelId } from './model-id.ts';
+import { splitProviderModelId } from "./model-id.ts";
 
 export interface ModelPricing {
   /** USD per 1M input tokens. */
@@ -54,33 +54,41 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
   // ── Anthropic ──────────────────────────────────────────────────────────
   // Opus 4.x: $5 in / $25 out. 4.8 (released 2026-05-28) shares 4.7's
   // per-token rate — closes gbrain#1819.
-  'anthropic:claude-opus-4-8':            { input:  5.00, output: 25.00 },
-  'anthropic:claude-opus-4-7':            { input:  5.00, output: 25.00 },
-  'anthropic:claude-opus-4-6':            { input:  5.00, output: 25.00 },
-  'anthropic:claude-sonnet-4-6':          { input:  3.00, output: 15.00 },
+  "anthropic:claude-opus-4-8": { input: 5.0, output: 25.0 },
+  "anthropic:claude-opus-4-7": { input: 5.0, output: 25.0 },
+  "anthropic:claude-opus-4-6": { input: 5.0, output: 25.0 },
+  "anthropic:claude-sonnet-4-6": { input: 3.0, output: 15.0 },
   // Haiku 4.5 — both the dateless canonical id and the dated snapshot.
-  'anthropic:claude-haiku-4-5':           { input:  1.00, output:  5.00 },
-  'anthropic:claude-haiku-4-5-20251001':  { input:  1.00, output:  5.00 },
-  'anthropic:claude-3-5-sonnet-20241022': { input:  3.00, output: 15.00 },
-  'anthropic:claude-3-5-haiku-20241022':  { input:  0.80, output:  4.00 },
+  "anthropic:claude-haiku-4-5": { input: 1.0, output: 5.0 },
+  "anthropic:claude-haiku-4-5-20251001": { input: 1.0, output: 5.0 },
+  "anthropic:claude-3-5-sonnet-20241022": { input: 3.0, output: 15.0 },
+  "anthropic:claude-3-5-haiku-20241022": { input: 0.8, output: 4.0 },
 
   // ── OpenAI ─────────────────────────────────────────────────────────────
-  'openai:gpt-4o':                        { input:  2.50, output: 10.00 },
-  'openai:gpt-4o-mini':                   { input:  0.15, output:  0.60 },
-  'openai:gpt-5':                         { input:  5.00, output: 20.00 },
-  'openai:gpt-5.5':                       { input:  4.00, output: 16.00 },
+  "openai:gpt-4o": { input: 2.5, output: 10.0 },
+  "openai:gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "openai:gpt-5": { input: 5.0, output: 20.0 },
+  "openai:gpt-5.5": { input: 4.0, output: 16.0 },
 
   // ── Google ─────────────────────────────────────────────────────────────
-  'google:gemini-1.5-pro':                { input:  1.25, output:  5.00 },
+  "google:gemini-1.5-pro": { input: 1.25, output: 5.0 },
+  // Gemini 3 Pro: $2.00 in / $12.00 out (verified 2026-06-20 via eesel.ai +
+  // pricepertoken.com). 1M context, advanced reasoning.
+  "google:gemini-3-pro": { input: 2.0, output: 12.0 },
   // Gemini 2.0 Flash: $0.10 in / $0.40 out (verified 2026-06-03). Reconciled
   // from a stale $0.30/$1.20 entry that had drifted in takes-quality-eval.
   // `gemini-2-flash` kept as an alias for the legacy id spelling.
-  'google:gemini-2.0-flash':              { input:  0.10, output:  0.40 },
-  'google:gemini-2-flash':                { input:  0.10, output:  0.40 },
+  "google:gemini-2.0-flash": { input: 0.1, output: 0.4 },
+  "google:gemini-2-flash": { input: 0.1, output: 0.4 },
+
+  // ── Mistral ────────────────────────────────────────────────────────────
+  // Mistral Large 3: $0.50 in / $1.50 out (verified 2026-06-20 via
+  // docsbot.ai + llmcosthub.com + tickerr.ai). EU-hosted (Paris), 256K context.
+  "mistral:mistral-large-3": { input: 0.5, output: 1.5 },
 
   // ── Together / DeepSeek (cross-modal-eval panel) ───────────────────────
-  'together:meta-llama/Llama-3.3-70B-Instruct-Turbo': { input: 0.88, output: 0.88 },
-  'deepseek:deepseek-chat':               { input:  0.14, output:  0.28 },
+  "together:meta-llama/Llama-3.3-70B-Instruct-Turbo": { input: 0.88, output: 0.88 },
+  "deepseek:deepseek-chat": { input: 0.14, output: 0.28 },
 };
 
 /**
@@ -98,9 +106,7 @@ export const CANONICAL_PRICING: Record<string, ModelPricing> = {
  * canonical key. OpenRouter markup ≠ native pricing, so we never reprice it as
  * the inner vendor.
  */
-export function canonicalLookup(
-  modelId: string | null | undefined,
-): ModelPricing | undefined {
+export function canonicalLookup(modelId: string | null | undefined): ModelPricing | undefined {
   if (!modelId) return undefined;
   // 1. Exact key — colon form, already-canonical ids, and slash-bearing model
   //    tails carried verbatim as keys (e.g. together:.../Llama-3.3-70B-...).

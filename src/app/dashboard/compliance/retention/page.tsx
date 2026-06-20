@@ -33,9 +33,12 @@ export default function RetentionPage() {
         const mapped: RetentionCase[] = pages.map((p) => {
           const fm = p.frontmatter as Record<string, unknown>;
           const closedAt = fm.closed_at ? String(fm.closed_at) : undefined;
-          const years = closedAt ? (now.getTime() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365) : 0;
+          const years = closedAt
+            ? (now.getTime() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365)
+            : 0;
           let action: RetentionCase["action"] = "keep";
-          if (years >= RETENTION_YEARS + 4) action = "delete"; // > 10 Jahre
+          if (years >= RETENTION_YEARS + 4)
+            action = "delete"; // > 10 Jahre
           else if (years >= RETENTION_YEARS) action = "review"; // 6-10 Jahre
           return {
             slug: p.slug,
@@ -60,26 +63,38 @@ export default function RetentionPage() {
   const toDelete = cases.filter((c) => c.action === "delete");
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Löschfristen"
         description="DSGVO + BRAO — Aufbewahrungsfristen prüfen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Compliance", href: "/dashboard/compliance" }, { label: "Löschfristen" }]}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Compliance", href: "/dashboard/compliance" },
+          { label: "Löschfristen" },
+        ]}
       />
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div className="text-xl font-bold text-emerald-600">{cases.filter((c) => c.action === "keep").length}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Aktiv / Frist nicht erreicht</div>
+          <div className="text-xl font-bold text-emerald-600">
+            {cases.filter((c) => c.action === "keep").length}
+          </div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            Aktiv / Frist nicht erreicht
+          </div>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
           <div className="text-xl font-bold text-amber-600">{toReview.length}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Zur Prüfung (≥{RETENTION_YEARS} J.)</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            Zur Prüfung (≥{RETENTION_YEARS} J.)
+          </div>
         </div>
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
           <div className="text-xl font-bold text-red-600">{toDelete.length}</div>
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Löschfällig (≥{RETENTION_YEARS + 4} J.)</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">
+            Löschfällig (≥{RETENTION_YEARS + 4} J.)
+          </div>
         </div>
       </div>
 
@@ -90,34 +105,46 @@ export default function RetentionPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-[color:var(--ds-text-muted)]">Lade Akten…</div>
+        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Lade Akten…</div>
       ) : (
         <div className="space-y-2">
           {cases.map((c) => (
             <div
               key={c.slug}
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl border ${
-                c.action === "delete" ? "border-red-500/20 bg-red-500/5" :
-                c.action === "review" ? "border-amber-500/20 bg-amber-500/5" :
-                "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+              className={`flex items-center gap-4 rounded-xl border px-4 py-3 ${
+                c.action === "delete"
+                  ? "border-red-500/20 bg-red-500/5"
+                  : c.action === "review"
+                    ? "border-amber-500/20 bg-amber-500/5"
+                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
               }`}
             >
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
-                {c.action === "delete" ? <Trash2 size={18} className="text-red-600" /> :
-                 c.action === "review" ? <AlertTriangle size={18} className="text-amber-600" /> :
-                 <CheckCircle2 size={18} className="text-emerald-600" />}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+                {c.action === "delete" ? (
+                  <Trash2 size={18} className="text-red-600" />
+                ) : c.action === "review" ? (
+                  <AlertTriangle size={18} className="text-amber-600" />
+                ) : (
+                  <CheckCircle2 size={18} className="text-emerald-600" />
+                )}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[color:var(--ds-text)]">{c.caseNumber}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">{c.status}</span>
+                  <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                    {c.caseNumber}
+                  </span>
+                  <span className="rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    {c.status}
+                  </span>
                 </div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
                   {c.title} · {c.yearsSinceClosure} Jahre seit Abschluss
                 </div>
               </div>
               {c.action !== "keep" && (
-                <span className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}>
+                <span
+                  className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}
+                >
                   {c.action === "delete" ? "Löschfällig" : "Prüfung empfohlen"}
                 </span>
               )}
@@ -128,14 +155,14 @@ export default function RetentionPage() {
 
       <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-start gap-3">
-          <Shield size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <Shield size={16} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              <strong className="text-[color:var(--ds-text)]">Hinweis:</strong> Die angezeigten Fristen dienen als Orientierung.
-              Die tatsächliche Aufbewahrungsfrist hängt von der Rechtsmaterie ab:
-              Handakten (§ 147 AO): 6 Jahre, Kanzleiakten (§ 50 BRAO): 10 Jahre.
-              Persönliche Daten müssen nach Zweckwegfall gelöscht werden (Art. 5 DSGVO).
-              Vor Löschung stets eine Datenträgerkopie anfertigen.
+              <strong className="text-[color:var(--ds-text)]">Hinweis:</strong> Die angezeigten
+              Fristen dienen als Orientierung. Die tatsächliche Aufbewahrungsfrist hängt von der
+              Rechtsmaterie ab: Handakten (§ 147 AO): 6 Jahre, Kanzleiakten (§ 50 BRAO): 10 Jahre.
+              Persönliche Daten müssen nach Zweckwegfall gelöscht werden (Art. 5 DSGVO). Vor
+              Löschung stets eine Datenträgerkopie anfertigen.
             </p>
           </div>
         </div>

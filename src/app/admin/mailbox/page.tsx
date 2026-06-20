@@ -56,19 +56,21 @@ export default async function MailboxPage() {
   const webhookUrl = `${siteUrl().replace(/\/$/, "")}/api/email/webhook/resend`;
 
   return (
-    <div data-tone="dark" className="min-h-screen bg-[#06060f] px-6 py-10">
+    <div data-tone="dark" className="min-h-screen px-6 py-10 [background:var(--mk-bg)]">
       <div className="mx-auto max-w-5xl space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="mb-1 flex items-center gap-2">
               <Mail size={18} className="brand-text" />
-              <h1 className="text-2xl font-bold text-[#e8e8f0]">Mailbox</h1>
+              <h1 className="text-2xl font-bold [color:var(--mk-text)]">Mailbox</h1>
             </div>
-            <p className="text-sm text-[#8888aa]">Eingehende und gesendete E-Mails von Subsumio.</p>
+            <p className="text-sm [color:var(--mk-text-muted)]">
+              Eingehende und gesendete E-Mails von Subsumio.
+            </p>
           </div>
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 text-sm text-[#8888aa] hover:text-[#e8e8f0]"
+            className="inline-flex items-center gap-1.5 text-sm [color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
           >
             <ArrowLeft size={14} /> Zum Admin
           </Link>

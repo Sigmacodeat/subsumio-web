@@ -1,6 +1,5 @@
-
 import { usageFor } from "@/lib/usage";
-import { limitsFor } from "@/lib/plans";
+import { limitsFor, getModelUsage } from "@/lib/plans";
 import { createHandler } from "@/lib/api-handler";
 
 export const GET = createHandler(
@@ -11,12 +10,14 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     const usage = await usageFor(ctx.brainId);
+    const modelBreakdown = await getModelUsage(ctx.brainId);
     return Response.json({
       month: usage.month,
       queries: usage.queries,
       plan: ctx.plan,
       limits: limitsFor(ctx.plan),
       shared: ctx.brainId !== ctx.user.brainId,
+      modelBreakdown,
     });
-  },
+  }
 );

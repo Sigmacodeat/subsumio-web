@@ -11,7 +11,12 @@ interface CommentThreadProps {
   currentUserName: string;
 }
 
-export default function CommentThread({ parentSlug, parentType, currentUserId, currentUserName }: CommentThreadProps) {
+export default function CommentThread({
+  parentSlug,
+  parentType,
+  currentUserId,
+  currentUserName,
+}: CommentThreadProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newText, setNewText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -53,32 +58,46 @@ export default function CommentThread({ parentSlug, parentType, currentUserId, c
   }
 
   return (
-    <div className="rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] p-4 space-y-3">
+    <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
       <div className="flex items-center gap-2">
         <MessageSquare size={14} className="brand-text" />
-        <h4 className="text-xs font-semibold [color:var(--mk-text)] uppercase tracking-wider">Kommentare</h4>
-        <span className="text-[10px] text-[#8a8aa8]">({comments.length})</span>
+        <h4 className="text-xs font-semibold tracking-wider [color:var(--mk-text)] uppercase">
+          Kommentare
+        </h4>
+        <span className="text-xs text-[color:var(--mk-text-subtle)]">({comments.length})</span>
       </div>
 
       {loading ? (
-        <div className="text-xs text-[#8a8aa8] py-2">Lade…</div>
+        <div className="py-2 text-xs text-[color:var(--mk-text-subtle)]">Lade…</div>
       ) : comments.length === 0 ? (
-        <div className="text-xs text-[#8a8aa8] py-2">Noch keine Kommentare.</div>
+        <div className="py-2 text-xs text-[color:var(--mk-text-subtle)]">
+          Noch keine Kommentare.
+        </div>
       ) : (
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+        <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
           {comments.map((c) => (
-            <div key={c.id} className="flex gap-2 p-2 rounded-lg [background:var(--mk-bg)] border [border-color:var(--mk-border)]">
-              <div className="w-6 h-6 rounded-full brand-soft flex items-center justify-center shrink-0">
+            <div
+              key={c.id}
+              className="flex gap-2 rounded-lg border [border-color:var(--mk-border)] p-2 [background:var(--mk-bg)]"
+            >
+              <div className="brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                 <User size={12} className="brand-text" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium [color:var(--mk-text)]">{c.authorName}</span>
-                  <span className="text-[10px] text-[#8a8aa8]">
-                    {new Date(c.createdAt).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  <span className="text-xs text-[color:var(--mk-text-subtle)]">
+                    {new Date(c.createdAt).toLocaleString("de-DE", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
-                <p className="text-xs [color:var(--mk-text-muted)] mt-0.5 whitespace-pre-wrap">{c.content}</p>
+                <p className="mt-0.5 text-xs whitespace-pre-wrap [color:var(--mk-text-muted)]">
+                  {c.content}
+                </p>
               </div>
             </div>
           ))}
@@ -92,12 +111,12 @@ export default function CommentThread({ parentSlug, parentType, currentUserId, c
           onChange={(e) => setNewText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="Kommentar hinzufügen…"
-          className="flex-1 [background:var(--mk-bg)] border [border-color:var(--mk-border)] rounded-lg px-3 py-2 text-xs [color:var(--mk-text)] placeholder:text-[#8a8aa8] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text)] [background:var(--mk-bg)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
         <button
           onClick={submit}
           disabled={sending || !newText.trim()}
-          className="px-3 py-2 rounded-lg brand-bg text-white text-xs font-medium brand-bg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          className="brand-bg brand-bg flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Send size={12} />
         </button>

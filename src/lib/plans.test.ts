@@ -1,10 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import {
-  PLAN_LIMITS,
-  limitsFor,
-} from "./plans";
+import { PLAN_LIMITS, limitsFor } from "./plans";
 import type { Plan } from "@/lib/auth/store";
 
 describe("PLAN_LIMITS", () => {
@@ -23,7 +20,7 @@ describe("PLAN_LIMITS", () => {
 
   test("enterprise plan has highest limits", () => {
     expect(PLAN_LIMITS.enterprise.pages).toBe(1_000_000);
-    expect(PLAN_LIMITS.enterprise.queriesPerMonth).toBe(100_000);
+    expect(PLAN_LIMITS.enterprise.queriesPerMonth).toBe(15_000);
     expect(PLAN_LIMITS.enterprise.seats).toBe(25);
   });
 
@@ -31,7 +28,9 @@ describe("PLAN_LIMITS", () => {
     const plans: Plan[] = ["free", "pro", "team", "enterprise"];
     for (let i = 0; i < plans.length - 1; i++) {
       expect(PLAN_LIMITS[plans[i]].pages).toBeLessThan(PLAN_LIMITS[plans[i + 1]].pages);
-      expect(PLAN_LIMITS[plans[i]].queriesPerMonth).toBeLessThan(PLAN_LIMITS[plans[i + 1]].queriesPerMonth);
+      expect(PLAN_LIMITS[plans[i]].queriesPerMonth).toBeLessThan(
+        PLAN_LIMITS[plans[i + 1]].queriesPerMonth
+      );
       expect(PLAN_LIMITS[plans[i]].seats).toBeLessThanOrEqual(PLAN_LIMITS[plans[i + 1]].seats);
     }
   });

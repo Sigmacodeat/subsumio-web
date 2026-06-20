@@ -85,9 +85,8 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   // Pricing-tier CTAs deep-link with ?plan=pro|team → after signup, land on
   // billing with auto-checkout for that plan. Explicit ?next= wins.
   const planParam = params.get("plan");
-  const planNext = planParam === "pro" || planParam === "team"
-    ? `/dashboard/billing?checkout=${planParam}`
-    : null;
+  const planNext =
+    planParam === "pro" || planParam === "team" ? `/dashboard/billing?checkout=${planParam}` : null;
   const next = params.get("next") || planNext || "/dashboard";
 
   const [name, setName] = useState("");
@@ -135,7 +134,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
         body: JSON.stringify(
           mode === "signup"
             ? { name, email, password, locale: lang, industry }
-            : { email, password },
+            : { email, password }
         ),
       });
       const data = await res.json().catch(() => ({}));
@@ -153,23 +152,34 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   }
 
   return (
-    <div data-tone="dark" className="min-h-screen bg-[#06060f] flex items-center justify-center px-6 py-12" lang={lang} style={styleForIndustry(industry)}>
+    <div
+      data-tone="dark"
+      className="flex min-h-screen items-center justify-center px-6 py-12 [background:var(--mk-bg)]"
+      lang={lang}
+      style={styleForIndustry(industry)}
+    >
       <MarketingBackground />
       <div className="relative z-10 w-full max-w-md">
-        <Link href={p(lang, "")} className="flex justify-center mb-8" aria-label="Subsumio home">
+        <Link href={p(lang, "")} className="mb-8 flex justify-center" aria-label="Subsumio home">
           <SubsumioLogo size={40} />
         </Link>
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
-          <h1 className="text-2xl font-black text-[#e8e8f0] mb-1">{m.title}</h1>
-          <p className="text-sm text-[#8888aa] mb-7">{m.sub}</p>
+          <h1 className="mb-1 text-2xl font-black [color:var(--mk-text)]">{m.title}</h1>
+          <p className="mb-7 text-sm [color:var(--mk-text-muted)]">{m.sub}</p>
 
           <form onSubmit={submit} className="space-y-4" noValidate>
             {mode === "signup" && (
               <label className="block">
-                <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.name}</span>
+                <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                  {t.name}
+                </span>
                 <div className="relative">
-                  <UserIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                  <UserIcon
+                    size={14}
+                    className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                    aria-hidden
+                  />
                   <input
                     type="text"
                     name="name"
@@ -177,15 +187,21 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#0a0a18] border border-[#1e1e3a] rounded-lg pl-9 pr-3 py-2.5 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:outline-none focus:brand-border/60"
+                    className="focus:brand-border/60 w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:outline-none"
                   />
                 </div>
               </label>
             )}
             <label className="block">
-              <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.email}</span>
+              <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                {t.email}
+              </span>
               <div className="relative">
-                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                <Mail
+                  size={14}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                  aria-hidden
+                />
                 <input
                   type="email"
                   name="email"
@@ -193,14 +209,20 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#0a0a18] border border-[#1e1e3a] rounded-lg pl-9 pr-3 py-2.5 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:outline-none focus:border-[var(--brand-primary)]"
+                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none"
                 />
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.password}</span>
+              <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                {t.password}
+              </span>
               <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                <Lock
+                  size={14}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                  aria-hidden
+                />
                 <input
                   type="password"
                   name="password"
@@ -209,20 +231,30 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#0a0a18] border border-[#1e1e3a] rounded-lg pl-9 pr-3 py-2.5 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:outline-none focus:border-[var(--brand-primary)]"
+                  className="w-full rounded-lg border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-[var(--brand-primary)] focus:outline-none"
                 />
               </div>
-              {mode === "signup" && <span className="text-xs text-[#7878a0] mt-1 block">{t.passwordHint}</span>}
+              {mode === "signup" && (
+                <span className="mt-1 block text-xs [color:var(--mk-text-subtle)]">
+                  {t.passwordHint}
+                </span>
+              )}
               {mode === "login" && (
-                <Link href={p(lang, "/forgot")} className="text-xs text-[var(--brand-primary)] hover:underline mt-1.5 inline-block">
+                <Link
+                  href={p(lang, "/forgot")}
+                  className="mt-1.5 inline-block text-xs text-[var(--brand-primary)] hover:underline"
+                >
                   {lang === "de" ? "Passwort vergessen?" : "Forgot password?"}
                 </Link>
               )}
             </label>
 
             {error && (
-              <div role="alert" className="flex items-start gap-2 p-3 rounded-lg border border-red-500/30 bg-red-500/10">
-                <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" aria-hidden />
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3"
+              >
+                <AlertCircle size={14} className="mt-0.5 shrink-0 text-red-400" aria-hidden />
                 <p className="text-xs text-red-300">{error}</p>
               </div>
             )}
@@ -236,10 +268,10 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
             <div className="mt-5">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#1e1e3a]" />
+                  <div className="w-full border-t [border-color:var(--mk-border)]" />
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-[#0a0a18] px-2 text-[#7878a0]">
+                  <span className="px-2 [color:var(--mk-text-subtle)] [background:var(--mk-surface-2)]">
                     {lang === "de" ? "oder" : "or"}
                   </span>
                 </div>
@@ -249,7 +281,7 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   type="button"
                   onClick={() => startSso("MicrosoftOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[#1e1e3a] bg-[#0a0a18] text-sm text-[#e8e8f0] hover:border-[#2e2e4a] hover:bg-[#12122a] transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
                 >
                   <Building2 size={16} className="text-blue-400" />
                   Microsoft
@@ -258,30 +290,42 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
                   type="button"
                   onClick={() => startSso("GoogleOAuth")}
                   disabled={ssoLoading}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-[#1e1e3a] bg-[#0a0a18] text-sm text-[#e8e8f0] hover:border-[#2e2e4a] hover:bg-[#12122a] transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-3 py-2.5 text-sm [color:var(--mk-text)] transition-all [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[background:var(--mk-surface)] disabled:opacity-50"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="shrink-0">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.26 1.05-3.71 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.26 1.05-3.71 1.05-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
                   </svg>
                   Google
                 </button>
               </div>
               {ssoLoading && (
-                <p className="text-xs text-[#7878a0] text-center mt-2">
+                <p className="mt-2 text-center text-xs [color:var(--mk-text-subtle)]">
                   {lang === "de" ? "Weiterleitung zum Anbieter..." : "Redirecting to provider..."}
                 </p>
               )}
             </div>
           )}
 
-          <p className="text-xs text-[#8888aa] text-center mt-6">
+          <p className="mt-6 text-center text-xs [color:var(--mk-text-muted)]">
             {m.switchText}{" "}
             <Link
               href={`${p(lang, mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
-              className="text-[var(--brand-primary)] hover:underline font-medium"
+              className="font-medium text-[var(--brand-primary)] hover:underline"
             >
               {m.switchCta}
             </Link>
@@ -295,7 +339,9 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
 export default function AuthForm(props: { mode: "login" | "signup"; lang: Lang }) {
   // useSearchParams requires a Suspense boundary during prerender.
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#06060f]" data-tone="dark" />}>
+    <Suspense
+      fallback={<div className="min-h-screen [background:var(--mk-bg)]" data-tone="dark" />}
+    >
       <AuthFormInner {...props} />
     </Suspense>
   );

@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Mail, Trash2, LogOut, Crown, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import {
+  Users,
+  Mail,
+  Trash2,
+  LogOut,
+  Crown,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -33,10 +42,12 @@ const ERRORS: Record<string, string> = {
   invalid_name: "Bitte gib einen Team-Namen mit 2–80 Zeichen ein.",
   owner_only: "Nur der Team-Inhaber kann das.",
   self_invite: "Du bist schon drin — dich selbst einzuladen geht nicht.",
-  no_seats_left: "Keine freien Plätze mehr. Upgrade auf einen größeren Plan oder entferne ein Mitglied.",
+  no_seats_left:
+    "Keine freien Plätze mehr. Upgrade auf einen größeren Plan oder entferne ein Mitglied.",
   already_member: "Diese Person ist bereits Mitglied.",
   invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
-  owner_must_remove_members_first: "Als Inhaber zuerst alle Mitglieder entfernen — dann löst sich das Team auf.",
+  owner_must_remove_members_first:
+    "Als Inhaber zuerst alle Mitglieder entfernen — dann löst sich das Team auf.",
   owner_cannot_remove_self: "Der Inhaber kann sich nicht selbst entfernen.",
   rate_limited: "Zu viele Versuche — bitte kurz warten.",
   generic: "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
@@ -61,7 +72,11 @@ export default function TeamPage() {
 
   const loading = orgQuery.isLoading;
   const state = (orgQuery.data ?? { org: null }) as OrgState;
-  const busy = createOrgMutation.isPending || inviteMutation.isPending || removeMutation.isPending || leaveMutation.isPending;
+  const busy =
+    createOrgMutation.isPending ||
+    inviteMutation.isPending ||
+    removeMutation.isPending ||
+    leaveMutation.isPending;
 
   function handleErr(err: unknown) {
     setError(err instanceof Error ? errMsg(err.message) : ERRORS.generic);
@@ -69,14 +84,14 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center gap-2 text-[color:var(--ds-text-muted)] text-sm">
+      <div className="flex items-center gap-2 p-6 text-sm text-[color:var(--ds-text-muted)]">
         <Loader2 size={14} className="animate-spin" aria-hidden /> Lade Team…
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Team"
         description="Ein gemeinsames Brain für euer ganzes Team — Mitglieder sehen und füttern dasselbe Wissen."
@@ -84,40 +99,48 @@ export default function TeamPage() {
       />
 
       {error && (
-        <div role="alert" className="flex items-start gap-2.5 p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5">
-          <AlertCircle size={15} className="text-rose-600 shrink-0 mt-0.5" aria-hidden />
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5"
+        >
+          <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-600" aria-hidden />
           <p className="text-sm text-rose-700">{error}</p>
         </div>
       )}
       {notice && (
-        <div role="status" className="flex items-start gap-2.5 p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-          <CheckCircle size={15} className="text-emerald-600 shrink-0 mt-0.5" aria-hidden />
-          <p className="text-sm text-[#454552]">{notice}</p>
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5"
+        >
+          <CheckCircle size={15} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden />
+          <p className="text-sm [color:var(--mk-text-subtle)]">{notice}</p>
         </div>
       )}
       {devJoinUrl && (
-        <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5">
-          <p className="text-xs text-amber-700 mb-1.5">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5">
+          <p className="mb-1.5 text-xs text-amber-700">
             Mail-Provider nicht konfiguriert — gib der Person diesen Einladungs-Link direkt:
           </p>
-          <code className="text-xs brand-text break-all">{devJoinUrl}</code>
+          <code className="brand-text text-xs break-all">{devJoinUrl}</code>
         </div>
       )}
 
       {!state?.org ? (
         <Card>
-          <div className="p-6 space-y-4">
+          <div className="space-y-4 p-6">
             <div className="flex items-center gap-2.5">
               <Users size={18} className="brand-text" aria-hidden />
-              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">Team erstellen</h2>
+              <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+                Team erstellen
+              </h2>
             </div>
-            <p className="text-sm text-[color:var(--ds-text-muted)] leading-relaxed">
-              Erstelle ein Team-Brain und lade Kolleginnen und Kollegen ein. Die Plätze richten
-              sich nach deinem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Dein persönliches
-              Brain bleibt unangetastet — das Team bekommt ein eigenes.
+            <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+              Erstelle ein Team-Brain und lade Kolleginnen und Kollegen ein. Die Plätze richten sich
+              nach deinem Plan (Free/Pro: 1 · Team: 5 · Enterprise: 25). Dein persönliches Brain
+              bleibt unangetastet — das Team bekommt ein eigenes.
             </p>
             <form
-              className="flex flex-col sm:flex-row gap-3"
+              className="flex flex-col gap-3 sm:flex-row"
               onSubmit={async (e) => {
                 e.preventDefault();
                 setError(null);
@@ -151,24 +174,29 @@ export default function TeamPage() {
       ) : (
         <>
           <Card>
-            <div className="p-6 border-b border-[color:var(--ds-border)] flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[color:var(--ds-border)] p-6">
               <div>
-                <h2 className="text-base font-semibold text-[color:var(--ds-text)]">{state.org.name}</h2>
-                <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                  {state.members?.length ?? 0} Mitglied{(state.members?.length ?? 0) !== 1 ? "er" : ""} · gemeinsames Brain
+                <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
+                  {state.org.name}
+                </h2>
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                  {state.members?.length ?? 0} Mitglied
+                  {(state.members?.length ?? 0) !== 1 ? "er" : ""} · gemeinsames Brain
                 </p>
               </div>
               {state.isOwner && <Badge>Inhaber</Badge>}
             </div>
             <ul className="divide-y divide-[color:var(--ds-border)]">
               {(state.members ?? []).map((m) => (
-                <li key={m.id} className="px-6 py-3.5 flex items-center justify-between gap-4">
+                <li key={m.id} className="flex items-center justify-between gap-4 px-6 py-3.5">
                   <div className="min-w-0">
-                    <p className="text-sm text-[color:var(--ds-text)] truncate flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 truncate text-sm text-[color:var(--ds-text)]">
                       {m.name}
-                      {m.isOwner && <Crown size={12} className="text-amber-600 shrink-0" aria-label="Inhaber" />}
+                      {m.isOwner && (
+                        <Crown size={12} className="shrink-0 text-amber-600" aria-label="Inhaber" />
+                      )}
                     </p>
-                    <p className="text-xs text-[color:var(--ds-text-muted)] truncate">{m.email}</p>
+                    <p className="truncate text-xs text-[color:var(--ds-text-muted)]">{m.email}</p>
                   </div>
                   {state.isOwner && !m.isOwner && (
                     <Button
@@ -181,7 +209,9 @@ export default function TeamPage() {
                         setNotice(null);
                         try {
                           await removeMutation.mutateAsync(m.id);
-                          setNotice("Mitglied entfernt — es arbeitet ab sofort wieder im eigenen Brain.");
+                          setNotice(
+                            "Mitglied entfernt — es arbeitet ab sofort wieder im eigenen Brain."
+                          );
                         } catch (err) {
                           handleErr(err);
                         }
@@ -197,13 +227,15 @@ export default function TeamPage() {
 
           {state.isOwner && (
             <Card>
-              <div className="p-6 space-y-3">
+              <div className="space-y-3 p-6">
                 <div className="flex items-center gap-2.5">
                   <Mail size={16} className="brand-text" aria-hidden />
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Mitglied einladen</h3>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    Mitglied einladen
+                  </h3>
                 </div>
                 <form
-                  className="flex flex-col sm:flex-row gap-3"
+                  className="flex flex-col gap-3 sm:flex-row"
                   onSubmit={async (e) => {
                     e.preventDefault();
                     setError(null);
@@ -238,10 +270,12 @@ export default function TeamPage() {
           )}
 
           <Card>
-            <div className="p-6 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-6">
               <div>
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Team verlassen</h3>
-                <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Team verlassen
+                </h3>
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                   {state.isOwner
                     ? "Als Inhaber: erst alle Mitglieder entfernen, dann löst Verlassen das Team auf."
                     : "Du arbeitest danach wieder in deinem persönlichen Brain."}

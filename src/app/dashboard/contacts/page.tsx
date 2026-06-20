@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { Mail, Phone, Plus, UserCircle, Pencil, Trash2, X, Save, AlertTriangle, RotateCcw, Loader2 } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  Plus,
+  UserCircle,
+  Pencil,
+  Trash2,
+  X,
+  Save,
+  AlertTriangle,
+  RotateCcw,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -68,7 +80,10 @@ function parseContact(page: BrainPage): ContactItem {
   };
 }
 
-function findLinkedCases(contactSlug: string, cases: BrainPage[]): { slug: string; title: string; caseNumber: string }[] {
+function findLinkedCases(
+  contactSlug: string,
+  cases: BrainPage[]
+): { slug: string; title: string; caseNumber: string }[] {
   return cases
     .filter((p) => {
       const fm = p.frontmatter as Record<string, unknown>;
@@ -86,7 +101,11 @@ function findLinkedCases(contactSlug: string, cases: BrainPage[]): { slug: strin
 }
 
 function slugifyContact(name: string): string {
-  return `contact/${name.toLowerCase().trim().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-|-$/g, "")}-${Date.now()}`;
+  return `contact/${name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9äöüß]+/gi, "-")
+    .replace(/^-|-$/g, "")}-${Date.now()}`;
 }
 
 export default function ContactsPage() {
@@ -111,13 +130,18 @@ export default function ContactsPage() {
       const nextContacts = contactPages.map(parseContact);
       setContacts(nextContacts);
       setCases(casePages);
-      await setCache<ContactsCache>(OFFLINE_KEYS.contacts, { contacts: nextContacts, cases: casePages });
+      await setCache<ContactsCache>(OFFLINE_KEYS.contacts, {
+        contacts: nextContacts,
+        cases: casePages,
+      });
     } catch (err) {
       const cached = await getCache<ContactsCache>(OFFLINE_KEYS.contacts);
       if (cached) {
         setContacts(cached.contacts);
         setCases(cached.cases);
-        setLoadError("Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Kontakte angezeigt.");
+        setLoadError(
+          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Kontakte angezeigt."
+        );
       } else {
         setLoadError(err instanceof Error ? err.message : "Kontakte konnten nicht geladen werden.");
         setContacts([]);
@@ -129,7 +153,15 @@ export default function ContactsPage() {
 
   const createForm = useDashboardForm({
     schema: contactFormSchema,
-    defaultValues: { name: "", role: "client", company: "", email: "", phone: "", address: "", notes: "" },
+    defaultValues: {
+      name: "",
+      role: "client",
+      company: "",
+      email: "",
+      phone: "",
+      address: "",
+      notes: "",
+    },
     onSubmit: async (data) => {
       const contact: ContactItem = {
         slug: slugifyContact(data.name),
@@ -173,7 +205,15 @@ export default function ContactsPage() {
 
   const editForm = useDashboardForm({
     schema: contactFormSchema,
-    defaultValues: { name: "", role: "client", company: "", email: "", phone: "", address: "", notes: "" },
+    defaultValues: {
+      name: "",
+      role: "client",
+      company: "",
+      email: "",
+      phone: "",
+      address: "",
+      notes: "",
+    },
     onSubmit: async (data) => {
       if (!editingSlug) return;
       const updatePayload = {
@@ -224,13 +264,21 @@ export default function ContactsPage() {
       if (cancelled) return;
       await loadContacts();
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [loadContacts]);
 
   const filtered = useMemo(() => {
     const needle = query.toLowerCase();
     return contacts.filter((contact) => {
-      const matchesSearch = [contact.name, contact.company, contact.email, contact.phone, contact.address]
+      const matchesSearch = [
+        contact.name,
+        contact.company,
+        contact.email,
+        contact.phone,
+        contact.address,
+      ]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(needle));
       const matchesRole = roleFilter === "all" || contact.role === roleFilter;
@@ -238,10 +286,13 @@ export default function ContactsPage() {
     });
   }, [contacts, query, roleFilter]);
 
-  const roleCounts = contacts.reduce((acc, c) => {
-    acc[c.role] = (acc[c.role] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const roleCounts = contacts.reduce(
+    (acc, c) => {
+      acc[c.role] = (acc[c.role] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   function startEdit(contact: ContactItem) {
     setEditingSlug(contact.slug);
@@ -287,61 +338,103 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
-      <PageHeader
-        title="Kontakte"
-        description="Mandanten, Gegner, Gerichte und Ansprechpartner"
-      />
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+      <PageHeader title="Kontakte" description="Mandanten, Gegner, Gerichte und Ansprechpartner" />
 
       {/* Create form */}
-      <form onSubmit={createForm.handleSubmit} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <form
+        onSubmit={createForm.handleSubmit}
+        className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+      >
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Kontakt anlegen</h2>
         {createForm.error && (
           <div className="flex items-center gap-2 text-xs text-red-600">
             <AlertTriangle size={14} /> {createForm.error}
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_150px] gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_150px]">
           <div>
             <Input
               {...createForm.form.register("name")}
               placeholder="Name"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {createForm.form.formState.errors.name && (
-              <p className="text-xs text-red-600 mt-1">{createForm.form.formState.errors.name.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {createForm.form.formState.errors.name.message}
+              </p>
             )}
           </div>
           <select
             {...createForm.form.register("role")}
-            className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
-            {Object.entries(ROLE_LABEL).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            {Object.entries(ROLE_LABEL).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Input {...createForm.form.register("company")} placeholder="Firma / Organisation" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Input
+            {...createForm.form.register("company")}
+            placeholder="Firma / Organisation"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+          />
           <div>
-            <Input {...createForm.form.register("email")} placeholder="E-Mail" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
+            <Input
+              {...createForm.form.register("email")}
+              placeholder="E-Mail"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+            />
             {createForm.form.formState.errors.email && (
-              <p className="text-xs text-red-600 mt-1">{createForm.form.formState.errors.email.message}</p>
+              <p className="mt-1 text-xs text-red-600">
+                {createForm.form.formState.errors.email.message}
+              </p>
             )}
           </div>
-          <Input {...createForm.form.register("phone")} placeholder="Telefon" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
+          <Input
+            {...createForm.form.register("phone")}
+            placeholder="Telefon"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+          />
         </div>
-        <textarea {...createForm.form.register("address")} rows={2} placeholder="Adresse" className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]" />
+        <textarea
+          {...createForm.form.register("address")}
+          rows={2}
+          placeholder="Adresse"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        />
         <div className="flex gap-3">
-          <textarea {...createForm.form.register("notes")} rows={2} placeholder="Notizen" className="flex-1 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]" />
-          <Button type="submit" disabled={createForm.status === "submitting"} className="self-start brand-bg brand-bg text-white gap-2">
-            {createForm.status === "submitting" ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          <textarea
+            {...createForm.form.register("notes")}
+            rows={2}
+            placeholder="Notizen"
+            className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          />
+          <Button
+            type="submit"
+            disabled={createForm.status === "submitting"}
+            className="brand-bg brand-bg gap-2 self-start text-white"
+          >
+            {createForm.status === "submitting" ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
             {createForm.status === "submitting" ? "Speichern…" : "Anlegen"}
           </Button>
         </div>
       </form>
 
       {/* Role filter chips */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <FilterChip label="Alle" active={roleFilter === "all"} onClick={() => setRoleFilter("all")} />
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterChip
+          label="Alle"
+          active={roleFilter === "all"}
+          onClick={() => setRoleFilter("all")}
+        />
         {Object.entries(ROLE_LABEL).map(([key, label]) => {
           const count = roleCounts[key] || 0;
           return (
@@ -371,7 +464,7 @@ export default function ContactsPage() {
             variant="ghost"
             size="sm"
             onClick={() => void loadContacts()}
-            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0"
+            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
           >
             <RotateCcw size={13} />
             Erneut versuchen
@@ -381,9 +474,12 @@ export default function ContactsPage() {
 
       {/* Contact cards */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+            <div
+              key={i}
+              className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
               <div className="flex items-start justify-between">
                 <div className="space-y-1.5">
                   <Skeleton className="h-4 w-32 rounded" />
@@ -397,26 +493,43 @@ export default function ContactsPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)]">
-          <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
             <UserCircle size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
-          <h3 className="text-sm font-semibold text-[color:var(--ds-text)] tracking-tight">Keine Kontakte gefunden</h3>
-          <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] max-w-sm leading-relaxed">
-            {contacts.length === 0 ? "Lege deinen ersten Kontakt an über das Formular oben." : "Passe deine Suche oder Filter an."}
+          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
+            Keine Kontakte gefunden
+          </h3>
+          <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+            {contacts.length === 0
+              ? "Lege deinen ersten Kontakt an über das Formular oben."
+              : "Passe deine Suche oder Filter an."}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {filtered.map((contact) => {
             const linked = findLinkedCases(contact.slug, cases);
             const isEditing = editingSlug === contact.slug;
             if (isEditing) {
               return (
-                <form key={contact.slug} onSubmit={editForm.handleSubmit} className="rounded-xl border brand-border bg-[color:var(--ds-surface)] p-4 space-y-3">
+                <form
+                  key={contact.slug}
+                  onSubmit={editForm.handleSubmit}
+                  className="brand-border space-y-3 rounded-xl border bg-[color:var(--ds-surface)] p-4"
+                >
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Kontakt bearbeiten</h3>
-                    <button type="button" onClick={() => setEditingSlug(null)} aria-label="Bearbeiten abbrechen" className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"><X size={14} /></button>
+                    <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      Kontakt bearbeiten
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setEditingSlug(null)}
+                      aria-label="Bearbeiten abbrechen"
+                      className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                   {editForm.error && (
                     <div className="flex items-center gap-2 text-xs text-red-600">
@@ -425,28 +538,77 @@ export default function ContactsPage() {
                   )}
                   <div className="space-y-2">
                     <div>
-                      <Input {...editForm.form.register("name")} placeholder="Name" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
-                      {editForm.form.formState.errors.name && <p className="text-xs text-red-600 mt-1">{editForm.form.formState.errors.name.message}</p>}
+                      <Input
+                        {...editForm.form.register("name")}
+                        placeholder="Name"
+                        className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                      />
+                      {editForm.form.formState.errors.name && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {editForm.form.formState.errors.name.message}
+                        </p>
+                      )}
                     </div>
-                    <select {...editForm.form.register("role")} className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]">
-                      {Object.entries(ROLE_LABEL).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                    <select
+                      {...editForm.form.register("role")}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    >
+                      {Object.entries(ROLE_LABEL).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
-                      <Input {...editForm.form.register("company")} placeholder="Firma" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
+                      <Input
+                        {...editForm.form.register("company")}
+                        placeholder="Firma"
+                        className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                      />
                       <div>
-                        <Input {...editForm.form.register("email")} placeholder="E-Mail" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
-                        {editForm.form.formState.errors.email && <p className="text-xs text-red-600 mt-1">{editForm.form.formState.errors.email.message}</p>}
+                        <Input
+                          {...editForm.form.register("email")}
+                          placeholder="E-Mail"
+                          className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                        />
+                        {editForm.form.formState.errors.email && (
+                          <p className="mt-1 text-xs text-red-600">
+                            {editForm.form.formState.errors.email.message}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Input {...editForm.form.register("phone")} placeholder="Telefon" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]" />
+                      <Input
+                        {...editForm.form.register("phone")}
+                        placeholder="Telefon"
+                        className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                      />
                     </div>
-                    <textarea {...editForm.form.register("address")} rows={2} placeholder="Adresse" className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]" />
-                    <textarea {...editForm.form.register("notes")} rows={2} placeholder="Notizen" className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]" />
+                    <textarea
+                      {...editForm.form.register("address")}
+                      rows={2}
+                      placeholder="Adresse"
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    />
+                    <textarea
+                      {...editForm.form.register("notes")}
+                      rows={2}
+                      placeholder="Notizen"
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    />
                   </div>
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={editForm.status === "submitting"} className="brand-bg brand-bg text-white gap-2 text-xs">
-                      {editForm.status === "submitting" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    <Button
+                      type="submit"
+                      disabled={editForm.status === "submitting"}
+                      className="brand-bg brand-bg gap-2 text-xs text-white"
+                    >
+                      {editForm.status === "submitting" ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Save size={14} />
+                      )}
                       {editForm.status === "submitting" ? "Speichern…" : "Speichern"}
                     </Button>
                   </div>
@@ -454,34 +616,84 @@ export default function ContactsPage() {
               );
             }
             return (
-              <div key={contact.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3 hover:border-[color:var(--ds-border-strong)] transition-colors">
+              <div
+                key={contact.slug}
+                className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium text-[color:var(--ds-text)]">{contact.name}</div>
-                    {contact.company && <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">{contact.company}</div>}
+                    <div className="text-sm font-medium text-[color:var(--ds-text)]">
+                      {contact.name}
+                    </div>
+                    {contact.company && (
+                      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        {contact.company}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge variant="default" className={`text-[10px] border ${ROLE_COLORS[contact.role]}`}>{ROLE_LABEL[contact.role]}</Badge>
-                    <button onClick={() => startEdit(contact)} aria-label={`${contact.name} bearbeiten`} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all" title="Bearbeiten"><Pencil size={13} /></button>
-                    <button onClick={() => deleteContact(contact.slug)} aria-label={`${contact.name} löschen`} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all" title="Löschen"><Trash2 size={13} /></button>
+                    <Badge
+                      variant="default"
+                      className={`border text-xs ${ROLE_COLORS[contact.role]}`}
+                    >
+                      {ROLE_LABEL[contact.role]}
+                    </Badge>
+                    <button
+                      onClick={() => startEdit(contact)}
+                      aria-label={`${contact.name} bearbeiten`}
+                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                      title="Bearbeiten"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => deleteContact(contact.slug)}
+                      aria-label={`${contact.name} löschen`}
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                      title="Löschen"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                  {contact.email && <div className="flex items-center gap-2"><Mail size={12} />{contact.email}</div>}
-                  {contact.phone && <div className="flex items-center gap-2"><Phone size={12} />{contact.phone}</div>}
-                  {contact.address && <div className="whitespace-pre-wrap leading-relaxed">{contact.address}</div>}
+                  {contact.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail size={12} />
+                      {contact.email}
+                    </div>
+                  )}
+                  {contact.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone size={12} />
+                      {contact.phone}
+                    </div>
+                  )}
+                  {contact.address && (
+                    <div className="leading-relaxed whitespace-pre-wrap">{contact.address}</div>
+                  )}
                 </div>
                 {linked.length > 0 && (
                   <div className="space-y-1">
-                    <div className="text-[10px] uppercase tracking-[0.08em] text-[color:var(--ds-text-subtle)] font-semibold">Verknüpfte Akten</div>
+                    <div className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                      Verknüpfte Akten
+                    </div>
                     {linked.map((c) => (
-                      <Link key={c.slug} href={`/dashboard/cases/${encodeURIComponent(c.slug)}`} className="block text-xs brand-text hover:underline truncate">
+                      <Link
+                        key={c.slug}
+                        href={`/dashboard/cases/${encodeURIComponent(c.slug)}`}
+                        className="brand-text block truncate text-xs hover:underline"
+                      >
                         {c.caseNumber} — {c.title}
                       </Link>
                     ))}
                   </div>
                 )}
-                {contact.notes && <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-3 leading-relaxed">{contact.notes}</p>}
+                {contact.notes && (
+                  <p className="line-clamp-3 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                    {contact.notes}
+                  </p>
+                )}
               </div>
             );
           })}

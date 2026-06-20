@@ -96,7 +96,7 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
     setLoading(true);
     try {
       const token =
-        mode === "reset" ? new URLSearchParams(window.location.search).get("token") ?? "" : "";
+        mode === "reset" ? (new URLSearchParams(window.location.search).get("token") ?? "") : "";
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -118,65 +118,91 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
   }
 
   return (
-    <div data-tone="dark" className="min-h-screen bg-[#06060f] flex items-center justify-center px-6 py-12" lang={lang}>
+    <div
+      data-tone="dark"
+      className="flex min-h-screen items-center justify-center px-6 py-12 [background:var(--mk-bg)]"
+      lang={lang}
+    >
       <MarketingBackground />
       <div className="relative z-10 w-full max-w-md">
-        <Link href={p(lang, "")} className="flex justify-center mb-8" aria-label="Subsumio home">
+        <Link href={p(lang, "")} className="mb-8 flex justify-center" aria-label="Subsumio home">
           <SubsumioLogo size={38} />
         </Link>
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
-          <h1 className="text-2xl font-black text-[#e8e8f0] mb-1">{m.title}</h1>
-          <p className="text-sm text-[#8888aa] mb-7">{m.sub}</p>
+          <h1 className="mb-1 text-2xl font-black [color:var(--mk-text)]">{m.title}</h1>
+          <p className="mb-7 text-sm [color:var(--mk-text-muted)]">{m.sub}</p>
 
           {done ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-2.5 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-                <CheckCircle size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-[#a8a8be] leading-relaxed">{m.done}</p>
+              <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <CheckCircle size={16} className="mt-0.5 shrink-0 text-emerald-400" />
+                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{m.done}</p>
               </div>
               {devResetUrl && (
-                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5">
-                  <p className="text-xs text-amber-300 mb-2">{COPY[lang].forgot.devNote}</p>
-                  <a href={devResetUrl} className="text-xs text-[var(--brand-primary)] hover:underline break-all">
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <p className="mb-2 text-xs text-amber-300">{COPY[lang].forgot.devNote}</p>
+                  <a
+                    href={devResetUrl}
+                    className="text-xs break-all text-[var(--brand-primary)] hover:underline"
+                  >
                     {devResetUrl}
                   </a>
                 </div>
               )}
-              <Link href={p(lang, "/login")} className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-primary)] hover:underline">
-                {mode === "reset" ? COPY[lang].reset.toLogin : t.backToLogin} <ArrowRight size={13} />
+              <Link
+                href={p(lang, "/login")}
+                className="inline-flex items-center gap-1.5 text-sm text-[var(--brand-primary)] hover:underline"
+              >
+                {mode === "reset" ? COPY[lang].reset.toLogin : t.backToLogin}{" "}
+                <ArrowRight size={13} />
               </Link>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4" noValidate>
               {error && (
-                <div role="alert" className="flex items-start gap-2.5 p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5">
-                  <AlertCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
+                <div
+                  role="alert"
+                  className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5"
+                >
+                  <AlertCircle size={15} className="mt-0.5 shrink-0 text-rose-400" />
                   <p className="text-sm text-rose-300">{error}</p>
                 </div>
               )}
 
               {mode === "forgot" ? (
                 <label className="block">
-                  <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.email}</span>
+                  <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                    {t.email}
+                  </span>
                   <div className="relative">
-                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                    <Mail
+                      size={14}
+                      className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                      aria-hidden
+                    />
                     <input
                       type="email"
                       autoComplete="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#0a0a18] border border-[#1e1e3a] focus:border-[var(--brand-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 text-sm text-[#e8e8f0]"
+                      className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none"
                     />
                   </div>
                 </label>
               ) : (
                 <>
                   <label className="block">
-                    <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.password}</span>
+                    <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                      {t.password}
+                    </span>
                     <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                      <Lock
+                        size={14}
+                        className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                        aria-hidden
+                      />
                       <input
                         type="password"
                         autoComplete="new-password"
@@ -184,15 +210,23 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                         minLength={8}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#0a0a18] border border-[#1e1e3a] focus:border-[var(--brand-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 text-sm text-[#e8e8f0]"
+                        className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none"
                       />
                     </div>
-                    <span className="text-xs text-[#7878a0] mt-1 block">{t.passwordHint}</span>
+                    <span className="mt-1 block text-xs [color:var(--mk-text-subtle)]">
+                      {t.passwordHint}
+                    </span>
                   </label>
                   <label className="block">
-                    <span className="text-xs font-medium text-[#8888aa] mb-1.5 block">{t.passwordConfirm}</span>
+                    <span className="mb-1.5 block text-xs font-medium [color:var(--mk-text-muted)]">
+                      {t.passwordConfirm}
+                    </span>
                     <div className="relative">
-                      <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7878a0]" aria-hidden />
+                      <Lock
+                        size={14}
+                        className="absolute top-1/2 left-3 -translate-y-1/2 [color:var(--mk-text-subtle)]"
+                        aria-hidden
+                      />
                       <input
                         type="password"
                         autoComplete="new-password"
@@ -200,7 +234,7 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
                         minLength={8}
                         value={confirm}
                         onChange={(e) => setConfirm(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#0a0a18] border border-[#1e1e3a] focus:border-[var(--brand-primary)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/20 text-sm text-[#e8e8f0]"
+                        className="w-full rounded-xl border [border-color:var(--mk-border)] py-2.5 pr-3 pl-9 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] focus:border-[var(--brand-primary)]/50 focus:ring-2 focus:ring-[var(--brand-primary)]/20 focus:outline-none"
                       />
                     </div>
                   </label>
@@ -212,7 +246,10 @@ export default function RecoveryForm({ mode, lang }: { mode: "forgot" | "reset";
               </Button>
 
               <p className="text-center">
-                <Link href={p(lang, "/login")} className="text-xs text-[#8888aa] hover:text-[#e8e8f0]">
+                <Link
+                  href={p(lang, "/login")}
+                  className="text-xs [color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+                >
                   {t.backToLogin}
                 </Link>
               </p>

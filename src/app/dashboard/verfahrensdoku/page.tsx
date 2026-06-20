@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  FileText,
-  Save,
-  Printer,
-  Download,
-  Info,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { FileText, Save, Printer, Download, Info, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { buildVerfahrensdoku, type VerfahrensdokuInput } from "@/lib/gobd-verfahrensdoku";
@@ -45,7 +37,10 @@ function markdownToHtml(md: string): string {
   let tableRows: string[][] = [];
 
   const flushList = () => {
-    if (inList) { out.push("</ul>"); inList = false; }
+    if (inList) {
+      out.push("</ul>");
+      inList = false;
+    }
   };
   const flushTable = () => {
     if (tableRows.length === 0) return;
@@ -71,17 +66,33 @@ function markdownToHtml(md: string): string {
     }
     flushTable();
 
-    if (line.startsWith("### ")) { flushList(); out.push(`<h3>${inline(line.slice(4))}</h3>`); }
-    else if (line.startsWith("## ")) { flushList(); out.push(`<h2>${inline(line.slice(3))}</h2>`); }
-    else if (line.startsWith("# ")) { flushList(); out.push(`<h1>${inline(line.slice(2))}</h1>`); }
-    else if (line.startsWith("> ")) { flushList(); out.push(`<blockquote>${inline(line.slice(2))}</blockquote>`); }
-    else if (line.startsWith("- ")) {
-      if (!inList) { out.push("<ul>"); inList = true; }
+    if (line.startsWith("### ")) {
+      flushList();
+      out.push(`<h3>${inline(line.slice(4))}</h3>`);
+    } else if (line.startsWith("## ")) {
+      flushList();
+      out.push(`<h2>${inline(line.slice(3))}</h2>`);
+    } else if (line.startsWith("# ")) {
+      flushList();
+      out.push(`<h1>${inline(line.slice(2))}</h1>`);
+    } else if (line.startsWith("> ")) {
+      flushList();
+      out.push(`<blockquote>${inline(line.slice(2))}</blockquote>`);
+    } else if (line.startsWith("- ")) {
+      if (!inList) {
+        out.push("<ul>");
+        inList = true;
+      }
       out.push(`<li>${inline(line.slice(2))}</li>`);
+    } else if (line.trim() === "---") {
+      flushList();
+      out.push("<hr/>");
+    } else if (line.trim() === "") {
+      flushList();
+    } else {
+      flushList();
+      out.push(`<p>${inline(line)}</p>`);
     }
-    else if (line.trim() === "---") { flushList(); out.push("<hr/>"); }
-    else if (line.trim() === "") { flushList(); }
-    else { flushList(); out.push(`<p>${inline(line)}</p>`); }
   }
   flushList();
   flushTable();
@@ -148,26 +159,32 @@ export default function VerfahrensdokuPage() {
   };
 
   useEffect(() => {
-    loadKanzleiSettings().then((s) => {
-      dokuForm.reset({
-        ...dokuForm.getValues(),
-        kanzleiName: s.kanzleiName ?? "",
-        anwaltName: s.anwaltName ?? "",
-        ustId: s.ustId ?? "",
-        verantwortlich: dokuForm.getValues("verantwortlich") || (s.anwaltName ?? ""),
-      });
-    }).catch(() => {});
+    loadKanzleiSettings()
+      .then((s) => {
+        dokuForm.reset({
+          ...dokuForm.getValues(),
+          kanzleiName: s.kanzleiName ?? "",
+          anwaltName: s.anwaltName ?? "",
+          ustId: s.ustId ?? "",
+          verantwortlich: dokuForm.getValues("verantwortlich") || (s.anwaltName ?? ""),
+        });
+      })
+      .catch(() => {});
     // Bereits gespeicherten Entwurf laden, falls vorhanden.
-    api.brain.getPage(DOC_SLUG)
+    api.brain
+      .getPage(DOC_SLUG)
       .then((p) => {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
         const stored = fm.verfahrensdoku_input;
         if (stored && typeof stored === "object") {
-          dokuForm.reset({ ...dokuForm.getValues(), ...(stored as Partial<VerfahrensdokuFormData>) });
+          dokuForm.reset({
+            ...dokuForm.getValues(),
+            ...(stored as Partial<VerfahrensdokuFormData>),
+          });
         }
       })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markdown = buildVerfahrensdoku(formData);
@@ -225,107 +242,158 @@ export default function VerfahrensdokuPage() {
     label: string,
     name: keyof VerfahrensdokuFormData,
     placeholder: string,
-    textarea = false,
+    textarea = false
   ) => (
     <div>
-      <label className="text-xs text-[color:var(--ds-text-muted)] block mb-1.5">{label}</label>
+      <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">{label}</label>
       {textarea ? (
         <textarea
           {...dokuForm.register(name)}
           placeholder={placeholder}
           rows={3}
-          className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)] resize-y"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       ) : (
         <input
           type="text"
           {...dokuForm.register(name)}
           placeholder={placeholder}
-          className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       )}
       {dokuForm.formState.errors[name] && (
-        <p className="text-xs text-red-600 mt-1">{dokuForm.formState.errors[name]?.message}</p>
+        <p className="mt-1 text-xs text-red-600">{dokuForm.formState.errors[name]?.message}</p>
       )}
     </div>
   );
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="GoBD-Verfahrensdokumentation"
         description="Vorlage aus Kanzlei-Stammdaten + Ablaufbeschreibung (GoBD Rz. 151 ff.)"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Verfahrensdoku" }]}
         actions={
           <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={printPdf} className="gap-1.5 text-xs">
-            <Printer size={14} /> PDF / Drucken
-          </Button>
-          <Button variant="secondary" size="sm" onClick={downloadWord} className="gap-1.5 text-xs">
-            <Download size={14} /> Word (.doc)
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={save}
-            disabled={saving}
-            className="brand-bg brand-bg text-white gap-1.5 text-xs"
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <CheckCircle2 size={14} /> : <Save size={14} />}
-            {saved ? "Gespeichert" : "Im Brain speichern"}
-          </Button>
-        </div>
+            <Button variant="secondary" size="sm" onClick={printPdf} className="gap-1.5 text-xs">
+              <Printer size={14} /> PDF / Drucken
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={downloadWord}
+              className="gap-1.5 text-xs"
+            >
+              <Download size={14} /> Word (.doc)
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={save}
+              disabled={saving}
+              className="brand-bg brand-bg gap-1.5 text-xs text-white"
+            >
+              {saving ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : saved ? (
+                <CheckCircle2 size={14} />
+              ) : (
+                <Save size={14} />
+              )}
+              {saved ? "Gespeichert" : "Im Brain speichern"}
+            </Button>
+          </div>
         }
       />
 
       {/* Honest framing */}
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-        <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-600 leading-relaxed">
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+        <Info size={16} className="mt-0.5 shrink-0 text-amber-600" />
+        <p className="text-xs leading-relaxed text-amber-600">
           Dies erzeugt eine <strong>Vorlage</strong>, kein prüfungssicheres Dokument. Die
           Verfahrensdokumentation muss an den tatsächlichen Kanzleiablauf angepasst,
-          anwaltlich/steuerlich geprüft und vom Berater bzw. Betriebsprüfer abgenommen
-          werden. Subsumio liefert technische GoBD-Bausteine — keine Konformitätszusage.
+          anwaltlich/steuerlich geprüft und vom Berater bzw. Betriebsprüfer abgenommen werden.
+          Subsumio liefert technische GoBD-Bausteine — keine Konformitätszusage.
         </p>
       </div>
 
       {saveError && <div className="text-xs text-red-600">{saveError}</div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Form */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Stammdaten</h2>
             {field("Kanzlei / Unternehmen", "kanzleiName", "z.B. Kanzlei Muster")}
             {field("Vertretungsberechtigte/r", "anwaltName", "z.B. RA Dr. Muster")}
             {field("USt-IdNr.", "ustId", "DE123456789")}
-            {field("Verantwortlich für die Ordnungsmäßigkeit", "verantwortlich", "Name der zuständigen Person")}
+            {field(
+              "Verantwortlich für die Ordnungsmäßigkeit",
+              "verantwortlich",
+              "Name der zuständigen Person"
+            )}
             {field("Stand (Datum)", "stand", today)}
           </div>
 
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Ablaufbeschreibung</h2>
+          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Ablaufbeschreibung
+            </h2>
             {field("Eingesetzte DV-Systeme", "systeme", "Subsumio, DATEV, beA …")}
-            {field("Belegeingang", "belegEingang", "Wie kommen Belege herein? (Post, E-Mail, Upload, Scan)", true)}
-            {field("Erfassung & Verbuchung", "erfassung", "Wie/wann werden Belege erfasst und verbucht?", true)}
-            {field("Ablage & Aufbewahrungsort", "ablageOrt", "Wo werden Belege unveränderbar abgelegt?", true)}
+            {field(
+              "Belegeingang",
+              "belegEingang",
+              "Wie kommen Belege herein? (Post, E-Mail, Upload, Scan)",
+              true
+            )}
+            {field(
+              "Erfassung & Verbuchung",
+              "erfassung",
+              "Wie/wann werden Belege erfasst und verbucht?",
+              true
+            )}
+            {field(
+              "Ablage & Aufbewahrungsort",
+              "ablageOrt",
+              "Wo werden Belege unveränderbar abgelegt?",
+              true
+            )}
           </div>
 
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Betrieb & Kontrolle</h2>
-            {field("Datensicherung / Backup", "backup", "Sicherungskonzept, Frequenz, Aufbewahrung der Backups", true)}
-            {field("Zugriffsschutz", "zugriffsschutz", "Berechtigungskonzept, Authentifizierung", true)}
-            {field("Internes Kontrollsystem (IKS)", "iks", "Funktionstrennung, Plausibilitätskontrollen", true)}
+          <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Betrieb & Kontrolle
+            </h2>
+            {field(
+              "Datensicherung / Backup",
+              "backup",
+              "Sicherungskonzept, Frequenz, Aufbewahrung der Backups",
+              true
+            )}
+            {field(
+              "Zugriffsschutz",
+              "zugriffsschutz",
+              "Berechtigungskonzept, Authentifizierung",
+              true
+            )}
+            {field(
+              "Internes Kontrollsystem (IKS)",
+              "iks",
+              "Funktionstrennung, Plausibilitätskontrollen",
+              true
+            )}
           </div>
         </div>
 
         {/* Preview */}
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2 lg:sticky lg:top-6 lg:self-start">
+        <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 lg:sticky lg:top-6 lg:self-start">
           <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
             <FileText size={14} className="brand-text" />
-            <span className="text-sm font-semibold text-[color:var(--ds-text)]">Vorschau (Markdown)</span>
+            <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Vorschau (Markdown)
+            </span>
           </div>
-          <pre className="text-[11px] text-[color:var(--ds-text-muted)] font-mono whitespace-pre-wrap leading-relaxed max-h-[70vh] overflow-y-auto">
+          <pre className="max-h-[70vh] overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
             {markdown}
           </pre>
         </div>

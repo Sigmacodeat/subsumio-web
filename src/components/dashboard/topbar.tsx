@@ -357,7 +357,7 @@ export function Topbar({
             autoComplete="off"
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-3 pr-16 pl-9 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
-          <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-[10px] text-[color:var(--ds-text-subtle)] md:flex">
+          <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
           </kbd>
           {searchOpen && searchQuery.trim().length >= 2 && (
@@ -407,7 +407,7 @@ export function Topbar({
                       )}
                     </button>
                   ))}
-                  <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-[10px] text-[color:var(--ds-text-subtle)]">
+                  <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
                     <span>↵ für alle Ergebnisse</span>
                     <span>{searchItems.length} Treffer</span>
                   </div>
@@ -452,7 +452,7 @@ export function Topbar({
             <Bell size={16} />
             {unreadCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
                 aria-hidden
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -474,7 +474,7 @@ export function Topbar({
                     <button
                       onClick={markAllRead}
                       disabled={loadingNotifs}
-                      className="text-[11px] text-[color:var(--brand-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
+                      className="text-xs text-[color:var(--brand-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
                     >
                       {t("topbar.mark_all_read")}
                     </button>
@@ -511,7 +511,7 @@ export function Topbar({
                           <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
                             {n.title}
                           </div>
-                          <div className="mt-1 text-[11px] leading-relaxed text-[color:var(--ds-text-muted)]">
+                          <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                             {n.message}
                           </div>
                         </div>

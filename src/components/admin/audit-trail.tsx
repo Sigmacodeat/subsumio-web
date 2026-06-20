@@ -130,51 +130,56 @@ export default function AuditTrail() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8aa8]" />
+        <div className="relative min-w-[200px] flex-1">
+          <Search
+            size={14}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Audit-Log durchsuchen…"
-            className="w-full bg-[#0a0a18] border border-[#1e1e3a] rounded-lg pl-9 pr-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#8a8aa8] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
         </div>
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          className="bg-[#0a0a18] border border-[#1e1e3a] rounded-lg px-3 py-2 text-sm text-[#e8e8f0] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           <option value="">Alle Aktionen</option>
           {uniqueActions.map((a) => (
-            <option key={a} value={a}>{auditLabel(a)}</option>
+            <option key={a} value={a}>
+              {auditLabel(a)}
+            </option>
           ))}
         </select>
         <div className="flex items-center gap-2">
-          <Calendar size={14} className="text-[#8a8aa8]" />
+          <Calendar size={14} className="text-[color:var(--ds-text-subtle)]" />
           <input
             type="date"
             value={filterFrom}
             onChange={(e) => setFilterFrom(e.target.value)}
-            className="bg-[#0a0a18] border border-[#1e1e3a] rounded-lg px-3 py-2 text-sm text-[#e8e8f0] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
-          <span className="text-[#8a8aa8] text-sm">bis</span>
+          <span className="text-sm text-[color:var(--ds-text-subtle)]">bis</span>
           <input
             type="date"
             value={filterTo}
             onChange={(e) => setFilterTo(e.target.value)}
-            className="bg-[#0a0a18] border border-[#1e1e3a] rounded-lg px-3 py-2 text-sm text-[#e8e8f0] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
         </div>
         <button
           onClick={loadEntries}
-          className="px-3 py-2 rounded-lg brand-bg brand-bg text-white text-sm transition-colors"
+          className="brand-bg brand-bg rounded-lg px-3 py-2 text-sm text-white transition-colors"
         >
           Laden
         </button>
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#1e1e3a] bg-[#0d0d1a] text-sm text-[#8888aa] hover:text-[#e8e8f0] hover:border-[#3a3a6a] transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
         >
           <Download size={14} />
           CSV
@@ -187,19 +192,21 @@ export default function AuditTrail() {
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 space-y-3">
-          <Shield size={40} className="mx-auto text-[#1e1e3a]" />
-          <p className="text-[#8888aa] text-sm">Keine Audit-Einträge gefunden.</p>
-          <p className="text-[#8a8aa8] text-xs">
+        <div className="space-y-3 py-16 text-center">
+          <Shield size={40} className="mx-auto text-[color:var(--ds-border)]" />
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Keine Audit-Einträge gefunden.
+          </p>
+          <p className="text-xs text-[color:var(--ds-text-subtle)]">
             Audit-Logs werden erstellt, sobald Benutzer Aktionen im Dashboard ausführen.
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-[#7878a0] uppercase tracking-wider border-b border-[#1e1e3a]">
+                <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
                   <th className="px-4 py-3 font-medium">Zeitpunkt</th>
                   <th className="px-4 py-3 font-medium">Aktion</th>
                   <th className="px-4 py-3 font-medium">Typ</th>
@@ -212,8 +219,11 @@ export default function AuditTrail() {
                   const color = actionColor(e.action);
                   const Icon = actionIcon(e.action);
                   return (
-                    <tr key={e.id} className="border-b border-[#1e1e3a]/50 last:border-0 hover:bg-[#12122a]/50">
-                      <td className="px-4 py-3 text-xs text-[#8a8aa8] whitespace-nowrap">
+                    <tr
+                      key={e.id}
+                      className="border-b border-[color:var(--ds-border)]/50 last:border-0 hover:bg-[color:var(--ds-hover)]/50"
+                    >
+                      <td className="px-4 py-3 text-xs whitespace-nowrap text-[color:var(--ds-text-subtle)]">
                         {new Date(e.timestamp).toLocaleString("de-DE", {
                           day: "2-digit",
                           month: "2-digit",
@@ -224,17 +234,32 @@ export default function AuditTrail() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className={cn("w-6 h-6 rounded flex items-center justify-center", `bg-${color}-500/10`)}>
+                          <div
+                            className={cn(
+                              "flex h-6 w-6 items-center justify-center rounded",
+                              `bg-${color}-500/10`
+                            )}
+                          >
                             <Icon size={12} className={cn(`text-${color}-400`)} />
                           </div>
-                          <Badge variant="default" className={cn("text-[10px] border", `bg-${color}-500/5 border-${color}-500/20 text-${color}-400`)}>
+                          <Badge
+                            variant="default"
+                            className={cn(
+                              "border text-xs",
+                              `bg-${color}-500/5 border-${color}-500/20 text-${color}-400`
+                            )}
+                          >
                             {auditLabel(e.action)}
                           </Badge>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[#8888aa] text-xs">{e.entityType}</td>
-                      <td className="px-4 py-3 text-[#8888aa] text-xs font-mono">{e.entityId || "—"}</td>
-                      <td className="px-4 py-3 text-[#8a8aa8] text-xs max-w-xs truncate">
+                      <td className="px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                        {e.entityType}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-[color:var(--ds-text-muted)]">
+                        {e.entityId || "—"}
+                      </td>
+                      <td className="max-w-xs truncate px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
                         {e.details ? JSON.stringify(e.details).slice(0, 80) : "—"}
                       </td>
                     </tr>
@@ -243,7 +268,7 @@ export default function AuditTrail() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-3 border-t border-[#1e1e3a] text-xs text-[#7878a0]">
+          <div className="border-t border-[color:var(--ds-border)] px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
             {filtered.length} von {entries.length} Einträgen
           </div>
         </div>

@@ -16,8 +16,12 @@
  *   8. Unsupported claim rate darf nicht über 40% steigen.
  */
 
-import type { EvalSummary } from "@/lib/rag-eval";
-import type { AIQualityReport } from "@/lib/ai-quality";
+// Relative (not "@/lib/...") imports deliberately: this file has zero other
+// Next.js coupling and is imported cross-package by
+// server/scripts/run-release-gate-eval.ts, whose tsconfig has no "@/lib"
+// alias. A relative path resolves correctly under either tsconfig.
+import type { EvalSummary } from "./rag-eval";
+import type { AIQualityReport } from "./ai-quality";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -76,7 +80,7 @@ export function evaluateReleaseGate(
   current: EvalSummary,
   quality: AIQualityReport | null,
   baseline: EvalSummary | null,
-  thresholds: GateThresholds = DEFAULT_THRESHOLDS,
+  thresholds: GateThresholds = DEFAULT_THRESHOLDS
 ): ReleaseGateResult {
   const checks: GateCheck[] = [];
 
@@ -262,7 +266,7 @@ const BASELINE_SLUG = "monitoring/ai-eval-baseline";
 
 export async function loadBaseline(
   engineUrl: string,
-  engineHeaders: Record<string, string>,
+  engineHeaders: Record<string, string>
 ): Promise<EvalSummary | null> {
   try {
     const res = await fetch(`${engineUrl}/api/pages/${BASELINE_SLUG}`, {
@@ -279,7 +283,7 @@ export async function loadBaseline(
 export async function saveBaseline(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  summary: EvalSummary,
+  summary: EvalSummary
 ): Promise<void> {
   try {
     await fetch(`${engineUrl}/api/pages`, {
@@ -304,7 +308,7 @@ const HISTORY_SLUG = "monitoring/ai-eval-history";
 
 export async function loadEvalHistory(
   engineUrl: string,
-  engineHeaders: Record<string, string>,
+  engineHeaders: Record<string, string>
 ): Promise<EvalSummary[]> {
   try {
     const res = await fetch(`${engineUrl}/api/pages/${HISTORY_SLUG}`, {
@@ -323,7 +327,7 @@ export async function loadEvalHistory(
 export async function appendEvalHistory(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  summary: EvalSummary,
+  summary: EvalSummary
 ): Promise<void> {
   try {
     const existing = await loadEvalHistory(engineUrl, engineHeaders);

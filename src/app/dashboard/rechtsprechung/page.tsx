@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Landmark,
-  Search,
-  Loader2,
-  ExternalLink,
-  Calendar,
-} from "lucide-react";
+import { Landmark, Search, Loader2, ExternalLink, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,11 +108,17 @@ export default function RechtsprechungPage() {
               });
             }
             current = { title: line.replace(/^\d+\.\s*/, "").replace(/^##\s*/, "") };
-          } else if (line.toLowerCase().includes("gericht") || line.toLowerCase().includes("court")) {
+          } else if (
+            line.toLowerCase().includes("gericht") ||
+            line.toLowerCase().includes("court")
+          ) {
             current.court = line.split(":")[1]?.trim() || line;
           } else if (line.toLowerCase().includes("datum") || line.toLowerCase().includes("date")) {
             current.date = line.split(":")[1]?.trim() || line;
-          } else if (line.toLowerCase().includes("aktenzeichen") || line.toLowerCase().includes("az")) {
+          } else if (
+            line.toLowerCase().includes("aktenzeichen") ||
+            line.toLowerCase().includes("az")
+          ) {
             current.az = line.split(":")[1]?.trim() || line;
           } else if (line.toLowerCase().includes("ecli")) {
             current.ecli = line.split(":")[1]?.trim() || line;
@@ -152,24 +152,21 @@ export default function RechtsprechungPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
-      <PageHeader
-        title="Rechtsprechung"
-        description="Urteile und Entscheidungen durchsuchen"
-      />
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+      <PageHeader title="Rechtsprechung" description="Urteile und Entscheidungen durchsuchen" />
 
       {/* Search */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex gap-2">
           {(["at", "de", "all"] as const).map((j) => (
             <button
               key={j}
               onClick={() => setJurisdiction(j)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
+                "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
                 jurisdiction === j
                   ? "brand-soft brand-border brand-text"
-                  : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
               )}
             >
               {j === "at" ? "🇦🇹 Österreich" : j === "de" ? "🇩🇪 Deutschland" : "🌍 Beide"}
@@ -178,21 +175,24 @@ export default function RechtsprechungPage() {
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+            <Search
+              size={14}
+              className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+            />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz"
               aria-label="Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz"
-              className="pl-9 bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
           <Button
             onClick={handleSearch}
             disabled={searching || !query.trim()}
             variant="primary"
-            className="brand-bg brand-bg text-white gap-2"
+            className="brand-bg brand-bg gap-2 text-white"
           >
             {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
             Suchen
@@ -202,12 +202,16 @@ export default function RechtsprechungPage() {
 
       {/* Results */}
       {searched && results.length === 0 && !searching && (
-        <div className="text-center py-20 space-y-4">
+        <div className="space-y-4 py-20 text-center">
           <Landmark size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
             <p className="text-[color:var(--ds-text-muted)]">Keine Urteile im Brain gefunden.</p>
-            <p className="text-[color:var(--ds-text-muted)] text-sm mt-1">
-              Nutze den <code className="font-mono text-xs bg-[color:var(--ds-hover)] px-1.5 py-0.5 rounded">legal-judgements</code> Konnektor um Rechtsprechung zu importieren.
+            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
+              Nutze den{" "}
+              <code className="rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs">
+                legal-judgements
+              </code>{" "}
+              Konnektor um Rechtsprechung zu importieren.
             </p>
           </div>
         </div>
@@ -221,32 +225,49 @@ export default function RechtsprechungPage() {
           {results.map((r) => (
             <div
               key={r.id}
-              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 hover:brand-border transition-all"
+              className="hover:brand-border rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
                     <span className="font-medium text-[color:var(--ds-text)]">{r.title}</span>
-                    <Badge variant="default" className={cn(
-                      "text-[10px] border",
-                      r.source === "brain" ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-600" :
-                      r.source === "ris-ogd" ? "bg-blue-500/5 border-blue-500/20 text-blue-600" :
-                      "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]"
-                    )}>
+                    <Badge
+                      variant="default"
+                      className={cn(
+                        "border text-xs",
+                        r.source === "brain"
+                          ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-600"
+                          : r.source === "ris-ogd"
+                            ? "border-blue-500/20 bg-blue-500/5 text-blue-600"
+                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
+                      )}
+                    >
                       {r.source === "brain" ? "Brain" : r.source === "ris-ogd" ? "RIS-OGD" : "KI"}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)] mb-2">
-                    <span className="flex items-center gap-1"><Landmark size={10} />{r.court}</span>
-                    <span className="flex items-center gap-1"><Calendar size={10} />{new Date(r.date).toLocaleDateString("de-DE")}</span>
+                  <div className="mb-2 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
+                    <span className="flex items-center gap-1">
+                      <Landmark size={10} />
+                      {r.court}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar size={10} />
+                      {new Date(r.date).toLocaleDateString("de-DE")}
+                    </span>
                     {r.az && <span className="font-mono">{r.az}</span>}
-                    {r.ecli && <span className="font-mono text-[10px]">{r.ecli}</span>}
+                    {r.ecli && <span className="font-mono text-xs">{r.ecli}</span>}
                   </div>
-                  <p className="text-sm text-[color:var(--ds-text-muted)] line-clamp-3">{r.summary}</p>
+                  <p className="line-clamp-3 text-sm text-[color:var(--ds-text-muted)]">
+                    {r.summary}
+                  </p>
                   {r.keywords.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="mt-2 flex flex-wrap gap-1">
                       {r.keywords.map((k) => (
-                        <Badge key={k} variant="default" className="text-[10px] brand-soft brand-border/10 brand-text">
+                        <Badge
+                          key={k}
+                          variant="default"
+                          className="brand-soft brand-border/10 brand-text text-xs"
+                        >
                           {k}
                         </Badge>
                       ))}
@@ -258,7 +279,7 @@ export default function RechtsprechungPage() {
                     href={r.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 w-8 h-8 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] flex items-center justify-center text-[color:var(--ds-text-muted)] hover:brand-text hover:brand-border transition-all"
+                    className="hover:brand-text hover:brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] transition-all"
                   >
                     <ExternalLink size={14} />
                   </a>

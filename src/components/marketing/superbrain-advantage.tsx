@@ -191,7 +191,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
               >
                 <Brain size={34} className="brand-text mb-3" />
                 <span className="text-sm font-bold [color:var(--mk-text)]">{t.center}</span>
-                <span className="mt-1 text-[11px] [color:var(--mk-text-muted)]">
+                <span className="mt-1 text-xs [color:var(--mk-text-muted)]">
                   queryable · cited · scoped
                 </span>
               </motion.div>

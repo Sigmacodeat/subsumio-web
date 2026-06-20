@@ -87,9 +87,12 @@ export default function MailboxClient({
 
   const filtered = useMemo(
     () => (filter === "all" ? messages : messages.filter((m) => m.direction === filter)),
-    [messages, filter],
+    [messages, filter]
   );
-  const selected = useMemo(() => messages.find((m) => m.id === selectedId) ?? null, [messages, selectedId]);
+  const selected = useMemo(
+    () => messages.find((m) => m.id === selectedId) ?? null,
+    [messages, selectedId]
+  );
 
   const copyAddress = async () => {
     try {
@@ -104,25 +107,25 @@ export default function MailboxClient({
   return (
     <div className="space-y-6">
       {/* Receiving-address / setup card */}
-      <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-5 space-y-4">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="space-y-4 rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold text-[#e8e8f0] mb-1">Empfangsadresse</h2>
-            <p className="text-xs text-[#8888aa]">
-              Diese Adresse bei Supabase (und anderen Diensten) als Konto-E-Mail verwenden — eingehende
-              Mails landen unten in dieser Mailbox.
+            <h2 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">Empfangsadresse</h2>
+            <p className="text-xs [color:var(--mk-text-muted)]">
+              Diese Adresse bei Supabase (und anderen Diensten) als Konto-E-Mail verwenden —
+              eingehende Mails landen unten in dieser Mailbox.
             </p>
           </div>
           <button
             onClick={copyAddress}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a4a] bg-[#12122a] px-3 py-2 text-sm font-mono text-violet-300 hover:bg-[#1a1a36]"
+            className="inline-flex items-center gap-1.5 rounded-lg border [border-color:var(--mk-border-strong)] px-3 py-2 font-mono text-sm text-violet-300 [background:var(--mk-surface)] hover:[background:var(--mk-surface)]"
           >
             {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
             {receivingAddress}
           </button>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 text-xs">
+        <div className="grid gap-2 text-xs sm:grid-cols-2">
           <StatusPill
             ok={mailConfigured}
             okText="Versand aktiv (Resend)"
@@ -136,39 +139,65 @@ export default function MailboxClient({
         </div>
 
         {!inboundConfigured && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200/90 space-y-1">
-            <p className="font-medium flex items-center gap-1.5">
+          <div className="space-y-1 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200/90">
+            <p className="flex items-center gap-1.5 font-medium">
               <AlertTriangle size={13} /> Damit Supabase-Mails ankommen:
             </p>
-            <ol className="list-decimal pl-5 space-y-0.5 text-amber-100/70">
-              <li>In Resend die Domain von <span className="font-mono">{receivingAddress}</span> verifizieren (MX-Records).</li>
-              <li>Resend → Receiving → Webhook auf <span className="font-mono break-all">{webhookUrl}</span> setzen, Event <span className="font-mono">email.received</span>.</li>
-              <li><span className="font-mono">RESEND_WEBHOOK_SECRET</span> aus Resend in die Env eintragen und neu deployen.</li>
+            <ol className="list-decimal space-y-0.5 pl-5 text-amber-100/70">
+              <li>
+                In Resend die Domain von <span className="font-mono">{receivingAddress}</span>{" "}
+                verifizieren (MX-Records).
+              </li>
+              <li>
+                Resend → Receiving → Webhook auf{" "}
+                <span className="font-mono break-all">{webhookUrl}</span> setzen, Event{" "}
+                <span className="font-mono">email.received</span>.
+              </li>
+              <li>
+                <span className="font-mono">RESEND_WEBHOOK_SECRET</span> aus Resend in die Env
+                eintragen und neu deployen.
+              </li>
             </ol>
           </div>
         )}
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-1 rounded-lg border border-[#1e1e3a] bg-[#0d0d1a] p-1">
-          <FilterTab active={filter === "all"} onClick={() => setFilter("all")} icon={Mail} label="Alle" />
-          <FilterTab active={filter === "inbound"} onClick={() => setFilter("inbound")} icon={Inbox} label="Empfangen" />
-          <FilterTab active={filter === "outbound"} onClick={() => setFilter("outbound")} icon={Send} label="Gesendet" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-lg border [border-color:var(--mk-border)] p-1 [background:var(--mk-surface)]">
+          <FilterTab
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+            icon={Mail}
+            label="Alle"
+          />
+          <FilterTab
+            active={filter === "inbound"}
+            onClick={() => setFilter("inbound")}
+            icon={Inbox}
+            label="Empfangen"
+          />
+          <FilterTab
+            active={filter === "outbound"}
+            onClick={() => setFilter("outbound")}
+            icon={Send}
+            label="Gesendet"
+          />
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setComposeOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a4a] bg-[#12122a] px-3 py-2 text-sm text-[#e8e8f0] hover:bg-[#1a1a36]"
+            className="inline-flex items-center gap-1.5 rounded-lg border [border-color:var(--mk-border-strong)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface)] hover:[background:var(--mk-surface)]"
           >
             <PenSquare size={14} /> Neue Mail
           </button>
           <button
             onClick={refresh}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a4a] bg-[#12122a] px-3 py-2 text-sm text-[#e8e8f0] hover:bg-[#1a1a36] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border [border-color:var(--mk-border-strong)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface)] hover:[background:var(--mk-surface)] disabled:opacity-50"
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Aktualisieren
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}{" "}
+            Aktualisieren
           </button>
         </div>
       </div>
@@ -181,40 +210,47 @@ export default function MailboxClient({
 
       {/* List + detail */}
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]">
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#1e1e3a] flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#e8e8f0]">E-Mails</span>
-            <span className="text-xs text-[#7878a0]">{filtered.length}</span>
+        <div className="overflow-hidden rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)]">
+          <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3">
+            <span className="text-xs font-semibold [color:var(--mk-text)]">E-Mails</span>
+            <span className="text-xs [color:var(--mk-text-subtle)]">{filtered.length}</span>
           </div>
           {filtered.length === 0 ? (
             <div className="px-4 py-16 text-center">
-              <Mail size={28} className="mx-auto text-[#2a2a4a] mb-2" />
-              <p className="text-sm text-[#7878a0]">Noch keine E-Mails.</p>
+              <Mail size={28} className="mx-auto mb-2 [color:var(--mk-border-strong)]" />
+              <p className="text-sm [color:var(--mk-text-subtle)]">Noch keine E-Mails.</p>
             </div>
           ) : (
-            <ul className="divide-y divide-[#1e1e3a] max-h-[60vh] overflow-y-auto">
+            <ul className="max-h-[60vh] divide-y divide-[color:var(--mk-border)] overflow-y-auto">
               {filtered.map((m) => (
                 <li key={m.id}>
                   <button
                     onClick={() => setSelectedId(m.id)}
-                    className={`w-full text-left px-4 py-3 hover:bg-[#12122a]/60 ${
-                      m.id === selectedId ? "bg-[#12122a]" : ""
+                    className={`w-full px-4 py-3 text-left hover:[background:var(--mk-surface)]/60 ${
+                      m.id === selectedId ? "[background:var(--mk-surface)]" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="mb-0.5 flex items-center gap-2">
                       {m.direction === "inbound" ? (
                         <Inbox size={12} className="brand-text shrink-0" />
                       ) : (
-                        <Send size={12} className={`${m.status === "failed" ? "text-red-400" : "text-emerald-400"} shrink-0`} />
+                        <Send
+                          size={12}
+                          className={`${m.status === "failed" ? "text-red-400" : "text-emerald-400"} shrink-0`}
+                        />
                       )}
-                      <span className="text-xs font-medium text-[#e8e8f0] truncate">
+                      <span className="truncate text-xs font-medium [color:var(--mk-text)]">
                         {m.direction === "inbound"
                           ? m.fromName || m.fromEmail
                           : m.toEmails.join(", ") || "—"}
                       </span>
                     </div>
-                    <p className="text-xs text-[#aaaac4] truncate">{m.subject || "(kein Betreff)"}</p>
-                    <p className="text-[10px] text-[#7878a0] mt-0.5">{fmt(m.createdAt)}</p>
+                    <p className="truncate text-xs [color:var(--mk-text-muted)]">
+                      {m.subject || "(kein Betreff)"}
+                    </p>
+                    <p className="mt-0.5 text-xs [color:var(--mk-text-subtle)]">
+                      {fmt(m.createdAt)}
+                    </p>
                   </button>
                 </li>
               ))}
@@ -222,13 +258,13 @@ export default function MailboxClient({
           )}
         </div>
 
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] overflow-hidden">
+        <div className="overflow-hidden rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)]">
           {selected ? (
             <MessageDetail message={selected} onSent={refresh} />
           ) : (
             <div className="px-5 py-24 text-center">
-              <Mail size={28} className="mx-auto text-[#2a2a4a] mb-2" />
-              <p className="text-sm text-[#7878a0]">Wähle links eine E-Mail aus.</p>
+              <Mail size={28} className="mx-auto mb-2 [color:var(--mk-border-strong)]" />
+              <p className="text-sm [color:var(--mk-text-subtle)]">Wähle links eine E-Mail aus.</p>
             </div>
           )}
         </div>
@@ -251,7 +287,9 @@ function StatusPill({ ok, okText, badText }: { ok: boolean; okText: string; badT
   return (
     <div
       className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
-        ok ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-300" : "border-amber-500/30 bg-amber-500/5 text-amber-200"
+        ok
+          ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-300"
+          : "border-amber-500/30 bg-amber-500/5 text-amber-200"
       }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-400" : "bg-amber-400"}`} />
@@ -275,7 +313,9 @@ function FilterTab({
     <button
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
-        active ? "bg-[#1a1a36] text-[#e8e8f0]" : "text-[#8888aa] hover:text-[#e8e8f0]"
+        active
+          ? "[color:var(--mk-text)] [background:var(--mk-surface)]"
+          : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
       }`}
     >
       <Icon size={14} /> {label}
@@ -287,33 +327,38 @@ function MessageDetail({ message, onSent }: { message: MailMessageView; onSent: 
   const [replyOpen, setReplyOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-5 py-4 border-b border-[#1e1e3a]">
+    <div className="flex h-full flex-col">
+      <div className="border-b [border-color:var(--mk-border)] px-5 py-4">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-base font-semibold text-[#e8e8f0]">{message.subject || "(kein Betreff)"}</h2>
+          <h2 className="text-base font-semibold [color:var(--mk-text)]">
+            {message.subject || "(kein Betreff)"}
+          </h2>
           {message.direction === "inbound" && (
             <button
               onClick={() => setReplyOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a4a] bg-[#12122a] px-3 py-1.5 text-sm text-[#e8e8f0] hover:bg-[#1a1a36] shrink-0"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border [border-color:var(--mk-border-strong)] px-3 py-1.5 text-sm [color:var(--mk-text)] [background:var(--mk-surface)] hover:[background:var(--mk-surface)]"
             >
               <Reply size={13} /> Antworten
             </button>
           )}
         </div>
-        <div className="mt-2 space-y-0.5 text-xs text-[#8888aa]">
+        <div className="mt-2 space-y-0.5 text-xs [color:var(--mk-text-muted)]">
           <p>
-            <span className="text-[#7878a0]">Von:</span>{" "}
+            <span className="[color:var(--mk-text-subtle)]">Von:</span>{" "}
             {message.fromName ? `${message.fromName} <${message.fromEmail}>` : message.fromEmail}
           </p>
           <p>
-            <span className="text-[#7878a0]">An:</span> {message.toEmails.join(", ") || "—"}
+            <span className="[color:var(--mk-text-subtle)]">An:</span>{" "}
+            {message.toEmails.join(", ") || "—"}
           </p>
           <p className="flex items-center gap-1">
             <Calendar size={11} /> {fmt(message.createdAt)}
             {message.direction === "outbound" && (
               <span
-                className={`ml-2 rounded px-1.5 py-0.5 text-[10px] ${
-                  message.status === "failed" ? "bg-red-500/15 text-red-300" : "bg-emerald-500/15 text-emerald-300"
+                className={`ml-2 rounded px-1.5 py-0.5 text-xs ${
+                  message.status === "failed"
+                    ? "bg-red-500/15 text-red-300"
+                    : "bg-emerald-500/15 text-emerald-300"
                 }`}
               >
                 {message.status === "failed" ? "Fehlgeschlagen" : "Gesendet"}
@@ -323,16 +368,18 @@ function MessageDetail({ message, onSent }: { message: MailMessageView; onSent: 
         </div>
       </div>
 
-      <div className="px-5 py-4 overflow-y-auto max-h-[50vh]">
+      <div className="max-h-[50vh] overflow-y-auto px-5 py-4">
         {message.text ? (
-          <pre className="whitespace-pre-wrap text-sm text-[#c4c4dc] leading-relaxed font-sans">{message.text}</pre>
+          <pre className="font-sans text-sm leading-relaxed whitespace-pre-wrap [color:var(--mk-text-muted)]">
+            {message.text}
+          </pre>
         ) : message.html ? (
           <div
-            className="text-sm text-[#c4c4dc] prose prose-invert max-w-none"
+            className="prose prose-invert max-w-none text-sm [color:var(--mk-text-muted)]"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.html) }}
           />
         ) : (
-          <p className="text-sm text-[#7878a0]">Kein Inhalt.</p>
+          <p className="text-sm [color:var(--mk-text-subtle)]">Kein Inhalt.</p>
         )}
       </div>
 
@@ -390,23 +437,26 @@ function ReplyForm({
   };
 
   return (
-    <div className="border-t border-[#1e1e3a] px-5 py-4 space-y-3 bg-[#0a0a18]">
+    <div className="space-y-3 border-t [border-color:var(--mk-border)] px-5 py-4 [background:var(--mk-surface-2)]">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
         placeholder="Antwort schreiben…"
-        className="w-full rounded-lg border border-[#1e1e3a] bg-[#080812] px-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:border-[color:var(--brand-primary)] focus:outline-none"
+        className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
       />
       {err && <p className="text-xs text-red-300">{err}</p>}
-      <div className="flex items-center gap-2 justify-end">
-        <button onClick={onCancel} className="rounded-lg px-3 py-2 text-sm text-[#8888aa] hover:text-[#e8e8f0]">
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="rounded-lg px-3 py-2 text-sm [color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+        >
           Abbrechen
         </button>
         <button
           onClick={send}
           disabled={sending}
-          className="inline-flex items-center gap-1.5 rounded-lg brand-bg px-4 py-2 text-sm font-medium text-white brand-bg disabled:opacity-50"
+          className="brand-bg brand-bg inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Senden
         </button>
@@ -448,16 +498,22 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-5 space-y-3"
+        className="w-full max-w-lg space-y-3 rounded-xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#e8e8f0] flex items-center gap-1.5">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold [color:var(--mk-text)]">
             <PenSquare size={15} /> Neue E-Mail
           </h2>
-          <button onClick={onClose} className="text-[#8888aa] hover:text-[#e8e8f0]">
+          <button
+            onClick={onClose}
+            className="[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+          >
             <X size={16} />
           </button>
         </div>
@@ -465,30 +521,33 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
           value={to}
           onChange={(e) => setTo(e.target.value)}
           placeholder="An (mehrere mit Komma)"
-          className="w-full rounded-lg border border-[#1e1e3a] bg-[#080812] px-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           placeholder="Betreff"
-          className="w-full rounded-lg border border-[#1e1e3a] bg-[#080812] px-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={7}
           placeholder="Nachricht…"
-          className="w-full rounded-lg border border-[#1e1e3a] bg-[#080812] px-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#7878a0] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:[color:var(--mk-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
         {err && <p className="text-xs text-red-300">{err}</p>}
         <div className="flex items-center justify-end gap-2">
-          <button onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-[#8888aa] hover:text-[#e8e8f0]">
+          <button
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-sm [color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+          >
             Abbrechen
           </button>
           <button
             onClick={send}
             disabled={sending}
-            className="inline-flex items-center gap-1.5 rounded-lg brand-bg px-4 py-2 text-sm font-medium text-white brand-bg disabled:opacity-50"
+            className="brand-bg brand-bg inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Senden
           </button>

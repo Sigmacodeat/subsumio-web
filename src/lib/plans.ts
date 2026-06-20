@@ -19,9 +19,9 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: { pages: 200, queriesPerMonth: 100, seats: 1 },
-  pro: { pages: 25_000, queriesPerMonth: 2_000, seats: 1 },
-  team: { pages: 100_000, queriesPerMonth: 10_000, seats: 5 },
-  enterprise: { pages: 1_000_000, queriesPerMonth: 100_000, seats: 25 },
+  pro: { pages: 50_000, queriesPerMonth: 1_000, seats: 1 },
+  team: { pages: 200_000, queriesPerMonth: 4_000, seats: 5 },
+  enterprise: { pages: 1_000_000, queriesPerMonth: 15_000, seats: 25 },
 };
 
 export function limitsFor(plan: Plan): PlanLimits {
@@ -79,7 +79,17 @@ const ensureQuotaSchema = createSchemaInit(`
     uploads integer NOT NULL DEFAULT 0,
     updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (brain_id, month)
-  )
+  );
+  CREATE TABLE IF NOT EXISTS subsumio_model_usage (
+    brain_id text NOT NULL,
+    month text NOT NULL,
+    model_id text NOT NULL,
+    queries integer NOT NULL DEFAULT 0,
+    input_tokens bigint NOT NULL DEFAULT 0,
+    output_tokens bigint NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (brain_id, month, model_id)
+  );
 `);
 
 export type QuotaType = "queries" | "pages" | "uploads";
@@ -157,6 +167,74 @@ export async function incQuota(brainId: string, field: QuotaType, amount = 1): P
     }
   } catch (err) {
     console.error(`[quota] inc failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+// ── Model-level usage tracking ────────────────────────────────────────────
+
+export interface ModelUsageRow {
+  modelId: string;
+  queries: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+/** Record per-model usage for a brain. Never throws. */
+export async function recordModelUsage(
+  brainId: string,
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number
+): Promise<void> {
+  const month = currentMonth();
+  try {
+    const pool = getSharedPgPool();
+    if (pool) {
+      await ensureQuotaSchema();
+      await pool.query(
+        `INSERT INTO subsumio_model_usage (brain_id, month, model_id, queries, input_tokens, output_tokens)
+         VALUES ($1, $2, $3, 1, $4, $5)
+         ON CONFLICT (brain_id, month, model_id)
+         DO UPDATE SET queries = subsumio_model_usage.queries + 1,
+                       input_tokens = subsumio_model_usage.input_tokens + $4,
+                       output_tokens = subsumio_model_usage.output_tokens + $5,
+                       updated_at = now()`,
+        [brainId, month, modelId, inputTokens, outputTokens]
+      );
+    } else {
+      const db = await loadQuotaFile();
+      const brain = (db[brainId] ??= {});
+      const slot = (brain[month] ??= { queries: 0, pages: 0, uploads: 0 });
+      slot.queries += 1;
+      await persistQuotaFile();
+    }
+  } catch (err) {
+    console.error(
+      `[model-usage] record failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+/** Get per-model usage breakdown for a brain in the current month. */
+export async function getModelUsage(brainId: string): Promise<ModelUsageRow[]> {
+  const month = currentMonth();
+  try {
+    const pool = getSharedPgPool();
+    if (pool) {
+      await ensureQuotaSchema();
+      const { rows } = await pool.query<ModelUsageRow>(
+        `SELECT model_id as "modelId", queries, input_tokens as "inputTokens", output_tokens as "outputTokens"
+         FROM subsumio_model_usage
+         WHERE brain_id = $1 AND month = $2
+         ORDER BY queries DESC`,
+        [brainId, month]
+      );
+      return rows;
+    }
+    return [];
+  } catch (err) {
+    console.error(`[model-usage] read failed: ${err instanceof Error ? err.message : String(err)}`);
+    return [];
   }
 }
 

@@ -223,13 +223,15 @@ export default function DashboardReel({
     >
       {/* window bar */}
       <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
-        <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-        <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-        <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+        <div className="terminal-dots flex items-center gap-2">
+          <span className="terminal-dot-red" />
+          <span className="terminal-dot-amber" />
+          <span className="terminal-dot-green" />
+        </div>
         <div className="ml-3 flex-1 font-mono text-xs [color:var(--mk-text-subtle)]">
           {brand} — dashboard
         </div>
-        <span className="brand-text text-[10px] font-medium">live</span>
+        <span className="brand-text text-xs font-medium">live</span>
       </div>
 
       <div className="grid h-[480px] grid-cols-[160px_1fr]">
@@ -242,10 +244,10 @@ export default function DashboardReel({
                 <Brain size={13} className="text-white" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-[11px] font-semibold [color:var(--mk-text)]">
+                <p className="truncate text-xs font-semibold [color:var(--mk-text)]">
                   Rechtsanwälte
                 </p>
-                <p className="text-[9px] [color:var(--mk-text-subtle)]">Kanzlei Müller</p>
+                <p className="text-xs [color:var(--mk-text-subtle)]">Kanzlei Müller</p>
               </div>
             </div>
           </div>
@@ -256,7 +258,7 @@ export default function DashboardReel({
             return (
               <div
                 key={i}
-                className={`flex items-center gap-2 rounded-md px-2 py-2 text-[11px] transition-colors ${
+                className={`flex items-center gap-2 rounded-md px-2 py-2 text-xs transition-colors ${
                   isActive ? "brand-soft brand-text font-medium" : "[color:var(--mk-text-muted)]"
                 }`}
               >
@@ -270,12 +272,12 @@ export default function DashboardReel({
           })}
           {/* usage at bottom */}
           <div className="mt-auto border-t [border-color:var(--mk-border)] pt-3">
-            <div className="mb-1 text-[9px] [color:var(--mk-text-subtle)]">KI-Anfragen</div>
+            <div className="mb-1 text-xs [color:var(--mk-text-subtle)]">KI-Anfragen</div>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full [background:var(--mk-surface)]">
                 <div className="brand-bg h-full rounded-full" style={{ width: "42%" }} />
               </div>
-              <span className="font-mono text-[9px] [color:var(--mk-text-muted)]">42%</span>
+              <span className="font-mono text-xs [color:var(--mk-text-muted)]">42%</span>
             </div>
           </div>
         </div>
@@ -286,11 +288,11 @@ export default function DashboardReel({
           <div className="flex items-center gap-3 border-b [border-color:var(--mk-border)] px-4 py-2.5 [background:var(--mk-surface)]">
             <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
               <Search size={13} className="[color:var(--mk-text-subtle)]" />
-              <span className="text-[11px] [color:var(--mk-text-subtle)]">
+              <span className="text-xs [color:var(--mk-text-subtle)]">
                 {lang === "de" ? "Suchen…" : "Search…"}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] [color:var(--mk-text-subtle)]">
+            <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-subtle)]">
               <Clock size={11} />
               {lang === "de" ? "09:42" : "9:42 AM"}
             </div>
@@ -313,7 +315,7 @@ export default function DashboardReel({
                     <h3 className="text-sm font-bold [color:var(--mk-text)]">
                       {lang === "de" ? "Akten" : "Matters"}
                     </h3>
-                    <span className="text-[10px] [color:var(--mk-text-subtle)]">
+                    <span className="text-xs [color:var(--mk-text-subtle)]">
                       {v.matters.length} {lang === "de" ? "Akten" : "matters"}
                     </span>
                   </div>
@@ -337,12 +339,12 @@ export default function DashboardReel({
                           <p className="truncate text-xs font-medium [color:var(--mk-text)]">
                             {m.title}
                           </p>
-                          <p className="font-mono text-[10px] [color:var(--mk-text-subtle)]">
+                          <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
                             {m.id} · {m.client}
                           </p>
                         </div>
                         <span
-                          className="rounded-full px-2 py-0.5 text-[9px] font-medium"
+                          className="rounded-full px-2 py-0.5 text-xs font-medium"
                           style={{ color: sc.text, background: sc.bg }}
                         >
                           {m.status}
@@ -377,7 +379,7 @@ export default function DashboardReel({
                       >
                         <div className="max-w-[85%] rounded-xl rounded-tr-sm border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface)]">
                           <p className="text-xs [color:var(--mk-text)]">{v.brain.question}</p>
-                          <span className="brand-text mt-1 inline-flex items-center gap-1 text-[10px]">
+                          <span className="brand-text mt-1 inline-flex items-center gap-1 text-xs">
                             <FileText size={10} /> {v.brain.file}
                           </span>
                         </div>
@@ -407,7 +409,7 @@ export default function DashboardReel({
                             {v.brain.sources.map((s) => (
                               <span
                                 key={s}
-                                className="brand-text brand-soft rounded px-1.5 py-0.5 font-mono text-[9px]"
+                                className="brand-text brand-soft rounded px-1.5 py-0.5 font-mono text-xs"
                               >
                                 {s}
                               </span>
@@ -445,7 +447,7 @@ export default function DashboardReel({
                     <h3 className="text-sm font-bold [color:var(--mk-text)]">
                       {lang === "de" ? "Fristen" : "Deadlines"}
                     </h3>
-                    <span className="text-[10px] font-medium text-rose-400">
+                    <span className="text-xs font-medium text-rose-400">
                       {v.deadlines.filter((d) => d.urgent).length}{" "}
                       {lang === "de" ? "dringend" : "urgent"}
                     </span>
@@ -477,12 +479,12 @@ export default function DashboardReel({
                         <p className="truncate text-xs font-medium [color:var(--mk-text)]">
                           {d.title}
                         </p>
-                        <p className="font-mono text-[10px] [color:var(--mk-text-subtle)]">
+                        <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
                           {d.matter}
                         </p>
                       </div>
                       <span
-                        className={`font-mono text-[10px] font-medium ${d.urgent ? "text-rose-400" : "[color:var(--mk-text-muted)]"}`}
+                        className={`font-mono text-xs font-medium ${d.urgent ? "text-rose-400" : "[color:var(--mk-text-muted)]"}`}
                       >
                         {d.date}
                       </span>

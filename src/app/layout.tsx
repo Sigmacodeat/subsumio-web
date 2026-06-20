@@ -16,8 +16,16 @@ import "./globals.css";
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
 // render-blocking CSS @import.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-grotesk", display: "swap" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-grotesk",
+  display: "swap",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -44,7 +52,14 @@ export const metadata: Metadata = {
       "Matter management, deadlines, document vault, legal research and cited AI answers for law firms.",
     type: "website",
     siteName: "Subsumio",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Subsumio — AI Legal Workspace for DACH Law Firms" }],
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Subsumio — AI Legal Workspace for DACH Law Firms",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -68,7 +83,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#eef0f4",
-  colorScheme: "light",
+  colorScheme: "light dark",
 };
 
 export default async function RootLayout({
@@ -83,8 +98,12 @@ export default async function RootLayout({
   const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
   return (
-    <html lang={lang} className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} style={{ colorScheme: "light" }}>
-      <body className="min-h-full bg-[#eef0f4] text-[#0f0f1a] antialiased noise">
+    <html
+      lang={lang}
+      className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      style={{ colorScheme: "light dark" }}
+    >
+      <body className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]">
         <LangSetter />
         <SubsumioTheme />
         <QueryProvider>

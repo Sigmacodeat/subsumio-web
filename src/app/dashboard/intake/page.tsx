@@ -135,7 +135,11 @@ export default function IntakePage() {
     }, {});
   }, [items]);
 
-  async function updateStatus(item: IntakeRecord, status: IntakeStatus, convertedCaseSlug?: string) {
+  async function updateStatus(
+    item: IntakeRecord,
+    status: IntakeStatus,
+    convertedCaseSlug?: string
+  ) {
     await updateMutation.mutateAsync({
       slug: item.slug,
       status,
@@ -170,7 +174,7 @@ export default function IntakePage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Intake"
         description="WhatsApp- und Portal-Anfragen triagieren, prüfen und in Akten überführen"
@@ -178,7 +182,7 @@ export default function IntakePage() {
         actions={
           <button
             onClick={() => void qc.invalidateQueries({ queryKey: ["intake", "list"] })}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[color:var(--ds-border)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
           >
             <RefreshCw size={16} />
             Aktualisieren
@@ -186,33 +190,37 @@ export default function IntakePage() {
         }
       />
 
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border brand-border brand-soft/5" role="note">
-        <AlertCircle size={16} className="brand-text shrink-0 mt-0.5" aria-hidden="true" />
-        <p className="text-xs brand-text/90 leading-relaxed">
+      <div
+        className="brand-border brand-soft/5 flex items-start gap-3 rounded-xl border px-4 py-3"
+        role="note"
+      >
+        <AlertCircle size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="brand-text/90 text-xs leading-relaxed">
           Intake ist die erste sichere Schleuse: WhatsApp, E-Mail und Web werden hier in eine
-          prüfbare Mandatsaufnahme überführt, bevor etwas als Akte, Frist oder Nachricht wirksam wird.
+          prüfbare Mandatsaufnahme überführt, bevor etwas als Akte, Frist oder Nachricht wirksam
+          wird.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Metric label="Neu" value={metrics.new || 0} tone="amber" />
         <Metric label="Rückfrage" value={metrics.needs_info || 0} tone="slate" />
         <Metric label="Freigegeben" value={metrics.accepted || 0} tone="emerald" />
         <Metric label="Konvertiert" value={metrics.converted || 0} tone="blue" />
       </div>
 
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-center gap-2">
           <Plus size={14} className="text-[color:var(--ds-text-muted)]" />
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Intake anlegen</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <textarea
             value={createForm.summary}
             onChange={(e) => setCreateForm((prev) => ({ ...prev, summary: e.target.value }))}
             placeholder="Kurzbeschreibung der Anfrage"
             rows={3}
-            className="md:col-span-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
           />
           <input
             value={createForm.client_name}
@@ -246,15 +254,19 @@ export default function IntakePage() {
           <button
             onClick={() => void createIntake()}
             disabled={createMutation.isPending || !createForm.summary.trim()}
-            className="inline-flex items-center gap-2 rounded-lg brand-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
-            {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            {createMutation.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
             Anlegen
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((entry) => (
             <button
@@ -263,8 +275,8 @@ export default function IntakePage() {
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
                 filter === entry.key
-                  ? "brand-bg text-white border-transparent"
-                  : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]",
+                  ? "brand-bg border-transparent text-white"
+                  : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
               )}
             >
               {entry.label}
@@ -272,52 +284,69 @@ export default function IntakePage() {
           ))}
         </div>
         <div className="relative w-full md:w-80">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Intake suchen…"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
           />
         </div>
       </div>
 
       {listQuery.isLoading ? (
         <div className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]">
-          <Loader2 size={20} className="animate-spin mr-2" /> Lade Intake…
+          <Loader2 size={20} className="mr-2 animate-spin" /> Lade Intake…
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-10 text-center">
           <Inbox size={20} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Intakes für den aktuellen Filter.</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Keine Intakes für den aktuellen Filter.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((item) => (
-            <div key={item.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+            <div
+              key={item.slug}
+              className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="default" className="text-[10px] border brand-soft brand-border brand-text">
+                    <Badge
+                      variant="default"
+                      className="brand-soft brand-border brand-text border text-xs"
+                    >
                       {item.frontmatter.source}
                     </Badge>
-                    <Badge variant="default" className="text-[10px] border bg-amber-500/10 border-amber-500/20 text-amber-600">
+                    <Badge
+                      variant="default"
+                      className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                    >
                       {item.frontmatter.status}
                     </Badge>
                     {item.frontmatter.conflict_check_status && (
-                      <Badge variant="default" className="text-[10px] border bg-slate-500/10 border-slate-500/20 text-slate-600">
+                      <Badge
+                        variant="default"
+                        className="border border-slate-500/20 bg-slate-500/10 text-xs text-slate-600"
+                      >
                         {item.frontmatter.conflict_check_status}
                       </Badge>
                     )}
                   </div>
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)] truncate">
+                  <h3 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
                     {item.frontmatter.client_name || item.title}
                   </h3>
-                  <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2">
+                  <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
                     {item.frontmatter.summary}
                   </p>
                 </div>
-                <div className="text-right text-xs text-[color:var(--ds-text-muted)] shrink-0">
+                <div className="shrink-0 text-right text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex items-center justify-end gap-1">
                     <Clock size={12} />
                     {createdLabel(item.frontmatter.created_at)}
@@ -326,18 +355,26 @@ export default function IntakePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto]">
                 <div className="space-y-2 text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex flex-wrap gap-2">
-                    {item.frontmatter.legal_area && <span>Gebiet: {item.frontmatter.legal_area}</span>}
+                    {item.frontmatter.legal_area && (
+                      <span>Gebiet: {item.frontmatter.legal_area}</span>
+                    )}
                     {item.frontmatter.email && <span>Email: {item.frontmatter.email}</span>}
-                    {item.frontmatter.phone_hash && <span>Phone Hash: {item.frontmatter.phone_hash.slice(0, 10)}…</span>}
+                    {item.frontmatter.phone_hash && (
+                      <span>Phone Hash: {item.frontmatter.phone_hash.slice(0, 10)}…</span>
+                    )}
                   </div>
                   {item.frontmatter.missing_documents?.length ? (
                     <div className="flex flex-wrap gap-2">
                       <span>Fehlt:</span>
                       {item.frontmatter.missing_documents.map((doc) => (
-                        <Badge key={doc} variant="default" className="text-[10px] border bg-amber-500/10 border-amber-500/20 text-amber-700">
+                        <Badge
+                          key={doc}
+                          variant="default"
+                          className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-700"
+                        >
                           {doc}
                         </Badge>
                       ))}
@@ -346,7 +383,7 @@ export default function IntakePage() {
                   {item.frontmatter.source_event_slug && (
                     <a
                       href={`/dashboard/brain/${encodeURIComponent(item.frontmatter.source_event_slug)}`}
-                      className="inline-flex items-center gap-1 text-[color:var(--ds-text)] hover:underline font-mono"
+                      className="inline-flex items-center gap-1 font-mono text-[color:var(--ds-text)] hover:underline"
                     >
                       <MessageSquareText size={12} />
                       {item.frontmatter.source_event_slug}
@@ -354,7 +391,9 @@ export default function IntakePage() {
                   )}
                   {item.frontmatter.phone_hash && (
                     <button
-                      onClick={() => void navigator.clipboard.writeText(item.frontmatter.phone_hash || "")}
+                      onClick={() =>
+                        void navigator.clipboard.writeText(item.frontmatter.phone_hash || "")
+                      }
                       className="inline-flex items-center gap-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                     >
                       <Copy size={12} />
@@ -364,7 +403,7 @@ export default function IntakePage() {
                   {item.frontmatter.converted_case_slug && (
                     <a
                       href={`/dashboard/cases/${encodeURIComponent(item.frontmatter.converted_case_slug)}`}
-                      className="inline-flex items-center gap-1 text-emerald-600 hover:underline font-mono"
+                      className="inline-flex items-center gap-1 font-mono text-emerald-600 hover:underline"
                     >
                       <ChevronRight size={12} />
                       {item.frontmatter.converted_case_slug}
@@ -372,7 +411,7 @@ export default function IntakePage() {
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 min-w-[280px]">
+                <div className="flex min-w-[280px] flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
                     <ActionButton
                       label="Info anfordern"
@@ -402,7 +441,9 @@ export default function IntakePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <input
-                      value={conversionTargets[item.slug] ?? item.frontmatter.converted_case_slug ?? ""}
+                      value={
+                        conversionTargets[item.slug] ?? item.frontmatter.converted_case_slug ?? ""
+                      }
                       onChange={(e) =>
                         setConversionTargets((prev) => ({ ...prev, [item.slug]: e.target.value }))
                       }
@@ -412,9 +453,11 @@ export default function IntakePage() {
                     <button
                       onClick={() => void convertToCase(item)}
                       disabled={convertMutation.isPending}
-                      className="inline-flex items-center gap-2 rounded-lg brand-bg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                      className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                     >
-                      {convertMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {convertMutation.isPending ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : null}
                       Akte anlegen
                     </button>
                   </div>
@@ -428,7 +471,15 @@ export default function IntakePage() {
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone: "emerald" | "amber" | "blue" | "slate" }) {
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "emerald" | "amber" | "blue" | "slate";
+}) {
   const toneClass =
     tone === "emerald"
       ? "text-emerald-600"
@@ -466,7 +517,7 @@ function ActionButton({
         "inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50",
         danger
           ? "border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10"
-          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]",
+          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
       )}
     >
       <Icon size={12} />

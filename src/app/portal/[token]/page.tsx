@@ -92,7 +92,11 @@ export default function PortalPage() {
         const res = await fetch(`/api/portal/verify?token=${encodeURIComponent(token)}`);
         const verifyData = await res.json();
         if (!res.ok) {
-          setError(verifyData.error === "invalid_or_expired_token" ? "Dieser Link ist abgelaufen oder ungültig. Bitte kontaktieren Sie Ihren Anwalt." : "Zugriff verweigert.");
+          setError(
+            verifyData.error === "invalid_or_expired_token"
+              ? "Dieser Link ist abgelaufen oder ungültig. Bitte kontaktieren Sie Ihren Anwalt."
+              : "Zugriff verweigert."
+          );
           return;
         }
         if (!cancelled) {
@@ -106,18 +110,25 @@ export default function PortalPage() {
         setError("Verbindungsfehler. Bitte versuchen Sie es später erneut.");
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   async function loadMessages(caseSlug: string) {
     try {
-      const res = await fetch(`/api/portal/messages?token=${encodeURIComponent(token)}&caseSlug=${encodeURIComponent(caseSlug)}`);
+      const res = await fetch(
+        `/api/portal/messages?token=${encodeURIComponent(token)}&caseSlug=${encodeURIComponent(caseSlug)}`
+      );
       if (!res.ok) return;
       const data = await res.json();
       setMessages(data.messages || []);
     } catch (err) {
-      console.error("[portal] load messages failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[portal] load messages failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 
@@ -128,7 +139,10 @@ export default function PortalPage() {
       const data = await res.json();
       setDocumentRequests(data.requests || []);
     } catch (err) {
-      console.error("[portal] load document requests failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[portal] load document requests failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 
@@ -146,7 +160,10 @@ export default function PortalPage() {
         await loadMessages(caseSlug);
       }
     } catch (err) {
-      console.error("[portal] send message failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[portal] send message failed:",
+        err instanceof Error ? err.message : String(err)
+      );
     } finally {
       setSendingMessage(false);
     }
@@ -158,9 +175,11 @@ export default function PortalPage() {
       const res = await fetch(`/api/portal/case?token=${encodeURIComponent(token)}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error === "new_portal_link_required"
-          ? "Dieser Portal-Link muss erneuert werden. Bitte kontaktieren Sie Ihre Kanzlei."
-          : data.message || "Akte konnte nicht geladen werden.");
+        setError(
+          data.error === "new_portal_link_required"
+            ? "Dieser Portal-Link muss erneuert werden. Bitte kontaktieren Sie Ihre Kanzlei."
+            : data.message || "Akte konnte nicht geladen werden."
+        );
         return;
       }
       const page = data.page;
@@ -186,12 +205,14 @@ export default function PortalPage() {
           due_date: d.due_date,
           status: d.status,
         })),
-        documents: (fm.documents || []).map((d: { name?: string; url?: string; slug?: string; uploadedAt?: string }) => ({
-          name: d.name,
-          url: d.url,
-          slug: d.slug,
-          uploadedAt: d.uploadedAt,
-        })),
+        documents: (fm.documents || []).map(
+          (d: { name?: string; url?: string; slug?: string; uploadedAt?: string }) => ({
+            name: d.name,
+            url: d.url,
+            slug: d.slug,
+            uploadedAt: d.uploadedAt,
+          })
+        ),
       });
     } catch (err) {
       console.error("[portal] load case failed:", err instanceof Error ? err.message : String(err));
@@ -219,9 +240,11 @@ export default function PortalPage() {
         setUploadError(data.message || "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.");
         return;
       }
-      setUploadMessage(data.documentRequestStatus === "fulfilled"
-        ? "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt."
-        : "Dokument hochgeladen und an die Akte übermittelt.");
+      setUploadMessage(
+        data.documentRequestStatus === "fulfilled"
+          ? "Dokument hochgeladen. Die Dokumentenanfrage ist vollständig erfüllt."
+          : "Dokument hochgeladen und an die Akte übermittelt."
+      );
       await loadCase();
       await loadDocumentRequests();
     } catch (err) {
@@ -235,10 +258,13 @@ export default function PortalPage() {
 
   if (verifying || loadingCase) {
     return (
-      <div className="min-h-screen bg-[#0a0a18] flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Loader2 size={32} className="animate-spin text-violet-400 mx-auto" />
-          <p className="text-sm text-[#8888aa]">Portal wird geladen…</p>
+      <div
+        data-tone="dark"
+        className="flex min-h-screen items-center justify-center [background:var(--mk-bg)]"
+      >
+        <div className="space-y-3 text-center">
+          <Loader2 size={32} className="mx-auto animate-spin text-violet-400" />
+          <p className="text-sm [color:var(--mk-text-muted)]">Portal wird geladen…</p>
         </div>
       </div>
     );
@@ -246,14 +272,17 @@ export default function PortalPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0a0a18] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto">
+      <div
+        data-tone="dark"
+        className="flex min-h-screen items-center justify-center p-6 [background:var(--mk-bg)]"
+      >
+        <div className="w-full max-w-md space-y-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
             <AlertTriangle size={28} className="text-red-400" />
           </div>
-          <h1 className="text-xl font-bold text-[#e8e8f0]">Zugriff nicht möglich</h1>
-          <p className="text-sm text-[#8888aa]">{error}</p>
-          <p className="text-xs text-[#8a8aa8]">
+          <h1 className="text-xl font-bold [color:var(--mk-text)]">Zugriff nicht möglich</h1>
+          <p className="text-sm [color:var(--mk-text-muted)]">{error}</p>
+          <p className="text-xs [color:var(--mk-text-subtle)]">
             Bei Fragen wenden Sie sich bitte an Ihre Kanzlei.
           </p>
         </div>
@@ -266,64 +295,80 @@ export default function PortalPage() {
   const statusCfg = STATUS_CONFIG[caseData.status] ?? STATUS_CONFIG.open;
 
   return (
-    <div className="min-h-screen bg-[#0a0a18] text-[#e8e8f0]">
+    <div data-tone="dark" className="min-h-screen [color:var(--mk-text)] [background:var(--mk-bg)]">
       {/* Header */}
-      <header className="border-b border-[#1e1e3a] bg-[#0d0d1a]">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-600/15 border border-violet-500/20 flex items-center justify-center">
+      <header className="border-b [border-color:var(--mk-border)] [background:var(--mk-surface)]">
+        <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-600/15">
             <Users size={20} className="text-violet-400" />
           </div>
           <div>
             <h1 className="text-lg font-bold">Mandanten-Portal</h1>
-            <p className="text-xs text-[#8888aa]">Übersicht über Ihre Akte</p>
+            <p className="text-xs [color:var(--mk-text-muted)]">Übersicht über Ihre Akte</p>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
         {/* Case header */}
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold">{caseData.title}</h2>
-              <p className="text-xs text-[#8a8aa8] font-mono">{caseData.caseNumber}</p>
+              <p className="font-mono text-xs [color:var(--mk-text-subtle)]">
+                {caseData.caseNumber}
+              </p>
             </div>
-            <Badge variant="default" className={cn("text-[10px] border", statusCfg.color)}>
+            <Badge variant="default" className={cn("border text-xs", statusCfg.color)}>
               {statusCfg.label}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#8a8aa8]">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs [color:var(--mk-text-subtle)]">
             {caseData.clientName && (
-              <span className="flex items-center gap-1"><Users size={10} />Mandant: {caseData.clientName}</span>
+              <span className="flex items-center gap-1">
+                <Users size={10} />
+                Mandant: {caseData.clientName}
+              </span>
             )}
             {caseData.opponentName && (
-              <span className="flex items-center gap-1"><ShieldAlert size={10} />Gegner: {caseData.opponentName}</span>
+              <span className="flex items-center gap-1">
+                <ShieldAlert size={10} />
+                Gegner: {caseData.opponentName}
+              </span>
             )}
             {caseData.courtName && (
-              <span className="flex items-center gap-1"><Landmark size={10} />Gericht: {caseData.courtName}</span>
+              <span className="flex items-center gap-1">
+                <Landmark size={10} />
+                Gericht: {caseData.courtName}
+              </span>
             )}
             {caseData.legalArea && (
-              <span className="flex items-center gap-1"><FileText size={10} />{caseData.legalArea}</span>
+              <span className="flex items-center gap-1">
+                <FileText size={10} />
+                {caseData.legalArea}
+              </span>
             )}
           </div>
         </div>
 
         {/* Facts */}
         {caseData.facts && (
-          <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4">
-            <h3 className="text-sm font-semibold mb-2">Sachverhalt</h3>
-            <p className="text-sm text-[#8888aa] whitespace-pre-wrap leading-relaxed">{caseData.facts}</p>
+          <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+            <h3 className="mb-2 text-sm font-semibold">Sachverhalt</h3>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap [color:var(--mk-text-muted)]">
+              {caseData.facts}
+            </p>
           </div>
         )}
 
         {/* Claims */}
         {caseData.claims.length > 0 && (
-          <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4">
-            <h3 className="text-sm font-semibold mb-2">Ansprüche</h3>
+          <div className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+            <h3 className="mb-2 text-sm font-semibold">Ansprüche</h3>
             <ul className="space-y-1.5">
               {caseData.claims.map((claim, i) => (
-                <li key={i} className="text-sm text-[#8888aa] flex items-start gap-2">
-                  <span className="text-violet-400 mt-0.5">•</span>
+                <li key={i} className="flex items-start gap-2 text-sm [color:var(--mk-text-muted)]">
+                  <span className="mt-0.5 text-violet-400">•</span>
                   {claim}
                 </li>
               ))}
@@ -333,7 +378,7 @@ export default function PortalPage() {
 
         {/* Deadlines */}
         {caseData.deadlines.length > 0 && (
-          <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
             <h3 className="text-sm font-semibold">Fristen</h3>
             <div className="space-y-2">
               {caseData.deadlines.map((dl, i) => {
@@ -344,8 +389,8 @@ export default function PortalPage() {
                   <div key={i} className="flex items-center gap-3 text-sm">
                     <CalendarClock size={14} className={statusClass} />
                     <div className="flex-1">
-                      <div className="text-[#e8e8f0]">{dl.title || "Frist"}</div>
-                      <div className="text-xs text-[#8a8aa8]">
+                      <div className="[color:var(--mk-text)]">{dl.title || "Frist"}</div>
+                      <div className="text-xs [color:var(--mk-text-subtle)]">
                         {due ? new Date(due).toLocaleDateString("de-DE") : "—"}
                       </div>
                     </div>
@@ -358,7 +403,7 @@ export default function PortalPage() {
 
         {/* Requested documents */}
         {documentRequests.some((request) => request.frontmatter.status !== "fulfilled") && (
-          <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+          <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
             <h3 className="text-sm font-semibold">Angeforderte Unterlagen</h3>
             <div className="space-y-2">
               {documentRequests
@@ -368,16 +413,22 @@ export default function PortalPage() {
                   const done = Boolean(item.received_document_slug);
                   const key = `${request.slug}:${item.key}`;
                   return (
-                    <div key={key} className="flex items-center gap-3 rounded-lg border border-[#1e1e3a] bg-[#0a0a18] px-3 py-2">
-                      <FileText size={14} className={done ? "text-emerald-400" : "text-amber-400"} />
+                    <div
+                      key={key}
+                      className="flex items-center gap-3 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-surface-2)]"
+                    >
+                      <FileText
+                        size={14}
+                        className={done ? "text-emerald-400" : "text-amber-400"}
+                      />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm text-[#e8e8f0] truncate">{item.label}</div>
-                        <div className="text-[11px] text-[#8a8aa8]">
+                        <div className="truncate text-sm [color:var(--mk-text)]">{item.label}</div>
+                        <div className="text-xs [color:var(--mk-text-subtle)]">
                           {done ? "Eingereicht" : item.required ? "Erforderlich" : "Optional"}
                         </div>
                       </div>
                       {!done && (
-                        <label className="inline-flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer">
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500">
                           <input
                             type="file"
                             className="hidden"
@@ -388,7 +439,11 @@ export default function PortalPage() {
                               if (file) void uploadDocument(file, request.slug, item.key);
                             }}
                           />
-                          {uploadingKey === key ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                          {uploadingKey === key ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Upload size={13} />
+                          )}
                           Hochladen
                         </label>
                       )}
@@ -400,10 +455,10 @@ export default function PortalPage() {
         )}
 
         {/* Documents */}
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">Dokumente</h3>
-            <label className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg px-3 py-2 text-xs font-medium transition-colors cursor-pointer">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50">
               <input
                 type="file"
                 className="hidden"
@@ -429,16 +484,23 @@ export default function PortalPage() {
             </div>
           )}
           {caseData.documents.length === 0 ? (
-            <p className="text-xs text-[#8a8aa8]">Noch keine Dokumente hinterlegt.</p>
+            <p className="text-xs [color:var(--mk-text-subtle)]">
+              Noch keine Dokumente hinterlegt.
+            </p>
           ) : (
             <div className="space-y-2">
               {caseData.documents.map((doc, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
-                  <FileText size={14} className="text-[#8a8aa8]" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[#e8e8f0] truncate">{doc.name || "Dokument"}</div>
+                  <FileText size={14} className="[color:var(--mk-text-subtle)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate [color:var(--mk-text)]">{doc.name || "Dokument"}</div>
                     {doc.url && (doc.url.startsWith("http") || doc.url.startsWith("/")) && (
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:underline">
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-violet-400 hover:underline"
+                      >
                         Herunterladen →
                       </a>
                     )}
@@ -450,18 +512,29 @@ export default function PortalPage() {
         </div>
 
         {/* Messages */}
-        <div className="rounded-xl border border-[#1e1e3a] bg-[#0d0d1a] p-4 space-y-3">
+        <div className="space-y-3 rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
           <h3 className="text-sm font-semibold">Nachrichten an Ihre Kanzlei</h3>
           {messages.length === 0 ? (
-            <p className="text-xs text-[#8a8aa8]">Noch keine Nachrichten. Schreiben Sie Ihrer Kanzlei unten.</p>
+            <p className="text-xs [color:var(--mk-text-subtle)]">
+              Noch keine Nachrichten. Schreiben Sie Ihrer Kanzlei unten.
+            </p>
           ) : (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+            <div className="max-h-64 space-y-3 overflow-y-auto">
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "bg-violet-600/15 text-violet-200 border border-violet-500/20" : "bg-[#0a0a18] text-[#8888aa] border border-[#1e1e3a]"}`}>
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.sender === "client" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${msg.sender === "client" ? "border border-violet-500/20 bg-violet-600/15 text-violet-200" : "border [border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)]"}`}
+                  >
                     <p>{msg.text}</p>
-                    <p className="text-[10px] text-[#8a8aa8] mt-1">
-                      {new Date(msg.createdAt).toLocaleDateString("de-DE")} · {new Date(msg.createdAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                    <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
+                      {new Date(msg.createdAt).toLocaleDateString("de-DE")} ·{" "}
+                      {new Date(msg.createdAt).toLocaleTimeString("de-DE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -473,14 +546,16 @@ export default function PortalPage() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !sendingMessage) void sendMessage(caseData.slug);
+              }}
               placeholder="Nachricht an Ihre Kanzlei…"
-              className="flex-1 bg-[#0a0a18] border border-[#1e1e3a] rounded-lg px-3 py-2 text-sm text-[#e8e8f0] placeholder:text-[#8a8aa8] focus:outline-none focus:border-violet-500/50"
+              className="flex-1 rounded-lg border [border-color:var(--mk-border)] px-3 py-2 text-sm [color:var(--mk-text)] [background:var(--mk-surface-2)] placeholder:text-[color:var(--mk-text-subtle)] focus:border-violet-500/50 focus:outline-none"
             />
             <button
               onClick={() => void sendMessage(caseData.slug)}
               disabled={sendingMessage || !newMessage.trim()}
-              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
             >
               {sendingMessage ? "…" : "Senden"}
             </button>
@@ -488,7 +563,7 @@ export default function PortalPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-xs text-[#8a8aa8] pt-6 pb-8">
+        <div className="pt-6 pb-8 text-center text-xs [color:var(--mk-text-subtle)]">
           <p>Diese Ansicht ist nur für Sie bestimmt. Bitte teilen Sie den Link nicht.</p>
         </div>
       </main>

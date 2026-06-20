@@ -17,9 +17,9 @@ describe("BILLABLE_PLANS", () => {
     const pro = BILLABLE_PLANS.pro;
     expect(pro.id).toBe("pro");
     expect(pro.name).toBe("Pro");
-    expect(pro.monthlyEur).toBe(290);
+    expect(pro.monthlyEur).toBe(890);
     expect(pro.stripePriceEnv).toBe("STRIPE_PRICE_PRO");
-    expect(pro.pages).toBe(25_000);
+    expect(pro.pages).toBe(50_000);
     expect(pro.seats).toBe(1);
   });
 
@@ -27,9 +27,9 @@ describe("BILLABLE_PLANS", () => {
     const team = BILLABLE_PLANS.team;
     expect(team.id).toBe("team");
     expect(team.name).toBe("Team");
-    expect(team.monthlyEur).toBe(490);
+    expect(team.monthlyEur).toBe(1290);
     expect(team.stripePriceEnv).toBe("STRIPE_PRICE_TEAM");
-    expect(team.pages).toBe(100_000);
+    expect(team.pages).toBe(200_000);
     expect(team.seats).toBe(5);
   });
 
@@ -104,14 +104,14 @@ describe("BILLING_PLANS_DISPLAY", () => {
     expect(free?.price).toContain("0");
   });
 
-  test("pro plan price contains 290", () => {
+  test("pro plan price contains 890", () => {
     const pro = BILLING_PLANS_DISPLAY.find((p) => p.id === "pro");
-    expect(pro?.price).toContain("290");
+    expect(pro?.price).toContain("890");
   });
 
-  test("team plan price contains 490", () => {
+  test("team plan price contains 1.290", () => {
     const team = BILLING_PLANS_DISPLAY.find((p) => p.id === "team");
-    expect(team?.price).toContain("490");
+    expect(team?.price).toContain("1.290");
   });
 
   test("all feature strings are non-empty", () => {

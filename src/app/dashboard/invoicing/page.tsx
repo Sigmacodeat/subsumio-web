@@ -21,7 +21,13 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { STATUS_TEXT, STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
-import { caseFrontmatter, invoiceFrontmatter, type ExpenseEntry, type InvoiceExpenseEntry, type TimeEntry } from "@/lib/legal-types";
+import {
+  caseFrontmatter,
+  invoiceFrontmatter,
+  type ExpenseEntry,
+  type InvoiceExpenseEntry,
+  type TimeEntry,
+} from "@/lib/legal-types";
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { generateInvoicePdf } from "@/lib/invoice-pdf";
@@ -91,7 +97,10 @@ interface InvoicingCache {
   cases: InvoiceCase[];
 }
 
-const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; icon: React.ElementType; color: StatusColor }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { labelKey: DashboardKey; icon: React.ElementType; color: StatusColor }
+> = {
   draft: { labelKey: "inv.status_draft", icon: Clock, color: "gray" },
   sent: { labelKey: "inv.status_sent", icon: Send, color: "blue" },
   paid: { labelKey: "inv.status_paid", icon: CheckCircle2, color: "emerald" },
@@ -154,7 +163,9 @@ export default function InvoicingPage() {
   }, [meQuery.data]);
 
   useEffect(() => {
-    loadKanzleiSettings().then(setKanzlei).catch(() => {});
+    loadKanzleiSettings()
+      .then(setKanzlei)
+      .catch(() => {});
     loadInvoices();
     loadCases();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,7 +210,10 @@ export default function InvoicingPage() {
       setInvoices(loaded);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: loaded, cases });
     } catch (err) {
-      console.error("[invoicing] failed to load invoices:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[invoicing] failed to load invoices:",
+        err instanceof Error ? err.message : String(err)
+      );
       const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
       if (cached) {
         setInvoices(cached.invoices);
@@ -231,7 +245,10 @@ export default function InvoicingPage() {
       setCases(loadedCases);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices, cases: loadedCases });
     } catch (err) {
-      console.error("[invoicing] failed to load cases:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[invoicing] failed to load cases:",
+        err instanceof Error ? err.message : String(err)
+      );
       const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
       setCases(cached?.cases ?? []);
     }
@@ -241,7 +258,7 @@ export default function InvoicingPage() {
     const c = cases.find((ca) => ca.slug === selectedCase);
     if (!c) return;
 
-    const settings = kanzlei ?? await loadKanzleiSettings();
+    const settings = kanzlei ?? (await loadKanzleiSettings());
     let clientAddress: string | undefined;
     if (c.clientSlug) {
       try {
@@ -252,12 +269,19 @@ export default function InvoicingPage() {
         const name = String(fm.name ?? c.clientName ?? "");
         clientAddress = [name, company, addr].filter(Boolean).join("\n");
       } catch (err) {
-        console.error("[invoice-create] failed to load contact:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[invoice-create] failed to load contact:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
     }
     const defaultRate = parseInt(settings?.stundensatz || "200", 10);
-    const billableTime = (c.timeEntries ?? []).filter((entry) => entry.billable !== false && !entry.billed);
-    const billableExpenses = (c.expenses ?? []).filter((entry) => entry.billable !== false && !entry.billed);
+    const billableTime = (c.timeEntries ?? []).filter(
+      (entry) => entry.billable !== false && !entry.billed
+    );
+    const billableExpenses = (c.expenses ?? []).filter(
+      (entry) => entry.billable !== false && !entry.billed
+    );
     if (billableTime.length === 0 && billableExpenses.length === 0) return;
 
     const items: InvoiceItem[] = billableTime.map((entry) => {
@@ -281,7 +305,7 @@ export default function InvoicingPage() {
     const expenseTotal = expenses.reduce((s, i) => s + i.amount, 0);
     const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
     // RATG = Austria (20% VAT), RVG/custom = Germany (19% VAT)
-    const vatRate = settings?.tarifModell === "ratg" ? 0.20 : 0.19;
+    const vatRate = settings?.tarifModell === "ratg" ? 0.2 : 0.19;
     const taxableBase = subtotal + expenseTotal;
     const tax = Math.round(taxableBase * vatRate * 100) / 100;
     const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
@@ -358,10 +382,14 @@ export default function InvoicingPage() {
       const billedTimeIds = new Set(billableTime.map((entry) => entry.id));
       const billedExpenseIds = new Set(billableExpenses.map((entry) => entry.id));
       const updatedTimeEntries = (c.timeEntries ?? []).map((entry) =>
-        billedTimeIds.has(entry.id) ? { ...entry, billed: true, invoice_number: invoice.number } : entry,
+        billedTimeIds.has(entry.id)
+          ? { ...entry, billed: true, invoice_number: invoice.number }
+          : entry
       );
       const updatedExpenses = (c.expenses ?? []).map((entry) =>
-        billedExpenseIds.has(entry.id) ? { ...entry, billed: true, invoice_number: invoice.number } : entry,
+        billedExpenseIds.has(entry.id)
+          ? { ...entry, billed: true, invoice_number: invoice.number }
+          : entry
       );
       const caseUpdatePayload = {
         slug: c.slug,
@@ -376,15 +404,25 @@ export default function InvoicingPage() {
         await enqueueMutation({ type: "updatePage", payload: caseUpdatePayload });
       }
       const nextInvoices = [invoice, ...invoices];
-      const nextCases = cases.map((ca) => ca.slug === c.slug ? { ...ca, timeEntries: updatedTimeEntries, expenses: updatedExpenses } : ca);
+      const nextCases = cases.map((ca) =>
+        ca.slug === c.slug
+          ? { ...ca, timeEntries: updatedTimeEntries, expenses: updatedExpenses }
+          : ca
+      );
       setInvoices(nextInvoices);
       setCases(nextCases);
-      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases: nextCases });
+      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
+        invoices: nextInvoices,
+        cases: nextCases,
+      });
       setShowCreate(false);
       setSelectedCase("");
       setAdvancePayment("");
     } catch (err) {
-      console.error("[invoicing] failed to create invoice:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[invoicing] failed to create invoice:",
+        err instanceof Error ? err.message : String(err)
+      );
     }
   }
 
@@ -392,8 +430,8 @@ export default function InvoicingPage() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const settings = kanzlei ?? await loadKanzleiSettings();
-    const vatRate = inv.vatRate || (settings?.tarifModell === "ratg" ? 0.20 : 0.19);
+    const settings = kanzlei ?? (await loadKanzleiSettings());
+    const vatRate = inv.vatRate || (settings?.tarifModell === "ratg" ? 0.2 : 0.19);
     const html = `
 <!DOCTYPE html>
 <html lang="de">
@@ -456,7 +494,9 @@ export default function InvoicingPage() {
       </tr>
     </thead>
     <tbody>
-      ${inv.items.map((item) => `
+      ${inv.items
+        .map(
+          (item) => `
         <tr>
           <td>${escapeHtml(item.date)}</td>
           <td>${escapeHtml(item.description)}</td>
@@ -464,11 +504,15 @@ export default function InvoicingPage() {
           <td class="right">${item.rate.toFixed(2)}</td>
           <td class="right">${item.amount.toFixed(2)}</td>
         </tr>
-      `).join("")}
+      `
+        )
+        .join("")}
     </tbody>
   </table>
 
-  ${inv.expenses.length > 0 ? `
+  ${
+    inv.expenses.length > 0
+      ? `
     <table>
       <thead>
         <tr>
@@ -478,16 +522,22 @@ export default function InvoicingPage() {
         </tr>
       </thead>
       <tbody>
-        ${inv.expenses.map((item) => `
+        ${inv.expenses
+          .map(
+            (item) => `
           <tr>
             <td>${escapeHtml(item.date)}</td>
             <td>${escapeHtml(item.description)}</td>
             <td class="right">${item.amount.toFixed(2)}</td>
           </tr>
-        `).join("")}
+        `
+          )
+          .join("")}
       </tbody>
     </table>
-  ` : ""}
+  `
+      : ""
+  }
 
   <div class="totals">
     <div class="total-row"><span>Honorar netto</span><span>${inv.subtotal.toFixed(2)} €</span></div>
@@ -513,7 +563,7 @@ export default function InvoicingPage() {
   }
 
   async function downloadPdf(inv: Invoice) {
-    const settings = kanzlei ?? await loadKanzleiSettings();
+    const settings = kanzlei ?? (await loadKanzleiSettings());
     const pdf = generateInvoicePdf({
       number: inv.number,
       client: inv.client,
@@ -558,7 +608,11 @@ export default function InvoicingPage() {
         setStatusMessage(`${t("inv.email_sent")} ${data.sentTo}`);
         setTimeout(() => setStatusMessage(null), 4000);
       } else {
-        setStatusMessage(data.error === "smtp_not_configured" ? t("inv.email_smtp_error") : `${t("inv.error_prefix")}: ${data.error}`);
+        setStatusMessage(
+          data.error === "smtp_not_configured"
+            ? t("inv.email_smtp_error")
+            : `${t("inv.error_prefix")}: ${data.error}`
+        );
       }
     } catch (err) {
       setStatusMessage(t("inv.email_fail"));
@@ -576,12 +630,18 @@ export default function InvoicingPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setStatusMessage(`${data.reminderCount}. ${t("inv.reminder_sent")} — ${t("inv.reminder_fee")}: ${data.fee.toFixed(2)} €`);
+        setStatusMessage(
+          `${data.reminderCount}. ${t("inv.reminder_sent")} — ${t("inv.reminder_fee")}: ${data.fee.toFixed(2)} €`
+        );
         // Refresh invoice list
         await loadInvoices();
         setTimeout(() => setStatusMessage(null), 5000);
       } else {
-        setStatusMessage(data.error === "smtp_not_configured" ? t("inv.email_smtp_error") : `${t("inv.error_prefix")}: ${data.error}`);
+        setStatusMessage(
+          data.error === "smtp_not_configured"
+            ? t("inv.email_smtp_error")
+            : `${t("inv.error_prefix")}: ${data.error}`
+        );
       }
     } catch (err) {
       setStatusMessage(t("inv.reminder_fail"));
@@ -590,16 +650,19 @@ export default function InvoicingPage() {
   }
 
   async function updateStatus(inv: Invoice, status: Invoice["status"]) {
-    const paidPatch: Pick<Invoice, "paidAt" | "paidAmount"> = status === "paid"
-      ? { paidAt: new Date().toISOString(), paidAmount: inv.total }
-      : { paidAt: inv.paidAt, paidAmount: inv.paidAmount };
+    const paidPatch: Pick<Invoice, "paidAt" | "paidAmount"> =
+      status === "paid"
+        ? { paidAt: new Date().toISOString(), paidAmount: inv.total }
+        : { paidAt: inv.paidAt, paidAmount: inv.paidAmount };
     setStatusMessage(null);
     try {
       const updatePayload = {
         slug: inv.id,
         frontmatter: {
           status,
-          ...(status === "paid" ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount } : {}),
+          ...(status === "paid"
+            ? { paid_at: paidPatch.paidAt, paid_amount: paidPatch.paidAmount }
+            : {}),
         },
       };
       if (isOnline()) {
@@ -607,12 +670,18 @@ export default function InvoicingPage() {
       } else {
         await enqueueMutation({ type: "updatePage", payload: updatePayload });
       }
-      const nextInvoices = invoices.map((i) => i.id === inv.id ? { ...i, status, ...paidPatch } : i);
+      const nextInvoices = invoices.map((i) =>
+        i.id === inv.id ? { ...i, status, ...paidPatch } : i
+      );
       setInvoices(nextInvoices);
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
       setStatusMessage(`${t("inv.updated")} ${inv.number}.`);
     } catch (err) {
-      setStatusMessage(err instanceof Error ? `${t("inv.status_save_fail")} ${err.message}` : t("inv.status_save_fail"));
+      setStatusMessage(
+        err instanceof Error
+          ? `${t("inv.status_save_fail")} ${err.message}`
+          : t("inv.status_save_fail")
+      );
     }
   }
 
@@ -635,20 +704,25 @@ export default function InvoicingPage() {
       await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: nextInvoices, cases });
       setStatusMessage(`${t("inv.deleted")} ${inv.number}.`);
     } catch (err) {
-      setStatusMessage(err instanceof Error ? `${t("inv.delete_fail")} ${err.message}` : t("inv.delete_fail"));
+      setStatusMessage(
+        err instanceof Error ? `${t("inv.delete_fail")} ${err.message}` : t("inv.delete_fail")
+      );
     }
   }
 
-  const filtered = invoices.filter((inv) =>
-    inv.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    inv.client.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = invoices.filter(
+    (inv) =>
+      inv.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inv.client.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalOutstanding = invoices.filter((i) => i.status === "sent" || i.status === "overdue").reduce((s, i) => s + i.total, 0);
+  const totalOutstanding = invoices
+    .filter((i) => i.status === "sent" || i.status === "overdue")
+    .reduce((s, i) => s + i.total, 0);
   const totalPaid = invoices.filter((i) => i.status === "paid").reduce((s, i) => s + i.total, 0);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title={t("inv.title")}
         description={t("inv.desc")}
@@ -656,7 +730,7 @@ export default function InvoicingPage() {
         actions={
           <Button
             variant="primary"
-            className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 text-sm"
+            className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
             onClick={() => setShowCreate(!showCreate)}
           >
             {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
@@ -669,11 +743,15 @@ export default function InvoicingPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
-          <div className="text-xl font-bold text-amber-600">{totalOutstanding.toLocaleString("de-DE")} €</div>
+          <div className="text-xl font-bold text-amber-600">
+            {totalOutstanding.toLocaleString("de-DE")} €
+          </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
-          <div className="text-xl font-bold text-emerald-600">{totalPaid.toLocaleString("de-DE")} €</div>
+          <div className="text-xl font-bold text-emerald-600">
+            {totalPaid.toLocaleString("de-DE")} €
+          </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.invoices")}</div>
@@ -682,28 +760,36 @@ export default function InvoicingPage() {
       </div>
 
       {statusMessage && (
-        <div className={cn(
-          "rounded-xl border px-4 py-3 text-sm",
-          statusMessage.includes("nicht") || statusMessage.includes("fehl") || statusMessage.includes("fail") || statusMessage.includes("not") || statusMessage.includes("error")
-            ? "border-red-500/20 bg-red-500/5 text-red-700"
-            : "border-emerald-500/20 bg-emerald-500/5 text-emerald-700",
-        )}>
+        <div
+          className={cn(
+            "rounded-xl border px-4 py-3 text-sm",
+            statusMessage.includes("nicht") ||
+              statusMessage.includes("fehl") ||
+              statusMessage.includes("fail") ||
+              statusMessage.includes("not") ||
+              statusMessage.includes("error")
+              ? "border-red-500/20 bg-red-500/5 text-red-700"
+              : "border-emerald-500/20 bg-emerald-500/5 text-emerald-700"
+          )}
+        >
           {statusMessage}
         </div>
       )}
 
       {/* Create Invoice */}
       {showCreate && (
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
+        <div className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
           <h2 className="text-sm font-semibold text-emerald-600">{t("inv.create_from_case")}</h2>
           <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div>
-                <label className="text-xs text-[color:var(--ds-text-muted)] block mb-1">{t("inv.select_case")}</label>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("inv.select_case")}
+                </label>
                 <select
                   value={selectedCase}
                   onChange={(e) => setSelectedCase(e.target.value)}
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-emerald-500/50"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
                 >
                   <option value="">— {t("inv.select_case")} —</option>
                   {cases.map((c) => (
@@ -714,11 +800,13 @@ export default function InvoicingPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-[color:var(--ds-text-muted)] block mb-1">{t("inv.invoice_type")}</label>
+                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                  {t("inv.invoice_type")}
+                </label>
                 <select
                   value={invoiceType}
                   onChange={(e) => setInvoiceType(e.target.value as Invoice["invoiceType"])}
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-emerald-500/50"
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
                 >
                   <option value="standard">{t("inv.type_standard")}</option>
                   <option value="teilrechnung">{t("inv.type_teilrechnung")}</option>
@@ -727,41 +815,53 @@ export default function InvoicingPage() {
                 </select>
               </div>
             </div>
-            {selectedCase && (() => {
-              const c = cases.find((ca) => ca.slug === selectedCase);
-              const openTime = (c?.timeEntries ?? []).filter((entry) => entry.billable !== false && !entry.billed);
-              const openExpenses = (c?.expenses ?? []).filter((entry) => entry.billable !== false && !entry.billed);
-              if (openTime.length === 0 && openExpenses.length === 0) return (
-                <div className="text-sm text-amber-600">{t("inv.no_billable")}</div>
-              );
-              const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
-              const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
-              return (
-                <div className="text-sm text-[color:var(--ds-text-muted)]">
-                  {openTime.length} {t("inv.open_bookings")} · {Math.floor(totalMinutes / 60)}h {totalMinutes % 60}min ·
-                  {' '}{openExpenses.length} {t("inv.expenses")} ({expenseTotal.toFixed(2)} €) ·
-                  {' '}{t("inv.fee_estimated")}: {Math.round((totalMinutes / 60) * (parseInt(kanzlei?.stundensatz || "200", 10))).toLocaleString("de-DE")} €
-                </div>
-              );
-            })()}
+            {selectedCase &&
+              (() => {
+                const c = cases.find((ca) => ca.slug === selectedCase);
+                const openTime = (c?.timeEntries ?? []).filter(
+                  (entry) => entry.billable !== false && !entry.billed
+                );
+                const openExpenses = (c?.expenses ?? []).filter(
+                  (entry) => entry.billable !== false && !entry.billed
+                );
+                if (openTime.length === 0 && openExpenses.length === 0)
+                  return <div className="text-sm text-amber-600">{t("inv.no_billable")}</div>;
+                const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
+                const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
+                return (
+                  <div className="text-sm text-[color:var(--ds-text-muted)]">
+                    {openTime.length} {t("inv.open_bookings")} · {Math.floor(totalMinutes / 60)}h{" "}
+                    {totalMinutes % 60}min · {openExpenses.length} {t("inv.expenses")} (
+                    {expenseTotal.toFixed(2)} €) · {t("inv.fee_estimated")}:{" "}
+                    {Math.round(
+                      (totalMinutes / 60) * parseInt(kanzlei?.stundensatz || "200", 10)
+                    ).toLocaleString("de-DE")}{" "}
+                    €
+                  </div>
+                );
+              })()}
             <div>
-              <label className="text-xs text-[color:var(--ds-text-muted)] block mb-1">{t("inv.advance_payment")}</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                {t("inv.advance_payment")}
+              </label>
               <input
                 type="number"
                 step="0.01"
                 value={advancePayment}
                 onChange={(e) => setAdvancePayment(e.target.value)}
                 placeholder="0,00"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-emerald-500/50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-emerald-500/50 focus:outline-none"
               />
             </div>
             <div className="flex gap-2">
               <Button
                 variant="primary"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 text-sm"
+                className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
                 onClick={createInvoice}
                 disabled={!selectedCase || (userRole !== "admin" && userRole !== "lawyer")}
-                title={userRole !== "admin" && userRole !== "lawyer" ? t("inv.admin_lawyer_only") : ""}
+                title={
+                  userRole !== "admin" && userRole !== "lawyer" ? t("inv.admin_lawyer_only") : ""
+                }
               >
                 <FileText size={14} />
                 {t("inv.create")}
@@ -782,16 +882,26 @@ export default function InvoicingPage() {
 
       {/* Invoice List */}
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label={t("inv.loading")}>
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" aria-hidden="true" />
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label={t("inv.loading")}
+        >
+          <Loader2
+            size={24}
+            className="animate-spin text-[color:var(--ds-text-muted)]"
+            aria-hidden="true"
+          />
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
             <FileText size={28} className="text-[color:var(--ds-border-strong)]" />
           </div>
-          <h3 className="text-lg font-semibold text-[color:var(--ds-text)] mb-2 tracking-tight">{t("inv.empty_title")}</h3>
-          <p className="text-sm text-[color:var(--ds-text-muted)] mb-6 max-w-sm leading-relaxed">
+          <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
+            {t("inv.empty_title")}
+          </h3>
+          <p className="mb-6 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
             {t("inv.empty_desc")}
           </p>
           <Button variant="glow" size="md" onClick={() => setShowCreate(true)}>
@@ -806,43 +916,64 @@ export default function InvoicingPage() {
             return (
               <div
                 key={inv.id}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-hover)] transition-all"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-all hover:bg-[color:var(--ds-hover)]"
               >
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", STATUS_BG[status.color])} aria-hidden="true">
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                    STATUS_BG[status.color]
+                  )}
+                  aria-hidden="true"
+                >
                   <StatusIcon size={18} className={STATUS_TEXT[status.color]} />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">{inv.number}</span>
-                    <Badge variant="default" className={cn("text-[10px] border", statusBadgeClasses(status.color))}>
+                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                      {inv.number}
+                    </span>
+                    <Badge
+                      variant="default"
+                      className={cn("border text-xs", statusBadgeClasses(status.color))}
+                    >
                       {t(status.labelKey)}
                     </Badge>
                     {inv.reminderCount ? (
-                      <Badge variant="default" className="text-[10px] border bg-amber-600/15 text-amber-600 border-amber-500/30">
+                      <Badge
+                        variant="default"
+                        className="border border-amber-500/30 bg-amber-600/15 text-xs text-amber-600"
+                      >
                         {inv.reminderCount}. {t("inv.reminder")}
                       </Badge>
                     ) : null}
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                    {inv.client} · {inv.items.length + inv.expenses.length} {t("inv.positions")} · {inv.date}
-                    {inv.paidAt ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString("de-DE")}` : ""}
+                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    {inv.client} · {inv.items.length + inv.expenses.length} {t("inv.positions")} ·{" "}
+                    {inv.date}
+                    {inv.paidAt
+                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString("de-DE")}`
+                      : ""}
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-bold text-[color:var(--ds-text)]">{inv.total.toFixed(2)} €</div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.incl_vat")}</div>
+                <div className="shrink-0 text-right">
+                  <div className="text-sm font-bold text-[color:var(--ds-text)]">
+                    {inv.total.toFixed(2)} €
+                  </div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("inv.incl_vat")}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => void printInvoice(inv)}
-                    className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-emerald-600 hover:bg-emerald-500/10 transition-all"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-emerald-500/10 hover:text-emerald-600"
                     title={t("inv.print")}
                   >
                     <Printer size={14} />
                   </button>
                   <button
                     onClick={() => void downloadPdf(inv)}
-                    className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all"
+                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all"
                     title={t("inv.download_pdf")}
                   >
                     <FileText size={14} />
@@ -850,7 +981,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer" || userRole === "assistant") && (
                     <button
                       onClick={() => void sendInvoiceEmail(inv)}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-blue-600 hover:bg-blue-500/10 transition-all"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-blue-500/10 hover:text-blue-600"
                       title={t("inv.send_email")}
                     >
                       <Mail size={14} />
@@ -859,7 +990,7 @@ export default function InvoicingPage() {
                   {inv.status === "draft" && (
                     <button
                       onClick={() => updateStatus(inv, "sent")}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-blue-600 hover:bg-blue-500/10 transition-all"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-blue-500/10 hover:text-blue-600"
                       title={t("inv.mark_sent")}
                     >
                       <Send size={14} />
@@ -868,34 +999,37 @@ export default function InvoicingPage() {
                   {inv.status === "sent" && (
                     <button
                       onClick={() => updateStatus(inv, "paid")}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-emerald-600 hover:bg-emerald-500/10 transition-all"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-emerald-500/10 hover:text-emerald-600"
                       title={t("inv.mark_paid")}
                     >
                       <CheckCircle2 size={14} />
                     </button>
                   )}
-                  {inv.status !== "paid" && inv.status !== "cancelled" && (userRole === "admin" || userRole === "lawyer") && (
-                    <button
-                      onClick={() => updateStatus(inv, "cancelled")}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all"
-                      title={t("inv.cancel_invoice")}
-                    >
-                      <XCircle size={14} />
-                    </button>
-                  )}
-                  {(inv.status === "sent" || inv.status === "overdue") && (userRole === "admin" || userRole === "lawyer") && (
-                    <button
-                      onClick={() => void sendReminder(inv)}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-amber-600 hover:bg-amber-500/10 transition-all"
-                      title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
-                    >
-                      <AlertTriangle size={14} />
-                    </button>
-                  )}
+                  {inv.status !== "paid" &&
+                    inv.status !== "cancelled" &&
+                    (userRole === "admin" || userRole === "lawyer") && (
+                      <button
+                        onClick={() => updateStatus(inv, "cancelled")}
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                        title={t("inv.cancel_invoice")}
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    )}
+                  {(inv.status === "sent" || inv.status === "overdue") &&
+                    (userRole === "admin" || userRole === "lawyer") && (
+                      <button
+                        onClick={() => void sendReminder(inv)}
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-amber-500/10 hover:text-amber-600"
+                        title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
+                      >
+                        <AlertTriangle size={14} />
+                      </button>
+                    )}
                   {(userRole === "admin" || userRole === "lawyer") && (
                     <button
                       onClick={() => deleteInvoice(inv)}
-                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
                       title={t("inv.delete")}
                     >
                       <Trash2 size={14} />
@@ -921,17 +1055,27 @@ function RvgDialog() {
     <>
       <Button
         variant="outline"
-        className="text-sm border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:border-[color:var(--ds-border-strong)]"
+        className="border-[color:var(--ds-border)] text-sm text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
         onClick={() => setOpen(true)}
       >
         RVG {t("inv.rvg_calculate")}
       </Button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-md rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-[color:var(--ds-text)]">{t("inv.rvg_title")}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="w-full max-w-md space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-semibold text-[color:var(--ds-text)]">
+              {t("inv.rvg_title")}
+            </h3>
             <div>
-              <label className="text-xs text-[color:var(--ds-text-muted)] block mb-1">{t("inv.rvg_streitwert")} (€)</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                {t("inv.rvg_streitwert")} (€)
+              </label>
               <input
                 type="number"
                 value={streitwert}
@@ -945,22 +1089,63 @@ function RvgDialog() {
                   }
                 }}
                 placeholder="z. B. 10000"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
             {result && (
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_basis")} (1,0)</span><span className="text-[color:var(--ds-text)]">{result.basisGebuehr.toFixed(2)} €</span></div>
-                <div className="flex justify-between"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_verfahren")} (1,3)</span><span className="text-[color:var(--ds-text)]">{result.verfahrensgebuehr.toFixed(2)} €</span></div>
-                <div className="flex justify-between"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_termins")} (1,2)</span><span className="text-[color:var(--ds-text)]">{result.terminsgebuehr.toFixed(2)} €</span></div>
-                <div className="flex justify-between"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_auslagen")}</span><span className="text-[color:var(--ds-text)]">{result.auslagenpauschale.toFixed(2)} €</span></div>
-                <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-2"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_netto")}</span><span className="text-[color:var(--ds-text)] font-medium">{result.summeNetto.toFixed(2)} €</span></div>
-                <div className="flex justify-between"><span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_vat")} (19 %)</span><span className="text-[color:var(--ds-text)]">{result.mwst.toFixed(2)} €</span></div>
-                <div className="flex justify-between text-emerald-600 font-semibold"><span>{t("inv.rvg_brutto")}</span><span>{result.summeBrutto.toFixed(2)} €</span></div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--ds-text-muted)]">
+                    {t("inv.rvg_basis")} (1,0)
+                  </span>
+                  <span className="text-[color:var(--ds-text)]">
+                    {result.basisGebuehr.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--ds-text-muted)]">
+                    {t("inv.rvg_verfahren")} (1,3)
+                  </span>
+                  <span className="text-[color:var(--ds-text)]">
+                    {result.verfahrensgebuehr.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--ds-text-muted)]">
+                    {t("inv.rvg_termins")} (1,2)
+                  </span>
+                  <span className="text-[color:var(--ds-text)]">
+                    {result.terminsgebuehr.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_auslagen")}</span>
+                  <span className="text-[color:var(--ds-text)]">
+                    {result.auslagenpauschale.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-2">
+                  <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_netto")}</span>
+                  <span className="font-medium text-[color:var(--ds-text)]">
+                    {result.summeNetto.toFixed(2)} €
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--ds-text-muted)]">
+                    {t("inv.rvg_vat")} (19 %)
+                  </span>
+                  <span className="text-[color:var(--ds-text)]">{result.mwst.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between font-semibold text-emerald-600">
+                  <span>{t("inv.rvg_brutto")}</span>
+                  <span>{result.summeBrutto.toFixed(2)} €</span>
+                </div>
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>{t("inv.rvg_close")}</Button>
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+                {t("inv.rvg_close")}
+              </Button>
             </div>
           </div>
         </div>

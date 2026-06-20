@@ -188,7 +188,7 @@ export default function ConnectorsPage() {
                     {isLegal && (
                       <Badge
                         variant="default"
-                        className="brand-soft brand-border brand-text text-[10px]"
+                        className="brand-soft brand-border brand-text text-xs"
                       >
                         Kanzlei
                       </Badge>
@@ -196,7 +196,7 @@ export default function ConnectorsPage() {
                     {!c.configured && (
                       <Badge
                         variant="default"
-                        className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[10px] text-[color:var(--ds-text-muted)]"
+                        className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                       >
                         Nicht eingerichtet
                       </Badge>

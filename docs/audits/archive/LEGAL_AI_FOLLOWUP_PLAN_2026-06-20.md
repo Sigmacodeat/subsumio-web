@@ -1,5 +1,9 @@
 # Subsumio Legal-AI — Folge-Plan (Stand 2026-06-20)
 
+> **Archiviert.** Relevante offene Punkte wurden in
+> `docs/audits/LEGAL_AI_IMPLEMENTATION_STATUS.md` übernommen. Dieses Dokument
+> bleibt als Audit-Historie erhalten und ist nicht mehr die aktive Todo-Liste.
+
 Dieser Plan ist das Ergebnis einer vollständigen Paket-für-Paket-Verifikation gegen
 `docs/audits/LEGAL_AI_ACTION_TODO_PLAN_2026-06-20.md` — nicht gegen dessen eigene
 Status-Spalte, sondern gegen den tatsächlichen Code. Ausgenommen: die Matter-Scope-/

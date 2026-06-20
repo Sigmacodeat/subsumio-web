@@ -58,10 +58,19 @@ export default function LiveDemo({
   const t = {
     ask: lang === "en" ? "Ask" : "Fragen",
     placeholder: lang === "en" ? "Ask the demo brain…" : "Frag das Demo-Brain…",
-    scripted: lang === "en" ? "Example answer · live brain after deploy" : "Beispiel-Antwort · Live-Brain nach Deploy",
+    scripted:
+      lang === "en"
+        ? "Example answer · live brain after deploy"
+        : "Beispiel-Antwort · Live-Brain nach Deploy",
     liveLabel: lang === "en" ? "Live from the demo brain:" : "Live aus dem Demo-Brain:",
-    none: lang === "en" ? "No demo matches — here's the example answer." : "Keine Demo-Treffer — hier die Beispiel-Antwort.",
-    rate: lang === "en" ? "Demo limit reached — try again later." : "Demo-Limit erreicht — später erneut.",
+    none:
+      lang === "en"
+        ? "No demo matches — here's the example answer."
+        : "Keine Demo-Treffer — hier die Beispiel-Antwort.",
+    rate:
+      lang === "en"
+        ? "Demo limit reached — try again later."
+        : "Demo-Limit erreicht — später erneut.",
   };
 
   async function ask() {
@@ -92,65 +101,86 @@ export default function LiveDemo({
 
   return (
     <div
-      className="rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/10 overflow-hidden text-left"
+      className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] text-left shadow-2xl shadow-black/10 [background:var(--mk-surface)]"
       role="region"
       aria-label={lang === "de" ? "Live-Demo" : "Live demo"}
     >
       {/* window bar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b [border-color:var(--mk-border)] [background:var(--mk-bg)]">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-        <div className="flex-1 ml-4 text-xs [color:var(--mk-text)] opacity-60 font-mono">{windowTitle}</div>
+      <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
+        <div className="terminal-dots flex items-center gap-2">
+          <span className="terminal-dot-red" />
+          <span className="terminal-dot-amber" />
+          <span className="terminal-dot-green" />
+        </div>
+        <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text)] opacity-60">
+          {windowTitle}
+        </div>
       </div>
 
       {/* editable question */}
       <div className="px-5 pt-5">
         <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-full brand-soft border brand-border flex items-center justify-center shrink-0 mt-0.5">
-            <span className="text-[10px] brand-text font-semibold">{you}</span>
+          <div className="brand-soft brand-border mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
+            <span className="brand-text text-xs font-semibold">{you}</span>
           </div>
-          <div className="flex-1 flex items-end gap-2 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-bg)] px-3 py-2 focus-within:brand-border-strong transition-colors">
+          <div className="focus-within:brand-border-strong flex flex-1 items-end gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 transition-colors [background:var(--mk-bg)]">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  ask();
+                }
+              }}
               rows={2}
               placeholder={t.placeholder}
               aria-label={t.placeholder}
-              className="flex-1 bg-transparent text-sm [color:var(--mk-text)] placeholder:[color:var(--mk-text-subtle)] resize-none focus:outline-none leading-relaxed"
+              className="flex-1 resize-none bg-transparent text-sm leading-relaxed [color:var(--mk-text)] placeholder:[color:var(--mk-text-subtle)] focus:outline-none"
             />
             <button
               onClick={ask}
               disabled={loading || !input.trim()}
               aria-label={t.ask}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg brand-bg disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 transition-colors"
+              className="brand-bg inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-40"
             >
-              {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} {t.ask}
+              {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}{" "}
+              {t.ask}
             </button>
           </div>
         </div>
       </div>
 
       {/* answer */}
-      <div className="px-5 pb-4 pt-4">
+      <div className="px-5 pt-4 pb-4">
         <div className="flex items-start gap-3">
-          <SubsumioMark size={28} className="shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
+          <SubsumioMark size={28} className="mt-0.5 shrink-0" />
+          <div className="min-w-0 flex-1">
             {live ? (
               <div>
-                <p className="text-xs brand-text mb-2 flex items-center gap-1.5"><Sparkles size={12} /> {t.liveLabel}</p>
+                <p className="brand-text mb-2 flex items-center gap-1.5 text-xs">
+                  <Sparkles size={12} /> {t.liveLabel}
+                </p>
                 <ul className="space-y-2">
                   {live.map((r, i) => (
-                    <li key={(r.slug ?? "") + i} className="text-sm [color:var(--mk-text-muted)] leading-relaxed">
-                      <span className="[color:var(--mk-text-muted)]">{r.snippet || r.chunk_text || r.text || r.evidence || r.title}</span>
-                      {r.slug && <span className="ml-2 text-xs font-mono brand-text brand-soft px-1.5 py-0.5 rounded">{r.slug}</span>}
+                    <li
+                      key={(r.slug ?? "") + i}
+                      className="text-sm leading-relaxed [color:var(--mk-text-muted)]"
+                    >
+                      <span className="[color:var(--mk-text-muted)]">
+                        {r.snippet || r.chunk_text || r.text || r.evidence || r.title}
+                      </span>
+                      {r.slug && (
+                        <span className="brand-text brand-soft ml-2 rounded px-1.5 py-0.5 font-mono text-xs">
+                          {r.slug}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <div className="text-sm [color:var(--mk-text)] leading-relaxed whitespace-pre-line">
+              <div className="text-sm leading-relaxed whitespace-pre-line [color:var(--mk-text)]">
                 {renderStrongText(a)}
               </div>
             )}
@@ -159,18 +189,27 @@ export default function LiveDemo({
       </div>
 
       {/* sources / note */}
-      <div className="px-5 py-3 border-t [border-color:var(--mk-border)] [background:var(--mk-bg)] flex items-center gap-2 flex-wrap min-h-[40px]">
+      <div className="flex min-h-[40px] flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-5 py-3 [background:var(--mk-bg)]">
         {note ? (
           <span className="text-xs [color:var(--signal-amber)] opacity-80">{note}</span>
         ) : !live ? (
           <>
             <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
             {sources.map((slug) => (
-              <span key={slug} className="text-xs font-mono brand-text brand-soft px-2 py-0.5 rounded">{slug}</span>
+              <span
+                key={slug}
+                className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-xs"
+              >
+                {slug}
+              </span>
             ))}
           </>
         ) : (
-          <span className="text-xs [color:var(--mk-text-subtle)]">{lang === "en" ? "Read-only demo brain · your data stays yours" : "Read-only Demo-Brain · deine Daten bleiben deine"}</span>
+          <span className="text-xs [color:var(--mk-text-subtle)]">
+            {lang === "en"
+              ? "Read-only demo brain · your data stays yours"
+              : "Read-only Demo-Brain · deine Daten bleiben deine"}
+          </span>
         )}
       </div>
     </div>

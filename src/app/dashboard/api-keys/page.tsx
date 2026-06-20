@@ -57,7 +57,7 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="API-Keys"
         description="Drittanbieter-Integration (Zapier, beA, DATEV)"
@@ -65,40 +65,54 @@ export default function ApiKeysPage() {
       />
 
       {/* Create Key */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
-        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Neuen API-Key erstellen</h2>
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          Neuen API-Key erstellen
+        </h2>
         <div className="flex gap-2">
           <input
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             placeholder="z. B. Zapier-Integration"
-            className="flex-1 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             onKeyDown={(e) => e.key === "Enter" && createKey()}
           />
           <Button
             variant="primary"
-            className="brand-bg brand-bg text-white gap-2 text-sm"
+            className="brand-bg brand-bg gap-2 text-sm text-white"
             onClick={createKey}
             disabled={createMutation.isPending || !newKeyName.trim()}
           >
-            {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            {createMutation.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
             Erstellen
           </Button>
         </div>
 
         {newKeyPlaintext && (
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+          <div className="space-y-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-600" />
-              <span className="text-sm font-medium text-amber-600">Key wird nur EINMAL angezeigt</span>
+              <span className="text-sm font-medium text-amber-600">
+                Key wird nur EINMAL angezeigt
+              </span>
             </div>
-            <div className="flex items-center gap-2 bg-[color:var(--ds-surface)] rounded-lg px-3 py-2 border border-[color:var(--ds-border)]">
-              <code className="text-sm text-[color:var(--ds-text)] font-mono flex-1 break-all">{newKeyPlaintext}</code>
+            <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
+              <code className="flex-1 font-mono text-sm break-all text-[color:var(--ds-text)]">
+                {newKeyPlaintext}
+              </code>
               <button
                 onClick={() => copyKey(newKeyPlaintext)}
-                className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all"
+                className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
               >
-                {copied ? <CheckCircle2 size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                {copied ? (
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
           </div>
@@ -112,32 +126,52 @@ export default function ApiKeysPage() {
       </div>
 
       {/* Keys List */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
-              <th className="text-left px-4 py-3 font-medium">Name</th>
-              <th className="text-left px-4 py-3 font-medium">Prefix</th>
-              <th className="text-left px-4 py-3 font-medium">Scopes</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Erstellt</th>
-              <th className="text-right px-4 py-3 font-medium"></th>
+              <th className="px-4 py-3 text-left font-medium">Name</th>
+              <th className="px-4 py-3 text-left font-medium">Prefix</th>
+              <th className="px-4 py-3 text-left font-medium">Scopes</th>
+              <th className="px-4 py-3 text-left font-medium">Status</th>
+              <th className="px-4 py-3 text-left font-medium">Erstellt</th>
+              <th className="px-4 py-3 text-right font-medium"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-[color:var(--ds-text-muted)]"><Loader2 size={16} className="animate-spin inline mr-2" />Lade…</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-[color:var(--ds-text-muted)]">
+                  <Loader2 size={16} className="mr-2 inline animate-spin" />
+                  Lade…
+                </td>
+              </tr>
             ) : keys.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-[color:var(--ds-text-muted)]">Noch keine API-Keys vorhanden.</td></tr>
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-[color:var(--ds-text-muted)]">
+                  Noch keine API-Keys vorhanden.
+                </td>
+              </tr>
             ) : (
               keys.map((k) => (
-                <tr key={k.id} className="border-b border-[color:var(--ds-border)]/50 hover:bg-[color:var(--ds-surface)] transition-colors">
+                <tr
+                  key={k.id}
+                  className="border-b border-[color:var(--ds-border)]/50 transition-colors hover:bg-[color:var(--ds-surface)]"
+                >
                   <td className="px-4 py-3 text-[color:var(--ds-text)]">{k.name}</td>
-                  <td className="px-4 py-3 text-[color:var(--ds-text-muted)] font-mono">{k.prefix}…</td>
+                  <td className="px-4 py-3 font-mono text-[color:var(--ds-text-muted)]">
+                    {k.prefix}…
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {k.scopes.map((s) => (
-                        <Badge key={s} variant="default" className="text-[10px] brand-soft brand-border brand-text">{s}</Badge>
+                        <Badge
+                          key={s}
+                          variant="default"
+                          className="brand-soft brand-border brand-text text-xs"
+                        >
+                          {s}
+                        </Badge>
                       ))}
                     </div>
                   </td>
@@ -148,11 +182,13 @@ export default function ApiKeysPage() {
                       <span className="text-xs text-red-600">Inaktiv</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[color:var(--ds-text-muted)]">{new Date(k.createdAt).toLocaleDateString("de-DE")}</td>
+                  <td className="px-4 py-3 text-[color:var(--ds-text-muted)]">
+                    {new Date(k.createdAt).toLocaleDateString("de-DE")}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => deleteKey(k.id)}
-                      className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
                       title="Löschen"
                     >
                       <Trash2 size={14} />
@@ -166,14 +202,18 @@ export default function ApiKeysPage() {
       </div>
 
       {/* Webhook Info */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2">
+      <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Webhook-Endpoint</h2>
-        <code className="block text-xs text-[color:var(--ds-text-muted)] font-mono bg-[color:var(--ds-surface)] rounded-lg px-3 py-2 border border-[color:var(--ds-border)]">
+        <code className="block rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-xs text-[color:var(--ds-text-muted)]">
           POST https://ihre-domain.de/api/webhook/incoming
         </code>
         <p className="text-xs text-[color:var(--ds-text-muted)]">
-          Header: <code className="brand-text">X-API-Key: sk_live_…</code><br />
-          Events: <code className="brand-text">case.created</code>, <code className="brand-text">deadline.due</code>, <code className="brand-text">invoice.paid</code>, <code className="brand-text">email.received</code>
+          Header: <code className="brand-text">X-API-Key: sk_live_…</code>
+          <br />
+          Events: <code className="brand-text">case.created</code>,{" "}
+          <code className="brand-text">deadline.due</code>,{" "}
+          <code className="brand-text">invoice.paid</code>,{" "}
+          <code className="brand-text">email.received</code>
         </p>
       </div>
     </div>

@@ -35,10 +35,15 @@ export interface EthicalWallCheckResult {
  */
 export function checkEthicalWall(
   userId: string,
-  permissions: PermissionInfo | undefined,
+  permissions: PermissionInfo | undefined
 ): EthicalWallCheckResult {
   if (!permissions) {
-    return { allowed: true, reason: "no_permissions_defined", ethical_wall_active: false, user_blocked: false };
+    return {
+      allowed: true,
+      reason: "no_permissions_defined",
+      ethical_wall_active: false,
+      user_blocked: false,
+    };
   }
 
   const blockedUsers = permissions.blocked_users ?? [];
@@ -68,7 +73,7 @@ export function checkEthicalWall(
 export function checkPermissionWithEthicalWall(
   canPerformAction: boolean,
   userId: string,
-  permissions: PermissionInfo | undefined,
+  permissions: PermissionInfo | undefined
 ): EthicalWallCheckResult & { rbac_allowed: boolean } {
   const wallCheck = checkEthicalWall(userId, permissions);
 
@@ -100,7 +105,7 @@ export function checkPermissionWithEthicalWall(
  */
 export function filterUsersByEthicalWall(
   userIds: string[],
-  permissions: PermissionInfo | undefined,
+  permissions: PermissionInfo | undefined
 ): { allowed: string[]; blocked: string[] } {
   if (!permissions?.blocked_users) {
     return { allowed: [...userIds], blocked: [] };
@@ -132,6 +137,7 @@ export const PROVIDER_REGIONS: Record<ModelProvider, ProviderRegion> = {
   mistral: "eu",
   meta: "us",
   "zero-entropy": "eu",
+  deepseek: "global",
 };
 
 export type DataResidencyRequirement = "none" | "eu_only" | "eu_or_adequate";
@@ -169,18 +175,30 @@ export function getDataResidencyRequirement(privilege: PrivilegeLevel): DataResi
  */
 export function checkAiProviderPolicy(
   provider: ModelProvider,
-  privilege: PrivilegeLevel,
+  privilege: PrivilegeLevel
 ): AiProviderPolicyResult {
   const region = PROVIDER_REGIONS[provider];
   const required = getDataResidencyRequirement(privilege);
 
   if (required === "none") {
-    return { allowed: true, reason: "no_residency_requirement", provider, region, required_region: required };
+    return {
+      allowed: true,
+      reason: "no_residency_requirement",
+      provider,
+      region,
+      required_region: required,
+    };
   }
 
   if (required === "eu_only") {
     if (region === "eu") {
-      return { allowed: true, reason: "provider_in_eu", provider, region, required_region: required };
+      return {
+        allowed: true,
+        reason: "provider_in_eu",
+        provider,
+        region,
+        required_region: required,
+      };
     }
     return {
       allowed: false,
@@ -220,7 +238,7 @@ export function checkAiProviderPolicy(
  */
 export function filterModelsByPrivilege(
   models: ModelEntry[],
-  privilege: PrivilegeLevel,
+  privilege: PrivilegeLevel
 ): { allowed: ModelEntry[]; blocked: Array<{ model: ModelEntry; reason: string }> } {
   const allowed: ModelEntry[] = [];
   const blocked: Array<{ model: ModelEntry; reason: string }> = [];
@@ -246,7 +264,9 @@ export function filterModelsByPrivilege(
  * internal → none
  * public → none
  */
-export function getDataResidencyForConfidentiality(level: ConfidentialityLevel): DataResidencyRequirement {
+export function getDataResidencyForConfidentiality(
+  level: ConfidentialityLevel
+): DataResidencyRequirement {
   switch (level) {
     case "restricted":
       return "eu_only";
@@ -264,7 +284,7 @@ export function getDataResidencyForConfidentiality(level: ConfidentialityLevel):
  */
 export function getCombinedDataResidency(
   privilege: PrivilegeLevel,
-  confidentiality: ConfidentialityLevel,
+  confidentiality: ConfidentialityLevel
 ): DataResidencyRequirement {
   const privReq = getDataResidencyRequirement(privilege);
   const confReq = getDataResidencyForConfidentiality(confidentiality);
@@ -290,7 +310,7 @@ export function createEthicalWallAudit(
   userId: string,
   action: string,
   result: EthicalWallCheckResult,
-  caseSlug?: string,
+  caseSlug?: string
 ): EthicalWallAuditEntry {
   return {
     id: `ew-audit-${Date.now()}-${userId}`,

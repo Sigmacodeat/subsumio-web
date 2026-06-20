@@ -849,9 +849,11 @@ export function DemoWindow({
   return (
     <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] text-left shadow-2xl shadow-black/20 [background:var(--mk-surface)]">
       <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
-        <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-        <div className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-        <div className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+        <div className="terminal-dots flex items-center gap-2">
+          <span className="terminal-dot-red" />
+          <span className="terminal-dot-amber" />
+          <span className="terminal-dot-green" />
+        </div>
         <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text)] opacity-60">
           {windowTitle}
         </div>
@@ -859,7 +861,7 @@ export function DemoWindow({
       <div className="px-6 pt-6 pb-4">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/15">
-            <span className="brand-text text-[10px] font-semibold">{you}</span>
+            <span className="brand-text text-xs font-semibold">{you}</span>
           </div>
           <p className="text-sm [color:var(--mk-text)]">{q}</p>
         </div>

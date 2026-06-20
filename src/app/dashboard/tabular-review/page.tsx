@@ -65,7 +65,7 @@ export default function TabularReviewPage() {
     const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const header = ["Dokument", ...result.questions].map(esc).join(",");
     const lines = result.rows.map((r) =>
-      [r.title, ...r.cells.map((c) => c.answer)].map(esc).join(","),
+      [r.title, ...r.cells.map((c) => c.answer)].map(esc).join(",")
     );
     const csv = [header, ...lines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -76,65 +76,86 @@ export default function TabularReviewPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-full space-y-6">
+    <div className="max-w-full space-y-6 p-6 md:p-8">
       <PageHeader
         title="Massen-Review"
         description="Eine Frage gegen viele Dokumente — Antworten im Raster, jede Zelle mit Quelle"
       />
 
       {/* Konfiguration */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">Dokumenttyp (Zeilen)</label>
+            <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+              Dokumenttyp (Zeilen)
+            </label>
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
-              className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             >
-              {DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {DOC_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">Max. Dokumente</label>
+            <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+              Max. Dokumente
+            </label>
             <input
-              type="number" min={1} max={50} value={limit}
+              type="number"
+              min={1}
+              max={50}
+              value={limit}
               onChange={(e) => setLimit(Math.min(Math.max(1, Number(e.target.value) || 1), 50))}
-              className="w-24 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+              className="w-24 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs text-[color:var(--ds-text-muted)]">Fragen (Spalten, max. 8)</label>
+          <label className="block text-xs text-[color:var(--ds-text-muted)]">
+            Fragen (Spalten, max. 8)
+          </label>
           {questions.map((q, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
                 value={q}
                 onChange={(e) => setQuestion(i, e.target.value)}
                 placeholder={`Frage ${i + 1}`}
-                className="flex-1 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
               {questions.length > 1 && (
-                <button onClick={() => removeQuestion(i)} className="text-[color:var(--ds-text-muted)] hover:text-red-600 p-2"><X size={15} /></button>
+                <button
+                  onClick={() => removeQuestion(i)}
+                  className="p-2 text-[color:var(--ds-text-muted)] hover:text-red-600"
+                >
+                  <X size={15} />
+                </button>
               )}
             </div>
           ))}
           {questions.length < 8 && (
-            <button onClick={addQuestion} className="flex items-center gap-1.5 text-xs brand-text hover:underline">
+            <button
+              onClick={addQuestion}
+              className="brand-text flex items-center gap-1.5 text-xs hover:underline"
+            >
               <Plus size={13} /> Frage hinzufügen
             </button>
           )}
         </div>
 
-        <Button onClick={run} disabled={loading} className="gap-2 brand-bg brand-bg text-white">
+        <Button onClick={run} disabled={loading} className="brand-bg brand-bg gap-2 text-white">
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Table2 size={15} />}
           {loading ? "Analysiere…" : "Review starten"}
         </Button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-sm text-amber-600">
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -145,33 +166,55 @@ export default function TabularReviewPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-[color:var(--ds-text-muted)]">
               {result.document_count} Dokumente × {result.questions.length} Fragen
-              {result.truncated && <span className="text-amber-600"> · gekürzt auf {result.document_count}</span>}
+              {result.truncated && (
+                <span className="text-amber-600"> · gekürzt auf {result.document_count}</span>
+              )}
             </p>
-            <button onClick={exportCsv} className="flex items-center gap-1.5 text-xs brand-text hover:underline">
+            <button
+              onClick={exportCsv}
+              className="brand-text flex items-center gap-1.5 text-xs hover:underline"
+            >
               <Download size={13} /> CSV-Export
             </button>
           </div>
           <div className="overflow-x-auto rounded-xl border border-[color:var(--ds-border)]">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-[color:var(--ds-hover)]">
-                  <th className="text-left px-4 py-3 text-[color:var(--ds-text)] font-semibold sticky left-0 bg-[color:var(--ds-hover)] min-w-[200px]">Dokument</th>
+                  <th className="sticky left-0 min-w-[200px] bg-[color:var(--ds-hover)] px-4 py-3 text-left font-semibold text-[color:var(--ds-text)]">
+                    Dokument
+                  </th>
                   {result.questions.map((q, i) => (
-                    <th key={i} className="text-left px-4 py-3 text-[color:var(--ds-text-muted)] font-medium min-w-[240px] border-l border-[color:var(--ds-border)]">{q}</th>
+                    <th
+                      key={i}
+                      className="min-w-[240px] border-l border-[color:var(--ds-border)] px-4 py-3 text-left font-medium text-[color:var(--ds-text-muted)]"
+                    >
+                      {q}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {result.rows.map((row) => (
-                  <tr key={row.slug} className="border-t border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface)]/50">
-                    <td className="px-4 py-3 text-[color:var(--ds-text)] align-top sticky left-0 bg-[color:var(--ds-surface)] font-medium">
-                      <a href={`/dashboard/brain/${row.slug}`} className="hover:brand-text">{row.title}</a>
+                  <tr
+                    key={row.slug}
+                    className="border-t border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface)]/50"
+                  >
+                    <td className="sticky left-0 bg-[color:var(--ds-surface)] px-4 py-3 align-top font-medium text-[color:var(--ds-text)]">
+                      <a href={`/dashboard/brain/${row.slug}`} className="hover:brand-text">
+                        {row.title}
+                      </a>
                     </td>
                     {row.cells.map((cell, i) => (
-                      <td key={i} className="px-4 py-3 text-[color:var(--ds-text-muted)] align-top border-l border-[color:var(--ds-border)]/60 leading-relaxed">
+                      <td
+                        key={i}
+                        className="border-l border-[color:var(--ds-border)]/60 px-4 py-3 align-top leading-relaxed text-[color:var(--ds-text-muted)]"
+                      >
                         {cell.answer}
                         {cell.citations.length > 0 && (
-                          <span className="block mt-1 text-[10px] brand-text/70">↳ {cell.citations[0].title}</span>
+                          <span className="brand-text/70 mt-1 block text-xs">
+                            ↳ {cell.citations[0].title}
+                          </span>
                         )}
                       </td>
                     ))}
@@ -181,7 +224,8 @@ export default function TabularReviewPage() {
             </table>
           </div>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Maschinell erzeugt — vor Verwendung prüfen. „nicht im Dokument&quot; heißt: die Frage wird vom jeweiligen Dokument nicht beantwortet.
+            Maschinell erzeugt — vor Verwendung prüfen. „nicht im Dokument&quot; heißt: die Frage
+            wird vom jeweiligen Dokument nicht beantwortet.
           </p>
         </div>
       )}

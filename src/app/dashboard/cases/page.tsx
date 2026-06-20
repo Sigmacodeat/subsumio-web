@@ -49,7 +49,10 @@ interface LegalCaseItem {
   tags: string[];
 }
 
-const STATUS_CONFIG: Record<string, { labelKey: DashboardKey; icon: React.ElementType; color: StatusColor }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { labelKey: DashboardKey; icon: React.ElementType; color: StatusColor }
+> = {
   open: { labelKey: "cases.status_open", icon: Clock, color: "blue" },
   pending: { labelKey: "cases.status_pending", icon: PauseCircle, color: "amber" },
   settled: { labelKey: "cases.status_settled", icon: CheckCircle2, color: "emerald" },
@@ -99,9 +102,9 @@ export default function CasesPage() {
     setLoadError(null);
     try {
       const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
-      const items = pages.map(parseCase).sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
+      const items = pages
+        .map(parseCase)
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       await setCache(OFFLINE_KEYS.cases, items);
       setCases(items);
     } catch (err) {
@@ -115,7 +118,7 @@ export default function CasesPage() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -124,7 +127,9 @@ export default function CasesPage() {
       if (cancelled) return;
       await loadCases();
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [loadCases]);
 
   async function deleteCase(slug: string) {
@@ -198,10 +203,13 @@ export default function CasesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const statusCounts = cases.reduce((acc, c) => {
-    acc[c.status] = (acc[c.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const statusCounts = cases.reduce(
+    (acc, c) => {
+      acc[c.status] = (acc[c.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const columns: Column<LegalCaseItem>[] = [
     {
@@ -210,8 +218,8 @@ export default function CasesPage() {
       sortable: true,
       sortAccessor: (c) => c.title,
       cell: (c) => (
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] flex items-center justify-center shrink-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
             {(() => {
               const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.open;
               const Icon = cfg.icon;
@@ -219,8 +227,10 @@ export default function CasesPage() {
             })()}
           </div>
           <div className="min-w-0">
-            <div className="font-medium text-[color:var(--ds-text)] truncate">{c.title}</div>
-            <div className="text-xs text-[color:var(--ds-text-subtle)] font-mono">{c.caseNumber}</div>
+            <div className="truncate font-medium text-[color:var(--ds-text)]">{c.title}</div>
+            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
+              {c.caseNumber}
+            </div>
           </div>
         </div>
       ),
@@ -233,7 +243,10 @@ export default function CasesPage() {
       cell: (c) => {
         const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.open;
         return (
-          <Badge variant="default" className="text-[10px] border bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
+          <Badge
+            variant="default"
+            className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+          >
             {t(cfg.labelKey)}
           </Badge>
         );
@@ -246,7 +259,10 @@ export default function CasesPage() {
       sortAccessor: (c) => c.priority,
       hideOnMobile: true,
       cell: (c) => (
-        <Badge variant="default" className={cn("text-[10px] border", PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.medium)}>
+        <Badge
+          variant="default"
+          className={cn("border text-xs", PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.medium)}
+        >
           {c.priority}
         </Badge>
       ),
@@ -257,21 +273,29 @@ export default function CasesPage() {
       sortable: true,
       sortAccessor: (c) => c.legalArea,
       hideOnMobile: true,
-      cell: (c) => c.legalArea ? (
-        <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-          <Scale size={10} />{c.legalArea}
-        </span>
-      ) : <span className="text-[color:var(--ds-text-subtle)]">—</span>,
+      cell: (c) =>
+        c.legalArea ? (
+          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+            <Scale size={10} />
+            {c.legalArea}
+          </span>
+        ) : (
+          <span className="text-[color:var(--ds-text-subtle)]">—</span>
+        ),
     },
     {
       key: "opponent",
       header: t("cases.col_opponent"),
       hideOnMobile: true,
-      cell: (c) => c.opponentName ? (
-        <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-          <Users size={10} />{c.opponentName}
-        </span>
-      ) : <span className="text-[color:var(--ds-text-subtle)]">—</span>,
+      cell: (c) =>
+        c.opponentName ? (
+          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+            <Users size={10} />
+            {c.opponentName}
+          </span>
+        ) : (
+          <span className="text-[color:var(--ds-text-subtle)]">—</span>
+        ),
     },
     {
       key: "updatedAt",
@@ -279,7 +303,7 @@ export default function CasesPage() {
       sortable: true,
       sortAccessor: (c) => new Date(c.updatedAt).getTime(),
       cell: (c) => (
-        <span className="text-xs text-[color:var(--ds-text-muted)] flex items-center gap-1">
+        <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
           <Calendar size={10} />
           {new Date(c.updatedAt).toLocaleDateString("de-DE")}
         </span>
@@ -292,8 +316,11 @@ export default function CasesPage() {
       cell: (c) => (
         <div className="flex items-center gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); deleteCase(c.slug); }}
-            className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteCase(c.slug);
+            }}
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
             title={t("cases.delete")}
             aria-label={`${t("cases.delete")} ${c.title}`}
           >
@@ -306,7 +333,7 @@ export default function CasesPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 p-6 md:p-8">
       <PageHeader
         title={t("cases.title")}
         description={`${cases.length} ${t("cases.count")}`}
@@ -322,7 +349,7 @@ export default function CasesPage() {
       />
 
       {/* Status filter chips */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <FilterChip
           label={t("cases.all")}
           active={statusFilter === "all"}
@@ -357,7 +384,7 @@ export default function CasesPage() {
             variant="ghost"
             size="sm"
             onClick={() => void loadCases()}
-            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0"
+            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
           >
             <RotateCcw size={13} />
             {t("cases.retry")}
@@ -371,7 +398,9 @@ export default function CasesPage() {
         data={filtered}
         loading={loading}
         emptyTitle={t("cases.empty_title")}
-        emptyDescription={cases.length === 0 ? t("cases.empty_no_cases") : t("cases.empty_filtered")}
+        emptyDescription={
+          cases.length === 0 ? t("cases.empty_no_cases") : t("cases.empty_filtered")
+        }
         emptyIcon={Briefcase}
         emptyActionLabel={cases.length === 0 ? t("cases.empty_create") : undefined}
         onEmptyAction={cases.length === 0 ? () => router.push("/dashboard/cases/new") : undefined}

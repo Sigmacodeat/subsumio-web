@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Cpu, Zap, DollarSign, Gauge } from "lucide-react";
+import { ChevronDown, Check, Cpu, Zap, DollarSign, Gauge, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useModelPreference,
@@ -62,7 +62,12 @@ export function ModelSelector({
 
   if (query.isLoading) {
     return (
-      <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text-muted)]", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)]",
+          className
+        )}
+      >
         <Cpu size={12} className="animate-pulse" />
         Loading…
       </div>
@@ -71,7 +76,12 @@ export function ModelSelector({
 
   if (query.isError || !models.length) {
     return (
-      <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text-muted)]", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)]",
+          className
+        )}
+      >
         <Cpu size={12} />
         Auto
       </div>
@@ -82,8 +92,12 @@ export function ModelSelector({
     <div ref={ref} className={cn("relative", className)}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] transition-all"
-        title={activeModel ? `${activeModel.name} · ${getProviderLabel(activeModel.provider as never)}` : "Modell wählen"}
+        className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+        title={
+          activeModel
+            ? `${activeModel.name} · ${getProviderLabel(activeModel.provider as never)}`
+            : "Modell wählen"
+        }
       >
         <Cpu size={12} />
         {activeModel ? activeModel.name : "Auto"}
@@ -91,24 +105,29 @@ export function ModelSelector({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-80 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-xl card-shadow-elevated z-50 overflow-hidden max-h-[28rem] overflow-y-auto">
+        <div className="card-shadow-elevated absolute top-full right-0 z-50 mt-1 max-h-[28rem] w-80 overflow-hidden overflow-y-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {/* Auto / Default option */}
           <button
             onClick={() => handleSelect("auto")}
             className={cn(
-              "w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[color:var(--ds-hover)] transition-colors border-b border-[color:var(--ds-border)]",
-              activeModelId === "auto" && "brand-soft",
+              "flex w-full items-start gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+              activeModelId === "auto" && "brand-soft"
             )}
           >
             <div className="flex-1">
-              <p className={cn("text-sm font-medium", activeModelId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]")}>
+              <p
+                className={cn(
+                  "text-sm font-medium",
+                  activeModelId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
+                )}
+              >
                 Auto (Engine-Default)
               </p>
-              <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
+              <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                 Engine wählt automatisch das optimale Modell
               </p>
             </div>
-            {activeModelId === "auto" && <Check size={14} className="brand-text shrink-0 mt-0.5" />}
+            {activeModelId === "auto" && <Check size={14} className="brand-text mt-0.5 shrink-0" />}
           </button>
 
           {/* Model list */}
@@ -119,26 +138,42 @@ export function ModelSelector({
                 key={model.id}
                 onClick={() => handleSelect(model.id)}
                 className={cn(
-                  "w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[color:var(--ds-hover)] transition-colors border-b border-[color:var(--ds-border)] last:border-0",
-                  isActive && "brand-soft",
+                  "flex w-full items-start gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 text-left transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]",
+                  isActive && "brand-soft"
                 )}
               >
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className={cn("text-sm font-medium truncate", isActive ? "brand-text" : "text-[color:var(--ds-text)]")}>
+                    <p
+                      className={cn(
+                        "truncate text-sm font-medium",
+                        isActive ? "brand-text" : "text-[color:var(--ds-text)]"
+                      )}
+                    >
                       {model.name}
                     </p>
-                    <span className="text-[10px] text-[color:var(--ds-text-subtle)] font-medium uppercase tracking-wide shrink-0">
+                    <span className="shrink-0 text-xs font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                       {getProviderLabel(model.provider as never)}
                     </span>
+                    {"dataResidency" in model && model.dataResidency === "eu" && (
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 text-xs font-medium text-emerald-600">
+                        <Globe size={8} />
+                        EU
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5 line-clamp-2">{model.description}</p>
-                  <div className="flex items-center gap-3 mt-2 text-[10px] text-[color:var(--ds-text-subtle)]">
+                  <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                    {model.description}
+                  </p>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
                     <span className="flex items-center gap-1" title="Context Window">
                       <Gauge size={9} />
                       {formatContextWindow(model.contextWindow)}
                     </span>
-                    <span className="flex items-center gap-1" title="Cost per 1M tokens (input/output)">
+                    <span
+                      className="flex items-center gap-1"
+                      title="Cost per 1M tokens (input/output)"
+                    >
                       <DollarSign size={9} />
                       {formatCost(model.costPer1MInput)}/{formatCost(model.costPer1MOutput)}
                     </span>
@@ -148,7 +183,7 @@ export function ModelSelector({
                     </span>
                   </div>
                 </div>
-                {isActive && <Check size={14} className="brand-text shrink-0 mt-0.5" />}
+                {isActive && <Check size={14} className="brand-text mt-0.5 shrink-0" />}
               </button>
             );
           })}

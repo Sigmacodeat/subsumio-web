@@ -197,23 +197,20 @@ export default function JudgementsSyncPage() {
                 {src.status === "done" && (
                   <Badge
                     variant="default"
-                    className="border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-600"
+                    className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
                   >
                     {src.count > 0 ? `+${src.count} Urteile importiert` : "Keine neuen Urteile"}
                   </Badge>
                 )}
                 {src.status === "running" && (
-                  <Badge
-                    variant="default"
-                    className="brand-soft brand-text brand-border text-[10px]"
-                  >
+                  <Badge variant="default" className="brand-soft brand-text brand-border text-xs">
                     Lädt…
                   </Badge>
                 )}
                 {src.status === "error" && (
                   <Badge
                     variant="default"
-                    className="border-red-500/20 bg-red-500/10 text-[10px] text-red-600"
+                    className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
                   >
                     Fehler: {src.error}
                   </Badge>
@@ -224,7 +221,7 @@ export default function JudgementsSyncPage() {
                 {src.courts.map((court) => (
                   <span
                     key={court}
-                    className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-0.5 text-[10px] text-[color:var(--ds-text-muted)]"
+                    className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-0.5 text-xs text-[color:var(--ds-text-muted)]"
                   >
                     {court}
                   </span>

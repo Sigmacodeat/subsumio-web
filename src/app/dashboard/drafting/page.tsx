@@ -148,7 +148,9 @@ export default function DraftingPage() {
       setGenerating(true);
       setResult(null);
       try {
-        const res = await api.query.think(template.prompt(data as unknown as Record<string, string>));
+        const res = await api.query.think(
+          template.prompt(data as unknown as Record<string, string>)
+        );
         setResult(res.answer);
         setDraftSaved(null);
       } catch {
@@ -167,7 +169,8 @@ export default function DraftingPage() {
   useUnsavedChanges(f.formState.isDirty);
 
   useEffect(() => {
-    api.brain.listPages({ type: "legal_case", limit: 200 })
+    api.brain
+      .listPages({ type: "legal_case", limit: 200 })
       .then((pages) => setCases(pages))
       .catch(() => setCases([]));
   }, []);
@@ -189,7 +192,7 @@ export default function DraftingPage() {
 <p><strong>Beklagter/Empfänger:</strong> ${formData.beklagter || "—"}</p>
 <p><strong>Rechtsgrundlage:</strong> ${formData.legalBasis || "—"}</p>
 <hr/>
-<pre style="font-family:Calibri,sans-serif;white-space:pre-wrap;">${text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>
+<pre style="font-family:Calibri,sans-serif;white-space:pre-wrap;">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
 <hr/>
 <p style="font-size:9pt;color:#777;font-style:italic;">${AI_NOTICE}</p>
 </body></html>`;
@@ -197,7 +200,7 @@ export default function DraftingPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${template.label}_${formData.title.slice(0,40).replace(/[^a-zA-Z0-9äöüß]/g,"_")}.doc`;
+    a.download = `${template.label}_${formData.title.slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
     a.click();
     URL.revokeObjectURL(url);
     setDocxReady(true);
@@ -210,7 +213,11 @@ export default function DraftingPage() {
     setDraftSaved(null);
     try {
       const now = new Date();
-      const safeTitle = (current.title || template.label).toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+      const safeTitle = (current.title || template.label)
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 60);
       const slug = `legal/drafts/${now.toISOString().split("T")[0]}-${template.key}-${safeTitle || now.getTime()}`;
       await api.brain.createPage({
         slug,
@@ -295,25 +302,28 @@ export default function DraftingPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Schriftsatz-Generator"
         description="Schriftsätze und Gutachten mit KI-Unterstützung erstellen"
       />
 
       {/* Template selector */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
         {TEMPLATES.map((t) => {
           const Icon = t.icon;
           return (
             <button
               key={t.key}
-              onClick={() => { setSelectedTemplate(t.key); setResult(null); }}
+              onClick={() => {
+                setSelectedTemplate(t.key);
+                setResult(null);
+              }}
               className={cn(
-                "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all",
+                "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all",
                 selectedTemplate === t.key
                   ? "brand-soft brand-border brand-text"
-                  : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
               )}
             >
               <Icon size={14} />
@@ -324,8 +334,13 @@ export default function DraftingPage() {
       </div>
 
       {/* Form */}
-      <form onSubmit={form.handleSubmit} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
-        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{template.label} — Angaben</h2>
+      <form
+        onSubmit={form.handleSubmit}
+        className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+      >
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {template.label} — Angaben
+        </h2>
         {form.error && (
           <div className="flex items-center gap-2 text-xs text-red-600">
             <AlertTriangle size={14} /> {form.error}
@@ -333,72 +348,85 @@ export default function DraftingPage() {
         )}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Titel / Betreff</label>
+            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+              Titel / Betreff
+            </label>
             <Input
               {...register("title")}
               placeholder="z.B. Vertragsbruch Muster GmbH"
               aria-label="z.B. Vertragsbruch Muster GmbH"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
-              <p className="text-xs text-red-600 mt-1">{f.formState.errors.title.message}</p>
+              <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Rechtsgrundlage</label>
+            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+              Rechtsgrundlage
+            </label>
             <Input
               {...register("legalBasis")}
               placeholder="z.B. § 823 BGB"
               aria-label="z.B. § 823 BGB"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Kläger / Absender</label>
+            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+              Kläger / Absender
+            </label>
             <Input
               {...register("klaeger")}
               placeholder="Name"
               aria-label="Name"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
           <div>
-            <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Beklagter / Empfänger</label>
+            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+              Beklagter / Empfänger
+            </label>
             <Input
               {...register("beklagter")}
               placeholder="Name"
               aria-label="Name"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
         </div>
         <div>
-          <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Sachverhalt</label>
+          <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+            Sachverhalt
+          </label>
           <textarea
             {...register("facts")}
             rows={4}
             placeholder="Beschreibe den Sachverhalt…"
             aria-label="Beschreibe den Sachverhalt"
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)] resize-y"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
           {f.formState.errors.facts && (
-            <p className="text-xs text-red-600 mt-1">{f.formState.errors.facts.message}</p>
+            <p className="mt-1 text-xs text-red-600">{f.formState.errors.facts.message}</p>
           )}
         </div>
         <div>
-          <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Mit Akte verknüpfen</label>
+          <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+            Mit Akte verknüpfen
+          </label>
           <select
             {...register("selectedCaseSlug")}
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             <option value="">Keine Akte</option>
             {cases.map((c) => {
               const fm = caseFrontmatter(c);
               return (
                 <option key={c.slug} value={c.slug}>
-                  {fm.case_number ? `${fm.case_number} - ` : ""}{c.title}
+                  {fm.case_number ? `${fm.case_number} - ` : ""}
+                  {c.title}
                 </option>
               );
             })}
@@ -407,7 +435,7 @@ export default function DraftingPage() {
         <Button
           type="submit"
           variant="primary"
-          className="brand-bg brand-bg text-white gap-2"
+          className="brand-bg brand-bg gap-2 text-white"
           disabled={!canGenerate || generating}
         >
           {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
@@ -417,11 +445,11 @@ export default function DraftingPage() {
 
       {/* Result */}
       {result && (
-        <div className="rounded-xl border brand-border brand-soft p-4 space-y-3">
+        <div className="brand-border brand-soft space-y-3 rounded-xl border p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs brand-text font-medium">Entwurf</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-700 text-[10px] font-medium">
+              <span className="brand-text text-xs font-medium">Entwurf</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700">
                 {AI_BADGE_LABEL}
               </span>
             </div>
@@ -429,7 +457,7 @@ export default function DraftingPage() {
               <button
                 onClick={() => saveDraftToBrain(result)}
                 disabled={savingDraft || submitting}
-                className="text-[color:var(--ds-text-muted)] hover:text-emerald-600 transition-colors flex items-center gap-1 text-xs disabled:opacity-60"
+                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-emerald-600 disabled:opacity-60"
                 title="Entwurf im Brain speichern"
               >
                 {savingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
@@ -438,41 +466,58 @@ export default function DraftingPage() {
               <button
                 onClick={() => submitForApproval(result)}
                 disabled={savingDraft || submitting}
-                className="text-[color:var(--ds-text-muted)] hover:brand-text transition-colors flex items-center gap-1 text-xs disabled:opacity-60"
+                className="hover:brand-text flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors disabled:opacity-60"
                 title="Entwurf einem zweiten Bearbeiter zur Freigabe vorlegen (Vier-Augen-Prinzip)"
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <UserCheck size={14} />}
+                {submitting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <UserCheck size={14} />
+                )}
                 Zur Freigabe
               </button>
               <button
                 onClick={() => downloadDocx(result)}
-                className="text-[color:var(--ds-text-muted)] hover:text-blue-600 transition-colors flex items-center gap-1 text-xs"
+                className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
                 title="Als Word-Dokument herunterladen"
               >
-                {docxReady ? <Check size={14} className="text-emerald-600" /> : <FileText size={14} />}
+                {docxReady ? (
+                  <Check size={14} className="text-emerald-600" />
+                ) : (
+                  <FileText size={14} />
+                )}
                 Word
               </button>
               <button
                 onClick={() => copyToClipboard(result)}
-                className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)] transition-colors"
+                className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
               >
                 {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
               </button>
             </div>
           </div>
-          <div className="text-sm text-[color:var(--ds-text)] whitespace-pre-wrap leading-relaxed max-h-[600px] overflow-y-auto">
+          <div className="max-h-[600px] overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
             {result}
           </div>
-          <p className="text-[11px] text-amber-700/70 leading-relaxed border-t border-[color:var(--ds-border)] pt-2">
+          <p className="border-t border-[color:var(--ds-border)] pt-2 text-xs leading-relaxed text-amber-700/70">
             {AI_NOTICE}
           </p>
           {draftSaved && (
-            <p className={cn("text-xs", draftSaved.startsWith("Fehler:") ? "text-red-600" : draftSaved.startsWith("approval:") ? "brand-text" : "text-emerald-600")}>
+            <p
+              className={cn(
+                "text-xs",
+                draftSaved.startsWith("Fehler:")
+                  ? "text-red-600"
+                  : draftSaved.startsWith("approval:")
+                    ? "brand-text"
+                    : "text-emerald-600"
+              )}
+            >
               {draftSaved.startsWith("Fehler:")
                 ? draftSaved
                 : draftSaved.startsWith("approval:")
-                ? "Zur Freigabe eingereicht — sichtbar im Menü unter Freigaben."
-                : `Gespeichert: ${draftSaved}`}
+                  ? "Zur Freigabe eingereicht — sichtbar im Menü unter Freigaben."
+                  : `Gespeichert: ${draftSaved}`}
             </p>
           )}
         </div>

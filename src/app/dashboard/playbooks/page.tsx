@@ -20,7 +20,12 @@ import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
-import type { BrainPage, PlaybookRule, PlaybookRequiredPosition, PlaybookSeverity } from "@/lib/types";
+import type {
+  BrainPage,
+  PlaybookRule,
+  PlaybookRequiredPosition,
+  PlaybookSeverity,
+} from "@/lib/types";
 
 const JURISDICTION_LABELS: Record<string, string> = {
   at: "Österreich",
@@ -58,9 +63,17 @@ const POSITION_COLORS: Record<string, string> = {
 };
 
 const CONTRACT_TYPES = [
-  "Kaufvertrag", "Dienstvertrag", "Werkvertrag", "Mietvertrag",
-  "NDA / Geheimhaltung", "Arbeitsvertrag", "Lizenzvertrag",
-  "GmbH-Vertrag", "Liefervertrag", "Beratungsvertrag", "Sonstige",
+  "Kaufvertrag",
+  "Dienstvertrag",
+  "Werkvertrag",
+  "Mietvertrag",
+  "NDA / Geheimhaltung",
+  "Arbeitsvertrag",
+  "Lizenzvertrag",
+  "GmbH-Vertrag",
+  "Liefervertrag",
+  "Beratungsvertrag",
+  "Sonstige",
 ];
 
 interface PlaybookItem {
@@ -79,10 +92,12 @@ function parsePlaybook(page: BrainPage): PlaybookItem {
     slug: page.slug,
     title: page.title,
     jurisdiction: (fm.jurisdiction as string) || "all",
-    contract_types: Array.isArray(fm.contract_types) ? fm.contract_types as string[] : [],
-    rules: Array.isArray(fm.rules) ? fm.rules as PlaybookRule[] : [],
+    contract_types: Array.isArray(fm.contract_types) ? (fm.contract_types as string[]) : [],
+    rules: Array.isArray(fm.rules) ? (fm.rules as PlaybookRule[]) : [],
     description: page.content || "",
-    createdAt: (page as unknown as Record<string, unknown>).created_at as string || new Date().toISOString(),
+    createdAt:
+      ((page as unknown as Record<string, unknown>).created_at as string) ||
+      new Date().toISOString(),
   };
 }
 
@@ -118,7 +133,8 @@ export default function PlaybooksPage() {
   const [formDescription, setFormDescription] = useState("");
   const [formRules, setFormRules] = useState<PlaybookRule[]>([]);
 
-  useEffect(() => { loadPlaybooks(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    loadPlaybooks(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPlaybooks = useCallback(async () => {
@@ -142,7 +158,7 @@ export default function PlaybooksPage() {
       (p) =>
         p.title.toLowerCase().includes(q) ||
         p.jurisdiction.toLowerCase().includes(q) ||
-        p.contract_types.some((t) => t.toLowerCase().includes(q)),
+        p.contract_types.some((t) => t.toLowerCase().includes(q))
     );
   }, [playbooks, query]);
 
@@ -198,9 +214,7 @@ export default function PlaybooksPage() {
   }
 
   function toggleContractType(type: string) {
-    setFormContractTypes((t) =>
-      t.includes(type) ? t.filter((x) => x !== type) : [...t, type],
-    );
+    setFormContractTypes((t) => (t.includes(type) ? t.filter((x) => x !== type) : [...t, type]));
   }
 
   async function savePlaybook() {
@@ -231,13 +245,7 @@ export default function PlaybooksPage() {
 
       if (editingSlug) {
         await api.legal.playbooks.update(editingSlug, payload);
-        setPlaybooks((p) =>
-          p.map((pb) =>
-            pb.slug === editingSlug
-              ? { ...pb, ...payload }
-              : pb,
-          ),
-        );
+        setPlaybooks((p) => p.map((pb) => (pb.slug === editingSlug ? { ...pb, ...payload } : pb)));
       } else {
         const result = await api.legal.playbooks.create(payload);
         const newItem: PlaybookItem = {
@@ -274,13 +282,13 @@ export default function PlaybooksPage() {
   const isFormOpen = creating || editingSlug !== null;
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Contract Playbooks"
         description="Rule-Based Contract Review — definiere Klausel-Standards und flagge Deviationen beim Redlining"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Playbooks" }]}
         actions={
-          <Button onClick={startCreate} className="brand-bg text-white gap-2">
+          <Button onClick={startCreate} className="brand-bg gap-2 text-white">
             <Plus size={14} /> Playbook anlegen
           </Button>
         }
@@ -324,7 +332,12 @@ export default function PlaybooksPage() {
       {loadError && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
           <span>{loadError}</span>
-          <Button variant="ghost" size="sm" onClick={() => void loadPlaybooks()} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void loadPlaybooks()}
+            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+          >
             Erneut versuchen
           </Button>
         </div>
@@ -332,16 +345,27 @@ export default function PlaybooksPage() {
 
       {/* Stats */}
       {!loading && playbooks.length > 0 && !isFormOpen && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatCard icon={<BookOpen size={14} />} label="Playbooks" value={playbooks.length} />
-          <StatCard icon={<Scale size={14} />} label="Rules gesamt" value={playbooks.reduce((s, p) => s + p.rules.length, 0)} />
+          <StatCard
+            icon={<Scale size={14} />}
+            label="Rules gesamt"
+            value={playbooks.reduce((s, p) => s + p.rules.length, 0)}
+          />
           <StatCard
             icon={<AlertTriangle size={14} />}
             label="Kritische Rules"
-            value={playbooks.reduce((s, p) => s + p.rules.filter((r) => r.severity === "critical").length, 0)}
+            value={playbooks.reduce(
+              (s, p) => s + p.rules.filter((r) => r.severity === "critical").length,
+              0
+            )}
             color="red"
           />
-          <StatCard icon={<BookOpen size={14} />} label="Jurisdiktionen" value={new Set(playbooks.map((p) => p.jurisdiction)).size} />
+          <StatCard
+            icon={<BookOpen size={14} />}
+            label="Jurisdiktionen"
+            value={new Set(playbooks.map((p) => p.jurisdiction)).size}
+          />
         </div>
       )}
 
@@ -351,14 +375,14 @@ export default function PlaybooksPage() {
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : !isFormOpen && filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)]">
-          <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
             <BookOpen size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
-          <h3 className="text-sm font-semibold text-[color:var(--ds-text)] tracking-tight">
+          <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
             {playbooks.length === 0 ? "Keine Playbooks vorhanden" : "Keine Playbooks gefunden"}
           </h3>
-          <p className="mt-2 text-xs text-[color:var(--ds-text-muted)] max-w-sm leading-relaxed">
+          <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
             {playbooks.length === 0
               ? "Lege dein erstes Playbook an über den „Playbook anlegen“-Button oben."
               : "Passe deine Suche an."}
@@ -380,85 +404,129 @@ export default function PlaybooksPage() {
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color?: "red" }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color?: "red";
+}) {
   return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 flex items-center gap-3">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-        color === "red"
-          ? "bg-red-500/10 border border-red-500/20 text-red-600"
-          : "brand-soft border brand-border brand-text"
-      }`}>
+    <div className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+          color === "red"
+            ? "border border-red-500/20 bg-red-500/10 text-red-600"
+            : "brand-soft brand-border brand-text border"
+        }`}
+      >
         {icon}
       </div>
       <div>
         <p className="text-lg font-bold text-[color:var(--ds-text)]">{value}</p>
-        <p className="text-[10px] text-[color:var(--ds-text-muted)]">{label}</p>
+        <p className="text-xs text-[color:var(--ds-text-muted)]">{label}</p>
       </div>
     </div>
   );
 }
 
-function PlaybookCard({ playbook, onEdit, onDelete }: {
+function PlaybookCard({
+  playbook,
+  onEdit,
+  onDelete,
+}: {
   playbook: PlaybookItem;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+    <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-[color:var(--ds-text)]">{playbook.title}</span>
-            <Badge variant="default" className="text-[10px] border brand-border brand-soft brand-text">
+            <Badge variant="default" className="brand-border brand-soft brand-text border text-xs">
               {JURISDICTION_LABELS[playbook.jurisdiction] || playbook.jurisdiction}
             </Badge>
-            <Badge variant="default" className="text-[10px] border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">
+            <Badge
+              variant="default"
+              className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+            >
               {playbook.rules.length} Rules
             </Badge>
           </div>
           {playbook.contract_types.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap mt-1.5">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {playbook.contract_types.map((t) => (
-                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">
+                <span
+                  key={t}
+                  className="rounded bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]"
+                >
                   {t}
                 </span>
               ))}
             </div>
           )}
           {playbook.description && (
-            <p className="text-xs text-[color:var(--ds-text-muted)] mt-1 line-clamp-2">{playbook.description}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+              {playbook.description}
+            </p>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all" title="Aufklappen">
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+            title="Aufklappen"
+          >
             <BookOpen size={14} />
           </button>
-          <button onClick={onEdit} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all" title="Bearbeiten">
+          <button
+            onClick={onEdit}
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+            title="Bearbeiten"
+          >
             <Pencil size={14} />
           </button>
-          <button onClick={onDelete} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all" title="Löschen">
+          <button
+            onClick={onDelete}
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+            title="Löschen"
+          >
             <Trash2 size={14} />
           </button>
         </div>
       </div>
 
       {expanded && playbook.rules.length > 0 && (
-        <div className="border-t border-[color:var(--ds-border)] pt-3 space-y-2">
+        <div className="space-y-2 border-t border-[color:var(--ds-border)] pt-3">
           {playbook.rules.map((rule) => (
             <div key={rule.id} className="flex items-start gap-2 text-xs">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-medium text-[color:var(--ds-text)]">{rule.clause_type}</span>
-                  <span className={`px-1.5 py-0.5 rounded border text-[10px] ${POSITION_COLORS[rule.required_position]}`}>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-medium text-[color:var(--ds-text)]">
+                    {rule.clause_type}
+                  </span>
+                  <span
+                    className={`rounded border px-1.5 py-0.5 text-xs ${POSITION_COLORS[rule.required_position]}`}
+                  >
                     {POSITION_LABELS[rule.required_position]}
                   </span>
-                  <span className={`px-1.5 py-0.5 rounded border text-[10px] ${SEVERITY_COLORS[rule.severity]}`}>
+                  <span
+                    className={`rounded border px-1.5 py-0.5 text-xs ${SEVERITY_COLORS[rule.severity]}`}
+                  >
                     {SEVERITY_LABELS[rule.severity]}
                   </span>
                 </div>
-                <p className="text-[color:var(--ds-text-muted)] mt-0.5">{rule.deviation_flag}</p>
-                {rule.notes && <p className="text-[color:var(--ds-text-subtle)] mt-0.5 italic">{rule.notes}</p>}
+                <p className="mt-0.5 text-[color:var(--ds-text-muted)]">{rule.deviation_flag}</p>
+                {rule.notes && (
+                  <p className="mt-0.5 text-[color:var(--ds-text-subtle)] italic">{rule.notes}</p>
+                )}
               </div>
             </div>
           ))}
@@ -489,55 +557,68 @@ function PlaybookEditor(props: {
   onCancel: () => void;
 }) {
   return (
-    <div className="rounded-xl border brand-border bg-[color:var(--ds-surface)] p-5 space-y-5">
+    <div className="brand-border space-y-5 rounded-xl border bg-[color:var(--ds-surface)] p-5">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
           {props.isEdit ? "Playbook bearbeiten" : "Neues Playbook"}
         </h3>
-        <button onClick={props.onCancel} className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]">
+        <button
+          onClick={props.onCancel}
+          className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+        >
           <X size={16} />
         </button>
       </div>
 
       {/* Basic fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <label className="text-xs font-medium text-[color:var(--ds-text-muted)] mb-1 block">Name</label>
+          <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Name
+          </label>
           <input
             value={props.title}
             onChange={(e) => props.onTitleChange(e.target.value)}
             placeholder="z.B. DACH-NDA Standard"
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-[color:var(--ds-text-muted)] mb-1 block">Jurisdiktion</label>
+          <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Jurisdiktion
+          </label>
           <select
             value={props.jurisdiction}
             onChange={(e) => props.onJurisdictionChange(e.target.value)}
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
             {Object.entries(JURISDICTION_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
+              <option key={key} value={key}>
+                {label}
+              </option>
             ))}
           </select>
         </div>
       </div>
 
       <div>
-        <label className="text-xs font-medium text-[color:var(--ds-text-muted)] mb-1 block">Beschreibung (optional)</label>
+        <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+          Beschreibung (optional)
+        </label>
         <textarea
           value={props.description}
           onChange={(e) => props.onDescriptionChange(e.target.value)}
           rows={2}
           placeholder="Kurze Beschreibung des Playbook-Zwecks…"
-          className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       </div>
 
       {/* Contract type assignment */}
       <div>
-        <label className="text-xs font-medium text-[color:var(--ds-text-muted)] mb-2 block">Vertragstypen-Zuweisung</label>
+        <label className="mb-2 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+          Vertragstypen-Zuweisung
+        </label>
         <div className="flex flex-wrap gap-1.5">
           {CONTRACT_TYPES.map((t) => {
             const selected = props.contractTypes.includes(t);
@@ -545,10 +626,10 @@ function PlaybookEditor(props: {
               <button
                 key={t}
                 onClick={() => props.onContractTypeToggle(t)}
-                className={`px-2.5 py-1 rounded-lg text-xs border transition-all ${
+                className={`rounded-lg border px-2.5 py-1 text-xs transition-all ${
                   selected
-                    ? "brand-bg text-white border-transparent"
-                    : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)]"
+                    ? "brand-bg border-transparent text-white"
+                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)]"
                 }`}
               >
                 {t}
@@ -561,8 +642,15 @@ function PlaybookEditor(props: {
       {/* Rules editor */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">Rules ({props.rules.length})</label>
-          <Button variant="ghost" size="sm" onClick={props.onAddRule} className="text-xs brand-text gap-1.5">
+          <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Rules ({props.rules.length})
+          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={props.onAddRule}
+            className="brand-text gap-1.5 text-xs"
+          >
             <Plus size={12} /> Rule hinzufügen
           </Button>
         </div>
@@ -595,10 +683,19 @@ function PlaybookEditor(props: {
       )}
 
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={props.onCancel} className="text-[color:var(--ds-text-muted)]">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={props.onCancel}
+          className="text-[color:var(--ds-text-muted)]"
+        >
           Abbrechen
         </Button>
-        <Button onClick={props.onSave} disabled={props.saving} className="brand-bg text-white gap-2">
+        <Button
+          onClick={props.onSave}
+          disabled={props.saving}
+          className="brand-bg gap-2 text-white"
+        >
           {props.saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           {props.isEdit ? "Speichern" : "Erstellen"}
         </Button>
@@ -607,46 +704,65 @@ function PlaybookEditor(props: {
   );
 }
 
-function RuleRow({ rule, onChange, onRemove, onDuplicate }: {
+function RuleRow({
+  rule,
+  onChange,
+  onRemove,
+  onDuplicate,
+}: {
   rule: PlaybookRule;
   onChange: (patch: Partial<PlaybookRule>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 space-y-2">
+    <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
       <div className="flex items-center gap-2">
-        <GripVertical size={12} className="text-[color:var(--ds-text-subtle)] shrink-0" />
+        <GripVertical size={12} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
         <input
           value={rule.clause_type}
           onChange={(e) => onChange({ clause_type: e.target.value })}
           placeholder="Klauseltyp (z.B. Haftungsbegrenzung)"
-          className="flex-1 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
-        <button onClick={onDuplicate} className="p-1 rounded text-[color:var(--ds-text-muted)] hover:brand-text transition-all" title="Duplizieren">
+        <button
+          onClick={onDuplicate}
+          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-all"
+          title="Duplizieren"
+        >
           <Copy size={12} />
         </button>
-        <button onClick={onRemove} className="p-1 rounded text-[color:var(--ds-text-muted)] hover:text-red-600 transition-all" title="Entfernen">
+        <button
+          onClick={onRemove}
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:text-red-600"
+          title="Entfernen"
+        >
           <X size={12} />
         </button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-5">
+      <div className="grid grid-cols-2 gap-2 pl-5 md:grid-cols-3">
         <select
           value={rule.required_position}
-          onChange={(e) => onChange({ required_position: e.target.value as PlaybookRequiredPosition })}
-          className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          onChange={(e) =>
+            onChange({ required_position: e.target.value as PlaybookRequiredPosition })
+          }
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           {Object.entries(POSITION_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+            <option key={key} value={key}>
+              {label}
+            </option>
           ))}
         </select>
         <select
           value={rule.severity}
           onChange={(e) => onChange({ severity: e.target.value as PlaybookSeverity })}
-          className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1.5 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           {Object.entries(SEVERITY_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+            <option key={key} value={key}>
+              {label}
+            </option>
           ))}
         </select>
       </div>
@@ -654,13 +770,13 @@ function RuleRow({ rule, onChange, onRemove, onDuplicate }: {
         value={rule.deviation_flag}
         onChange={(e) => onChange({ deviation_flag: e.target.value })}
         placeholder="Deviation-Flag (wann liegt eine Abweichung vor?)"
-        className="w-full pl-5 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
       />
       <input
         value={rule.notes ?? ""}
         onChange={(e) => onChange({ notes: e.target.value })}
         placeholder="Notizen (optional)"
-        className="w-full pl-5 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 pl-5 text-xs text-[color:var(--ds-text-muted)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
       />
     </div>
   );

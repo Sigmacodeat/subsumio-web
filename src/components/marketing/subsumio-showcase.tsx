@@ -130,22 +130,25 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
         className="absolute -inset-6 rounded-[3rem] opacity-40 blur-2xl"
         style={{ background: "radial-gradient(circle, var(--brand-glow), transparent 70%)" }}
       />
-      <div className="relative rounded-[2.5rem] border border-[#23233f] bg-[#0a0a14] p-2.5 shadow-2xl shadow-black/60">
-        <div className="overflow-hidden rounded-[2rem] border border-[#1a1a30] bg-[#0b0f1a]">
+      <div className="relative rounded-[2.5rem] border [border-color:var(--mk-border-strong)] p-2.5 shadow-2xl shadow-black/60 [background:var(--mk-bg)]">
+        <div className="overflow-hidden rounded-[2rem] border [border-color:var(--mk-border)] [background:var(--mk-surface-2)]">
           {/* header */}
           <div
-            className="flex items-center gap-2.5 border-b border-[#15233a] px-4 py-3"
-            style={{ background: "linear-gradient(120deg,#0e1d33,#0b1424)" }}
+            className="flex items-center gap-2.5 border-b [border-color:var(--mk-border)] px-4 py-3"
+            style={{ background: "linear-gradient(120deg, var(--mk-surface), var(--mk-bg))" }}
           >
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full"
-              style={{ background: "linear-gradient(150deg,#1d4ed8,#0ea5e9)" }}
+              style={{
+                background:
+                  "linear-gradient(150deg, var(--brand-gradient-via), var(--brand-gradient-to))",
+              }}
             >
               <ShieldCheck size={15} className="text-white" />
             </div>
             <div className="leading-tight">
               <p className="text-xs font-semibold [color:var(--mk-text)]">{c.phoneHeader}</p>
-              <p className="flex items-center gap-1 text-[10px] text-[var(--brand-secondary)]">
+              <p className="flex items-center gap-1 text-xs text-[var(--brand-secondary)]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />
                 {c.phoneStatus}
               </p>
@@ -156,7 +159,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
             className="min-h-[360px] space-y-2.5 px-3 py-4"
             style={{
               background:
-                "repeating-linear-gradient(135deg,#0b0f1a,#0b0f1a 18px,#0c1120 18px,#0c1120 36px)",
+                "repeating-linear-gradient(135deg, var(--mk-surface-2), var(--mk-surface-2) 18px, var(--mk-surface) 18px, var(--mk-surface) 36px)",
             }}
           >
             {c.chat.map((m, i) => (
@@ -169,11 +172,11 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                 className={m.from === "user" ? "flex justify-end" : "flex justify-start"}
               >
                 <div
-                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-[11px] leading-snug whitespace-pre-line ${m.from === "user" ? "rounded-br-sm bg-[#13351f] text-[#d6f5e1]" : "rounded-bl-sm border border-[#1d3354] bg-[#13213a] text-[#cfe0f5]"}`}
+                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-snug whitespace-pre-line ${m.from === "user" ? "rounded-br-sm bg-emerald-500/15 text-emerald-300" : "rounded-bl-sm border [border-color:var(--mk-border-strong)] bg-blue-500/10 text-blue-200"}`}
                 >
                   {m.text}
                   {"file" in m && m.file && (
-                    <span className="mt-1.5 flex items-center gap-1 text-[10px] text-sky-300">
+                    <span className="mt-1.5 flex items-center gap-1 text-xs text-sky-300">
                       <FileText size={11} /> {m.file}
                     </span>
                   )}
@@ -182,7 +185,7 @@ export function PhoneCopilot({ lang }: { lang: Lang }) {
                       {m.chips.map((ch) => (
                         <span
                           key={ch}
-                          className={`rounded-full border px-2 py-0.5 text-[10px] ${ch === m.chips![0] ? "border-[var(--brand-secondary)]/40 bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]" : "[border-color:var(--mk-border-strong)] text-[#8fa6c5]"}`}
+                          className={`rounded-full border px-2 py-0.5 text-xs ${ch === m.chips![0] ? "border-[var(--brand-secondary)]/40 bg-[var(--brand-secondary)]/10 text-[var(--brand-secondary)]" : "[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)]"}`}
                         >
                           {ch}
                         </span>

@@ -1,5 +1,10 @@
 # Subsumio Legal-AI Action Todo Plan
 
+> **Historischer Plan.** Die Paketstruktur bleibt wichtig, aber der Statusblock
+> in diesem Dokument ist nicht mehr die kanonische Wahrheit. Aktueller Stand:
+> `docs/audits/LEGAL_AI_IMPLEMENTATION_STATUS.md`. Der Gegencheck liegt
+> archiviert unter `docs/audits/archive/LEGAL_AI_FOLLOWUP_PLAN_2026-06-20.md`.
+
 Datum: 2026-06-20  
 Basis: `docs/audits/LEGAL_AI_GLOBAL_COMPETITIVE_GAP_ANALYSIS_2026-06-20.md`  
 Ziel: Die Wettbewerbsanalyse in konkrete Arbeitspakete übersetzen, damit Subsumio vom starken Kanzlei-OS-Fundament zur führenden Legal-AI-Software ausgebaut wird.
@@ -161,7 +166,7 @@ Status nach erneutem Code-Abgleich:
    - `src/app/dashboard/court-deadlines` existiert nicht; Court Filing muss auf `src/app/dashboard/deadlines`, `src/lib/legal-deadlines.ts`, `src/app/api/legal/ai-deadlines` und einem neu zu spezifizierenden Filing-Package-Modell aufbauen.
    - `src/lib/anonymize.ts` existiert nicht; Anonymisierung ist aktuell über `src/app/api/legal/anonymize/route.ts` und die allgemeine Upload-/AI-Security-Schicht zu verknüpfen.
    - `src/lib/legal-grounding.ts` existiert bewusst noch nicht; Paket 1 fordert diese Extraktion.
-   - `docs/audits/LEGAL_AI_IMPLEMENTATION_STATUS.md` existiert bewusst noch nicht; Paket 0 fordert diese Statusdatei.
+   - `docs/audits/LEGAL_AI_IMPLEMENTATION_STATUS.md` wurde nachträglich als kanonische Statusdatei ergänzt; Paket 0 ist damit dokumentarisch erfüllt, externe Ticket-/Owner-Zuordnung bleibt getrennt zu pflegen.
 3. Redundanzen sind erkannt und als Abhängigkeiten zu behandeln:
    - Paket 10 Governance, Paket 13A AI Security, Paket 19 Auth Security und Paket 23 Legal Ethics überschneiden sich bei Security. Abgrenzung: Paket 19 = Account/Auth, Paket 13A = AI-/Upload-/Webhook-Security, Paket 10 = Enterprise-Governance, Paket 23 = Berufsrecht/Privilege/AML.
    - Paket 7 Intake, Paket 7A WhatsApp und Paket 18 Client Portal überschneiden sich bei Mandantenkommunikation. Abgrenzung: Paket 7 = Intake-Datenmodell, Paket 7A = WhatsApp-Kanal, Paket 18 = Portal-Link/Dokumente/Nachrichten.

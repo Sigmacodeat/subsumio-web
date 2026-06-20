@@ -122,8 +122,8 @@ function StepEditor({
   return (
     <div className="space-y-2">
       {steps.length === 0 && (
-        <div className="text-center py-6 rounded-lg border border-dashed border-[color:var(--ds-border)]">
-          <Zap size={20} className="mx-auto text-[color:var(--ds-border)] mb-2" />
+        <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] py-6 text-center">
+          <Zap size={20} className="mx-auto mb-2 text-[color:var(--ds-border)]" />
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             Keine Steps definiert. Der Supervisor decomponiert automatisch.
           </p>
@@ -133,50 +133,58 @@ function StepEditor({
       {steps.map((step, idx) => (
         <div
           key={step.id}
-          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 space-y-2"
+          className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
         >
           <div className="flex items-center gap-2">
-            <GripVertical size={14} className="text-[color:var(--ds-text-subtle)] shrink-0" />
-            <span className="text-xs font-mono text-[color:var(--ds-text-muted)]">#{idx + 1}</span>
+            <GripVertical size={14} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
+            <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">#{idx + 1}</span>
             <select
               value={step.specialist}
               onChange={(e) => updateStep(idx, { specialist: e.target.value })}
-              className="flex-1 bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)] rounded-md px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus:brand-border"
+              className="focus:brand-border flex-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
             >
               {SPECIALISTS.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
               ))}
             </select>
             {idx > 0 && (
               <select
                 value={step.depends_on ?? ""}
-                onChange={(e) => updateStep(idx, { depends_on: e.target.value ? Number(e.target.value) : undefined })}
-                className="w-28 bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)] rounded-md px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none focus:brand-border"
+                onChange={(e) =>
+                  updateStep(idx, {
+                    depends_on: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="focus:brand-border w-28 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:outline-none"
                 title="Abhängigkeit von vorherigem Step"
               >
                 <option value="">Parallel</option>
                 {steps.slice(0, idx).map((_, i) => (
-                  <option key={i} value={i}>Nach #{i + 1}</option>
+                  <option key={i} value={i}>
+                    Nach #{i + 1}
+                  </option>
                 ))}
               </select>
             )}
             <button
               onClick={() => moveStep(idx, -1)}
               disabled={idx === 0}
-              className="p-1 rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] disabled:opacity-30 transition-all"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
             >
               <ChevronUp size={14} />
             </button>
             <button
               onClick={() => moveStep(idx, 1)}
               disabled={idx === steps.length - 1}
-              className="p-1 rounded text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] disabled:opacity-30 transition-all"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
             >
               <ChevronDown size={14} />
             </button>
             <button
               onClick={() => removeStep(idx)}
-              className="p-1 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+              className="rounded p-1 text-red-500 transition-all hover:bg-red-500/10 hover:text-red-400"
             >
               <Trash2 size={14} />
             </button>
@@ -186,14 +194,14 @@ function StepEditor({
             onChange={(e) => updateStep(idx, { prompt: e.target.value })}
             placeholder="Prompt für diesen Step..."
             rows={2}
-            className="w-full bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)] rounded-md px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border resize-y"
+            className="focus:brand-border w-full resize-y rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
           />
         </div>
       ))}
 
       <button
         onClick={addStep}
-        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-[color:var(--ds-border)] text-xs text-[color:var(--ds-text-muted)] hover:brand-border hover:text-[color:var(--ds-text)] transition-all"
+        className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-all hover:text-[color:var(--ds-text)]"
       >
         <Plus size={14} />
         Step hinzufügen
@@ -230,52 +238,70 @@ function TemplateCard({
     <div
       onClick={onSelect}
       className={cn(
-        "w-full text-left p-3 rounded-lg border transition-all cursor-pointer",
+        "w-full cursor-pointer rounded-lg border p-3 text-left transition-all",
         isSelected
           ? "brand-soft brand-border"
-          : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] hover:border-[color:var(--ds-border-strong)]",
+          : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
       )}
     >
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Wand2 size={14} className="brand-text shrink-0" />
-          <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{template.name}</span>
+          <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+            {template.name}
+          </span>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-0.5">
           <button
-            onClick={(e) => { e.stopPropagation(); onRun(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRun();
+            }}
             disabled={isRunning}
-            className="p-1.5 rounded-md brand-soft brand-text border brand-border hover:brand-bg/30 disabled:opacity-40 transition-all"
+            className="brand-soft brand-text brand-border hover:brand-bg/30 rounded-md border p-1.5 transition-all disabled:opacity-40"
             title="Agent ausführen"
           >
             {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="p-1.5 rounded-md text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Bearbeiten"
           >
             <Edit3 size={13} />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            className="p-1.5 rounded-md text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Duplizieren"
           >
             <Copy size={13} />
           </button>
           {confirmDelete ? (
             <button
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); onDelete(); }}
-              className="p-1.5 rounded-md bg-red-600/15 text-red-500 border border-red-500/20 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDelete(false);
+                onDelete();
+              }}
+              className="rounded-md border border-red-500/20 bg-red-600/15 p-1.5 text-red-500 transition-all"
               title="Wirklich löschen"
             >
               <Trash2 size={13} />
             </button>
           ) : (
             <button
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-              className="p-1.5 rounded-md text-[color:var(--ds-text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDelete(true);
+              }}
+              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-500"
               title="Löschen"
             >
               <Trash2 size={13} />
@@ -284,26 +310,28 @@ function TemplateCard({
         </div>
       </div>
       {template.description && (
-        <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2 mb-2">{template.description}</p>
+        <p className="mb-2 line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+          {template.description}
+        </p>
       )}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         {template.model && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] font-mono">
+          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
             {template.model}
           </span>
         )}
         {stepCount > 0 && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">
+          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
             {stepCount} Step{stepCount > 1 ? "s" : ""}
           </span>
         )}
         {template.force_specialists && template.force_specialists.length > 0 && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600">
+          <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
             {template.force_specialists.length} Specialists
           </span>
         )}
         {template.skip_critic && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]">
+          <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
             No Critic
           </span>
         )}
@@ -328,9 +356,12 @@ function RunDialog({
   const [input, setInput] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 space-y-4 shadow-2xl"
+        className="w-full max-w-lg space-y-4 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -338,32 +369,36 @@ function RunDialog({
             <Play size={18} className="brand-text" />
             <h3 className="text-base font-semibold text-[color:var(--ds-text)]">Agent starten</h3>
           </div>
-          <button onClick={onClose} className="p-1 rounded-md text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all">
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          >
             <X size={18} />
           </button>
         </div>
         <p className="text-sm text-[color:var(--ds-text-muted)]">
-          <span className="text-[color:var(--ds-text)] font-medium">{template.name}</span> wird ausgeführt.
-          Optional kannst du eine Eingabe mitgeben, die an das Prompt-Template angehängt wird.
+          <span className="font-medium text-[color:var(--ds-text)]">{template.name}</span> wird
+          ausgeführt. Optional kannst du eine Eingabe mitgeben, die an das Prompt-Template angehängt
+          wird.
         </p>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Optionale Eingabe für den Agenten..."
           rows={4}
-          className="w-full bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border resize-y"
+          className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
         />
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+            className="rounded-lg px-4 py-2 text-sm text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             Abbrechen
           </button>
           <button
             onClick={() => onRun(input.trim() || undefined)}
             disabled={isRunning}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg brand-bg text-white text-sm font-medium brand-bg disabled:opacity-40 transition-all"
+            className="brand-bg brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-40"
           >
             {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
             {isRunning ? "Starte..." : "Starten"}
@@ -397,7 +432,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
   const templates = useMemo(() => templatesQuery.data ?? [], [templatesQuery.data]);
   const selected = useMemo(
     () => templates.find((t) => t.slug === selectedSlug) ?? null,
-    [templates, selectedSlug],
+    [templates, selectedSlug]
   );
 
   // Auto-clear success message
@@ -469,49 +504,58 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
     }
   }, [form, isNew, selected, createMutation, updateMutation]);
 
-  const handleDuplicate = useCallback(async (template: AgentTemplate) => {
-    try {
-      const dupInput: AgentTemplateInput = {
-        ...formToInput(templateToForm(template)),
-        name: `${template.name} (Kopie)`,
-      };
-      const result = await createMutation.mutateAsync(dupInput);
-      setSuccessMsg("Template dupliziert");
-      setSelectedSlug(result.slug);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Duplizieren fehlgeschlagen");
-    }
-  }, [createMutation]);
-
-  const handleDelete = useCallback(async (slug: string) => {
-    try {
-      await deleteMutation.mutateAsync(slug);
-      if (selectedSlug === slug) {
-        setSelectedSlug(null);
-        setForm(EMPTY_FORM);
-        setEditing(false);
-        setIsNew(false);
+  const handleDuplicate = useCallback(
+    async (template: AgentTemplate) => {
+      try {
+        const dupInput: AgentTemplateInput = {
+          ...formToInput(templateToForm(template)),
+          name: `${template.name} (Kopie)`,
+        };
+        const result = await createMutation.mutateAsync(dupInput);
+        setSuccessMsg("Template dupliziert");
+        setSelectedSlug(result.slug);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Duplizieren fehlgeschlagen");
       }
-      setSuccessMsg("Template gelöscht");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
-    }
-  }, [deleteMutation, selectedSlug]);
+    },
+    [createMutation]
+  );
 
-  const handleRun = useCallback(async (template: AgentTemplate, input?: string) => {
-    setRunError(null);
-    try {
-      const result = await runMutation.mutateAsync({ slug: template.slug, input });
-      setRunTarget(null);
-      setRunInput(undefined);
-      if (result.jobId && onRunComplete) {
-        onRunComplete(result.jobId);
+  const handleDelete = useCallback(
+    async (slug: string) => {
+      try {
+        await deleteMutation.mutateAsync(slug);
+        if (selectedSlug === slug) {
+          setSelectedSlug(null);
+          setForm(EMPTY_FORM);
+          setEditing(false);
+          setIsNew(false);
+        }
+        setSuccessMsg("Template gelöscht");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
       }
-      setSuccessMsg(`Agent gestartet (Job #${result.jobId})`);
-    } catch (err) {
-      setRunError(err instanceof Error ? err.message : "Starten fehlgeschlagen");
-    }
-  }, [runMutation, onRunComplete]);
+    },
+    [deleteMutation, selectedSlug]
+  );
+
+  const handleRun = useCallback(
+    async (template: AgentTemplate, input?: string) => {
+      setRunError(null);
+      try {
+        const result = await runMutation.mutateAsync({ slug: template.slug, input });
+        setRunTarget(null);
+        setRunInput(undefined);
+        if (result.jobId && onRunComplete) {
+          onRunComplete(result.jobId);
+        }
+        setSuccessMsg(`Agent gestartet (Job #${result.jobId})`);
+      } catch (err) {
+        setRunError(err instanceof Error ? err.message : "Starten fehlgeschlagen");
+      }
+    },
+    [runMutation, onRunComplete]
+  );
 
   const handleRunClick = useCallback((template: AgentTemplate) => {
     setRunTarget(template);
@@ -527,9 +571,9 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Left: Template List */}
-      <div className="w-80 border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] flex flex-col">
+      <div className="flex w-80 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
         {/* Header + Search */}
-        <div className="p-4 border-b border-[color:var(--ds-border)] space-y-3">
+        <div className="space-y-3 border-b border-[color:var(--ds-border)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wand2 size={16} className="brand-text" />
@@ -537,25 +581,28 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             </div>
             <button
               onClick={handleNew}
-              className="flex items-center gap-1 px-2 py-1 rounded-md brand-soft brand-text text-xs font-medium border brand-border hover:brand-bg/30 transition-all"
+              className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-all"
             >
               <Plus size={14} />
               Neu
             </button>
           </div>
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+            <Search
+              size={14}
+              className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Suchen..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)] text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border"
+              className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] py-1.5 pr-3 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
             />
           </div>
         </div>
 
         {/* Template List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+        <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
           {templatesQuery.isLoading && templates.length === 0 && (
             <div className="flex items-center justify-center py-8">
               <Loader2 size={20} className="brand-text animate-spin" />
@@ -563,22 +610,24 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           )}
 
           {templatesQuery.error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-500">
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-500">
               <AlertCircle size={14} />
               Templates nicht ladbar
             </div>
           )}
 
           {!templatesQuery.isLoading && templates.length === 0 && (
-            <div className="text-center py-12">
-              <Bot size={32} className="mx-auto text-[color:var(--ds-border)] mb-3" />
-              <p className="text-sm text-[color:var(--ds-text-muted)] mb-1">Keine Agent-Templates</p>
-              <p className="text-xs text-[color:var(--ds-text-subtle)] mb-4">
+            <div className="py-12 text-center">
+              <Bot size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
+              <p className="mb-1 text-sm text-[color:var(--ds-text-muted)]">
+                Keine Agent-Templates
+              </p>
+              <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
                 Erstelle deinen ersten Custom Agent
               </p>
               <button
                 onClick={handleNew}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg brand-soft brand-text text-xs font-medium border brand-border hover:brand-bg/30 transition-all"
+                className="brand-soft brand-text brand-border hover:brand-bg/30 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
               >
                 <Plus size={14} />
                 Neues Template
@@ -591,7 +640,11 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               key={template.slug}
               template={template}
               isSelected={selectedSlug === template.slug}
-              onSelect={() => { setSelectedSlug(template.slug); setEditing(false); setIsNew(false); }}
+              onSelect={() => {
+                setSelectedSlug(template.slug);
+                setEditing(false);
+                setIsNew(false);
+              }}
               onEdit={handleEdit}
               onDuplicate={() => handleDuplicate(template)}
               onDelete={() => handleDelete(template.slug)}
@@ -603,9 +656,9 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
       </div>
 
       {/* Right: Editor / Detail */}
-      <div className="flex-1 flex flex-col bg-[color:var(--ds-bg)] overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden bg-[color:var(--ds-bg)]">
         {/* Toolbar */}
-        <div className="p-4 border-b border-[color:var(--ds-border)] flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] p-4">
           <div className="flex items-center gap-2">
             {editing ? (
               <>
@@ -617,7 +670,9 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             ) : selected ? (
               <>
                 <Wand2 size={16} className="brand-text" />
-                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{selected.name}</h2>
+                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {selected.name}
+                </h2>
               </>
             ) : (
               <>
@@ -644,7 +699,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={handleCancel}
                   disabled={savePending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] disabled:opacity-40 transition-all"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-40"
                 >
                   <X size={14} />
                   Abbrechen
@@ -652,9 +707,13 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={handleSave}
                   disabled={savePending}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg brand-bg text-white text-xs font-medium brand-bg disabled:opacity-40 transition-all"
+                  className="brand-bg brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all disabled:opacity-40"
                 >
-                  {savePending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {savePending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Save size={14} />
+                  )}
                   Speichern
                 </button>
               </>
@@ -663,14 +722,14 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={() => handleRunClick(selected)}
                   disabled={isRunning}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg brand-soft brand-text text-xs font-medium border brand-border hover:brand-bg/30 disabled:opacity-40 transition-all"
+                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-40"
                 >
                   {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                   Ausführen
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 >
                   <Edit3 size={14} />
                   Bearbeiten
@@ -679,7 +738,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             ) : (
               <button
                 onClick={handleNew}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg brand-soft brand-text text-xs font-medium border brand-border hover:brand-bg/30 transition-all"
+                className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
               >
                 <Plus size={14} />
                 Neues Template
@@ -691,16 +750,18 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6">
           {!editing && !selected && (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Wand2 size={48} className="text-[color:var(--ds-border)] mb-4" />
-              <h3 className="text-lg font-semibold text-[color:var(--ds-text)] mb-2">Agent Builder</h3>
-              <p className="text-sm text-[color:var(--ds-text-muted)] max-w-md mb-6">
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <Wand2 size={48} className="mb-4 text-[color:var(--ds-border)]" />
+              <h3 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">
+                Agent Builder
+              </h3>
+              <p className="mb-6 max-w-md text-sm text-[color:var(--ds-text-muted)]">
                 Erstelle Custom Agents mit Prompt-Templates, Model-Auswahl und Workflow-Steps.
                 Speichere wiederverwendbare Agent-Definitionen und starte sie mit einem Klick.
               </p>
               <button
                 onClick={handleNew}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg brand-bg text-white text-sm font-medium brand-bg hover:opacity-90 transition-all"
+                className="brand-bg brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
               >
                 <Plus size={16} />
                 Erstes Template erstellen
@@ -709,52 +770,54 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           )}
 
           {editing && (
-            <div className="max-w-2xl mx-auto space-y-5">
+            <div className="mx-auto max-w-2xl space-y-5">
               {/* Name */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="z.B. Vertrags-Review Agent"
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Beschreibung
                 </label>
                 <input
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Kurze Beschreibung des Agenten..."
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
                 />
               </div>
 
               {/* Model */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Modell
                 </label>
                 <select
                   value={form.model}
                   onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:brand-border"
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none"
                 >
                   {MODEL_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               {/* Prompt Template */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Prompt-Template <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -762,32 +825,30 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                   onChange={(e) => setForm({ ...form, prompt_template: e.target.value })}
                   placeholder="Du bist ein Legal AI Agent. Deine Aufgabe ist es..."
                   rows={8}
-                  className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border resize-y font-mono"
+                  className="focus:brand-border w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
                 />
-                <p className="text-[10px] text-[color:var(--ds-text-subtle)] mt-1">
-                  Der Prompt wird an den Supervisor gesendet. Verwende Variablen wie {"{{eingabe}}"} für dynamische Werte.
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                  Der Prompt wird an den Supervisor gesendet. Verwende Variablen wie {"{{eingabe}}"}{" "}
+                  für dynamische Werte.
                 </p>
               </div>
 
               {/* Steps / Workflow */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider">
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                     Workflow Steps
                   </label>
-                  <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                  <span className="text-xs text-[color:var(--ds-text-subtle)]">
                     Optional — leer = Auto-Dekomposition
                   </span>
                 </div>
-                <StepEditor
-                  steps={form.steps}
-                  onChange={(steps) => setForm({ ...form, steps })}
-                />
+                <StepEditor steps={form.steps} onChange={(steps) => setForm({ ...form, steps })} />
               </div>
 
               {/* Force Specialists */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Force Specialists
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -803,10 +864,10 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                           setForm({ ...form, force_specialists: next });
                         }}
                         className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-medium border transition-all",
+                          "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
                           active
                             ? "brand-soft brand-text brand-border"
-                            : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]",
+                            : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                         )}
                         title={s.description}
                       >
@@ -815,26 +876,30 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                     );
                   })}
                 </div>
-                <p className="text-[10px] text-[color:var(--ds-text-subtle)] mt-1">
-                  Überschreibt die Auto-Dekomposition. Steps werden ignoriert, wenn Specialists forciert werden.
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                  Überschreibt die Auto-Dekomposition. Steps werden ignoriert, wenn Specialists
+                  forciert werden.
                 </p>
               </div>
 
               {/* Playbook Reference */}
               <div>
-                <label className="block text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                   Playbook-Referenz
                 </label>
                 <div className="relative">
-                  <FileText size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+                  <FileText
+                    size={14}
+                    className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                  />
                   <input
                     value={form.playbook_ref}
                     onChange={(e) => setForm({ ...form, playbook_ref: e.target.value })}
                     placeholder="z.B. playbooks/vertrags-review"
-                    className="w-full pl-8 pr-3 py-2 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:brand-border font-mono"
+                    className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-8 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
                   />
                 </div>
-                <p className="text-[10px] text-[color:var(--ds-text-subtle)] mt-1">
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
                   Brain-Page-Slug mit zusätzlichem Kontext für den Agenten.
                 </p>
               </div>
@@ -844,20 +909,22 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={() => setForm({ ...form, skip_critic: !form.skip_critic })}
                   className={cn(
-                    "relative w-10 h-5 rounded-full transition-all",
-                    form.skip_critic ? "brand-bg" : "bg-[color:var(--ds-border)]",
+                    "relative h-5 w-10 rounded-full transition-all",
+                    form.skip_critic ? "brand-bg" : "bg-[color:var(--ds-border)]"
                   )}
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all",
-                      form.skip_critic ? "left-5" : "left-0.5",
+                      "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all",
+                      form.skip_critic ? "left-5" : "left-0.5"
                     )}
                   />
                 </button>
                 <div>
-                  <span className="text-sm text-[color:var(--ds-text)]">Critic-Phase überspringen</span>
-                  <p className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                  <span className="text-sm text-[color:var(--ds-text)]">
+                    Critic-Phase überspringen
+                  </span>
+                  <p className="text-xs text-[color:var(--ds-text-subtle)]">
                     Deaktiviert die Qualitätsprüfung durch den Critic-Agenten.
                   </p>
                 </div>
@@ -866,12 +933,16 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
           )}
 
           {!editing && selected && (
-            <div className="max-w-2xl mx-auto space-y-5">
+            <div className="mx-auto max-w-2xl space-y-5">
               {/* Description */}
               {selected.description && (
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Beschreibung</h4>
-                  <p className="text-sm text-[color:var(--ds-text)] leading-relaxed">{selected.description}</p>
+                  <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                    Beschreibung
+                  </h4>
+                  <p className="text-sm leading-relaxed text-[color:var(--ds-text)]">
+                    {selected.description}
+                  </p>
                 </div>
               )}
 
@@ -879,30 +950,40 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               <div className="grid grid-cols-2 gap-3">
                 {selected.model && (
                   <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="text-xs text-[color:var(--ds-text-muted)] mb-1">Modell</div>
-                    <div className="text-sm font-mono text-[color:var(--ds-text)]">{selected.model}</div>
+                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Modell</div>
+                    <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                      {selected.model}
+                    </div>
                   </div>
                 )}
                 {selected.playbook_ref && (
                   <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="text-xs text-[color:var(--ds-text-muted)] mb-1">Playbook</div>
-                    <div className="text-sm font-mono text-[color:var(--ds-text)] truncate">{selected.playbook_ref}</div>
+                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Playbook</div>
+                    <div className="truncate font-mono text-sm text-[color:var(--ds-text)]">
+                      {selected.playbook_ref}
+                    </div>
                   </div>
                 )}
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                  <div className="text-xs text-[color:var(--ds-text-muted)] mb-1">Critic</div>
-                  <div className="text-sm text-[color:var(--ds-text)]">{selected.skip_critic ? "Deaktiviert" : "Aktiviert"}</div>
+                  <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Critic</div>
+                  <div className="text-sm text-[color:var(--ds-text)]">
+                    {selected.skip_critic ? "Deaktiviert" : "Aktiviert"}
+                  </div>
                 </div>
                 <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                  <div className="text-xs text-[color:var(--ds-text-muted)] mb-1">Steps</div>
-                  <div className="text-sm text-[color:var(--ds-text)]">{selected.steps?.length ?? 0}</div>
+                  <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Steps</div>
+                  <div className="text-sm text-[color:var(--ds-text)]">
+                    {selected.steps?.length ?? 0}
+                  </div>
                 </div>
               </div>
 
               {/* Prompt Template */}
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Prompt-Template</h4>
-                <pre className="text-sm text-[color:var(--ds-text)] leading-relaxed whitespace-pre-wrap font-mono max-h-80 overflow-y-auto">
+                <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                  Prompt-Template
+                </h4>
+                <pre className="max-h-80 overflow-y-auto font-mono text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
                   {selected.prompt_template}
                 </pre>
               </div>
@@ -910,21 +991,32 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               {/* Steps */}
               {selected.steps && selected.steps.length > 0 && (
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-3">Workflow Steps</h4>
+                  <h4 className="mb-3 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                    Workflow Steps
+                  </h4>
                   <div className="space-y-2">
                     {selected.steps.map((step, idx) => (
-                      <div key={step.id} className="flex items-start gap-3 p-2 rounded-lg bg-[color:var(--ds-bg)] border border-[color:var(--ds-border)]">
-                        <span className="text-xs font-mono text-[color:var(--ds-text-muted)] mt-0.5">#{idx + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium brand-text">{step.specialist}</span>
+                      <div
+                        key={step.id}
+                        className="flex items-start gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] p-2"
+                      >
+                        <span className="mt-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
+                          #{idx + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="brand-text text-xs font-medium">
+                              {step.specialist}
+                            </span>
                             {step.depends_on !== undefined && (
-                              <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                              <span className="text-xs text-[color:var(--ds-text-subtle)]">
                                 → nach #{step.depends_on + 1}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-3">{step.prompt}</p>
+                          <p className="line-clamp-3 text-xs text-[color:var(--ds-text-muted)]">
+                            {step.prompt}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -935,10 +1027,15 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               {/* Force Specialists */}
               {selected.force_specialists && selected.force_specialists.length > 0 && (
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Force Specialists</h4>
+                  <h4 className="mb-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                    Force Specialists
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {selected.force_specialists.map((s) => (
-                      <span key={s} className="text-xs px-2 py-1 rounded-lg brand-soft brand-text border brand-border">
+                      <span
+                        key={s}
+                        className="brand-soft brand-text brand-border rounded-lg border px-2 py-1 text-xs"
+                      >
                         {s}
                       </span>
                     ))}
@@ -947,9 +1044,13 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               )}
 
               {/* Timestamps */}
-              <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)] pt-2">
-                {selected.created_at && <span>Erstellt: {new Date(selected.created_at).toLocaleString("de-DE")}</span>}
-                {selected.updated_at && <span>Aktualisiert: {new Date(selected.updated_at).toLocaleString("de-DE")}</span>}
+              <div className="flex items-center gap-4 pt-2 text-xs text-[color:var(--ds-text-muted)]">
+                {selected.created_at && (
+                  <span>Erstellt: {new Date(selected.created_at).toLocaleString("de-DE")}</span>
+                )}
+                {selected.updated_at && (
+                  <span>Aktualisiert: {new Date(selected.updated_at).toLocaleString("de-DE")}</span>
+                )}
               </div>
             </div>
           )}
@@ -960,7 +1061,10 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
       {runTarget && (
         <RunDialog
           template={runTarget}
-          onClose={() => { setRunTarget(null); setRunError(null); }}
+          onClose={() => {
+            setRunTarget(null);
+            setRunError(null);
+          }}
           onRun={(input) => handleRun(runTarget, input)}
           isRunning={isRunning}
         />
@@ -968,7 +1072,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
 
       {/* Run Error Toast */}
       {runError && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-red-600 text-white text-sm shadow-2xl">
+        <div className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm text-white shadow-2xl">
           <AlertCircle size={16} />
           {runError}
           <button onClick={() => setRunError(null)} className="ml-2 hover:opacity-70">

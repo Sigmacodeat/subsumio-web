@@ -34,7 +34,16 @@ interface SignatureRequest {
   expiresAt: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; iconClass: string; badgeClass: string; tileClass: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  {
+    label: string;
+    icon: React.ElementType;
+    iconClass: string;
+    badgeClass: string;
+    tileClass: string;
+  }
+> = {
   draft: {
     label: "Entwurf",
     icon: PenTool,
@@ -95,26 +104,30 @@ export default function SignaturePage() {
       try {
         const pages = await api.brain.listPages({ type: "signature_request", limit: 100 });
         if (cancelled) return;
-        setRequests(pages.map((p) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            id: p.slug,
-            documentName: String(fm.document_name ?? p.title),
-            recipientName: String(fm.recipient_name ?? "—"),
-            recipientEmail: String(fm.recipient_email ?? "—"),
-            status: String(fm.status ?? "draft") as SignatureRequest["status"],
-            sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
-            signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
-            expiresAt: String(fm.expires_at ?? p.created_at),
-          };
-        }));
+        setRequests(
+          pages.map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              id: p.slug,
+              documentName: String(fm.document_name ?? p.title),
+              recipientName: String(fm.recipient_name ?? "—"),
+              recipientEmail: String(fm.recipient_email ?? "—"),
+              status: String(fm.status ?? "draft") as SignatureRequest["status"],
+              sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
+              signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
+              expiresAt: String(fm.expires_at ?? p.created_at),
+            };
+          })
+        );
       } catch {
         setNotice("Signatur-Anfragen konnten nicht geladen werden.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function createRequest() {
@@ -124,7 +137,10 @@ export default function SignaturePage() {
     setSaving(true);
     setNotice(null);
     const now = new Date();
-    const slug = `legal/signatures/${now.toISOString().split("T")[0]}-${data.documentName.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-").slice(0, 60)}`;
+    const slug = `legal/signatures/${now.toISOString().split("T")[0]}-${data.documentName
+      .toLowerCase()
+      .replace(/[^a-z0-9äöüß]+/g, "-")
+      .slice(0, 60)}`;
     const req: SignatureRequest = {
       id: slug,
       documentName: data.documentName,
@@ -155,7 +171,9 @@ export default function SignaturePage() {
       setShowCreate(false);
       setNotice("Signatur-Entwurf im Brain gespeichert.");
     } catch (e) {
-      setNotice(e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen.");
+      setNotice(
+        e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen."
+      );
     } finally {
       setSaving(false);
     }
@@ -164,7 +182,7 @@ export default function SignaturePage() {
   async function markPrepared(req: SignatureRequest) {
     const sentAt = new Date().toISOString();
     const updated = { ...req, status: "sent" as const, sentAt };
-    setRequests(requests.map((r) => r.id === req.id ? updated : r));
+    setRequests(requests.map((r) => (r.id === req.id ? updated : r)));
     try {
       await api.brain.updatePage({
         slug: req.id,
@@ -179,114 +197,146 @@ export default function SignaturePage() {
           provider: "external",
         },
       });
-      setNotice("Als extern versendet markiert. Der tatsächliche Versand erfolgt im Signatur-Provider.");
+      setNotice(
+        "Als extern versendet markiert. Der tatsächliche Versand erfolgt im Signatur-Provider."
+      );
     } catch (e) {
-      setNotice(e instanceof Error ? `Status konnte nicht gespeichert werden: ${e.message}` : "Status konnte nicht gespeichert werden.");
+      setNotice(
+        e instanceof Error
+          ? `Status konnte nicht gespeichert werden: ${e.message}`
+          : "Status konnte nicht gespeichert werden."
+      );
     }
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="e-Signatur"
         description="Dokumente digital unterschreiben lassen"
         actions={
           <div className="flex items-center gap-2">
-          <a
-            href="/dashboard/settings"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-amber-600 hover:bg-amber-500/10 transition-all"
-          >
-            <Settings size={14} />
-            Anbieter konfigurieren
-          </a>
-          <Button
-            variant="primary"
-            className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2 text-sm"
-            onClick={() => setShowCreate(!showCreate)}
-          >
-            {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
-            {showCreate ? "Abbrechen" : "Unterschrift anfordern"}
-          </Button>
-        </div>
+            <a
+              href="/dashboard/settings"
+              className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 transition-all hover:bg-amber-500/10"
+            >
+              <Settings size={14} />
+              Anbieter konfigurieren
+            </a>
+            <Button
+              variant="primary"
+              className="gap-2 bg-indigo-600 text-sm text-white hover:bg-indigo-500"
+              onClick={() => setShowCreate(!showCreate)}
+            >
+              {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
+              {showCreate ? "Abbrechen" : "Unterschrift anfordern"}
+            </Button>
+          </div>
         }
       />
 
       {/* Setup hint */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
-            <p className="text-sm text-amber-600 font-medium">Externer Signatur-Provider erforderlich</p>
-            <p className="text-xs text-[color:var(--ds-text-muted)] mt-1">
-              Subsumio speichert Signatur-Anfragen revisionsfähig im Brain und verfolgt Status.
-              Der rechtlich wirksame Versand erfolgt über einen Anbieter wie{" "}
-              <a href="https://developers.docusign.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Docusign</a>
-              {" "}oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.
+            <p className="text-sm font-medium text-amber-600">
+              Externer Signatur-Provider erforderlich
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              Subsumio speichert Signatur-Anfragen revisionsfähig im Brain und verfolgt Status. Der
+              rechtlich wirksame Versand erfolgt über einen Anbieter wie{" "}
+              <a
+                href="https://developers.docusign.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 hover:underline"
+              >
+                Docusign
+              </a>{" "}
+              oder ein Kanzlei-Signaturportal. Kein Demo-Versand wird vorgetäuscht.
             </p>
           </div>
         </div>
       </div>
 
       {notice && (
-        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-700" role="status">
+        <div
+          className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-700"
+          role="status"
+        >
           {notice}
         </div>
       )}
 
       {/* Create form */}
       {showCreate && (
-        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-indigo-600">Unterschriften-Anfrage erstellen</h2>
+        <div className="space-y-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
+          <h2 className="text-sm font-semibold text-indigo-600">
+            Unterschriften-Anfrage erstellen
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">Dokument</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                Dokument
+              </label>
               <input
                 {...sigForm.register("documentName")}
                 placeholder="z.B. Mandatsvereinbarung Muster GmbH"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-indigo-500/50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
               />
               {sigForm.formState.errors.documentName && (
-                <p className="text-xs text-red-600 mt-1">{sigForm.formState.errors.documentName.message}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {sigForm.formState.errors.documentName.message}
+                </p>
               )}
             </div>
             <div>
-              <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">Empfänger-Name</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                Empfänger-Name
+              </label>
               <input
                 {...sigForm.register("recipientName")}
                 placeholder="Max Mustermann"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-indigo-500/50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">E-Mail</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">E-Mail</label>
               <input
                 type="email"
                 {...sigForm.register("recipientEmail")}
                 placeholder="max@example.com"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-indigo-500/50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
               />
               {sigForm.formState.errors.recipientEmail && (
-                <p className="text-xs text-red-600 mt-1">{sigForm.formState.errors.recipientEmail.message}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {sigForm.formState.errors.recipientEmail.message}
+                </p>
               )}
             </div>
             <div>
-              <label className="block text-xs text-[color:var(--ds-text-muted)] mb-1">Gültigkeit (Tage)</label>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                Gültigkeit (Tage)
+              </label>
               <input
                 type="number"
                 {...sigForm.register("expiresDays")}
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-indigo-500/50"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
               />
               {sigForm.formState.errors.expiresDays && (
-                <p className="text-xs text-red-600 mt-1">{sigForm.formState.errors.expiresDays.message}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {sigForm.formState.errors.expiresDays.message}
+                </p>
               )}
             </div>
           </div>
           <div className="flex gap-2">
             <Button
               variant="primary"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2 text-sm"
+              className="gap-2 bg-indigo-600 text-sm text-white hover:bg-indigo-500"
               onClick={createRequest}
               disabled={saving}
             >
@@ -303,11 +353,11 @@ export default function SignaturePage() {
           <Loader2 size={24} className="animate-spin text-indigo-600" />
         </div>
       ) : requests.length === 0 ? (
-        <div className="text-center py-20 space-y-4">
+        <div className="space-y-4 py-20 text-center">
           <FileSignature size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
             <p className="text-[color:var(--ds-text-muted)]">Noch keine Unterschriften-Anfragen.</p>
-            <p className="text-[color:var(--ds-text-muted)] text-sm mt-1">
+            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
               Erstelle eine Anfrage, um Dokumente digital unterschreiben zu lassen.
             </p>
           </div>
@@ -320,37 +370,45 @@ export default function SignaturePage() {
             return (
               <div
                 key={req.id}
-                className="flex items-center gap-4 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-indigo-500/30 transition-all"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-all hover:border-indigo-500/30"
               >
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", cfg.tileClass)}>
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                    cfg.tileClass
+                  )}
+                >
                   <Icon size={18} className={cfg.iconClass} />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-[color:var(--ds-text)]">{req.documentName}</span>
-                    <Badge variant="default" className={cn("text-[10px] border", cfg.badgeClass)}>
+                    <span className="font-medium text-[color:var(--ds-text)]">
+                      {req.documentName}
+                    </span>
+                    <Badge variant="default" className={cn("border text-xs", cfg.badgeClass)}>
                       {cfg.label}
                     </Badge>
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                    {req.recipientName} · {req.recipientEmail} · Gültig bis {new Date(req.expiresAt).toLocaleDateString("de-DE")}
+                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    {req.recipientName} · {req.recipientEmail} · Gültig bis{" "}
+                    {new Date(req.expiresAt).toLocaleDateString("de-DE")}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-	                  {req.status === "draft" && (
-	                    <button
-	                      onClick={() => markPrepared(req)}
-	                      className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-indigo-600 hover:bg-indigo-500/10 transition-all"
-	                      title="Als extern versendet markieren"
-	                    >
-	                      <Send size={14} />
-	                    </button>
-	                  )}
-	                  <a
-	                    href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
-	                    className="p-2 rounded-lg text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] transition-all"
-	                    title="Brain-Seite öffnen"
-	                  >
+                <div className="flex shrink-0 items-center gap-1">
+                  {req.status === "draft" && (
+                    <button
+                      onClick={() => markPrepared(req)}
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-indigo-500/10 hover:text-indigo-600"
+                      title="Als extern versendet markieren"
+                    >
+                      <Send size={14} />
+                    </button>
+                  )}
+                  <a
+                    href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
+                    title="Brain-Seite öffnen"
+                  >
                     <ExternalLink size={14} />
                   </a>
                 </div>

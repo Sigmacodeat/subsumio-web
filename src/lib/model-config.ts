@@ -14,7 +14,14 @@
  *   - brainScoped:  whether this model is available per-brain or globally
  */
 
-export type ModelProvider = "anthropic" | "openai" | "google" | "mistral" | "meta" | "zero-entropy";
+export type ModelProvider =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "mistral"
+  | "meta"
+  | "zero-entropy"
+  | "deepseek";
 
 export interface ModelEntry {
   id: string;
@@ -44,62 +51,77 @@ export interface ModelEntry {
 
 export const AI_MODELS: ModelEntry[] = [
   {
-    id: "claude-sonnet-4-20250514",
-    name: "Claude Sonnet 4",
+    id: "claude-opus-4-7",
+    name: "Claude Opus 4.7",
+    provider: "anthropic",
+    contextWindow: 200_000,
+    costPer1MInput: 5.0,
+    costPer1MOutput: 25.0,
+    speedRating: 2,
+    description:
+      "Highest intelligence for the most complex legal reasoning and multi-document synthesis. Harvey's deep-reasoning model.",
+    capabilities: ["tool-use", "vision", "extended-thinking"],
+    brainScoped: true,
+    dataResidency: "non_eu",
+  },
+  {
+    id: "claude-sonnet-4-6",
+    name: "Claude Sonnet 4.6",
     provider: "anthropic",
     contextWindow: 200_000,
     costPer1MInput: 3.0,
     costPer1MOutput: 15.0,
     speedRating: 4,
     description:
-      "Best balance of intelligence and speed. Ideal for legal drafting, analysis, and complex queries.",
+      "Best balance of intelligence and speed. Default workhorse for legal drafting, analysis, and complex queries.",
     capabilities: ["tool-use", "vision", "extended-thinking"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
-    id: "claude-opus-4-20250514",
-    name: "Claude Opus 4",
+    id: "claude-haiku-4-5",
+    name: "Claude Haiku 4.5",
     provider: "anthropic",
     contextWindow: 200_000,
-    costPer1MInput: 15.0,
-    costPer1MOutput: 75.0,
-    speedRating: 2,
-    description:
-      "Highest intelligence for the most complex legal reasoning and multi-document synthesis.",
-    capabilities: ["tool-use", "vision", "extended-thinking"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "claude-haiku-3-5-20241022",
-    name: "Claude 3.5 Haiku",
-    provider: "anthropic",
-    contextWindow: 200_000,
-    costPer1MInput: 0.8,
-    costPer1MOutput: 4.0,
+    costPer1MInput: 1.0,
+    costPer1MOutput: 5.0,
     speedRating: 5,
     description:
-      "Fastest and most cost-effective. Great for quick lookups, summaries, and high-volume tasks.",
+      "Fast and cost-effective. Great for classification, summaries, and high-volume utility tasks.",
     capabilities: ["tool-use", "vision"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
-    id: "gpt-4o-2024-11-20",
-    name: "GPT-4o",
+    id: "gpt-5.5",
+    name: "GPT-5.5",
     provider: "openai",
-    contextWindow: 128_000,
-    costPer1MInput: 2.5,
-    costPer1MOutput: 10.0,
-    speedRating: 4,
-    description: "Versatile multimodal model with strong general reasoning and code capabilities.",
+    contextWindow: 200_000,
+    costPer1MInput: 4.0,
+    costPer1MOutput: 16.0,
+    speedRating: 3,
+    description:
+      "Strong structured output and citation grounding. Harvey uses it for regulated industries and research-heavy retrieval.",
+    capabilities: ["tool-use", "vision", "structured-output"],
+    brainScoped: true,
+    dataResidency: "non_eu",
+  },
+  {
+    id: "gpt-5",
+    name: "GPT-5",
+    provider: "openai",
+    contextWindow: 200_000,
+    costPer1MInput: 5.0,
+    costPer1MOutput: 20.0,
+    speedRating: 3,
+    description:
+      "Versatile flagship model with strong general reasoning. Good for drafting-intensive work and complex analysis.",
     capabilities: ["tool-use", "vision"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
-    id: "gpt-4o-mini-2024-07-18",
+    id: "gpt-4o-mini",
     name: "GPT-4o mini",
     provider: "openai",
     contextWindow: 128_000,
@@ -113,7 +135,21 @@ export const AI_MODELS: ModelEntry[] = [
     dataResidency: "non_eu",
   },
   {
-    id: "gemini-2-0-flash-001",
+    id: "gemini-3-pro",
+    name: "Gemini 3 Pro",
+    provider: "google",
+    contextWindow: 1_000_000,
+    costPer1MInput: 2.0,
+    costPer1MOutput: 12.0,
+    speedRating: 3,
+    description:
+      "1M-token context with advanced reasoning. Strong for complex multi-document legal analysis and long-context review.",
+    capabilities: ["tool-use", "vision"],
+    brainScoped: true,
+    dataResidency: "non_eu",
+  },
+  {
+    id: "gemini-2.0-flash",
     name: "Gemini 2.0 Flash",
     provider: "google",
     contextWindow: 1_000_000,
@@ -121,36 +157,22 @@ export const AI_MODELS: ModelEntry[] = [
     costPer1MOutput: 0.4,
     speedRating: 5,
     description:
-      "1M-token context window at breakthrough pricing. Ideal for whole-brain ingestion and large-document review.",
+      "1M-token context at breakthrough pricing. Ideal for whole-brain ingestion and large-document review.",
     capabilities: ["tool-use", "vision"],
     brainScoped: true,
     dataResidency: "non_eu",
   },
   {
-    id: "gemini-2-5-pro-preview-06-05",
-    name: "Gemini 2.5 Pro",
-    provider: "google",
-    contextWindow: 1_000_000,
-    costPer1MInput: 1.25,
-    costPer1MOutput: 10.0,
-    speedRating: 3,
-    description:
-      "Advanced reasoning with 1M-token context. Strong for complex multi-document legal analysis.",
-    capabilities: ["tool-use", "vision"],
-    brainScoped: true,
-    dataResidency: "non_eu",
-  },
-  {
-    id: "mistral-large-2411",
-    name: "Mistral Large 2",
+    id: "mistral-large-3",
+    name: "Mistral Large 3",
     provider: "mistral",
-    contextWindow: 128_000,
-    costPer1MInput: 2.0,
-    costPer1MOutput: 6.0,
+    contextWindow: 256_000,
+    costPer1MInput: 0.5,
+    costPer1MOutput: 1.5,
     speedRating: 4,
     description:
-      "European-hosted option with strong multilingual support. GDPR-friendly data residency.",
-    capabilities: ["tool-use", "vision"],
+      "EU-hosted flagship (Paris). Apache 2.0, ISO 27001/27701, EU AI Act Code of Practice. Ideal for EU-only Kanzleien and utility-tier tasks.",
+    capabilities: ["tool-use", "structured-output", "vision"],
     brainScoped: true,
     dataResidency: "eu",
   },
@@ -190,6 +212,7 @@ export function getProviderLabel(provider: ModelProvider): string {
     mistral: "Mistral AI",
     meta: "Meta",
     "zero-entropy": "ZeroEntropy",
+    deepseek: "DeepSeek",
   };
   return labels[provider];
 }

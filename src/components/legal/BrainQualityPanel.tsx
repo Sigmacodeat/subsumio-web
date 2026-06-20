@@ -51,36 +51,25 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
   }, [load]);
 
   const score = summary ? Math.round(summary.coverage_score * 100) : 0;
-  const scoreColor = score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
+  const scoreColor =
+    score >= 80 ? "text-emerald-600" : score >= 50 ? "text-amber-600" : "text-red-600";
   const scoreBg = score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500";
 
   return (
     <div
       className={cn(
         "rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4",
-        className,
+        className
       )}
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Brain size={16} className="brand-text" />
-          <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-            Brain Qualität
-          </span>
+          <span className="text-sm font-semibold text-[color:var(--ds-text)]">Brain Qualität</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={load}
-          className="h-7 px-2"
-          disabled={loading}
-        >
-          {loading ? (
-            <Loader2 size={12} className="animate-spin" />
-          ) : (
-            <RefreshCw size={12} />
-          )}
+        <Button variant="ghost" size="sm" onClick={load} className="h-7 px-2" disabled={loading}>
+          {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
         </Button>
       </div>
 
@@ -196,7 +185,7 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
 
           {/* Last Synced */}
           {summary.last_synced && (
-            <div className="flex items-center gap-1.5 text-[10px] text-[color:var(--ds-text-subtle)]">
+            <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-subtle)]">
               <Clock size={10} />
               Letzter Sync: {new Date(summary.last_synced).toLocaleString("de-DE")}
             </div>
@@ -222,7 +211,7 @@ function StatCard({
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2.5 text-center">
       <Icon size={14} className={cn("mx-auto mb-1", color)} />
       <div className={cn("text-lg font-bold", color)}>{value.toLocaleString("de-DE")}</div>
-      <div className="text-[10px] text-[color:var(--ds-text-subtle)]">{label}</div>
+      <div className="text-xs text-[color:var(--ds-text-subtle)]">{label}</div>
     </div>
   );
 }

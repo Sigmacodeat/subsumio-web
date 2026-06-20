@@ -42,7 +42,9 @@ export default function ResearchPage() {
   const [query, setQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState("de");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  const [currentCitations, setCurrentCitations] = useState<Array<{ slug: string; title: string }>>([]);
+  const [currentCitations, setCurrentCitations] = useState<Array<{ slug: string; title: string }>>(
+    []
+  );
   const [currentGaps, setCurrentGaps] = useState<string[]>([]);
   const [currentGrounding, setCurrentGrounding] = useState<CitationPanelData["grounding"]>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +52,14 @@ export default function ResearchPage() {
   const [savedLoading, setSavedLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"new" | "saved">("new");
   const [savedSearch, setSavedSearch] = useState("");
-  const [savedJurisdiction, setSavedJurisdiction] = useState<"all" | "at" | "de" | "ch" | "eu">("all");
+  const [savedJurisdiction, setSavedJurisdiction] = useState<"all" | "at" | "de" | "ch" | "eu">(
+    "all"
+  );
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
 
-  useEffect(() => { loadSavedResearch(); }, []);
+  useEffect(() => {
+    loadSavedResearch();
+  }, []);
 
   async function loadSavedResearch() {
     setSavedLoading(true);
@@ -65,9 +71,13 @@ export default function ResearchPage() {
       const cached = await getCache<BrainPage[]>(OFFLINE_KEYS.research);
       if (cached) {
         setSavedPages(cached);
-        setError("Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Recherchen angezeigt.");
+        setError(
+          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Recherchen angezeigt."
+        );
       }
-    } finally { setSavedLoading(false); }
+    } finally {
+      setSavedLoading(false);
+    }
   }
 
   async function runResearch() {
@@ -111,7 +121,10 @@ export default function ResearchPage() {
   async function saveResearch() {
     if (!currentAnswer) return;
     try {
-      const slug = `legal/research/${query.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}-${Date.now()}`;
+      const slug = `legal/research/${query
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .slice(0, 40)}-${Date.now()}`;
       const payload = {
         slug,
         title: `Recherche: ${query.slice(0, 80)}`,
@@ -145,13 +158,16 @@ export default function ResearchPage() {
   }
 
   async function syncJudgements() {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       await api.legal.judgementsSync({ jurisdiction: jurisdiction as "at" | "de" | "all", query });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sync fehlgeschlagen.");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function deleteResearch(slug: string) {
@@ -171,61 +187,91 @@ export default function ResearchPage() {
       const nextPages = savedPages.filter((page) => page.slug !== slug);
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
     }
-    catch (err) { setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen."); }
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Legal Research"
         description="KI-gestützte Rechtsrecherche mit Zitation und Quellenangabe"
       />
 
       {/* Research Input */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
         <div className="flex items-center gap-3">
-          <select value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]">
+          <select
+            value={jurisdiction}
+            onChange={(e) => setJurisdiction(e.target.value)}
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          >
             <option value="de">🇩🇪 Deutschland</option>
             <option value="at">🇦🇹 Österreich</option>
             <option value="ch">🇨🇭 Schweiz</option>
             <option value="eu">🇪🇺 EU-Recht</option>
           </select>
-          <div className="flex-1 relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+          <div className="relative flex-1">
+            <Search
+              size={14}
+              className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+            />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && runResearch()}
               placeholder="Rechtsfrage eingeben… (z.B. 'Wann ist eine AGB-Klausel nach § 307 BGB unwirksam?')"
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             />
           </div>
-          <Button onClick={runResearch} disabled={loading || !query.trim()} className="brand-bg brand-bg text-white gap-2">
+          <Button
+            onClick={runResearch}
+            disabled={loading || !query.trim()}
+            className="brand-bg brand-bg gap-2 text-white"
+          >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {loading ? "Recherchiert…" : "Recherchieren"}
           </Button>
-          <Button variant="secondary" onClick={syncJudgements} disabled={loading} className="bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] gap-2">
+          <Button
+            variant="secondary"
+            onClick={syncJudgements}
+            disabled={loading}
+            className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+          >
             <Landmark size={14} /> Urteile-Sync
           </Button>
         </div>
-        {error && <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">{error}</div>}
+        {error && (
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Current Result */}
       {currentAnswer && (
-        <div className="rounded-xl border brand-border bg-[color:var(--ds-surface)] p-5 space-y-4">
+        <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale size={16} className="brand-text" />
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Ergebnis</h3>
-              <Badge variant="default" className="text-[10px] border brand-border brand-soft brand-text">{jurisdiction.toUpperCase()}</Badge>
+              <Badge
+                variant="default"
+                className="brand-border brand-soft brand-text border text-xs"
+              >
+                {jurisdiction.toUpperCase()}
+              </Badge>
             </div>
-            <Button onClick={saveResearch} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 text-xs">
+            <Button
+              onClick={saveResearch}
+              className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
+            >
               <Save size={14} /> Als Brain-Page speichern
             </Button>
           </div>
-          <div className="prose prose-invert prose-sm max-w-none text-[color:var(--ds-text-muted)] leading-relaxed"
+          <div
+            className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
           />
           <CitationPanel
@@ -245,23 +291,32 @@ export default function ResearchPage() {
       <div className="flex gap-1 border-b border-[color:var(--ds-border)]">
         <button
           onClick={() => setActiveTab("new")}
-          className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "new"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           }`}
         >
-          <span className="flex items-center gap-1.5"><Sparkles size={14} /> Neue Recherche</span>
+          <span className="flex items-center gap-1.5">
+            <Sparkles size={14} /> Neue Recherche
+          </span>
         </button>
         <button
           onClick={() => setActiveTab("saved")}
-          className={`px-4 py-2 text-sm font-medium transition-all border-b-2 ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-all ${
             activeTab === "saved"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           }`}
         >
-          <span className="flex items-center gap-1.5"><FolderOpen size={14} /> Gespeicherte Recherchen {savedPages.length > 0 && <span className="text-[10px] bg-[color:var(--ds-border)] px-1.5 py-0.5 rounded">{savedPages.length}</span>}</span>
+          <span className="flex items-center gap-1.5">
+            <FolderOpen size={14} /> Gespeicherte Recherchen{" "}
+            {savedPages.length > 0 && (
+              <span className="rounded bg-[color:var(--ds-border)] px-1.5 py-0.5 text-xs">
+                {savedPages.length}
+              </span>
+            )}
+          </span>
         </button>
       </div>
 
@@ -269,49 +324,70 @@ export default function ResearchPage() {
         <>
           {/* Current Result */}
           {currentAnswer && (
-            <div className="rounded-xl border brand-border bg-[color:var(--ds-surface)] p-5 space-y-4">
+            <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Scale size={16} className="brand-text" />
                   <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Ergebnis</h3>
-                  <Badge variant="default" className="text-[10px] border brand-border brand-soft brand-text">{jurisdiction.toUpperCase()}</Badge>
+                  <Badge
+                    variant="default"
+                    className="brand-border brand-soft brand-text border text-xs"
+                  >
+                    {jurisdiction.toUpperCase()}
+                  </Badge>
                 </div>
-                <Button onClick={saveResearch} className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 text-xs">
+                <Button
+                  onClick={saveResearch}
+                  className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
+                >
                   <Save size={14} /> Als Brain-Page speichern
                 </Button>
               </div>
-              <div className="prose prose-invert prose-sm max-w-none text-[color:var(--ds-text-muted)] leading-relaxed"
+              <div
+                className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
               />
-          <CitationPanel
-            data={{
-              citations: currentCitations,
-              gaps: currentGaps,
-              grounding: currentGrounding,
-              isStreaming: loading,
-              jurisdiction,
-            }}
-            className="mt-3"
-          />
-        </div>
+              <CitationPanel
+                data={{
+                  citations: currentCitations,
+                  gaps: currentGaps,
+                  grounding: currentGrounding,
+                  isStreaming: loading,
+                  jurisdiction,
+                }}
+                className="mt-3"
+              />
+            </div>
           )}
 
           {/* Recent Sessions */}
           {sessions.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-[color:var(--ds-text)] flex items-center gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
                 <Clock size={16} className="brand-text" />
                 Sitzungs-Verlauf
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {sessions.map((s) => (
-                  <div key={s.id} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{s.query}</span>
-                      <Badge variant="default" className="text-[10px] border brand-border brand-soft brand-text">{s.jurisdiction.toUpperCase()}</Badge>
+                  <div
+                    key={s.id}
+                    className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                        {s.query}
+                      </span>
+                      <Badge
+                        variant="default"
+                        className="brand-border brand-soft brand-text border text-xs"
+                      >
+                        {s.jurisdiction.toUpperCase()}
+                      </Badge>
                     </div>
-                    <div className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2">{s.answer.slice(0, 150)}…</div>
-                    <div className="flex items-center justify-between text-[10px] text-[color:var(--ds-text-muted)]">
+                    <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                      {s.answer.slice(0, 150)}…
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                       <span>{new Date(s.createdAt).toLocaleString("de-DE")}</span>
                       {s.citations.length > 0 && <span>{s.citations.length} Quellen</span>}
                     </div>
@@ -326,14 +402,17 @@ export default function ResearchPage() {
       {activeTab === "saved" && (
         <div className="space-y-4">
           {/* Filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search
+                size={14}
+                className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+              />
               <input
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
                 placeholder="Gespeicherte Recherchen durchsuchen…"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
             <div className="flex gap-1">
@@ -341,44 +420,61 @@ export default function ResearchPage() {
                 <button
                   key={j}
                   onClick={() => setSavedJurisdiction(j)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all border ${
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
                     savedJurisdiction === j
                       ? "brand-soft brand-border brand-text"
-                      : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
+                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
                   }`}
                 >
-                  {j === "all" ? "Alle" : j === "at" ? "🇦🇹 AT" : j === "de" ? "🇩🇪 DE" : j === "ch" ? "🇨🇭 CH" : "🇪🇺 EU"}
+                  {j === "all"
+                    ? "Alle"
+                    : j === "at"
+                      ? "🇦🇹 AT"
+                      : j === "de"
+                        ? "🇩🇪 DE"
+                        : j === "ch"
+                          ? "🇨🇭 CH"
+                          : "🇪🇺 EU"}
                 </button>
               ))}
             </div>
           </div>
 
           {savedLoading ? (
-            <div className="text-center py-8 text-[color:var(--ds-text-muted)]">Lade…</div>
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Lade…</div>
           ) : savedPages.length === 0 ? (
-            <div className="text-center py-16 space-y-3">
+            <div className="space-y-3 py-16 text-center">
               <FolderOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">Noch keine Recherchen gespeichert.</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Starte eine neue Recherche und speichere das Ergebnis.</p>
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                Noch keine Recherchen gespeichert.
+              </p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Starte eine neue Recherche und speichere das Ergebnis.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {(() => {
                 let filtered = savedPages;
                 if (savedJurisdiction !== "all") {
-                  filtered = filtered.filter((p) => (p.frontmatter?.jurisdiction as string) === savedJurisdiction);
+                  filtered = filtered.filter(
+                    (p) => (p.frontmatter?.jurisdiction as string) === savedJurisdiction
+                  );
                 }
                 if (savedSearch.trim()) {
                   const q = savedSearch.toLowerCase();
-                  filtered = filtered.filter((p) =>
-                    p.title.toLowerCase().includes(q) ||
-                    ((p.frontmatter?.query as string) || "").toLowerCase().includes(q) ||
-                    (p.content || "").toLowerCase().includes(q)
+                  filtered = filtered.filter(
+                    (p) =>
+                      p.title.toLowerCase().includes(q) ||
+                      ((p.frontmatter?.query as string) || "").toLowerCase().includes(q) ||
+                      (p.content || "").toLowerCase().includes(q)
                   );
                 }
                 if (filtered.length === 0) {
                   return (
-                    <div className="text-center py-12 text-[color:var(--ds-text-muted)] text-sm">Keine Recherchen passen zu den Filtern.</div>
+                    <div className="py-12 text-center text-sm text-[color:var(--ds-text-muted)]">
+                      Keine Recherchen passen zu den Filtern.
+                    </div>
                   );
                 }
                 return filtered.map((page) => {
@@ -387,47 +483,83 @@ export default function ResearchPage() {
                   const q = (fm.query as string) || "";
                   const isExpanded = expandedSlug === page.slug;
                   return (
-                    <div key={page.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3 group">
+                    <div
+                      key={page.slug}
+                      className="group space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+                    >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{page.title}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                              {page.title}
+                            </span>
                             {j && (
-                              <Badge variant="default" className={`text-[10px] border ${
-                                j === "at" ? "bg-red-500/10 border-red-500/20 text-red-600" :
-                                j === "ch" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" :
-                                j === "eu" ? "bg-amber-500/10 border-amber-500/20 text-amber-600" :
-                                "bg-blue-500/10 border-blue-500/20 text-blue-600"
-                              }`}>{j.toUpperCase()}</Badge>
+                              <Badge
+                                variant="default"
+                                className={`border text-xs ${
+                                  j === "at"
+                                    ? "border-red-500/20 bg-red-500/10 text-red-600"
+                                    : j === "ch"
+                                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                      : j === "eu"
+                                        ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
+                                        : "border-blue-500/20 bg-blue-500/10 text-blue-600"
+                                }`}
+                              >
+                                {j.toUpperCase()}
+                              </Badge>
                             )}
                           </div>
-                          {q && <p className="text-xs text-[color:var(--ds-text-muted)] mt-1 truncate">{q}</p>}
+                          {q && (
+                            <p className="mt-1 truncate text-xs text-[color:var(--ds-text-muted)]">
+                              {q}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
-                            className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:brand-text brand-bg/10 transition-all"
+                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >
                             {isExpanded ? <X size={13} /> : <ChevronRight size={13} />}
                           </button>
-                          <button onClick={() => deleteResearch(page.slug)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:text-red-600 hover:bg-red-500/10 transition-all" title="Löschen">
+                          <button
+                            onClick={() => deleteResearch(page.slug)}
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
+                            title="Löschen"
+                          >
                             <Trash2 size={13} />
                           </button>
                         </div>
                       </div>
                       {isExpanded ? (
-                        <div className="prose prose-invert prose-sm max-w-none text-[color:var(--ds-text-muted)] leading-relaxed"
+                        <div
+                          className="prose prose-invert prose-sm max-w-none leading-relaxed text-[color:var(--ds-text-muted)]"
                           dangerouslySetInnerHTML={{ __html: renderMarkdown(page.content || "") }}
                         />
                       ) : (
-                        <div className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2">{page.content?.slice(0, 200)}…</div>
+                        <div className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+                          {page.content?.slice(0, 200)}…
+                        </div>
                       )}
-                      <div className="flex items-center justify-between text-[10px] text-[color:var(--ds-text-muted)]">
-                        <span className="flex items-center gap-1"><Clock size={9} />{new Date((page as unknown as Record<string, unknown>).createdAt as string || (page as unknown as Record<string, unknown>).created_at as string || page.created_at || new Date().toISOString()).toLocaleDateString("de-DE")}</span>
+                      <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
+                        <span className="flex items-center gap-1">
+                          <Clock size={9} />
+                          {new Date(
+                            ((page as unknown as Record<string, unknown>).createdAt as string) ||
+                              ((page as unknown as Record<string, unknown>).created_at as string) ||
+                              page.created_at ||
+                              new Date().toISOString()
+                          ).toLocaleDateString("de-DE")}
+                        </span>
                         <div className="flex items-center gap-2">
-                          {Array.isArray(fm.citations) && fm.citations.length > 0 && <span>{fm.citations.length} Quellen</span>}
-                          {Array.isArray(fm.gaps) && fm.gaps.length > 0 && <span className="text-amber-600">{fm.gaps.length} Lücken</span>}
+                          {Array.isArray(fm.citations) && fm.citations.length > 0 && (
+                            <span>{fm.citations.length} Quellen</span>
+                          )}
+                          {Array.isArray(fm.gaps) && fm.gaps.length > 0 && (
+                            <span className="text-amber-600">{fm.gaps.length} Lücken</span>
+                          )}
                         </div>
                       </div>
                     </div>

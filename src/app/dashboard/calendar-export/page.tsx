@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Download,
-  CalendarClock,
-  AlertTriangle,
-  Clock,
-} from "lucide-react";
+import { Download, CalendarClock, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -84,7 +79,12 @@ export default function CalendarExportPage() {
         return {
           id: String(p.slug || ""),
           title: String(p.title || ""),
-          date: String(fm.due_date || fm.date || p.created_at?.split("T")[0] || new Date().toISOString().split("T")[0]),
+          date: String(
+            fm.due_date ||
+              fm.date ||
+              p.created_at?.split("T")[0] ||
+              new Date().toISOString().split("T")[0]
+          ),
           description: String(fm.description || p.content?.slice(0, 200) || ""),
           type: String(fm.event_type || "deadline") as CalendarEvent["type"],
           caseNumber: fm.case_number ? String(fm.case_number) : undefined,
@@ -97,7 +97,9 @@ export default function CalendarExportPage() {
         const fm = caseFrontmatter(cp);
         const rawDeadlines = fm.deadlines?.length
           ? fm.deadlines
-          : [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])].map((entry) => timelineToDeadline(entry, cp.slug));
+          : [...(fm.timeline ?? []), ...(fm.timeline_events ?? [])].map((entry) =>
+              timelineToDeadline(entry, cp.slug)
+            );
         if (rawDeadlines.length) {
           for (const dl of rawDeadlines) {
             const date = dl.due_date || dl.date;
@@ -137,8 +139,12 @@ export default function CalendarExportPage() {
   }
 
   const filtered = filter === "all" ? events : events.filter((e) => e.type === filter);
-  const upcoming = filtered.filter((e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)));
-  const overdue = filtered.filter((e) => new Date(e.date) < new Date(new Date().setHours(0, 0, 0, 0)));
+  const upcoming = filtered.filter(
+    (e) => new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0))
+  );
+  const overdue = filtered.filter(
+    (e) => new Date(e.date) < new Date(new Date().setHours(0, 0, 0, 0))
+  );
 
   const TYPE_COLORS: Record<string, StatusColor> = {
     deadline: "amber",
@@ -148,27 +154,27 @@ export default function CalendarExportPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Kalender-Export"
         description="Fristen & Termine als iCal (.ics)"
         actions={
           <Button
             variant="primary"
-          className="bg-blue-600 hover:bg-blue-500 text-white gap-2 text-sm"
-          onClick={downloadIcal}
-        >
-          <Download size={14} />
-          iCal herunterladen
-        </Button>
+            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            onClick={downloadIcal}
+          >
+            <Download size={14} />
+            iCal herunterladen
+          </Button>
         }
       />
 
       {/* Info */}
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/5">
-        <CalendarClock size={16} className="text-blue-600 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+        <CalendarClock size={16} className="mt-0.5 shrink-0 text-blue-600" />
         <div className="text-sm text-blue-600">
-          <p className="font-medium mb-1">Importieren Sie die .ics-Datei in:</p>
+          <p className="mb-1 font-medium">Importieren Sie die .ics-Datei in:</p>
           <ul className="space-y-0.5 text-xs">
             <li>• Outlook: Datei → Öffnen und Exportieren → Importieren/Exportieren → iCalendar</li>
             <li>• Google Calendar: Einstellungen → Kalender importieren → Datei auswählen</li>
@@ -183,13 +189,19 @@ export default function CalendarExportPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
               filter === f
-                ? "bg-blue-600/15 text-blue-600 border-blue-500/30"
-                : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                ? "border-blue-500/30 bg-blue-600/15 text-blue-600"
+                : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             }`}
           >
-            {f === "all" ? "Alle" : f === "deadline" ? "Fristen" : f === "hearing" ? "Verhandlungen" : "Besprechungen"}
+            {f === "all"
+              ? "Alle"
+              : f === "deadline"
+                ? "Fristen"
+                : f === "hearing"
+                  ? "Verhandlungen"
+                  : "Besprechungen"}
           </button>
         ))}
       </div>
@@ -214,12 +226,14 @@ export default function CalendarExportPage() {
 
       {/* Events */}
       {loading ? (
-        <div className="text-center py-20 text-[color:var(--ds-text-muted)]">Lade Termine…</div>
+        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Lade Termine…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 space-y-4">
+        <div className="space-y-4 py-20 text-center">
           <CalendarClock size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <p className="text-[color:var(--ds-text-muted)]">Keine Termine gefunden.</p>
-          <p className="text-[color:var(--ds-text-muted)] text-sm">Erstellen Sie Fristen in Akten oder nutzen Sie den Deadline-Extractor.</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Erstellen Sie Fristen in Akten oder nutzen Sie den Deadline-Extractor.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -229,36 +243,64 @@ export default function CalendarExportPage() {
             return (
               <div
                 key={ev.id}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-all ${
                   isOverdue
                     ? "border-red-500/20 bg-red-500/5"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 }`}
               >
-                <div className={cn("w-2 h-2 rounded-full shrink-0", STATUS_BG[color])} aria-hidden="true" />
-                <div className="flex-1 min-w-0">
+                <div
+                  className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_BG[color])}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)]">{ev.title}</span>
-                    <Badge variant="default" className={cn("text-[10px] border", statusBadgeClasses(color))}>
-                      {ev.type === "deadline" ? "Frist" : ev.type === "hearing" ? "Verhandlung" : ev.type === "meeting" ? "Besprechung" : "Erinnerung"}
+                    <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                      {ev.title}
+                    </span>
+                    <Badge
+                      variant="default"
+                      className={cn("border text-xs", statusBadgeClasses(color))}
+                    >
+                      {ev.type === "deadline"
+                        ? "Frist"
+                        : ev.type === "hearing"
+                          ? "Verhandlung"
+                          : ev.type === "meeting"
+                            ? "Besprechung"
+                            : "Erinnerung"}
                     </Badge>
                     {isOverdue && (
-                      <Badge variant="default" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/20">
+                      <Badge
+                        variant="default"
+                        className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
+                      >
                         Überfällig
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                    {new Date(ev.date).toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
+                  <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                    {new Date(ev.date).toLocaleDateString("de-DE", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
                     {ev.caseNumber && ` · Akte ${ev.caseNumber}`}
                     {ev.location && ` · ${ev.location}`}
                   </div>
                   {ev.description && (
-                    <div className="text-xs text-[color:var(--ds-text-muted)] mt-1 line-clamp-1">{ev.description}</div>
+                    <div className="mt-1 line-clamp-1 text-xs text-[color:var(--ds-text-muted)]">
+                      {ev.description}
+                    </div>
                   )}
                 </div>
                 <div className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">
-                  {isOverdue ? <AlertTriangle size={14} className="text-red-600" /> : <Clock size={14} className="text-blue-600" />}
+                  {isOverdue ? (
+                    <AlertTriangle size={14} className="text-red-600" />
+                  ) : (
+                    <Clock size={14} className="text-blue-600" />
+                  )}
                 </div>
               </div>
             );

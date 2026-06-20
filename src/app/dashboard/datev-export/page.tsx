@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Download,
-  Copy,
-  Check,
-  AlertTriangle,
-  Clock,
-  Briefcase,
-  Loader2,
-} from "lucide-react";
+import { Download, Copy, Check, AlertTriangle, Clock, Briefcase, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -116,7 +108,7 @@ export default function DatevExportPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="DATEV Export"
         description="Abgerechnete Honorare und Auslagen für DATEV Unternehmen Online"
@@ -124,16 +116,16 @@ export default function DatevExportPage() {
       />
 
       {/* DATEV Einstellungen */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Export-Einstellungen</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="space-y-1">
             <label className="text-xs text-[color:var(--ds-text-muted)]">Von</label>
             <input
               type="date"
               value={periodFrom}
               onChange={(e) => setPeriodFrom(e.target.value)}
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-green-500/50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
           <div className="space-y-1">
@@ -142,7 +134,7 @@ export default function DatevExportPage() {
               type="date"
               value={periodTo}
               onChange={(e) => setPeriodTo(e.target.value)}
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-green-500/50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
           <div className="space-y-1">
@@ -150,10 +142,13 @@ export default function DatevExportPage() {
             <select
               value={settings?.datevKontenrahmen || "SKR03"}
               onChange={(e) => {
-                const next = { ...settings, datevKontenrahmen: e.target.value as "SKR03" | "SKR04" | "SKR49" } as KanzleiSettings;
+                const next = {
+                  ...settings,
+                  datevKontenrahmen: e.target.value as "SKR03" | "SKR04" | "SKR49",
+                } as KanzleiSettings;
                 setSettings(next);
               }}
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-green-500/50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             >
               <option value="SKR03">SKR03 (DE)</option>
               <option value="SKR04">SKR04 (DE)</option>
@@ -165,25 +160,28 @@ export default function DatevExportPage() {
             <input
               type="text"
               value={settings?.datevBeraterNr || ""}
-              onChange={(e) => setSettings({ ...settings, datevBeraterNr: e.target.value } as KanzleiSettings)}
+              onChange={(e) =>
+                setSettings({ ...settings, datevBeraterNr: e.target.value } as KanzleiSettings)
+              }
               placeholder="12345"
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-green-500/50"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* Info */}
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-        <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
         <p className="text-sm text-amber-600">
           Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten.
-          Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihren Steuerberater verifizieren.
+          Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihren
+          Steuerberater verifizieren.
         </p>
       </div>
 
       {loadError && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5 text-red-600 text-sm">
+        <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <AlertTriangle size={16} className="shrink-0" />
           {loadError}
         </div>
@@ -197,45 +195,65 @@ export default function DatevExportPage() {
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamtstunden</div>
-          <div className="text-xl font-bold text-[color:var(--ds-text)]">{totalHours.toFixed(1)}h</div>
+          <div className="text-xl font-bold text-[color:var(--ds-text)]">
+            {totalHours.toFixed(1)}h
+          </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Netto-Betrag</div>
-          <div className="text-xl font-bold text-emerald-600">{totalAmount.toLocaleString("de-DE")} €</div>
+          <div className="text-xl font-bold text-emerald-600">
+            {totalAmount.toLocaleString("de-DE")} €
+          </div>
         </div>
       </div>
 
       {/* Entries */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Buchungen</h2>
         {loading ? (
-          <div className="text-center py-10 text-[color:var(--ds-text-muted)]">
-            <Loader2 size={20} className="mx-auto animate-spin mb-2" />
+          <div className="py-10 text-center text-[color:var(--ds-text-muted)]">
+            <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
             Lade Buchungen…
           </div>
         ) : entries.length === 0 ? (
-          <div className="text-center py-10 space-y-3">
+          <div className="space-y-3 py-10 text-center">
             <Clock size={32} className="mx-auto text-[color:var(--ds-border)]" />
-            <p className="text-[color:var(--ds-text-muted)]">Keine abgerechneten Buchungen gefunden.</p>
-            <p className="text-[color:var(--ds-text-muted)] text-sm">Erstellen Sie zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den DATEV-Export wandern.</p>
+            <p className="text-[color:var(--ds-text-muted)]">
+              Keine abgerechneten Buchungen gefunden.
+            </p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">
+              Erstellen Sie zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den
+              DATEV-Export wandern.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
             {entries.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)]">
-                <Briefcase size={14} className="text-[color:var(--ds-text-muted)] shrink-0" />
-                <div className="flex-1 min-w-0">
+              <div
+                key={entry.id}
+                className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
+              >
+                <Briefcase size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                <div className="min-w-0 flex-1">
                   <div className="text-sm text-[color:var(--ds-text)]">{entry.description}</div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {entry.client} · {entry.caseNumber}{entry.invoiceNumber ? ` · ${entry.invoiceNumber}` : ""}
+                    {entry.client} · {entry.caseNumber}
+                    {entry.invoiceNumber ? ` · ${entry.invoiceNumber}` : ""}
                   </div>
                 </div>
-                <Badge variant="default" className="text-[10px] bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] shrink-0">
+                <Badge
+                  variant="default"
+                  className="shrink-0 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                >
                   {entry.legalArea}
                 </Badge>
-                <div className="text-right shrink-0">
-                  <div className="text-sm text-[color:var(--ds-text)] font-mono">{entry.kind === "time" ? `${(entry.hours ?? 0).toFixed(1)}h` : "Auslage"}</div>
-                  <div className="text-xs text-emerald-600 font-mono">{entry.amount.toFixed(0)} €</div>
+                <div className="shrink-0 text-right">
+                  <div className="font-mono text-sm text-[color:var(--ds-text)]">
+                    {entry.kind === "time" ? `${(entry.hours ?? 0).toFixed(1)}h` : "Auslage"}
+                  </div>
+                  <div className="font-mono text-xs text-emerald-600">
+                    {entry.amount.toFixed(0)} €
+                  </div>
                 </div>
               </div>
             ))}
@@ -244,7 +262,7 @@ export default function DatevExportPage() {
       </div>
 
       {/* CSV Preview */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">DATEV CSV</h2>
           <div className="flex gap-2">
@@ -252,7 +270,7 @@ export default function DatevExportPage() {
               variant="ghost"
               size="sm"
               onClick={copyCsv}
-              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] gap-1.5 text-xs"
+              className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
               Kopieren
@@ -261,14 +279,14 @@ export default function DatevExportPage() {
               variant="primary"
               size="sm"
               onClick={downloadCsv}
-              className="bg-green-600 hover:bg-green-500 text-white gap-1.5 text-xs"
+              className="gap-1.5 bg-green-600 text-xs text-white hover:bg-green-500"
             >
               <Download size={14} />
               Herunterladen
             </Button>
           </div>
         </div>
-        <pre className="text-xs text-[color:var(--ds-text-muted)] font-mono bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+        <pre className="overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 font-mono text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
           {csv}
         </pre>
       </div>

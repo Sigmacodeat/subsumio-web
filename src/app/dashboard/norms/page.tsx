@@ -65,7 +65,11 @@ export default function NormsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Wird geladen">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label="Wird geladen"
+        >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       }
@@ -102,8 +106,11 @@ function NormsPageInner() {
         for (const page of pages) {
           const fm = frontmatterOf<NormFrontmatter>(page);
           // Erkenne Gesetze: type=statute, legal/statutes/..., law-corpus/..., norms/...
-          const isStatute = fm.type === "statute" || fm.type === "norm" ||
-            page.slug.includes("/law-corpus/") || page.slug.includes("/norms/") ||
+          const isStatute =
+            fm.type === "statute" ||
+            fm.type === "norm" ||
+            page.slug.includes("/law-corpus/") ||
+            page.slug.includes("/norms/") ||
             page.slug.startsWith("legal/statutes/");
           if (isStatute) {
             const codeMatch = page.slug.match(/\/([a-z-]+)$/);
@@ -114,9 +121,9 @@ function NormsPageInner() {
               code: fm.code || codeFromSlug || "allg",
               section: fm.section || fm.paragraph || "",
               content: page.snippet || "",
-              jurisdiction: (fm.jurisdiction as string) ||
-                (page.slug.includes("/at/") ? "at" :
-                 page.slug.includes("/ch/") ? "ch" : "de"),
+              jurisdiction:
+                (fm.jurisdiction as string) ||
+                (page.slug.includes("/at/") ? "at" : page.slug.includes("/ch/") ? "ch" : "de"),
             });
           }
         }
@@ -124,7 +131,8 @@ function NormsPageInner() {
         // Also check all pages for statutes
         const lawPages = await api.brain.listPages({ limit: 300 });
         for (const page of lawPages) {
-          const isLawPage = page.slug.startsWith("law-corpus/") ||
+          const isLawPage =
+            page.slug.startsWith("law-corpus/") ||
             page.slug.startsWith("legal/statutes/") ||
             page.slug.includes("-gesetz") ||
             page.slug.includes("-recht");
@@ -137,21 +145,24 @@ function NormsPageInner() {
               code: fm.code || codeMatch?.[1] || page.slug.split("/").pop() || "allg",
               section: "",
               content: page.content?.slice(0, 2000) || "",
-              jurisdiction: (fm.jurisdiction as string) ||
-                (page.slug.includes("/at/") ? "at" :
-                 page.slug.includes("/ch/") ? "ch" : "de"),
+              jurisdiction:
+                (fm.jurisdiction as string) ||
+                (page.slug.includes("/at/") ? "at" : page.slug.includes("/ch/") ? "ch" : "de"),
             });
           }
         }
 
         setNorms(items);
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Normen konnten nicht geladen werden.");
+        if (!cancelled)
+          setLoadError(e instanceof Error ? e.message : "Normen konnten nicht geladen werden.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [initialSearchQuery]);
 
   useEffect(() => {
@@ -171,30 +182,36 @@ function NormsPageInner() {
         if (!cancelled) setDetailLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [selectedNorm]);
 
   const filtered = norms.filter((n) => {
     const jMatch = jurisdiction === "all" || n.jurisdiction === jurisdiction;
     if (!query) return jMatch;
     const q = query.toLowerCase();
-    return jMatch && (
-      n.title.toLowerCase().includes(q) ||
-      n.code.toLowerCase().includes(q) ||
-      n.section.toLowerCase().includes(q) ||
-      n.content.toLowerCase().includes(q)
+    return (
+      jMatch &&
+      (n.title.toLowerCase().includes(q) ||
+        n.code.toLowerCase().includes(q) ||
+        n.section.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q))
     );
   });
 
   // Group by code
-  const byCode = filtered.reduce((acc, n) => {
-    if (!acc[n.code]) acc[n.code] = [];
-    acc[n.code].push(n);
-    return acc;
-  }, {} as Record<string, NormItem[]>);
+  const byCode = filtered.reduce(
+    (acc, n) => {
+      if (!acc[n.code]) acc[n.code] = [];
+      acc[n.code].push(n);
+      return acc;
+    },
+    {} as Record<string, NormItem[]>
+  );
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Normen"
         description="Gesetze und Rechtsvorschriften durchsuchen"
@@ -203,14 +220,17 @@ function NormsPageInner() {
 
       {/* Search */}
       <div className="flex gap-2">
-        <div className="relative flex-1 max-w-lg">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-muted)]" />
+        <div className="relative max-w-lg flex-1">
+          <Search
+            size={14}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
+          />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Norm suchen… z.B. § 823 BGB, Art. 5 GG"
             aria-label="Norm suchen… z.B. § 823 BGB, Art. 5 GG"
-            className="pl-9 bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
       </div>
@@ -223,15 +243,17 @@ function NormsPageInner() {
             <button
               key={j}
               onClick={() => setJurisdiction(j)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
                 jurisdiction === j
                   ? "brand-soft brand-border brand-text"
-                  : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                  : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
               }`}
             >
               {j === "all" ? "Alle" : j === "at" ? "🇦🇹 AT" : j === "de" ? "🇩🇪 DE" : "🇨🇭 CH"}
               {j !== "all" && counts > 0 && (
-                <span className="ml-1.5 px-1 py-0.5 rounded bg-[color:var(--ds-border)] text-[10px]">{counts}</span>
+                <span className="ml-1.5 rounded bg-[color:var(--ds-border)] px-1 py-0.5 text-xs">
+                  {counts}
+                </span>
               )}
             </button>
           );
@@ -240,7 +262,7 @@ function NormsPageInner() {
 
       {/* Selected norm detail */}
       {selectedNorm && (
-        <div className="rounded-xl border brand-border brand-soft p-5 space-y-4">
+        <div className="brand-border brand-soft space-y-4 rounded-xl border p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button
@@ -252,18 +274,31 @@ function NormsPageInner() {
                 <ArrowLeft size={16} />
               </Button>
               <div>
-                <h2 className="text-lg font-bold text-[color:var(--ds-text)]">{selectedNorm.title}</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="default" className="text-[10px] bg-blue-600/10 border-blue-500/20 text-blue-600">
+                <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                  {selectedNorm.title}
+                </h2>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge
+                    variant="default"
+                    className="border-blue-500/20 bg-blue-600/10 text-xs text-blue-600"
+                  >
                     {CODE_LABELS[selectedNorm.code] || selectedNorm.code.toUpperCase()}
                   </Badge>
-                  <Badge variant="default" className={`text-[10px] border ${
-                    selectedNorm.jurisdiction === "at" ? "bg-red-500/10 border-red-500/20 text-red-600" :
-                    selectedNorm.jurisdiction === "ch" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" :
-                    "bg-blue-500/10 border-blue-500/20 text-blue-600"
-                  }`}>
-                    {selectedNorm.jurisdiction === "at" ? "🇦🇹 Österreich" :
-                     selectedNorm.jurisdiction === "ch" ? "🇨🇭 Schweiz" : "🇩🇪 Deutschland"}
+                  <Badge
+                    variant="default"
+                    className={`border text-xs ${
+                      selectedNorm.jurisdiction === "at"
+                        ? "border-red-500/20 bg-red-500/10 text-red-600"
+                        : selectedNorm.jurisdiction === "ch"
+                          ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                          : "border-blue-500/20 bg-blue-500/10 text-blue-600"
+                    }`}
+                  >
+                    {selectedNorm.jurisdiction === "at"
+                      ? "🇦🇹 Österreich"
+                      : selectedNorm.jurisdiction === "ch"
+                        ? "🇨🇭 Schweiz"
+                        : "🇩🇪 Deutschland"}
                   </Badge>
                 </div>
               </div>
@@ -274,18 +309,20 @@ function NormsPageInner() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:brand-text hover:brand-border transition-all"
+              className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all"
               title="Text kopieren"
             >
               {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
               {copied ? "Kopiert" : "Kopieren"}
             </button>
           </div>
-          <div className="text-sm text-[color:var(--ds-text-muted)] whitespace-pre-wrap leading-relaxed max-h-[60vh] overflow-y-auto bg-[color:var(--ds-surface)] rounded-lg p-4 border border-[color:var(--ds-border)]">
+          <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
             {detailLoading ? (
               <div className="flex items-center gap-2 py-4">
-                <Loader2 size={14} className="animate-spin brand-text" />
-                <span className="text-xs text-[color:var(--ds-text-muted)]">Gesetzestext wird geladen…</span>
+                <Loader2 size={14} className="brand-text animate-spin" />
+                <span className="text-xs text-[color:var(--ds-text-muted)]">
+                  Gesetzestext wird geladen…
+                </span>
               </div>
             ) : (
               fullContent || selectedNorm.content
@@ -303,50 +340,80 @@ function NormsPageInner() {
       {/* Stats bar */}
       {!loading && norms.length > 0 && (
         <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
-          <span className="flex items-center gap-1"><Scale size={12} /> <strong className="text-[color:var(--ds-text)]">{norms.length}</strong> Gesetze</span>
-          <span className="flex items-center gap-1"><Globe size={12} /> AT: {norms.filter(n => n.jurisdiction === "at").length}</span>
-          <span className="flex items-center gap-1"><Globe size={12} /> DE: {norms.filter(n => n.jurisdiction === "de").length}</span>
-          <span className="flex items-center gap-1"><Globe size={12} /> CH: {norms.filter(n => n.jurisdiction === "ch").length}</span>
+          <span className="flex items-center gap-1">
+            <Scale size={12} />{" "}
+            <strong className="text-[color:var(--ds-text)]">{norms.length}</strong> Gesetze
+          </span>
+          <span className="flex items-center gap-1">
+            <Globe size={12} /> AT: {norms.filter((n) => n.jurisdiction === "at").length}
+          </span>
+          <span className="flex items-center gap-1">
+            <Globe size={12} /> DE: {norms.filter((n) => n.jurisdiction === "de").length}
+          </span>
+          <span className="flex items-center gap-1">
+            <Globe size={12} /> CH: {norms.filter((n) => n.jurisdiction === "ch").length}
+          </span>
         </div>
       )}
 
       {/* Norm list grouped by code */}
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Wird geladen">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label="Wird geladen"
+        >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 space-y-3">
+        <div className="space-y-3 py-16 text-center">
           <BookOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Gesetze gefunden.</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">{norms.length > 0 ? "Passe den Filter oder die Suche an." : "Importiere Gesetze über das CLI."}</p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            {norms.length > 0
+              ? "Passe den Filter oder die Suche an."
+              : "Importiere Gesetze über das CLI."}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(byCode).map(([code, items]) => (
             <div key={code} className="space-y-2">
-              <h3 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <BookOpen size={12} />
                 {CODE_LABELS[code] || code.toUpperCase()}
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">{items.length}</span>
+                <span className="rounded bg-[color:var(--ds-border)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                  {items.length}
+                </span>
               </h3>
               <div className="space-y-1">
                 {items.map((n) => (
                   <button
                     key={n.slug}
                     onClick={() => setSelectedNorm(n)}
-                    className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[color:var(--ds-hover)] transition-colors group border border-transparent hover:border-[color:var(--ds-border)]"
+                    className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-[color:var(--ds-border)] hover:bg-[color:var(--ds-hover)]"
                   >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${
-                      n.jurisdiction === "at" ? "bg-red-400" :
-                      n.jurisdiction === "ch" ? "bg-emerald-400" :
-                      "bg-blue-400"
-                    }`} />
-                    <span className="text-sm text-[color:var(--ds-text-muted)] group-hover:text-[color:var(--ds-text)] flex-1 truncate">{n.title}</span>
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${
+                        n.jurisdiction === "at"
+                          ? "bg-red-400"
+                          : n.jurisdiction === "ch"
+                            ? "bg-emerald-400"
+                            : "bg-blue-400"
+                      }`}
+                    />
+                    <span className="flex-1 truncate text-sm text-[color:var(--ds-text-muted)] group-hover:text-[color:var(--ds-text)]">
+                      {n.title}
+                    </span>
                     {n.jurisdiction && (
-                      <span className="text-[10px] text-[color:var(--ds-text-muted)] bg-[color:var(--ds-border)] px-1.5 py-0.5 rounded uppercase">{n.jurisdiction}</span>
+                      <span className="rounded bg-[color:var(--ds-border)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)] uppercase">
+                        {n.jurisdiction}
+                      </span>
                     )}
-                    <ChevronRight size={12} className="text-[color:var(--ds-text-muted)] group-hover:brand-text shrink-0" />
+                    <ChevronRight
+                      size={12}
+                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)]"
+                    />
                   </button>
                 ))}
               </div>

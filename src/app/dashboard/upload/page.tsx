@@ -280,7 +280,7 @@ export default function UploadPage() {
             — Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden eine
             10-Jahre-Aufbewahrungsfrist (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§
             146 Abs. 4 AO) ins Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.
-            <span className="mt-1 block text-[11px] text-[color:var(--ds-text-muted)]">
+            <span className="mt-1 block text-xs text-[color:var(--ds-text-muted)]">
               Technischer Baustein — volle GoBD-Konformität verlangt zusätzlich
               Verfahrensdokumentation und Prüfer-Abnahme.
             </span>
@@ -423,7 +423,7 @@ export default function UploadPage() {
                       {f.gobdStamped && (
                         <Badge
                           variant="default"
-                          className="brand-soft brand-text brand-border gap-1 text-[10px]"
+                          className="brand-soft brand-text brand-border gap-1 text-xs"
                         >
                           <Archive size={10} /> GoBD gestempelt
                         </Badge>

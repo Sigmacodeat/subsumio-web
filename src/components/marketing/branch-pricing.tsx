@@ -31,22 +31,22 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
   const hrefFor = (tier: { id: string; href: string }) => {
     if (tier.href !== "/signup") return tier.href;
     const plan = PLAN_BY_TIER[tier.id];
-    return plan
-      ? `/signup?industry=${industry}&plan=${plan}`
-      : `/signup?industry=${industry}`;
+    return plan ? `/signup?industry=${industry}&plan=${plan}` : `/signup?industry=${industry}`;
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-12">
-        <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium brand-soft brand-text border brand-border mb-4">
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-12 text-center">
+        <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           Pricing
         </span>
-        <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{title}</h2>
-        <p className="text-lg [color:var(--mk-text-muted)] max-w-2xl mx-auto">{sub}</p>
+        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
+        <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
       </div>
 
-      <div className={`grid md:grid-cols-2 gap-5 ${tiers.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3 max-w-5xl mx-auto"}`}>
+      <div
+        className={`grid gap-5 md:grid-cols-2 ${tiers.length >= 4 ? "lg:grid-cols-4" : "mx-auto max-w-5xl lg:grid-cols-3"}`}
+      >
         {tiers.map((tier) => {
           const href = hrefFor(tier);
           const isExternal = href.startsWith("http") || href.startsWith("mailto");
@@ -58,30 +58,43 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
           return (
             <div
               key={tier.id}
-              className={`relative flex flex-col p-6 rounded-2xl border ${
-                tier.highlight ? "brand-border-strong brand-soft" : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
+              className={`relative flex flex-col rounded-2xl border p-6 ${
+                tier.highlight
+                  ? "brand-border-strong brand-soft"
+                  : "[border-color:var(--mk-border)] [background:var(--mk-surface)]"
               }`}
             >
               {tier.highlight && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full brand-bg text-white text-[10px] font-semibold">
+                <span className="brand-bg absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white">
                   {lang === "en" ? "Most popular" : "Beliebt"}
                 </span>
               )}
-              <p className="text-sm font-medium [color:var(--mk-text-muted)] mb-1">{tier.name}</p>
+              <p className="mb-1 text-sm font-medium [color:var(--mk-text-muted)]">{tier.name}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold [color:var(--mk-text)]">{tier.price}</span>
                 <span className="text-xs [color:var(--mk-text-muted)]">{tier.period}</span>
               </div>
-              <p className="text-xs [color:var(--mk-text-muted)] mt-2 leading-relaxed">{tier.blurb}</p>
-              <ul className="space-y-2 my-5 flex-1">
+              <p className="mt-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                {tier.blurb}
+              </p>
+              <ul className="my-5 flex-1 space-y-2">
                 {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs text-[#a8a8be] leading-relaxed">
-                    <Check size={13} className="brand-text shrink-0 mt-0.5" /> {f}
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-xs leading-relaxed [color:var(--mk-text-muted)]"
+                  >
+                    <Check size={13} className="brand-text mt-0.5 shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
               {isExternal ? (
-                <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">{btn}</a>
+                <a
+                  href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel="noreferrer"
+                >
+                  {btn}
+                </a>
               ) : (
                 <Link href={p(lang, href)}>{btn}</Link>
               )}
@@ -90,7 +103,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
         })}
       </div>
 
-      <p className="text-center text-xs [color:var(--mk-text-subtle)] mt-6">
+      <p className="mt-6 text-center text-xs [color:var(--mk-text-subtle)]">
         {PRICING[lang].footnote}{" "}
         <Link href={p(lang, "/pricing")} className="brand-text hover:underline">
           {lang === "en" ? "Full pricing & FAQ" : "Alle Preise & FAQ"}

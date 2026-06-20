@@ -83,10 +83,19 @@ const TYPE_CONFIG: Record<SourceType, { label: string; icon: React.ElementType }
 };
 
 const AUTHORITY_CONFIG: Record<AuthorityTier, { label: string; badge: string }> = {
-  official: { label: "Offiziell", badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
-  "semi-official": { label: "Semi-offiziell", badge: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+  official: {
+    label: "Offiziell",
+    badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  },
+  "semi-official": {
+    label: "Semi-offiziell",
+    badge: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  },
   community: { label: "Community", badge: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-  commercial: { label: "Kommerziell", badge: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+  commercial: {
+    label: "Kommerziell",
+    badge: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  },
 };
 
 const JURISDICTION_LABELS: Record<JurisdictionCode, string> = {
@@ -121,7 +130,7 @@ function SourceCard({
       className={cn(
         "rounded-xl border bg-[color:var(--ds-surface)] transition-all",
         statusCfg.border,
-        expanded && "ring-1 ring-[color:var(--brand-primary)]/20",
+        expanded && "ring-1 ring-[color:var(--brand-primary)]/20"
       )}
     >
       <div className="flex items-start gap-3 p-4">
@@ -130,7 +139,7 @@ function SourceCard({
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
             statusCfg.bg,
-            statusCfg.border,
+            statusCfg.border
           )}
         >
           <TypeIcon size={18} className={statusCfg.color} />
@@ -138,21 +147,18 @@ function SourceCard({
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-[color:var(--ds-text)]">{source.label}</span>
             <span className={cn("text-xs font-medium", statusCfg.color)}>
-              <StatusIcon size={11} className="inline mr-0.5" />
+              <StatusIcon size={11} className="mr-0.5 inline" />
               {statusCfg.label}
             </span>
-            <Badge
-              variant="default"
-              className={cn("text-[10px] border", authCfg.badge)}
-            >
+            <Badge variant="default" className={cn("border text-xs", authCfg.badge)}>
               {authCfg.label}
             </Badge>
           </div>
 
-          <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)] flex-wrap">
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
             <span>{JURISDICTION_LABELS[source.jurisdiction]}</span>
             <span className="flex items-center gap-1">
               <FileText size={10} />
@@ -167,21 +173,19 @@ function SourceCard({
               </span>
             )}
             {source.last_sync_at && (
-              <span>
-                Sync: {new Date(source.last_sync_at).toLocaleDateString("de-DE")}
-              </span>
+              <span>Sync: {new Date(source.last_sync_at).toLocaleDateString("de-DE")}</span>
             )}
           </div>
 
           {source.last_error && (
-            <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600">
               <AlertTriangle size={11} />
               {source.last_error}
             </p>
           )}
 
           {/* License */}
-          <p className="mt-1 text-[10px] text-[color:var(--ds-text-subtle)] truncate">
+          <p className="mt-1 truncate text-xs text-[color:var(--ds-text-subtle)]">
             {source.license}
           </p>
 
@@ -190,7 +194,7 @@ function SourceCard({
             <div className="mt-2">
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1 text-xs brand-text hover:underline"
+                className="brand-text flex items-center gap-1 text-xs hover:underline"
               >
                 {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 {source.diff_log.length} Änderung(en) seit letztem Sync
@@ -204,12 +208,12 @@ function SourceCard({
                     >
                       <span
                         className={cn(
-                          "px-1.5 py-0.5 rounded font-medium",
+                          "rounded px-1.5 py-0.5 font-medium",
                           diff.change_type === "added"
                             ? "bg-emerald-500/10 text-emerald-600"
                             : diff.change_type === "modified"
                               ? "bg-amber-500/10 text-amber-600"
-                              : "bg-red-500/10 text-red-600",
+                              : "bg-red-500/10 text-red-600"
                         )}
                       >
                         {diff.change_type === "added"
@@ -321,7 +325,7 @@ export default function SourcesPage() {
     try {
       const result = await api.sources.refresh(sourceId);
       setMessage(
-        `${result.label}: ${result.sync_summary?.imported ?? 0} Dokumente synchronisiert.`,
+        `${result.label}: ${result.sync_summary?.imported ?? 0} Dokumente synchronisiert.`
       );
       await loadSources();
     } catch (e) {
@@ -359,7 +363,7 @@ export default function SourcesPage() {
   }, [filteredSources]);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Rechtsquellen"
         description="Quellen-Registry — Status, Freshness und Provenance aller Rechtsdaten"
@@ -396,13 +400,13 @@ export default function SourcesPage() {
       {registry && <StatsBar registry={registry} />}
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
         <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
         <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Filter:</span>
         <select
           value={jurisdictionFilter}
           onChange={(e) => setJurisdictionFilter(e.target.value)}
-          className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           <option value="all">Alle Jurisdiktionen</option>
           <option value="DE">🇩🇪 Deutschland</option>
@@ -412,7 +416,7 @@ export default function SourcesPage() {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           <option value="all">Alle Typen</option>
           <option value="statute_corpus">Gesetzeskorpus</option>
@@ -421,7 +425,7 @@ export default function SourcesPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+          className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
           <option value="all">Alle Status</option>
           <option value="fresh">Aktuell</option>
@@ -452,11 +456,11 @@ export default function SourcesPage() {
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>
       ) : filteredSources.length === 0 ? (
-        <div className="text-center py-20 space-y-4">
+        <div className="space-y-4 py-20 text-center">
           <Database size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
             <p className="text-[color:var(--ds-text-muted)]">Keine Quellen gefunden.</p>
-            <p className="text-[color:var(--ds-text-muted)] text-sm mt-1">
+            <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
               Passen Sie die Filter an oder aktualisieren Sie die Ansicht.
             </p>
           </div>
@@ -495,15 +499,18 @@ export default function SourcesPage() {
       )}
 
       {/* Info panel */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2">
-        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Über die Quellen-Registry</h3>
-        <p className="text-xs text-[color:var(--ds-text-muted)] leading-relaxed">
-          Die Source Registry ist die zentrale Instanz für Rechtsdaten-Provenance in Subsumio.
-          Sie verfolgt den Status aller Rechtsquellen — Gesetzeskorpora, Judikatur-APIs und
-          regulatorische Feeds — mit Freshness-Indikatoren, Authority-Tier und Sync-Historie.
-          Jede AI-Antwort kann über die Registry nachweisen, aus welchen Quellen und welchem Stand sie stammt.
+      <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          Über die Quellen-Registry
+        </h3>
+        <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+          Die Source Registry ist die zentrale Instanz für Rechtsdaten-Provenance in Subsumio. Sie
+          verfolgt den Status aller Rechtsquellen — Gesetzeskorpora, Judikatur-APIs und
+          regulatorische Feeds — mit Freshness-Indikatoren, Authority-Tier und Sync-Historie. Jede
+          AI-Antwort kann über die Registry nachweisen, aus welchen Quellen und welchem Stand sie
+          stammt.
         </p>
-        <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)] pt-1">
+        <div className="flex items-center gap-4 pt-1 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
             <CheckCircle2 size={11} className="text-emerald-600" />
             Fresh = innerhalb des Sync-Intervalls

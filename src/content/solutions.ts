@@ -185,7 +185,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           q: "Can I afford this as a solo?",
-          a: "The Pro plan is €290/seat/month — less than one billable hour. The 14-day reverse trial means you see real value before you pay.",
+          a: "The Pro plan is €890/seat/month — less than two billable hours. The 14-day reverse trial means you see real value before you pay.",
         },
         {
           q: "What if I grow into a firm later?",
@@ -342,7 +342,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           q: "What's the pricing for a mid-sized firm?",
-          a: "Team plan at €490/seat/month from 5 seats. Annual billing saves 20%. Transparent overages — you see usage live, no surprise bills.",
+          a: "Team plan at €1,290/seat/month from 5 seats. Annual billing saves 20%. Transparent overages — you see usage live, no surprise bills.",
         },
         {
           q: "Can we start small and scale?",
@@ -515,7 +515,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           q: "Kann ich mir das als Einzelanwalt leisten?",
-          a: "Der Pro-Plan kostet 290 €/Seat/Monat — weniger als eine abrechenbare Stunde. Der 14-Tage-Reverse-Trial bedeutet: du siehst den echten Wert, bevor du zahlst.",
+          a: "Der Pro-Plan kostet 890 €/Seat/Monat — weniger als zwei abrechenbare Stunden. Der 14-Tage-Reverse-Trial bedeutet: du siehst den echten Wert, bevor du zahlst.",
         },
         {
           q: "Was, wenn ich später wachse?",
@@ -672,7 +672,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           q: "Was kostet das für eine mittelständische Kanzlei?",
-          a: "Team-Plan ab 490 €/Seat/Monat ab 5 Seats. Jahreszahlung spart 20 %. Transparente Mehrkosten — du siehst den Verbrauch live, keine Überraschungen.",
+          a: "Team-Plan ab 1.290 €/Seat/Monat ab 5 Seats. Jahreszahlung spart 20 %. Transparente Mehrkosten — du siehst den Verbrauch live, keine Überraschungen.",
         },
         {
           q: "Können wir klein anfangen und wachsen?",

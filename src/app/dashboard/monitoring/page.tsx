@@ -2,16 +2,39 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  Radar, Plus, X, Loader2, Check, AlertTriangle, Pencil, Trash2,
-  Bell, BellOff, Pause, Play, ExternalLink, Filter, ArrowUpDown,
-  Mail, Settings, Inbox, Clock, Globe,
+  Radar,
+  Plus,
+  X,
+  Loader2,
+  Check,
+  AlertTriangle,
+  Pencil,
+  Trash2,
+  Bell,
+  BellOff,
+  Pause,
+  Play,
+  ExternalLink,
+  Filter,
+  ArrowUpDown,
+  Mail,
+  Settings,
+  Inbox,
+  Clock,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
@@ -37,7 +60,8 @@ import {
   LEGACY_WATCHLIST,
 } from "@/lib/regulatory-monitors";
 
-const inputCls = "w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]";
+const inputCls =
+  "w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]";
 const selectCls = inputCls;
 const labelCls = "block text-xs text-[color:var(--ds-text-muted)] mb-1 font-medium";
 
@@ -71,7 +95,10 @@ const emptyForm: MonitorFormState = {
 };
 
 function MonitorFormDialog({
-  open, onClose, onSave, editing,
+  open,
+  onClose,
+  onSave,
+  editing,
 }: {
   open: boolean;
   onClose: () => void;
@@ -106,9 +133,7 @@ function MonitorFormDialog({
   function toggleSource(src: MonitorSource) {
     setForm((f) => ({
       ...f,
-      sources: f.sources.includes(src)
-        ? f.sources.filter((s) => s !== src)
-        : [...f.sources, src],
+      sources: f.sources.includes(src) ? f.sources.filter((s) => s !== src) : [...f.sources, src],
     }));
   }
 
@@ -123,8 +148,14 @@ function MonitorFormDialog({
   }
 
   async function handleSave() {
-    if (!form.topic.trim()) { setError("Topic ist erforderlich."); return; }
-    if (form.keywords.length === 0) { setError("Mindestens ein Suchbegriff erforderlich."); return; }
+    if (!form.topic.trim()) {
+      setError("Topic ist erforderlich.");
+      return;
+    }
+    if (form.keywords.length === 0) {
+      setError("Mindestens ein Suchbegriff erforderlich.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -139,7 +170,11 @@ function MonitorFormDialog({
         keywords: form.keywords,
         status: form.status,
         email_notifications: form.email_notifications,
-        notify_emails: form.notify_emails.split(",").map((e) => e.trim()).filter(Boolean) || undefined,
+        notify_emails:
+          form.notify_emails
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean) || undefined,
         created_at: editing?.created_at ?? now,
         updated_at: now,
         last_run_at: editing?.last_run_at,
@@ -157,7 +192,7 @@ function MonitorFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? "Monitor bearbeiten" : "Neuen Monitor anlegen"}</DialogTitle>
         </DialogHeader>
@@ -186,11 +221,15 @@ function MonitorFormDialog({
               <label className={labelCls}>Jurisdiktion</label>
               <select
                 value={form.jurisdiction}
-                onChange={(e) => setForm((f) => ({ ...f, jurisdiction: e.target.value as Jurisdiction }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, jurisdiction: e.target.value as Jurisdiction }))
+                }
                 className={selectCls}
               >
                 {Object.entries(JURISDICTION_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
                 ))}
               </select>
             </div>
@@ -198,11 +237,15 @@ function MonitorFormDialog({
               <label className={labelCls}>Frequenz</label>
               <select
                 value={form.frequency}
-                onChange={(e) => setForm((f) => ({ ...f, frequency: e.target.value as MonitorFrequency }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, frequency: e.target.value as MonitorFrequency }))
+                }
                 className={selectCls}
               >
                 {Object.entries(FREQUENCY_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
                 ))}
               </select>
             </div>
@@ -216,7 +259,7 @@ function MonitorFormDialog({
                   key={src}
                   type="button"
                   onClick={() => toggleSource(src)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
                     form.sources.includes(src)
                       ? "brand-soft brand-text brand-border"
                       : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -230,23 +273,40 @@ function MonitorFormDialog({
 
           <div>
             <label className={labelCls}>Suchbegriffe / Keywords *</label>
-            <div className="flex gap-2 mb-2">
+            <div className="mb-2 flex gap-2">
               <Input
                 value={form.newKeyword}
                 onChange={(e) => setForm((f) => ({ ...f, newKeyword: e.target.value }))}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addKeyword();
+                  }
+                }}
                 placeholder="z. B. Mietminderung, § 543 BGB…"
               />
-              <Button type="button" variant="secondary" onClick={addKeyword} disabled={!form.newKeyword.trim()}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={addKeyword}
+                disabled={!form.newKeyword.trim()}
+              >
                 <Plus size={14} />
               </Button>
             </div>
             {form.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {form.keywords.map((kw) => (
-                  <span key={kw} className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)]">
+                  <span
+                    key={kw}
+                    className="inline-flex items-center gap-1 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
+                  >
                     {kw}
-                    <button type="button" onClick={() => removeKeyword(kw)} className="text-[color:var(--ds-text-muted)] hover:text-red-600">
+                    <button
+                      type="button"
+                      onClick={() => removeKeyword(kw)}
+                      className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                    >
                       <X size={11} />
                     </button>
                   </span>
@@ -260,7 +320,9 @@ function MonitorFormDialog({
               <label className={labelCls}>Status</label>
               <select
                 value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as MonitorStatus }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, status: e.target.value as MonitorStatus }))
+                }
                 className={selectCls}
               >
                 <option value="active">Aktiv</option>
@@ -268,36 +330,46 @@ function MonitorFormDialog({
               </select>
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-2 cursor-pointer pb-2">
+              <label className="flex cursor-pointer items-center gap-2 pb-2">
                 <Switch
                   checked={form.email_notifications}
                   onCheckedChange={(v) => setForm((f) => ({ ...f, email_notifications: v }))}
                 />
-                <span className="text-sm text-[color:var(--ds-text)]">E-Mail-Benachrichtigungen</span>
+                <span className="text-sm text-[color:var(--ds-text)]">
+                  E-Mail-Benachrichtigungen
+                </span>
               </label>
             </div>
           </div>
 
           {form.email_notifications && (
             <div>
-              <label className={labelCls}>Benachrichtigungs-E-Mails (optional, komma-getrennt)</label>
+              <label className={labelCls}>
+                Benachrichtigungs-E-Mails (optional, komma-getrennt)
+              </label>
               <Input
                 value={form.notify_emails}
                 onChange={(e) => setForm((f) => ({ ...f, notify_emails: e.target.value }))}
                 placeholder="leer = alle Kanzlei-Nutzer"
               />
-              <p className="text-xs text-[color:var(--ds-text-subtle)] mt-1">Leer lassen, um alle Nutzer der Kanzlei zu benachrichtigen.</p>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                Leer lassen, um alle Nutzer der Kanzlei zu benachrichtigen.
+              </p>
             </div>
           )}
 
           {error && (
-            <p className="text-xs text-red-600 flex items-center gap-1"><AlertTriangle size={12} /> {error}</p>
+            <p className="flex items-center gap-1 text-xs text-red-600">
+              <AlertTriangle size={12} /> {error}
+            </p>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Abbrechen</Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5 brand-bg text-white">
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Abbrechen
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="brand-bg gap-1.5 text-white">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             {editing ? "Speichern" : "Anlegen"}
           </Button>
@@ -310,7 +382,11 @@ function MonitorFormDialog({
 // ─── Monitor Card ──────────────────────────────────────────────────
 
 function MonitorCard({
-  monitor, onEdit, onDelete, onToggleStatus, onToggleEmail: _onToggleEmail,
+  monitor,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+  onToggleEmail: _onToggleEmail,
 }: {
   monitor: RegulatoryMonitor;
   onEdit: () => void;
@@ -319,31 +395,53 @@ function MonitorCard({
   onToggleEmail: () => void;
 }) {
   const lastRun = monitor.last_run_at
-    ? new Date(monitor.last_run_at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? new Date(monitor.last_run_at).toLocaleDateString("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "Nie";
 
   return (
-    <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+    <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)] truncate">{monitor.topic}</h3>
+          <div className="mb-1 flex items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
+              {monitor.topic}
+            </h3>
             <Badge variant={monitor.status === "active" ? "accent" : "default"}>
               {monitor.status === "active" ? "Aktiv" : "Pausiert"}
             </Badge>
           </div>
           {monitor.description && (
-            <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-2">{monitor.description}</p>
+            <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
+              {monitor.description}
+            </p>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button onClick={onToggleStatus} title={monitor.status === "active" ? "Pausieren" : "Aktivieren"} className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] transition-colors">
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={onToggleStatus}
+            title={monitor.status === "active" ? "Pausieren" : "Aktivieren"}
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          >
             {monitor.status === "active" ? <Pause size={14} /> : <Play size={14} />}
           </button>
-          <button onClick={onEdit} title="Bearbeiten" className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] transition-colors">
+          <button
+            onClick={onEdit}
+            title="Bearbeiten"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          >
             <Pencil size={14} />
           </button>
-          <button onClick={onDelete} title="Löschen" className="p-1.5 rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-red-600 transition-colors">
+          <button
+            onClick={onDelete}
+            title="Löschen"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-red-600"
+          >
             <Trash2 size={14} />
           </button>
         </div>
@@ -351,18 +449,27 @@ function MonitorCard({
 
       <div className="flex flex-wrap gap-1.5">
         {monitor.keywords.slice(0, 5).map((kw) => (
-          <span key={kw} className="px-2 py-0.5 rounded-md text-xs bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
+          <span
+            key={kw}
+            className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs text-[color:var(--ds-text-muted)]"
+          >
             {kw}
           </span>
         ))}
         {monitor.keywords.length > 5 && (
-          <span className="px-2 py-0.5 text-xs text-[color:var(--ds-text-subtle)]">+{monitor.keywords.length - 5} weitere</span>
+          <span className="px-2 py-0.5 text-xs text-[color:var(--ds-text-subtle)]">
+            +{monitor.keywords.length - 5} weitere
+          </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)] flex-wrap">
-        <span className="flex items-center gap-1"><Globe size={11} /> {JURISDICTION_LABELS[monitor.jurisdiction]}</span>
-        <span className="flex items-center gap-1"><Clock size={11} /> {FREQUENCY_LABELS[monitor.frequency]}</span>
+      <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
+        <span className="flex items-center gap-1">
+          <Globe size={11} /> {JURISDICTION_LABELS[monitor.jurisdiction]}
+        </span>
+        <span className="flex items-center gap-1">
+          <Clock size={11} /> {FREQUENCY_LABELS[monitor.frequency]}
+        </span>
         <span className="flex items-center gap-1">
           {monitor.email_notifications ? <Bell size={11} /> : <BellOff size={11} />}
           {monitor.email_notifications ? "E-Mail an" : "Keine E-Mail"}
@@ -375,10 +482,13 @@ function MonitorCard({
         <span className="text-[color:var(--ds-text-subtle)]">Letzter Lauf: {lastRun}</span>
       </div>
 
-      <div className="flex items-center gap-1.5 pt-1 border-t border-[color:var(--ds-border)]">
-        <span className="text-xs text-[color:var(--ds-text-subtle)] mr-1">Quellen:</span>
+      <div className="flex items-center gap-1.5 border-t border-[color:var(--ds-border)] pt-1">
+        <span className="mr-1 text-xs text-[color:var(--ds-text-subtle)]">Quellen:</span>
         {monitor.sources.map((src) => (
-          <span key={src} className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]">
+          <span
+            key={src}
+            className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]"
+          >
             {SOURCE_LABELS[src]}
           </span>
         ))}
@@ -391,27 +501,37 @@ function MonitorCard({
 
 function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: () => void }) {
   return (
-    <div className={`rounded-xl border bg-[color:var(--ds-surface)] p-4 transition-colors ${alert.read ? "border-[color:var(--ds-border)] opacity-75" : "border-[color:var(--ds-border-strong)]"}`}>
+    <div
+      className={`rounded-xl border bg-[color:var(--ds-surface)] p-4 transition-colors ${alert.read ? "border-[color:var(--ds-border)] opacity-75" : "border-[color:var(--ds-border-strong)]"}`}
+    >
       <div className="flex items-start gap-3">
-        <div className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${alert.read ? "bg-[color:var(--ds-text-subtle)]" : "bg-[color:var(--brand-primary)] animate-pulse"}`} />
+        <div
+          className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.read ? "bg-[color:var(--ds-text-subtle)]" : "animate-pulse bg-[color:var(--brand-primary)]"}`}
+        />
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-2">
-            <h4 className="text-sm font-medium text-[color:var(--ds-text)] line-clamp-2">{alert.title}</h4>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${SEVERITY_COLORS[alert.severity]}`}>
+            <h4 className="line-clamp-2 text-sm font-medium text-[color:var(--ds-text)]">
+              {alert.title}
+            </h4>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span
+                className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${SEVERITY_COLORS[alert.severity]}`}
+              >
                 {SEVERITY_LABELS[alert.severity]}
               </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] border border-[color:var(--ds-border)]">
+              <span className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-0.5 text-xs font-medium text-[color:var(--ds-text-muted)]">
                 {CHANGE_TYPE_LABELS[alert.change_type]}
               </span>
             </div>
           </div>
 
           {alert.summary && (
-            <p className="text-xs text-[color:var(--ds-text-muted)] line-clamp-3">{alert.summary}</p>
+            <p className="line-clamp-3 text-xs text-[color:var(--ds-text-muted)]">
+              {alert.summary}
+            </p>
           )}
 
-          <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)] flex-wrap">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
             <span className="font-medium text-[color:var(--ds-text)]">{alert.monitor_topic}</span>
             {alert.court && <span>• {alert.court}</span>}
             {alert.case_number && <span>• {alert.case_number}</span>}
@@ -425,13 +545,16 @@ function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: 
                 href={alert.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs brand-text hover:underline"
+                className="brand-text inline-flex items-center gap-1 text-xs hover:underline"
               >
                 <ExternalLink size={11} /> Öffnen
               </a>
             )}
             {!alert.read && (
-              <button onClick={onMarkRead} className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] transition-colors">
+              <button
+                onClick={onMarkRead}
+                className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+              >
                 <Check size={11} /> Als gelesen markieren
               </button>
             )}
@@ -491,10 +614,14 @@ export default function MonitoringPage() {
         const legacy = await api.brain.getPage(LEGACY_WATCHLIST);
         const fmTerms = legacy?.frontmatter?.terms;
         if (Array.isArray(fmTerms)) {
-          setLegacyKeywords(fmTerms
-            .map((t: unknown) => (t && typeof t === "object" ? (t as Record<string, unknown>) : {}))
-            .map((t: Record<string, unknown>) => String(t.query ?? ""))
-            .filter(Boolean));
+          setLegacyKeywords(
+            fmTerms
+              .map((t: unknown) =>
+                t && typeof t === "object" ? (t as Record<string, unknown>) : {}
+              )
+              .map((t: Record<string, unknown>) => String(t.query ?? ""))
+              .filter(Boolean)
+          );
         }
       } catch {
         setLegacyKeywords([]);
@@ -506,7 +633,9 @@ export default function MonitoringPage() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // ── CRUD handlers ──
 
@@ -591,7 +720,8 @@ export default function MonitoringPage() {
     result = [...result].sort((a, b) => {
       if (sortBy === "date_desc") return b.date.localeCompare(a.date);
       if (sortBy === "date_asc") return a.date.localeCompare(b.date);
-      if (sortBy === "severity") return severityRank[a.severity] - severityRank[b.severity] || b.date.localeCompare(a.date);
+      if (sortBy === "severity")
+        return severityRank[a.severity] - severityRank[b.severity] || b.date.localeCompare(a.date);
       return 0;
     });
     return result;
@@ -604,13 +734,19 @@ export default function MonitoringPage() {
   // ── Render ──
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Regulatory Monitoring"
         description="Themen und Rechtsgebiete beobachten — neue Urteile, Verordnungen und Änderungen automatisch erfassen"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Monitoring" }]}
         actions={
-          <Button onClick={() => { setEditingMonitor(null); setDialogOpen(true); }} className="gap-1.5 brand-bg text-white">
+          <Button
+            onClick={() => {
+              setEditingMonitor(null);
+              setDialogOpen(true);
+            }}
+            className="brand-bg gap-1.5 text-white"
+          >
             <Plus size={15} /> Neuer Monitor
           </Button>
         }
@@ -627,20 +763,20 @@ export default function MonitoringPage() {
           <p className="text-xs text-[color:var(--ds-text-muted)]">Alerts gesamt</p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <p className="text-2xl font-bold brand-text">{unreadCount}</p>
+          <p className="brand-text text-2xl font-bold">{unreadCount}</p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">Ungelesen</p>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600 flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-600">
           <AlertTriangle size={14} /> {error}
         </div>
       )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16 text-sm text-[color:var(--ds-text-muted)]">
-          <Loader2 size={18} className="animate-spin mr-2" /> Lade Monitoring-Daten…
+          <Loader2 size={18} className="mr-2 animate-spin" /> Lade Monitoring-Daten…
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -649,7 +785,9 @@ export default function MonitoringPage() {
               <Radar size={14} /> Monitore ({monitors.length})
             </TabsTrigger>
             <TabsTrigger value="alerts" className="gap-1.5">
-              <Bell size={14} /> Alerts ({unreadCount > 0 && <span className="brand-text font-bold">{unreadCount}</span>} {alerts.length})
+              <Bell size={14} /> Alerts (
+              {unreadCount > 0 && <span className="brand-text font-bold">{unreadCount}</span>}{" "}
+              {alerts.length})
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5">
               <Settings size={14} /> Einstellungen
@@ -657,22 +795,31 @@ export default function MonitoringPage() {
           </TabsList>
 
           {/* ── Monitors Tab ── */}
-          <TabsContent value="monitors" className="space-y-3 mt-4">
+          <TabsContent value="monitors" className="mt-4 space-y-3">
             {monitors.length === 0 && legacyKeywords.length === 0 ? (
-              <div className="text-center py-16 text-[color:var(--ds-text-muted)]">
+              <div className="py-16 text-center text-[color:var(--ds-text-muted)]">
                 <Radar size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm mb-2">Noch keine Monitore definiert.</p>
-                <p className="text-xs text-[color:var(--ds-text-subtle)] mb-4">Erstelle deinen ersten Monitor, um Themen und Rechtsgebiete zu beobachten.</p>
-                <Button onClick={() => { setEditingMonitor(null); setDialogOpen(true); }} className="gap-1.5 brand-bg text-white">
+                <p className="mb-2 text-sm">Noch keine Monitore definiert.</p>
+                <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
+                  Erstelle deinen ersten Monitor, um Themen und Rechtsgebiete zu beobachten.
+                </p>
+                <Button
+                  onClick={() => {
+                    setEditingMonitor(null);
+                    setDialogOpen(true);
+                  }}
+                  className="brand-bg gap-1.5 text-white"
+                >
                   <Plus size={15} /> Monitor anlegen
                 </Button>
               </div>
             ) : (
               <>
                 {monitors.length === 0 && legacyKeywords.length > 0 && (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700 flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700">
                     <AlertTriangle size={14} />
-                    Du nutzt noch die alte Watchlist ({legacyKeywords.length} Begriffe). Erstelle einen neuen Monitor für erweiterte Funktionen.
+                    Du nutzt noch die alte Watchlist ({legacyKeywords.length} Begriffe). Erstelle
+                    einen neuen Monitor für erweiterte Funktionen.
                   </div>
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
@@ -680,7 +827,10 @@ export default function MonitoringPage() {
                     <MonitorCard
                       key={m.monitor_id}
                       monitor={m}
-                      onEdit={() => { setEditingMonitor(m); setDialogOpen(true); }}
+                      onEdit={() => {
+                        setEditingMonitor(m);
+                        setDialogOpen(true);
+                      }}
                       onDelete={async () => {
                         if (confirm(`Monitor "${m.topic}" wirklich löschen?`)) {
                           await deleteMonitor(m);
@@ -696,16 +846,18 @@ export default function MonitoringPage() {
           </TabsContent>
 
           {/* ── Alerts Tab ── */}
-          <TabsContent value="alerts" className="space-y-3 mt-4">
+          <TabsContent value="alerts" className="mt-4 space-y-3">
             {/* Filter bar */}
-            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
-                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Filter:</span>
+                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  Filter:
+                </span>
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
-                  className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="all">Alle Schweregrade</option>
                   <option value="high">Hoch</option>
@@ -715,50 +867,62 @@ export default function MonitoringPage() {
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="all">Alle Quellen</option>
                   {availableSources.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
                 </select>
                 <select
                   value={monitorFilter}
                   onChange={(e) => setMonitorFilter(e.target.value)}
-                  className="text-xs rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="all">Alle Monitore</option>
                   {monitors.map((m) => (
-                    <option key={m.monitor_id} value={m.monitor_id}>{m.topic}</option>
+                    <option key={m.monitor_id} value={m.monitor_id}>
+                      {m.topic}
+                    </option>
                   ))}
                 </select>
                 <div className="flex-1" />
-                <label className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)] cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
                   <Switch checked={showRead} onCheckedChange={setShowRead} />
                   Gelesen zeigen
                 </label>
               </div>
               <div className="flex items-center gap-2">
                 <ArrowUpDown size={14} className="text-[color:var(--ds-text-muted)]" />
-                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Sortierung:</span>
+                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  Sortierung:
+                </span>
                 <button
                   onClick={() => setSortBy("date_desc")}
-                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                >Neueste zuerst</button>
+                  className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                >
+                  Neueste zuerst
+                </button>
                 <button
                   onClick={() => setSortBy("date_asc")}
-                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                >Älteste zuerst</button>
+                  className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                >
+                  Älteste zuerst
+                </button>
                 <button
                   onClick={() => setSortBy("severity")}
-                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                >Nach Schweregrad</button>
+                  className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                >
+                  Nach Schweregrad
+                </button>
               </div>
             </div>
 
             {/* Alert list */}
             {filteredAlerts.length === 0 ? (
-              <div className="text-center py-16 text-[color:var(--ds-text-muted)]">
+              <div className="py-16 text-center text-[color:var(--ds-text-muted)]">
                 <Bell size={36} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">
                   {alerts.length === 0
@@ -785,25 +949,32 @@ export default function MonitoringPage() {
           </TabsContent>
 
           {/* ── Settings Tab ── */}
-          <TabsContent value="settings" className="space-y-4 mt-4">
-            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">
+          <TabsContent value="settings" className="mt-4 space-y-4">
+            <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
               <div className="flex items-center gap-2">
                 <Mail size={16} className="text-[color:var(--ds-text-muted)]" />
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">E-Mail-Benachrichtigungen</h3>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  E-Mail-Benachrichtigungen
+                </h3>
               </div>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Pro Monitor kannst du E-Mail-Benachrichtigungen aktivieren. Der Cron-Job sendet bei neuen Treffern
-                einen Digest an alle konfigurierten Empfänger.
+                Pro Monitor kannst du E-Mail-Benachrichtigungen aktivieren. Der Cron-Job sendet bei
+                neuen Treffern einen Digest an alle konfigurierten Empfänger.
               </p>
 
               {monitors.length === 0 ? (
-                <p className="text-xs text-[color:var(--ds-text-subtle)] py-4">Keine Monitore vorhanden.</p>
+                <p className="py-4 text-xs text-[color:var(--ds-text-subtle)]">
+                  Keine Monitore vorhanden.
+                </p>
               ) : (
                 <div className="space-y-2">
                   {monitors.map((m) => (
-                    <div key={m.monitor_id} className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5">
+                    <div
+                      key={m.monitor_id}
+                      className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5"
+                    >
                       <div className="min-w-0">
-                        <p className="text-sm text-[color:var(--ds-text)] truncate">{m.topic}</p>
+                        <p className="truncate text-sm text-[color:var(--ds-text)]">{m.topic}</p>
                         <p className="text-xs text-[color:var(--ds-text-muted)]">
                           {m.email_notifications
                             ? `Aktiv — ${m.notify_emails?.length ? m.notify_emails.join(", ") : "alle Nutzer"}`
@@ -820,31 +991,48 @@ export default function MonitoringPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-3">
+            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
               <div className="flex items-center gap-2">
                 <Clock size={16} className="text-[color:var(--ds-text-muted)]" />
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Cron-Job Status</h3>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Cron-Job Status
+                </h3>
               </div>
               <div className="space-y-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                <p>Der Cron-Job <code className="text-[color:var(--ds-text)]">/api/cron/regulatory-monitors</code> läuft täglich um 06:45 UTC.</p>
-                <p>Voraussetzung: <code className="text-[color:var(--ds-text)]">CRON_SECRET</code> und <code className="text-[color:var(--ds-text)]">RESEND_API_KEY</code> müssen gesetzt sein.</p>
-                <p>Quellen: RIS-OGD (AT), openlegaldata.io (DE), OpenCaseLaw.ch (CH) — geteilt mit <code className="text-[color:var(--ds-text)]">/api/cron/case-law</code>.</p>
+                <p>
+                  Der Cron-Job{" "}
+                  <code className="text-[color:var(--ds-text)]">/api/cron/regulatory-monitors</code>{" "}
+                  läuft täglich um 06:45 UTC.
+                </p>
+                <p>
+                  Voraussetzung: <code className="text-[color:var(--ds-text)]">CRON_SECRET</code>{" "}
+                  und <code className="text-[color:var(--ds-text)]">RESEND_API_KEY</code> müssen
+                  gesetzt sein.
+                </p>
+                <p>
+                  Quellen: RIS-OGD (AT), openlegaldata.io (DE), OpenCaseLaw.ch (CH) — geteilt mit{" "}
+                  <code className="text-[color:var(--ds-text)]">/api/cron/case-law</code>.
+                </p>
               </div>
             </div>
 
             {legacyKeywords.length > 0 && (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
+              <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={16} className="text-amber-600" />
                   <h3 className="text-sm font-semibold text-amber-700">Legacy Watchlist</h3>
                 </div>
                 <p className="text-xs text-amber-700">
-                  Die alte Rechtsprechungs-Watchlist mit {legacyKeywords.length} Begriffen ist weiterhin aktiv
-                  und wird vom Cron-Job zusätzlich ausgeführt. Wir empfehlen, diese in neue Monitore zu migrieren.
+                  Die alte Rechtsprechungs-Watchlist mit {legacyKeywords.length} Begriffen ist
+                  weiterhin aktiv und wird vom Cron-Job zusätzlich ausgeführt. Wir empfehlen, diese
+                  in neue Monitore zu migrieren.
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {legacyKeywords.map((kw) => (
-                    <span key={kw} className="px-2 py-0.5 rounded-md text-xs bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                    <span
+                      key={kw}
+                      className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700"
+                    >
                       {kw}
                     </span>
                   ))}

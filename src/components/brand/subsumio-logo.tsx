@@ -15,7 +15,12 @@ export function SubsumioMark({
 }) {
   if (!tile) {
     return (
-      <Scale size={size} className={`text-[#3b82f6] ${className}`} strokeWidth={2} aria-hidden />
+      <Scale
+        size={size}
+        className={`text-[color:var(--brand-primary)] ${className}`}
+        strokeWidth={2}
+        aria-hidden
+      />
     );
   }
 
@@ -28,14 +33,18 @@ export function SubsumioMark({
       <span
         aria-hidden
         className="absolute -inset-0.5 rounded-[34%] opacity-50 blur-md"
-        style={{ background: "radial-gradient(circle, rgba(37,99,235,0.55), transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, color-mix(in srgb, var(--brand-primary) 55%, transparent), transparent 70%)",
+        }}
       />
       <span
         className="relative inline-flex items-center justify-center rounded-[30%] shadow-lg ring-1 shadow-blue-950/50 ring-white/15"
         style={{
           width: size,
           height: size,
-          background: "linear-gradient(150deg, #1e3a8a 0%, #1d4ed8 52%, #0ea5e9 100%)",
+          background:
+            "linear-gradient(150deg, var(--brand-gradient-from) 0%, var(--brand-gradient-via) 52%, var(--brand-gradient-to) 100%)",
         }}
       >
         <Scale size={Math.round(size * 0.56)} className="text-white" strokeWidth={2} aria-hidden />
@@ -61,7 +70,7 @@ export function SubsumioLogo({
           Subsum<span className="brand-text">•</span>io
         </span>
         {subtitle && (
-          <span className="mt-1 text-[9px] font-medium tracking-[0.22em] [color:var(--mk-text-subtle)]">
+          <span className="mt-1 text-xs font-medium tracking-[0.22em] [color:var(--mk-text-subtle)]">
             {subtitle}
           </span>
         )}

@@ -30,7 +30,16 @@ import { api } from "@/lib/api";
 import { BrainQualityPanel } from "@/components/legal/BrainQualityPanel";
 import type { BrainPage, Entity, SearchResult } from "@/lib/types";
 
-type FilterType = "all" | Entity["type"] | "document" | "legal_case" | "legal_actor" | "legal_deadline" | "court" | "statute" | "norm";
+type FilterType =
+  | "all"
+  | Entity["type"]
+  | "document"
+  | "legal_case"
+  | "legal_actor"
+  | "legal_deadline"
+  | "court"
+  | "statute"
+  | "norm";
 type PageItem = BrainPage & { type: string; words: number; updated: string };
 
 const TYPE_FILTERS: { key: FilterType; label: string; icon: React.ElementType; color: string }[] = [
@@ -82,35 +91,43 @@ export default function BrainPage() {
           edges: brainStats.total_edges,
         });
       } catch (err) {
-        console.error("[brain] failed to load pages:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[brain] failed to load pages:",
+          err instanceof Error ? err.message : String(err)
+        );
         if (!cancelled) setPages([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     // All state writes live inside the (deferred) timer callback so the
     // effect body itself never calls setState synchronously.
     const trimmed = query.trim();
-    const timer = setTimeout(async () => {
-      if (!trimmed) {
-        setSearchResults(null);
-        return;
-      }
-      setSearching(true);
-      try {
-        const results = await api.brain.search(trimmed, 20);
-        setSearchResults(results);
-      } catch (err) {
-        console.error("[brain] search failed:", err instanceof Error ? err.message : String(err));
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, trimmed ? 350 : 0);
+    const timer = setTimeout(
+      async () => {
+        if (!trimmed) {
+          setSearchResults(null);
+          return;
+        }
+        setSearching(true);
+        try {
+          const results = await api.brain.search(trimmed, 20);
+          setSearchResults(results);
+        } catch (err) {
+          console.error("[brain] search failed:", err instanceof Error ? err.message : String(err));
+          setSearchResults([]);
+        } finally {
+          setSearching(false);
+        }
+      },
+      trimmed ? 350 : 0
+    );
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -160,8 +177,10 @@ export default function BrainPage() {
 
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="w-52 shrink-0 border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-1 overflow-y-auto">
-        <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-3">Typ</p>
+      <div className="w-52 shrink-0 space-y-1 overflow-y-auto border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+          Typ
+        </p>
         {TYPE_FILTERS.map((f) => {
           const Icon = f.icon;
           return (
@@ -169,10 +188,10 @@ export default function BrainPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all",
                 filter === f.key
-                  ? "brand-soft brand-text border brand-border"
-                  : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  ? "brand-soft brand-text brand-border border"
+                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               )}
             >
               <Icon size={15} className="shrink-0" />
@@ -182,7 +201,9 @@ export default function BrainPage() {
         })}
 
         <div className="pt-4 pb-2">
-          <p className="text-[10px] text-[color:var(--ds-text-subtle)] uppercase tracking-[0.08em] font-semibold mb-3">Sortierung</p>
+          <p className="mb-3 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+            Sortierung
+          </p>
           {[
             { key: "updated" as const, label: "Aktualisiert" },
             { key: "title" as const, label: "Titel A–Z" },
@@ -192,10 +213,10 @@ export default function BrainPage() {
               key={s.key}
               onClick={() => setSort(s.key)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all",
                 sort === s.key
-                  ? "brand-soft brand-text border brand-border"
-                  : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  ? "brand-soft brand-text brand-border border"
+                  : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               )}
             >
               <SortAsc size={15} className="shrink-0" />
@@ -210,7 +231,7 @@ export default function BrainPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-[color:var(--ds-bg)] border-b border-[color:var(--ds-border)] px-6 py-4">
+        <div className="sticky top-0 z-10 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-bg)] px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <Input
@@ -220,7 +241,13 @@ export default function BrainPage() {
                 placeholder="Brain durchsuchen… (Hybrid: Vector + BM25 + Graph)"
               />
             </div>
-            <Button variant="secondary" size="md" className="shrink-0" disabled title="Nutze die Typfilter links.">
+            <Button
+              variant="secondary"
+              size="md"
+              className="shrink-0"
+              disabled
+              title="Nutze die Typfilter links."
+            >
               <Filter size={15} />
               Filter
             </Button>
@@ -228,7 +255,7 @@ export default function BrainPage() {
         </div>
 
         <div className="px-6 py-6">
-          <div className="flex items-center gap-4 mb-6 text-sm text-[color:var(--ds-text-muted)]">
+          <div className="mb-6 flex items-center gap-4 text-sm text-[color:var(--ds-text-muted)]">
             <span>
               <strong className="text-[color:var(--ds-text)]">{stats.pages}</strong> Seiten
             </span>
@@ -243,7 +270,7 @@ export default function BrainPage() {
             {searching && (
               <>
                 <span>·</span>
-                <Loader2 size={14} className="animate-spin brand-text" />
+                <Loader2 size={14} className="brand-text animate-spin" />
               </>
             )}
           </div>
@@ -254,24 +281,32 @@ export default function BrainPage() {
             </div>
           ) : isEmpty ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[color:var(--ds-surface-2)] flex items-center justify-center mb-5">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--ds-surface-2)]">
                 <BookOpen size={28} className="text-[color:var(--ds-border-strong)]" />
               </div>
-              <h3 className="text-lg font-semibold text-[color:var(--ds-text)] mb-2 tracking-tight">Brain ist leer</h3>
-              <p className="text-sm text-[color:var(--ds-text-muted)] mb-6 max-w-sm leading-relaxed">
+              <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
+                Brain ist leer
+              </h3>
+              <p className="mb-6 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
                 Lade Dokumente hoch oder verbinde Subsumio mit einem bestehenden Brain-Repo.
               </p>
               <div className="flex gap-3">
                 <Button variant="glow" size="md" onClick={() => router.push("/dashboard/upload")}>
                   Dokument hochladen
                 </Button>
-                <Button variant="secondary" size="md" onClick={() => router.push("/dashboard/settings")}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={() => router.push("/dashboard/settings")}
+                >
                   Setup öffnen
                 </Button>
               </div>
             </div>
           ) : displayed.length === 0 ? (
-            <div className="text-center py-16 text-[color:var(--ds-text-muted)] text-sm">Keine Treffer für „{query}“</div>
+            <div className="py-16 text-center text-sm text-[color:var(--ds-text-muted)]">
+              Keine Treffer für „{query}“
+            </div>
           ) : (
             <div className="space-y-2">
               {displayed.map((page) => {
@@ -281,15 +316,21 @@ export default function BrainPage() {
                   <a
                     key={page.slug}
                     href={`/dashboard/brain/${page.slug.split("/").map(encodeURIComponent).join("/")}`}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] transition-all group card-shadow"
+                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
                   >
-                    <div className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 brand-soft brand-border">
+                    <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
                       <TypeIcon size={17} className="brand-text" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{page.title}</span>
-                        <Badge variant={typeColorMap[page.type] as Parameters<typeof Badge>[0]["variant"]}>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                          {page.title}
+                        </span>
+                        <Badge
+                          variant={
+                            typeColorMap[page.type] as Parameters<typeof Badge>[0]["variant"]
+                          }
+                        >
                           {page.type}
                         </Badge>
                       </div>
@@ -315,19 +356,27 @@ export default function BrainPage() {
                         )}
                       </div>
                       {"snippet" in page && page.snippet && (
-                        <p className="text-xs text-[color:var(--ds-text-muted)] mt-2 line-clamp-2 leading-relaxed">{page.snippet}</p>
+                        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                          {page.snippet}
+                        </p>
                       )}
                       {tags && tags.length > 0 && (
-                        <div className="flex items-center gap-1 mt-2">
+                        <div className="mt-2 flex items-center gap-1">
                           {tags.map((tag) => (
-                            <span key={tag} className="text-xs font-mono text-[color:var(--ds-text-subtle)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 rounded">
+                            <span
+                              key={tag}
+                              className="rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)]"
+                            >
                               #{tag}
                             </span>
                           ))}
                         </div>
                       )}
                     </div>
-                    <ChevronRight size={16} className="text-[color:var(--ds-text-subtle)] group-hover:brand-text transition-colors shrink-0" />
+                    <ChevronRight
+                      size={16}
+                      className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
+                    />
                   </a>
                 );
               })}

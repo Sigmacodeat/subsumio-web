@@ -188,11 +188,11 @@ export default function AuditLogPage() {
 
   const uniqueActions = useMemo(
     () => Array.from(new Set(entries.map((e) => e.action))).sort(),
-    [entries],
+    [entries]
   );
   const uniqueEntityTypes = useMemo(
     () => Array.from(new Set(entries.map((e) => e.entityType).filter(Boolean))).sort(),
-    [entries],
+    [entries]
   );
 
   function exportCsv() {
@@ -201,7 +201,9 @@ export default function AuditLogPage() {
       ...filtered.map((e) => {
         const ts = new Date(e.timestamp).toISOString();
         const label = auditLabel(e.action);
-        const details = e.details ? JSON.stringify(e.details).replace(/,/g, ";").replace(/"/g, "'") : "";
+        const details = e.details
+          ? JSON.stringify(e.details).replace(/,/g, ";").replace(/"/g, "'")
+          : "";
         return `"${ts}","${e.action}","${label}","${e.entityType}","${e.entityId || ""}","${e.userEmail || ""}","${details}"`;
       }),
     ];
@@ -224,13 +226,10 @@ export default function AuditLogPage() {
   }
 
   const activeFilterCount =
-    (filterAction ? 1 : 0) +
-    (filterEntityType ? 1 : 0) +
-    (filterFrom ? 1 : 0) +
-    (filterTo ? 1 : 0);
+    (filterAction ? 1 : 0) + (filterEntityType ? 1 : 0) + (filterFrom ? 1 : 0) + (filterTo ? 1 : 0);
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl p-6 md:p-8">
       <PageHeader
         title="Audit-Log"
         description="Vollständige Nachvollziehbarkeit aller Aktionen im Kanzlei-Workspace — GoBD-konform protokolliert."
@@ -246,7 +245,7 @@ export default function AuditLogPage() {
               <Filter size={14} />
               Filter
               {activeFilterCount > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full brand-bg text-white text-[10px] font-bold">
+                <span className="brand-bg ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs font-bold text-white">
                   {activeFilterCount}
                 </span>
               )}
@@ -276,19 +275,25 @@ export default function AuditLogPage() {
       />
 
       {/* Search bar */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+          <Search
+            size={16}
+            className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+          />
           <input
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             placeholder="Audit-Log durchsuchen — Aktion, Entität, Benutzer, Details…"
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg pl-10 pr-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] transition-colors"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-10 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
             >
               <X size={14} />
             </button>
@@ -298,66 +303,96 @@ export default function AuditLogPage() {
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="mb-4 p-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] space-y-4">
+        <div className="mb-4 space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-[color:var(--ds-text)]">Filter</span>
             {activeFilterCount > 0 && (
               <button
                 onClick={resetFilters}
-                className="text-xs text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] transition-colors"
+                className="text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
               >
                 Zurücksetzen
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="block text-xs font-medium text-[color:var(--ds-text-muted)] mb-1.5">Aktion</label>
+              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Aktion
+              </label>
               <select
                 value={filterAction}
-                onChange={(e) => { setFilterAction(e.target.value); setPage(0); }}
-                className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                onChange={(e) => {
+                  setFilterAction(e.target.value);
+                  setPage(0);
+                }}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               >
                 <option value="">Alle Aktionen</option>
                 {uniqueActions.map((a) => (
-                  <option key={a} value={a}>{auditLabel(a)}</option>
+                  <option key={a} value={a}>
+                    {auditLabel(a)}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[color:var(--ds-text-muted)] mb-1.5">Entitätstyp</label>
+              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Entitätstyp
+              </label>
               <select
                 value={filterEntityType}
-                onChange={(e) => { setFilterEntityType(e.target.value); setPage(0); }}
-                className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                onChange={(e) => {
+                  setFilterEntityType(e.target.value);
+                  setPage(0);
+                }}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               >
                 <option value="">Alle Typen</option>
                 {uniqueEntityTypes.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[color:var(--ds-text-muted)] mb-1.5">Von</label>
+              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Von
+              </label>
               <div className="relative">
-                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+                <Calendar
+                  size={14}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                />
                 <input
                   type="date"
                   value={filterFrom}
-                  onChange={(e) => { setFilterFrom(e.target.value); setPage(0); }}
-                  className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  onChange={(e) => {
+                    setFilterFrom(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[color:var(--ds-text-muted)] mb-1.5">Bis</label>
+              <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Bis
+              </label>
               <div className="relative">
-                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]" />
+                <Calendar
+                  size={14}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                />
                 <input
                   type="date"
                   value={filterTo}
-                  onChange={(e) => { setFilterTo(e.target.value); setPage(0); }}
-                  className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg pl-9 pr-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  onChange={(e) => {
+                    setFilterTo(e.target.value);
+                    setPage(0);
+                  }}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
             </div>
@@ -366,36 +401,40 @@ export default function AuditLogPage() {
       )}
 
       {/* Stats bar */}
-      <div className="flex items-center gap-4 mb-4 text-xs text-[color:var(--ds-text-muted)]">
+      <div className="mb-4 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
         <span>{filtered.length} Einträge</span>
         {filtered.length !== entries.length && (
           <span className="text-[color:var(--ds-text-subtle)]">({entries.length} gesamt)</span>
         )}
         {totalPages > 1 && (
-          <span>Seite {page + 1} von {totalPages}</span>
+          <span>
+            Seite {page + 1} von {totalPages}
+          </span>
         )}
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="flex flex-col items-center justify-center gap-3 py-24">
           <Loader2 size={28} className="brand-text animate-spin" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">Audit-Log wird geladen…</p>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="flex flex-col items-center justify-center gap-3 py-24">
           <AlertTriangle size={32} className="text-red-500" />
-          <p className="text-sm text-red-600 font-medium">Fehler beim Laden</p>
+          <p className="text-sm font-medium text-red-600">Fehler beim Laden</p>
           <p className="text-xs text-[color:var(--ds-text-subtle)]">{error}</p>
           <Button variant="outline" size="sm" onClick={loadEntries} className="mt-2 gap-1.5">
             <RefreshCw size={14} /> Erneut versuchen
           </Button>
         </div>
       ) : pageEntries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="flex flex-col items-center justify-center gap-3 py-24">
           <Shield size={40} className="text-[color:var(--ds-text-subtle)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)] font-medium">Keine Audit-Einträge gefunden</p>
-          <p className="text-xs text-[color:var(--ds-text-subtle)] max-w-md text-center">
+          <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">
+            Keine Audit-Einträge gefunden
+          </p>
+          <p className="max-w-md text-center text-xs text-[color:var(--ds-text-subtle)]">
             {search || activeFilterCount > 0
               ? "Mit den aktuellen Filtern wurden keine Einträge gefunden. Versuche die Filter anzupassen."
               : "Audit-Logs werden automatisch erstellt, sobald Aktionen im Dashboard ausgeführt werden."}
@@ -409,16 +448,16 @@ export default function AuditLogPage() {
       ) : (
         <>
           {/* Table */}
-          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-[color:var(--ds-text-subtle)] uppercase tracking-wider border-b border-[color:var(--ds-border)]">
+                  <tr className="border-b border-[color:var(--ds-border)] text-left text-xs tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
                     <th className="px-4 py-3 font-medium">Zeitpunkt</th>
                     <th className="px-4 py-3 font-medium">Aktion</th>
                     <th className="px-4 py-3 font-medium">Entität</th>
-                    <th className="px-4 py-3 font-medium hidden md:table-cell">Benutzer</th>
-                    <th className="px-4 py-3 font-medium hidden lg:table-cell">Details</th>
+                    <th className="hidden px-4 py-3 font-medium md:table-cell">Benutzer</th>
+                    <th className="hidden px-4 py-3 font-medium lg:table-cell">Details</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -429,51 +468,58 @@ export default function AuditLogPage() {
                       <tr
                         key={e.id}
                         onClick={() => setSelectedEntry(e)}
-                        className="border-b border-[color:var(--ds-border)] last:border-0 hover:bg-[color:var(--ds-hover)] cursor-pointer transition-colors"
+                        className="cursor-pointer border-b border-[color:var(--ds-border)] transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]"
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="text-xs text-[color:var(--ds-text)] font-medium">
+                          <div className="text-xs font-medium text-[color:var(--ds-text)]">
                             {formatTimestamp(e.timestamp)}
                           </div>
-                          <div className="text-[10px] text-[color:var(--ds-text-subtle)] mt-0.5">
+                          <div className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
                             {formatRelative(e.timestamp)}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", `bg-${color}-500/10`)}>
+                            <div
+                              className={cn(
+                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+                                `bg-${color}-500/10`
+                              )}
+                            >
                               <Icon size={13} className={cn(`text-${color}-500`)} />
                             </div>
                             <div className="min-w-0">
-                              <div className="text-xs font-medium text-[color:var(--ds-text)] truncate">
+                              <div className="truncate text-xs font-medium text-[color:var(--ds-text)]">
                                 {auditLabel(e.action)}
                               </div>
-                              <div className="text-[10px] text-[color:var(--ds-text-subtle)] font-mono truncate">
+                              <div className="truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
                                 {e.action}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-xs text-[color:var(--ds-text-muted)]">{e.entityType || "—"}</div>
+                          <div className="text-xs text-[color:var(--ds-text-muted)]">
+                            {e.entityType || "—"}
+                          </div>
                           {e.entityId && (
-                            <div className="text-[10px] text-[color:var(--ds-text-subtle)] font-mono truncate max-w-[180px]">
+                            <div className="max-w-[180px] truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
                               {e.entityId}
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
+                        <td className="hidden px-4 py-3 md:table-cell">
                           {e.userEmail ? (
-                            <span className="text-xs text-[color:var(--ds-text-muted)] truncate block max-w-[180px]">
+                            <span className="block max-w-[180px] truncate text-xs text-[color:var(--ds-text-muted)]">
                               {e.userEmail}
                             </span>
                           ) : (
                             <span className="text-xs text-[color:var(--ds-text-subtle)]">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
+                        <td className="hidden px-4 py-3 lg:table-cell">
                           {e.details ? (
-                            <span className="text-xs text-[color:var(--ds-text-subtle)] font-mono truncate block max-w-[240px]">
+                            <span className="block max-w-[240px] truncate font-mono text-xs text-[color:var(--ds-text-subtle)]">
                               {JSON.stringify(e.details).slice(0, 100)}
                             </span>
                           ) : (
@@ -490,9 +536,10 @@ export default function AuditLogPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="mt-4 flex items-center justify-between">
               <div className="text-xs text-[color:var(--ds-text-subtle)]">
-                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} von {filtered.length}
+                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} von{" "}
+                {filtered.length}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -504,7 +551,7 @@ export default function AuditLogPage() {
                 >
                   <ChevronLeft size={14} /> Zurück
                 </Button>
-                <span className="text-xs text-[color:var(--ds-text-muted)] px-2">
+                <span className="px-2 text-xs text-[color:var(--ds-text-muted)]">
                   {page + 1} / {totalPages}
                 </span>
                 <Button
@@ -525,37 +572,50 @@ export default function AuditLogPage() {
       {/* Detail drawer */}
       {selectedEntry && (
         <div
-          className="fixed inset-0 bg-black/60 z-50 flex justify-end"
+          className="fixed inset-0 z-50 flex justify-end bg-black/60"
           onClick={() => setSelectedEntry(null)}
         >
           <div
-            className="w-full max-w-md bg-[color:var(--ds-surface)] border-l border-[color:var(--ds-border)] h-full overflow-y-auto"
+            className="h-full w-full max-w-md overflow-y-auto border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-[color:var(--ds-surface)] border-b border-[color:var(--ds-border)] px-6 py-4 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[color:var(--ds-text)]">Audit-Eintrag Details</h2>
+            <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-4">
+              <h2 className="text-sm font-bold text-[color:var(--ds-text)]">
+                Audit-Eintrag Details
+              </h2>
               <button
                 onClick={() => setSelectedEntry(null)}
-                className="text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)] transition-colors"
+                className="text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="p-6 space-y-5">
+            <div className="space-y-5 p-6">
               <div>
-                <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">Aktion</label>
+                <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  Aktion
+                </label>
                 <div className="mt-1.5 flex items-center gap-2">
                   {(() => {
                     const color = actionColor(selectedEntry.action);
                     const Icon = actionIcon(selectedEntry.action);
                     return (
                       <>
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", `bg-${color}-500/10`)}>
+                        <div
+                          className={cn(
+                            "flex h-8 w-8 items-center justify-center rounded-lg",
+                            `bg-${color}-500/10`
+                          )}
+                        >
                           <Icon size={15} className={cn(`text-${color}-500`)} />
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-[color:var(--ds-text)]">{auditLabel(selectedEntry.action)}</div>
-                          <div className="text-xs text-[color:var(--ds-text-subtle)] font-mono">{selectedEntry.action}</div>
+                          <div className="text-sm font-medium text-[color:var(--ds-text)]">
+                            {auditLabel(selectedEntry.action)}
+                          </div>
+                          <div className="font-mono text-xs text-[color:var(--ds-text-subtle)]">
+                            {selectedEntry.action}
+                          </div>
                         </div>
                       </>
                     );
@@ -564,47 +624,73 @@ export default function AuditLogPage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">Zeitpunkt</label>
-                <p className="mt-1 text-sm text-[color:var(--ds-text)]">{formatTimestamp(selectedEntry.timestamp)}</p>
-                <p className="text-xs text-[color:var(--ds-text-subtle)] mt-0.5">{formatRelative(selectedEntry.timestamp)}</p>
+                <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  Zeitpunkt
+                </label>
+                <p className="mt-1 text-sm text-[color:var(--ds-text)]">
+                  {formatTimestamp(selectedEntry.timestamp)}
+                </p>
+                <p className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
+                  {formatRelative(selectedEntry.timestamp)}
+                </p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">Entität</label>
+                <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  Entität
+                </label>
                 <div className="mt-1 space-y-1">
-                  <p className="text-sm text-[color:var(--ds-text)]">{selectedEntry.entityType || "—"}</p>
+                  <p className="text-sm text-[color:var(--ds-text)]">
+                    {selectedEntry.entityType || "—"}
+                  </p>
                   {selectedEntry.entityId && (
-                    <p className="text-xs text-[color:var(--ds-text-subtle)] font-mono break-all">{selectedEntry.entityId}</p>
+                    <p className="font-mono text-xs break-all text-[color:var(--ds-text-subtle)]">
+                      {selectedEntry.entityId}
+                    </p>
                   )}
                 </div>
               </div>
 
               {selectedEntry.userEmail && (
                 <div>
-                  <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">Benutzer</label>
-                  <p className="mt-1 text-sm text-[color:var(--ds-text)]">{selectedEntry.userEmail}</p>
+                  <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    Benutzer
+                  </label>
+                  <p className="mt-1 text-sm text-[color:var(--ds-text)]">
+                    {selectedEntry.userEmail}
+                  </p>
                 </div>
               )}
 
               {selectedEntry.ip && (
                 <div>
-                  <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">IP-Adresse</label>
-                  <p className="mt-1 text-sm text-[color:var(--ds-text)] font-mono">{selectedEntry.ip}</p>
+                  <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    IP-Adresse
+                  </label>
+                  <p className="mt-1 font-mono text-sm text-[color:var(--ds-text)]">
+                    {selectedEntry.ip}
+                  </p>
                 </div>
               )}
 
               {selectedEntry.details && (
                 <div>
-                  <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">Details</label>
-                  <pre className="mt-1.5 p-3 rounded-lg bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] text-xs text-[color:var(--ds-text-muted)] font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                  <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                    Details
+                  </label>
+                  <pre className="mt-1.5 overflow-x-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 font-mono text-xs break-all whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                     {JSON.stringify(selectedEntry.details, null, 2)}
                   </pre>
                 </div>
               )}
 
               <div>
-                <label className="text-xs font-medium text-[color:var(--ds-text-subtle)] uppercase tracking-wider">ID</label>
-                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)] font-mono break-all">{selectedEntry.id}</p>
+                <label className="text-xs font-medium tracking-wider text-[color:var(--ds-text-subtle)] uppercase">
+                  ID
+                </label>
+                <p className="mt-1 font-mono text-xs break-all text-[color:var(--ds-text-subtle)]">
+                  {selectedEntry.id}
+                </p>
               </div>
             </div>
           </div>

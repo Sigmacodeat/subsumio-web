@@ -79,6 +79,13 @@ word-addin/          # Microsoft Word Add-in
 outlook-addin/       # Outlook Add-in
 ```
 
+## Product documentation
+
+- [Product capabilities](docs/PRODUCT_CAPABILITIES.md) — current module and feature overview.
+- [Legal-AI implementation status](docs/audits/LEGAL_AI_IMPLEMENTATION_STATUS.md) — canonical package status and remaining work.
+- [Legal-AI todo-plan review](docs/audits/LEGAL_AI_TODO_PLAN_REVIEW_2026-06-20.md) — current read on which plans are active, stale, or still need verification.
+- [Software repo audit](docs/audits/SOFTWARE_REPO_AUDIT_2026-06-20.md) — repo-wide todo/audit inventory and release-readiness caveats.
+
 ## Development
 
 ```bash

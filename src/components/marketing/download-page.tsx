@@ -54,23 +54,23 @@ function PhoneMockup({ lang }: { lang: Lang }) {
       className="relative mx-auto w-[260px]"
     >
       {/* glow */}
-      <div className="absolute -inset-6 bg-[var(--brand-primary)]/20 blur-3xl rounded-full" />
+      <div className="absolute -inset-6 rounded-full bg-[var(--brand-primary)]/20 blur-3xl" />
 
       {/* gentle float */}
       <motion.div
         animate={{ y: [0, -10, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        className="relative rounded-[2.6rem] border border-[#2a2a52] [background:var(--mk-bg)] p-2.5 shadow-2xl shadow-black/60"
+        className="relative rounded-[2.6rem] border [border-color:var(--mk-border-strong)] p-2.5 shadow-2xl shadow-black/60 [background:var(--mk-bg)]"
       >
         {/* notch */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-2.5 h-5 w-24 rounded-b-2xl [background:var(--mk-bg)] z-20" />
+        <div className="absolute top-2.5 left-1/2 z-20 h-5 w-24 -translate-x-1/2 rounded-b-2xl [background:var(--mk-bg)]" />
 
-        <div className="relative rounded-[2.1rem] overflow-hidden bg-gradient-to-b from-[var(--mk-surface)] to-[var(--mk-bg)] aspect-[9/19]">
+        <div className="relative aspect-[9/19] overflow-hidden rounded-[2.1rem] bg-gradient-to-b from-[var(--mk-surface)] to-[var(--mk-bg)]">
           {/* status bar */}
-          <div className="flex items-center justify-between px-5 pt-3 text-[9px] [color:var(--mk-text-muted)] font-mono">
+          <div className="flex items-center justify-between px-5 pt-3 font-mono text-xs [color:var(--mk-text-muted)]">
             <span>9:41</span>
             <span className="flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-[var(--brand-primary)]" /> Σ
+              <span className="h-1 w-1 rounded-full bg-[var(--brand-primary)]" /> Σ
             </span>
           </div>
 
@@ -85,10 +85,10 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.4 }}
-            className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-bg)] px-3 py-2"
+            className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-bg)]"
           >
             <Search size={12} className="text-[var(--brand-primary)]" />
-            <span className="text-[10px] [color:var(--mk-text-muted)]">
+            <span className="text-xs [color:var(--mk-text-muted)]">
               {lang === "en" ? "Ask your brain…" : "Frag dein Brain…"}
             </span>
           </motion.div>
@@ -100,7 +100,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             transition={{ delay: 0.95, duration: 0.45 }}
             className="mx-4 mt-3 rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.05] p-3"
           >
-            <p className="text-[10px] [color:var(--mk-text-muted)] leading-relaxed mb-2">
+            <p className="mb-2 text-xs leading-relaxed [color:var(--mk-text-muted)]">
               {lang === "en"
                 ? "3 open commitments across 4 meetings this week —"
                 : "3 offene Zusagen in 4 Meetings diese Woche —"}
@@ -111,17 +111,20 @@ function PhoneMockup({ lang }: { lang: Lang }) {
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.2 + i * 0.18, duration: 0.3 }}
-                className="flex items-center gap-1.5 mb-1"
+                className="mb-1 flex items-center gap-1.5"
               >
-                <span className="w-1 h-1 rounded-full bg-[var(--brand-primary)] shrink-0" />
-                <span className="h-1.5 rounded-full bg-[#2a2a52]" style={{ width: `${70 - i * 12}%` }} />
+                <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--brand-primary)]" />
+                <span
+                  className="h-1.5 rounded-full [background:var(--mk-border-strong)]"
+                  style={{ width: `${70 - i * 12}%` }}
+                />
               </motion.div>
             ))}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.9, duration: 0.4 }}
-              className="text-[9px] [color:var(--signal-amber)] opacity-80 mt-2"
+              className="mt-2 text-xs [color:var(--signal-amber)] opacity-80"
             >
               {lang === "en" ? "⚠ Gap: Thu 2pm has no notes" : "⚠ Lücke: Do 14 Uhr ohne Notiz"}
             </motion.p>
@@ -132,10 +135,10 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2.2, duration: 0.4 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-3 py-1.5"
+            className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border [border-color:var(--mk-border)] px-3 py-1.5 [background:var(--mk-surface)]"
           >
             <WifiOff size={10} className="text-[var(--brand-secondary)]" />
-            <span className="text-[9px] [color:var(--mk-text-muted)]">
+            <span className="text-xs [color:var(--mk-text-muted)]">
               {lang === "en" ? "Works offline" : "Funktioniert offline"}
             </span>
           </motion.div>
@@ -161,34 +164,38 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+      <div
+        data-tone="light"
+        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+        lang={lang}
+      >
         <ScrollProgress />
         <MarketingBackground />
         <MarketingNav lang={lang} />
 
         {/* Hero — copy left, phone mockup right */}
-        <section className="relative z-10 pt-20 pb-16 px-6 max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="text-center lg:text-left"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 text-xs text-[var(--brand-primary)] font-medium mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-primary)] animate-pulse" />
+              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1.5 text-xs font-medium text-[var(--brand-primary)]">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--brand-primary)]" />
                 {t.badge}
               </div>
-              <h1 className="text-4xl md:text-6xl font-black [color:var(--mk-text)] leading-[1.08] tracking-tight mb-6">
+              <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
                 {t.h1a}
                 <br />
                 <span className="gradient-text glow-text">{t.h1b}</span>
               </h1>
-              <p className="text-lg md:text-xl [color:var(--mk-text-muted)] max-w-xl mx-auto lg:mx-0 mb-10 leading-relaxed">
+              <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
                 {t.sub}
               </p>
 
-              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
                 {installEvent ? (
                   <Button
                     size="xl"
@@ -219,8 +226,8 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Platform cards */}
-        <section className="relative z-10 px-6 max-w-6xl mx-auto pb-20">
-          <div className="grid md:grid-cols-3 gap-5">
+        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+          <div className="grid gap-5 md:grid-cols-3">
             {t.platforms.map((platform, idx) => {
               const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
               return (
@@ -230,17 +237,22 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ delay: idx * 0.08, duration: 0.3 }}
-                  className="p-7 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)] hover:-translate-y-1 transition-all flex flex-col"
+                  className="flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-[var(--brand-primary)]/10 border border-[var(--brand-primary)]/20 flex items-center justify-center mb-5">
+                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/10">
                     <Icon size={22} className="text-[var(--brand-primary)]" />
                   </div>
-                  <h2 className="text-lg font-bold [color:var(--mk-text)] mb-1">{platform.name}</h2>
-                  <p className="text-sm text-[var(--brand-primary)] font-medium mb-5">{platform.tagline}</p>
-                  <ol className="space-y-3 flex-1">
+                  <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
+                  <p className="mb-5 text-sm font-medium text-[var(--brand-primary)]">
+                    {platform.tagline}
+                  </p>
+                  <ol className="flex-1 space-y-3">
                     {platform.steps.map((step, i) => (
-                      <li key={step} className="flex gap-3 text-sm [color:var(--mk-text-muted)] leading-relaxed">
-                        <span className="w-5 h-5 rounded-full bg-[var(--brand-primary)]/20 border border-[var(--brand-primary)]/30 text-[var(--brand-primary)] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      <li
+                        key={step}
+                        className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
+                      >
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/20 text-xs font-bold text-[var(--brand-primary)]">
                           {i + 1}
                         </span>
                         {step}
@@ -248,7 +260,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                     ))}
                   </ol>
                   {platform.note && (
-                    <p className="text-xs [color:var(--mk-text-subtle)] leading-relaxed mt-5 pt-4 border-t [border-color:var(--mk-border)]">
+                    <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
                       {platform.note}
                     </p>
                   )}
@@ -259,20 +271,36 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Store preview */}
-        <section className="relative z-10 py-20 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl font-black [color:var(--mk-text)] mb-4">{t.storesTitle}</h2>
-            <p className="text-base [color:var(--mk-text-muted)] leading-relaxed mb-8">{t.storesSub}</p>
+        <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+              {t.storesTitle}
+            </h2>
+            <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
+              {t.storesSub}
+            </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
               {[
-                { icon: Bell, label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen" },
-                { icon: Fingerprint, label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung" },
-                { icon: Share2, label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“" },
+                {
+                  icon: Bell,
+                  label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen",
+                },
+                {
+                  icon: Fingerprint,
+                  label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung",
+                },
+                {
+                  icon: Share2,
+                  label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“",
+                },
               ].map((f) => {
                 const Icon = f.icon;
                 return (
-                  <span key={f.label} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border [border-color:var(--mk-border)] [background:var(--mk-surface)] text-xs [color:var(--mk-text-muted)]">
+                  <span
+                    key={f.label}
+                    className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                  >
                     <Icon size={13} className="text-[var(--brand-primary)]" /> {f.label}
                   </span>
                 );
@@ -280,16 +308,16 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             </div>
 
             {/* Store badge placeholders — replace with official badges at store launch */}
-            <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="mb-6 flex items-center justify-center gap-4">
               {["App Store", "Google Play"].map((store) => (
                 <div
                   key={store}
                   aria-disabled="true"
-                  className="flex items-center gap-3 px-6 py-3 rounded-xl border border-dashed [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] opacity-70 select-none"
+                  className="flex items-center gap-3 rounded-xl border border-dashed [border-color:var(--mk-border-strong)] px-6 py-3 opacity-70 select-none [background:var(--mk-bg)]"
                 >
                   <DownloadIcon size={16} className="[color:var(--mk-text-subtle)]" />
                   <div className="text-left">
-                    <p className="text-[10px] [color:var(--mk-text-subtle)] uppercase tracking-wide">
+                    <p className="text-xs tracking-wide [color:var(--mk-text-subtle)] uppercase">
                       {lang === "en" ? "Coming soon to" : "Bald im"}
                     </p>
                     <p className="text-sm font-semibold [color:var(--mk-text-muted)]">{store}</p>
@@ -297,23 +325,27 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 </div>
               ))}
             </div>
-            <p className="text-xs [color:var(--mk-text-subtle)] max-w-xl mx-auto leading-relaxed">{t.storesNote}</p>
+            <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+              {t.storesNote}
+            </p>
           </div>
         </section>
 
         {/* FAQ */}
-        <section className="relative z-10 py-24 px-6">
-          <div className="max-w-5xl mx-auto">
+        <section className="relative z-10 px-6 py-24">
+          <div className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
             <FaqList items={t.faq} />
           </div>
         </section>
 
         {/* CTA */}
-        <section className="relative z-10 py-24 px-6 text-center max-w-3xl mx-auto border-t [border-color:var(--mk-border)]">
+        <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
           <SubsumioMark size={64} className="mx-auto mb-8" />
-          <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
-          <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
+          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+            {t.ctaTitle}
+          </h2>
+          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
             <Button size="xl" variant="glow">
               {t.ctaButton} <ArrowRight size={18} />

@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ShieldAlert,
-  Loader2,
-  ChevronRight,
-} from "lucide-react";
+import { ShieldAlert, Loader2, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -93,39 +89,45 @@ export default function OpponentsPage() {
 
         setOpponents(Object.values(opponentMap).sort((a, b) => b.caseCount - a.caseCount));
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+        if (!cancelled)
+          setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
-      <PageHeader
-        title="Gegner-Analyse"
-        description="Intelligence über Gegner aus allen Akten"
-      />
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+      <PageHeader title="Gegner-Analyse" description="Intelligence über Gegner aus allen Akten" />
 
       {/* Stats summary */}
       {opponents.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Gegner gesamt</div>
             <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.length}</div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Häufigster Gegner</div>
-            <div className="text-sm font-bold text-[color:var(--ds-text)] truncate">{opponents[0]?.name}</div>
+            <div className="truncate text-sm font-bold text-[color:var(--ds-text)]">
+              {opponents[0]?.name}
+            </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamt-Akten</div>
-            <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.reduce((s, o) => s + o.caseCount, 0)}</div>
+            <div className="text-xl font-bold text-[color:var(--ds-text)]">
+              {opponents.reduce((s, o) => s + o.caseCount, 0)}
+            </div>
           </div>
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
             <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
-            <div className="text-xl font-bold text-emerald-600">{opponents.reduce((s, o) => s + o.wins, 0)}</div>
+            <div className="text-xl font-bold text-emerald-600">
+              {opponents.reduce((s, o) => s + o.wins, 0)}
+            </div>
           </div>
         </div>
       )}
@@ -133,7 +135,25 @@ export default function OpponentsPage() {
       {loadError && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
           <span>{loadError}</span>
-          <Button variant="ghost" size="sm" onClick={() => { setLoading(true); setLoadError(null); void (async () => { try { await api.brain.listPages({ type: "legal_case", limit: 200 }); setOpponents([]); } catch (e) { setLoadError(e instanceof Error ? e.message : "Fehler"); } finally { setLoading(false); } })(); }} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              setLoadError(null);
+              void (async () => {
+                try {
+                  await api.brain.listPages({ type: "legal_case", limit: 200 });
+                  setOpponents([]);
+                } catch (e) {
+                  setLoadError(e instanceof Error ? e.message : "Fehler");
+                } finally {
+                  setLoading(false);
+                }
+              })();
+            }}
+            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+          >
             <RotateCcw size={13} /> Erneut versuchen
           </Button>
         </div>
@@ -141,14 +161,22 @@ export default function OpponentsPage() {
 
       {/* Opponent list */}
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Wird geladen">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label="Wird geladen"
+        >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>
       ) : opponents.length === 0 ? (
-        <div className="text-center py-20 space-y-4">
+        <div className="space-y-4 py-20 text-center">
           <ShieldAlert size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">Noch keine Gegner in den Akten erfasst.</p>
-          <p className="text-[color:var(--ds-text-muted)] text-sm">Füge Gegner bei der Akten-Erstellung hinzu.</p>
+          <p className="text-[color:var(--ds-text-muted)]">
+            Noch keine Gegner in den Akten erfasst.
+          </p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">
+            Füge Gegner bei der Akten-Erstellung hinzu.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -156,16 +184,22 @@ export default function OpponentsPage() {
             <div className="space-y-4">
               <button
                 onClick={() => setSelectedOpponent(null)}
-                className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] transition-colors"
+                className="text-sm text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
               >
                 ← Zurück zur Übersicht
               </button>
 
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <h2 className="text-lg font-bold text-[color:var(--ds-text)]">{selectedOpponent.name}</h2>
-                <div className="flex items-center gap-3 text-sm text-[color:var(--ds-text-muted)] mt-1">
+                <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                  {selectedOpponent.name}
+                </h2>
+                <div className="mt-1 flex items-center gap-3 text-sm text-[color:var(--ds-text-muted)]">
                   <span>{selectedOpponent.caseCount} Akten</span>
-                  <span className={selectedOpponent.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"}>
+                  <span
+                    className={
+                      selectedOpponent.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"
+                    }
+                  >
                     {Math.round(selectedOpponent.winRate * 100)}% Siegquote
                   </span>
                 </div>
@@ -181,17 +215,25 @@ export default function OpponentsPage() {
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Verloren</div>
                 </div>
                 <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-center">
-                  <div className="text-xl font-bold text-blue-600">{selectedOpponent.settlements}</div>
+                  <div className="text-xl font-bold text-blue-600">
+                    {selectedOpponent.settlements}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">Erledigt</div>
                 </div>
               </div>
 
               {selectedOpponent.preferredAreas.length > 0 && (
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">Rechtsgebiete</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
+                    Rechtsgebiete
+                  </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedOpponent.preferredAreas.map((area) => (
-                      <Badge key={area} variant="default" className="text-[10px] brand-soft brand-border/10 brand-text">
+                      <Badge
+                        key={area}
+                        variant="default"
+                        className="brand-soft brand-border/10 brand-text text-xs"
+                      >
                         {area}
                       </Badge>
                     ))}
@@ -200,26 +242,38 @@ export default function OpponentsPage() {
               )}
 
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-                <h3 className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">Akten</h3>
+                <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">Akten</h3>
                 <div className="space-y-2">
                   {selectedOpponent.recentCases.map((c) => {
                     const statusColor =
-                      c.status === "won" ? "text-emerald-600" :
-                      c.status === "lost" ? "text-red-600" :
-                      c.status === "settled" ? "text-blue-600" :
-                      "text-amber-600";
+                      c.status === "won"
+                        ? "text-emerald-600"
+                        : c.status === "lost"
+                          ? "text-red-600"
+                          : c.status === "settled"
+                            ? "text-blue-600"
+                            : "text-amber-600";
                     return (
                       <Link
                         key={c.slug}
                         href={`/dashboard/cases/${encodeURIComponent(c.slug)}`}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[color:var(--ds-hover)] transition-colors group"
+                        className="group flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]"
                       >
                         <span className="text-sm text-[color:var(--ds-text)]">{c.title}</span>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs ${statusColor}`}>
-                            {c.status === "won" ? "Gewonnen" : c.status === "lost" ? "Verloren" : c.status === "settled" ? "Erledigt" : c.status}
+                            {c.status === "won"
+                              ? "Gewonnen"
+                              : c.status === "lost"
+                                ? "Verloren"
+                                : c.status === "settled"
+                                  ? "Erledigt"
+                                  : c.status}
                           </span>
-                          <ChevronRight size={12} className="text-[color:var(--ds-text-muted)] group-hover:brand-text" />
+                          <ChevronRight
+                            size={12}
+                            className="group-hover:brand-text text-[color:var(--ds-text-muted)]"
+                          />
                         </div>
                       </Link>
                     );
@@ -233,24 +287,32 @@ export default function OpponentsPage() {
                 <button
                   key={o.name}
                   onClick={() => setSelectedOpponent(o)}
-                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:brand-border hover:brand-soft transition-all text-left group"
+                  className="hover:brand-border hover:brand-soft group flex w-full items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-left transition-all"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] flex items-center justify-center shrink-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
                     <ShieldAlert size={18} className="text-red-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="font-medium text-[color:var(--ds-text)]">{o.name}</div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
                       {o.caseCount} Akten · {o.preferredAreas.slice(0, 2).join(", ")}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className={cn("text-sm font-medium", o.winRate >= 0.5 ? "text-emerald-600" : "text-red-600")}>
+                  <div className="shrink-0 text-right">
+                    <div
+                      className={cn(
+                        "text-sm font-medium",
+                        o.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"
+                      )}
+                    >
                       {Math.round(o.winRate * 100)}%
                     </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">Siegquote</div>
                   </div>
-                  <ChevronRight size={16} className="text-[color:var(--ds-text-muted)] group-hover:brand-text shrink-0" />
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)]"
+                  />
                 </button>
               ))}
             </div>

@@ -2,7 +2,12 @@
 
 import { useRef, useState } from "react";
 import { ShieldCheck, ShieldAlert, Archive, Loader2, FileSearch } from "lucide-react";
-import { sha256Hex, sha256HexBytes, invoiceContentString, type InvoiceHashFields } from "@/lib/gobd";
+import {
+  sha256Hex,
+  sha256HexBytes,
+  invoiceContentString,
+  type InvoiceHashFields,
+} from "@/lib/gobd";
 import type { BrainPage } from "@/lib/types";
 
 type VerifyState =
@@ -68,28 +73,30 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
   }
 
   return (
-    <div className="mt-10 rounded-xl border brand-border brand-soft/5 p-5 space-y-4">
+    <div className="brand-border brand-soft/5 mt-10 space-y-4 rounded-xl border p-5">
       <div className="flex items-center gap-2">
         <Archive size={15} className="brand-text" />
-        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">GoBD-Beleg — Integrität</h3>
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          GoBD-Beleg — Integrität
+        </h3>
       </div>
 
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
         {retentionUntil && (
           <div className="flex justify-between gap-2">
             <dt className="text-[color:var(--ds-text-muted)]">Aufbewahrung bis</dt>
-            <dd className="text-[color:var(--ds-text)] font-mono">{retentionUntil}</dd>
+            <dd className="font-mono text-[color:var(--ds-text)]">{retentionUntil}</dd>
           </div>
         )}
         {hashedAt && (
           <div className="flex justify-between gap-2">
             <dt className="text-[color:var(--ds-text-muted)]">Gestempelt am</dt>
-            <dd className="text-[color:var(--ds-text)] font-mono">{hashedAt.split("T")[0]}</dd>
+            <dd className="font-mono text-[color:var(--ds-text)]">{hashedAt.split("T")[0]}</dd>
           </div>
         )}
-        <div className="sm:col-span-2 flex flex-col gap-1">
+        <div className="flex flex-col gap-1 sm:col-span-2">
           <dt className="text-[color:var(--ds-text-muted)]">Gespeicherter Hash (SHA-256)</dt>
-          <dd className="text-[color:var(--ds-text-muted)] font-mono break-all">{storedHash}</dd>
+          <dd className="font-mono break-all text-[color:var(--ds-text-muted)]">{storedHash}</dd>
         </div>
       </dl>
 
@@ -99,9 +106,13 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
           <button
             onClick={verifyInvoice}
             disabled={state.kind === "checking"}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium brand-soft brand-text border brand-border hover:brand-soft-strong transition-all disabled:opacity-50"
+            className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all disabled:opacity-50"
           >
-            {state.kind === "checking" ? <Loader2 size={13} className="animate-spin" /> : <FileSearch size={13} />}
+            {state.kind === "checking" ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <FileSearch size={13} />
+            )}
             Integrität prüfen
           </button>
         ) : (
@@ -109,9 +120,13 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={state.kind === "checking"}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium brand-soft brand-text border brand-border hover:brand-soft-strong transition-all disabled:opacity-50"
+              className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all disabled:opacity-50"
             >
-              {state.kind === "checking" ? <Loader2 size={13} className="animate-spin" /> : <FileSearch size={13} />}
+              {state.kind === "checking" ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <FileSearch size={13} />
+              )}
               Originaldatei prüfen
             </button>
             <input
@@ -124,7 +139,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
                 e.target.value = "";
               }}
             />
-            <p className="text-[11px] text-[color:var(--ds-text-muted)]">
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
               Wähle die Originaldatei — sie wird lokal im Browser gehasht und gegen den
               gespeicherten Wert geprüft. Die Datei verlässt den Browser nicht.
             </p>
@@ -132,25 +147,34 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
         )}
 
         {state.kind === "match" && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
-            <ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
+            <ShieldCheck
+              size={15}
+              className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+            />
             <div className="text-xs text-emerald-600 dark:text-emerald-400">
-              <strong>Unverändert seit Ausstellung.</strong> Der neu berechnete Hash stimmt
-              mit dem gespeicherten überein.
+              <strong>Unverändert seit Ausstellung.</strong> Der neu berechnete Hash stimmt mit dem
+              gespeicherten überein.
             </div>
           </div>
         )}
         {state.kind === "mismatch" && (
-          <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg border border-red-500/30 bg-red-500/10">
-            <ShieldAlert size={15} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-red-600 dark:text-red-400 space-y-1">
-              <div><strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.</div>
-              <div className="font-mono break-all text-red-600/80 dark:text-red-400/80">Ist: {state.computed}</div>
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5">
+            <ShieldAlert size={15} className="mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
+            <div className="space-y-1 text-xs text-red-600 dark:text-red-400">
+              <div>
+                <strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.
+              </div>
+              <div className="font-mono break-all text-red-600/80 dark:text-red-400/80">
+                Ist: {state.computed}
+              </div>
             </div>
           </div>
         )}
         {state.kind === "error" && (
-          <div className="text-xs text-red-600 dark:text-red-400">Prüfung fehlgeschlagen: {state.message}</div>
+          <div className="text-xs text-red-600 dark:text-red-400">
+            Prüfung fehlgeschlagen: {state.message}
+          </div>
         )}
       </div>
     </div>

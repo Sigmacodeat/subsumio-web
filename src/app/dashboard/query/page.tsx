@@ -238,7 +238,7 @@ function AssistantMessage({ msg }: { msg: Message }) {
                       <div className="flex items-center gap-1.5">
                         <Badge
                           variant="default"
-                          className={cn("border text-[10px]", cat.bg, cat.color, cat.border)}
+                          className={cn("border text-xs", cat.bg, cat.color, cat.border)}
                         >
                           {cat.label}
                         </Badge>
@@ -494,7 +494,12 @@ export default function QueryPage() {
             </button>
             {showSuperbrainMenu && (
               <div className="card-shadow-elevated absolute top-full right-0 z-50 mt-1 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-                {(Object.entries(QUERY_MODE_LABELS) as [QueryMode, (typeof QUERY_MODE_LABELS)[QueryMode]][]).map(([key, val]) => (
+                {(
+                  Object.entries(QUERY_MODE_LABELS) as [
+                    QueryMode,
+                    (typeof QUERY_MODE_LABELS)[QueryMode],
+                  ][]
+                ).map(([key, val]) => (
                   <button
                     key={key}
                     onClick={() => {
@@ -515,7 +520,9 @@ export default function QueryPage() {
                       >
                         {val.label}
                       </p>
-                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{val.description}</p>
+                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        {val.description}
+                      </p>
                     </div>
                     {superbrainMode === key && (
                       <Check size={14} className="brand-text mt-0.5 shrink-0" />
@@ -552,7 +559,7 @@ export default function QueryPage() {
             <div className="w-full space-y-2">
               <div className="mb-3 flex items-center gap-2">
                 <Lightbulb size={13} className="text-amber-600" />
-                <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
                   Beispiel-Queries
                 </span>
               </div>
@@ -614,7 +621,7 @@ export default function QueryPage() {
               <Badge variant="default" className="text-xs">
                 {MODE_LABELS[queryMode].label}
               </Badge>
-              <Badge variant="default" className="text-xs brand-soft brand-text brand-border">
+              <Badge variant="default" className="brand-soft brand-text brand-border text-xs">
                 {QUERY_MODE_LABELS[superbrainMode].label}
               </Badge>
             </div>
