@@ -72,11 +72,25 @@ Diese vier sind die günstigsten Fixes im ganzen Plan: kein Neubau, nur Verkabel
    `outlook-addin/src/taskpane.ts` speichert den API-Key im Klartext im Browser
    (XSS-Angriffsfläche auf Anwaltszugang). Auf token-basierten/verschlüsselten
    Mechanismus wie andere Add-ins umstellen.
-5. **AI-Act-/Model-Policy technisch durchsetzen** — `src/lib/ai-act.ts` und
-   `src/lib/model-config.ts` sind rein deklarativ (Label-Metadaten ohne
-   Laufzeit-Whitelist/EU-only-Gate). Falls Marketing/Vertrieb technische
-   Durchsetzung suggeriert, ist das ein Compliance-Risiko — entweder Gate bauen
-   oder Marketingaussage korrigieren.
+5. ~~**AI-Act-/Model-Policy technisch durchsetzen**~~ — **Präzisierung + Erledigt.**
+   `src/lib/ai-act.ts` (Art.-50-Transparenzkennzeichnung) war beim Prüfen bereits korrekt
+   verdrahtet (`AI_FRONTMATTER`/`AI_NOTICE` werden tatsächlich in `drafting/page.tsx`,
+   `bea/page.tsx`, `CitationPanel.tsx`, `CitationLink.tsx` verwendet — keine reine
+   Deklaration). Der echte Gap lag bei `model-config.ts`: `src/content/solutions.ts`
+   verspricht explizit "Keine US-Cloud, kein US-Modell" für die EU-Hosting-Variante, aber
+   der Modell-Katalog hatte keine Residency-Information und keine Org-Policy — jeder
+   Nutzer konnte Anthropic/OpenAI/Google-Modelle (alle `non_eu`, nur Mistral ist
+   dokumentiert EU-gehostet) ohne jede Einschränkung wählen. Jetzt: `ModelEntry.dataResidency`
+   (`"eu" | "non_eu"`, je Anbieter dokumentiert, nicht spekuliert — ZeroEntropy bleibt
+   trotz "Optimiert für deutsches/EU-Recht" konservativ `non_eu`, weil das eine
+   Domain-Spezialisierung ist, keine Hosting-Garantie), `Org.modelPolicy?: "any" | "eu_only"`
+   (`src/lib/auth/store.ts`), `isModelAllowedForPolicy()`/`modelsForPolicy()`
+   (`model-config.ts`), Owner-only `PATCH /api/org` zum Setzen der Policy, Enforcement in
+   `PATCH /api/settings/model` (403 `model_not_allowed_by_policy` bei Verstoß), `GET`
+   liefert nur noch policy-konforme Modelle. 9 neue Tests in `model-config.test.ts` (43
+   gesamt). **Offen:** keine UI zum Setzen der Org-Policy (API ist da, Settings-Seite noch
+   nicht); Migration für bestehende Orgs ist automatisch (`undefined` = `"any"`, kein
+   Verhaltensbruch).
 
 ## Priorität B — Produkthaftung/Qualitätssicherung
 

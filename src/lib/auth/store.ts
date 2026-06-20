@@ -73,6 +73,14 @@ export interface Org {
   brainId: string;
   ownerId: string;
   createdAt: string;
+  /**
+   * "eu_only" technically enforces the "Keine US-Cloud, kein US-Modell"
+   * marketing claim (src/content/solutions.ts) — every member's model
+   * selection is restricted to EU-hosted entries (see
+   * src/lib/model-config.ts's isModelAllowedForPolicy). Owner-only setting.
+   * undefined = "any" (no restriction, prior behavior for every existing org).
+   */
+  modelPolicy?: "any" | "eu_only";
 }
 
 export interface OrgStore {

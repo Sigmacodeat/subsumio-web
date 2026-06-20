@@ -8,6 +8,8 @@ import {
   formatCost,
   formatContextWindow,
   getSpeedLabel,
+  isModelAllowedForPolicy,
+  modelsForPolicy,
   type ModelProvider,
 } from "./model-config";
 
@@ -29,7 +31,13 @@ describe("AI_MODELS", () => {
       expect(m.description).toBeTruthy();
       expect(Array.isArray(m.capabilities)).toBe(true);
       expect(typeof m.brainScoped).toBe("boolean");
+      expect(["eu", "non_eu"]).toContain(m.dataResidency);
     }
+  });
+
+  test("Mistral is the only EU-hosted entry (documented EU infra)", () => {
+    const euModels = AI_MODELS.filter((m) => m.dataResidency === "eu");
+    expect(euModels.map((m) => m.provider)).toEqual(["mistral"]);
   });
 
   test("has unique model IDs", () => {
@@ -188,5 +196,43 @@ describe("getSpeedLabel", () => {
 
   test("returns 'Very Fast' for rating 5", () => {
     expect(getSpeedLabel(5)).toBe("Very Fast");
+  });
+});
+
+describe("isModelAllowedForPolicy", () => {
+  const euModel = AI_MODELS.find((m) => m.dataResidency === "eu")!;
+  const nonEuModel = AI_MODELS.find((m) => m.dataResidency === "non_eu")!;
+
+  test("policy 'any' allows every model", () => {
+    expect(isModelAllowedForPolicy(euModel, "any")).toBe(true);
+    expect(isModelAllowedForPolicy(nonEuModel, "any")).toBe(true);
+  });
+
+  test("policy undefined behaves like 'any' (back-compat for existing orgs)", () => {
+    expect(isModelAllowedForPolicy(nonEuModel, undefined)).toBe(true);
+  });
+
+  test("policy 'eu_only' allows EU-hosted models", () => {
+    expect(isModelAllowedForPolicy(euModel, "eu_only")).toBe(true);
+  });
+
+  test("policy 'eu_only' rejects non-EU models", () => {
+    expect(isModelAllowedForPolicy(nonEuModel, "eu_only")).toBe(false);
+  });
+});
+
+describe("modelsForPolicy", () => {
+  test("'any' returns the full catalog", () => {
+    expect(modelsForPolicy("any")).toHaveLength(AI_MODELS.length);
+  });
+
+  test("undefined returns the full catalog (back-compat)", () => {
+    expect(modelsForPolicy(undefined)).toHaveLength(AI_MODELS.length);
+  });
+
+  test("'eu_only' returns only EU-hosted models, and none are non_eu", () => {
+    const filtered = modelsForPolicy("eu_only");
+    expect(filtered.length).toBeGreaterThan(0);
+    expect(filtered.every((m) => m.dataResidency === "eu")).toBe(true);
   });
 });

@@ -1,11 +1,25 @@
 import { z } from "zod";
 import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
-import { getStore } from "@/lib/auth/store";
-import { AI_MODELS, isValidModelId, DEFAULT_MODEL_ID, getModelById } from "@/lib/model-config";
+import { getStore, getOrgStore } from "@/lib/auth/store";
+import {
+  AI_MODELS,
+  isValidModelId,
+  DEFAULT_MODEL_ID,
+  getModelById,
+  isModelAllowedForPolicy,
+  modelsForPolicy,
+} from "@/lib/model-config";
 
 const modelPatchSchema = z.object({
   modelId: z.string().min(1).max(100),
 });
+
+/** The calling user's org-wide model policy ("any" when not in an org). */
+async function resolveModelPolicy(orgId: string | null | undefined) {
+  if (!orgId) return "any" as const;
+  const org = await getOrgStore().getById(orgId);
+  return org?.modelPolicy ?? "any";
+}
 
 export const GET = createHandler(
   {
@@ -18,16 +32,18 @@ export const GET = createHandler(
     const user = await store.getById(ctx.user.id);
     if (!user) return apiError("user_not_found", "User not found", 404);
 
+    const policy = await resolveModelPolicy(user.orgId);
     const preferredModelId = user.preferredModel ?? DEFAULT_MODEL_ID;
     const preferredModel = getModelById(preferredModelId);
 
     return apiSuccess({
-      models: AI_MODELS,
+      models: modelsForPolicy(policy),
+      modelPolicy: policy,
       preferredModelId,
       preferredModel: preferredModel ?? null,
       brainId: ctx.brainId,
     });
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -47,27 +63,36 @@ export const PATCH = createHandler(
     const modelId = body.modelId === "auto" ? DEFAULT_MODEL_ID : body.modelId;
 
     if (!isValidModelId(modelId)) {
-      return apiError(
-        "invalid_model",
-        `Unknown model ID: ${body.modelId}`,
-        400,
-        { availableModels: [...AI_MODELS.map((m) => m.id), "auto"] },
-      );
+      return apiError("invalid_model", `Unknown model ID: ${body.modelId}`, 400, {
+        availableModels: [...AI_MODELS.map((m) => m.id), "auto"],
+      });
     }
 
     const store = getStore();
+    const user = await store.getById(ctx.user.id);
+    if (!user) return apiError("user_not_found", "User not found", 404);
+
+    const model = getModelById(modelId)!;
+    const policy = await resolveModelPolicy(user.orgId);
+    if (!isModelAllowedForPolicy(model, policy)) {
+      return apiError(
+        "model_not_allowed_by_policy",
+        `Model "${modelId}" is not allowed under this organization's model policy (${policy}).`,
+        403,
+        { policy, availableModels: modelsForPolicy(policy).map((m) => m.id) }
+      );
+    }
+
     const updated = await store.update(ctx.user.id, {
       preferredModel: modelId,
     });
 
     if (!updated) return apiError("user_not_found", "User not found", 404);
 
-    const model = getModelById(modelId);
-
     return apiSuccess({
       preferredModelId: modelId,
-      preferredModel: model ?? null,
+      preferredModel: model,
       brainId: ctx.brainId,
     });
-  },
+  }
 );

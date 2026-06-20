@@ -1,10 +1,13 @@
-
 import { z } from "zod";
 import { getStore, getOrgStore, buildNewOrg, toPublic } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 const orgPostSchema = z.object({
   name: z.string().trim().min(2, "invalid_name").max(80, "invalid_name"),
+});
+
+const orgPatchSchema = z.object({
+  modelPolicy: z.enum(["any", "eu_only"]),
 });
 
 export const GET = createHandler(
@@ -22,11 +25,44 @@ export const GET = createHandler(
       .filter((u) => u.orgId === org.id)
       .map((u) => ({ ...toPublic(u), isOwner: u.id === org.ownerId }));
     return Response.json({
-      org: { id: org.id, name: org.name, ownerId: org.ownerId, createdAt: org.createdAt },
+      org: {
+        id: org.id,
+        name: org.name,
+        ownerId: org.ownerId,
+        createdAt: org.createdAt,
+        modelPolicy: org.modelPolicy ?? "any",
+      },
       members,
       isOwner: ctx.user.id === org.ownerId,
     });
+  }
+);
+
+/** Owner-only: set the org-wide model policy (e.g. "eu_only" — see model-config.ts). */
+export const PATCH = createHandler(
+  {
+    action: "brain.write",
+    rateTier: "standard",
+    body: orgPatchSchema,
+    audit: (ctx, body) => ({
+      action: "settings.update" as const,
+      entityType: "org",
+      entityId: ctx.user.orgId ?? undefined,
+      details: { modelPolicy: body.modelPolicy },
+    }),
   },
+  async (ctx, body, _query, _req) => {
+    if (!ctx.user.orgId) return apiError("not_in_org", "Keine Organisation", 400);
+
+    const org = await getOrgStore().getById(ctx.user.orgId);
+    if (!org) return apiError("org_not_found", "Organisation nicht gefunden", 404);
+    if (ctx.user.id !== org.ownerId) {
+      return apiError("owner_only", "Nur der Owner kann die Model-Policy ändern", 403);
+    }
+
+    const updated = await getOrgStore().update(org.id, { modelPolicy: body.modelPolicy });
+    return Response.json({ org: { id: updated!.id, modelPolicy: updated!.modelPolicy ?? "any" } });
+  }
 );
 
 export const POST = createHandler(
@@ -46,7 +82,7 @@ export const POST = createHandler(
     const org = await getOrgStore().create(buildNewOrg({ name: body.name, ownerId: ctx.user.id }));
     await getStore().update(ctx.user.id, { orgId: org.id });
     return Response.json({ org }, { status: 201 });
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -81,5 +117,5 @@ export const DELETE = createHandler(
 
     await getStore().update(ctx.user.id, { orgId: null });
     return Response.json({ ok: true });
-  },
+  }
 );
