@@ -11,7 +11,6 @@ triggers:
   - "Suchstatus"
   - "stehengebliebene Kandidaten"
   - "Mandate Status Recruiting"
-  - "pipeline review"
   - "search status"
   - "stalled candidates"
   - "time to fill"
@@ -34,6 +33,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Each active search's stage + candidate counts are drawn from the brain (sourced).
 2. Stalled candidates (no movement) and next actions are explicit.
 3. Time-in-stage / time-to-fill signals are surfaced where data allows.
@@ -71,5 +71,6 @@ Use for a pipeline/search-wide view. Do NOT use to build a shortlist
 - ❌ Omitting the next action for an at-risk search.
 
 ## Error Handling
+
 - Searches with no recent activity → flag as stalled, not as healthy.
 - Incomplete pipeline data → state coverage before reviewing.

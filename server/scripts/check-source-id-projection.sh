@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 # Allowlist: SELECT shapes that legitimately don't need source_id (single-col

@@ -13,7 +13,7 @@ triggers:
   - "ist der Schaden gedeckt"
   - "Schadenmeldung"
   - "Schaden prüfen"
-  - "claim"
+  - "insurance claim"
   - "is this claim covered"
   - "file a claim"
   - "claim notification"
@@ -38,6 +38,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The loss is checked against the specific policy's cover, sub-limits and deductible (cited).
 2. The claim notification window per the policy is surfaced and flagged as a deadline.
 3. The required documentation list is produced for the line of business.
@@ -84,5 +85,6 @@ insurer. Do NOT use to review a policy in the abstract (→ policy-review).
 - ❌ Assessing without citing the policy terms relied on.
 
 ## Error Handling
+
 - Policy not found in brain → request it; do not assume terms.
 - Loss facts incomplete → list what the insurer will need before notifying.

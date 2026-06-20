@@ -11,10 +11,16 @@
 # Usage:  scripts/check-admin-scope-drift.sh
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
 SRC=src/core/scope.ts
 ADMIN=admin/src/lib/scope-constants.ts
 
 [ -f "$SRC" ] || { echo "[check-admin-scope-drift] missing $SRC" >&2; exit 2; }
+if [ ! -d admin ]; then
+  echo "[check-admin-scope-drift] no admin/ directory, skipping"
+  exit 0
+fi
 [ -f "$ADMIN" ] || { echo "[check-admin-scope-drift] missing $ADMIN" >&2; exit 2; }
 
 # Extract the contents of ALLOWED_SCOPES_LIST = [...] from each file.

@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { isWebhookProcessed, markWebhookProcessed } from "@/lib/docusign";
+import {
+  isWebhookProcessed,
+  markWebhookProcessed,
+  verifyDocusignConnectSignature,
+} from "@/lib/docusign";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +27,9 @@ export async function POST(req: NextRequest) {
       envelopeId?: string;
       envelopeSummary?: {
         status?: string;
-        recipients?: { signers?: Array<{ status: string; signedDateTime?: string; email?: string }> };
+        recipients?: {
+          signers?: Array<{ status: string; signedDateTime?: string; email?: string }>;
+        };
       };
     };
     eventId?: string;
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Idempotency: skip already processed events (Postgres-backed)
-  if (eventId && await isWebhookProcessed(eventId)) {
+  if (eventId && (await isWebhookProcessed(eventId))) {
     return Response.json({ ok: true, dedup: true });
   }
 
@@ -47,13 +52,7 @@ export async function POST(req: NextRequest) {
   const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
   if (connectSecret) {
     const signature = req.headers.get("x-docusign-signature-1");
-    if (!signature) {
-      return Response.json({ error: "invalid_signature" }, { status: 401 });
-    }
-    const expected = await hmacSha256(rawBody, connectSecret);
-    const a = Buffer.from(signature, "utf8");
-    const b = Buffer.from(expected, "utf8");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    if (!verifyDocusignConnectSignature(rawBody, signature, connectSecret)) {
       return Response.json({ error: "invalid_signature" }, { status: 401 });
     }
   }
@@ -95,7 +94,7 @@ export async function POST(req: NextRequest) {
     const headers = engineHeadersForBrain(brainId);
     const searchRes = await fetch(
       `${ENGINE_URL}/api/search?q=${encodeURIComponent(`docusign_envelope_id:${envelopeId}`)}`,
-      { headers },
+      { headers }
     );
     if (searchRes.ok) {
       const results = (await searchRes.json()) as { pages?: Array<{ slug: string }> };
@@ -116,19 +115,13 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err) {
-    console.error("[docusign webhook] brain update failed:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[docusign webhook] brain update failed:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 
   if (eventId) await markWebhookProcessed(eventId, envelopeId, body.event);
 
   return Response.json({ ok: true, envelopeId, mapped, updated });
-}
-
-async function hmacSha256(message: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
 }

@@ -12,8 +12,6 @@ triggers:
   - "Lessons Learned"
   - "Projekt nachbereiten"
   - "project retro"
-  - "post-mortem"
-  - "lessons learned"
   - "wrap up this project"
   - "capture learnings"
 priority: 61
@@ -35,6 +33,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The retro covers what worked, what didn't, reusable assets and key learnings.
 2. Each point cites the project source it draws from.
 3. Reusable assets are listed with their location.
@@ -71,5 +70,6 @@ Use to wrap up a finished/ongoing project. Do NOT use to find prior work
 - ❌ Listing reusable assets without where to find them.
 
 ## Error Handling
+
 - Thin project record → capture what exists, flag the gaps for the team.
 - No client feedback on file → note its absence rather than inferring satisfaction.

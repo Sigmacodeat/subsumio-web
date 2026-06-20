@@ -3,11 +3,9 @@
 // Idempotency: tracks processed event IDs to prevent duplicate plan updates.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
-
-const TOLERANCE_SECONDS = 300;
+import { verifyStripeSignature } from "@/lib/stripe-webhook";
 
 // In-memory fallback for dev mode (no Postgres)
 const processedEventIds = new Set<string>();
@@ -49,22 +47,6 @@ async function isDuplicateEvent(eventId: string, eventType: string): Promise<boo
     if (first) processedEventIds.delete(first);
   }
   return false;
-}
-
-function verifyStripeSignature(payload: string, header: string | null, secret: string): boolean {
-  if (!header) return false;
-  const parts = Object.fromEntries(
-    header.split(",").map((kv) => kv.split("=", 2) as [string, string])
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) return false;
-  const age = Math.abs(Date.now() / 1000 - Number(timestamp));
-  if (!Number.isFinite(age) || age > TOLERANCE_SECONDS) return false;
-  const expected = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
-  const a = Buffer.from(expected);
-  const b = Buffer.from(signature);
-  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function POST(req: NextRequest) {

@@ -21,7 +21,6 @@ triggers:
   - "NDA prüfen"
   - "Geheimhaltungsvereinbarung"
   - "Aufhebungsvertrag"
-  - "Mietvertrag prüfen"
 priority: 65
 tools:
   - search
@@ -40,6 +39,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. Every flagged clause cites the contract section by number/heading
 2. Risk ratings are justified with the applicable legal standard
 3. Missing standard clauses are identified explicitly
@@ -53,6 +53,7 @@ If brain slug provided: `gbrain get_page <slug>`
 If text provided directly: use as-is
 
 Identify:
+
 - **Contract type**: Kaufvertrag / Dienstvertrag / Werkvertrag / Mietvertrag / NDA / GmbH-Vertrag / Arbeitsvertrag / Lizenzvertrag / Sonstige
 - **Parties**: Vertragsparteien, Rollen
 - **Governing law**: Rechtswahlklausel (default: DE if not stated)
@@ -61,6 +62,7 @@ Identify:
 ### Step 2 — Risk Scan
 
 Search brain for known problem clauses:
+
 ```
 gbrain search "problematische Klausel [contract_type] AGB unwirksam § 307 BGB"
 gbrain search "[contract_type] Muster Checkliste Pflichtklauseln"
@@ -70,14 +72,14 @@ gbrain search "[contract_type] Muster Checkliste Pflichtklauseln"
 
 For each material clause, assess:
 
-| Dimension | Question |
-|---|---|
-| Wirksamkeit | Ist die Klausel wirksam? (§§ 305–310 BGB, § 879 ABGB) |
-| Vollständigkeit | Fehlen Standardregelungen? |
-| Haftung | Ist die Haftung ausgewogen? |
-| Laufzeit/Kündigung | Sind Fristen angemessen? |
-| Datenschutz | DSGVO-Konformität (Art. 28, 32, 37 DSGVO)? |
-| Gerichtsstand | Ist der Gerichtsstand wirksam vereinbart? |
+| Dimension          | Question                                              |
+| ------------------ | ----------------------------------------------------- |
+| Wirksamkeit        | Ist die Klausel wirksam? (§§ 305–310 BGB, § 879 ABGB) |
+| Vollständigkeit    | Fehlen Standardregelungen?                            |
+| Haftung            | Ist die Haftung ausgewogen?                           |
+| Laufzeit/Kündigung | Sind Fristen angemessen?                              |
+| Datenschutz        | DSGVO-Konformität (Art. 28, 32, 37 DSGVO)?            |
+| Gerichtsstand      | Ist der Gerichtsstand wirksam vereinbart?             |
 
 ### Step 4 — Output Format
 
@@ -85,6 +87,7 @@ For each material clause, assess:
 ## Vertragsanalyse — [Vertragsbezeichnung] — [Datum]
 
 ### Übersicht
+
 - **Vertragstyp:** [Typ]
 - **Parteien:** [A] ↔ [B]
 - **Anwendbares Recht:** [Jurisdiktion]
@@ -92,31 +95,36 @@ For each material clause, assess:
 
 ### Klauselmatrix
 
-| Klausel | Bewertung | Risiko | Empfehlung |
-|---------|-----------|--------|------------|
-| § 1 Vertragsgegenstand | [Text-Zusammenfassung] | 🟢/🟡/🔴 | [Änderungsvorschlag] |
-| § 3 Haftung | [Text-Zusammenfassung] | 🔴 | [Konkreter Änderungsvorschlag] |
-| ... | | | |
+| Klausel                | Bewertung              | Risiko   | Empfehlung                     |
+| ---------------------- | ---------------------- | -------- | ------------------------------ |
+| § 1 Vertragsgegenstand | [Text-Zusammenfassung] | 🟢/🟡/🔴 | [Änderungsvorschlag]           |
+| § 3 Haftung            | [Text-Zusammenfassung] | 🔴       | [Konkreter Änderungsvorschlag] |
+| ...                    |                        |          |                                |
 
 ### 🚨 Rote Flaggen (sofort klären)
+
 1. [Klausel X]: [Problem] — [Rechtliche Grundlage]
 2. ...
 
 ### ⚠️ Fehlende Standardklauseln
+
 - [ ] Höhere Gewalt (force majeure)
 - [ ] Schriftformklausel (§ 127 BGB)
 - [ ] Salvatorische Klausel
 - [ ] [weitere fehlende Klauseln]
 
 ### 📋 Empfohlene Änderungen
+
 [Nummerierte Liste mit konkreten Textvorschlägen]
 
 ### Nächste Schritte
+
 - [ ] Anwaltliche Überprüfung (insbesondere: [Klauseln])
 - [ ] Nachverhandlung: [Punkte]
 - [ ] Vor Unterzeichnung klären: [Fragen]
 
 ---
+
 ⚠️ KI-generierte Analyse. Kein Ersatz für Rechtsberatung.
 ```
 

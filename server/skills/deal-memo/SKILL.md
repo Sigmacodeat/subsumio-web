@@ -12,8 +12,6 @@ triggers:
   - "Investment Memo"
   - "Beteiligungsvorlage"
   - "Memo schreiben Deal"
-  - "deal memo"
-  - "investment memo"
   - "write up this deal"
   - "IC memo"
   - "Investment Case"
@@ -36,6 +34,7 @@ mutating: true
 ## Contract
 
 This skill guarantees:
+
 1. The memo follows a consistent structure (company, team, market, product, traction, terms, risks, recommendation).
 2. Every claim cites its brain source; figures are marked as reported, not verified.
 3. It ends with explicit open questions and gaps.
@@ -76,5 +75,6 @@ for portfolio-wide status (→ portfolio-review) or single-founder prep
 - ❌ Inventing data not in the brain.
 
 ## Error Handling
+
 - Thin context → say what's missing before writing a recommendation.
 - Conflicting figures across sources → surface both, flag the contradiction.

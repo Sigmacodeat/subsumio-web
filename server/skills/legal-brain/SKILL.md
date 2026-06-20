@@ -9,22 +9,20 @@ triggers:
   - "new legal case"
   - "analyze opponent"
   - "assess chances"
-  - "legal strategy"
-  - "search precedent"
-  - "find precedent"
-  - "legal precedent"
   - "Rechtsfall"
   - "Gegner analysieren"
   - "Gegneranalyse"
   - "Chancen bewerten"
   - "Chancenbewertung"
-  - "Rechtsstrategie"
-  - "Präjudizien"
-  - "Präzedenzfall"
 priority: 60
 ---
 
 # Legal Brain — Dispatcher
+
+> **Convention:** see [conventions/brain-first.md](../conventions/brain-first.md)
+> before issuing external lookups. This dispatcher checks the matter brain and
+> law corpus first, then chains to specialist legal skills only for missing
+> context.
 
 ## What This Is
 
@@ -40,17 +38,17 @@ The Legal Brain is a complete case-management and strategic-analysis subsystem f
 
 ## Commands
 
-| Intent | Command |
-|--------|---------|
-| Create entity profile | `gbrain legal entity create --type <type> --name <name>` |
-| List entities | `gbrain legal entity list` |
-| Create case | `gbrain legal case create --title <t> --area <a> --opponent <id>` |
-| List cases | `gbrain legal case list` |
-| Show case | `gbrain legal case show <id>` |
-| Generate strategy | `gbrain legal case strategy <id>` |
-| Assess chances | `gbrain legal case assess <id>` |
-| Analyze opponent | `gbrain legal opponent <name>` |
-| Search precedents | `gbrain legal precedent <query>` |
+| Intent                | Command                                                           |
+| --------------------- | ----------------------------------------------------------------- |
+| Create entity profile | `gbrain legal entity create --type <type> --name <name>`          |
+| List entities         | `gbrain legal entity list`                                        |
+| Create case           | `gbrain legal case create --title <t> --area <a> --opponent <id>` |
+| List cases            | `gbrain legal case list`                                          |
+| Show case             | `gbrain legal case show <id>`                                     |
+| Generate strategy     | `gbrain legal case strategy <id>`                                 |
+| Assess chances        | `gbrain legal case assess <id>`                                   |
+| Analyze opponent      | `gbrain legal opponent <name>`                                    |
+| Search precedents     | `gbrain legal precedent <query>`                                  |
 
 ## Privacy Rules
 

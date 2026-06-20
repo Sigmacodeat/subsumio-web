@@ -15,7 +15,6 @@ triggers:
   - "WALT"
   - "Mietvertragsablauf"
   - "Portfolio Miete"
-  - "rent roll"
   - "occupancy analysis"
   - "lease expiry"
   - "portfolio analysis"
@@ -37,6 +36,7 @@ mutating: false
 ## Contract
 
 This skill guarantees:
+
 1. Occupancy, rent totals and WALT are computed from the leases in the brain (cited).
 2. The expiry timeline lists which leases end when (deadline-bearing).
 3. Arrears and tenant-concentration risk are flagged where the data allows.
@@ -80,5 +80,6 @@ clauses (→ lease-review).
 - ❌ Computing from an incomplete lease set without saying so.
 
 ## Error Handling
+
 - Lease data incomplete in brain → state coverage (n of m units) before reporting.
 - No dates on leases → timeline cannot be built; flag the missing data.

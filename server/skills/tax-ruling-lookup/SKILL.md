@@ -14,17 +14,14 @@ triggers:
   - "Betriebsprüfung"
   - "Einspruch Finanzamt"
   - "Steuerberechnung"
-  - "Umsatzsteuer prüfen"
   - "Einkommensteuer"
   - "Körperschaftsteuer"
   - "Gewerbesteuer"
   - "tax assessment"
   - "tax appeal"
   - "VAT ruling"
-  - "Vorsteuerabzug"
   - "Steuererklärung prüfen"
   - "Betriebsausgaben"
-  - "Steuergestaltung"
   - "AO Verjährung"
 priority: 65
 tools:
@@ -55,6 +52,7 @@ mutating: true
 ### Step 1 — Parse the Tax Notice
 
 Extract from the Bescheid:
+
 - **Steuerart**: ESt / KSt / USt / GewSt / ErbSt / GrESt / LSt
 - **Veranlagungszeitraum**: Which tax year(s)?
 - **Festgesetzte Steuer**: Betrag
@@ -73,11 +71,13 @@ gbrain query "Welche Möglichkeiten gibt es gegen [issue] vorzugehen?"
 ### Step 3 — Deadline Calculation
 
 **Einspruchsfrist (§ 355 AO):**
+
 - Standard: 1 Monat ab Bekanntgabe des Bescheids
 - Bekanntgabe: § 122 AO — 3 Tage nach Aufgabe zur Post (Bekanntgabefiktion)
 - Wenn Fristende auf Wochenende/Feiertag: Verlängerung auf nächsten Werktag (§ 108 AO)
 
 **Verjährung (§§ 169–171 AO):**
+
 - Regelverjährung: 4 Jahre
 - Steuerhinterziehung: 10 Jahre
 - Leichtfertige Steuerverkürzung: 5 Jahre
@@ -86,11 +86,13 @@ gbrain query "Welche Möglichkeiten gibt es gegen [issue] vorzugehen?"
 
 ```markdown
 ## Steuerrechtliche Analyse — [Steuerart] [Zeitraum]
+
 **Erstellt:** [Datum] | **Bescheiddatum:** [Datum] | **Einspruchsfrist läuft bis:** [Datum]
 
 ---
 
 ### ⏰ Fristen-Übersicht
+
 - Bekanntgabe des Bescheids: [Datum]
 - Einspruchsfrist endet: **[Datum]** (§ 355 AO) — [X] Tage verbleibend
 - Festsetzungsverjährung: [Datum] (§ 169 AO)
@@ -100,6 +102,7 @@ gbrain query "Welche Möglichkeiten gibt es gegen [issue] vorzugehen?"
 ### Streitige Punkte
 
 #### Punkt 1: [Bezeichnung]
+
 - **Streitbetrag:** [X] €
 - **Steuerpunkt:** § [X] [Gesetz]
 - **Position FA:** [Zusammenfassung]
@@ -114,11 +117,11 @@ gbrain query "Welche Möglichkeiten gibt es gegen [issue] vorzugehen?"
 
 ### Zusammenfassung Einspruchsaussichten
 
-| Punkt | Streitbetrag | Aussichten | Empfehlung |
-|-------|-------------|------------|------------|
-| [P1]  | [X] €       | 🟢 Stark  | Einspruch |
-| [P2]  | [Y] €       | 🔴 Schwach | Abwägen   |
-| **Gesamt** | **[Z] €** | — | — |
+| Punkt      | Streitbetrag | Aussichten | Empfehlung |
+| ---------- | ------------ | ---------- | ---------- |
+| [P1]       | [X] €        | 🟢 Stark   | Einspruch  |
+| [P2]       | [Y] €        | 🔴 Schwach | Abwägen    |
+| **Gesamt** | **[Z] €**    | —          | —          |
 
 ---
 
@@ -141,6 +144,7 @@ gbrain query "Welche Möglichkeiten gibt es gegen [issue] vorzugehen?"
    - [ ] Betriebsprüfungsabwehr
 
 ---
+
 ⚠️ KI-generierte Steueranalyse. Kein Ersatz für Steuerberatung.
 ```
 
@@ -181,17 +185,17 @@ gbrain put_page --slug "steuer/[mandant]/bescheide/[typ]-[zeitraum]-analyse" --t
 
 ## Key Tax Norms Quick Reference
 
-| Norm | Inhalt |
-|---|---|
-| § 355 AO | Einspruchsfrist: 1 Monat |
-| § 361 AO | Aussetzung der Vollziehung |
-| § 169 AO | Festsetzungsverjährung: 4 Jahre |
-| § 173 AO | Änderung wegen neuer Tatsachen |
-| § 175 AO | Änderung wegen Grundlagenbescheid |
-| § 15 UStG | Vorsteuerabzug |
-| § 4 UStG | Steuerbefreiungen |
-| § 8b KStG | Dividendenprivileg |
-| § 10d EStG | Verlustabzug |
+| Norm       | Inhalt                            |
+| ---------- | --------------------------------- |
+| § 355 AO   | Einspruchsfrist: 1 Monat          |
+| § 361 AO   | Aussetzung der Vollziehung        |
+| § 169 AO   | Festsetzungsverjährung: 4 Jahre   |
+| § 173 AO   | Änderung wegen neuer Tatsachen    |
+| § 175 AO   | Änderung wegen Grundlagenbescheid |
+| § 15 UStG  | Vorsteuerabzug                    |
+| § 4 UStG   | Steuerbefreiungen                 |
+| § 8b KStG  | Dividendenprivileg                |
+| § 10d EStG | Verlustabzug                      |
 
 ## Anti-Patterns
 
