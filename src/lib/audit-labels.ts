@@ -11,24 +11,60 @@ export interface AuditEntry {
 }
 
 export type AuditAction =
-  | "user.login" | "user.logout" | "user.signup"
-  | "case.create" | "case.update" | "case.delete" | "case.view"
-  | "invoice.create" | "invoice.update" | "invoice.delete" | "invoice.send" | "invoice.remind"
-  | "document.upload" | "document.delete"
-  | "deadline.create" | "deadline.update" | "deadline.delete"
-  | "evidence.create" | "evidence.update" | "evidence.delete"
-  | "drafting.generate" | "drafting.export"
-  | "conflict.check" | "judgements.search"
-  | "legal.contract_draft" | "legal.document_review" | "legal.due_diligence"
-  | "legal.risk_analysis" | "legal.memo" | "legal.redline" | "legal.anonymize"
-  | "legal.tabular" | "legal.judgements_sync" | "legal.ai_deadlines" | "legal.rvg" | "legal.statute"
+  | "user.login"
+  | "user.logout"
+  | "user.signup"
+  | "case.create"
+  | "case.update"
+  | "case.delete"
+  | "case.view"
+  | "invoice.create"
+  | "invoice.update"
+  | "invoice.delete"
+  | "invoice.send"
+  | "invoice.remind"
+  | "document.upload"
+  | "document.delete"
+  | "deadline.create"
+  | "deadline.update"
+  | "deadline.delete"
+  | "evidence.create"
+  | "evidence.update"
+  | "evidence.delete"
+  | "drafting.generate"
+  | "drafting.export"
+  | "conflict.check"
+  | "judgements.search"
+  | "legal.contract_draft"
+  | "legal.document_review"
+  | "legal.due_diligence"
+  | "legal.risk_analysis"
+  | "legal.memo"
+  | "legal.redline"
+  | "legal.anonymize"
+  | "legal.tabular"
+  | "legal.judgements_sync"
+  | "legal.ai_deadlines"
+  | "legal.rvg"
+  | "legal.statute"
   | "legal.playbook"
-  | "settings.update" | "billing.upgrade"
-  | "team.invite" | "team.remove" | "team.role_change"
-  | "connector.add" | "connector.remove" | "connector.sync"
-  | "scim.user_provisioned" | "scim.user_deprovisioned" | "scim.user_updated" | "scim.group_synced" | "scim.sync_manual"
+  | "settings.update"
+  | "billing.upgrade"
+  | "onboarding.complete"
+  | "team.invite"
+  | "team.remove"
+  | "team.role_change"
+  | "connector.add"
+  | "connector.remove"
+  | "connector.sync"
+  | "scim.user_provisioned"
+  | "scim.user_deprovisioned"
+  | "scim.user_updated"
+  | "scim.group_synced"
+  | "scim.sync_manual"
   | "query.submit"
-  | "data.export" | "data.delete";
+  | "data.export"
+  | "data.delete";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -60,6 +96,7 @@ const ACTION_LABELS: Record<string, string> = {
   "legal.statute": "Gesetzessuche",
   "settings.update": "Einstellungen geändert",
   "billing.upgrade": "Plan geändert",
+  "onboarding.complete": "Onboarding abgeschlossen",
   "team.invite": "Team-Einladung",
   "team.remove": "Team-Mitglied entfernt",
   "connector.add": "Konnektor hinzugefügt",

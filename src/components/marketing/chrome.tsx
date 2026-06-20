@@ -38,6 +38,10 @@ import {
   FileSignature,
   Lock,
   ScanSearch,
+  Download,
+  User,
+  Building2,
+  Info,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,6 +84,10 @@ export const ICONS: Record<string, LucideIcon> = {
   FileSignature,
   Lock,
   ScanSearch,
+  Download,
+  User,
+  Building2,
+  Info,
 };
 
 // Tone-aware accent icon-tiles. On light surfaces the -700/-50/-200 shades
@@ -259,12 +267,20 @@ export function MarketingNav({ lang }: { lang: Lang }) {
   const pathname = usePathname() || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [openSection, setOpenSection] = useState<number | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
-  const firstMobileLinkRef = useRef<HTMLAnchorElement>(null);
+  const firstMobileLinkRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isActive = (href: string) => pathname === p(lang, href) || pathname === href;
+
+  const isSectionActive = (sectionIdx: number) => {
+    return nav.sections[sectionIdx].items.some((item) => isActive(item.href));
+  };
 
   // Scroll detection — backdrop blur after 8px.
   useEffect(() => {
@@ -274,16 +290,16 @@ export function MarketingNav({ lang }: { lang: Lang }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change.
+  // Close mobile menu + mega dropdown on route change.
   useEffect(() => {
     setMobileOpen(false);
+    setOpenSection(null);
   }, [pathname]);
 
   // Body scroll lock + focus management when mobile menu is open.
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
-      // Move focus to first nav link.
       const t = setTimeout(() => firstMobileLinkRef.current?.focus(), 50);
       return () => {
         document.body.style.overflow = "";
@@ -318,6 +334,50 @@ export function MarketingNav({ lang }: { lang: Lang }) {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [mobileOpen]);
 
+  // Keyboard handling for mega dropdown (Escape closes).
+  useEffect(() => {
+    if (openSection === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpenSection(null);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [openSection]);
+
+  // Click-outside closes mega dropdown.
+  useEffect(() => {
+    if (openSection === null) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenSection(null);
+      }
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [openSection]);
+
+  // Cleanup hover timeout on unmount.
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
+  const handleSectionEnter = (idx: number) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setOpenSection(idx);
+  };
+
+  const handleSectionLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => setOpenSection(null), 150);
+  };
+
   return (
     <header
       data-tone="light"
@@ -330,27 +390,116 @@ export function MarketingNav({ lang }: { lang: Lang }) {
         background: scrolled ? "color-mix(in srgb, var(--mk-bg) 92%, transparent)" : "var(--mk-bg)",
       }}
     >
-      <nav className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+      <nav ref={navRef} className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Link href={p(lang, "")} aria-label="Subsumio home" className="shrink-0">
             <BrandLogo />
           </Link>
 
-          {/* Desktop nav — flat list from navItems */}
+          {/* Desktop nav — mega dropdown sections */}
           <div className="hidden items-center gap-1 lg:flex">
-            {nav.navItems.map((item) => {
-              const active = isActive(item.href);
+            {nav.sections.map((section, sIdx) => {
+              const sectionActive = isSectionActive(sIdx);
+              const isOpen = openSection === sIdx;
               return (
-                <Link
-                  key={item.href}
-                  href={p(lang, item.href)}
-                  className={navLinkCls(active)}
-                  aria-current={active ? "page" : undefined}
+                <div
+                  key={section.label}
+                  className="relative"
+                  onMouseEnter={() => handleSectionEnter(sIdx)}
+                  onMouseLeave={handleSectionLeave}
                 >
-                  {item.label}
-                </Link>
+                  <button
+                    className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${NAV_LINK_BORDER} ${NAV_LINK_FOCUS} ${
+                      sectionActive || isOpen
+                        ? "font-medium [color:var(--brand-text)]"
+                        : NAV_LINK_INACTIVE
+                    }`}
+                    onClick={() => setOpenSection(isOpen ? null : sIdx)}
+                    aria-expanded={isOpen}
+                    aria-haspopup="true"
+                  >
+                    {section.label}
+                    <ChevronDown
+                      size={14}
+                      className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+                        animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                        transition={
+                          reduceMotion ? { duration: 0 } : { duration: 0.18, ease: "easeOut" }
+                        }
+                        className="absolute top-full left-1/2 z-50 mt-2 -translate-x-1/2"
+                        style={{ minWidth: section.items.length > 4 ? "560px" : "320px" }}
+                      >
+                        {/* Arrow pointer */}
+                        <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-t border-l [border-color:var(--mk-border)] [background:var(--mk-surface)]" />
+                        <div
+                          className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/10 backdrop-blur-xl [background:var(--mk-surface)]"
+                          style={{
+                            background: "color-mix(in srgb, var(--mk-surface) 96%, transparent)",
+                          }}
+                        >
+                          <div
+                            className={
+                              section.items.length > 4 ? "grid grid-cols-2 gap-1 p-3" : "p-3"
+                            }
+                          >
+                            {section.items.map((item) => {
+                              const active = isActive(item.href);
+                              const Icon = ICONS[item.icon] ?? Layers;
+                              return (
+                                <Link
+                                  key={item.href + item.label}
+                                  href={p(lang, item.href)}
+                                  onClick={() => setOpenSection(null)}
+                                  className={`group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-all duration-150 ${NAV_LINK_FOCUS} ${
+                                    active
+                                      ? "[background:color-mix(in_srgb,var(--brand-primary)_8%,var(--mk-hover))]"
+                                      : "hover:[background:var(--mk-hover)]"
+                                  }`}
+                                >
+                                  <div className="group-hover:brand-soft group-hover:brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border [border-color:var(--mk-border)] transition-colors [background:var(--mk-bg)]">
+                                    <Icon
+                                      size={16}
+                                      className="group-hover:brand-text [color:var(--mk-text-muted)]"
+                                    />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div
+                                      className={`text-sm font-medium ${active ? "brand-text" : "[color:var(--mk-text)]"}`}
+                                    >
+                                      {item.label}
+                                    </div>
+                                    <div className="mt-0.5 text-xs leading-snug [color:var(--mk-text-subtle)]">
+                                      {item.description}
+                                    </div>
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
+
+            {/* Standalone pricing link */}
+            <Link
+              href={p(lang, nav.pricingHref)}
+              className={navLinkCls(isActive(nav.pricingHref))}
+              aria-current={isActive(nav.pricingHref) ? "page" : undefined}
+            >
+              {nav.pricingLabel}
+            </Link>
           </div>
 
           {/* Action area */}
@@ -402,22 +551,82 @@ export function MarketingNav({ lang }: { lang: Lang }) {
               transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden lg:hidden"
             >
-              <div className="mt-3 space-y-0.5 rounded-2xl p-4 shadow-2xl shadow-black/10 [background:var(--mk-bg)]">
-                {nav.navItems.map((item, i) => {
-                  const active = isActive(item.href);
+              <div className="mt-3 space-y-1 rounded-2xl p-3 shadow-2xl shadow-black/10 [background:var(--mk-bg)]">
+                {/* Expandable sections */}
+                {nav.sections.map((section, sIdx) => {
+                  const expanded = mobileExpanded === sIdx;
+                  const sectionActive = isSectionActive(sIdx);
                   return (
-                    <Link
-                      key={item.href}
-                      ref={i === 0 ? firstMobileLinkRef : undefined}
-                      href={p(lang, item.href)}
-                      className={mobileLinkCls(active)}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
+                    <div key={section.label}>
+                      <button
+                        ref={sIdx === 0 ? firstMobileLinkRef : undefined}
+                        className={`flex min-h-[44px] w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${NAV_LINK_FOCUS} ${
+                          sectionActive ? "brand-text" : "[color:var(--mk-text)]"
+                        } hover:[background:var(--mk-hover)]`}
+                        onClick={() => setMobileExpanded(expanded ? null : sIdx)}
+                        aria-expanded={expanded}
+                      >
+                        {section.label}
+                        <ChevronDown
+                          size={15}
+                          className={`shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""} [color:var(--mk-text-subtle)]`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {expanded && (
+                          <motion.div
+                            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
+                            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+                            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                            transition={
+                              reduceMotion ? { duration: 0 } : { duration: 0.15, ease: "easeInOut" }
+                            }
+                            className="overflow-hidden"
+                          >
+                            <div className="ml-3 space-y-0.5 border-l [border-color:var(--mk-border)] pl-3">
+                              {section.items.map((item) => {
+                                const active = isActive(item.href);
+                                const Icon = ICONS[item.icon] ?? Layers;
+                                return (
+                                  <Link
+                                    key={item.href + item.label}
+                                    href={p(lang, item.href)}
+                                    className={mobileLinkCls(active)}
+                                    aria-current={active ? "page" : undefined}
+                                    onClick={() => setMobileOpen(false)}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <Icon
+                                        size={14}
+                                        className="shrink-0 [color:var(--mk-text-subtle)]"
+                                      />
+                                      <span className="flex flex-col">
+                                        <span>{item.label}</span>
+                                        <span className="text-xs [color:var(--mk-text-subtle)]">
+                                          {item.description}
+                                        </span>
+                                      </span>
+                                    </span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   );
                 })}
+
+                {/* Standalone pricing link */}
+                <Link
+                  href={p(lang, nav.pricingHref)}
+                  className={mobileLinkCls(isActive(nav.pricingHref))}
+                  aria-current={isActive(nav.pricingHref) ? "page" : undefined}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {nav.pricingLabel}
+                </Link>
 
                 {/* Language switcher + Sign-in — always visible in mobile menu */}
                 <div className="mt-2 space-y-0.5 border-t [border-color:var(--mk-border)] pt-2">

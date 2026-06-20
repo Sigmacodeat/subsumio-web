@@ -60,6 +60,8 @@ export interface User {
   zeroEntropyKey?: string | null;
   /** Preferred AI model ID (brain-scoped setting, see model-config.ts). */
   preferredModel?: string | null;
+  /** ISO timestamp when the guided onboarding wizard was completed. null = not yet done. */
+  onboardingCompletedAt?: string | null;
   createdAt: string;
 }
 
@@ -110,7 +112,10 @@ class FileUserStore implements UserStore {
       const raw = await fs.readFile(USERS_FILE, "utf8");
       this.cache = JSON.parse(raw) as User[];
     } catch (err) {
-      console.error("[auth] failed to load users file:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[auth] failed to load users file:",
+        err instanceof Error ? err.message : String(err)
+      );
       this.cache = [];
     }
     return this.cache;
@@ -248,7 +253,9 @@ declare global {
 
 function authPool(): Pool {
   if (!AUTH_DB_URL) {
-    throw new AuthError("A Postgres URL is required for the production auth store.", { code: "AUTH_DB_URL_MISSING" });
+    throw new AuthError("A Postgres URL is required for the production auth store.", {
+      code: "AUTH_DB_URL_MISSING",
+    });
   }
   if (!globalThis.__subsumioAuthPool) {
     const config: PoolConfig = {
@@ -296,19 +303,23 @@ function ensureSchema(): Promise<void> {
           updated_at timestamptz NOT NULL DEFAULT now()
         )
       `);
-      await pool.query("CREATE INDEX IF NOT EXISTS subsumio_users_org_id_idx ON subsumio_users ((data->>'orgId'))");
-      await pool.query("CREATE INDEX IF NOT EXISTS subsumio_orgs_owner_id_idx ON subsumio_orgs (owner_id)");
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS subsumio_users_org_id_idx ON subsumio_users ((data->>'orgId'))"
+      );
+      await pool.query(
+        "CREATE INDEX IF NOT EXISTS subsumio_orgs_owner_id_idx ON subsumio_orgs (owner_id)"
+      );
     })();
   }
   return schemaReady;
 }
 
 function rowToUser(row: { data: User | string }): User {
-  return typeof row.data === "string" ? JSON.parse(row.data) as User : row.data;
+  return typeof row.data === "string" ? (JSON.parse(row.data) as User) : row.data;
 }
 
 function rowToOrg(row: { data: Org | string }): Org {
-  return typeof row.data === "string" ? JSON.parse(row.data) as Org : row.data;
+  return typeof row.data === "string" ? (JSON.parse(row.data) as Org) : row.data;
 }
 
 class PostgresUserStore implements UserStore {
@@ -319,20 +330,29 @@ class PostgresUserStore implements UserStore {
 
   async getById(id: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE id = $1", [id]);
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE id = $1",
+      [id]
+    );
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
   async getByEmail(email: string) {
     const pool = await this.ready();
     const norm = email.trim().toLowerCase();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE email = $1", [norm]);
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE email = $1",
+      [norm]
+    );
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
   async getByReferralCode(code: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE referral_code = $1", [code]);
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE referral_code = $1",
+      [code]
+    );
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
@@ -340,7 +360,7 @@ class PostgresUserStore implements UserStore {
     const pool = await this.ready();
     const { rows } = await pool.query<{ data: User }>(
       "SELECT data FROM subsumio_users WHERE data->>'scimExternalId' = $1",
-      [externalId],
+      [externalId]
     );
     return rows[0] ? rowToUser(rows[0]) : null;
   }
@@ -358,7 +378,7 @@ class PostgresUserStore implements UserStore {
         normalized.passwordHash,
         JSON.stringify(normalized),
         normalized.createdAt,
-      ],
+      ]
     );
     return normalized;
   }
@@ -381,21 +401,23 @@ class PostgresUserStore implements UserStore {
               data = $5::jsonb,
               updated_at = now()
         WHERE id = $1`,
-      [id, next.email, next.referralCode, next.passwordHash, JSON.stringify(next)],
+      [id, next.email, next.referralCode, next.passwordHash, JSON.stringify(next)]
     );
     return next;
   }
 
   async list() {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users ORDER BY created_at ASC");
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users ORDER BY created_at ASC"
+    );
     return rows.map(rowToUser);
   }
   async countReferrals(code: string) {
     const pool = await this.ready();
     const { rows } = await pool.query<{ count: string }>(
       "SELECT COUNT(*) as count FROM subsumio_users WHERE data->>'referredBy' = $1",
-      [code],
+      [code]
     );
     return parseInt(rows[0]?.count ?? "0", 10);
   }
@@ -409,7 +431,10 @@ class PostgresOrgStore implements OrgStore {
 
   async getById(id: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM subsumio_orgs WHERE id = $1", [id]);
+    const { rows } = await pool.query<{ data: Org }>(
+      "SELECT data FROM subsumio_orgs WHERE id = $1",
+      [id]
+    );
     return rows[0] ? rowToOrg(rows[0]) : null;
   }
 
@@ -418,7 +443,7 @@ class PostgresOrgStore implements OrgStore {
     await pool.query(
       `INSERT INTO subsumio_orgs (id, owner_id, data, created_at, updated_at)
        VALUES ($1, $2, $3::jsonb, $4, now())`,
-      [org.id, org.ownerId, JSON.stringify(org), org.createdAt],
+      [org.id, org.ownerId, JSON.stringify(org), org.createdAt]
     );
     return org;
   }
@@ -434,7 +459,7 @@ class PostgresOrgStore implements OrgStore {
               data = $3::jsonb,
               updated_at = now()
         WHERE id = $1`,
-      [id, next.ownerId, JSON.stringify(next)],
+      [id, next.ownerId, JSON.stringify(next)]
     );
     return next;
   }
@@ -446,7 +471,9 @@ class PostgresOrgStore implements OrgStore {
 
   async list() {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM subsumio_orgs ORDER BY created_at ASC");
+    const { rows } = await pool.query<{ data: Org }>(
+      "SELECT data FROM subsumio_orgs ORDER BY created_at ASC"
+    );
     return rows.map(rowToOrg);
   }
 }
@@ -463,7 +490,10 @@ export function getSharedPgPool(): Pool | null {
 function createUserStore(): UserStore {
   if (AUTH_DB_URL) return new PostgresUserStore();
   if (process.env.NODE_ENV === "production") {
-    throw new AuthError("Production auth requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.", { code: "AUTH_DB_URL_MISSING" });
+    throw new AuthError(
+      "Production auth requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
+      { code: "AUTH_DB_URL_MISSING" }
+    );
   }
   return new FileUserStore();
 }
@@ -471,7 +501,10 @@ function createUserStore(): UserStore {
 function createOrgStore(): OrgStore {
   if (AUTH_DB_URL) return new PostgresOrgStore();
   if (process.env.NODE_ENV === "production") {
-    throw new AuthError("Production org storage requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.", { code: "AUTH_DB_URL_MISSING" });
+    throw new AuthError(
+      "Production org storage requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
+      { code: "AUTH_DB_URL_MISSING" }
+    );
   }
   return new FileOrgStore();
 }
@@ -526,6 +559,7 @@ export async function buildNewUser(opts: {
     emailVerifiedAt: null,
     orgId: null,
     industry: opts.industry ?? null,
+    onboardingCompletedAt: null,
     createdAt: new Date().toISOString(),
   };
 }

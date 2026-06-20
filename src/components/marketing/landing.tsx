@@ -243,16 +243,49 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </section>
 
+        {/* Use cases — real workflows, not fake testimonials */}
+        <section
+          data-tone="light"
+          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
+        >
+          <div className="mx-auto max-w-7xl">
+            <motion.div {...reveal}>
+              <SectionHeading title={t.scenariosTitle} sub={t.scenariosSub} />
+            </motion.div>
+            <div className="grid gap-6 md:grid-cols-3">
+              {t.scenarios.map((s, i) => (
+                <motion.div
+                  key={s.role}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={viewport}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  className="rounded-xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
+                >
+                  <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--brand-primary)] uppercase">
+                    {s.role}
+                  </p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{s.text}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* How it works — alternating surface band */}
         <section
           data-tone="light"
           className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
         >
-          <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-6xl">
             <motion.div {...reveal}>
               <SectionHeading title={t.howTitle} />
             </motion.div>
-            <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.1} y={18}>
+            <StaggerContainer
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-4"
+              stagger={0.08}
+              y={18}
+            >
               {t.how.map((item) => {
                 const Icon = ICONS[item.icon];
                 return (
@@ -280,35 +313,6 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 );
               })}
             </StaggerContainer>
-          </div>
-        </section>
-
-        {/* Scenarios (honest — no fake testimonials) — subtle surface band */}
-        <section
-          data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
-        >
-          <div className="mx-auto max-w-7xl">
-            <motion.div {...reveal}>
-              <SectionHeading title={t.scenariosTitle} sub={t.scenariosSub} />
-            </motion.div>
-            <div className="grid gap-6 md:grid-cols-3">
-              {t.scenarios.map((s, i) => (
-                <motion.div
-                  key={s.role}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewport}
-                  transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="rounded-xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
-                >
-                  <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--brand-primary)] uppercase">
-                    {s.role}
-                  </p>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{s.text}</p>
-                </motion.div>
-              ))}
-            </div>
           </div>
         </section>
 

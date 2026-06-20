@@ -33,33 +33,292 @@ export interface NavItem {
   href: string;
 }
 
+export interface MegaNavItem {
+  label: string;
+  href: string;
+  description: string;
+  icon: string;
+}
+
+export interface NavSection {
+  label: string;
+  items: readonly MegaNavItem[];
+}
+
 interface NavContent {
   signIn: string;
   cta: string;
-  navItems: readonly NavItem[];
+  pricingLabel: string;
+  pricingHref: string;
+  sections: readonly NavSection[];
 }
 
 export const NAV: Record<Lang, NavContent> = {
   en: {
     signIn: "Sign in",
     cta: "Get started",
-    navItems: [
-      { label: "Product", href: "/subsumio" },
-      { label: "Security", href: "/security" },
-      { label: "Pricing", href: "/pricing" },
-      { label: "Compare", href: "/compare" },
-      { label: "Docs", href: "/docs" },
+    pricingLabel: "Pricing",
+    pricingHref: "/pricing",
+    sections: [
+      {
+        label: "Platform",
+        items: [
+          {
+            label: "Overview",
+            href: "/subsumio",
+            description: "AI legal software for law firms in DACH",
+            icon: "Layers",
+          },
+          {
+            label: "Features",
+            href: "/features",
+            description: "Every capability, nothing hidden",
+            icon: "Zap",
+          },
+          {
+            label: "Security",
+            href: "/security",
+            description: "Your data, your keys, your jurisdiction",
+            icon: "ShieldCheck",
+          },
+          {
+            label: "WhatsApp Copilot",
+            href: "/whatsapp",
+            description: "Book time, file docs from your phone",
+            icon: "MessageSquare",
+          },
+          {
+            label: "Compare",
+            href: "/compare",
+            description: "Honest side-by-side vs. competitors",
+            icon: "GitBranch",
+          },
+          {
+            label: "Download",
+            href: "/download",
+            description: "iOS, Android, desktop apps",
+            icon: "Download",
+          },
+        ],
+      },
+      {
+        label: "Solutions",
+        items: [
+          {
+            label: "For Law Firms",
+            href: "/solutions/law-firms",
+            description: "Full power for established firms",
+            icon: "Landmark",
+          },
+          {
+            label: "For Solo Lawyers",
+            href: "/solutions/solo",
+            description: "One seat, one brain, zero overhead",
+            icon: "User",
+          },
+          {
+            label: "For In-House",
+            href: "/solutions/in-house",
+            description: "Legal ops with audit-ready memory",
+            icon: "Building2",
+          },
+          {
+            label: "For Mid-Sized Firms",
+            href: "/solutions/mid-sized",
+            description: "Lean team, outsized impact",
+            icon: "Users",
+          },
+        ],
+      },
+      {
+        label: "Resources",
+        items: [
+          {
+            label: "Documentation",
+            href: "/docs",
+            description: "Guides, API reference, setup help",
+            icon: "FileText",
+          },
+          {
+            label: "Partner Program",
+            href: "/partners",
+            description: "Refer clients, earn 30% recurring",
+            icon: "Handshake",
+          },
+          {
+            label: "Compare",
+            href: "/compare",
+            description: "Side-by-side vs. Harvey, Legora, Noxtua",
+            icon: "GitBranch",
+          },
+          {
+            label: "Download",
+            href: "/download",
+            description: "Get the mobile and desktop apps",
+            icon: "Download",
+          },
+        ],
+      },
+      {
+        label: "Company",
+        items: [
+          {
+            label: "About",
+            href: "/about",
+            description: "Built in Austria for DACH law",
+            icon: "Info",
+          },
+          {
+            label: "Security",
+            href: "/security",
+            description: "GDPR, GoBD, confidentiality by design",
+            icon: "ShieldCheck",
+          },
+          { label: "Contact", href: "/contact", description: "Talk to our team", icon: "Mail" },
+          {
+            label: "Imprint",
+            href: "/imprint",
+            description: "Legal notice and provider info",
+            icon: "FileText",
+          },
+        ],
+      },
     ],
   },
   de: {
     signIn: "Anmelden",
     cta: "Jetzt starten",
-    navItems: [
-      { label: "Produkt", href: "/subsumio" },
-      { label: "Sicherheit", href: "/security" },
-      { label: "Preise", href: "/pricing" },
-      { label: "Vergleich", href: "/compare" },
-      { label: "Docs", href: "/docs" },
+    pricingLabel: "Preise",
+    pricingHref: "/pricing",
+    sections: [
+      {
+        label: "Plattform",
+        items: [
+          {
+            label: "Übersicht",
+            href: "/subsumio",
+            description: "KI-Kanzleisoftware für DACH",
+            icon: "Layers",
+          },
+          {
+            label: "Features",
+            href: "/features",
+            description: "Jede Funktion, nichts verborgen",
+            icon: "Zap",
+          },
+          {
+            label: "Sicherheit",
+            href: "/security",
+            description: "Deine Daten, deine Keys, deine Jurisdiktion",
+            icon: "ShieldCheck",
+          },
+          {
+            label: "WhatsApp-Copilot",
+            href: "/whatsapp",
+            description: "Zeiten buchen, Dokumente vom Handy",
+            icon: "MessageSquare",
+          },
+          {
+            label: "Vergleich",
+            href: "/compare",
+            description: "Ehrlich side-by-side vs. Wettbewerber",
+            icon: "GitBranch",
+          },
+          {
+            label: "Download",
+            href: "/download",
+            description: "iOS, Android, Desktop-Apps",
+            icon: "Download",
+          },
+        ],
+      },
+      {
+        label: "Lösungen",
+        items: [
+          {
+            label: "Für Kanzleien",
+            href: "/solutions/law-firms",
+            description: "Volle Power für etablierte Kanzleien",
+            icon: "Landmark",
+          },
+          {
+            label: "Für Einzelanwälte",
+            href: "/solutions/solo",
+            description: "Ein Seat, ein Brain, null Overhead",
+            icon: "User",
+          },
+          {
+            label: "Für Justiziariate",
+            href: "/solutions/in-house",
+            description: "Legal Ops mit audit-ready Gedächtnis",
+            icon: "Building2",
+          },
+          {
+            label: "Für Mittelständische",
+            href: "/solutions/mid-sized",
+            description: "Schlanke Teams, überproportionale Wirkung",
+            icon: "Users",
+          },
+        ],
+      },
+      {
+        label: "Ressourcen",
+        items: [
+          {
+            label: "Dokumentation",
+            href: "/docs",
+            description: "Guides, API-Referenz, Setup-Hilfe",
+            icon: "FileText",
+          },
+          {
+            label: "Partnerprogramm",
+            href: "/partners",
+            description: "Kunden empfehlen, 30 % wiederkehrend",
+            icon: "Handshake",
+          },
+          {
+            label: "Vergleich",
+            href: "/compare",
+            description: "Side-by-side vs. Harvey, Legora, Noxtua",
+            icon: "GitBranch",
+          },
+          {
+            label: "Download",
+            href: "/download",
+            description: "Mobile- und Desktop-Apps laden",
+            icon: "Download",
+          },
+        ],
+      },
+      {
+        label: "Unternehmen",
+        items: [
+          {
+            label: "Über uns",
+            href: "/about",
+            description: "Aus Österreich für DACH-Kanzleien",
+            icon: "Info",
+          },
+          {
+            label: "Sicherheit",
+            href: "/security",
+            description: "DSGVO, GoBD, Vertraulichkeit by Design",
+            icon: "ShieldCheck",
+          },
+          {
+            label: "Kontakt",
+            href: "/contact",
+            description: "Sprich mit unserem Team",
+            icon: "Mail",
+          },
+          {
+            label: "Impressum",
+            href: "/imprint",
+            description: "Anbieterinfo und rechtliche Angaben",
+            icon: "FileText",
+          },
+        ],
+      },
     ],
   },
 };
@@ -69,29 +328,41 @@ export const FOOTER = {
     tagline: "The brain your firm never had.",
     columns: [
       {
-        title: "Product",
+        title: "Platform",
         links: [
+          { label: "Overview", href: "/subsumio" },
           { label: "Features", href: "/features" },
-          { label: "Pricing", href: "/pricing" },
-          { label: "Compare us honestly", href: "/compare" },
-          { label: "Dashboard", href: "/dashboard", external: false },
-          { label: "Download the app", href: "/download" },
-          { label: "Docs", href: "/docs" },
-        ],
-      },
-      {
-        title: "Subsumio",
-        links: [
-          { label: "Product overview", href: "/subsumio" },
-          { label: "WhatsApp copilot", href: "/whatsapp" },
           { label: "Security", href: "/security" },
+          { label: "WhatsApp Copilot", href: "/whatsapp" },
+          { label: "Compare", href: "/compare" },
+          { label: "Pricing", href: "/pricing" },
+          { label: "Download", href: "/download" },
         ],
       },
       {
-        title: "Grow with us",
+        title: "Solutions",
         links: [
-          { label: "Partner program", href: "/partners" },
+          { label: "For Law Firms", href: "/solutions/law-firms" },
+          { label: "For Solo Lawyers", href: "/solutions/solo" },
+          { label: "For In-House", href: "/solutions/in-house" },
+          { label: "For Mid-Sized Firms", href: "/solutions/mid-sized" },
+        ],
+      },
+      {
+        title: "Resources",
+        links: [
+          { label: "Documentation", href: "/docs" },
+          { label: "Partner Program", href: "/partners" },
           { label: "Refer a customer — earn 30%", href: "/partners#affiliate" },
+          { label: "Dashboard", href: "/dashboard", external: false },
+        ],
+      },
+      {
+        title: "Company",
+        links: [
+          { label: "About", href: "/about" },
+          { label: "Contact", href: "/contact" },
+          { label: "Imprint", href: "/imprint" },
         ],
       },
       {
@@ -99,7 +370,6 @@ export const FOOTER = {
         links: [
           { label: "Terms of service", href: "/terms" },
           { label: "Privacy", href: "/privacy" },
-          { label: "Imprint", href: "/imprint" },
         ],
       },
     ],
@@ -109,29 +379,41 @@ export const FOOTER = {
     tagline: "Das Gedächtnis deiner Firma.",
     columns: [
       {
-        title: "Produkt",
+        title: "Plattform",
         links: [
+          { label: "Übersicht", href: "/subsumio" },
           { label: "Features", href: "/features" },
-          { label: "Preise", href: "/pricing" },
-          { label: "Ehrlicher Vergleich", href: "/compare" },
-          { label: "Dashboard", href: "/dashboard", external: false },
-          { label: "App herunterladen", href: "/download" },
-          { label: "Docs", href: "/docs" },
-        ],
-      },
-      {
-        title: "Subsumio",
-        links: [
-          { label: "Produktübersicht", href: "/subsumio" },
-          { label: "WhatsApp-Copilot", href: "/whatsapp" },
           { label: "Sicherheit", href: "/security" },
+          { label: "WhatsApp-Copilot", href: "/whatsapp" },
+          { label: "Vergleich", href: "/compare" },
+          { label: "Preise", href: "/pricing" },
+          { label: "Download", href: "/download" },
         ],
       },
       {
-        title: "Wachse mit uns",
+        title: "Lösungen",
         links: [
+          { label: "Für Kanzleien", href: "/solutions/law-firms" },
+          { label: "Für Einzelanwälte", href: "/solutions/solo" },
+          { label: "Für Justiziariate", href: "/solutions/in-house" },
+          { label: "Für Mittelständische", href: "/solutions/mid-sized" },
+        ],
+      },
+      {
+        title: "Ressourcen",
+        links: [
+          { label: "Dokumentation", href: "/docs" },
           { label: "Partnerprogramm", href: "/partners" },
           { label: "Kunden empfehlen — 30 % verdienen", href: "/partners#affiliate" },
+          { label: "Dashboard", href: "/dashboard", external: false },
+        ],
+      },
+      {
+        title: "Unternehmen",
+        links: [
+          { label: "Über uns", href: "/about" },
+          { label: "Kontakt", href: "/contact" },
+          { label: "Impressum", href: "/imprint" },
         ],
       },
       {
@@ -139,11 +421,10 @@ export const FOOTER = {
         links: [
           { label: "AGB", href: "/terms" },
           { label: "Datenschutz", href: "/privacy" },
-          { label: "Impressum", href: "/imprint" },
         ],
       },
     ],
-    note: "Deine Daten, deine Keys — self-hosted auf eurer Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
+    note: "Deine Daten, deine Keys — self-hosted auf deiner Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
   },
 } as const;
 
@@ -170,8 +451,8 @@ export const PRICING: Record<
   { title: string; sub: string; tiers: PricingTier[]; footnote: string }
 > = {
   en: {
-    title: "Premium memory for teams that run on knowledge.",
-    sub: "Per seat, billed annually. Your company's brain on infrastructure you control — EU-hosted or on-premise.",
+    title: "Legal software pricing — per seat, no lock-in",
+    sub: "Per seat, billed annually. Your firm's brain on infrastructure you control — EU-hosted or on-premise.",
     tiers: [
       {
         id: "pro",
@@ -180,7 +461,7 @@ export const PRICING: Record<
         priceMonthly: "€363",
         period: "/seat/mo",
         periodMonthly: "/seat/mo",
-        blurb: "For the professional who lives on their knowledge. Annual billing saves 20%.",
+        blurb: "For the lawyer who lives on their knowledge. Annual billing saves 20%.",
         features: [
           "Fully managed — no API keys needed",
           "25,000 pages · 50 GB cloud storage",
@@ -236,8 +517,8 @@ export const PRICING: Record<
       "Annual billing −20 %. Included AI query and storage quotas shown per plan. Overages billed at transparent per-unit rates at month end — no surprise bills, no silent throttling.",
   },
   de: {
-    title: "Premium-Gedächtnis für Teams, die von Wissen leben.",
-    sub: "Pro Seat, jährliche Abrechnung. Das Gehirn eurer Firma auf Infrastruktur, die ihr kontrolliert — EU-gehostet oder On-Premise.",
+    title: "Kanzleisoftware Preise — pro Seat, kein Lock-in",
+    sub: "Pro Seat, jährliche Abrechnung. Das Brain deiner Kanzlei auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
     tiers: [
       {
         id: "pro",
@@ -246,7 +527,7 @@ export const PRICING: Record<
         priceMonthly: "363 €",
         period: "/Seat/Mon.",
         periodMonthly: "/Seat/Mon.",
-        blurb: "Für Professionals, die von ihrem Wissen leben. Jahreszahlung spart 20%.",
+        blurb: "Für Anwälte, die von ihrem Wissen leben. Jahreszahlung spart 20%.",
         features: [
           "Voll verwaltet — keine API-Keys nötig",
           "25.000 Seiten · 50 GB Cloud-Speicher",
@@ -285,7 +566,7 @@ export const PRICING: Record<
         name: "Enterprise",
         price: "Individuell",
         period: "jährlich",
-        blurb: "Compliance-tauglich. Ab 20 Seats, eure Infrastruktur oder EU-Cloud.",
+        blurb: "Compliance-tauglich. Ab 20 Seats, deine Infrastruktur oder EU-Cloud.",
         features: [
           "Unbegrenzte KI-Anfragen & Speicher (Fair Use)",
           "EU-Cloud, Vercel Blob/S3 oder On-Prem",
@@ -366,10 +647,10 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
 
 export const LANDING = {
   en: {
-    badge: "AI legal workspace",
-    h1a: "Your firm forgets.",
-    h1b: "Subsumio doesn't.",
-    sub: "Subsumio turns matters, deadlines, emails, documents and research into one cited legal workspace for law firms.",
+    badge: "AI legal software",
+    h1a: "Every matter,",
+    h1b: "one cited answer.",
+    sub: "Subsumio is the AI legal software that turns matters, deadlines, emails, documents and research into one cited workspace — built for DACH law firms.",
     ctaPrimary: "Get started",
     ctaSecondary: "See it answer",
     demo: {
@@ -388,12 +669,12 @@ export const LANDING = {
       sources: ["matters/bauer-hofer", "deadlines/reply-brief", "documents/expert-klein"],
     },
     stats: [
-      { value: "14,713", label: "statute paragraphs, citable" },
+      { value: "97.9%", label: "Recall@5 — retrieval benchmark" },
+      { value: "72", label: "API endpoints, fully documented" },
       { value: "3", label: "jurisdictions — AT · DE · CH" },
-      { value: "10 yr", label: "GoBD-proof retention" },
       { value: "0", label: "client-data leaks, by design" },
     ],
-    statsNote: "Built on a verified DACH statute corpus — every AI answer names its source.",
+    statsNote: "Engine-class retrieval, not a chat wrapper — every AI answer names its source.",
     featuresTitle: "Built for law firms",
     featuresSub:
       "From deadline control to contradiction detection — every answer cited, every deadline tracked.",
@@ -415,6 +696,24 @@ export const LANDING = {
         color: "emerald",
         title: "WhatsApp copilot",
         desc: "Book time, file documents, send voice notes from your phone. Everything lands in the right matter — confirmation-gated, nothing reaches the file unseen.",
+      },
+      {
+        icon: "ShieldAlert",
+        color: "rose",
+        title: "Conflict check (§ 43a BRAO)",
+        desc: "Every new client or opponent is checked server-side against your entire matter database — conflicts flagged before the mandate is accepted.",
+      },
+      {
+        icon: "Calculator",
+        color: "blue",
+        title: "Time, expenses, invoices & DATEV",
+        desc: "Book minutes by lawyer and activity, track billable expenses, generate invoices from open work, export DATEV-ready.",
+      },
+      {
+        icon: "Shield",
+        color: "violet",
+        title: "Self-hosted or EU cloud",
+        desc: "The full engine on your hardware with your keys — or managed EU cloud with DPA. Client data never leaves your control.",
       },
     ],
     howTitle: "From document to cited answer",
@@ -444,20 +743,20 @@ export const LANDING = {
         desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing.",
       },
     ],
-    scenariosTitle: "What a workday with Subsumio looks like",
-    scenariosSub: "Illustrative scenarios based on what the engine does in production.",
+    scenariosTitle: "Use cases",
+    scenariosSub: "Real workflows from the engine — not mockups.",
     scenarios: [
       {
-        role: "A paralegal",
-        text: "Uploads the incoming post and a scanned contract, then asks: “Which deadlines does this trigger?” — every statutory date is calculated, calendared and linked to the matter.",
+        role: "Incoming post",
+        text: "Upload the day's mail and a scanned contract, then ask: “Which deadlines does this trigger?” — every statutory date is calculated per ZPO/BGB/ABGB, calendared and linked to the matter.",
       },
       {
-        role: "A lawyer",
-        text: "Sends a voice note and a PDF by WhatsApp with a matter reference, books 20 minutes, then asks: “Where do the opposing party's statements contradict each other?” — the file, time and answer are in one brain.",
+        role: "Trial prep",
+        text: "Send a voice note and a PDF by WhatsApp with a matter reference, book 20 minutes, then ask: “Where do the opposing party's statements contradict each other?” — the Dream Cycle finds it across filings, exhibits and protocols.",
       },
       {
-        role: "A managing partner",
-        text: "Indexes five years of matters and pleadings. A new associate asks: “Have we argued something like this before?” — and finds the 2023 brief in seconds.",
+        role: "Onboarding a new associate",
+        text: "Index five years of matters and pleadings. The new associate asks: “Have we argued something like this before?” — and finds the 2023 brief in seconds, with page-level citations.",
       },
     ],
     faqTitle: "Questions, answered",
@@ -484,14 +783,14 @@ export const LANDING = {
       },
     ],
     ctaTitle: "Your brain is waiting.",
-    ctaSub: "Three minutes to first answer on hosted plans. No credit card.",
+    ctaSub: "Three minutes to first answer. No credit card.",
     ctaButton: "Get started with Subsumio",
   },
   de: {
-    badge: "KI-Legal-Workspace",
-    h1a: "Deine Firma vergisst.",
-    h1b: "Subsumio nicht.",
-    sub: "Subsumio macht Akten, Fristen, E-Mails, Dokumente und Recherche zu einem belegten Legal Workspace für Kanzleien.",
+    badge: "KI-Kanzleisoftware",
+    h1a: "Jede Akte,",
+    h1b: "eine belegte Antwort.",
+    sub: "Subsumio ist die KI-Kanzleisoftware, die Akten, Fristen, E-Mails, Dokumente und Recherche zu einem belegten Workspace macht — gebaut für DACH-Kanzleien.",
     ctaPrimary: "Jetzt starten",
     ctaSecondary: "Antwort ansehen",
     demo: {
@@ -510,12 +809,12 @@ export const LANDING = {
       sources: ["akten/bauer-hofer", "fristen/replik", "dokumente/gutachten-klein"],
     },
     stats: [
-      { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
+      { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
+      { value: "72", label: "API-Endpunkte, voll dokumentiert" },
       { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-      { value: "10 J.", label: "GoBD-revisionssichere Aufbewahrung" },
       { value: "0", label: "Mandantendaten-Leaks, by design" },
     ],
-    statsNote: "Auf einem geprüften DACH-Gesetzeskorpus — jede KI-Antwort nennt ihre Quelle.",
+    statsNote: "Engine-Klasse Retrieval, kein Chat-Wrapper — jede KI-Antwort nennt ihre Quelle.",
     featuresTitle: "Für Kanzleien gebaut",
     featuresSub:
       "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort belegt, jede Frist im Blick.",
@@ -537,6 +836,24 @@ export const LANDING = {
         color: "emerald",
         title: "WhatsApp-Copilot",
         desc: "Zeiten buchen, Dokumente ablegen, Sprachnotizen vom Handy. Alles landet in der richtigen Akte — bestätigungspflichtig, nichts erreicht die Akte ungesehen.",
+      },
+      {
+        icon: "ShieldAlert",
+        color: "rose",
+        title: "Kollisionsprüfung (§ 43a BRAO)",
+        desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird.",
+      },
+      {
+        icon: "Calculator",
+        color: "blue",
+        title: "Zeiten, Auslagen, Rechnungen & DATEV",
+        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, DATEV-ready exportieren.",
+      },
+      {
+        icon: "Shield",
+        color: "violet",
+        title: "Self-hosted oder EU-Cloud",
+        desc: "Die volle Engine auf deiner Hardware mit deinen Keys — oder gemanagte EU-Cloud mit AVV. Mandantendaten verlassen nie deine Kontrolle.",
       },
     ],
     howTitle: "Vom Dokument zur belegten Antwort",
@@ -566,20 +883,20 @@ export const LANDING = {
         desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
       },
     ],
-    scenariosTitle: "So sieht ein Arbeitstag mit Subsumio aus",
-    scenariosSub: "Illustrative Szenarien — basierend auf dem, was die Engine produktiv leistet.",
+    scenariosTitle: "Use Cases",
+    scenariosSub: "Echte Workflows aus der Engine — keine Mockups.",
     scenarios: [
       {
-        role: "Eine Kanzleiassistentin",
-        text: "Lädt die Eingangspost und einen gescannten Vertrag hoch und fragt: „Welche Fristen löst das aus?“ — jede gesetzliche Frist wird berechnet, eingetragen und mit der Akte verknüpft.",
+        role: "Eingangspost",
+        text: "Die Tagespost und einen gescannten Vertrag hochladen, dann fragen: „Welche Fristen löst das aus?“ — jedes gesetzliche Datum wird nach ZPO/BGB/ABGB berechnet, im Kalender eingetragen und mit der Akte verknüpft.",
       },
       {
-        role: "Ein Anwalt",
-        text: "Schickt Sprachnotiz und PDF per WhatsApp mit Aktenzeichen, bucht 20 Minuten und fragt: „Wo widersprechen sich die Aussagen der Gegenseite?“ — Datei, Zeit und Antwort liegen in einem Brain.",
+        role: "Verhandlungsvorbereitung",
+        text: "Sprachnotiz und PDF per WhatsApp mit Aktenzeichen schicken, 20 Minuten buchen, dann fragen: „Wo widersprechen sich die Schriftsätze der Gegenseite?“ — der Dream Cycle findet es über Schriftsätze, Anlagen und Protokolle hinweg.",
       },
       {
-        role: "Ein Kanzleipartner",
-        text: "Indiziert fünf Jahre Akten und Schriftsätze. Ein neuer Associate fragt: „Haben wir so etwas schon mal argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden.",
+        role: "Neuer Mitarbeiter",
+        text: "Fünf Jahre Akten und Schriftsätze indexieren. Der neue Mitarbeiter fragt: „Haben wir schon mal so etwas argumentiert?“ — und findet den Schriftsatz von 2023 in Sekunden, mit seitengenauen Zitaten.",
       },
     ],
     faqTitle: "Fragen, beantwortet",
@@ -594,19 +911,19 @@ export const LANDING = {
       },
       {
         q: "Brauche ich API-Keys oder einen Server?",
-        a: "Nein. Anmelden, Brain läuft — voll verwaltet, keine Keys, keine Infrastruktur. Enterprise-Self-Hosting läuft auf eurer eigenen Hardware mit euren eigenen Keys.",
+        a: "Nein. Anmelden, Brain läuft — voll verwaltet, keine Keys, keine Infrastruktur. Enterprise-Self-Hosting läuft auf deiner eigenen Hardware mit deinen eigenen Keys.",
       },
       {
         q: "Was passiert, wenn ich an Plan-Limits stoße?",
         a: "Du siehst den Verbrauch live im Dashboard, und wir fragen, bevor sich etwas ändert. Keine Überraschungsrechnung, kein stilles Drosseln.",
       },
       {
-        q: "Trainiert ihr auf unseren Daten?",
-        a: "Niemals. Euer Wissen gehört allein euch — es wird nie zum Training geteilter Modelle genutzt. Self-hosted verlässt nichts euer Haus; in unserer EU-Cloud bleibt es verschlüsselt und pro Kunde isoliert.",
+        q: "Trainiert ihr auf meinen Daten?",
+        a: "Niemals. Dein Wissen gehört allein dir — es wird nie zum Training geteilter Modelle genutzt. Self-hosted verlässt nichts dein Haus; in unserer EU-Cloud bleibt es verschlüsselt und pro Kunde isoliert.",
       },
     ],
     ctaTitle: "Dein Brain wartet.",
-    ctaSub: "Drei Minuten bis zur ersten Antwort auf gehosteten Plänen. Keine Kreditkarte.",
+    ctaSub: "Drei Minuten bis zur ersten Antwort. Keine Kreditkarte.",
     ctaButton: "Mit Subsumio starten",
   },
 } as const;

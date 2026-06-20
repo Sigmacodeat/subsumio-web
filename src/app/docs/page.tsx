@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import DocsPage from "@/components/marketing/docs-page";
 
 export const metadata: Metadata = {
-  title: "Docs — Everything Subsumio does",
-  description: "Complete feature documentation extracted directly from the source code. No marketing fluff, just facts.",
+  title: "Subsumio Docs — legal software features catalog",
+  description:
+    "Complete feature documentation — 72 API endpoints, 57 dashboard pages, 10 categories. Brain, cases, deadlines, billing, security, mobile. Directly from source.",
   alternates: { canonical: "/docs", languages: { en: "/docs", de: "/de/docs" } },
 };
 

@@ -35,7 +35,8 @@ export interface PartnersContent {
 export const PARTNERS: Record<Lang, PartnersContent> = {
   en: {
     metaTitle: "Subsumio Partner Program — earn lifetime recurring commission",
-    metaDesc: "Recommend Subsumio and earn lifetime recurring commission. Affiliate, referral and certified implementation partner tracks.",
+    metaDesc:
+      "Recommend Subsumio and earn lifetime recurring commission. Affiliate, referral and certified implementation partner tracks.",
     badge: "Partner program",
     h1a: "Recommend the brain.",
     h1b: "Keep the commission.",
@@ -90,22 +91,54 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
       },
     ],
     calcTitle: "What lifetime recurring actually means",
-    calcSub: "Refer 10 Team seats (€390/seat/month). At 30%, that's €1,170 every month — for as long as they stay. Year one alone is €14,040. And it keeps compounding.",
-    calcNote: "We pay at the top of the industry range because early partners matter most. The more successful your referrals, the more we all grow.",
+    calcSub:
+      "Refer 10 Team seats (€390/seat/month). At 30%, that's €1,170 every month — for as long as they stay. Year one alone is €14,040. And it keeps compounding.",
+    calcNote:
+      "We pay at the top of the industry range because early partners matter most. The more successful your referrals, the more we all grow.",
     howTitle: "How it works",
     how: [
-      { step: "01", title: "Apply & get your link", desc: "We review applications within 48 hours. You get a tracked link and a partner dashboard." },
-      { step: "02", title: "Recommend honestly", desc: "Share with audiences who actually need a company brain. We'd rather have 10 real fits than 1,000 clicks." },
-      { step: "03", title: "Get paid monthly", desc: "Stripe-powered payouts every month, from €50. You see every referral and its status in real time." },
+      {
+        step: "01",
+        title: "Apply & get your link",
+        desc: "We review applications within 48 hours. You get a tracked link and a partner dashboard.",
+      },
+      {
+        step: "02",
+        title: "Recommend honestly",
+        desc: "Share with audiences who actually need a company brain. We'd rather have 10 real fits than 1,000 clicks.",
+      },
+      {
+        step: "03",
+        title: "Get paid monthly",
+        desc: "Stripe-powered payouts every month, from €50. You see every referral and its status in real time.",
+      },
     ],
     faqTitle: "Partner FAQ",
     faq: [
-      { q: "When do commissions start?", a: "From the first payment your referral makes. Affiliate commissions continue for as long as they remain a paying customer — no cutoff, no cap." },
-      { q: "What if a customer upgrades?", a: "Your commission follows their actual payments. Refer a Pro customer who upgrades to Team — your percentage applies to the new price, automatically." },
-      { q: "Can I be both an affiliate and a certified partner?", a: "Yes. Many partners start with the affiliate track and certify once they've implemented for a few clients." },
-      { q: "Is there a self-referral policy?", a: "Self-referrals don't pay out — we keep the program honest so it stays generous for everyone." },
-      { q: "Can I recruit other affiliates?", a: "Yes. When you bring in another affiliate, you earn a 5% override on the customers they refer. It's our way of rewarding you for growing the partner network." },
-      { q: "Can I get territory exclusivity?", a: "Apply as a Regional Launch Partner — performance-gated priority in your region and the full 5% override on every affiliate you recruit locally." },
+      {
+        q: "When do commissions start?",
+        a: "From the first payment your referral makes. Affiliate commissions continue for as long as they remain a paying customer — no cutoff, no cap.",
+      },
+      {
+        q: "What if a customer upgrades?",
+        a: "Your commission follows their actual payments. Refer a Pro customer who upgrades to Team — your percentage applies to the new price, automatically.",
+      },
+      {
+        q: "Can I be both an affiliate and a certified partner?",
+        a: "Yes. Many partners start with the affiliate track and certify once they've implemented for a few clients.",
+      },
+      {
+        q: "Is there a self-referral policy?",
+        a: "Self-referrals don't pay out — we keep the program honest so it stays generous for everyone.",
+      },
+      {
+        q: "Can I recruit other affiliates?",
+        a: "Yes. When you bring in another affiliate, you earn a 5% override on the customers they refer. It's our way of rewarding you for growing the partner network.",
+      },
+      {
+        q: "Can I get territory exclusivity?",
+        a: "Apply as a Regional Launch Partner — performance-gated priority in your region and the full 5% override on every affiliate you recruit locally.",
+      },
     ],
     ctaTitle: "Your audience needs a brain. You need recurring revenue.",
     ctaSub: "Applications reviewed within 48 hours.",
@@ -113,7 +146,8 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
   },
   de: {
     metaTitle: "Subsumio Partnerprogramm — lebenslang wiederkehrend verdienen",
-    metaDesc: "Subsumio empfehlen und lebenslang wiederkehrende Provision verdienen. Affiliate-, Referral- und zertifizierte Implementierungspartner-Tracks.",
+    metaDesc:
+      "Subsumio empfehlen und lebenslang wiederkehrende Provision verdienen. Affiliate-, Referral- und zertifizierte Implementierungspartner-Tracks.",
     badge: "Partnerprogramm",
     h1a: "Empfiehl das Brain.",
     h1b: "Behalte die Provision.",
@@ -155,11 +189,11 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         id: "vertical",
         icon: "Handshake",
         name: "Zertifizierte Partner",
-        headline: "20 % lifetime + euer Dienstleistungsumsatz",
+        headline: "20 % lifetime + dein Dienstleistungsumsatz",
         desc: "Für Legal-Tech-Integratoren, IT-Häuser und Berater, die Subsumio bei Kanzleien implementieren.",
         points: [
           "20 % Revenue-Share — lebenslang für jeden gebrachten Kunden",
-          "100 % eurer Implementierungs- und Beratungshonorare bleiben bei euch",
+          "100 % deiner Implementierungs- und Beratungshonorare bleiben bei dir",
           "Status „Subsumio Certified Partner“ ab 3 Live-Kunden",
           "Direkter Draht zu unserem Engineering für Integrationen",
         ],
@@ -168,22 +202,54 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
       },
     ],
     calcTitle: "Was lebenslang wiederkehrend wirklich heißt",
-    calcSub: "Wirb 10 Team-Seats (390 €/Seat/Monat). Bei 30 % sind das 1.170 € jeden Monat — solange sie bleiben. Allein im ersten Jahr sind das 14.040 €. Und es läuft weiter.",
-    calcNote: "Wir zahlen am oberen Ende der Branche, weil frühe Partner am meisten zählen. Je erfolgreicher deine Empfehlungen, desto mehr wachsen wir gemeinsam.",
+    calcSub:
+      "Wirb 10 Team-Seats (390 €/Seat/Monat). Bei 30 % sind das 1.170 € jeden Monat — solange sie bleiben. Allein im ersten Jahr sind das 14.040 €. Und es läuft weiter.",
+    calcNote:
+      "Wir zahlen am oberen Ende der Branche, weil frühe Partner am meisten zählen. Je erfolgreicher deine Empfehlungen, desto mehr wachsen wir gemeinsam.",
     howTitle: "So funktioniert's",
     how: [
-      { step: "01", title: "Bewerben & Link erhalten", desc: "Wir prüfen Bewerbungen innerhalb von 48 Stunden. Du bekommst einen getrackten Link und ein Partner-Dashboard." },
-      { step: "02", title: "Ehrlich empfehlen", desc: "Teile mit Publikum, das wirklich ein Company Brain braucht. Uns sind 10 echte Fits lieber als 1.000 Klicks." },
-      { step: "03", title: "Monatlich kassieren", desc: "Stripe-basierte Auszahlung jeden Monat, ab 50 €. Jede Empfehlung und ihr Status in Echtzeit sichtbar." },
+      {
+        step: "01",
+        title: "Bewerben & Link erhalten",
+        desc: "Wir prüfen Bewerbungen innerhalb von 48 Stunden. Du bekommst einen getrackten Link und ein Partner-Dashboard.",
+      },
+      {
+        step: "02",
+        title: "Ehrlich empfehlen",
+        desc: "Teile mit Publikum, das wirklich ein Company Brain braucht. Uns sind 10 echte Fits lieber als 1.000 Klicks.",
+      },
+      {
+        step: "03",
+        title: "Monatlich kassieren",
+        desc: "Stripe-basierte Auszahlung jeden Monat, ab 50 €. Jede Empfehlung und ihr Status in Echtzeit sichtbar.",
+      },
     ],
     faqTitle: "Partner-FAQ",
     faq: [
-      { q: "Wann beginnt die Provision?", a: "Ab der ersten Zahlung deiner Empfehlung. Affiliate-Provisionen laufen so lange, wie der Kunde zahlt — kein Stichtag, keine Obergrenze." },
-      { q: "Was passiert bei einem Upgrade?", a: "Deine Provision folgt den tatsächlichen Zahlungen. Wirbst du einen Pro-Kunden, der auf Team upgradet, gelten deine Prozente auf den neuen Preis, automatisch." },
-      { q: "Kann ich Affiliate UND zertifizierter Partner sein?", a: "Ja. Viele starten als Affiliate und zertifizieren sich nach den ersten Implementierungen." },
-      { q: "Gibt es Regeln gegen Selbst-Empfehlung?", a: "Selbst-Empfehlungen werden nicht ausgezahlt — wir halten das Programm ehrlich, damit es für alle großzügig bleibt." },
-      { q: "Kann ich andere Affiliates rekrutieren?", a: "Ja. Wenn du einen weiteren Affiliate einbringst, verdienst du 5 % Override auf dessen geworbene Kunden. So belohnen wir dich fürs Ausbauen des Partner-Netzwerks." },
-      { q: "Kann ich Gebietsexklusivität bekommen?", a: "Bewirb dich als Regional Launch Partner — leistungsgebundener Vorrang in deiner Region und der volle 5-%-Override auf jeden Affiliate, den du lokal rekrutierst." },
+      {
+        q: "Wann beginnt die Provision?",
+        a: "Ab der ersten Zahlung deiner Empfehlung. Affiliate-Provisionen laufen so lange, wie der Kunde zahlt — kein Stichtag, keine Obergrenze.",
+      },
+      {
+        q: "Was passiert bei einem Upgrade?",
+        a: "Deine Provision folgt den tatsächlichen Zahlungen. Wirbst du einen Pro-Kunden, der auf Team upgradet, gelten deine Prozente auf den neuen Preis, automatisch.",
+      },
+      {
+        q: "Kann ich Affiliate UND zertifizierter Partner sein?",
+        a: "Ja. Viele starten als Affiliate und zertifizieren sich nach den ersten Implementierungen.",
+      },
+      {
+        q: "Gibt es Regeln gegen Selbst-Empfehlung?",
+        a: "Selbst-Empfehlungen werden nicht ausgezahlt — wir halten das Programm ehrlich, damit es für alle großzügig bleibt.",
+      },
+      {
+        q: "Kann ich andere Affiliates rekrutieren?",
+        a: "Ja. Wenn du einen weiteren Affiliate einbringst, verdienst du 5 % Override auf dessen geworbene Kunden. So belohnen wir dich fürs Ausbauen des Partner-Netzwerks.",
+      },
+      {
+        q: "Kann ich Gebietsexklusivität bekommen?",
+        a: "Bewirb dich als Regional Launch Partner — leistungsgebundener Vorrang in deiner Region und der volle 5-%-Override auf jeden Affiliate, den du lokal rekrutierst.",
+      },
     ],
     ctaTitle: "Dein Publikum braucht ein Brain. Du brauchst wiederkehrenden Umsatz.",
     ctaSub: "Bewerbungen werden innerhalb von 48 Stunden geprüft.",

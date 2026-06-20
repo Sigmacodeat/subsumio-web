@@ -13,7 +13,14 @@ export interface VerticalContent {
   sub: string;
   painsTitle: string;
   pains: { title: string; desc: string }[];
-  demo: { windowTitle: string; you: string; q: string; a: string; sourcesLabel: string; sources: string[] };
+  demo: {
+    windowTitle: string;
+    you: string;
+    q: string;
+    a: string;
+    sourcesLabel: string;
+    sources: string[];
+  };
   featuresTitle: string;
   features: { icon: string; title: string; desc: string }[];
   proofTitle: string;
@@ -32,17 +39,27 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     legal: {
       slug: "legal",
       navLabel: "Law Firms",
-      metaTitle: "Subsumio — AI case management for law firms in Austria & Germany",
-      metaDesc: "Subsumio is the AI legal software for lawyers: manage case files & documents, automate deadlines per ZPO/BGB/ABGB, get AI analysis with citations — GDPR-compliant, EU-hosted or self-hosted.",
+      metaTitle: "Subsumio — Law firm software Austria & Germany",
+      metaDesc:
+        "AI legal software for lawyers: case files, deadlines per ZPO/BGB/ABGB, AI analysis with citations. GDPR-compliant, EU-hosted or self-hosted.",
       badge: "Legal software for Austria & Germany",
       h1a: "500 pages of case file.",
       h1b: "One question away.",
-      sub: "Subsumio is the case management software for law firms: centrally manage files & documents, automate deadlines per ZPO/BGB/ABGB, and get AI legal analysis with page-level citations — GDPR-compliant and EU-hosted.",
+      sub: "Subsumio is law firm software for Austria and Germany: manage files, automate deadlines per ZPO/BGB/ABGB, get AI legal analysis with page-level citations — GDPR-compliant, EU-hosted or self-hosted.",
       painsTitle: "Sound familiar?",
       pains: [
-        { title: "Case knowledge buried in PDFs", desc: "The decisive detail is on page 347 of a brief someone else read eight months ago." },
-        { title: "US clouds are a non-starter", desc: "Client files in a US-hosted AI tool? Your professional duty of confidentiality says no — and so do your clients." },
-        { title: "Knowledge walks out with people", desc: "When a senior associate leaves, years of matter context leave too — unless the firm's knowledge lives somewhere durable and answerable." },
+        {
+          title: "Case knowledge buried in PDFs",
+          desc: "The decisive detail is on page 347 of a brief someone else read eight months ago.",
+        },
+        {
+          title: "US clouds are a non-starter",
+          desc: "Client files in a US-hosted AI tool? Your professional duty of confidentiality says no — and so do your clients.",
+        },
+        {
+          title: "Knowledge walks out with people",
+          desc: "When a senior associate leaves, years of matter context leave too — unless the firm's knowledge lives somewhere durable and answerable.",
+        },
       ],
       demo: {
         windowTitle: "subsumio — case brain",
@@ -60,30 +77,95 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       },
       featuresTitle: "Built for confidentiality-first work",
       features: [
-        { icon: "CalendarClock", title: "Deadline control (ZPO & BGB)", desc: "Computes statutory and appeal deadlines with correct month arithmetic (§ 188 BGB) and weekend roll-forward (§ 222 ZPO) — with the governing statute cited. A daily email digest flags overdue and critical deadlines." },
-        { icon: "MessageSquare", title: "WhatsApp matter copilot", desc: "Lawyers can send time entries, notes, tasks, deadlines, expenses, questions, PDFs, photos and voice notes from their phone. Subsumio stores them in the brain and links media to the right matter when the caption contains the case reference." },
-        { icon: "FolderOpen", title: "Document vault with durable storage", desc: "Matter documents, WhatsApp media and uploaded evidence are kept in the vault with hash, source, size and storage metadata — local for self-hosting, Vercel Blob/S3-style cloud storage for hosted plans." },
-        { icon: "Mail", title: "beA integration", desc: "German electronic legal mail (beA XML export) lands straight in the case file: sender, case reference and attachments captured and searchable — no copy-paste." },
-        { icon: "ShieldAlert", title: "Conflict check (§ 43a BRAO)", desc: "Screens every new client or opposing party server-side against the entire case base and flags conflicts of interest before the mandate is accepted." },
-        { icon: "Calculator", title: "Time, expenses, invoices & DATEV", desc: "Book minutes by lawyer/activity, capture billable expenses, create invoices from open work, mark billed entries and export a DATEV-ready accounting file." },
-        { icon: "Landmark", title: "Case law DE & AT", desc: "Live search across openlegaldata/BGH (DE) and RIS-OGD (AT) — relevant judgements land in the brain, citable, in one click." },
-        { icon: "Shield", title: "Your server, your jurisdiction", desc: "Self-host the full engine on firm hardware with local storage, or choose EU-hosted cloud with DPA and durable object storage. Client data never leaves your control." },
-        { icon: "Zap", title: "Offline-first daily work", desc: "Cases, contacts, deadlines, invoices, vault, contracts and research keep local caches and queue changes until the cloud brain is reachable again." },
-        { icon: "Brain", title: "Contradiction detection", desc: "The Dream Cycle surfaces conflicting statements across briefs, exhibits and protocols — with citations." },
-        { icon: "Search", title: "Every claim, sourced", desc: "Answers cite the exact pages they come from. Verify in one click before anything goes into a brief." },
-        { icon: "Layers", title: "Matter-level isolation", desc: "Scoped access per matter and per user — fuzz-tested, zero leaks between cases or teams." },
+        {
+          icon: "CalendarClock",
+          title: "Deadline control (ZPO & BGB)",
+          desc: "Computes statutory and appeal deadlines with correct month arithmetic (§ 188 BGB) and weekend roll-forward (§ 222 ZPO) — with the governing statute cited. A daily email digest flags overdue and critical deadlines.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "WhatsApp matter copilot",
+          desc: "Lawyers can send time entries, notes, tasks, deadlines, expenses, questions, PDFs, photos and voice notes from their phone. Subsumio stores them in the brain and links media to the right matter when the caption contains the case reference.",
+        },
+        {
+          icon: "FolderOpen",
+          title: "Document vault with durable storage",
+          desc: "Matter documents, WhatsApp media and uploaded evidence are kept in the vault with hash, source, size and storage metadata — local for self-hosting, Vercel Blob/S3-style cloud storage for hosted plans.",
+        },
+        {
+          icon: "Mail",
+          title: "beA integration",
+          desc: "German electronic legal mail (beA XML export) lands straight in the case file: sender, case reference and attachments captured and searchable — no copy-paste.",
+        },
+        {
+          icon: "ShieldAlert",
+          title: "Conflict check (§ 43a BRAO)",
+          desc: "Screens every new client or opposing party server-side against the entire case base and flags conflicts of interest before the mandate is accepted.",
+        },
+        {
+          icon: "Calculator",
+          title: "Time, expenses, invoices & DATEV",
+          desc: "Book minutes by lawyer/activity, capture billable expenses, create invoices from open work, mark billed entries and export a DATEV-ready accounting file.",
+        },
+        {
+          icon: "Landmark",
+          title: "Case law DE & AT",
+          desc: "Live search across openlegaldata/BGH (DE) and RIS-OGD (AT) — relevant judgements land in the brain, citable, in one click.",
+        },
+        {
+          icon: "Shield",
+          title: "Your server, your jurisdiction",
+          desc: "Self-host the full engine on firm hardware with local storage, or choose EU-hosted cloud with DPA and durable object storage. Client data never leaves your control.",
+        },
+        {
+          icon: "Zap",
+          title: "Offline-first daily work",
+          desc: "Cases, contacts, deadlines, invoices, vault, contracts and research keep local caches and queue changes until the cloud brain is reachable again.",
+        },
+        {
+          icon: "Brain",
+          title: "Contradiction detection",
+          desc: "The Dream Cycle surfaces conflicting statements across briefs, exhibits and protocols — with citations.",
+        },
+        {
+          icon: "Search",
+          title: "Every claim, sourced",
+          desc: "Answers cite the exact pages they come from. Verify in one click before anything goes into a brief.",
+        },
+        {
+          icon: "Layers",
+          title: "Matter-level isolation",
+          desc: "Scoped access per matter and per user — fuzz-tested, zero leaks between cases or teams.",
+        },
       ],
       proofTitle: "Engine-grade retrieval, not a chat wrapper",
-      proof: "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.",
+      proof:
+        "The retrieval core benchmarks at 97.9% Recall@5 with hybrid search and a knowledge graph — and because it runs on infrastructure you control, your IT governs every system that touches client data.",
       faq: [
-        { q: "Is this legal advice software?", a: "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them." },
-        { q: "Can we run it fully offline?", a: "The engine self-hosts on your hardware and the dashboard keeps local caches with a mutation queue for core legal workflows. Synthesis uses LLM APIs of your choosing; enterprise setups can route through EU endpoints or your own gateway." },
-        { q: "How much data can we store?", a: "Self-hosted uses your own disk or S3-compatible storage. Hosted plans include cloud file storage by package and can scale to custom retention and storage volumes for enterprise firms." },
-        { q: "What about GDPR and our bar obligations?", a: "Self-hosted means data never leaves your infrastructure. Hosted plans come with EU hosting and a DPA. Have your data protection officer talk to us — we speak their language." },
-        { q: "How is this different from Harvey, Legora or Noxtua?", a: "They're excellent enterprise legal-AI workspaces — and they run on someone else's cloud and someone else's model. Subsumio gives you the same calibre of synthesis on infrastructure YOU control: self-hosted or EU cloud, your own files made answerable, with a WhatsApp copilot your lawyers use every day. It isn't legal research — it's your firm's own matters, with page-level citations and confidentiality by architecture." },
+        {
+          q: "Is this legal advice software?",
+          a: "No. Subsumio organizes and synthesizes your documents and notes. Legal judgment stays with the lawyers — the brain just makes sure nothing in the file escapes them.",
+        },
+        {
+          q: "Can we run it fully offline?",
+          a: "The engine self-hosts on your hardware and the dashboard keeps local caches with a mutation queue for core legal workflows. Synthesis uses LLM APIs of your choosing; enterprise setups can route through EU endpoints or your own gateway.",
+        },
+        {
+          q: "How much data can we store?",
+          a: "Self-hosted uses your own disk or S3-compatible storage. Hosted plans include cloud file storage by package and can scale to custom retention and storage volumes for enterprise firms.",
+        },
+        {
+          q: "What about GDPR and our bar obligations?",
+          a: "Self-hosted means data never leaves your infrastructure. Hosted plans come with EU hosting and a DPA. Have your data protection officer talk to us — we speak their language.",
+        },
+        {
+          q: "How is this different from Harvey, Legora or Noxtua?",
+          a: "They're excellent enterprise legal-AI workspaces — and they run on someone else's cloud and someone else's model. Subsumio gives you the same calibre of synthesis on infrastructure YOU control: self-hosted or EU cloud, your own files made answerable, with a WhatsApp copilot your lawyers use every day. It isn't legal research — it's your firm's own matters, with page-level citations and confidentiality by architecture.",
+        },
       ],
       ctaTitle: "The file knows the answer. Now you do too.",
-      ctaSub: "Start with one closed matter as a pilot. No client data needs to leave your building.",
+      ctaSub:
+        "Start with one closed matter as a pilot. No client data needs to leave your building.",
       ctaButton: "Try free",
     },
   },
@@ -91,17 +173,27 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     legal: {
       slug: "legal",
       navLabel: "Kanzleien",
-      metaTitle: "Subsumio — Kanzleisoftware für Rechtsanwälte in Österreich & Deutschland",
-      metaDesc: "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte: Akten & Dokumente verwalten, Fristen nach AVG/ABGB/ZPO automatisieren, juristische KI-Analysen mit Zitaten — DSGVO-konform, EU-gehostet oder self-hosted.",
+      metaTitle: "Subsumio — Kanzleisoftware Österreich & Deutschland",
+      metaDesc:
+        "KI-Kanzleisoftware für Rechtsanwälte: Akten verwalten, Fristen nach ZPO/ABGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder self-hosted.",
       badge: "Kanzleisoftware für Österreich & Deutschland",
       h1a: "500 Seiten Akte.",
       h1b: "Eine Frage entfernt.",
-      sub: "Subsumio ist die Kanzleisoftware für Rechtsanwälte in Österreich: Akten & Dokumente zentral verwalten, Fristen nach AVG/ABGB/ZPO automatisieren und juristische KI-Analysen mit Zitaten erhalten — DSGVO-konform und EU-gehostet.",
+      sub: "Subsumio ist Kanzleisoftware für Österreich und Deutschland: Akten verwalten, Fristen nach ZPO/BGB/ABGB automatisieren, KI-Analysen mit Zitaten erhalten — DSGVO-konform, EU-gehostet oder self-hosted.",
       painsTitle: "Kommt dir bekannt vor?",
       pains: [
-        { title: "Aktenwissen begraben in PDFs", desc: "Das entscheidende Detail steht auf Seite 347 eines Schriftsatzes, den jemand anderes vor acht Monaten gelesen hat." },
-        { title: "US-Clouds sind ein No-Go", desc: "Mandantenakten in einem US-gehosteten KI-Tool? Verschwiegenheitspflicht und Mandanten sagen Nein." },
-        { title: "Wissen geht mit den Köpfen", desc: "Wenn ein erfahrener Anwalt geht, gehen Jahre an Aktenkontext mit — außer das Kanzleiwissen liegt dauerhaft und abfragbar an einem Ort." },
+        {
+          title: "Aktenwissen begraben in PDFs",
+          desc: "Das entscheidende Detail steht auf Seite 347 eines Schriftsatzes, den jemand anderes vor acht Monaten gelesen hat.",
+        },
+        {
+          title: "US-Clouds sind ein No-Go",
+          desc: "Mandantenakten in einem US-gehosteten KI-Tool? Verschwiegenheitspflicht und Mandanten sagen Nein.",
+        },
+        {
+          title: "Wissen geht mit den Köpfen",
+          desc: "Wenn ein erfahrener Anwalt geht, gehen Jahre an Aktenkontext mit — außer das Kanzleiwissen liegt dauerhaft und abfragbar an einem Ort.",
+        },
       ],
       demo: {
         windowTitle: "subsumio — case brain",
@@ -119,30 +211,95 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       },
       featuresTitle: "Gebaut für Verschwiegenheit zuerst",
       features: [
-        { icon: "CalendarClock", title: "Fristenkontrolle nach ZPO & BGB", desc: "Berechnet Notfristen, Berufungs- und Beschwerdefristen mit korrekter Monatsarithmetik (§ 188 BGB) und Wochenend-Verschiebung (§ 222 ZPO) — inkl. Normzitat. Täglicher E-Mail-Digest für überfällige und kritische Fristen." },
-        { icon: "MessageSquare", title: "WhatsApp-Kanzlei-Copilot", desc: "Anwälte erfassen Zeiten, Notizen, Aufgaben, Fristen, Auslagen, Fragen, PDFs, Fotos und Sprachnotizen direkt vom Handy. Subsumio speichert alles im Brain und ordnet Medien per Aktenzeichen in der Beschriftung der richtigen Akte zu." },
-        { icon: "FolderOpen", title: "Dokumenten-Vault mit dauerhaftem Speicher", desc: "Aktiendokumente, WhatsApp-Medien und Beweise liegen im Vault mit Hash, Quelle, Größe und Storage-Metadaten — lokal self-hosted oder in der Cloud über Vercel Blob/S3-artigen Objektspeicher." },
-        { icon: "Mail", title: "beA-Anbindung", desc: "beA-Nachrichten (XML-Export) werden direkt zur Akte: Absender, Aktenzeichen und Anlagen strukturiert erfasst und durchsuchbar — ohne Copy-&-Paste." },
-        { icon: "ShieldAlert", title: "Kollisionsprüfung (§ 43a BRAO)", desc: "Prüft jeden neuen Mandanten oder Gegner serverseitig gegen den gesamten Aktenbestand und meldet Interessenkonflikte, bevor das Mandat angenommen wird." },
-        { icon: "Calculator", title: "Zeiten, Auslagen, Rechnungen & DATEV", desc: "Minuten nach Anwalt/Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, Einträge als abgerechnet markieren und DATEV-ready exportieren." },
-        { icon: "Landmark", title: "Rechtsprechung DE & AT", desc: "Live-Recherche in openlegaldata/BGH (DE) und RIS-OGD (AT) — relevante Urteile landen mit einem Klick zitierfähig im Brain." },
-        { icon: "Shield", title: "Euer Server, eure Jurisdiktion", desc: "Volle Engine self-hosted auf Kanzlei-Hardware mit lokalem Speicher — oder EU-Cloud mit AVV und dauerhaftem Objektspeicher. Mandantendaten verlassen nie eure Kontrolle." },
-        { icon: "Zap", title: "Offline-first Kanzleialltag", desc: "Akten, Kontakte, Fristen, Rechnungen, Vault, Verträge und Recherche nutzen lokale Caches und synchronisieren Änderungen, sobald das Cloud-Brain wieder erreichbar ist." },
-        { icon: "Brain", title: "Widerspruchs-Erkennung", desc: "Der Dream Cycle findet widersprüchliche Aussagen über Schriftsätze, Anlagen und Protokolle hinweg — mit Zitaten." },
-        { icon: "Search", title: "Jede Behauptung belegt", desc: "Antworten zitieren die exakten Fundstellen. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht." },
-        { icon: "Layers", title: "Trennung pro Mandat", desc: "Zugriff pro Mandat und Nutzer gescoped — fuzz-getestet, null Leaks zwischen Akten oder Teams." },
+        {
+          icon: "CalendarClock",
+          title: "Fristenkontrolle nach ZPO & BGB",
+          desc: "Berechnet Notfristen, Berufungs- und Beschwerdefristen mit korrekter Monatsarithmetik (§ 188 BGB) und Wochenend-Verschiebung (§ 222 ZPO) — inkl. Normzitat. Täglicher E-Mail-Digest für überfällige und kritische Fristen.",
+        },
+        {
+          icon: "MessageSquare",
+          title: "WhatsApp-Kanzlei-Copilot",
+          desc: "Anwälte erfassen Zeiten, Notizen, Aufgaben, Fristen, Auslagen, Fragen, PDFs, Fotos und Sprachnotizen direkt vom Handy. Subsumio speichert alles im Brain und ordnet Medien per Aktenzeichen in der Beschriftung der richtigen Akte zu.",
+        },
+        {
+          icon: "FolderOpen",
+          title: "Dokumenten-Vault mit dauerhaftem Speicher",
+          desc: "Aktendokumente, WhatsApp-Medien und Beweise liegen im Vault mit Hash, Quelle, Größe und Storage-Metadaten — lokal self-hosted oder in der Cloud über Vercel Blob/S3-artigen Objektspeicher.",
+        },
+        {
+          icon: "Mail",
+          title: "beA-Anbindung",
+          desc: "beA-Nachrichten (XML-Export) werden direkt zur Akte: Absender, Aktenzeichen und Anlagen strukturiert erfasst und durchsuchbar — ohne Copy-&-Paste.",
+        },
+        {
+          icon: "ShieldAlert",
+          title: "Kollisionsprüfung (§ 43a BRAO)",
+          desc: "Prüft jeden neuen Mandanten oder Gegner serverseitig gegen den gesamten Aktenbestand und meldet Interessenkonflikte, bevor das Mandat angenommen wird.",
+        },
+        {
+          icon: "Calculator",
+          title: "Zeiten, Auslagen, Rechnungen & DATEV",
+          desc: "Minuten nach Anwalt/Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, Einträge als abgerechnet markieren und DATEV-ready exportieren.",
+        },
+        {
+          icon: "Landmark",
+          title: "Rechtsprechung DE & AT",
+          desc: "Live-Recherche in openlegaldata/BGH (DE) und RIS-OGD (AT) — relevante Urteile landen mit einem Klick zitierfähig im Brain.",
+        },
+        {
+          icon: "Shield",
+          title: "Dein Server, deine Jurisdiktion",
+          desc: "Volle Engine self-hosted auf Kanzlei-Hardware mit lokalem Speicher — oder EU-Cloud mit AVV und dauerhaftem Objektspeicher. Mandantendaten verlassen nie deine Kontrolle.",
+        },
+        {
+          icon: "Zap",
+          title: "Offline-first Kanzleialltag",
+          desc: "Akten, Kontakte, Fristen, Rechnungen, Vault, Verträge und Recherche nutzen lokale Caches und synchronisieren Änderungen, sobald das Cloud-Brain wieder erreichbar ist.",
+        },
+        {
+          icon: "Brain",
+          title: "Widerspruchs-Erkennung",
+          desc: "Der Dream Cycle findet widersprüchliche Aussagen über Schriftsätze, Anlagen und Protokolle hinweg — mit Zitaten.",
+        },
+        {
+          icon: "Search",
+          title: "Jede Behauptung belegt",
+          desc: "Antworten zitieren die exakten Fundstellen. Ein Klick zur Verifikation, bevor etwas in den Schriftsatz geht.",
+        },
+        {
+          icon: "Layers",
+          title: "Trennung pro Mandat",
+          desc: "Zugriff pro Mandat und Nutzer gescoped — fuzz-getestet, null Leaks zwischen Akten oder Teams.",
+        },
       ],
       proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
-      proof: "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die ihr kontrolliert, steuert eure IT jedes System, das Mandantendaten berührt.",
+      proof:
+        "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die du kontrollierst, steuert deine IT jedes System, das Mandantendaten berührt.",
       faq: [
-        { q: "Ist das Rechtsberatungs-Software?", a: "Nein. Subsumio organisiert und synthetisiert eure Dokumente und Notizen. Die juristische Bewertung bleibt bei den Anwälten — das Brain stellt sicher, dass ihnen nichts aus der Akte entgeht." },
-        { q: "Können wir komplett offline arbeiten?", a: "Die Engine läuft self-hosted auf eurer Hardware und das Dashboard hält lokale Caches plus Änderungs-Warteschlange für die wichtigsten Kanzlei-Workflows. Die Synthese nutzt LLM-APIs eurer Wahl; Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen." },
-        { q: "Wie viel Daten können wir speichern?", a: "Self-hosted nutzt euren eigenen Speicher oder S3-kompatiblen Objektspeicher. Hosted-Pakete enthalten Cloud-Dateispeicher je Paket; Enterprise bekommt individuelle Speichermengen und Aufbewahrungsregeln." },
-        { q: "Was ist mit DSGVO und Berufsrecht?", a: "Self-hosted heißt: Daten verlassen eure Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Lasst euren Datenschutzbeauftragten mit uns sprechen — wir sprechen seine Sprache." },
-        { q: "Was unterscheidet das von Harvey, Legora oder Noxtua?", a: "Das sind exzellente Enterprise-Legal-AI-Workspaces — und sie laufen auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die IHR kontrolliert: self-hosted oder EU-Cloud, eure eigenen Akten abfragbar gemacht, mit einem WhatsApp-Copilot, den eure Anwälte täglich nutzen. Es ist keine Rechtsrecherche — es sind die eigenen Mandate eurer Kanzlei, mit seitengenauen Zitaten und Vertraulichkeit per Architektur." },
+        {
+          q: "Ist das Rechtsberatungs-Software?",
+          a: "Nein. Subsumio organisiert und synthetisiert deine Dokumente und Notizen. Die juristische Bewertung bleibt bei den Anwälten — das Brain stellt sicher, dass ihnen nichts aus der Akte entgeht.",
+        },
+        {
+          q: "Kann ich komplett offline arbeiten?",
+          a: "Die Engine läuft self-hosted auf deiner Hardware und das Dashboard hält lokale Caches plus Änderungs-Warteschlange für die wichtigsten Kanzlei-Workflows. Die Synthese nutzt LLM-APIs deiner Wahl; Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+        },
+        {
+          q: "Wie viel Daten kann ich speichern?",
+          a: "Self-hosted nutzt deinen eigenen Speicher oder S3-kompatiblen Objektspeicher. Hosted-Pakete enthalten Cloud-Dateispeicher je Paket; Enterprise bekommt individuelle Speichermengen und Aufbewahrungsregeln.",
+        },
+        {
+          q: "Was ist mit DSGVO und Berufsrecht?",
+          a: "Self-hosted heißt: Daten verlassen deine Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Lass deinen Datenschutzbeauftragten mit uns sprechen — wir sprechen seine Sprache.",
+        },
+        {
+          q: "Was unterscheidet das von Harvey, Legora oder Noxtua?",
+          a: "Das sind exzellente Enterprise-Legal-AI-Workspaces — und sie laufen auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die DU kontrollierst: self-hosted oder EU-Cloud, deine eigenen Akten abfragbar gemacht, mit einem WhatsApp-Copilot, den deine Anwälte täglich nutzen. Es ist keine Rechtsrecherche — es sind die eigenen Mandate deiner Kanzlei, mit seitengenauen Zitaten und Vertraulichkeit per Architektur.",
+        },
       ],
       ctaTitle: "Die Akte kennt die Antwort. Jetzt du auch.",
-      ctaSub: "Startet mit einem abgeschlossenen Mandat als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
+      ctaSub:
+        "Starte mit einem abgeschlossenen Mandat als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
       ctaButton: "Kostenlos testen",
     },
   },

@@ -4,8 +4,9 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Pricing",
-  description: "Start free with the open-source engine. Hosted plans from €290/seat/mo. No surprise bills, no vendor lock-in.",
+  title: "Subsumio — Legal software pricing, per seat",
+  description:
+    "Hosted plans from €290/seat/mo, billed annually. Self-hosted or EU cloud. No surprise bills, no vendor lock-in, 14-day reverse trial.",
   alternates: { canonical: "/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
 };
 

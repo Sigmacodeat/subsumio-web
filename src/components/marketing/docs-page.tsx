@@ -1,12 +1,11 @@
 "use client";
 
 import { motion, MotionConfig } from "framer-motion";
-import { ArrowRight, Check, X, Minus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs, type Lang } from "@/content/docs";
-import { getCompetitors } from "@/content/competitors";
 import { p } from "@/content/site";
 import { ICONS } from "./chrome";
 import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
@@ -55,125 +54,6 @@ function FeatureCard({
         </div>
       </div>
     </motion.div>
-  );
-}
-
-function StatusBadge({
-  status,
-  labels,
-}: {
-  status: boolean | "partial";
-  labels: { yes: string; no: string; partial: string };
-}) {
-  if (status === true)
-    return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-secondary)]">
-        <Check size={13} /> {labels.yes}
-      </span>
-    );
-  if (status === false)
-    return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-400">
-        <X size={13} /> {labels.no}
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-400">
-      <Minus size={13} /> {labels.partial}
-    </span>
-  );
-}
-
-function ComparisonSection({ lang }: { lang: Lang }) {
-  const c = getCompetitors(lang);
-  return (
-    <section className="relative z-10 px-6 py-24">
-      <div className="mx-auto max-w-6xl">
-        <motion.div {...reveal} className="mb-10 text-center">
-          <div
-            className="mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
-            style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}
-          >
-            <span
-              className="h-1.5 w-1.5 animate-pulse rounded-full"
-              style={{ background: "#60a5fa" }}
-            />
-            {c.badge}
-          </div>
-          <h2 className="mb-3 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
-            {c.title}
-            <br />
-            <span className="gradient-text">{c.claim}</span>
-          </h2>
-          <p className="mx-auto max-w-2xl text-sm [color:var(--mk-text-muted)]">{c.sub}</p>
-        </motion.div>
-
-        <motion.div {...reveal} className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-b [border-color:var(--mk-border)]">
-                <th className="py-3 pr-4 text-xs font-semibold tracking-wider whitespace-nowrap [color:var(--mk-text-muted)] uppercase">
-                  {c.tableTitle}
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap text-[var(--brand-primary)] uppercase">
-                  {c.subsumioLabel}
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap [color:var(--mk-text-subtle)] uppercase">
-                  {c.harveyLabel}
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap [color:var(--mk-text-subtle)] uppercase">
-                  {c.legoraLabel}
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap [color:var(--mk-text-subtle)] uppercase">
-                  {c.josefLabel}
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-semibold tracking-wider whitespace-nowrap [color:var(--mk-text-subtle)] uppercase">
-                  {c.cocounselLabel}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {c.rows.map((row, i) => (
-                <tr
-                  key={row.feature}
-                  className={`border-b [border-color:var(--mk-border)] ${i % 2 === 0 ? "[background:var(--mk-surface)]" : ""}`}
-                >
-                  <td className="py-2.5 pr-4 text-sm [color:var(--mk-text)]">{row.feature}</td>
-                  <td className="px-3 py-2.5 text-center">
-                    <StatusBadge status={row.subsumio} labels={c} />
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <StatusBadge status={row.harvey} labels={c} />
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <StatusBadge status={row.legora} labels={c} />
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <StatusBadge status={row.josef} labels={c} />
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <StatusBadge status={row.cocounsel} labels={c} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </motion.div>
-
-        <motion.div
-          {...reveal}
-          className="mt-10 rounded-2xl p-6 [background:var(--mk-surface)]"
-          style={{ boxShadow: "var(--mk-card-shadow)" }}
-        >
-          <h3 className="mb-3 text-lg font-black [color:var(--mk-text)]">{c.verdictTitle}</h3>
-          <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{c.verdict}</p>
-        </motion.div>
-
-        <p className="mt-4 text-[11px] leading-relaxed [color:var(--mk-text-subtle)]">
-          {c.footnote}
-        </p>
-      </div>
-    </section>
   );
 }
 
@@ -249,9 +129,6 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             ))}
           </div>
         </section>
-
-        {/* Competitive Comparison */}
-        <ComparisonSection lang={lang} />
 
         {/* Architecture */}
         <section className="relative z-10 px-6 py-24 [background:var(--mk-surface)]">

@@ -236,7 +236,7 @@ export default function VerticalPage({
                 title={t.featuresTitle}
                 sub={
                   lang === "de"
-                    ? "Von Fristenkontrolle bis Widerspruchserkennung — alles auf eurer Infrastruktur, jede Antwort mit Fundstelle."
+                    ? "Von Fristenkontrolle bis Widerspruchserkennung — alles auf deiner Infrastruktur, jede Antwort mit Fundstelle."
                     : "From deadline control to contradiction detection — all on your infrastructure, every answer cited."
                 }
               />

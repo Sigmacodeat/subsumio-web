@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
+import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
@@ -15,13 +16,16 @@ function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("light");
   useEffect(() => {
     const stored = localStorage.getItem("gbrain-theme") as Theme | null;
-    const next = stored ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next =
+      stored ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setTheme(next);
   }, []);
   const toggle = () => {
     setTheme((prev) => {
       const next: Theme = prev === "light" ? "dark" : "light";
-      try { localStorage.setItem("gbrain-theme", next); } catch {}
+      try {
+        localStorage.setItem("gbrain-theme", next);
+      } catch {}
       return next;
     });
   };
@@ -37,6 +41,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [cmdOpen, setCmdOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const { t } = useLang();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
+  const isOnboardingPage = pathname === "/dashboard/onboarding";
+
+  useEffect(() => {
+    if (meQuery.isLoading || !meQuery.data?.user) return;
+    if (!onboardingCompleted && !isOnboardingPage) {
+      router.replace("/dashboard/onboarding");
+    }
+    if (onboardingCompleted && isOnboardingPage) {
+      router.replace("/dashboard");
+    }
+  }, [onboardingCompleted, isOnboardingPage, meQuery.isLoading, meQuery.data?.user, router]);
 
   const pages = statsQuery.data?.total_pages ?? 0;
   const entities = statsQuery.data?.total_entities ?? 0;
@@ -108,18 +127,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="flex h-screen bg-[color:var(--ds-bg)] overflow-hidden" style={styleForIndustry(industry)} data-industry={industry ?? "core"} data-app="dashboard" data-theme={theme}>
+    <div
+      className="flex h-screen overflow-hidden bg-[color:var(--ds-bg)]"
+      style={styleForIndustry(industry)}
+      data-industry={industry ?? "core"}
+      data-app="dashboard"
+      data-theme={theme}
+    >
       <Script src="/theme-init.js" strategy="beforeInteractive" />
       {/* Skip-to-content link for keyboard users */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:text-white focus:text-sm focus:font-medium focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
       >
         {t("layout.skip_to_content")}
       </a>
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -138,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         userEmail={userEmail}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar
           theme={theme}
           toggleTheme={toggleTheme}
@@ -154,7 +179,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
 
-      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} onToggleTheme={toggleTheme} onToggleSidebar={() => setCollapsed((c) => !c)} />
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        onToggleTheme={toggleTheme}
+        onToggleSidebar={() => setCollapsed((c) => !c)}
+      />
     </div>
   );
 }

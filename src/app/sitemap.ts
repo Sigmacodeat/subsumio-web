@@ -7,13 +7,18 @@ const PAGES = [
   "",
   "/features",
   "/pricing",
-  "/compare",
   "/security",
   "/partners",
   "/download",
   "/docs",
   "/subsumio",
   "/whatsapp",
+  "/about",
+  "/contact",
+  "/solutions/law-firms",
+  "/solutions/solo",
+  "/solutions/in-house",
+  "/solutions/mid-sized",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -41,8 +46,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Auth + legal — bilingual, include DE variants
   for (const page of ["/login", "/signup", "/privacy", "/imprint", "/terms"]) {
-    entries.push({ url: `${BASE}${page}`, lastModified: now, changeFrequency: "monthly", priority: 0.3 });
-    entries.push({ url: `${BASE}/de${page}`, lastModified: now, changeFrequency: "monthly", priority: 0.3 });
+    entries.push({
+      url: `${BASE}${page}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    });
+    entries.push({
+      url: `${BASE}/de${page}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.3,
+    });
   }
 
   return entries;

@@ -17,10 +17,30 @@ const COPY = {
     title: "Seriös, sicher, nachvollziehbar",
     sub: "{brand} ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist — nicht Präferenz.",
     pillars: [
-      { icon: ShieldCheck, signal: "blue", t: "Self-hosted oder EU-Cloud", d: "Eure Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht." },
-      { icon: Lock, signal: "green", t: "Kein Training auf euren Daten", d: "Euer Wissen trainiert nie geteilte Modelle. Niemals." },
-      { icon: Quote, signal: "blue", t: "Jede Antwort belegt", d: "Seitengenaue Zitate — prüfbar in einem Klick, bevor etwas in den Schriftsatz geht." },
-      { icon: ScrollText, signal: "amber", t: "§ 203 StGB im Blick", d: "Architektur für Berufsgeheimnisträger — kein Dritter verarbeitet Mandantendaten." },
+      {
+        icon: ShieldCheck,
+        signal: "blue",
+        t: "Self-hosted oder EU-Cloud",
+        d: "Deine Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht.",
+      },
+      {
+        icon: Lock,
+        signal: "green",
+        t: "Kein Training auf deinen Daten",
+        d: "Dein Wissen trainiert nie geteilte Modelle. Niemals.",
+      },
+      {
+        icon: Quote,
+        signal: "blue",
+        t: "Jede Antwort belegt",
+        d: "Seitengenaue Zitate — prüfbar in einem Klick, bevor etwas in den Schriftsatz geht.",
+      },
+      {
+        icon: ScrollText,
+        signal: "amber",
+        t: "§ 203 StGB im Blick",
+        d: "Architektur für Berufsgeheimnisträger — kein Dritter verarbeitet Mandantendaten.",
+      },
     ],
   },
   en: {
@@ -28,10 +48,30 @@ const COPY = {
     title: "Serious, secure, verifiable",
     sub: "{brand} is built for professions where confidentiality is law, not preference.",
     pillars: [
-      { icon: ShieldCheck, signal: "blue", t: "Self-hosted or EU cloud", d: "Your hardware or EU hosting with a DPA. Client data never leaves the EU." },
-      { icon: Lock, signal: "green", t: "No training on your data", d: "Your knowledge never trains shared models. Ever." },
-      { icon: Quote, signal: "blue", t: "Every answer cited", d: "Page-level citations — verify in one click before anything goes into a brief." },
-      { icon: ScrollText, signal: "amber", t: "Professional secrecy by design", d: "Architecture for confidentiality holders — no third party processes client data." },
+      {
+        icon: ShieldCheck,
+        signal: "blue",
+        t: "Self-hosted or EU cloud",
+        d: "Your hardware or EU hosting with a DPA. Client data never leaves the EU.",
+      },
+      {
+        icon: Lock,
+        signal: "green",
+        t: "No training on your data",
+        d: "Your knowledge never trains shared models. Ever.",
+      },
+      {
+        icon: Quote,
+        signal: "blue",
+        t: "Every answer cited",
+        d: "Page-level citations — verify in one click before anything goes into a brief.",
+      },
+      {
+        icon: ScrollText,
+        signal: "amber",
+        t: "Professional secrecy by design",
+        d: "Architecture for confidentiality holders — no third party processes client data.",
+      },
     ],
   },
 } as const;
@@ -47,31 +87,31 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
   const brand = profileForIndustry(industry)?.brand ?? "Subsumio";
   const sub = c.sub.replace("{brand}", brand);
   return (
-    <section data-tone="slate" className="relative z-10 py-28 px-6" style={{ background: "var(--mk-bg)" }}>
-      <div className="max-w-6xl mx-auto">
+    <section
+      data-tone="slate"
+      className="relative z-10 px-6 py-28"
+      style={{ background: "var(--mk-bg)" }}
+    >
+      <div className="mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-14"
+          className="mb-14 text-center"
         >
           <span
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-5"
+            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
             style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}
           >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#60a5fa" }} />
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#60a5fa" }} />
             {c.eyebrow}
           </span>
-          <h2 className="text-3xl md:text-4xl font-black mb-4 [color:var(--mk-text)]">
-            {c.title}
-          </h2>
-          <p className="text-lg max-w-2xl mx-auto [color:var(--mk-text-muted)]">
-            {sub}
-          </p>
+          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{c.title}</h2>
+          <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {c.pillars.map((pillar, i) => {
             const Icon = pillar.icon;
             const sig = SIGNAL[pillar.signal];
@@ -86,19 +126,17 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                 <GlowCard
                   glowColor={sig.text}
                   intensity={0.12}
-                  className="h-full rounded-2xl [background:var(--mk-surface)] border [border-color:var(--mk-border)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="h-full rounded-2xl border [border-color:var(--mk-border)] transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg"
                   style={{ boxShadow: "var(--mk-card-shadow)" } as React.CSSProperties}
                 >
                   <div className="p-6">
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                      className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl"
                       style={{ background: sig.bg, boxShadow: `inset 0 0 0 1px ${sig.ring}` }}
                     >
                       <Icon size={19} style={{ color: sig.text }} />
                     </div>
-                    <h3 className="text-base font-bold mb-2 [color:var(--mk-text)]">
-                      {pillar.t}
-                    </h3>
+                    <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{pillar.t}</h3>
                     <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
                       {pillar.d}
                     </p>

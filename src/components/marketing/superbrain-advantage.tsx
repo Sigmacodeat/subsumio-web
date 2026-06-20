@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Brain,
-  CheckCircle2,
   Database,
   FileSearch,
   GitBranch,
@@ -21,41 +20,97 @@ import { Button } from "@/components/ui/button";
 const copy = {
   en: {
     eyebrow: "The Subsumio engine",
-    title: "Not another chatbot. The memory layer your firm can run on.",
+    title: "Not another chatbot. The memory layer your firm runs on.",
     sub: "Most AI tools answer one prompt. Subsumio builds a durable, permission-aware brain over your own work: files, messages, meetings, entities, decisions and open loops.",
     center: "Your firm brain",
     proof: [
-      { icon: Database, title: "Own data first", desc: "Answers come from your matters, clients, deals and documents, not generic web guesses." },
-      { icon: GitBranch, title: "Graph memory", desc: "People, companies, files, deadlines and promises stay connected as reusable context." },
-      { icon: FileSearch, title: "Cited answers", desc: "Every synthesis keeps source trails visible, with gaps called out instead of hidden." },
-      { icon: ShieldCheck, title: "Deployment choice", desc: "Self-hosted on your keys and hardware, or managed EU cloud when you want speed." },
+      {
+        icon: Database,
+        title: "Own data first",
+        desc: "Answers come from your matters, clients, deals and documents, not generic web guesses.",
+      },
+      {
+        icon: GitBranch,
+        title: "Graph memory",
+        desc: "People, companies, files, deadlines and promises stay connected as reusable context.",
+      },
+      {
+        icon: FileSearch,
+        title: "Cited answers",
+        desc: "Every synthesis keeps source trails visible, with gaps called out instead of hidden.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Deployment choice",
+        desc: "Self-hosted on your keys and hardware, or managed EU cloud when you want speed.",
+      },
     ],
-    comparisonTitle: "Where Subsumio wins",
-    comparisons: [
-      { label: "Chatbots", weak: "forget context after the conversation", strong: "compound your institutional memory" },
-      { label: "DMS / Drive", weak: "store files and folders", strong: "answer across files, notes and relationships" },
-      { label: "Enterprise AI suites", weak: "start expensive and closed", strong: "run on your infrastructure, branch-specific and ownable" },
+    capabilityTitle: "What your brain does",
+    capabilities: [
+      {
+        icon: Brain,
+        title: "Compounds",
+        desc: "Every matter, every email, every deadline feeds the brain — it remembers what your firm has ever done.",
+      },
+      {
+        icon: FileSearch,
+        title: "Retrieves",
+        desc: "Hybrid search across vector, keyword and graph finds the passage that wins the case — with page-level citations.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Protects",
+        desc: "Per-matter scoping, fuzz-tested isolation, no training on your data. Confidentiality by architecture, not promise.",
+      },
     ],
-    cta: "Compare honestly",
+    cta: "Explore features",
   },
   de: {
     eyebrow: "Die Subsumio-Engine",
-    title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der eure Firma laufen kann.",
-    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über eure eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
-    center: "Euer Firmen-Brain",
+    title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der deine Kanzlei läuft.",
+    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
+    center: "Dein Kanzlei-Brain",
     proof: [
-      { icon: Database, title: "Eigene Daten zuerst", desc: "Antworten kommen aus euren Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen." },
-      { icon: GitBranch, title: "Graph-Gedächtnis", desc: "Personen, Firmen, Dateien, Fristen und Zusagen bleiben als wiederverwendbarer Kontext verbunden." },
-      { icon: FileSearch, title: "Belegte Antworten", desc: "Jede Synthese zeigt Quellen, und markiert Lücken, statt sie elegant zu verstecken." },
-      { icon: ShieldCheck, title: "Deployment-Wahl", desc: "Self-hosted mit eigenen Keys und Hardware, oder gemanagte EU-Cloud wenn es schnell gehen soll." },
+      {
+        icon: Database,
+        title: "Eigene Daten zuerst",
+        desc: "Antworten kommen aus deinen Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen.",
+      },
+      {
+        icon: GitBranch,
+        title: "Graph-Gedächtnis",
+        desc: "Personen, Firmen, Dateien, Fristen und Zusagen bleiben als wiederverwendbarer Kontext verbunden.",
+      },
+      {
+        icon: FileSearch,
+        title: "Belegte Antworten",
+        desc: "Jede Synthese zeigt Quellen und markiert Lücken, statt sie elegant zu verstecken.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Deployment-Wahl",
+        desc: "Self-hosted mit eigenen Keys und Hardware, oder gemanagte EU-Cloud wenn es schnell gehen soll.",
+      },
     ],
-    comparisonTitle: "Wo Subsumio gewinnt",
-    comparisons: [
-      { label: "Chatbots", weak: "vergessen Kontext nach dem Gespräch", strong: "verzinsen euer Firmenwissen" },
-      { label: "DMS / Drive", weak: "speichern Dateien und Ordner", strong: "antworten über Dateien, Notizen und Beziehungen" },
-      { label: "Enterprise-KI-Suiten", weak: "starten teuer und geschlossen", strong: "laufen auf eurer Infrastruktur, branchenspezifisch und kontrollierbar" },
+    capabilityTitle: "Was dein Brain kann",
+    capabilities: [
+      {
+        icon: Brain,
+        title: "Verzinst",
+        desc: "Jede Akte, jede E-Mail, jede Frist speist das Brain — es erinnert sich an alles, was deine Kanzlei je getan hat.",
+      },
+      {
+        icon: FileSearch,
+        title: "Findet",
+        desc: "Hybride Suche über Vektor, Keyword und Graph findet die Passage, die den Fall gewinnt — mit seitengenauen Zitaten.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Schützt",
+        desc: "Scoping pro Mandat, fuzz-getestete Isolation, kein Training auf deinen Daten. Vertraulichkeit per Architektur, nicht per Versprechen.",
+      },
     ],
-    cta: "Ehrlich vergleichen",
+    cta: "Features ansehen",
   },
 } as const;
 
@@ -71,21 +126,26 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   const reduced = useReducedMotion();
 
   return (
-    <section data-tone="slate" className="relative z-10 py-28 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)] overflow-hidden">
-      <div className="absolute inset-x-0 top-16 h-72 brand-glow-bg blur-3xl opacity-50" />
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-12 items-center">
+    <section
+      data-tone="slate"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-6 py-28 [background:var(--mk-surface)]"
+    >
+      <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-50 blur-3xl" />
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="text-xs font-mono uppercase tracking-wider brand-text mb-4">{t.eyebrow}</p>
-          <h2 className="text-3xl md:text-5xl font-black [color:var(--mk-text)] leading-tight mb-5">
+          <p className="brand-text mb-4 font-mono text-xs tracking-wider uppercase">{t.eyebrow}</p>
+          <h2 className="mb-5 text-3xl leading-tight font-black [color:var(--mk-text)] md:text-5xl">
             {t.title}
           </h2>
-          <p className="text-base md:text-lg [color:var(--mk-text-muted)] leading-relaxed mb-8">{t.sub}</p>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)] md:text-lg">
+            {t.sub}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
             {t.proof.map((item, i) => {
               const Icon = item.icon;
               return (
@@ -95,11 +155,15 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.35, delay: i * 0.06 }}
-                  className="rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface-2)] p-4"
+                  className="rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface-2)]"
                 >
                   <Icon size={18} className="brand-text mb-3" />
-                  <h3 className="text-sm font-semibold [color:var(--mk-text)] mb-1.5">{item.title}</h3>
-                  <p className="text-xs [color:var(--mk-text-muted)] leading-relaxed">{item.desc}</p>
+                  <h3 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                    {item.desc}
+                  </p>
                 </motion.div>
               );
             })}
@@ -112,7 +176,10 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
             transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
             className="absolute inset-8 rounded-full border border-dashed border-[var(--brand-primary)]/20"
           />
-          <div data-tone="slate" className="relative min-h-[560px] rounded-2xl border [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] overflow-hidden shadow-2xl shadow-black/20">
+          <div
+            data-tone="slate"
+            className="relative min-h-[560px] overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
+          >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,var(--brand-glow),transparent_42%)]" />
             <div className="relative h-[300px]">
               <motion.div
@@ -120,11 +187,13 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 whileInView={{ scale: 1, opacity: 1 }}
                 viewport={{ once: true, amount: 0.45 }}
                 transition={{ duration: 0.55, ease: "easeOut" }}
-                className="absolute left-1/2 top-1/2 w-40 h-40 -translate-x-1/2 -translate-y-1/2 rounded-full brand-soft-strong border brand-border-strong flex flex-col items-center justify-center text-center"
+                className="brand-soft-strong brand-border-strong absolute top-1/2 left-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border text-center"
               >
                 <Brain size={34} className="brand-text mb-3" />
                 <span className="text-sm font-bold [color:var(--mk-text)]">{t.center}</span>
-                <span className="mt-1 text-[11px] [color:var(--mk-text-muted)]">queryable · cited · scoped</span>
+                <span className="mt-1 text-[11px] [color:var(--mk-text-muted)]">
+                  queryable · cited · scoped
+                </span>
               </motion.div>
               {orbitNodes.map((node, i) => {
                 const Icon = node.icon;
@@ -135,42 +204,46 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true, amount: 0.4 }}
                     transition={{ duration: 0.35, delay: 0.1 + i * 0.08 }}
-                    className={`absolute ${node.className} rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3 flex items-center gap-2`}
+                    className={`absolute ${node.className} flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]`}
                   >
                     <Icon size={16} className="brand-text" />
                     <span className="text-xs font-medium [color:var(--mk-text)]">{node.label}</span>
                   </motion.div>
                 );
               })}
-              <div className="absolute left-[18%] right-[18%] top-1/2 h-px brand-bg opacity-30" />
-              <div className="absolute left-1/2 top-[22%] bottom-[20%] w-px brand-bg opacity-30" />
+              <div className="brand-bg absolute top-1/2 right-[18%] left-[18%] h-px opacity-30" />
+              <div className="brand-bg absolute top-[22%] bottom-[20%] left-1/2 w-px opacity-30" />
             </div>
 
             <div className="relative border-t [border-color:var(--mk-border)] p-5 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="mb-4 flex items-center gap-2">
                 <Sparkles size={16} className="brand-text" />
-                <h3 className="text-sm font-bold [color:var(--mk-text)]">{t.comparisonTitle}</h3>
+                <h3 className="text-sm font-bold [color:var(--mk-text)]">{t.capabilityTitle}</h3>
               </div>
               <div className="space-y-3">
-                {t.comparisons.map((row, i) => (
-                  <motion.div
-                    key={row.label}
-                    initial={{ opacity: 0, x: 16 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, amount: 0.4 }}
-                    transition={{ duration: 0.35, delay: i * 0.08 }}
-                    className="grid md:grid-cols-[120px_1fr_1fr] gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] p-3 text-sm"
-                  >
-                    <span className="font-semibold [color:var(--mk-text)]">{row.label}</span>
-                    <span className="[color:var(--mk-text-muted)]">{row.weak}</span>
-                    <span className="inline-flex items-start gap-2 [color:var(--mk-text)]">
-                      <CheckCircle2 size={16} className="brand-text shrink-0 mt-0.5" />
-                      {row.strong}
-                    </span>
-                  </motion.div>
-                ))}
+                {t.capabilities.map((row, i) => {
+                  const Icon = row.icon;
+                  return (
+                    <motion.div
+                      key={row.title}
+                      initial={{ opacity: 0, x: 16 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, amount: 0.4 }}
+                      transition={{ duration: 0.35, delay: i * 0.08 }}
+                      className="flex items-start gap-3 rounded-xl border [border-color:var(--mk-border)] p-3 text-sm [background:var(--mk-surface)]"
+                    >
+                      <Icon size={16} className="brand-text mt-0.5 shrink-0" />
+                      <div>
+                        <span className="font-semibold [color:var(--mk-text)]">{row.title}</span>
+                        <span className="mt-0.5 block text-xs [color:var(--mk-text-muted)]">
+                          {row.desc}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-              <Link href={p(lang, "/compare")} className="inline-flex mt-5">
+              <Link href={p(lang, "/features")} className="mt-5 inline-flex">
                 <Button variant="outline" size="sm">
                   {t.cta} <ArrowRight size={15} />
                 </Button>

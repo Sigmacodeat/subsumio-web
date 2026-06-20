@@ -31,11 +31,13 @@ async function isDuplicateEvent(eventId: string, eventType: string): Promise<boo
          VALUES ($1, $2)
          ON CONFLICT (event_id) DO UPDATE SET event_id = EXCLUDED.event_id
          RETURNING (xmax = 0) AS inserted`,
-        [eventId, eventType],
+        [eventId, eventType]
       );
       return !result.rows[0]?.inserted;
     } catch (err) {
-      console.error(`[stripe-webhook] idempotency check failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[stripe-webhook] idempotency check failed: ${err instanceof Error ? err.message : String(err)}`
+      );
       // Non-fatal — proceed without idempotency (dev mode)
     }
   }
@@ -52,7 +54,7 @@ async function isDuplicateEvent(eventId: string, eventType: string): Promise<boo
 function verifyStripeSignature(payload: string, header: string | null, secret: string): boolean {
   if (!header) return false;
   const parts = Object.fromEntries(
-    header.split(",").map((kv) => kv.split("=", 2) as [string, string]),
+    header.split(",").map((kv) => kv.split("=", 2) as [string, string])
   );
   const timestamp = parts.t;
   const signature = parts.v1;
@@ -111,6 +113,25 @@ export async function POST(req: NextRequest) {
       }
       break;
     }
+    case "customer.subscription.updated": {
+      // Plan upgrade/downgrade via Stripe portal. The subscription's
+      // price ID maps back to a plan via metadata or price lookup.
+      const customerId = typeof obj.customer === "string" ? obj.customer : null;
+      const metadata = obj.metadata as { plan?: string; user_id?: string } | undefined;
+      const plan = metadata?.plan;
+      const userId = metadata?.user_id;
+      if (userId && (plan === "pro" || plan === "team")) {
+        await store.update(userId, { plan: plan as Plan });
+      } else if (customerId) {
+        // Fallback: find by customer ID and update plan from metadata
+        const users = await store.list();
+        const user = users.find((u) => u.stripeCustomerId === customerId);
+        if (user && plan && (plan === "pro" || plan === "team")) {
+          await store.update(user.id, { plan: plan as Plan });
+        }
+      }
+      break;
+    }
     case "customer.subscription.deleted": {
       // Downgrade by Stripe customer id.
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
@@ -118,6 +139,21 @@ export async function POST(req: NextRequest) {
         const users = await store.list();
         const user = users.find((u) => u.stripeCustomerId === customerId);
         if (user) await store.update(user.id, { plan: "free" });
+      }
+      break;
+    }
+    case "invoice.payment_failed": {
+      // Payment failed — log but don't downgrade immediately.
+      // Stripe retries 3 times over ~4 days before canceling.
+      const customerId = typeof obj.customer === "string" ? obj.customer : null;
+      if (customerId) {
+        const users = await store.list();
+        const user = users.find((u) => u.stripeCustomerId === customerId);
+        if (user) {
+          console.warn(
+            `[stripe-webhook] payment failed for user ${user.email} (customer ${customerId})`
+          );
+        }
       }
       break;
     }

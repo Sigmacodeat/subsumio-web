@@ -5,10 +5,7 @@ import { ENGINE_REPO_URL, type Lang } from "@/content/site";
 
 export function JsonLd({ data }: { data: object }) {
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
 
@@ -34,8 +31,8 @@ export function softwareApplicationLd(lang: Lang) {
     operatingSystem: "Web, Self-hosted",
     description:
       lang === "de"
-        ? "Das Company Brain für wissensintensive Teams: eine Antwort statt zehn Dokumente — aus euren Meetings, Mails, Deals und Akten. Self-hosted oder EU-Cloud, Open-Source-Engine."
-        : "The company brain for knowledge-intensive teams: one answer instead of ten documents — from your meetings, emails, deals and files. Self-hosted or EU cloud, open-source engine.",
+        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: eine belegte Antwort statt zehn Dokumente — aus euren Akten, Mails, Fristen und Schriftsätzen. Self-hosted oder EU-Cloud."
+        : "AI legal software for law firms in Austria, Germany and Switzerland: one cited answer instead of ten documents — from your matters, emails, deadlines and pleadings. Self-hosted or EU cloud.",
     offers: [
       {
         "@type": "Offer",

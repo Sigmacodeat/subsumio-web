@@ -4,8 +4,9 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Preise",
-  description: "Kostenlos starten mit der Open-Source-Engine. Gehostete Pläne ab 290 €/Seat/Mon. Keine Überraschungsrechnung, kein Lock-in.",
+  title: "Subsumio — Kanzleisoftware Preise, pro Seat",
+  description:
+    "Gehostete Pläne ab 290 €/Seat/Mon., jährlich abgerechnet. Self-hosted oder EU-Cloud. Keine Überraschungsrechnung, kein Lock-in, 14-Tage-Reverse-Trial.",
   alternates: { canonical: "/de/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
 };
 

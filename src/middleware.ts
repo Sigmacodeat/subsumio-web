@@ -12,6 +12,20 @@ import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
+  "/api/webhook/",
+  "/api/billing/webhook",
+  "/api/whatsapp/webhook",
+  "/api/email/webhook/resend",
+  "/api/docusign/webhook",
+] as const;
+
+function isWebhookCsrfExempt(pathname: string): boolean {
+  return WEBHOOK_CSRF_EXEMPT_PREFIXES.some((prefix) => {
+    const normalized = prefix.endsWith("/") ? prefix : `${prefix}/`;
+    return pathname === prefix || pathname.startsWith(normalized);
+  });
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -30,16 +44,13 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith("/api/auth/reset") ||
       pathname.startsWith("/api/auth/2fa/login-verify") ||
       pathname.startsWith("/api/cron/") ||
-      pathname.startsWith("/api/webhook/");
+      isWebhookCsrfExempt(pathname);
 
     if (!isExempt) {
       const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
       const headerToken = req.headers.get(CSRF_HEADER_NAME);
       if (!cookieToken || !headerToken || cookieToken !== headerToken) {
-        return NextResponse.json(
-          { error: "csrf_token_invalid" },
-          { status: 403 },
-        );
+        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
       }
     }
   }

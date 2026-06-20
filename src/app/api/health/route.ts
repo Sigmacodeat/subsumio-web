@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_req: NextRequest) {
   const start = Date.now();
-  const checks: Record<string, { status: "ok" | "degraded" | "down"; latencyMs?: number }> = {};
+  const checks: Record<
+    string,
+    { status: "ok" | "degraded" | "down"; latencyMs?: number; detail?: string }
+  > = {};
 
   // 1. Engine (GBrain)
   const engineStart = Date.now();
@@ -42,11 +45,27 @@ export async function GET(_req: NextRequest) {
     checks.auth = { status: "down", latencyMs: Date.now() - authStart };
   }
 
+  // 3. Stripe billing configuration
+  checks.stripe = process.env.STRIPE_SECRET_KEY
+    ? { status: "ok" }
+    : { status: "degraded", detail: "STRIPE_SECRET_KEY not set" };
+
+  // 4. Sentry error tracking configuration
+  checks.sentry =
+    process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
+      ? { status: "ok" }
+      : { status: "degraded", detail: "SENTRY_DSN not set" };
+
+  // 5. Email service (Resend)
+  checks.email = process.env.RESEND_API_KEY
+    ? { status: "ok" }
+    : { status: "degraded", detail: "RESEND_API_KEY not set" };
+
   const allOk = Object.values(checks).every((c) => c.status === "ok");
   const anyDown = Object.values(checks).some((c) => c.status === "down");
 
-  const status = anyDown ? 503 : allOk ? 200 : 200;
-  const overall = anyDown ? "degraded" : "ok";
+  const status = anyDown ? 503 : 200;
+  const overall = anyDown ? "degraded" : allOk ? "ok" : "degraded";
 
   return Response.json(
     {
@@ -54,6 +73,6 @@ export async function GET(_req: NextRequest) {
       durationMs: Date.now() - start,
       checks,
     },
-    { status },
+    { status }
   );
 }

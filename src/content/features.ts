@@ -28,24 +28,38 @@ export interface FeaturesContent {
 
 export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
   en: {
-    metaTitle: "Features — everything Subsumio does",
-    metaDesc: "Synthesis with citations, self-wiring knowledge graph, hybrid retrieval, the 24/7 Dream Cycle, agent integrations and team-safe access control — in depth.",
+    metaTitle: "Subsumio Features — AI knowledge graph for law firms",
+    metaDesc:
+      "Synthesis with citations, self-wiring knowledge graph, hybrid retrieval, Dream Cycle, MCP integrations. Every claim ships in the product.",
     badge: "Full capability tour",
     h1a: "Everything it does.",
     h1b: "Nothing hidden.",
-    sub: "Six capability areas, one engine. Click through — every claim here ships in the product, with deterministic citations you can verify.",
+    sub: "Five capability areas, one engine. Click through — every claim here ships in the product, with deterministic citations you can verify.",
     categories: [
       {
         id: "synthesis",
         icon: "Brain",
         label: "Answers & Synthesis",
         title: "One answer instead of ten documents",
-        intro: "Most tools stop at retrieval: here are your chunks, good luck. Subsumio reads them for you and writes the answer — and tells you what it couldn't find.",
+        intro:
+          "Most tools stop at retrieval: here are your chunks, good luck. Subsumio reads them for you and writes the answer — and tells you what it couldn't find.",
         items: [
-          { title: "Synthesized prose answers", desc: "Cross-document synthesis over people, companies, deals and ideas — written out, not pasted together." },
-          { title: "Citations on every claim", desc: "Each statement links to its source page. One click to verify before you rely on it." },
-          { title: "Gap analysis", desc: "The answer ends with what the brain does NOT know yet — so silence never masquerades as certainty." },
-          { title: "Meeting prep mode", desc: "Ask about a person before a meeting: last contact, open commitments, what changed since." },
+          {
+            title: "Synthesized prose answers",
+            desc: "Cross-document synthesis over people, companies, deals and ideas — written out, not pasted together.",
+          },
+          {
+            title: "Citations on every claim",
+            desc: "Each statement links to its source page. One click to verify before you rely on it.",
+          },
+          {
+            title: "Gap analysis",
+            desc: "The answer ends with what the brain does NOT know yet — so silence never masquerades as certainty.",
+          },
+          {
+            title: "Meeting prep mode",
+            desc: "Ask about a person before a meeting: last contact, open commitments, what changed since.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — ask",
@@ -64,12 +78,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Network",
         label: "Knowledge Graph",
         title: "A graph that wires itself",
-        intro: "Every page write extracts entities and typed relationships — with zero extra LLM calls. Relationship questions get graph answers, not keyword guesses.",
+        intro:
+          "Every page write extracts entities and typed relationships — with zero extra LLM calls. Relationship questions get graph answers, not keyword guesses.",
         items: [
-          { title: "Typed edges, automatic", desc: "invested_in, works_at, founded, attended, advises — extracted on write, no tagging, no data entry." },
-          { title: "Relational queries", desc: "“Who invested in X?” “What connects A and B?” resolve by walking the graph — questions vector search can't answer." },
-          { title: "Entity enrichment", desc: "People and companies accumulate context across every mention; the brain consolidates overnight." },
-          { title: "Benchmarked recall", desc: "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus." },
+          {
+            title: "Typed edges, automatic",
+            desc: "invested_in, works_at, founded, attended, advises — extracted on write, no tagging, no data entry.",
+          },
+          {
+            title: "Relational queries",
+            desc: "“Who invested in X?” “What connects A and B?” resolve by walking the graph — questions vector search can't answer.",
+          },
+          {
+            title: "Entity enrichment",
+            desc: "People and companies accumulate context across every mention; the brain consolidates overnight.",
+          },
+          {
+            title: "Benchmarked recall",
+            desc: "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — graph",
@@ -88,12 +115,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Search",
         label: "Hybrid Retrieval",
         title: "Finds what single-method search misses",
-        intro: "Vector similarity, BM25 keyword match and graph traversal — fused with reciprocal rank fusion. Three recall arms, one ranked result.",
+        intro:
+          "Vector similarity, BM25 keyword match and graph traversal — fused with reciprocal rank fusion. Three recall arms, one ranked result.",
         items: [
-          { title: "Vector + BM25 + graph, fused", desc: "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone." },
-          { title: "Three cost modes", desc: "conservative, balanced, tokenmax — pick your quality/cost point. Token budgets are enforced, not vibes." },
-          { title: "Smart caching", desc: "Similar queries hit a semantic cache (~50% cost reduction in steady use) — with strict isolation so settings changes never serve stale results." },
-          { title: "Intent-aware ranking", desc: "Relational questions trigger graph recall automatically; lookups stay lean. The engine adapts per query." },
+          {
+            title: "Vector + BM25 + graph, fused",
+            desc: "Semantic similarity catches paraphrases, keywords catch exact terms, the graph catches relationships. Fusion beats each alone.",
+          },
+          {
+            title: "Three cost modes",
+            desc: "conservative, balanced, tokenmax — pick your quality/cost point. Token budgets are enforced, not vibes.",
+          },
+          {
+            title: "Smart caching",
+            desc: "Similar queries hit a semantic cache (~50% cost reduction in steady use) — with strict isolation so settings changes never serve stale results.",
+          },
+          {
+            title: "Intent-aware ranking",
+            desc: "Relational questions trigger graph recall automatically; lookups stay lean. The engine adapts per query.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — search modes",
@@ -112,12 +152,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Zap",
         label: "Dream Cycle",
         title: "Your brain gets smarter while you sleep",
-        intro: "A 24/7 background agent maintains the brain so it compounds instead of rotting. You wake up to a cleaner, sharper knowledge base every day.",
+        intro:
+          "A 24/7 background agent maintains the brain so it compounds instead of rotting. You wake up to a cleaner, sharper knowledge base every day.",
         items: [
-          { title: "Deduplication", desc: "Duplicate people and company pages are detected and merged — the graph stays canonical." },
-          { title: "Citation repair", desc: "Broken or stale citations are found and re-linked automatically." },
-          { title: "Contradiction detection", desc: "Conflicting facts across documents get flagged with both sources — gold for case files and due diligence." },
-          { title: "Scheduled jobs", desc: "Cron-based ingestion, enrichment and reports. The production deployment runs 66 autonomous jobs." },
+          {
+            title: "Deduplication",
+            desc: "Duplicate people and company pages are detected and merged — the graph stays canonical.",
+          },
+          {
+            title: "Citation repair",
+            desc: "Broken or stale citations are found and re-linked automatically.",
+          },
+          {
+            title: "Contradiction detection",
+            desc: "Conflicting facts across documents get flagged with both sources — gold for case files and due diligence.",
+          },
+          {
+            title: "Scheduled jobs",
+            desc: "Cron-based ingestion, enrichment and reports. The production deployment runs 66 autonomous jobs.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — overnight",
@@ -136,12 +189,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "GitBranch",
         label: "Integrations",
         title: "Meets your tools where they are",
-        intro: "Built agent-first: your AI assistant operates the brain directly. Humans get a dashboard; agents get a protocol.",
+        intro:
+          "Built agent-first: your AI assistant operates the brain directly. Humans get a dashboard; agents get a protocol.",
         items: [
-          { title: "MCP server", desc: "Native Model Context Protocol — Claude Code, Claude Desktop, Cursor and any MCP client query the brain as a tool." },
-          { title: "Full CLI", desc: "Every operation is scriptable. Bulk imports, exports, search, graph queries — automation-ready." },
-          { title: "Bulk import", desc: "Markdown, PDFs, meeting notes, email exports. Years of backlog ingest in one run with live progress." },
-          { title: "Web dashboard & PWA", desc: "Query, graph explorer, upload, settings — installable on iOS, iPadOS and Android as an app." },
+          {
+            title: "MCP server",
+            desc: "Native Model Context Protocol — Claude Code, Claude Desktop, Cursor and any MCP client query the brain as a tool.",
+          },
+          {
+            title: "Full CLI",
+            desc: "Every operation is scriptable. Bulk imports, exports, search, graph queries — automation-ready.",
+          },
+          {
+            title: "Bulk import",
+            desc: "Markdown, PDFs, meeting notes, email exports. Years of backlog ingest in one run with live progress.",
+          },
+          {
+            title: "Web dashboard & PWA",
+            desc: "Query, graph explorer, upload, settings — installable on iOS, iPadOS and Android as an app.",
+          },
         ],
         demo: {
           windowTitle: "claude code — with subsumio",
@@ -154,43 +220,44 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           ],
         },
       },
-      {
-        id: "security",
-        icon: "Shield",
-        label: "Security & Teams",
-        title: "Team-safe and audit-friendly by architecture",
-        intro: "Knowledge tools fail on trust. Subsumio's answer: infrastructure you own, auditable answers, and access control that's been attacked on purpose.",
-        items: [
-          { title: "Scoped access, fuzz-tested", desc: "Per-user, per-source scoping across every read path — search, lists, lookups, multi-source reads. Fuzzed for zero cross-user leaks." },
-          { title: "Self-hosted or EU cloud", desc: "Run the full engine on your hardware, or choose managed EU hosting with a DPA. Your data never trains anyone's model." },
-          { title: "Auditable, not a black box", desc: "Deterministic, page-level citations on every answer. You can verify exactly where each claim comes from — no opaque AI between you and your knowledge." },
-          { title: "Trust boundaries in code", desc: "Remote callers are untrusted by default — fail-closed design, enforced by tests, not policy documents." },
-        ],
-      },
     ],
     ctaTitle: "Seen enough?",
     ctaSub: "Up and running in minutes. First answer the same day.",
     ctaButton: "Get started",
   },
   de: {
-    metaTitle: "Features — alles, was Subsumio kann",
-    metaDesc: "Synthese mit Zitaten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, der 24/7 Dream Cycle, Agent-Integrationen und team-sichere Zugriffskontrolle — im Detail.",
+    metaTitle: "Subsumio Features — KI-Wissensgraph für Anwaltskanzleien",
+    metaDesc:
+      "Synthese mit Zitaten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, Dream Cycle, MCP-Integrationen. Jede Aussage steckt im Produkt.",
     badge: "Die komplette Capability-Tour",
     h1a: "Alles, was es kann.",
     h1b: "Nichts versteckt.",
-    sub: "Sechs Fähigkeits-Bereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit deterministischen Zitaten, die du prüfen kannst.",
+    sub: "Fünf Fähigkeits-Bereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit deterministischen Zitaten, die du prüfen kannst.",
     categories: [
       {
         id: "synthesis",
         icon: "Brain",
         label: "Antworten & Synthese",
         title: "Eine Antwort statt zehn Dokumenten",
-        intro: "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Subsumio liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
+        intro:
+          "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Subsumio liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
         items: [
-          { title: "Synthetisierte Prosa-Antworten", desc: "Dokumentübergreifende Synthese über Personen, Firmen, Deals und Ideen — ausformuliert, nicht zusammengeklebt." },
-          { title: "Zitate an jeder Behauptung", desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor du dich darauf verlässt." },
-          { title: "Gap-Analyse", desc: "Die Antwort endet mit dem, was das Brain NICHT weiß — Schweigen tarnt sich nie als Gewissheit." },
-          { title: "Meeting-Prep-Modus", desc: "Frag vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat." },
+          {
+            title: "Synthetisierte Prosa-Antworten",
+            desc: "Dokumentübergreifende Synthese über Personen, Firmen, Deals und Ideen — ausformuliert, nicht zusammengeklebt.",
+          },
+          {
+            title: "Zitate an jeder Behauptung",
+            desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor du dich darauf verlässt.",
+          },
+          {
+            title: "Gap-Analyse",
+            desc: "Die Antwort endet mit dem, was das Brain NICHT weiß — Schweigen tarnt sich nie als Gewissheit.",
+          },
+          {
+            title: "Meeting-Prep-Modus",
+            desc: "Frag vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — fragen",
@@ -209,12 +276,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Network",
         label: "Wissensgraph",
         title: "Ein Graph, der sich selbst verdrahtet",
-        intro: "Jeder Seiten-Write extrahiert Entitäten und typisierte Beziehungen — ohne zusätzliche LLM-Calls. Beziehungsfragen bekommen Graph-Antworten, kein Keyword-Raten.",
+        intro:
+          "Jeder Seiten-Write extrahiert Entitäten und typisierte Beziehungen — ohne zusätzliche LLM-Calls. Beziehungsfragen bekommen Graph-Antworten, kein Keyword-Raten.",
         items: [
-          { title: "Typisierte Kanten, automatisch", desc: "invested_in, works_at, founded, attended, advises — beim Schreiben extrahiert, ohne Tagging, ohne Datenpflege." },
-          { title: "Relationale Queries", desc: "„Wer hat in X investiert?“ „Was verbindet A und B?“ werden über den Graphen beantwortet — Fragen, an denen Vektorsuche scheitert." },
-          { title: "Entitäten-Anreicherung", desc: "Personen und Firmen sammeln Kontext über jede Erwähnung; das Brain konsolidiert über Nacht." },
-          { title: "Benchmark-belegt", desc: "97,9 % Recall@5 und +31,4 P@5-Punkte gegenüber reinem Vector-RAG auf einem 240-Seiten-Benchmark-Korpus." },
+          {
+            title: "Typisierte Kanten, automatisch",
+            desc: "invested_in, works_at, founded, attended, advises — beim Schreiben extrahiert, ohne Tagging, ohne Datenpflege.",
+          },
+          {
+            title: "Relationale Queries",
+            desc: "„Wer hat in X investiert?“ „Was verbindet A und B?“ werden über den Graphen beantwortet — Fragen, an denen Vektorsuche scheitert.",
+          },
+          {
+            title: "Entitäten-Anreicherung",
+            desc: "Personen und Firmen sammeln Kontext über jede Erwähnung; das Brain konsolidiert über Nacht.",
+          },
+          {
+            title: "Benchmark-belegt",
+            desc: "97,9 % Recall@5 und +31,4 P@5-Punkte gegenüber reinem Vector-RAG auf einem 240-Seiten-Benchmark-Korpus.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — graph",
@@ -233,12 +313,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Search",
         label: "Hybrid-Retrieval",
         title: "Findet, was Einzel-Methoden übersehen",
-        intro: "Vektor-Ähnlichkeit, BM25-Keyword-Match und Graph-Traversal — fusioniert per Reciprocal Rank Fusion. Drei Recall-Arme, ein Ranking.",
+        intro:
+          "Vektor-Ähnlichkeit, BM25-Keyword-Match und Graph-Traversal — fusioniert per Reciprocal Rank Fusion. Drei Recall-Arme, ein Ranking.",
         items: [
-          { title: "Vector + BM25 + Graph, fusioniert", desc: "Semantik fängt Umschreibungen, Keywords fangen exakte Begriffe, der Graph fängt Beziehungen. Die Fusion schlägt jede Methode allein." },
-          { title: "Drei Kosten-Modi", desc: "conservative, balanced, tokenmax — wähle deinen Qualitäts-/Kostenpunkt. Token-Budgets werden durchgesetzt, kein Bauchgefühl." },
-          { title: "Intelligentes Caching", desc: "Ähnliche Queries treffen einen semantischen Cache (~50 % Kostenersparnis im Dauerbetrieb) — strikt isoliert, damit Einstellungsänderungen nie veraltete Ergebnisse liefern." },
-          { title: "Intent-bewusstes Ranking", desc: "Beziehungsfragen aktivieren Graph-Recall automatisch; einfache Lookups bleiben schlank. Die Engine passt sich pro Query an." },
+          {
+            title: "Vector + BM25 + Graph, fusioniert",
+            desc: "Semantik fängt Umschreibungen, Keywords fangen exakte Begriffe, der Graph fängt Beziehungen. Die Fusion schlägt jede Methode allein.",
+          },
+          {
+            title: "Drei Kosten-Modi",
+            desc: "conservative, balanced, tokenmax — wähle deinen Qualitäts-/Kostenpunkt. Token-Budgets werden durchgesetzt, kein Bauchgefühl.",
+          },
+          {
+            title: "Intelligentes Caching",
+            desc: "Ähnliche Queries treffen einen semantischen Cache (~50 % Kostenersparnis im Dauerbetrieb) — strikt isoliert, damit Einstellungsänderungen nie veraltete Ergebnisse liefern.",
+          },
+          {
+            title: "Intent-bewusstes Ranking",
+            desc: "Beziehungsfragen aktivieren Graph-Recall automatisch; einfache Lookups bleiben schlank. Die Engine passt sich pro Query an.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — search modes",
@@ -257,12 +350,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Zap",
         label: "Dream Cycle",
         title: "Dein Brain wird schlauer, während du schläfst",
-        intro: "Ein 24/7-Hintergrund-Agent wartet das Brain, damit es sich verzinst statt zu verrotten. Du wachst jeden Tag mit einer saubereren, schärferen Wissensbasis auf.",
+        intro:
+          "Ein 24/7-Hintergrund-Agent wartet das Brain, damit es sich verzinst statt zu verrotten. Du wachst jeden Tag mit einer saubereren, schärferen Wissensbasis auf.",
         items: [
-          { title: "Deduplizierung", desc: "Doppelte Personen- und Firmenseiten werden erkannt und gemerged — der Graph bleibt kanonisch." },
-          { title: "Zitat-Reparatur", desc: "Kaputte oder veraltete Zitate werden automatisch gefunden und neu verlinkt." },
-          { title: "Widerspruchs-Erkennung", desc: "Widersprüchliche Fakten über Dokumente hinweg werden mit beiden Quellen markiert — Gold für Akten und Due Diligence." },
-          { title: "Geplante Jobs", desc: "Cron-basierte Ingestion, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs." },
+          {
+            title: "Deduplizierung",
+            desc: "Doppelte Personen- und Firmenseiten werden erkannt und gemerged — der Graph bleibt kanonisch.",
+          },
+          {
+            title: "Zitat-Reparatur",
+            desc: "Kaputte oder veraltete Zitate werden automatisch gefunden und neu verlinkt.",
+          },
+          {
+            title: "Widerspruchs-Erkennung",
+            desc: "Widersprüchliche Fakten über Dokumente hinweg werden mit beiden Quellen markiert — Gold für Akten und Due Diligence.",
+          },
+          {
+            title: "Geplante Jobs",
+            desc: "Cron-basierte Ingestion, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs.",
+          },
         ],
         demo: {
           windowTitle: "subsumio — über nacht",
@@ -281,12 +387,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "GitBranch",
         label: "Integrationen",
         title: "Holt deine Tools dort ab, wo sie sind",
-        intro: "Agent-first gebaut: Dein KI-Assistent bedient das Brain direkt. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll.",
+        intro:
+          "Agent-first gebaut: Dein KI-Assistent bedient das Brain direkt. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll.",
         items: [
-          { title: "MCP-Server", desc: "Natives Model Context Protocol — Claude Code, Claude Desktop, Cursor und jeder MCP-Client nutzen das Brain als Tool." },
-          { title: "Vollständige CLI", desc: "Jede Operation ist skriptbar. Bulk-Imports, Exports, Suche, Graph-Queries — automatisierungsbereit." },
-          { title: "Bulk-Import", desc: "Markdown, PDFs, Meeting-Notizen, E-Mail-Exporte. Jahre an Backlog in einem Durchlauf, mit Live-Fortschritt." },
-          { title: "Web-Dashboard & PWA", desc: "Query, Graph-Explorer, Upload, Einstellungen — installierbar auf iOS, iPadOS und Android als App." },
+          {
+            title: "MCP-Server",
+            desc: "Natives Model Context Protocol — Claude Code, Claude Desktop, Cursor und jeder MCP-Client nutzen das Brain als Tool.",
+          },
+          {
+            title: "Vollständige CLI",
+            desc: "Jede Operation ist skriptbar. Bulk-Imports, Exports, Suche, Graph-Queries — automatisierungsbereit.",
+          },
+          {
+            title: "Bulk-Import",
+            desc: "Markdown, PDFs, Meeting-Notizen, E-Mail-Exporte. Jahre an Backlog in einem Durchlauf, mit Live-Fortschritt.",
+          },
+          {
+            title: "Web-Dashboard & PWA",
+            desc: "Query, Graph-Explorer, Upload, Einstellungen — installierbar auf iOS, iPadOS und Android als App.",
+          },
         ],
         demo: {
           windowTitle: "claude code — mit subsumio",
@@ -298,19 +417,6 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             "  Dein Agent erinnert sich jetzt an alles, was nicht Code ist.",
           ],
         },
-      },
-      {
-        id: "security",
-        icon: "Shield",
-        label: "Sicherheit & Teams",
-        title: "Team-sicher und audit-freundlich per Architektur",
-        intro: "Wissens-Tools scheitern am Vertrauen. Subsumios Antwort: Infrastruktur zum Besitzen, auditierbare Antworten, und Zugriffskontrolle, die absichtlich angegriffen wurde.",
-        items: [
-          { title: "Scoped Access, fuzz-getestet", desc: "Scoping pro Nutzer und Quelle über jeden Lesepfad — Suche, Listen, Lookups, Multi-Source-Reads. Gefuzzt auf null Leaks zwischen Nutzern." },
-          { title: "Self-hosted oder EU-Cloud", desc: "Volle Engine auf eigener Hardware, oder verwaltetes EU-Hosting mit AVV. Deine Daten trainieren niemals fremde Modelle." },
-          { title: "Auditierbar, keine Blackbox", desc: "Deterministische, seitengenaue Zitate in jeder Antwort. Du prüfst exakt, woher jede Aussage stammt — keine undurchsichtige KI zwischen dir und deinem Wissen." },
-          { title: "Trust Boundaries im Code", desc: "Remote-Aufrufer sind per Default nicht vertrauenswürdig — Fail-Closed-Design, durch Tests erzwungen, nicht durch Policy-Dokumente." },
-        ],
       },
     ],
     ctaTitle: "Genug gesehen?",
