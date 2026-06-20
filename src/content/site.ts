@@ -88,12 +88,6 @@ export const NAV: Record<Lang, NavContent> = {
             icon: "MessageSquare",
           },
           {
-            label: "Compare",
-            href: "/compare",
-            description: "Honest side-by-side vs. competitors",
-            icon: "GitBranch",
-          },
-          {
             label: "Download",
             href: "/download",
             description: "iOS, Android, desktop apps",
@@ -144,12 +138,6 @@ export const NAV: Record<Lang, NavContent> = {
             href: "/partners",
             description: "Refer clients, earn 30% recurring",
             icon: "Handshake",
-          },
-          {
-            label: "Compare",
-            href: "/compare",
-            description: "Side-by-side vs. Harvey, Legora, Noxtua",
-            icon: "GitBranch",
           },
           {
             label: "Download",
@@ -219,12 +207,6 @@ export const NAV: Record<Lang, NavContent> = {
             icon: "MessageSquare",
           },
           {
-            label: "Vergleich",
-            href: "/compare",
-            description: "Ehrlich side-by-side vs. Wettbewerber",
-            icon: "GitBranch",
-          },
-          {
             label: "Download",
             href: "/download",
             description: "iOS, Android, Desktop-Apps",
@@ -275,12 +257,6 @@ export const NAV: Record<Lang, NavContent> = {
             href: "/partners",
             description: "Kunden empfehlen, 30 % wiederkehrend",
             icon: "Handshake",
-          },
-          {
-            label: "Vergleich",
-            href: "/compare",
-            description: "Side-by-side vs. Harvey, Legora, Noxtua",
-            icon: "GitBranch",
           },
           {
             label: "Download",
@@ -334,7 +310,6 @@ export const FOOTER = {
           { label: "Features", href: "/features" },
           { label: "Security", href: "/security" },
           { label: "WhatsApp Copilot", href: "/whatsapp" },
-          { label: "Compare", href: "/compare" },
           { label: "Pricing", href: "/pricing" },
           { label: "Download", href: "/download" },
         ],
@@ -385,7 +360,6 @@ export const FOOTER = {
           { label: "Features", href: "/features" },
           { label: "Sicherheit", href: "/security" },
           { label: "WhatsApp-Copilot", href: "/whatsapp" },
-          { label: "Vergleich", href: "/compare" },
           { label: "Preise", href: "/pricing" },
           { label: "Download", href: "/download" },
         ],
