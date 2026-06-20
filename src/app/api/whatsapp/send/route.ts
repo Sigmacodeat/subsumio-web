@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { sendWhatsAppText, sendWhatsAppTemplate, sendWhatsAppInteractive, sendWhatsAppMedia } from "@/lib/whatsapp/send";
 import { sendWhatsAppFlow } from "@/lib/whatsapp/flow-send";
-import { loadAllowedSenders, resolveSender } from "@/lib/whatsapp/verify";
+import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/verify";
+import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
 import { normalizePhone } from "@/lib/whatsapp/types";
 
 const sendSchema = z.object({
@@ -70,7 +71,7 @@ export const POST = createHandler(
       details: { to: body.to.slice(-4), type: body.type, sentBy: ctx.user.email },
     }),
   },
-  async (_ctx, body, _query, _req) => {
+  async (ctx, body, _query, _req) => {
     const token = process.env.WHATSAPP_ACCESS_TOKEN;
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
     if (!token || !phoneNumberId) {
@@ -83,8 +84,14 @@ export const POST = createHandler(
     }
 
     const normalizedTo = normalizePhone(body.to);
-    const sender = resolveSender(normalizedTo);
-    if (!sender) {
+    const envSender = resolveSender(normalizedTo);
+    const storedIdentity = await getWhatsAppIdentityStore().getByPhoneHash(phoneHash(normalizedTo)).catch(() => null);
+    const storedAllowed = Boolean(
+      storedIdentity &&
+      storedIdentity.status === "active" &&
+      storedIdentity.orgId === (ctx.user.orgId || ctx.brainId)
+    );
+    if (!envSender && !storedAllowed) {
       return apiError("recipient_not_allowed", "Empfänger ist nicht in der Liste der erlaubten WhatsApp-Teilnehmer", 403);
     }
 
@@ -138,4 +145,3 @@ export const POST = createHandler(
     }
   },
 );
-

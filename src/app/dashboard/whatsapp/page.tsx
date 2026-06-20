@@ -31,6 +31,17 @@ interface WhatsAppStatus {
   mediaMaxBytes: number;
   blobConfigured: boolean;
   allowedSenders: Array<{ brainId: string; userId?: string; name?: string; role?: string; phoneLast4: string }>;
+  identities: Array<{
+    id: string;
+    brainId: string;
+    userId?: string;
+    name?: string;
+    role?: string;
+    status: string;
+    verifiedAt: string | null;
+    phoneHash: string;
+    phoneLast4: string;
+  }>;
   webhookUrl: string;
 }
 
@@ -50,34 +61,65 @@ export default function WhatsAppDashboardPage() {
   const [documentRequests, setDocumentRequests] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [phone, setPhone] = useState("");
+  const [identityName, setIdentityName] = useState("");
+  const [identityRole, setIdentityRole] = useState<"lawyer" | "assistant" | "client" | "intake">("lawyer");
+  const [savingIdentity, setSavingIdentity] = useState(false);
+
+  async function reload() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statusRes, eventPages, approvalPages, intakePages, requestPages] = await Promise.all([
+        api.whatsapp.status().catch(() => null),
+        api.brain.listPages({ type: "conversation_event", limit: 100 }).catch(() => []),
+        api.brain.listPages({ type: "agent_action", limit: 100 }).catch(() => []),
+        api.brain.listPages({ type: "intake_request", limit: 100 }).catch(() => []),
+        api.brain.listPages({ type: "document_request", limit: 100 }).catch(() => []),
+      ]);
+      setStatus(statusRes);
+      setEvents(eventPages.filter((page) => front(page).channel === "whatsapp"));
+      setApprovals(approvalPages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp")));
+      setIntakes(intakePages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp") || front(page).source === "whatsapp"));
+      setDocumentRequests(requestPages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp") || front(page).channel === "whatsapp"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "WhatsApp-Status konnte nicht geladen werden.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [statusRes, eventPages, approvalPages, intakePages, requestPages] = await Promise.all([
-          api.whatsapp.status().catch(() => null),
-          api.brain.listPages({ type: "conversation_event", limit: 100 }).catch(() => []),
-          api.brain.listPages({ type: "agent_action", limit: 100 }).catch(() => []),
-          api.brain.listPages({ type: "intake_request", limit: 100 }).catch(() => []),
-          api.brain.listPages({ type: "document_request", limit: 100 }).catch(() => []),
-        ]);
-        if (cancelled) return;
-        setStatus(statusRes);
-        setEvents(eventPages.filter((page) => front(page).channel === "whatsapp"));
-        setApprovals(approvalPages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp")));
-        setIntakes(intakePages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp") || front(page).source === "whatsapp"));
-        setDocumentRequests(requestPages.filter((page) => text(front(page).source_event_slug).includes("legal/conversations/whatsapp") || front(page).channel === "whatsapp"));
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "WhatsApp-Status konnte nicht geladen werden.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      await reload();
+      if (cancelled) return;
     })();
     return () => { cancelled = true; };
   }, []);
+
+  async function addIdentity() {
+    if (!phone.trim()) return;
+    setSavingIdentity(true);
+    setError(null);
+    try {
+      await api.whatsapp.createIdentity({
+        phone: phone.trim(),
+        name: identityName.trim() || undefined,
+        role: identityRole,
+        status: "active",
+        matter_scope: "all",
+      });
+      setPhone("");
+      setIdentityName("");
+      setIdentityRole("lawyer");
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "WhatsApp-Nummer konnte nicht gespeichert werden.");
+    } finally {
+      setSavingIdentity(false);
+    }
+  }
 
   const pendingApprovals = useMemo(
     () => approvals.filter((page) => front(page).status === "pending").length,
@@ -139,6 +181,77 @@ export default function WhatsAppDashboardPage() {
               value={String(pendingApprovals)}
               text="Mandantenkommunikation und Aktionen sicher ausführen"
             />
+          </div>
+
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-emerald-600" />
+              <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">WhatsApp-Nummern</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_160px_auto] gap-2">
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+49 170 1234567"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              />
+              <input
+                value={identityName}
+                onChange={(e) => setIdentityName(e.target.value)}
+                placeholder="Name"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              />
+              <select
+                value={identityRole}
+                onChange={(e) => setIdentityRole(e.target.value as typeof identityRole)}
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              >
+                <option value="lawyer">Anwalt</option>
+                <option value="assistant">Assistenz</option>
+                <option value="client">Mandant</option>
+                <option value="intake">Intake</option>
+              </select>
+              <button
+                onClick={() => void addIdentity()}
+                disabled={savingIdentity || !phone.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-lg brand-bg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {savingIdentity ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                Aktivieren
+              </button>
+            </div>
+            {status?.identities?.length ? (
+              <div className="space-y-2">
+                {status.identities.map((identity) => (
+                  <div key={identity.id} className="flex items-center justify-between gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs">
+                    <div className="min-w-0">
+                      <div className="text-[color:var(--ds-text)] font-medium truncate">
+                        {identity.name || "WhatsApp Identity"} · {identity.phoneLast4 ? `****${identity.phoneLast4}` : identity.phoneHash.slice(0, 10)}
+                      </div>
+                      <div className="text-[color:var(--ds-text-muted)]">
+                        {identity.role} · {identity.status} · {identity.verifiedAt ? "verifiziert" : "nicht verifiziert"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => void api.whatsapp.updateIdentity({ id: identity.id, status: identity.status === "active" ? "suspended" : "active" }).then(() => reload())}
+                        className="rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                      >
+                        {identity.status === "active" ? "Sperren" : "Aktivieren"}
+                      </button>
+                      <button
+                        onClick={() => void api.whatsapp.deleteIdentity(identity.id).then(() => reload())}
+                        className="rounded-md border border-red-500/20 px-2 py-1 text-red-700"
+                      >
+                        Löschen
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-amber-600">Noch keine WhatsApp-Nummern im sicheren Identity Store.</p>
+            )}
           </div>
 
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 space-y-4">

@@ -57,7 +57,7 @@ export const GET = createHandler(
 
 export const POST = createHandler(
   {
-    action: "settings.update",
+    action: "settings.write",
     rateTier: "standard",
     body: identityPostSchema,
     audit: (ctx, body) => ({
@@ -99,7 +99,7 @@ export const POST = createHandler(
 
 export const PATCH = createHandler(
   {
-    action: "settings.update",
+    action: "settings.write",
     rateTier: "standard",
     body: identityPatchSchema,
     audit: (ctx, body) => ({
@@ -127,7 +127,7 @@ export const PATCH = createHandler(
 
 export const DELETE = createHandler(
   {
-    action: "settings.update",
+    action: "settings.write",
     rateTier: "standard",
     body: identityDeleteSchema,
     audit: (ctx, body) => ({
