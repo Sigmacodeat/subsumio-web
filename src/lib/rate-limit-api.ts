@@ -9,7 +9,7 @@
  * Verwendet denselben Upstash/Memory-Backend wie auth/rate-limit.ts.
  */
 
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { hit } from "@/lib/auth/rate-limit";
 import type { NextRequest } from "next/server";
 
 export type RateTier = "standard" | "heavy" | "search";
@@ -26,7 +26,7 @@ const TIER_MAX: Record<RateTier, { max: number; windowMs: number }> = {
 export async function checkApiRate(
   userId: string,
   tier: RateTier,
-  req?: NextRequest,
+  _req?: NextRequest,
 ): Promise<{ ok: boolean; retryAfterSeconds: number }> {
   const { max, windowMs } = TIER_MAX[tier];
   const key = `api:${tier}:${userId}`;

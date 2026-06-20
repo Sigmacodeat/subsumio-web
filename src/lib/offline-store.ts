@@ -4,10 +4,11 @@
  * Bei fehlender Internet-Verbindung → Fallback auf gecachte Daten.
  */
 
-const DB_NAME = "sigmabrain-offline";
-const DB_VERSION = 2;
+const DB_NAME = "subsumio-offline";
+const DB_VERSION = 3;
 const STORE_NAME = "pages";
 const MUTATION_STORE = "mutations";
+const CHAT_STORE = "chat_history";
 
 interface CacheEntry<T> {
   key: string;
@@ -53,9 +54,16 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(MUTATION_STORE)) {
         db.createObjectStore(MUTATION_STORE, { keyPath: "id", autoIncrement: true });
       }
+      if (!db.objectStoreNames.contains(CHAT_STORE)) {
+        db.createObjectStore(CHAT_STORE, { keyPath: "id" });
+      }
       // v1 → v2 migration: create mutations store
       if (event.oldVersion < 2 && !db.objectStoreNames.contains(MUTATION_STORE)) {
         db.createObjectStore(MUTATION_STORE, { keyPath: "id", autoIncrement: true });
+      }
+      // v2 → v3 migration: create chat_history store
+      if (event.oldVersion < 3 && !db.objectStoreNames.contains(CHAT_STORE)) {
+        db.createObjectStore(CHAT_STORE, { keyPath: "id" });
       }
     };
   });
@@ -124,6 +132,7 @@ export const OFFLINE_KEYS = {
   research: "dashboard:research",
   notifications: "dashboard:notifications",
   settings: "dashboard:settings",
+  chatHistory: "dashboard:chat-history",
 } as const;
 
 // --- Mutation Queue ---
@@ -186,5 +195,60 @@ export async function clearMutations(): Promise<void> {
     });
   } catch (e) {
     report(e, "clearMutations");
+  }
+}
+
+// --- Chat History ---
+
+export interface ChatHistoryEntry {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  citations?: Array<{ slug: string; title: string }>;
+  attachments?: Array<{ name: string; slug: string }>;
+}
+
+export async function saveChatMessage(msg: ChatHistoryEntry): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(CHAT_STORE, "readwrite");
+    tx.objectStore(CHAT_STORE).put(msg);
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    report(e, "saveChatMessage");
+  }
+}
+
+export async function loadChatHistory(): Promise<ChatHistoryEntry[]> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(CHAT_STORE, "readonly");
+    const req = tx.objectStore(CHAT_STORE).getAll();
+    const entries = await new Promise<ChatHistoryEntry[]>((resolve) => {
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+    return entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  } catch (e) {
+    report(e, "loadChatHistory");
+    return [];
+  }
+}
+
+export async function clearChatHistory(): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(CHAT_STORE, "readwrite");
+    tx.objectStore(CHAT_STORE).clear();
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (e) {
+    report(e, "clearChatHistory");
   }
 }

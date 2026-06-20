@@ -28,7 +28,19 @@ import {
   type DocSection,
 } from "./llms-config";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const scriptDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// Fork-friendly resolution: some files (AGENTS.md, CLAUDE.md, README.md, etc.)
+// live at the parent repo root when gbrain is a subdirectory. Check server/ first,
+// then fall back to the parent directory.
+function resolveRepoPath(path: string): string {
+  const local = join(scriptDir, path);
+  if (existsSync(local)) return local;
+  const parent = join(scriptDir, "..", path);
+  if (existsSync(parent)) return parent;
+  // Return local path for the error message (existsSync will be false).
+  return local;
+}
+const repoRoot = scriptDir;
 
 function urlFor(entry: DocEntry): string {
   return `${PROJECT.rawBaseUrl}/${entry.path}`;
@@ -92,7 +104,7 @@ function renderLlmsFullTxt(): { content: string; sizes: Array<{ path: string; by
       if (entry.includeInFull === false) continue;
       if (isDirectoryPath(entry.path)) continue;
 
-      const absPath = join(repoRoot, entry.path);
+      const absPath = resolveRepoPath(entry.path);
       if (!existsSync(absPath)) {
         // build-llms won't silently skip — surface the problem. Test case 1
         // catches this too, but fail fast for manual runs.
@@ -122,7 +134,7 @@ function renderLlmsFullTxt(): { content: string; sizes: Array<{ path: string; by
 function validateConfig(): void {
   for (const section of SECTIONS) {
     for (const entry of section.entries) {
-      const absPath = join(repoRoot, entry.path);
+      const absPath = resolveRepoPath(entry.path);
       if (!existsSync(absPath)) {
         throw new Error(
           `llms-config references missing path: ${entry.path}`,
@@ -157,8 +169,8 @@ export function buildLlmsFiles(): {
 function main(): void {
   const { llmsTxt, llmsFullTxt, sizes } = buildLlmsFiles();
 
-  const llmsPath = join(repoRoot, "llms.txt");
-  const llmsFullPath = join(repoRoot, "llms-full.txt");
+  const llmsPath = resolveRepoPath("llms.txt");
+  const llmsFullPath = resolveRepoPath("llms-full.txt");
 
   writeFileSync(llmsPath, llmsTxt);
   writeFileSync(llmsFullPath, llmsFullTxt);

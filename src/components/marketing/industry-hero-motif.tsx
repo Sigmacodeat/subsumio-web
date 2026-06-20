@@ -11,26 +11,13 @@
 import { motion } from "framer-motion";
 import {
   Scale, Landmark, FileText, Gavel, Stamp, CalendarClock,
-  Calculator, Percent, Receipt, FileSpreadsheet, Euro,
-  ShieldCheck, ShieldAlert, ClipboardCheck, FileCheck, Lock,
-  Umbrella, HeartPulse, Car, Building2,
-  Home, KeyRound, MapPin, Ruler,
-  TrendingUp, Rocket, Network, Handshake, LineChart, Gem,
-  Lightbulb, Presentation, Target, Puzzle, Users, BarChart3,
-  UserSearch, Star, Brain, Briefcase,
+  Brain, Network,
   type LucideIcon,
 } from "lucide-react";
 
-// 6 domain glyphs per industry — distinct character, same layout.
+// 6 domain glyphs for the legal vertical — Subsumio is legal-only.
 const MOTIF: Record<string, LucideIcon[]> = {
   legal: [Scale, Landmark, FileText, Gavel, Stamp, CalendarClock],
-  tax: [Calculator, Percent, Receipt, FileSpreadsheet, Landmark, Euro],
-  compliance: [ShieldCheck, ShieldAlert, ClipboardCheck, FileCheck, Scale, Lock],
-  insurance: [Umbrella, ShieldCheck, FileText, HeartPulse, Car, Building2],
-  realestate: [Building2, Home, KeyRound, MapPin, FileText, Ruler],
-  vc: [TrendingUp, Rocket, Network, Handshake, LineChart, Gem],
-  consulting: [Lightbulb, Presentation, Target, Puzzle, Users, BarChart3],
-  recruiting: [Users, UserSearch, Network, Briefcase, Star, Handshake],
 };
 
 // Node positions (% of the container) — a loose, asymmetric constellation.
@@ -47,7 +34,7 @@ export default function IndustryHeroMotif({
   industry: string;
   className?: string;
 }) {
-  const icons = MOTIF[industry] ?? [Brain, Network, FileText, Landmark, ShieldCheck, Users];
+  const icons = MOTIF[industry] ?? [Brain, Network, FileText, Landmark, Gavel, Stamp];
 
   return (
     <div className={`pointer-events-none select-none ${className}`} aria-hidden>

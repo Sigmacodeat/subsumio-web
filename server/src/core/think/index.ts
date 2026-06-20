@@ -131,6 +131,14 @@ export interface RunThinkOpts {
    */
   searchMode?: 'conservative' | 'balanced' | 'tokenmax';
   /**
+   * v0.43 — when true, activates legal-aware system prompt with statute
+   * citation discipline, jurisdiction awareness, and attorney review
+   * disclaimers. Auto-detected when gathered pages contain legal page types
+   * (legal_case, legal_entity, statute sections). Explicit opt-in via the
+   * MCP `think` op's `legal_mode` param.
+   */
+  legalMode?: boolean;
+  /**
    * When set, called with each text delta from the LLM as it streams.
    * Enables real-time token delivery to SSE clients. The final answer is
    * still parsed from the accumulated text after the stream completes, so
@@ -436,6 +444,18 @@ export async function runThink(
 
   // SYNTHESIZE
   const intent = inferIntent(opts.question, opts.anchor);
+  // v0.43: Auto-detect legal mode from gathered page types. If any gathered
+  // page has a type starting with 'legal_' or is a statute section (type 'law'
+  // with slug starting 'legal/statutes/'), activate legal-aware prompt.
+  const autoLegalMode = gather.pages.some((p) => {
+    const page = p as unknown as Record<string, unknown>;
+    const pageType = typeof page.type === 'string' ? page.type : '';
+    const pageSlug = typeof page.slug === 'string' ? page.slug : '';
+    return pageType.startsWith('legal_') ||
+      (pageType === 'law' && pageSlug.startsWith('legal/statutes/')) ||
+      pageType === 'evidence';
+  });
+  const legalMode = opts.legalMode || autoLegalMode;
   const systemPrompt = buildThinkSystemPrompt({
     intent,
     ...(opts.anchor !== undefined ? { anchor: opts.anchor } : {}),
@@ -443,6 +463,7 @@ export async function runThink(
     ...(opts.until !== undefined ? { until: opts.until } : {}),
     willSave: opts.save,
     withCalibration: !!calibrationBlockOpts,
+    ...(legalMode ? { legalMode: true } : {}),
   });
   const userMessage = buildThinkUserMessage({
     question: opts.question,

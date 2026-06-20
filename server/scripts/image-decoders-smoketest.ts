@@ -58,7 +58,7 @@ async function decodeAvif(): Promise<DecodeResult> {
     const wasmModule = await WebAssembly.compile(wasmBytes);
     await initAvif(wasmModule);
     const buf = readFileSync(avifFixture);
-    const result = await avifDecode(buf);
+    const result = await avifDecode(new Uint8Array(buf) as unknown as ArrayBuffer);
     if (!result || !result.data || result.data.byteLength === 0) {
       return { ok: false, error: 'avif decode returned empty pixel buffer' };
     }

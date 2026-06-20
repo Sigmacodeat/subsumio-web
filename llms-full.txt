@@ -1317,6 +1317,10 @@ This is the dispatcher. Skills are the implementation. **Read the skill file bef
 | "watch this video", "process this YouTube link", "save this podcast", "process this book", "summarize this book", "PDF book", "what's in this screenshot", "check out this repo" | `skills/media-ingest/SKILL.md` |
 | "ingest this document", "process this PDF", "process this Word document", "ingest this contract", "ingest this invoice", "ingest this email", "scanned PDF", "OCR this document", "upload and process", "document to brain", "bulk ingest documents", "import these files" | `skills/document-ingest/SKILL.md` |
 | "extract deadlines", "find deadlines", "Fristen extrahieren", "deadline audit", "upcoming deadlines", "what deadlines are in this document" | `skills/deadline-extract/SKILL.md` (chains after document-ingest/meeting-ingestion on deadline-bearing content) |
+| "calculate deadline", "Frist berechnen", "Fristentemplate", "deadline template", "Wiedervorlage", "Erinnerung erstellen", "Einspruchsfrist", "Berufungsfrist", "Beschwerdefrist" | `skills/deadline-templates/SKILL.md` |
+| "Rechtsstrategie", "Strategie empfehlen", "Prozessstrategie", "case strategy", "Taktik empfehlen", "Wie gewinne ich den Prozess" | `skills/legal-strategie/SKILL.md` |
+| "Beweismittel", "Beweislage", "Beweisanalyse", "Welche Beweise fehlen", "Beweiswürdigung", "evidence board", "Beweiskette" | `skills/legal-beweislage/SKILL.md` |
+| "Normen", "Gesetze", "Paragraf", "Gesetzesauslegung", "Rechtsgrundlage", "legal provision", "statute interpretation", "welches Gesetz gilt" | `skills/legal-normen/SKILL.md` |
 | Meeting transcript received | `skills/meeting-ingestion/SKILL.md` |
 | Generic "ingest this" (auto-routes to above) | `skills/ingest/SKILL.md` |
 
@@ -1352,6 +1356,9 @@ This is the dispatcher. Skills are the implementation. **Read the skill file bef
 | Webhook setup, external event processing | `skills/webhook-transforms/SKILL.md` |
 | "Spawn agent", "background task", "parallel tasks", "steer agent", "pause/resume agent", "gbrain jobs submit", "submit a gbrain job", "submit a shell job", "shell job" | `skills/minion-orchestrator/SKILL.md` |
 | "present options", "ask before proceeding", "choice gate", "user decision" | `skills/ask-user/SKILL.md` |
+| "project status", "status update", "where are we on", "what is the status of", "Projektstatus", "Statusbericht", "Fortschritt" | `skills/pm-status/SKILL.md` |
+| "create a project task", "case task", "project task", "project action items", "task dependency", "mark project task done", "tasks for project", "Aufgabe für Projekt", "Fallaufgabe", "Abhängigkeit erstellen" | `skills/pm-task/SKILL.md` |
+| "onboard project", "new project", "set up project", "start project", "Projekt anlegen", "Projekt einrichten", "Neues Projekt", "Projekt initialisieren" | `skills/project-onboard/SKILL.md` |
 
 ## Setup & migration
 
@@ -1407,6 +1414,37 @@ These apply to ALL brain-writing skills:
 | "personalized version of this book", "mirror this book", "two-column book analysis", "apply this book to my life", "how does this book apply to me" | `skills/book-mirror/SKILL.md` |
 | "enrich this article", "enrich brain pages", "batch enrich", "make brain pages useful" | `skills/article-enrichment/SKILL.md` |
 | "strategic reading", "read this through the lens of", "apply this to my problem", "what can I learn from this about", "extract a playbook from" | `skills/strategic-reading/SKILL.md` |
+| "legal brain", "create a case", "new legal case", "analyze opponent", "assess chances", "legal strategy", "Rechtsfall", "Gegneranalyse", "Chancenbewertung", "Rechtsstrategie" | `skills/legal-brain/SKILL.md` |
+| "subsumiere", "subsumption", "prüfe den Sachverhalt", "Tatbestand prüfen", "Rechtsfolge", "rechtliche Einordnung", "Anspruchsgrundlage", "Gutachtenstil", "legal analysis", "does this violate", "apply the law" | `skills/legal-subsumption/SKILL.md` |
+| "Vertrag prüfen", "Vertragsanalyse", "AGB prüfen", "contract review", "NDA prüfen", "Klauseln prüfen", "analyze contract", "red flags im Vertrag", "Haftungsklausel", "Gewährleistung" | `skills/contract-analysis/SKILL.md` |
+| "Präzedenzfall", "Leitentscheidung", "BGH-Urteil", "OGH-Urteil", "was hat der BGH entschieden", "Rechtsprechung zu", "Urteile zu", "case law", "find precedent", "search precedent", "BFH-Urteil", "EuGH-Entscheidung", "Judikatur" | `skills/precedent-finder/SKILL.md` |
+| "AML-Prüfung", "KYC-Check", "Sanktionslistenprüfung", "PEP-Prüfung", "Geldwäscheprüfung", "aml screening", "sanction screening", "screen this entity", "Mandantenprüfung GwG", "due diligence compliance" | `skills/aml-screener/SKILL.md` |
+| "DSGVO", "Datenschutz", "GDPR", "DSGVO-Check", "Datenschutzprüfung", "DSGVO-Konformität", "Datenverarbeitung prüfen", "privacy compliance", "data protection", "Verarbeitungsverzeichnis", "Datenschutz-Folgenabschätzung", "DSFA", "DPIA", "Datenschutzverletzung", "Breach notification" | `skills/dsgvo-compliance/SKILL.md` |
+| "DATEV Export", "DATEV", "Buchhaltungsexport", "Rechnung exportieren", "Zeiterfassung exportieren", "Kanzlei-Buchhaltung", "Abrechnungsexport", "billing export", "time tracking export", "accounting export", "Kostenstelle", "USt-IdNr", "Mandantenabrechnung" | `skills/datev-export/SKILL.md` |
+| "Kollisionsprüfung", "Interessenkonflikt", "Konflikt prüfen", "Mandantenkonflikt", "conflict of interest", "check conflict", "BRAO 43", "Gegner prüfen vor Mandat" | `skills/kollisionspruefung/SKILL.md` |
+| "Kostenrechner", "Gebühren berechnen", "RVG berechnen", "RATG", "Streitwert Gebühren", "Prozesskosten schätzen", "Anwaltskosten", "legal fee estimate", "Verfahrensgebühr", "Termingebühr" | `skills/cost-calculator/SKILL.md` |
+| "Schriftsatz", "erstelle Klage", "Klageschrift", "Klageerwiderung", "Berufungsbegründung", "draft brief", "write complaint", "Einspruch einlegen", "einstweilige Verfügung", "Abmahnung", "generate court filing", "Anwaltsschreiben" | `skills/brief-generator/SKILL.md` |
+| "Steuerbescheid", "Einspruch Finanzamt", "Betriebsprüfung", "Steuerberechnung", "Umsatzsteuer prüfen", "Einkommensteuer", "Körperschaftsteuer", "tax assessment", "tax appeal", "VAT ruling", "Vorsteuerabzug", "Steuererklärung prüfen", "AO Verjährung" | `skills/tax-ruling-lookup/SKILL.md` |
+| "steuerlich subsumieren", "Steuerfolge", "steuerliche Einordnung", "ist das steuerpflichtig", "ist das absetzbar", "Betriebsausgabe oder nicht", "Werbungskosten prüfen", "steuerbar oder steuerfrei", "tax subsumption", "is this taxable", "is this deductible", "tax treatment of" | `skills/steuer-subsumption/SKILL.md` |
+| "Steuergestaltung", "Steuer optimieren", "Steuern sparen", "Gestaltungsberatung", "Rechtsformwahl steuerlich", "Holding sinnvoll", "Thesaurieren oder ausschütten", "Umwandlung steuerlich", "tax structuring", "tax optimization", "tax planning", "Gestaltungsmissbrauch" | `skills/steuer-gestaltung/SKILL.md` |
+| "Umsatzsteuer prüfen", "USt-Behandlung", "Reverse Charge", "13b UStG", "innergemeinschaftliche Lieferung", "innergemeinschaftlicher Erwerb", "Leistungsort", "Vorsteuerabzug", "OSS Verfahren", "E-Rechnung Pflicht", "USt-IdNr prüfen", "VAT treatment", "VAT compliance", "place of supply" | `skills/umsatzsteuer-check/SKILL.md` |
+| "Police prüfen", "Vertrag prüfen Versicherung", "Deckung prüfen", "Versicherungsumfang", "Selbstbehalt", "Ausschlüsse prüfen", "Sublimit", "review policy", "policy review", "coverage check", "what does this policy cover", "exclusions" | `skills/policy-review/SKILL.md` |
+| "Schaden melden", "Schadenfall", "ist der Schaden gedeckt", "Schadenmeldung", "Schaden prüfen", "claim", "is this claim covered", "file a claim", "claim notification", "Schadenregulierung" | `skills/claims-assist/SKILL.md` |
+| "Deckungslücke", "Unterversicherung", "fehlende Versicherung", "was fehlt an Deckung", "Cross-Sell Versicherung", "Bedarfsanalyse", "coverage gap", "underinsured", "what coverage is missing", "insurance needs analysis" | `skills/coverage-gap-finder/SKILL.md` |
+| "AI Act Inventar", "KI-VO Einstufung", "EU AI Act", "Hochrisiko KI", "Annex III", "Art. 50 Kennzeichnung", "KI-System einstufen", "AI Act classification", "AI inventory", "high-risk AI", "AI Act obligations" | `skills/eu-ai-act-inventory/SKILL.md` |
+| "Kontrolle prüfen", "Kontrollwirksamkeit", "control effectiveness", "Wirksamkeit der Maßnahme", "ist die Kontrolle wirksam", "control testing", "Kontrolltest", "IKS prüfen", "effectiveness assessment", "Maßnahme bewerten" | `skills/control-effectiveness/SKILL.md` |
+| "Mietvertrag prüfen", "Lease prüfen", "Mietbedingungen", "Kündigungsfrist Miete", "Staffelmiete", "Indexmiete", "Schönheitsreparaturen", "review lease", "lease review", "break clause", "Mietvertrag analysieren" | `skills/lease-review/SKILL.md` |
+| "Rent Roll", "Mietaufstellung", "Mieterträge analysieren", "Leerstand", "WALT", "Mietvertragsablauf", "Portfolio Miete", "rent roll", "occupancy analysis", "lease expiry", "portfolio analysis" | `skills/rent-roll-analysis/SKILL.md` |
+| "Due Diligence Immobilie", "Ankaufsprüfung", "Immobilie kaufen prüfen", "Objektprüfung", "Grundbuch prüfen", "Lasten Immobilie", "property due diligence", "real estate due diligence", "acquisition checklist", "Transaktionsprüfung" | `skills/property-due-diligence/SKILL.md` |
+| "Deal Memo", "Investment Memo", "Beteiligungsvorlage", "deal memo", "investment memo", "write up this deal", "IC memo", "Investment Case" | `skills/deal-memo/SKILL.md` |
+| "Founder Update", "Meeting-Prep Founder", "was ist offen mit", "founder prep", "meeting prep", "what's open with", "before my call with", "catch me up on" | `skills/founder-tracker/SKILL.md` |
+| "Portfolio Review", "Portfolio Status", "welche Companies brauchen Aufmerksamkeit", "Reserven Follow-on", "portfolio review", "follow-on signals", "which companies need attention" | `skills/portfolio-review/SKILL.md` |
+| "haben wir das schon gemacht", "ähnliches Projekt", "Proposal Vorlage finden", "wiederverwendbare Assets", "have we done this before", "find similar project", "reusable proposal", "past work on" | `skills/proposal-finder/SKILL.md` |
+| "Projekt-Retro", "Post-Mortem", "Lessons Learned", "Projekt nachbereiten", "project retro", "post-mortem", "lessons learned", "capture learnings" | `skills/project-retro/SKILL.md` |
+| "Scope entwerfen", "Angebot Ansatz", "Vorgehen skizzieren", "SOW Entwurf", "Projektzuschnitt", "engagement scope", "draft an approach", "scope this engagement" | `skills/engagement-scoping/SKILL.md` |
+| "Kandidaten finden", "Matching Rolle", "wer passt auf die Position", "Shortlist erstellen", "candidate match", "who fits this role", "build a shortlist", "find candidates for" | `skills/candidate-match/SKILL.md` |
+| "Pipeline Review", "Suchstatus", "stehengebliebene Kandidaten", "Mandate Status Recruiting", "pipeline review", "search status", "stalled candidates", "time to fill" | `skills/pipeline-review/SKILL.md` |
+| "Kandidatenprofil", "Dossier erstellen", "Profil zusammenstellen", "Kandidaten-Steckbrief", "candidate dossier", "candidate profile", "write up this candidate", "submission profile" | `skills/candidate-dossier/SKILL.md` |
 | "concept synthesis", "synthesize my concepts", "find patterns across my notes", "build my intellectual map", "trace idea evolution" | `skills/concept-synthesis/SKILL.md` |
 | "idea lineage", "trace the lineage of this idea", "how my thinking about", "how has my thinking about", "what is my current version of", "show reversals in my thinking about", "where did this idea come from" | `skills/idea-lineage/SKILL.md` |
 | "perplexity research", "what's new about", "current state of", "web research", "what changed about" | `skills/perplexity-research/SKILL.md` |

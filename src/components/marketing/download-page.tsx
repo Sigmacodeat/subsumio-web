@@ -22,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SigmaMark } from "@/components/brand/logo";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
 import {
@@ -32,6 +32,8 @@ import {
   SectionHeading,
   FaqList,
 } from "./chrome";
+import { ScrollProgress } from "./motion-system";
+import BackToTop from "./back-to-top";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -74,8 +76,8 @@ function PhoneMockup({ lang }: { lang: Lang }) {
 
           {/* app header */}
           <div className="flex items-center gap-2 px-5 pt-4 pb-3">
-            <SigmaMark size={22} className="rounded-md" />
-            <span className="text-sm font-bold [color:var(--mk-text)]">Sigmabrain</span>
+            <SubsumioMark size={22} />
+            <span className="text-sm font-bold [color:var(--mk-text)]">Subsumio</span>
           </div>
 
           {/* search pill */}
@@ -119,7 +121,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.9, duration: 0.4 }}
-              className="text-[9px] text-amber-400/80 mt-2"
+              className="text-[9px] [color:var(--signal-amber)] opacity-80 mt-2"
             >
               {lang === "en" ? "⚠ Gap: Thu 2pm has no notes" : "⚠ Lücke: Do 14 Uhr ohne Notiz"}
             </motion.p>
@@ -159,7 +161,8 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+        <ScrollProgress />
         <MarketingBackground />
         <MarketingNav lang={lang} />
 
@@ -194,7 +197,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                     onClick={() => installEvent.prompt()}
                   >
                     <DownloadIcon size={18} />
-                    {lang === "en" ? "Install Sigmabrain now" : "Sigmabrain jetzt installieren"}
+                    {lang === "en" ? "Install Subsumio now" : "Subsumio jetzt installieren"}
                   </Button>
                 ) : (
                   <Link href={p(lang, "/signup")}>
@@ -227,7 +230,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ delay: idx * 0.08, duration: 0.3 }}
-                  className="p-7 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:border-[var(--brand-primary)]/40 hover:bg-[#0f0f20] hover:-translate-y-1 transition-all flex flex-col"
+                  className="p-7 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)] hover:-translate-y-1 transition-all flex flex-col"
                 >
                   <div className="w-12 h-12 rounded-xl bg-[var(--brand-primary)]/10 border border-[var(--brand-primary)]/20 flex items-center justify-center mb-5">
                     <Icon size={22} className="text-[var(--brand-primary)]" />
@@ -256,7 +259,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Store preview */}
-        <section className="relative z-10 py-20 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+        <section className="relative z-10 py-20 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl md:text-3xl font-black [color:var(--mk-text)] mb-4">{t.storesTitle}</h2>
             <p className="text-base [color:var(--mk-text-muted)] leading-relaxed mb-8">{t.storesSub}</p>
@@ -265,7 +268,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               {[
                 { icon: Bell, label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen" },
                 { icon: Fingerprint, label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung" },
-                { icon: Share2, label: lang === "en" ? "“Send to Sigmabrain”" : "„An Sigmabrain senden“" },
+                { icon: Share2, label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“" },
               ].map((f) => {
                 const Icon = f.icon;
                 return (
@@ -308,7 +311,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
 
         {/* CTA */}
         <section className="relative z-10 py-24 px-6 text-center max-w-3xl mx-auto border-t [border-color:var(--mk-border)]">
-          <SigmaMark size={64} className="mx-auto mb-8 rounded-[15px] glow-purple" />
+          <SubsumioMark size={64} className="mx-auto mb-8" />
           <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
           <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
@@ -319,6 +322,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
         </section>
 
         <MarketingFooter lang={lang} />
+        <BackToTop lang={lang} />
       </div>
     </MotionConfig>
   );

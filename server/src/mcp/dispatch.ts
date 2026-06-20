@@ -9,6 +9,7 @@
 import type { BrainEngine } from '../core/engine.ts';
 import { operations, OperationError } from '../core/operations.ts';
 import type { Operation, OperationContext, AuthInfo } from '../core/operations.ts';
+import { isEngineError } from '../core/engine-errors.ts';
 import { loadConfig } from '../core/config.ts';
 
 export interface ToolResult {
@@ -285,6 +286,13 @@ export async function dispatchToolCall(
   } catch (e: unknown) {
     if (e instanceof OperationError) {
       return { content: [{ type: 'text', text: JSON.stringify(e.toJSON(), null, 2) }], isError: true };
+    }
+    // EngineError subtypes — preserve kind for structured error handling.
+    if (isEngineError(e)) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: e.kind, message: e.message, fix: e.fix }, null, 2) }],
+        isError: true,
+      };
     }
     // Non-OperationError (uncaught throws) — wrap in the same shape so
     // every error response is JSON-parseable. The pre-v0.31 path emitted

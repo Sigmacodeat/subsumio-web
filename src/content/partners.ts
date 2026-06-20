@@ -34,12 +34,12 @@ export interface PartnersContent {
 
 export const PARTNERS: Record<Lang, PartnersContent> = {
   en: {
-    metaTitle: "Sigmabrain Partner Program — earn lifetime recurring commission",
-    metaDesc: "Recommend Sigmabrain and earn lifetime recurring commission. Affiliate, referral and certified implementation partner tracks.",
+    metaTitle: "Subsumio Partner Program — earn lifetime recurring commission",
+    metaDesc: "Recommend Subsumio and earn lifetime recurring commission. Affiliate, referral and certified implementation partner tracks.",
     badge: "Partner program",
     h1a: "Recommend the brain.",
     h1b: "Keep the commission.",
-    sub: "Three ways to earn with Sigmabrain — from a single shared link to a certified implementation practice. All built on one principle: you keep earning as long as your referrals keep paying.",
+    sub: "Three ways to earn with Subsumio — from a single shared link to a certified implementation practice. All built on one principle: you keep earning as long as your referrals keep paying.",
     tiers: [
       {
         id: "affiliate",
@@ -55,7 +55,7 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
           "Ready-made assets: demos, screenshots, comparison pages",
         ],
         cta: "Apply as affiliate",
-        href: "mailto:partners@sigmabrain.com?subject=Affiliate%20application",
+        href: "mailto:partners@subsum.eu?subject=Affiliate%20application",
         highlight: true,
       },
       {
@@ -78,15 +78,15 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         icon: "Handshake",
         name: "Certified partners",
         headline: "20% lifetime + your services revenue",
-        desc: "For consultants, fund-ops advisors, legal-tech integrators and IT firms who implement Sigmabrain for clients.",
+        desc: "For legal-tech integrators, IT firms and consultants who implement Subsumio for law firms.",
         points: [
           "20% revenue share for the lifetime of every client you bring",
           "You keep 100% of your implementation and consulting fees",
-          "“Sigmabrain Certified Partner” status after 3 live clients",
+          "“Subsumio Certified Partner” status after 3 live clients",
           "Direct line to our engineering for integrations",
         ],
         cta: "Apply as partner",
-        href: "mailto:partners@sigmabrain.com?subject=Certified%20partner%20application",
+        href: "mailto:partners@subsum.eu?subject=Certified%20partner%20application",
       },
     ],
     calcTitle: "What lifetime recurring actually means",
@@ -112,12 +112,12 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
     ctaButton: "Apply now",
   },
   de: {
-    metaTitle: "Sigmabrain Partnerprogramm — lebenslang wiederkehrend verdienen",
-    metaDesc: "Sigmabrain empfehlen und lebenslang wiederkehrende Provision verdienen. Affiliate-, Referral- und zertifizierte Implementierungspartner-Tracks.",
+    metaTitle: "Subsumio Partnerprogramm — lebenslang wiederkehrend verdienen",
+    metaDesc: "Subsumio empfehlen und lebenslang wiederkehrende Provision verdienen. Affiliate-, Referral- und zertifizierte Implementierungspartner-Tracks.",
     badge: "Partnerprogramm",
     h1a: "Empfiehl das Brain.",
     h1b: "Behalte die Provision.",
-    sub: "Drei Wege, mit Sigmabrain zu verdienen — vom geteilten Link bis zur zertifizierten Implementierungs-Practice. Alle nach einem Prinzip: Du verdienst weiter, solange deine Empfehlungen zahlen.",
+    sub: "Drei Wege, mit Subsumio zu verdienen — vom geteilten Link bis zur zertifizierten Implementierungs-Practice. Alle nach einem Prinzip: Du verdienst weiter, solange deine Empfehlungen zahlen.",
     tiers: [
       {
         id: "affiliate",
@@ -133,7 +133,7 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
           "Fertige Assets: Demos, Screenshots, Vergleichsseiten",
         ],
         cta: "Als Affiliate bewerben",
-        href: "mailto:partners@sigmabrain.com?subject=Affiliate-Bewerbung",
+        href: "mailto:partners@subsum.eu?subject=Affiliate-Bewerbung",
         highlight: true,
       },
       {
@@ -156,15 +156,15 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         icon: "Handshake",
         name: "Zertifizierte Partner",
         headline: "20 % lifetime + euer Dienstleistungsumsatz",
-        desc: "Für Berater, Fund-Ops-Spezialisten, Legal-Tech-Integratoren und IT-Häuser, die Sigmabrain bei Kunden implementieren.",
+        desc: "Für Legal-Tech-Integratoren, IT-Häuser und Berater, die Subsumio bei Kanzleien implementieren.",
         points: [
           "20 % Revenue-Share — lebenslang für jeden gebrachten Kunden",
           "100 % eurer Implementierungs- und Beratungshonorare bleiben bei euch",
-          "Status „Sigmabrain Certified Partner“ ab 3 Live-Kunden",
+          "Status „Subsumio Certified Partner“ ab 3 Live-Kunden",
           "Direkter Draht zu unserem Engineering für Integrationen",
         ],
         cta: "Als Partner bewerben",
-        href: "mailto:partners@sigmabrain.com?subject=Partner-Bewerbung",
+        href: "mailto:partners@subsum.eu?subject=Partner-Bewerbung",
       },
     ],
     calcTitle: "Was lebenslang wiederkehrend wirklich heißt",

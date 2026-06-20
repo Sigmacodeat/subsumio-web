@@ -12,6 +12,9 @@
  */
 
 import { getStore, type User } from "@/lib/auth/store";
+import { withRetry } from "@/lib/retry";
+import { DocusignError, AuthError } from "@/lib/errors";
+import { createIdempotencyStore } from "@/lib/idempotency";
 
 const BASE = process.env.DOCUSIGN_BASE_URL || "https://demo.docusign.net/restapi/v2.1";
 const IK = process.env.DOCUSIGN_INTEGRATION_KEY || "";
@@ -34,6 +37,7 @@ export interface EnvelopeRequest {
     }>;
   };
   status: "sent" | "created";
+  metadata?: Record<string, string>;
 }
 
 export interface EnvelopeSummary {
@@ -69,18 +73,18 @@ async function getServiceAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
     return cachedToken.token;
   }
-  if (!IK || !SECRET) throw new Error("Docusign nicht konfiguriert: DOCUSIGN_INTEGRATION_KEY / SECRET_KEY fehlen.");
+  if (!IK || !SECRET) throw new DocusignError("Docusign nicht konfiguriert: DOCUSIGN_INTEGRATION_KEY / SECRET_KEY fehlen.", { code: "DOCUSIGN_NOT_CONFIGURED" });
 
-  const res = await fetch(`${BASE.replace(/restapi.*/, "oauth/token")}`, {
+  const res = await withRetry(async () => fetch(`${BASE.replace(/restapi.*/, "oauth/token")}`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion: await buildJwt(),
     }),
-  });
+  }), { maxRetries: 2, baseDelayMs: 1000 });
   const data = (await res.json()) as TokenResponse;
-  if (!res.ok) throw new Error(`Docusign Auth fehlgeschlagen: ${JSON.stringify(data)}`);
+  if (!res.ok) throw new DocusignError(`Docusign Auth fehlgeschlagen: ${JSON.stringify(data)}`, { code: "DOCUSIGN_AUTH_FAILED", details: { response: data } });
   cachedToken = { token: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 };
   return cachedToken.token;
 }
@@ -88,7 +92,7 @@ async function getServiceAccessToken(): Promise<string> {
 async function buildJwt(): Promise<string> {
   const privateKeyB64 = process.env.DOCUSIGN_PRIVATE_KEY;
   if (!privateKeyB64) {
-    throw new Error("Docusign JWT requires DOCUSIGN_PRIVATE_KEY (base64-encoded PEM).");
+    throw new DocusignError("Docusign JWT requires DOCUSIGN_PRIVATE_KEY (base64-encoded PEM).", { code: "DOCUSIGN_PRIVATE_KEY_MISSING" });
   }
   const privateKeyPem = Buffer.from(privateKeyB64, "base64").toString("utf-8");
 
@@ -159,17 +163,17 @@ async function refreshUserToken(refreshToken: string): Promise<TokenResponse> {
     }),
   });
   const data = (await res.json()) as TokenResponse & { error?: string };
-  if (!res.ok) throw new Error(data.error || `Docusign refresh failed: ${JSON.stringify(data)}`);
+  if (!res.ok) throw new DocusignError(data.error || `Docusign refresh failed: ${JSON.stringify(data)}`, { code: "DOCUSIGN_REFRESH_FAILED", details: { response: data } });
   return data;
 }
 
 export async function getUserAccessToken(userId: string): Promise<string> {
   const store = getStore();
   const user = await store.getById(userId);
-  if (!user) throw new Error("user_not_found");
+  if (!user) throw new AuthError("user_not_found", { code: "USER_NOT_FOUND", details: { userId } });
 
   const conn = getUserDocusign(user);
-  if (!conn) throw new Error("docusign_not_connected");
+  if (!conn) throw new DocusignError("docusign_not_connected", { code: "DOCUSIGN_NOT_CONNECTED", details: { userId } });
 
   const expiresAt = new Date(conn.expiresAt).getTime();
   if (expiresAt > Date.now() + 60_000) {
@@ -193,7 +197,7 @@ export async function getUserAccessToken(userId: string): Promise<string> {
     }
   }
 
-  throw new Error("docusign_token_expired");
+  throw new DocusignError("docusign_token_expired", { code: "DOCUSIGN_TOKEN_EXPIRED", details: { userId } });
 }
 
 export async function disconnectUser(userId: string): Promise<void> {
@@ -211,11 +215,11 @@ export async function disconnectUser(userId: string): Promise<void> {
 
 export async function createEnvelope(req: EnvelopeRequest): Promise<{ envelopeId: string; status: string }> {
   const token = await getServiceAccessToken();
-  const res = await fetch(`${BASE}/accounts/${ACCOUNT}/envelopes`, {
+  const res = await withRetry(() => fetch(`${BASE}/accounts/${ACCOUNT}/envelopes`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(req),
-  });
+  }));
   const data = (await res.json()) as { envelopeId: string; status: string; errorCode?: string; message?: string };
   if (!res.ok) throw new Error(data.message || `Docusign Envelope fehlgeschlagen: ${data.errorCode}`);
   return { envelopeId: data.envelopeId, status: data.status };
@@ -223,11 +227,11 @@ export async function createEnvelope(req: EnvelopeRequest): Promise<{ envelopeId
 
 export async function createEnvelopeAsUser(userId: string, req: EnvelopeRequest): Promise<{ envelopeId: string; status: string }> {
   const token = await getUserAccessToken(userId);
-  const res = await fetch(`${BASE}/accounts/${ACCOUNT}/envelopes`, {
+  const res = await withRetry(() => fetch(`${BASE}/accounts/${ACCOUNT}/envelopes`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(req),
-  });
+  }));
   const data = (await res.json()) as { envelopeId: string; status: string; errorCode?: string; message?: string };
   if (!res.ok) throw new Error(data.message || `Docusign Envelope fehlgeschlagen: ${data.errorCode}`);
   return { envelopeId: data.envelopeId, status: data.status };
@@ -235,46 +239,48 @@ export async function createEnvelopeAsUser(userId: string, req: EnvelopeRequest)
 
 export async function getEnvelopeStatus(envelopeId: string): Promise<{ status: string; signers: Array<{ status: string; signedDateTime?: string }> }> {
   const token = await getServiceAccessToken();
-  const res = await fetch(`${BASE}/accounts/${ACCOUNT}/envelopes/${envelopeId}`, {
+  const res = await withRetry(() => fetch(`${BASE}/accounts/${ACCOUNT}/envelopes/${encodeURIComponent(envelopeId)}`, {
     headers: { Authorization: `Bearer ${token}` },
-  });
+  }));
   const data = (await res.json()) as { status: string; recipients?: { signers: Array<{ status: string; signedDateTime?: string }> } };
   return { status: data.status, signers: data.recipients?.signers ?? [] };
 }
 
-export async function listEnvelopes(userId: string, opts?: { fromDate?: string; status?: string; limit?: number }): Promise<EnvelopeSummary[]> {
+export async function listEnvelopes(userId: string, opts?: { fromDate?: string; status?: string; limit?: number; page?: number }): Promise<EnvelopeSummary[]> {
   const token = await getUserAccessToken(userId);
+  const limit = opts?.limit ?? 50;
+  const page = opts?.page ?? 1;
   const url = new URL(`${BASE}/accounts/${ACCOUNT}/envelopes`);
   if (opts?.fromDate) url.searchParams.set("from_date", opts.fromDate);
   if (opts?.status) url.searchParams.set("status", opts.status);
-  if (opts?.limit) url.searchParams.set("count", String(opts.limit));
+  url.searchParams.set("count", String(Math.min(limit, 100)));
+  url.searchParams.set("start_position", String((page - 1) * limit));
 
-  const res = await fetch(url.toString(), {
+  const res = await withRetry(() => fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = (await res.json()) as { envelopes?: EnvelopeSummary[]; errorCode?: string; message?: string };
-  if (!res.ok) throw new Error(data.message || `Docusign List failed: ${data.errorCode}`);
+  }));
+  const data = (await res.json()) as { envelopes?: EnvelopeSummary[]; errorCode?: string; message?: string; previousUri?: string; nextUri?: string };
+  if (!res.ok) throw new DocusignError(data.message || `Docusign List failed: ${data.errorCode}`, { code: "DOCUSIGN_LIST_FAILED", details: { errorCode: data.errorCode, response: data } });
   return data.envelopes ?? [];
 }
 
 // ---------------------------------------------------------------------------
 // Idempotency Tracking (Webhook Deduplication)
+// Postgres-backed in production, in-memory fallback for dev mode.
 // ---------------------------------------------------------------------------
 
-const processedWebhookIds = new Set<string>();
-const WEBHOOK_ID_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const docusignIdempotency = createIdempotencyStore(
+  "subsumio_docusign_events",
+  ["envelope_id text", "event_type text"],
+  { maxInMemory: 10_000 },
+);
 
-export function isWebhookProcessed(eventId: string): boolean {
-  return processedWebhookIds.has(eventId);
+export async function isWebhookProcessed(eventId: string): Promise<boolean> {
+  return docusignIdempotency.isProcessed(eventId);
 }
 
-export function markWebhookProcessed(eventId: string): void {
-  processedWebhookIds.add(eventId);
-  // Simple TTL: clear oldest entries when set gets too large
-  if (processedWebhookIds.size > 10_000) {
-    const toDelete = Array.from(processedWebhookIds).slice(0, 1000);
-    for (const id of toDelete) processedWebhookIds.delete(id);
-  }
+export async function markWebhookProcessed(eventId: string, envelopeId?: string, eventType?: string): Promise<void> {
+  await docusignIdempotency.markProcessed(eventId, envelopeId ?? null, eventType ?? null);
 }
 
 // ---------------------------------------------------------------------------
@@ -286,7 +292,7 @@ export function isConfigured(): boolean {
 }
 
 export function getAuthUrl(redirectUri: string, state?: string): string {
-  if (!IK) throw new Error("Docusign nicht konfiguriert: DOCUSIGN_INTEGRATION_KEY fehlt.");
+  if (!IK) throw new DocusignError("Docusign nicht konfiguriert: DOCUSIGN_INTEGRATION_KEY fehlt.", { code: "DOCUSIGN_NOT_CONFIGURED" });
   const url = new URL("https://account-d.docusign.com/oauth/auth");
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "signature impersonation extended");

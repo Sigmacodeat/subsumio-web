@@ -11,8 +11,8 @@ export interface DocsContent {
 }
 
 const DE: DocsContent = {
-  hero: { badge: "Handbuch", title: "Alles was", claim: "Sigmabrain kann.", sub: "Vollständige Feature-Dokumentation — direkt aus dem Quellcode. Keine Floskeln, nur Fakten." },
-  intro: "Sigmabrain ist eine vollständige Kanzlei-Software mit einem KI-Brain im Kern. Hier findest du jede Funktion, jeden Endpunkt und jeden Workflow — auf einen Blick.",
+  hero: { badge: "Handbuch", title: "Alles was", claim: "Subsumio kann.", sub: "Vollständige Feature-Dokumentation — direkt aus dem Quellcode. Keine Floskeln, nur Fakten." },
+  intro: "Subsumio ist eine vollständige Kanzlei-Software mit einem KI-Brain im Kern. Hier findest du jede Funktion, jeden Endpunkt und jeden Workflow — auf einen Blick.",
   categories: [
     { id: "brain", title: "Brain & KI", sub: "Semantisches Wissen, zitierte Antworten, Agenten.", features: [
       { icon: "Brain", title: "Semantic Brain", desc: "Vector-basierte Wissensdatenbank (PGLite oder Postgres + pgvector). Jede Entität und jedes Dokument embeddings-durchsuchbar." },
@@ -83,7 +83,7 @@ const DE: DocsContent = {
       { icon: "ScanSearch", title: "Case Scanner", desc: "Überwachung laufender Verfahren auf neue Entwicklungen, Termine und Entscheidungen." },
       { icon: "Brain", title: "Agenten-Automatisierung", desc: "Selbstkonfigurierbare Agents für wiederkehrende Aufgaben. Skill-basiert, evaluierbar, federated." },
     ]},
-    { id: "specialized", title: "Spezialmodule", sub: "Branchenspezifisch: Recht, Medizin, Immobilien, Versicherung.", features: [
+    { id: "specialized", title: "Spezialmodule", sub: "Rechtsgebietsspezifisch: Medizinrecht, Immobilienrecht, Versicherungsrecht und mehr.", features: [
       { icon: "Landmark", title: "Rechtsprechung & Normen", desc: "Datenbank deutscher und österreichischer Rechtsquellen. BGB, StGB, HGB, ABGB, AktG — mit KI-Suche." },
       { icon: "ShieldAlert", title: "Kollisionsprüfung", desc: "Automatische Interessenkonfliktprüfung vor Mandantenannahme. Gegenstellen, frühere Mandate, verbundene Personen." },
       { icon: "Mail", title: "BEA-Anbindung", desc: "Besonderes elektronisches Anwaltspostfach (BEA) im Dashboard. Senden und Empfangen von beA-Nachrichten." },
@@ -94,8 +94,6 @@ const DE: DocsContent = {
       { icon: "Search", title: "Rechtsrecherche", desc: "KI-gestützte Rechtsrecherche über alle gespeicherten Quellen. Fundstellen, Argumentationsketten, Gegenargumente — alles mit Quellen." },
       { icon: "MessageSquare", title: "Beratung & Consulting", desc: "Modul für Rechtsberatung und Consulting. Projektstruktur, Stundenbudgets, Meilensteine, Abrechnung nach Pauschalhonorar oder Stundensatz." },
       { icon: "Shield", title: "Compliance & GRC", desc: "Compliance- und Governance-Modul für DSGVO, GwG, EU AI Act. Pflichten, Kontrollen und der Nachweis — alles dokumentiert." },
-      { icon: "Calculator", title: "Steuerberater-Arbeitsplatz (Taxumio)", desc: "Branchenspezifischer Arbeitsplatz für Steuerkanzleien. Mandanten-Gedächtnis, Bescheide, DATEV-Kontext, E-Rechnungs-Pflicht-Tracking." },
-      { icon: "Network", title: "VC & Private Equity (Investumio)", desc: "Fonds-Gedächtnis für Venture Capital und Private Equity. Deals, Founder-Tracking, Beziehungsgraph, IC-Memos, LP-Updates." },
     ]},
     { id: "mobile", title: "Mobile & Offline", sub: "App, Offline-Sync, mobile Brücke.", features: [
       { icon: "Zap", title: "Mobile App", desc: "Native iOS und Android App. Zeitbuchung, Upload, Aktenzugriff, Chat — unterwegs genauso mächtig." },
@@ -126,8 +124,8 @@ const DE: DocsContent = {
 };
 
 const EN: DocsContent = {
-  hero: { badge: "Handbook", title: "Everything", claim: "Sigmabrain does.", sub: "Complete feature documentation — extracted directly from the source code. No marketing fluff, just facts." },
-  intro: "Sigmabrain is a complete law practice platform with an AI brain at its core. Here you'll find every feature, every endpoint, and every workflow — at a glance.",
+  hero: { badge: "Handbook", title: "Everything", claim: "Subsumio does.", sub: "Complete feature documentation — extracted directly from the source code. No marketing fluff, just facts." },
+  intro: "Subsumio is a complete law practice platform with an AI brain at its core. Here you'll find every feature, every endpoint, and every workflow — at a glance.",
   categories: [
     { id: "brain", title: "Brain & AI", sub: "Semantic knowledge, cited answers, agents.", features: [
       { icon: "Brain", title: "Semantic Brain", desc: "Vector-based knowledge base (PGLite or Postgres + pgvector). Every entity and document becomes embedding-searchable." },
@@ -198,7 +196,7 @@ const EN: DocsContent = {
       { icon: "ScanSearch", title: "Case Scanner", desc: "Monitoring of ongoing cases for new developments, hearings and decisions." },
       { icon: "Brain", title: "Agent Automation", desc: "Self-configurable agents for recurring tasks. Skill-based, evaluable, federated." },
     ]},
-    { id: "specialized", title: "Specialized Modules", sub: "Industry-specific: law, medicine, real estate, insurance.", features: [
+    { id: "specialized", title: "Specialized Modules", sub: "Practice-area-specific: medical law, real estate law, insurance law and more.", features: [
       { icon: "Landmark", title: "Case Law & Norms", desc: "Database of German and Austrian legal sources. BGB, StGB, HGB, ABGB, AktG — with AI search." },
       { icon: "ShieldAlert", title: "Conflict Check", desc: "Automatic interest conflict check before client intake. Opponents, prior mandates, related persons." },
       { icon: "Mail", title: "BEA Connection", desc: "Special electronic lawyer mailbox (BEA) in the dashboard. Send and receive beA messages." },
@@ -209,8 +207,6 @@ const EN: DocsContent = {
       { icon: "Search", title: "Legal Research", desc: "AI-powered legal research across all stored sources. Findings, argument chains, counter-arguments — all with sources." },
       { icon: "MessageSquare", title: "Consulting", desc: "Module for legal advice and consulting mandates. Project structure, hour budgets, milestones, billing by flat fee or hourly rate." },
       { icon: "Shield", title: "Compliance & GRC", desc: "Compliance and governance module for GDPR, AML, EU AI Act. Obligations, controls and evidence — all documented." },
-      { icon: "Calculator", title: "Tax Advisor Workspace (Taxumio)", desc: "Industry-specific workspace for tax firms. Client memory, notices, DATEV context, e-invoicing obligation tracking." },
-      { icon: "Network", title: "VC & Private Equity (Investumio)", desc: "Fund memory for venture capital and private equity. Deals, founder tracking, relationship graph, IC memos, LP updates." },
     ]},
     { id: "mobile", title: "Mobile & Offline", sub: "App, offline sync, mobile bridge.", features: [
       { icon: "Zap", title: "Mobile App", desc: "Native iOS and Android app. Time tracking, upload, case access, chat — equally powerful on the go." },
@@ -240,26 +236,6 @@ const EN: DocsContent = {
   cta: { title: "Something unclear?", sub: "Every feature can be tried in the dashboard — not just documented.", button: "Open Dashboard" },
 };
 
-export function getDocs(lang: Lang, brand?: "subsumio"): DocsContent {
-  const base = lang === "de" ? DE : EN;
-  if (!brand) return base;
-
-  return {
-    ...base,
-    categories: base.categories.map((cat) => {
-      if (cat.id === "specialized") {
-        return {
-          ...cat,
-          features: cat.features.filter(
-            (f) =>
-              !f.title.includes("Taxumio") &&
-              !f.title.includes("Investumio") &&
-              !f.title.includes("Tax Advisor") &&
-              !f.title.includes("Private Equity")
-          ),
-        };
-      }
-      return cat;
-    }),
-  };
+export function getDocs(lang: Lang): DocsContent {
+  return lang === "de" ? DE : EN;
 }

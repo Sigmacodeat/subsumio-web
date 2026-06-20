@@ -1,7 +1,7 @@
 // Server-side helper for the dashboard's engine proxies.
 //
 // Multi-tenant V1: every proxy resolves the logged-in user and forwards
-// their brainId as `x-sigmabrain-source` — the engine's web API scopes
+// their brainId as `x-subsumio-source` — the engine's web API scopes
 // every operation to it (see src/commands/web-api.ts upstream). The header
 // is added server-to-server only; the browser can never choose a tenant.
 
@@ -11,17 +11,30 @@ import { getStore, getOrgStore, type Plan, type User } from "@/lib/auth/store";
 import { can, forbidden, type RouteAction } from "@/lib/permissions";
 import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans";
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
+import { env } from "@/lib/env";
 
-const CONFIGURED_ENGINE_URL = process.env.SIGMABRAIN_API_URL || process.env.GBRAIN_API_URL;
+const CONFIGURED_ENGINE_URL = env("SIGMABRAIN_API_URL");
 
 export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
 
 export function engineConfigurationResponse(): Response | null {
-  if (process.env.NODE_ENV !== "production" || CONFIGURED_ENGINE_URL) return null;
+  if (process.env.NODE_ENV !== "production" || CONFIGURED_ENGINE_URL) {
+    // In production, also verify the API key is set
+    if (process.env.NODE_ENV === "production" && CONFIGURED_ENGINE_URL) {
+      const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+      if (!apiKey) {
+        return Response.json(
+          { error: "engine_api_key_missing", message: "Server configuration error." },
+          { status: 503 },
+        );
+      }
+    }
+    return null;
+  }
   return Response.json(
     {
       error: "engine_not_configured",
-      message: "Set SIGMABRAIN_API_URL or GBRAIN_API_URL in the production environment.",
+      message: "Server configuration error.",
     },
     { status: 503 },
   );
@@ -60,9 +73,9 @@ export async function engineContext(): Promise<EngineContext | null> {
     }
   }
 
-  const headers: Record<string, string> = { "x-sigmabrain-source": brainId };
-  const apiKey = process.env.SIGMABRAIN_WEB_API_KEY || process.env.GBRAIN_WEB_API_KEY;
-  if (apiKey) headers["x-sigmabrain-api-key"] = apiKey;
+  const headers: Record<string, string> = { "x-subsumio-source": brainId };
+  const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+  if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   return { headers, brainId, plan, user };
 }
 
@@ -86,9 +99,9 @@ export function unauthorized(): Response {
  * Never expose to request-derived input: the caller must own the brainId.
  */
 export function engineHeadersForBrain(brainId: string): Record<string, string> {
-  const headers: Record<string, string> = { "x-sigmabrain-source": brainId };
-  const apiKey = process.env.SIGMABRAIN_WEB_API_KEY || process.env.GBRAIN_WEB_API_KEY;
-  if (apiKey) headers["x-sigmabrain-api-key"] = apiKey;
+  const headers: Record<string, string> = { "x-subsumio-source": brainId };
+  const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+  if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   return headers;
 }
 
@@ -152,3 +165,4 @@ export async function requireAuthAction(
   if (!can(ctx.user, action)) return forbidden(action);
   return ctx;
 }
+

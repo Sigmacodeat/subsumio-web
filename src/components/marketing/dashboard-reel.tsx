@@ -1,6 +1,6 @@
 "use client";
 
-// "Sigmabrain in action" — a scripted, looping mockup of the dashboard with an
+// "Subsumio in action" — a scripted, looping mockup of the dashboard with an
 // animated cursor that attaches a file, types a question and receives a cited
 // answer. The premium "product reel" technique (Linear/Arc style) done in pure
 // React/framer-motion — no video, themeable via --brand-*. Reduced-motion shows
@@ -47,166 +47,6 @@ const BRANCHES: Record<string, Branch> = {
       },
     },
   },
-  tax: {
-    sidebar: {
-      de: ["Brain fragen", "Belege", "Buchungen", "Mandanten", "Konnektoren"],
-      en: ["Ask brain", "Receipts", "Bookings", "Clients", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Welche Belege sind ohne Vorsteuerabzug verbucht?",
-        file: "DATEV_Export_Q2.csv",
-        answer: "4 Belege ohne Vorsteuer: 2× fehlende Rechnungsnummer, 1× Kleinbetrag korrekt, 1× Bewirtung prüfen (§ 15 UStG).",
-        sources: ["belege/2026-q2", "ustg/§15", "mandant/beispiel-gmbh"],
-      },
-      en: {
-        question: "Which receipts are booked without input-VAT deduction?",
-        file: "DATEV_Export_Q2.csv",
-        answer: "4 receipts without input VAT: 2× missing invoice number, 1× small-amount fine, 1× entertainment to review (§ 15 VAT Act).",
-        sources: ["receipts/2026-q2", "vat-act/§15", "client/example-ltd"],
-      },
-    },
-  },
-  compliance: {
-    sidebar: {
-      de: ["Brain fragen", "Richtlinien", "Kontrollen", "Register", "Konnektoren"],
-      en: ["Ask brain", "Policies", "Controls", "Registers", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Welche KI-Systeme fallen unter Hochrisiko nach EU AI Act?",
-        file: "KI-System_Inventar.xlsx",
-        answer: "2 Hochrisiko-Systeme (Anhang III): Bewerber-Scoring, Kreditentscheidung. Konformitätsbewertung fehlt bei beiden.",
-        sources: ["inventar/ki-systeme", "eu-ai-act/anhang-iii", "kontrollen/offen"],
-      },
-      en: {
-        question: "Which AI systems are high-risk under the EU AI Act?",
-        file: "AI-System_Inventory.xlsx",
-        answer: "2 high-risk systems (Annex III): applicant scoring, credit decisioning. Conformity assessment missing for both.",
-        sources: ["inventory/ai-systems", "eu-ai-act/annex-iii", "controls/open"],
-      },
-    },
-  },
-  insurance: {
-    sidebar: {
-      de: ["Brain fragen", "Schäden", "Policen", "Deckung", "Konnektoren"],
-      en: ["Ask brain", "Claims", "Policies", "Coverage", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Gibt es eine Deckungslücke in diesem Schadenfall?",
-        file: "Schadenakte_2026-0481.pdf",
-        answer: "Ja: Elementarschaden nicht eingeschlossen, Selbstbehalt 1.500 €, Meldefrist knapp eingehalten.",
-        sources: ["schaden/2026-0481", "police/wohngebaeude", "bedingungen/§7"],
-      },
-      en: {
-        question: "Is there a coverage gap in this claim?",
-        file: "Claim_2026-0481.pdf",
-        answer: "Yes: natural-hazard cover excluded, €1,500 deductible, notification duty met just in time.",
-        sources: ["claim/2026-0481", "policy/building", "terms/§7"],
-      },
-    },
-  },
-  realestate: {
-    sidebar: {
-      de: ["Brain fragen", "Objekte", "Mietverträge", "Due Diligence", "Konnektoren"],
-      en: ["Ask brain", "Assets", "Leases", "Due diligence", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Welche Klauseln in diesem Mietvertrag sind risikobehaftet?",
-        file: "Mietvertrag_Objekt-Nord.pdf",
-        answer: "3 Risiken: Indexmiete ohne Kappung, Schönheitsreparaturen unwirksam, Kündigungsfrist abweichend.",
-        sources: ["objekt/nord", "mietvertrag/§4", "rechtsprechung/bgh"],
-      },
-      en: {
-        question: "Which clauses in this lease are risky?",
-        file: "Lease_Asset-North.pdf",
-        answer: "3 risks: index rent without cap, redecoration clause void, non-standard notice period.",
-        sources: ["asset/north", "lease/§4", "case-law"],
-      },
-    },
-  },
-  vc: {
-    sidebar: {
-      de: ["Brain fragen", "Deals", "Portfolio", "Pipeline", "Konnektoren"],
-      en: ["Ask brain", "Deals", "Portfolio", "Pipeline", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Fasse dieses Deck als Deal-Memo zusammen — mit roten Flaggen.",
-        file: "Pitch_Deck_acme-seed.pdf",
-        answer: "Markt groß, Team stark. Rote Flaggen: CAC steigend, kein Lock-in, Runway < 9 Monate.",
-        sources: ["deals/acme-seed", "metriken/cac", "portfolio/benchmarks"],
-      },
-      en: {
-        question: "Summarize this deck as a deal memo — with red flags.",
-        file: "Pitch_Deck_acme-seed.pdf",
-        answer: "Big market, strong team. Red flags: rising CAC, no lock-in, runway < 9 months.",
-        sources: ["deals/acme-seed", "metrics/cac", "portfolio/benchmarks"],
-      },
-    },
-  },
-  consulting: {
-    sidebar: {
-      de: ["Brain fragen", "Projekte", "Angebote", "Wissen", "Konnektoren"],
-      en: ["Ask brain", "Projects", "Proposals", "Knowledge", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Welche unserer Referenzen passen auf diese Ausschreibung?",
-        file: "RFP_Kunde-Beispiel.pdf",
-        answer: "3 passende Projekte: 2× gleiche Branche, 1× gleicher Tech-Stack. Lücke: ISO-27001-Zertifizierung fehlt.",
-        sources: ["projekte/referenzen", "angebot/rfp", "skills/matrix"],
-      },
-      en: {
-        question: "Which of our references fit this RFP?",
-        file: "RFP_Client-Example.pdf",
-        answer: "3 matching projects: 2× same industry, 1× same tech stack. Gap: ISO 27001 certification missing.",
-        sources: ["projects/references", "proposal/rfp", "skills/matrix"],
-      },
-    },
-  },
-  recruiting: {
-    sidebar: {
-      de: ["Brain fragen", "Kandidaten", "Stellen", "Pipeline", "Konnektoren"],
-      en: ["Ask brain", "Candidates", "Roles", "Pipeline", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Wie gut passt dieser Kandidat auf die Senior-Rolle?",
-        file: "Lebenslauf_Kandidat-A.pdf",
-        answer: "Match 86 %: Stack passt, 7 Jahre Erfahrung. Lücken: keine Führungserfahrung, Gehaltsband am oberen Rand.",
-        sources: ["kandidaten/kandidat-a", "stelle/senior", "pipeline/aktiv"],
-      },
-      en: {
-        question: "How well does this candidate fit the senior role?",
-        file: "Resume_Candidate-A.pdf",
-        answer: "86% match: stack fits, 7 years' experience. Gaps: no leadership experience, salary at top of band.",
-        sources: ["candidates/candidate-a", "role/senior", "pipeline/active"],
-      },
-    },
-  },
-  medical: {
-    sidebar: {
-      de: ["Brain fragen", "Befunde", "Behandlungen", "Wiedervorlage", "Konnektoren"],
-      en: ["Ask brain", "Findings", "Treatments", "Follow-ups", "Connectors"],
-    },
-    reel: {
-      de: {
-        question: "Was ist bei diesem Patienten zur Wiedervorlage offen?",
-        file: "Befund_Patient-Muster.pdf",
-        answer: "3 Punkte: Laborkontrolle in 4 Wochen, Radiologie-Befund ausstehend, Folgerezept fällig.",
-        sources: ["befunde/patient-muster", "labor/2026-07", "wiedervorlage/offen"],
-      },
-      en: {
-        question: "What's open for follow-up for this patient?",
-        file: "Findings_Patient-Sample.pdf",
-        answer: "3 items: lab check in 4 weeks, radiology report pending, repeat prescription due.",
-        sources: ["findings/patient-sample", "lab/2026-07", "follow-ups/open"],
-      },
-    },
-  },
 };
 
 // Scripted timeline. cursor = % position within the reel; each step dwells.
@@ -235,7 +75,7 @@ export default function DashboardReel({
   const branch = BRANCHES[industry] ?? BRANCHES.legal;
   const r = branch.reel[lang];
   const sidebar = branch.sidebar[lang];
-  const brand = (profileForIndustry(industry)?.brand ?? "Sigmabrain").toLowerCase();
+  const brand = (profileForIndustry(industry)?.brand ?? "Subsumio").toLowerCase();
   const [phase, setPhase] = useState(reduce ? 7 : 0);
   const [typed, setTyped] = useState(reduce ? r.question : "");
 
@@ -267,12 +107,12 @@ export default function DashboardReel({
   const step = STEPS[phase];
 
   return (
-    <div className={`relative rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-bg)] shadow-2xl shadow-black/60 overflow-hidden ${className}`}>
+    <div className={`relative rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-bg)] shadow-2xl shadow-black/20 overflow-hidden ${className}`}>
       {/* window bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b [border-color:var(--mk-border)] [background:var(--mk-surface)]">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
-        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
         <div className="flex-1 ml-3 text-xs [color:var(--mk-text-subtle)] font-mono">{brand} — dashboard</div>
         <span className="text-[10px] brand-text font-medium">live</span>
       </div>

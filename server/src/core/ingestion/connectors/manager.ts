@@ -31,6 +31,7 @@ import { DropboxConnector } from './dropbox.ts';
 import { AsanaConnector } from './asana.ts';
 import { JiraConnector } from './jira.ts';
 import { LegalJudgementsConnector } from './legal-judgements.ts';
+import { SwissJudgementsConnector } from './swiss-judgements.ts';
 import { BeaImportConnector } from './bea-import.ts';
 
 /** Registry entry: one line per active connector. */
@@ -52,6 +53,7 @@ export const CONNECTOR_REGISTRY: Record<string, new (cfg: ConnectorConfig) => Ba
   'asana': AsanaConnector,
   'jira': JiraConnector,
   'legal-judgements': LegalJudgementsConnector,
+  'swiss-judgements': SwissJudgementsConnector,
   'bea-import': BeaImportConnector,
 };
 

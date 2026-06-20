@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 
-// PWA manifest — makes Sigmabrain installable on iOS, Android and iPadOS
+// PWA manifest — makes Subsumio installable on iOS, Android and iPadOS
 // ("Add to Home Screen" / Chrome install prompt). Native store apps come
 // later via Capacitor on top of this same codebase.
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Sigmabrain — the brain your firm never had",
-    short_name: "Sigmabrain",
+    name: "Subsumio — the brain your firm never had",
+    short_name: "Subsumio",
     description:
       "Every meeting, deal, email and document — turned into one answer instead of ten search results.",
     start_url: "/dashboard",

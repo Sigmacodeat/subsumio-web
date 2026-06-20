@@ -10,17 +10,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "brand-bg text-white shadow-lg shadow-[var(--brand-glow)]",
+          "brand-bg text-white shadow-sm shadow-[var(--brand-glow)] hover:shadow-md transition-shadow",
         secondary:
-          "bg-transparent border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]",
+          "bg-transparent border border-[color:var(--mk-border)] text-[color:var(--mk-text-muted)] hover:border-[color:var(--mk-border-strong)] hover:text-[color:var(--mk-text)] hover:bg-[color:var(--mk-surface-2)]",
         ghost:
-          "bg-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-2)]",
+          "bg-transparent text-[color:var(--mk-text-muted)] hover:text-[color:var(--mk-text)] hover:bg-[color:var(--mk-surface-2)]",
         danger:
           "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40",
         success:
           "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-900/30",
         glow:
-          "brand-bg text-white shadow-[0_0_16px_-4px_var(--brand-glow)] hover:shadow-[0_0_28px_-2px_var(--brand-glow)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_0_12px_-4px_var(--brand-glow)] transition-all duration-300",
+          "brand-bg text-white shadow-[0_0_16px_-4px_var(--brand-glow)] hover:shadow-[0_0_24px_-2px_var(--brand-glow)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_0_12px_-4px_var(--brand-glow)] transition-all duration-200",
         outline:
           "border brand-border brand-text hover:brand-border-strong hover:brand-soft",
       },

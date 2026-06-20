@@ -50,12 +50,13 @@ async function seedPageWithStaleChunks(slug: string, chunkCount: number): Promis
   await engine.upsertChunks(slug, chunks);
 }
 
-/** Deterministic fake embedder — returns unit-length 1536-dim vectors with
- *  first dim = text length, so we can assert specific chunks got embedded. */
+/** Deterministic fake embedder — returns unit-length 1280-dim vectors with
+ *  first dim = text length, so we can assert specific chunks got embedded.
+ *  Uses 1280 dims to match DEFAULT_EMBEDDING_DIMENSIONS (zeroentropyai:zembed-1). */
 function fakeEmbedFn(texts: string[]): Promise<Float32Array[]> {
   return Promise.resolve(
     texts.map((t) => {
-      const v = new Float32Array(1536);
+      const v = new Float32Array(1280);
       v[0] = t.length;
       v[1] = 1;
       return v;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 export interface BrainInfo {
   name: string;
@@ -9,9 +10,10 @@ export interface BrainInfo {
   engine: string;
 }
 
-const ACTIVE_BRAIN_KEY = "sigmabrain:active_brain";
+const ACTIVE_BRAIN_KEY = "subsumio:active_brain";
 
 export function useBrainSelector() {
+  const router = useRouter();
   const [brains, setBrains] = useState<BrainInfo[]>([]);
   const [activeBrain, setActiveBrain] = useState<BrainInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +21,6 @@ export function useBrainSelector() {
   useEffect(() => {
     async function load() {
       try {
-        // Fetch brains from API or local config
         const res = await fetch("/api/brains").catch(() => null);
         if (res?.ok) {
           const data = await res.json();
@@ -33,7 +34,6 @@ export function useBrainSelector() {
             setActiveBrain(list[0]);
           }
         } else {
-          // Fallback: single default brain
           const fallback: BrainInfo = { name: "Standard", slug: "default", source: "default", engine: "pglite" };
           setBrains([fallback]);
           setActiveBrain(fallback);
@@ -52,9 +52,8 @@ export function useBrainSelector() {
   const selectBrain = useCallback((brain: BrainInfo) => {
     setActiveBrain(brain);
     localStorage.setItem(ACTIVE_BRAIN_KEY, brain.slug);
-    // Reload to apply brain context
-    window.location.reload();
-  }, []);
+    router.refresh();
+  }, [router]);
 
   return { brains, activeBrain, selectBrain, loading };
 }

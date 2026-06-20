@@ -36,7 +36,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getSharedPgPool } from "@/lib/auth/store";
 
-const DATA_DIR = process.env.SIGMABRAIN_DATA_DIR || path.join(process.cwd(), ".data");
+import { env } from "@/lib/env";
+import { currentMonth } from "@/lib/datetime";
+import { createSchemaInit } from "@/lib/schema-init";
+
+const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
 const QUOTA_FILE = path.join(DATA_DIR, "quota.json");
 
 /** { [brainId]: { [yyyy-mm]: { queries: number, pages: number, uploads: number } } } */
@@ -44,11 +48,6 @@ type QuotaDb = Record<string, Record<string, { queries: number; pages: number; u
 
 let quotaCache: QuotaDb | null = null;
 let quotaWriteQueue: Promise<void> = Promise.resolve();
-
-function currentMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
 
 async function loadQuotaFile(): Promise<QuotaDb> {
   if (quotaCache) return quotaCache;
@@ -71,27 +70,17 @@ async function persistQuotaFile(): Promise<void> {
   return quotaWriteQueue;
 }
 
-let quotaSchemaReady: Promise<void> | null = null;
-function ensureQuotaSchema(): Promise<void> {
-  if (!quotaSchemaReady) {
-    quotaSchemaReady = (async () => {
-      const pool = getSharedPgPool();
-      if (!pool) return;
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_quota (
-          brain_id text NOT NULL,
-          month text NOT NULL,
-          queries integer NOT NULL DEFAULT 0,
-          pages integer NOT NULL DEFAULT 0,
-          uploads integer NOT NULL DEFAULT 0,
-          updated_at timestamptz NOT NULL DEFAULT now(),
-          PRIMARY KEY (brain_id, month)
-        )
-      `);
-    })();
-  }
-  return quotaSchemaReady;
-}
+const ensureQuotaSchema = createSchemaInit(`
+  CREATE TABLE IF NOT EXISTS subsumio_quota (
+    brain_id text NOT NULL,
+    month text NOT NULL,
+    queries integer NOT NULL DEFAULT 0,
+    pages integer NOT NULL DEFAULT 0,
+    uploads integer NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (brain_id, month)
+  )
+`);
 
 export type QuotaType = "queries" | "pages" | "uploads";
 
@@ -100,7 +89,7 @@ async function pgGet(brainId: string, month: string): Promise<{ queries: number;
   if (!pool) return { queries: 0, pages: 0, uploads: 0 };
   await ensureQuotaSchema();
   const { rows } = await pool.query<{ queries: number; pages: number; uploads: number }>(
-    "SELECT queries, pages, uploads FROM sigmabrain_quota WHERE brain_id = $1 AND month = $2",
+    "SELECT queries, pages, uploads FROM subsumio_quota WHERE brain_id = $1 AND month = $2",
     [brainId, month],
   );
   return rows[0] ?? { queries: 0, pages: 0, uploads: 0 };
@@ -111,10 +100,10 @@ async function pgInc(brainId: string, month: string, field: QuotaType, amount = 
   if (!pool) return;
   await ensureQuotaSchema();
   await pool.query(
-    `INSERT INTO sigmabrain_quota (brain_id, month, ${field})
+    `INSERT INTO subsumio_quota (brain_id, month, ${field})
      VALUES ($1, $2, $3)
      ON CONFLICT (brain_id, month)
-     DO UPDATE SET ${field} = sigmabrain_quota.${field} + $3, updated_at = now()`,
+     DO UPDATE SET ${field} = subsumio_quota.${field} + $3, updated_at = now()`,
     [brainId, month, amount],
   );
 }
@@ -175,6 +164,51 @@ export async function checkQuota(
   if (!limitKey) return { ok: true, limit: Infinity, used: 0 };
   const limit = limits[limitKey];
   if (limit === Infinity) return { ok: true, limit: Infinity, used: 0 };
+
+  const pool = getSharedPgPool();
+  if (pool) {
+    // Atomic check-and-reserve: increment in the same transaction as the check
+    // to prevent race conditions between concurrent requests.
+    const month = currentMonth();
+    try {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        // Upsert + increment atomically
+        await client.query(
+          `INSERT INTO subsumio_quota (brain_id, month, ${field})
+           VALUES ($1, $2, 1)
+           ON CONFLICT (brain_id, month)
+           DO UPDATE SET ${field} = subsumio_quota.${field} + 1, updated_at = now()
+           RETURNING ${field} as new_val`,
+          [brainId, month],
+        );
+        const { rows } = await client.query<{ queries: number; pages: number; uploads: number }>(
+          "SELECT queries, pages, uploads FROM subsumio_quota WHERE brain_id = $1 AND month = $2 FOR UPDATE",
+          [brainId, month],
+        );
+        const used = rows[0]?.[field] ?? 0;
+        const ok = used <= limit;
+        if (!ok) {
+          // Roll back the increment if quota exceeded
+          await client.query("ROLLBACK");
+          return { ok: false, limit, used: used - 1 };
+        }
+        await client.query("COMMIT");
+        return { ok: true, limit, used };
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error(`[quota] atomic check failed: ${err instanceof Error ? err.message : String(err)}`);
+      return { ok: true, limit, used: 0 };
+    }
+  }
+
+  // File-based fallback (dev only — no atomicity guarantee)
   const used = (await getQuota(brainId))[field];
   return { ok: used < limit, limit, used };
 }

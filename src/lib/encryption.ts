@@ -6,14 +6,22 @@
  * Without it, values are stored as-is (dev convenience, not for prod).
  */
 
-const ENCRYPTION_KEY = process.env.SIGMABRAIN_ENCRYPTION_KEY;
+import { EncryptionError } from "@/lib/errors";
+import { env } from "@/lib/env";
+
+const ENCRYPTION_KEY = env("SIGMABRAIN_ENCRYPTION_KEY");
 
 export function isEncryptionEnabled(): boolean {
+  if (process.env.NODE_ENV === "production" && !ENCRYPTION_KEY) {
+    throw new EncryptionError("SIGMABRAIN_ENCRYPTION_KEY must be set in production for at-rest encryption.", {
+      code: "ENCRYPTION_KEY_MISSING",
+    });
+  }
   return !!ENCRYPTION_KEY;
 }
 
 function getKeyBytes(): Uint8Array {
-  const key = ENCRYPTION_KEY || "sigmabrain-dev-encryption-key-32chars!";
+  const key = ENCRYPTION_KEY || "subsumio-dev-encryption-key-32chars!";
   const encoder = new TextEncoder();
   const bytes = encoder.encode(key);
   // Ensure exactly 32 bytes for AES-256
@@ -81,17 +89,17 @@ export async function decrypt(ciphertext: string | null | undefined): Promise<st
     return ciphertext;
   }
   const payload = ciphertext.slice(6);
-  // base64url decode
-  const b64 = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-
-  const iv = bytes.slice(0, 12);
-  const data = bytes.slice(12);
-
-  const key = await importKey();
   try {
+    // base64url decode
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    const iv = bytes.slice(0, 12);
+    const data = bytes.slice(12);
+
+    const key = await importKey();
     const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
     return decoder.decode(decrypted);
   } catch {

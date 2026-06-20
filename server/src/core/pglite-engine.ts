@@ -23,6 +23,7 @@ import { runMigrations } from './migrate.ts';
 import { PGLITE_SCHEMA_SQL, getPGLiteSchema } from './pglite-schema.ts';
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from './ai/defaults.ts';
 import { DELETE_BATCH_SIZE } from './engine-constants.ts';
+import { ConfigError, NotFoundError, QueryError, ConnectionError } from './engine-errors.ts';
 import { acquireLock, releaseLock, type LockHandle } from './pglite-lock.ts';
 import type {
   Page, PageInput, PageFilters, PageType,
@@ -205,7 +206,7 @@ export class PGLiteEngine implements BrainEngine {
   private _snapshotLoaded = false;
 
   get db(): PGLiteDB {
-    if (!this._db) throw new Error('PGLite not connected. Call connect() first.');
+    if (!this._db) throw new ConnectionError('PGLite not connected. Call connect() first.');
     return this._db;
   }
 
@@ -217,7 +218,7 @@ export class PGLiteEngine implements BrainEngine {
     this._lock = await acquireLock(dataDir);
 
     if (!this._lock.acquired) {
-      throw new Error('Could not acquire PGLite lock. Another gbrain process is using the database.');
+      throw new ConnectionError('Could not acquire PGLite lock. Another gbrain process is using the database.');
     }
 
     // Tier 3: optional snapshot fast-restore. Only applies to in-memory
@@ -955,7 +956,7 @@ export class PGLiteEngine implements BrainEngine {
   async deletePages(slugs: string[], opts: { sourceId: string }): Promise<string[]> {
     if (slugs.length === 0) return [];
     if (slugs.length > DELETE_BATCH_SIZE) {
-      throw new Error(
+      throw new ConfigError(
         `deletePages: input size ${slugs.length} exceeds DELETE_BATCH_SIZE=${DELETE_BATCH_SIZE}. Caller must chunk.`,
       );
     }
@@ -976,7 +977,7 @@ export class PGLiteEngine implements BrainEngine {
   ): Promise<Map<string, string>> {
     if (paths.length === 0) return new Map();
     if (paths.length > DELETE_BATCH_SIZE) {
-      throw new Error(
+      throw new ConfigError(
         `resolveSlugsByPaths: input size ${paths.length} exceeds DELETE_BATCH_SIZE=${DELETE_BATCH_SIZE}. Caller must chunk.`,
       );
     }
@@ -1983,7 +1984,7 @@ export class PGLiteEngine implements BrainEngine {
       'SELECT id FROM pages WHERE slug = $1 AND source_id = $2',
       [slug, sourceId]
     );
-    if (pageResult.rows.length === 0) throw new Error(`Page not found: ${slug} (source=${sourceId})`);
+    if (pageResult.rows.length === 0) throw new NotFoundError(`Page not found: ${slug} (source=${sourceId})`);
     const pageId = (pageResult.rows[0] as { id: number }).id;
 
     // Remove chunks that no longer exist
@@ -2418,7 +2419,7 @@ export class PGLiteEngine implements BrainEngine {
       [from, fromSrc, to, toSrc]
     );
     if (exists.rows.length === 0) {
-      throw new Error(`addLink failed: page "${from}" (source=${fromSrc}) or "${to}" (source=${toSrc}) not found`);
+      throw new NotFoundError(`addLink failed: page "${from}" (source=${fromSrc}) or "${to}" (source=${toSrc}) not found`);
     }
     const src = linkSource ?? 'markdown';
     // Mirror addLinksBatch's VALUES + composite JOIN shape. The old cross-
@@ -3231,7 +3232,7 @@ export class PGLiteEngine implements BrainEngine {
       'SELECT id FROM pages WHERE slug = $1 AND source_id = $2',
       [slug, sourceId]
     );
-    if (page.rows.length === 0) throw new Error(`addTag failed: page "${slug}" (source=${sourceId}) not found`);
+    if (page.rows.length === 0) throw new NotFoundError(`addTag failed: page "${slug}" (source=${sourceId}) not found`);
     await this.db.query(
       `INSERT INTO tags (page_id, tag)
        VALUES ($1, $2)
@@ -3276,7 +3277,7 @@ export class PGLiteEngine implements BrainEngine {
         [slug, sourceId]
       );
       if (rows.length === 0) {
-        throw new Error(`addTimelineEntry failed: page "${slug}" (source=${sourceId}) not found`);
+        throw new NotFoundError(`addTimelineEntry failed: page "${slug}" (source=${sourceId}) not found`);
       }
     }
     // ON CONFLICT DO NOTHING via the (page_id, date, summary) unique index.
@@ -3436,7 +3437,7 @@ export class PGLiteEngine implements BrainEngine {
       ]
     );
     if (result.rows.length === 0) {
-      throw new Error(`upsertFile returned no rows for ${spec.storage_path}`);
+      throw new QueryError(`upsertFile returned no rows for ${spec.storage_path}`);
     }
     return { id: result.rows[0].id, created: !!result.rows[0].created };
   }
@@ -4561,7 +4562,7 @@ export class PGLiteEngine implements BrainEngine {
        RETURNING *`,
       [slug, sourceId]
     );
-    if (rows.length === 0) throw new Error(`createVersion failed: page "${slug}" (source=${sourceId}) not found`);
+    if (rows.length === 0) throw new NotFoundError(`createVersion failed: page "${slug}" (source=${sourceId}) not found`);
     return rows[0] as unknown as PageVersion;
   }
 

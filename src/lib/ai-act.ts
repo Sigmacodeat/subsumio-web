@@ -10,7 +10,7 @@
 
 /** Vollständiger Hinweistext (Export, Fußnote, gespeichertes Frontmatter). */
 export const AI_NOTICE =
-  "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Sigmabrain.";
+  "KI-generierter Entwurf — anwaltlich zu prüfen und freizugeben (EU AI Act Art. 50). Erstellt mit Subsumio.";
 
 /** Kurzes Label für den sichtbaren Badge. */
 export const AI_BADGE_LABEL = "KI-generiert · zu prüfen";

@@ -12,13 +12,13 @@ export function JsonLd({ data }: { data: object }) {
   );
 }
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://sigmabrain.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
 export function organizationLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Sigmabrain",
+    name: "Subsumio",
     url: BASE,
     logo: `${BASE}/icon-512.png`,
     sameAs: [ENGINE_REPO_URL],
@@ -29,7 +29,7 @@ export function softwareApplicationLd(lang: Lang) {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Sigmabrain",
+    name: "Subsumio",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Self-hosted",
     description:
@@ -46,21 +46,20 @@ export function softwareApplicationLd(lang: Lang) {
       {
         "@type": "Offer",
         name: "Pro",
-        price: "79",
+        price: "290",
         priceCurrency: "EUR",
         priceSpecification: {
           "@type": "UnitPriceSpecification",
-          price: "79",
+          price: "290",
           priceCurrency: "EUR",
-          unitText: lang === "de" ? "pro Nutzer und Monat" : "per user per month",
+          unitText: lang === "de" ? "pro Seat und Monat" : "per seat per month",
         },
       },
     ],
   };
 }
 
-/** Per-vertical product (e.g. Subsumio, Taxumio). Derived from the platform
- *  SoftwareApplication via isBasedOn so the brand graph stays connected. */
+/** Subsumio product JSON-LD for SEO. */
 export function verticalSoftwareApplicationLd(opts: {
   name: string;
   description: string;
@@ -75,7 +74,7 @@ export function verticalSoftwareApplicationLd(opts: {
     operatingSystem: "Web, Self-hosted",
     url: opts.url.startsWith("http") ? opts.url : `${BASE}${opts.url}`,
     description: opts.description,
-    isBasedOn: { "@type": "SoftwareApplication", name: "Sigmabrain", url: BASE },
+    isBasedOn: { "@type": "SoftwareApplication", name: "Subsumio", url: BASE },
     ...(opts.price
       ? { offers: { "@type": "Offer", price: opts.price, priceCurrency: "EUR" } }
       : {}),

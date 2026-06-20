@@ -1,9 +1,9 @@
-// Sigmabrain service worker v2.
+// Subsumio service worker v3.
 // Stale-while-revalidate caching for dashboard API calls + static assets.
 // Background sync for offline mutations (POST/PUT/DELETE to Brain API).
 
-const STATIC_CACHE = "sigmabrain-static-v2";
-const API_CACHE = "sigmabrain-api-v2";
+const STATIC_CACHE = "subsumio-static-v3";
+const API_CACHE = "subsumio-api-v3";
 const PRECACHE = ["/offline.html", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -34,6 +34,31 @@ async function apiFetch(req) {
   return cached ?? network;
 }
 
+/** Background sync queue for offline mutations (in-memory; SW has no localStorage) */
+const SYNC_TAG = "subsumio-sync";
+let syncQueue = [];
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === SYNC_TAG) {
+    event.waitUntil(processSyncQueue());
+  }
+});
+
+function queueMutation(method, url, body) {
+  syncQueue.push({ method, url, body, timestamp: Date.now() });
+  self.registration?.sync?.register(SYNC_TAG).catch(() => {});
+}
+
+async function processSyncQueue() {
+  while (syncQueue.length > 0) {
+    const item = syncQueue[0];
+    try {
+      const res = await fetch(item.url, { method: item.method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.body) });
+      if (res.ok) { syncQueue.shift(); } else { break; }
+    } catch { break; }
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
@@ -46,8 +71,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Offline mutations → queue + return 202
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && url.pathname.startsWith("/api/")) {
+    event.respondWith(
+      fetch(req.clone()).catch(() => {
+        queueMutation(req.method, req.url, null);
+        return new Response(JSON.stringify({ queued: true, offline: true }), {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+    return;
+  }
+
   // Brain API GET → stale-while-revalidate
-  if (req.method === "GET" && (url.pathname.startsWith("/api/") || url.pathname.startsWith("/api/brain"))) {
+  if (req.method === "GET" && (url.pathname.startsWith("/api/"))) {
     event.respondWith(apiFetch(req));
     return;
   }
@@ -68,38 +107,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
-
-/** Background sync queue for offline mutations */
-const SYNC_TAG = "brain-sync";
-self.addEventListener("sync", (event) => {
-  if (event.tag === SYNC_TAG) {
-    event.waitUntil(processSyncQueue());
-  }
-});
-
-let syncQueue = [];
-
-try {
-  const stored = self.localStorage?.getItem("sw_sync_queue");
-  if (stored) syncQueue = JSON.parse(stored);
-} catch {}
-
-function queueMutation(method, url, body) {
-  syncQueue.push({ method, url, body, timestamp: Date.now() });
-  try { self.localStorage?.setItem("sw_sync_queue", JSON.stringify(syncQueue)); } catch {}
-  self.registration?.sync?.register(SYNC_TAG).catch(() => {});
-}
-
-async function processSyncQueue() {
-  while (syncQueue.length > 0) {
-    const item = syncQueue[0];
-    try {
-      const res = await fetch(item.url, { method: item.method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.body) });
-      if (res.ok) { syncQueue.shift(); } else { break; }
-    } catch { break; }
-  }
-  try { self.localStorage?.setItem("sw_sync_queue", JSON.stringify(syncQueue)); } catch {}
-}
 
 // Expose queueMutation globally for the app to call
 self.queueBrainMutation = queueMutation;

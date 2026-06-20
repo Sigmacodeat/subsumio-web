@@ -6,9 +6,9 @@ import Link from "next/link";
 
 function Shell({ home, title, subtitle, children }: { home: string; title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen [background:var(--mk-bg)] px-6 py-16">
+    <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] px-6 py-16">
       <div className="max-w-2xl mx-auto">
-        <Link href={home} className="text-sm text-violet-400 hover:underline">← Sigmabrain</Link>
+        <Link href={home} className="text-sm brand-text hover:underline">← Subsumio</Link>
         <h1 className="text-3xl font-black [color:var(--mk-text)] mt-8 mb-2">{title}</h1>
         <p className="text-xs [color:var(--mk-text-subtle)] mb-6">{subtitle}</p>
         <div className="space-y-3 text-sm [color:var(--mk-text-muted)] leading-relaxed">{children}</div>
@@ -39,7 +39,7 @@ function LegalLinks({ home, exclude }: { home: string; exclude: "privacy" | "ter
       {links.map((l, i) => (
         <span key={l.key}>
           {i > 0 && " · "}
-          <Link href={l.href} className="text-violet-400 hover:underline">{l.label}</Link>
+          <Link href={l.href} className="brand-text hover:underline">{l.label}</Link>
         </span>
       ))}
     </p>
@@ -56,7 +56,7 @@ export function ImprintContent({ home }: { home: string }) {
       <H2>Betreiber</H2>
       <p>[Firmenname]<br />[Straße, Hausnummer]<br />[PLZ, Ort, Land]</p>
       <H2>Kontakt</H2>
-      <p>E-Mail: hello@sigmabrain.com<br />[Telefon]</p>
+      <p>E-Mail: hello@subsum.eu<br />[Telefon]</p>
       <H2>Vertretungsberechtigt</H2>
       <p>[Name der vertretungsberechtigten Person]</p>
       <H2>Registereintrag</H2>
@@ -85,9 +85,9 @@ export function PrivacyContent({ home }: { home: string }) {
       <H2>1. Verantwortlicher</H2>
       <p>
         Verantwortlich für die Datenverarbeitung auf dieser Website und im gehosteten
-        Sigmabrain-Dienst (im Folgenden &bdquo;Dienst&ldquo;) ist:
+        Subsumio-Dienst (im Folgenden &bdquo;Dienst&ldquo;) ist:
       </p>
-      <p className="mt-2">[Firmenname]<br />[Straße, Hausnummer]<br />[PLZ, Ort, Land]<br />E-Mail: hello@sigmabrain.com</p>
+      <p className="mt-2">[Firmenname]<br />[Straße, Hausnummer]<br />[PLZ, Ort, Land]<br />E-Mail: hello@subsum.eu</p>
       <p className="mt-2">
         Datenschutzbeauftragte/r (sofern bestellt): [Name, Kontakt]. Eine Bestellpflicht besteht
         u. a. bei umfangreicher Verarbeitung besonderer Kategorien personenbezogener Daten
@@ -96,7 +96,7 @@ export function PrivacyContent({ home }: { home: string }) {
 
       <H2>2. Grundsatz: Datensparsamkeit und Betriebsmodelle</H2>
       <p>
-        Sigmabrain ist als datensparsames Produkt konzipiert. Es gibt zwei Betriebsmodelle mit
+        Subsumio ist als datensparsames Produkt konzipiert. Es gibt zwei Betriebsmodelle mit
         unterschiedlichen datenschutzrechtlichen Rollen:
       </p>
       <ul className="list-disc pl-5 mt-2 space-y-1">
@@ -181,7 +181,7 @@ export function PrivacyContent({ home }: { home: string }) {
 
 export function TermsContent({ home }: { home: string }) {
   return (
-    <Shell home={home} title="Allgemeine Geschäftsbedingungen" subtitle="Stand: Juni 2026 · gilt für den gehosteten Sigmabrain-Dienst">
+    <Shell home={home} title="Allgemeine Geschäftsbedingungen" subtitle="Stand: Juni 2026 · gilt für den gehosteten Subsumio-Dienst">
       <DraftBanner>
         Entwurf — vor Launch anwaltlich zu prüfen, insbesondere Haftungsbegrenzung, Gerichtsstand
         und das Zusammenspiel mit AVV und Berufsgeheimnis. Felder in [eckigen Klammern] füllen.
@@ -189,7 +189,7 @@ export function TermsContent({ home }: { home: string }) {
 
       <H2>§ 1 Geltungsbereich, Vertragspartner</H2>
       <p>
-        (1) Diese AGB gelten für die Nutzung des gehosteten Sigmabrain-Dienstes (&bdquo;Dienst&ldquo;)
+        (1) Diese AGB gelten für die Nutzung des gehosteten Subsumio-Dienstes (&bdquo;Dienst&ldquo;)
         zwischen [Firmenname] (&bdquo;Anbieter&ldquo;) und dem Kunden. (2) Das Angebot richtet sich
         ausschließlich an Unternehmer i. S. d. § 14 BGB, juristische Personen des öffentlichen
         Rechts und öffentlich-rechtliche Sondervermögen (B2B). (3) Abweichende Bedingungen des
@@ -214,7 +214,7 @@ export function TermsContent({ home }: { home: string }) {
 
       <H2>§ 4 Preise, Zahlung, Laufzeit</H2>
       <p>
-        (1) Es gelten die auf der <Link href={`${home === "/" ? "" : home}/pricing`} className="text-violet-400 hover:underline">Preisseite</Link>{" "}
+        (1) Es gelten die auf der <Link href={`${home === "/" ? "" : home}/pricing`} className="brand-text hover:underline">Preisseite</Link>{" "}
         ausgewiesenen Preise zzgl. USt. (2) Abrechnung über den Zahlungsdienstleister im Voraus.
         (3) Der Vertrag verlängert sich um den Abrechnungszeitraum, sofern nicht zu dessen Ende
         gekündigt. (4) Up-/Downgrades werden zum nächsten Abrechnungszeitraum wirksam.

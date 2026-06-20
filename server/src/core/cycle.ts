@@ -96,7 +96,15 @@ export type CyclePhase =
   // Per-skill cost cap $0.50; brain-wide cap $2.00. Bundled-skill safety
   // (D16): never auto-mutates bundled skills — emits proposed.md instead
   // for user review.
-  | 'skillopt';
+  | 'skillopt'
+  // v0.43 — Legal dream cycle phases (opt-in, default OFF). Run after
+  // the main graph-mutating cluster so they see fresh state.
+  //  - legal_statute_currency: checks statute version currency in brain
+  //  - legal_deadline_monitor: scans legal_deadline pages for upcoming/overdue
+  //  - legal_case_progression: tracks case status changes since last cycle
+  //  - legal_precedent_linkage: links legal_case pages to statute sections
+  | 'legal_statute_currency' | 'legal_deadline_monitor'
+  | 'legal_case_progression' | 'legal_precedent_linkage';
 
 export const ALL_PHASES: CyclePhase[] = [
   'lint',
@@ -173,6 +181,13 @@ export const ALL_PHASES: CyclePhase[] = [
   // `report.phases.map(p => p.phase)).toEqual(ALL_PHASES)` assertion in
   // test/core/cycle.serial.test.ts.
   'skillopt',
+  // v0.43 — Legal dream cycle phases. Opt-in (default OFF). Positioned
+  // AFTER the main graph-mutating cluster + skillopt so they read fresh
+  // state, and BEFORE embed so any new precedent links get embedded same-cycle.
+  'legal_statute_currency',
+  'legal_deadline_monitor',
+  'legal_case_progression',
+  'legal_precedent_linkage',
   'embed',
   'orphans',
   // v0.39 T12: passive schema-suggest. Runs LATE so post-sync brain state
@@ -240,6 +255,13 @@ export const PHASE_SCOPE: Record<CyclePhase, PhaseScope> = {
   // v0.41.20.0 SkillOpt — global (walks the skills/ directory; per-skill
   // DB lock inside D14 handles cross-source coordination).
   skillopt: 'global',
+  // v0.43 — Legal dream cycle phases. statute_currency + deadline_monitor
+  // are read-only scans (source-scoped). case_progression is read-only.
+  // precedent_linkage writes page_links (source-scoped).
+  legal_statute_currency: 'source',
+  legal_deadline_monitor: 'source',
+  legal_case_progression: 'source',
+  legal_precedent_linkage: 'source',
 };
 
 /**
@@ -284,6 +306,8 @@ const NEEDS_LOCK_PHASES: ReadonlySet<CyclePhase> = new Set([
   // Per-skill lock (D14) is acquired inside runSkillOpt; this NEEDS_LOCK
   // entry covers the cycle-level coordination.
   'skillopt',
+  // v0.43 — legal_precedent_linkage writes page_links; needs lock.
+  'legal_precedent_linkage',
   'embed',
   'purge',
 ]);
@@ -2091,6 +2115,71 @@ export async function runCycle(
         );
         result.duration_ms = duration_ms;
         phaseResults.push(result as never);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    // ── v0.43: Legal dream cycle phases (opt-in, default OFF) ──────
+    // Four phases that keep legal data fresh: statute currency check,
+    // deadline monitor, case progression, precedent linkage.
+    // All gated on config flags; skipped silently when not enabled.
+
+    if (phases.includes('legal_statute_currency')) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({ phase: 'legal_statute_currency', status: 'skipped', duration_ms: 0, summary: 'no database connected', details: { reason: 'no_database' } });
+      } else {
+        progress.start('cycle.legal_statute_currency');
+        const { runPhaseLegalStatuteCurrency } = await import('./cycle/legal-phases.ts');
+        const { result, duration_ms } = await timePhase(() => runPhaseLegalStatuteCurrency(engine, { dryRun, ...(cycleSourceId ? { sourceId: cycleSourceId } : {}) }));
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    if (phases.includes('legal_deadline_monitor')) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({ phase: 'legal_deadline_monitor', status: 'skipped', duration_ms: 0, summary: 'no database connected', details: { reason: 'no_database' } });
+      } else {
+        progress.start('cycle.legal_deadline_monitor');
+        const { runPhaseLegalDeadlineMonitor } = await import('./cycle/legal-phases.ts');
+        const { result, duration_ms } = await timePhase(() => runPhaseLegalDeadlineMonitor(engine, { dryRun, ...(cycleSourceId ? { sourceId: cycleSourceId } : {}) }));
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    if (phases.includes('legal_case_progression')) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({ phase: 'legal_case_progression', status: 'skipped', duration_ms: 0, summary: 'no database connected', details: { reason: 'no_database' } });
+      } else {
+        progress.start('cycle.legal_case_progression');
+        const { runPhaseLegalCaseProgression } = await import('./cycle/legal-phases.ts');
+        const { result, duration_ms } = await timePhase(() => runPhaseLegalCaseProgression(engine, { dryRun, ...(cycleSourceId ? { sourceId: cycleSourceId } : {}) }));
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
+        progress.finish();
+      }
+      await safeYield(opts.yieldBetweenPhases);
+    }
+
+    if (phases.includes('legal_precedent_linkage')) {
+      checkAborted(opts.signal);
+      if (!engine) {
+        phaseResults.push({ phase: 'legal_precedent_linkage', status: 'skipped', duration_ms: 0, summary: 'no database connected', details: { reason: 'no_database' } });
+      } else {
+        progress.start('cycle.legal_precedent_linkage');
+        const { runPhaseLegalPrecedentLinkage } = await import('./cycle/legal-phases.ts');
+        const { result, duration_ms } = await timePhase(() => runPhaseLegalPrecedentLinkage(engine, { dryRun, ...(cycleSourceId ? { sourceId: cycleSourceId } : {}) }));
+        result.duration_ms = duration_ms;
+        phaseResults.push(result);
         progress.finish();
       }
       await safeYield(opts.yieldBetweenPhases);

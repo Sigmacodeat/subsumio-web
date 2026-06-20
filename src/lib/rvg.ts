@@ -1,82 +1,60 @@
 /**
- * RVG-Gebührenberechnung nach § 13 RVG (Rechtsanwaltsvergütungsgesetz).
- * Vereinfachte Tabelle mit linearen Interpolationen.
+ * RVG-Gebührenberechnung nach § 13 RVG i.d.F. KostBRÄG 2025 (gültig ab 01.06.2025).
+ * Verwendet die Stufenformel statt einer hartkodierten Tabelle.
  */
 
-// §13 RVG Gebühren nach Streitwert (1.0 Gebühr in €)
-const RVG_TABLE: Array<{ value: number; fee: number }> = [
-  { value: 500, fee: 49 },
-  { value: 1000, fee: 82 },
-  { value: 1500, fee: 106 },
-  { value: 2000, fee: 115 },
-  { value: 3000, fee: 147 },
-  { value: 4000, fee: 172 },
-  { value: 5000, fee: 188 },
-  { value: 6000, fee: 215 },
-  { value: 7000, fee: 239 },
-  { value: 8000, fee: 261 },
-  { value: 9000, fee: 275 },
-  { value: 10000, fee: 289 },
-  { value: 13000, fee: 340 },
-  { value: 15000, fee: 374 },
-  { value: 20000, fee: 449 },
-  { value: 25000, fee: 517 },
-  { value: 30000, fee: 579 },
-  { value: 35000, fee: 636 },
-  { value: 40000, fee: 689 },
-  { value: 45000, fee: 739 },
-  { value: 50000, fee: 785 },
-  { value: 65000, fee: 946 },
-  { value: 80000, fee: 1088 },
-  { value: 100000, fee: 1273 },
-  { value: 150000, fee: 1605 },
-  { value: 200000, fee: 1896 },
-  { value: 250000, fee: 2158 },
-  { value: 300000, fee: 2397 },
-  { value: 400000, fee: 2832 },
-  { value: 500000, fee: 3225 },
+// §13 RVG Stufenformel (KostBRÄG 2025): Grundgebühr 51,50 € bis 500 €,
+// danach feste Schritte je angefangenem Stufenbetrag.
+const RVG_STUFEN: Array<{ bis: number; schritt: number; je: number }> = [
+  { bis: 2_000, schritt: 41.5, je: 500 },
+  { bis: 10_000, schritt: 59.5, je: 1_000 },
+  { bis: 25_000, schritt: 55, je: 3_000 },
+  { bis: 50_000, schritt: 86, je: 5_000 },
+  { bis: 200_000, schritt: 99.5, je: 15_000 },
+  { bis: 500_000, schritt: 140, je: 30_000 },
+  { bis: Infinity, schritt: 175, je: 50_000 },
 ];
 
-function interpolate(streitwert: number): number {
-  if (streitwert <= 0) return 0;
-  if (streitwert >= RVG_TABLE[RVG_TABLE.length - 1].value) {
-    return RVG_TABLE[RVG_TABLE.length - 1].fee;
-  }
-  for (let i = 0; i < RVG_TABLE.length - 1; i++) {
-    const low = RVG_TABLE[i];
-    const high = RVG_TABLE[i + 1];
-    if (streitwert >= low.value && streitwert <= high.value) {
-      const ratio = (streitwert - low.value) / (high.value - low.value);
-      return Math.round(low.fee + ratio * (high.fee - low.fee));
+function rvgGebuehr(streitwert: number): number {
+  if (!Number.isFinite(streitwert) || streitwert <= 0) return 0;
+  let gebuehr = 51.5;
+  let grenze = 500;
+  for (const stufe of RVG_STUFEN) {
+    while (grenze < streitwert && grenze < stufe.bis) {
+      gebuehr += stufe.schritt;
+      grenze += stufe.je;
     }
+    if (grenze >= streitwert) break;
   }
-  return RVG_TABLE[0].fee;
+  return gebuehr;
 }
 
 export interface RvgResult {
   streitwert: number;
   basisGebuehr: number;
-  verfahrensgebuehr: number; // 1.3
-  terminsgebuehr: number; // 1.2
-  einigungsgebuehr: number; // 1.5
-  auslagenpauschale: number; // § 4 Abs. 1: 20 €
+  verfahrensgebuehr: number; // 1.3 (VV 3100)
+  terminsgebuehr: number; // 1.2 (VV 3104)
+  einigungsgebuehr: number; // 1.0 (VV 1003)
+  auslagenpauschale: number; // VV 7002: 20 €
   summeNetto: number;
   mwst: number;
   summeBrutto: number;
 }
 
 export function calculateRvg(streitwert: number): RvgResult {
-  const basis = interpolate(streitwert);
-  const verfahrensgebuehr = Math.round(basis * 1.3);
-  const terminsgebuehr = Math.round(basis * 1.2);
-  const einigungsgebuehr = Math.round(basis * 1.5);
+  const safeStreitwert = Number.isFinite(streitwert) && streitwert > 0 ? streitwert : 0;
+  const basis = rvgGebuehr(safeStreitwert);
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const verfahrensgebuehr = round2(basis * 1.3);
+  const terminsgebuehr = round2(basis * 1.2);
+  const einigungsgebuehr = round2(basis * 1.0);
   const auslagenpauschale = 20;
-  const summeNetto = verfahrensgebuehr + auslagenpauschale;
-  const mwst = Math.round(summeNetto * 0.19 * 100) / 100;
-  const summeBrutto = Math.round((summeNetto + mwst) * 100) / 100;
+  const summeNetto = round2(verfahrensgebuehr + terminsgebuehr + einigungsgebuehr + auslagenpauschale);
+  const mwst = round2(summeNetto * 0.19);
+  const summeBrutto = round2(summeNetto + mwst);
 
   return {
-    streitwert,
+    streitwert: safeStreitwert,
     basisGebuehr: basis,
     verfahrensgebuehr,
     terminsgebuehr,

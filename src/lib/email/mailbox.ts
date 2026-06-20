@@ -4,6 +4,7 @@ import path from "node:path";
 import { Webhook } from "svix";
 import { getSharedPgPool, type PublicUser } from "@/lib/auth/store";
 import { sendMail, type MailInput } from "@/lib/mail";
+import { createSchemaInit } from "@/lib/schema-init";
 
 export type MailDirection = "inbound" | "outbound";
 export type MailStatus = "received" | "sent" | "failed";
@@ -75,59 +76,51 @@ interface ResendWebhookEvent {
   };
 }
 
-let schemaReady: Promise<void> | null = null;
-const MAILBOX_DATA_DIR = process.env.SIGMABRAIN_DATA_DIR || path.join(process.cwd(), ".data");
+import { env } from "@/lib/env";
+
+const MAILBOX_DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
 const MAILBOX_FILE = path.join(MAILBOX_DATA_DIR, "mailbox.json");
-const allowFileMailbox = process.env.SIGMABRAIN_ALLOW_FILE_MAILBOX_IN_PRODUCTION === "true";
+const allowFileMailbox = env("SIGMABRAIN_ALLOW_FILE_MAILBOX_IN_PRODUCTION") === "true";
 
 let mailboxCache: MailMessage[] | null = null;
 let mailboxWriteQueue: Promise<void> = Promise.resolve();
 
-function poolOrThrow() {
-  const pool = getSharedPgPool();
-  if (!pool) return null;
-  return pool;
-}
+const ensureMailboxSchema = createSchemaInit([
+  `CREATE TABLE IF NOT EXISTS subsumio_mail_messages (
+    id text PRIMARY KEY,
+    provider_id text UNIQUE,
+    direction text NOT NULL CHECK (direction IN ('inbound', 'outbound')),
+    status text NOT NULL CHECK (status IN ('received', 'sent', 'failed')),
+    from_email text NOT NULL,
+    from_name text,
+    to_emails text[] NOT NULL DEFAULT '{}',
+    cc_emails text[] NOT NULL DEFAULT '{}',
+    bcc_emails text[] NOT NULL DEFAULT '{}',
+    subject text NOT NULL DEFAULT '',
+    text_body text,
+    html_body text,
+    message_id text,
+    in_reply_to text,
+    user_id text,
+    brain_id text,
+    raw jsonb NOT NULL DEFAULT '{}'::jsonb,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_user_idx ON subsumio_mail_messages (user_id, created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_brain_idx ON subsumio_mail_messages (brain_id, created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_message_id_idx ON subsumio_mail_messages (message_id)",
+]);
 
-async function ensureMailboxSchema() {
-  const pool = poolOrThrow();
+async function ensureMailboxReady(): Promise<void> {
+  const pool = getSharedPgPool();
   if (!pool) {
     if (process.env.NODE_ENV === "production" && !allowFileMailbox) {
       throw new Error("mailbox_database_not_configured");
     }
     return;
   }
-  if (!schemaReady) {
-    schemaReady = (async () => {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_mail_messages (
-          id text PRIMARY KEY,
-          provider_id text UNIQUE,
-          direction text NOT NULL CHECK (direction IN ('inbound', 'outbound')),
-          status text NOT NULL CHECK (status IN ('received', 'sent', 'failed')),
-          from_email text NOT NULL,
-          from_name text,
-          to_emails text[] NOT NULL DEFAULT '{}',
-          cc_emails text[] NOT NULL DEFAULT '{}',
-          bcc_emails text[] NOT NULL DEFAULT '{}',
-          subject text NOT NULL DEFAULT '',
-          text_body text,
-          html_body text,
-          message_id text,
-          in_reply_to text,
-          user_id text,
-          brain_id text,
-          raw jsonb NOT NULL DEFAULT '{}'::jsonb,
-          created_at timestamptz NOT NULL DEFAULT now(),
-          updated_at timestamptz NOT NULL DEFAULT now()
-        )
-      `);
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_mail_messages_user_idx ON sigmabrain_mail_messages (user_id, created_at DESC)");
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_mail_messages_brain_idx ON sigmabrain_mail_messages (brain_id, created_at DESC)");
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_mail_messages_message_id_idx ON sigmabrain_mail_messages (message_id)");
-    })();
-  }
-  return schemaReady;
+  await ensureMailboxSchema();
 }
 
 async function loadLocalMailbox(): Promise<MailMessage[]> {
@@ -252,7 +245,7 @@ export function verifyResendWebhook(payload: string, headers: Headers): ResendWe
 
 export async function storeInboundResendEmail(event: ResendWebhookEvent): Promise<MailMessage | null> {
   if (event.type !== "email.received") return null;
-  await ensureMailboxSchema();
+  await ensureMailboxReady();
 
   const emailId = event.data?.email_id;
   const full = emailId ? await fetchReceivedEmail(emailId) : null;
@@ -265,17 +258,17 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
   const raw = { event, received: full };
   const brainId = mailboxBrainId(to);
 
-  const pool = poolOrThrow();
+  const pool = getSharedPgPool();
   if (pool) {
     const { rows } = await pool.query(
-      `INSERT INTO sigmabrain_mail_messages
+      `INSERT INTO subsumio_mail_messages
         (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
          subject, text_body, html_body, message_id, brain_id, raw, created_at, updated_at)
        VALUES ($1,$2,'inbound','received',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14,now())
        ON CONFLICT (provider_id) DO UPDATE
          SET raw = EXCLUDED.raw,
-             text_body = COALESCE(EXCLUDED.text_body, sigmabrain_mail_messages.text_body),
-             html_body = COALESCE(EXCLUDED.html_body, sigmabrain_mail_messages.html_body),
+             text_body = COALESCE(EXCLUDED.text_body, subsumio_mail_messages.text_body),
+             html_body = COALESCE(EXCLUDED.html_body, subsumio_mail_messages.html_body),
              updated_at = now()
        RETURNING *`,
       [
@@ -339,8 +332,8 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
 type MailboxUser = Pick<PublicUser, "id" | "role" | "brainId">;
 
 export async function listMailMessages(user: MailboxUser, filters: MailListFilters = {}): Promise<MailMessage[]> {
-  await ensureMailboxSchema();
-  const pool = poolOrThrow();
+  await ensureMailboxReady();
+  const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
     return localSort(messages.filter((message) => mailboxMatchesUser(message, user) && (!filters.direction || message.direction === filters.direction))).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
@@ -350,10 +343,10 @@ export async function listMailMessages(user: MailboxUser, filters: MailListFilte
   const direction = filters.direction;
   const { rows } = await pool.query(
     isAdmin
-      ? `SELECT * FROM sigmabrain_mail_messages
+      ? `SELECT * FROM subsumio_mail_messages
            WHERE ($2::text IS NULL OR direction = $2)
            ORDER BY created_at DESC LIMIT $1`
-      : `SELECT * FROM sigmabrain_mail_messages
+      : `SELECT * FROM subsumio_mail_messages
            WHERE (user_id = $1 OR brain_id = $2)
              AND ($4::text IS NULL OR direction = $4)
            ORDER BY created_at DESC LIMIT $3`,
@@ -363,8 +356,8 @@ export async function listMailMessages(user: MailboxUser, filters: MailListFilte
 }
 
 export async function getMailMessage(user: MailboxUser, id: string): Promise<MailMessage | null> {
-  await ensureMailboxSchema();
-  const pool = poolOrThrow();
+  await ensureMailboxReady();
+  const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
     return messages.find((message) => message.id === id && mailboxMatchesUser(message, user)) ?? null;
@@ -372,15 +365,15 @@ export async function getMailMessage(user: MailboxUser, id: string): Promise<Mai
   const isAdmin = user.role === "admin";
   const { rows } = await pool.query(
     isAdmin
-      ? "SELECT * FROM sigmabrain_mail_messages WHERE id = $1"
-      : "SELECT * FROM sigmabrain_mail_messages WHERE id = $1 AND (user_id = $2 OR brain_id = $3)",
+      ? "SELECT * FROM subsumio_mail_messages WHERE id = $1"
+      : "SELECT * FROM subsumio_mail_messages WHERE id = $1 AND (user_id = $2 OR brain_id = $3)",
     isAdmin ? [id] : [id, user.id, user.brainId],
   );
   return rows[0] ? rowToMessage(rows[0]) : null;
 }
 
 export async function sendMailboxMessage(user: MailboxUser, input: MailDraftInput): Promise<MailMessage> {
-  await ensureMailboxSchema();
+  await ensureMailboxReady();
   const parent = input.replyToMessageId ? await getMailMessage(user, input.replyToMessageId) : null;
   const headers: Record<string, string> = {};
   if (parent?.messageId) headers["In-Reply-To"] = parent.messageId;
@@ -398,7 +391,7 @@ export async function sendMailboxMessage(user: MailboxUser, input: MailDraftInpu
   const result = await sendMail(mailInput);
 
   const from = parseAddress(process.env.MAIL_FROM || "Subsumio <hello@subsum.io>");
-  const pool = poolOrThrow();
+  const pool = getSharedPgPool();
   if (!pool) {
     if (process.env.NODE_ENV === "production" && !allowFileMailbox) {
       throw new Error("mailbox_database_not_configured");
@@ -430,7 +423,7 @@ export async function sendMailboxMessage(user: MailboxUser, input: MailDraftInpu
     return next;
   }
   const { rows } = await pool.query(
-    `INSERT INTO sigmabrain_mail_messages
+    `INSERT INTO subsumio_mail_messages
       (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
        subject, text_body, html_body, in_reply_to, user_id, brain_id, raw, created_at, updated_at)
      VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,now(),now())

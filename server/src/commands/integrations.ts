@@ -61,6 +61,7 @@ interface ParsedRecipe {
   body: string;
   filename: string;
   embedded: boolean;
+  sourceDir?: string;
 }
 
 interface HeartbeatEntry {
@@ -345,6 +346,10 @@ export function getRecipeDirs(): Array<{ dir: string; trusted: boolean }> {
   const dirs: Array<{ dir: string; trusted: boolean }> = [];
   const sourceDir = join(import.meta.dir, '../../recipes');
   if (existsSync(sourceDir)) dirs.push({ dir: sourceDir, trusted: true });
+  // Fork-friendly fallback: recipes/ may live at the parent repo root when
+  // gbrain is a subdirectory.
+  const parentDir = join(import.meta.dir, '../../../recipes');
+  if (existsSync(parentDir)) dirs.push({ dir: parentDir, trusted: true });
   const globalDir = join(homedir(), '.bun', 'install', 'global', 'node_modules', 'gbrain', 'recipes');
   if (existsSync(globalDir)) dirs.push({ dir: globalDir, trusted: true });
   if (process.env.GBRAIN_RECIPES_DIR && existsSync(process.env.GBRAIN_RECIPES_DIR)) {
@@ -369,6 +374,7 @@ function loadAllRecipes(): ParsedRecipe[] {
         const recipe = parseRecipe(content, file);
         if (recipe) {
           recipe.embedded = trusted;
+          recipe.sourceDir = dir;
           recipes.push(recipe);
           seen.add(file);
         } else {
@@ -1146,8 +1152,9 @@ async function refreshRecipeIntoHostRepo(
     throw new Error(`recipe ${recipeId} is not copy-into-host-repo (install_kind=${recipe.frontmatter.install_kind})`);
   }
 
+  const recipeDir2 = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, '..', '..', 'recipes'));
   const recipeBundleRoot = pathResolve(
-    pathDirname(pathResolve(__dirname, '..', '..', 'recipes', recipe.filename)),
+    recipeDir2,
     recipe.filename.replace(/\.md$/, ''),
   );
   const manifestPath = join(recipeBundleRoot, 'install', 'manifest.json');
@@ -1342,8 +1349,10 @@ export async function installRecipeIntoHostRepo(
   }
 
   // Find the recipe bundle root: recipes/<id>/ (sibling to recipes/<id>.md).
+  // Use sourceDir from the parsed recipe (fork-friendly) instead of __dirname.
+  const recipeDir = recipe.sourceDir ?? pathDirname(pathResolve(__dirname, '..', '..', 'recipes'));
   const recipeBundleRoot = pathResolve(
-    pathDirname(pathResolve(__dirname, '..', '..', 'recipes', recipe.filename)),
+    recipeDir,
     recipe.filename.replace(/\.md$/, ''),
   );
 

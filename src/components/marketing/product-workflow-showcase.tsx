@@ -62,7 +62,7 @@ export default function ProductWorkflowShowcase({
   const l = locale(lang);
   const c = copy[l];
   const profile = profileForIndustry(industry);
-  const brand = profile?.brand ?? "Sigmabrain";
+  const brand = profile?.brand ?? "Subsumio";
   const signature = profile?.signature.title[l] ?? c.title;
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
@@ -74,10 +74,10 @@ export default function ProductWorkflowShowcase({
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 py-28 px-6 overflow-hidden"
+      className="relative z-10 py-28 px-6 overflow-hidden border-y [border-color:var(--mk-border)]"
       style={industry ? styleForIndustry(industry) : undefined}
     >
-      <div className="absolute inset-x-0 top-1/3 h-64 brand-glow-bg blur-3xl opacity-80" />
+      <div className="absolute inset-x-0 top-1/3 h-64 brand-glow-bg blur-3xl opacity-40" />
       <div className="max-w-7xl mx-auto grid lg:grid-cols-[0.8fr_1.2fr] gap-10 lg:gap-14 items-center">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -99,7 +99,7 @@ export default function ProductWorkflowShowcase({
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ duration: 0.35, delay: i * 0.08 }}
-                className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:color-mix(in_srgb,var(--mk-surface)_85%,transparent)] px-4 py-3"
+                className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface-2)] px-4 py-3"
               >
                 <span className="w-7 h-7 rounded-lg brand-soft border brand-border flex items-center justify-center text-xs font-mono brand-text">
                   0{i + 1}
@@ -113,7 +113,7 @@ export default function ProductWorkflowShowcase({
 
         <motion.div style={{ y: yPanel }} className="relative">
           <div className="absolute -inset-6 brand-glow-bg blur-3xl rounded-full" />
-          <div className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] shadow-2xl shadow-black/50">
+          <div data-tone="slate" className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] shadow-2xl shadow-black/20">
             <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
@@ -124,7 +124,7 @@ export default function ProductWorkflowShowcase({
             </div>
 
             <div className="grid md:grid-cols-[180px_1fr] min-h-[470px]">
-              <aside className="hidden md:block border-r [border-color:var(--mk-border)] [background:var(--mk-bg)] p-4">
+              <div className="hidden md:block border-r [border-color:var(--mk-border)] [background:var(--mk-bg)] p-4">
                 <div className="flex items-center gap-2 mb-6">
                   <Brain size={17} className="brand-text" />
                   <span className="text-sm font-bold [color:var(--mk-text)]">{brand}</span>
@@ -134,13 +134,13 @@ export default function ProductWorkflowShowcase({
                     {item}
                   </div>
                 ))}
-              </aside>
+              </div>
 
               <div className="relative p-4 md:p-6">
                 <div className="flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3 mb-5">
                   <Search size={16} className="brand-text" />
                   <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
-                  <Sparkles size={16} className="ml-auto text-[#fbbf24]" />
+                  <Sparkles size={16} className="ml-auto [color:var(--brand-secondary)]" />
                 </div>
 
                 <div className="grid lg:grid-cols-[1fr_0.9fr] gap-4">

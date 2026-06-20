@@ -150,7 +150,7 @@ async function fetchDe(law: DeLaw): Promise<{ markdown: string; versionDate: str
     return null;
   }
   const xml = await zip.files[xmlName].async('string');
-  const doc = new DOMParser({ onError: () => undefined }).parseFromString(xml, 'text/xml');
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
 
   const dokumente = firstByTag(doc, 'dokumente');
   const builddate = dokumente?.getAttribute('builddate') ?? '';

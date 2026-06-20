@@ -5,14 +5,22 @@ import { join } from "node:path";
 import { buildLlmsFiles } from "../scripts/build-llms";
 import { SECTIONS, FULL_SIZE_BUDGET } from "../scripts/llms-config";
 
-const repoRoot = join(import.meta.dir, "..");
+const scriptDir = join(import.meta.dir, "..");
+// Fork-friendly: some files (AGENTS.md, CLAUDE.md, etc.) live at the parent
+// repo root when gbrain is a subdirectory. Check server/ first, then parent.
+function resolveRepoPath(path: string): string {
+  const local = join(scriptDir, path);
+  if (existsSync(local)) return local;
+  return join(scriptDir, "..", path);
+}
+const repoRoot = scriptDir;
 
 describe("build-llms generator", () => {
   // Case 1 — every config path resolves on disk. Catches rename-induced 404s.
   test("every configured path exists on disk", () => {
     for (const section of SECTIONS) {
       for (const entry of section.entries) {
-        const abs = join(repoRoot, entry.path);
+        const abs = resolveRepoPath(entry.path);
         expect(existsSync(abs), `missing: ${entry.path}`).toBe(true);
 
         const st = statSync(abs);
@@ -58,8 +66,8 @@ describe("build-llms generator", () => {
   test("committed llms.txt + llms-full.txt match current generator output", () => {
     const { llmsTxt, llmsFullTxt } = buildLlmsFiles();
 
-    const committedLlms = readFileSync(join(repoRoot, "llms.txt"), "utf8");
-    const committedFull = readFileSync(join(repoRoot, "llms-full.txt"), "utf8");
+    const committedLlms = readFileSync(resolveRepoPath("llms.txt"), "utf8");
+    const committedFull = readFileSync(resolveRepoPath("llms-full.txt"), "utf8");
 
     const helpMsg =
       "Run `bun run build:llms` and commit the updated output before shipping.";
@@ -78,7 +86,7 @@ describe("build-llms generator", () => {
   });
 
   test("content contract: AGENTS.md mirrors README + INSTALL_FOR_AGENTS install path", () => {
-    const agents = readFileSync(join(repoRoot, "AGENTS.md"), "utf8");
+    const agents = readFileSync(resolveRepoPath("AGENTS.md"), "utf8");
     expect(agents).toContain("CLAUDE.md");
     expect(agents).toContain("skills/RESOLVER.md");
     expect(agents).toContain("INSTALL_FOR_AGENTS.md");
@@ -104,7 +112,7 @@ describe("build-llms generator", () => {
 // new docs are wired into the bundle the way intended (KEY_FILES link-only,
 // not inlined).
 describe("CLAUDE.md restructure content contracts", () => {
-  const claude = () => readFileSync(join(repoRoot, "CLAUDE.md"), "utf8");
+  const claude = () => readFileSync(resolveRepoPath("CLAUDE.md"), "utf8");
 
   test("CLAUDE.md keeps the inline ship IRON RULES (must NOT move to a doc)", () => {
     const c = claude();
@@ -126,7 +134,7 @@ describe("CLAUDE.md restructure content contracts", () => {
   });
 
   test("AGENTS.md keeps its boot order + points at the new docs (not reduced to a pointer)", () => {
-    const agents = readFileSync(join(repoRoot, "AGENTS.md"), "utf8");
+    const agents = readFileSync(resolveRepoPath("AGENTS.md"), "utf8");
     expect(agents).toContain("Read this order");
     expect(agents).toContain("docs/architecture/KEY_FILES.md");
     expect(agents).toContain("docs/TESTING.md");

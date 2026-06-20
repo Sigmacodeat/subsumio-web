@@ -5,6 +5,10 @@
  */
 
 import { b64url, b64urlDecode, hmacKey } from "./auth/session";
+import { getSharedPgPool } from "./auth/store";
+import { createHash } from "node:crypto";
+import { AuthError } from "@/lib/errors";
+import { createSchemaInit } from "@/lib/schema-init";
 
 const encoder = new TextEncoder();
 
@@ -17,10 +21,10 @@ export function getPortalSecret(): string {
   const secret = process.env.PORTAL_TOKEN_SECRET;
   if (secret) return secret;
   if (process.env.NODE_ENV === "production") {
-    throw new Error("PORTAL_TOKEN_SECRET must be set in production.");
+    throw new AuthError("PORTAL_TOKEN_SECRET must be set in production.", { code: "PORTAL_TOKEN_SECRET_MISSING" });
   }
   // Dev fallback: ableiten aus dem Auth-Secret, aber NICHT identisch
-  return "portal-dev-" + (process.env.AUTH_SECRET || "sigmabrain-dev-secret-change-me").slice(0, 32);
+  return "portal-dev-" + (process.env.AUTH_SECRET || "subsumio-dev-secret-change-me").slice(0, 32);
 }
 
 export async function signPortalToken(
@@ -37,15 +41,47 @@ export async function signPortalToken(
   return `${body}.${b64url(sig)}`;
 }
 
-// NOTE: In-memory revocation list. For production with multiple server
-// instances or serverless, replace with Redis / DB-backed store.
+// --- Revocation store (Postgres in production, in-memory in dev) ---
+
 const REVOKED = new Set<string>();
+
+const ensurePortalSchema = createSchemaInit(`
+  CREATE TABLE IF NOT EXISTS subsumio_portal_revocations (
+    token_hash text PRIMARY KEY,
+    revoked_at timestamptz NOT NULL DEFAULT now()
+  )
+`);
+
+function tokenHash(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export async function verifyPortalToken(
   token: string | undefined | null,
 ): Promise<PortalTokenPayload | null> {
   if (!token) return null;
-  if (REVOKED.has(token)) return null;
+
+  // Check revocation (Postgres in prod, in-memory in dev)
+  const hash = tokenHash(token);
+  if (REVOKED.has(hash)) return null;
+
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensurePortalSchema();
+      const { rows } = await pool.query(
+        "SELECT 1 FROM subsumio_portal_revocations WHERE token_hash = $1",
+        [hash],
+      );
+      if (rows.length > 0) {
+        REVOKED.add(hash);
+        return null;
+      }
+    } catch {
+      // Fall through to signature verification
+    }
+  }
+
   const dot = token.lastIndexOf(".");
   if (dot <= 0) return null;
   const body = token.slice(0, dot);
@@ -66,10 +102,42 @@ export async function verifyPortalToken(
   }
 }
 
-export function revokePortalToken(token: string): void {
-  REVOKED.add(token);
+export async function revokePortalToken(token: string): Promise<void> {
+  const hash = tokenHash(token);
+  REVOKED.add(hash);
+
+  const pool = getSharedPgPool();
+  if (!pool) return;
+  try {
+    await ensurePortalSchema();
+    await pool.query(
+      "INSERT INTO subsumio_portal_revocations (token_hash) VALUES ($1) ON CONFLICT DO NOTHING",
+      [hash],
+    );
+  } catch (err) {
+    console.error(`[portal-token] revocation persist failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
-export function isPortalTokenRevoked(token: string): boolean {
-  return REVOKED.has(token);
+export async function isPortalTokenRevoked(token: string): Promise<boolean> {
+  const hash = tokenHash(token);
+  if (REVOKED.has(hash)) return true;
+
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensurePortalSchema();
+      const { rows } = await pool.query(
+        "SELECT 1 FROM subsumio_portal_revocations WHERE token_hash = $1",
+        [hash],
+      );
+      if (rows.length > 0) {
+        REVOKED.add(hash);
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return false;
 }

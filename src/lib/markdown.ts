@@ -31,8 +31,13 @@ export function renderMarkdown(text: string): string {
     .replace(/^\s*[-*+]\s+(.*$)/gim, '<li>$1</li>')
     // Ordered lists
     .replace(/^\s*\d+\.\s+(.*$)/gim, '<li>$1</li>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    // Links (sanitize href to block javascript:/data: URLs)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, href) => {
+      const safe = /^(https?:|mailto:|\/|#)/i.test(href);
+      return safe
+        ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`
+        : match;
+    })
     // Horizontal rule
     .replace(/^---+$/gim, '<hr/>')
     // Paragraphs (simple: wrap non-tag lines)

@@ -54,9 +54,10 @@ export async function generateTOTP(secret: string, opts?: { time?: number; step?
   const digits = opts?.digits ?? 6;
 
   const decoded = base32Decode(secret);
+  const keyBytes = new Uint8Array(decoded);
   const key = await crypto.subtle.importKey(
     "raw",
-    decoded.buffer.slice(decoded.byteOffset, decoded.byteOffset + decoded.byteLength) as ArrayBuffer,
+    keyBytes,
     { name: "HMAC", hash: "SHA-1" },
     false,
     ["sign"]
@@ -69,7 +70,7 @@ export async function generateTOTP(secret: string, opts?: { time?: number; step?
     temp >>= 8;
   }
 
-  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, counter.buffer));
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, counter));
   const offset = sig[sig.length - 1] & 0x0f;
   const code =
     ((sig[offset] & 0x7f) << 24 |

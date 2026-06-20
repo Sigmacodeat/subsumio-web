@@ -1,3 +1,5 @@
+import { EngineError } from './engine-errors.ts';
+
 // Page types
 // v0.38: `PageType` opens from a closed 23-element union to `string`. The
 // closed union was always a fiction — every gbrain user accumulated organic
@@ -1546,14 +1548,14 @@ export interface EngineConfig {
 }
 
 // Errors
-export class GBrainError extends Error {
+export class GBrainError extends EngineError {
   constructor(
     public problem: string,
     public cause_description: string,
     public fix: string,
     public docs_url?: string,
   ) {
-    super(`${problem}: ${cause_description}. Fix: ${fix}`);
+    super('config', `${problem}: ${cause_description}. Fix: ${fix}`, { fix });
     this.name = 'GBrainError';
   }
 }

@@ -4,22 +4,22 @@
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
-  <Id>sigmabrain-word-addin</Id>
+  <Id>subsumio-word-addin</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>SigmaBrain</ProviderName>
+  <ProviderName>Subsumio</ProviderName>
   <DefaultLocale>de-DE</DefaultLocale>
-  <DisplayName DefaultValue="SigmaBrain für Word"/>
-  <Description DefaultValue="Schriftsätze und Dokumente aus SigmaBrain direkt in Word einfügen."/>
-  <IconUrl DefaultValue="https://sigmabrain.com/icon-192.png"/>
-  <SupportUrl DefaultValue="https://sigmabrain.com/support"/>
+  <DisplayName DefaultValue="Subsumio für Word"/>
+  <Description DefaultValue="Schriftsätze und Dokumente aus Subsumio direkt in Word einfügen."/>
+  <IconUrl DefaultValue="https://subsum.io/icon-192.png"/>
+  <SupportUrl DefaultValue="https://subsum.io/support"/>
   <AppDomains>
-    <AppDomain>https://sigmabrain.com</AppDomain>
+    <AppDomain>https://subsum.io</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://sigmabrain.com/word-addin/taskpane.html"/>
+    <SourceLocation DefaultValue="https://subsum.io/word-addin/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -33,14 +33,14 @@
           </GetStarted>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="SigmaBrain.Group">
+              <Group id="Subsumio.Group">
                 <Label resid="Group.Label"/>
                 <Icon>
                   <bt:Image size="16" resid="Icon.16"/>
                   <bt:Image size="32" resid="Icon.32"/>
                   <bt:Image size="80" resid="Icon.80"/>
                 </Icon>
-                <Control xsi:type="Button" id="SigmaBrain.OpenPane">
+                <Control xsi:type="Button" id="Subsumio.OpenPane">
                   <Label resid="Button.Label"/>
                   <Supertip>
                     <Title resid="Button.SupertipTitle"/>
@@ -52,7 +52,7 @@
                     <bt:Image size="80" resid="Icon.80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>SigmaBrainPane</TaskpaneId>
+                    <TaskpaneId>SubsumioPane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
@@ -64,23 +64,23 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://sigmabrain.com/icon-192.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://sigmabrain.com/icon-192.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://sigmabrain.com/icon-192.png"/>
+        <bt:Image id="Icon.16" DefaultValue="https://subsum.io/icon-192.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://subsum.io/icon-192.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://subsum.io/icon-192.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://sigmabrain.com/support"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://sigmabrain.com/word-addin/taskpane.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://subsum.io/support"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://subsum.io/word-addin/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="SigmaBrain für Word"/>
-        <bt:String id="Group.Label" DefaultValue="SigmaBrain"/>
-        <bt:String id="Button.Label" DefaultValue="SigmaBrain"/>
-        <bt:String id="Button.SupertipTitle" DefaultValue="SigmaBrain öffnen"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Subsumio für Word"/>
+        <bt:String id="Group.Label" DefaultValue="Subsumio"/>
+        <bt:String id="Button.Label" DefaultValue="Subsumio"/>
+        <bt:String id="Button.SupertipTitle" DefaultValue="Subsumio öffnen"/>
         <bt:String id="Button.SupertipDesc" DefaultValue="Schriftsätze und Dokumente aus Ihrem Brain in Word einfügen."/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="GetStarted.Description" DefaultValue="Schriftsätze und Dokumente aus SigmaBrain direkt in Word einfügen."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Schriftsätze und Dokumente aus Subsumio direkt in Word einfügen."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

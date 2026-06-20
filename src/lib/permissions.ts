@@ -70,9 +70,14 @@ export type RouteAction =
   | "legal.risk_analysis"
   | "legal.memo"
   | "legal.redline"
+  | "legal.playbook"
+  | "legal.rvg"
+  | "legal.statute"
   | "team.role_change"
   | "billing.read"
   | "billing.write"
+  | "scim.read"       // GET /api/scim/*
+  | "scim.write"      // POST/PUT/PATCH/DELETE /api/scim/*
   | "admin.*";        // nur admin
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
@@ -100,9 +105,14 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.risk_analysis":   ["admin", "lawyer", "assistant"],
   "legal.memo":            ["admin", "lawyer", "assistant"],
   "legal.redline":         ["admin", "lawyer"],
+  "legal.playbook":        ["admin", "lawyer"],
+  "legal.rvg":             ["admin", "lawyer", "assistant"],
+  "legal.statute":         ["admin", "lawyer", "assistant"],
   "team.role_change":      ["admin"],
   "billing.read":          ["admin", "lawyer"],
   "billing.write":         ["admin"],
+  "scim.read":             ["admin"],
+  "scim.write":            ["admin"],
   "admin.*":               ["admin"],
 };
 
@@ -148,9 +158,14 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.risk_analysis": "legal.risk_analysis",
     "legal.memo": "legal.memo",
     "legal.redline": "legal.redline",
+    "legal.playbook": "legal.playbook",
+    "legal.rvg": "legal.rvg",
+    "legal.statute": "legal.statute",
     "team.role_change": "team.role_change",
     "billing.read": "billing.upgrade",
     "billing.write": "billing.upgrade",
+    "scim.read": "settings.update",
+    "scim.write": "settings.update",
     "admin.*": "settings.update",
   };
   return map[routeAction] ?? "settings.update";

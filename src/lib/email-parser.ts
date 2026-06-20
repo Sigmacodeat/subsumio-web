@@ -29,37 +29,96 @@ export function parseEml(emlText: string): ParsedEmail {
   let to = "";
   let subject = "";
   let date = "";
-  let inBody = false;
-  const bodyLines: string[] = [];
+  let boundary = "";
   const attachments: Array<{ filename: string; contentType: string }> = [];
+  const bodyLines: string[] = [];
 
-  for (const line of lines) {
+  // Phase 1: Parse headers
+  let headerEnd = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const lower = line.toLowerCase();
-    if (!inBody) {
-      if (lower.startsWith("from:")) {
-        const m = line.match(/From:\s*(.+)/i);
-        if (m) {
-          from = extractEmail(m[1]);
-          fromName = extractName(m[1]);
-        }
-      } else if (lower.startsWith("to:")) {
-        const m = line.match(/To:\s*(.+)/i);
-        if (m) to = extractEmail(m[1]);
-      } else if (lower.startsWith("subject:")) {
-        const m = line.match(/Subject:\s*(.+)/i);
-        if (m) subject = decodeHeader(m[1]);
-      } else if (lower.startsWith("date:")) {
-        const m = line.match(/Date:\s*(.+)/i);
-        if (m) date = m[1];
-      } else if (lower.startsWith("content-disposition:") && line.includes("attachment")) {
-        const fnMatch = line.match(/filename="?([^"]+)"?/);
-        if (fnMatch) attachments.push({ filename: fnMatch[1], contentType: "application/octet-stream" });
-      } else if (line.trim() === "") {
-        inBody = true;
+    if (lower.startsWith("from:")) {
+      const m = line.match(/From:\s*(.+)/i);
+      if (m) { from = extractEmail(m[1]); fromName = extractName(m[1]); }
+    } else if (lower.startsWith("to:")) {
+      const m = line.match(/To:\s*(.+)/i);
+      if (m) to = extractEmail(m[1]);
+    } else if (lower.startsWith("subject:")) {
+      const m = line.match(/Subject:\s*(.+)/i);
+      if (m) subject = decodeHeader(m[1]);
+    } else if (lower.startsWith("date:")) {
+      const m = line.match(/Date:\s*(.+)/i);
+      if (m) date = m[1];
+    } else if (lower.startsWith("content-type:")) {
+      const m = line.match(/Content-Type:\s*(.+)/i);
+      if (m) {
+        const bMatch = m[1].match(/boundary="?([^";\s]+)"?/i);
+        if (bMatch) boundary = bMatch[1];
       }
-    } else {
-      bodyLines.push(line);
+    } else if (lower.startsWith("content-disposition:") && line.includes("attachment")) {
+      const fnMatch = line.match(/filename="?([^"]+)"?/);
+      if (fnMatch) attachments.push({ filename: fnMatch[1], contentType: "application/octet-stream" });
+    } else if (line.trim() === "") {
+      headerEnd = i + 1;
+      break;
     }
+  }
+
+  // Phase 2: Parse body
+  if (boundary) {
+    // Multipart MIME: extract text/plain part and attachments from each part
+    const boundaryLine = `--${boundary}`;
+    const endBoundary = `--${boundary}--`;
+    const parts: Array<{ headers: Record<string, string>; body: string[] }> = [];
+    let currentPart: { headers: Record<string, string>; body: string[] } | null = null;
+    let inHeaders = false;
+
+    for (let i = headerEnd; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.startsWith(boundaryLine)) {
+        if (currentPart) parts.push(currentPart);
+        currentPart = { headers: {}, body: [] };
+        inHeaders = true;
+        continue;
+      }
+      if (line.startsWith(endBoundary)) {
+        if (currentPart) parts.push(currentPart);
+        currentPart = null;
+        inHeaders = false;
+        continue;
+      }
+      if (currentPart) {
+        if (inHeaders) {
+          if (line.trim() === "") {
+            inHeaders = false;
+          } else {
+            const hm = line.match(/^([A-Za-z-]+):\s*(.*)$/);
+            if (hm) currentPart.headers[hm[1].toLowerCase()] = hm[2];
+          }
+        } else {
+          currentPart.body.push(line);
+        }
+      }
+    }
+
+    for (const part of parts) {
+      const partCt = part.headers["content-type"] || "";
+      const partDisp = part.headers["content-disposition"] || "";
+      const isAttachment = partDisp.includes("attachment");
+      const isTextPlain = partCt.startsWith("text/plain") || (!isAttachment && partCt.startsWith("text/") && bodyLines.length === 0);
+      const fnMatch = partDisp.match(/filename="?([^"]+)"?/);
+      const ctMatch = partCt.match(/^([^;]+)/);
+
+      if (isAttachment) {
+        if (fnMatch) attachments.push({ filename: fnMatch[1], contentType: ctMatch?.[1]?.trim() || "application/octet-stream" });
+      } else if (isTextPlain) {
+        bodyLines.push(...part.body);
+      }
+    }
+  } else {
+    // Simple body: everything after headers
+    for (let i = headerEnd; i < lines.length; i++) bodyLines.push(lines[i]);
   }
 
   const body = bodyLines.join("\n").trim();
@@ -80,7 +139,7 @@ export function parseEml(emlText: string): ParsedEmail {
     to,
     subject,
     date,
-    body: body.slice(0, 5000), // truncate
+    body: body.slice(0, 5000),
     attachments,
     suggestedCaseSlug,
     confidence,

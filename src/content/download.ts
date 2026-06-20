@@ -29,12 +29,12 @@ export interface DownloadContent {
 
 export const DOWNLOAD: Record<Lang, DownloadContent> = {
   en: {
-    metaTitle: "Download — Sigmabrain on every device",
-    metaDesc: "Install Sigmabrain on iPhone, iPad, Android and desktop. One app, every screen — no app store required.",
+    metaTitle: "Download — Subsumio on every device",
+    metaDesc: "Install Subsumio on iPhone, iPad, Android and desktop. One app, every screen — no app store required.",
     badge: "iOS · iPadOS · Android · Desktop",
     h1a: "Your brain,",
     h1b: "in your pocket.",
-    sub: "Sigmabrain installs as a full-screen app on every device you own — straight from the browser, no app store, no waiting. Native store apps are on the way.",
+    sub: "Subsumio installs as a full-screen app on every device you own — straight from the browser, no app store, no waiting. Native store apps are on the way.",
     platforms: [
       {
         id: "ios",
@@ -42,7 +42,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "iPhone & iPad",
         tagline: "Install via Safari in 10 seconds",
         steps: [
-          "Open sigmabrain.com in Safari",
+          "Open subsum.eu in Safari",
           "Tap the Share button (square with arrow)",
           "Tap “Add to Home Screen”",
           "Tap “Add” — done. Full-screen app with the Σ icon.",
@@ -55,9 +55,9 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "Android",
         tagline: "Chrome offers the install for you",
         steps: [
-          "Open sigmabrain.com in Chrome",
+          "Open subsum.eu in Chrome",
           "Tap the “Install app” prompt (or menu ⋮ → “Add to Home screen”)",
-          "Confirm — Sigmabrain appears in your app drawer",
+          "Confirm — Subsumio appears in your app drawer",
           "Launches full-screen like any native app.",
         ],
         note: "Also works in Edge, Samsung Internet and Firefox.",
@@ -68,15 +68,15 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "Desktop (Mac, Windows, Linux)",
         tagline: "One click in Chrome or Edge",
         steps: [
-          "Open sigmabrain.com in Chrome or Edge",
+          "Open subsum.eu in Chrome or Edge",
           "Click the install icon in the address bar (⊕ screen)",
-          "Confirm — Sigmabrain opens in its own window",
+          "Confirm — Subsumio opens in its own window",
           "Pin it to your Dock or taskbar.",
         ],
       },
     ],
     storesTitle: "App Store & Google Play",
-    storesSub: "Native apps are in preparation — built on the same codebase via Capacitor, with push notifications, biometric unlock and a “Send to Sigmabrain” share extension.",
+    storesSub: "Native apps are in preparation — built on the same codebase via Capacitor, with push notifications, biometric unlock and a “Send to Subsumio” share extension.",
     storesNote: "Store availability follows the hosted-cloud launch (Apple requires a full account flow for review). Install the web app above today — it's the same product, and your account carries over.",
     faqTitle: "Install questions",
     faq: [
@@ -90,12 +90,12 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     ctaButton: "Get started",
   },
   de: {
-    metaTitle: "Download — Sigmabrain auf jedem Gerät",
-    metaDesc: "Installiere Sigmabrain auf iPhone, iPad, Android und Desktop. Eine App, jeder Bildschirm — ohne App Store.",
+    metaTitle: "Download — Subsumio auf jedem Gerät",
+    metaDesc: "Installiere Subsumio auf iPhone, iPad, Android und Desktop. Eine App, jeder Bildschirm — ohne App Store.",
     badge: "iOS · iPadOS · Android · Desktop",
     h1a: "Dein Brain,",
     h1b: "in deiner Tasche.",
-    sub: "Sigmabrain installiert sich als Vollbild-App auf jedem deiner Geräte — direkt aus dem Browser, ohne App Store, ohne Wartezeit. Native Store-Apps sind in Arbeit.",
+    sub: "Subsumio installiert sich als Vollbild-App auf jedem deiner Geräte — direkt aus dem Browser, ohne App Store, ohne Wartezeit. Native Store-Apps sind in Arbeit.",
     platforms: [
       {
         id: "ios",
@@ -103,7 +103,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "iPhone & iPad",
         tagline: "In 10 Sekunden über Safari installiert",
         steps: [
-          "Öffne sigmabrain.com in Safari",
+          "Öffne subsum.eu in Safari",
           "Tippe auf den Teilen-Button (Quadrat mit Pfeil)",
           "Tippe auf „Zum Home-Bildschirm“",
           "Tippe auf „Hinzufügen“ — fertig. Vollbild-App mit Σ-Icon.",
@@ -116,9 +116,9 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "Android",
         tagline: "Chrome bietet dir die Installation an",
         steps: [
-          "Öffne sigmabrain.com in Chrome",
+          "Öffne subsum.eu in Chrome",
           "Tippe auf „App installieren“ (oder Menü ⋮ → „Zum Startbildschirm“)",
-          "Bestätige — Sigmabrain erscheint im App-Drawer",
+          "Bestätige — Subsumio erscheint im App-Drawer",
           "Startet im Vollbild wie jede native App.",
         ],
         note: "Funktioniert auch in Edge, Samsung Internet und Firefox.",
@@ -129,15 +129,15 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         name: "Desktop (Mac, Windows, Linux)",
         tagline: "Ein Klick in Chrome oder Edge",
         steps: [
-          "Öffne sigmabrain.com in Chrome oder Edge",
+          "Öffne subsum.eu in Chrome oder Edge",
           "Klicke das Install-Icon in der Adressleiste (⊕ Bildschirm)",
-          "Bestätige — Sigmabrain öffnet im eigenen Fenster",
+          "Bestätige — Subsumio öffnet im eigenen Fenster",
           "Pinne es ans Dock oder die Taskleiste.",
         ],
       },
     ],
     storesTitle: "App Store & Google Play",
-    storesSub: "Native Apps sind in Vorbereitung — auf derselben Codebase via Capacitor, mit Push-Benachrichtigungen, biometrischer Entsperrung und einer „An Sigmabrain senden“-Share-Extension.",
+    storesSub: "Native Apps sind in Vorbereitung — auf derselben Codebase via Capacitor, mit Push-Benachrichtigungen, biometrischer Entsperrung und einer „An Subsumio senden“-Share-Extension.",
     storesNote: "Die Store-Verfügbarkeit folgt auf den Cloud-Launch (Apple verlangt für das Review einen vollständigen Account-Flow). Installiere heute die Web-App oben — es ist dasselbe Produkt, dein Konto zieht mit um.",
     faqTitle: "Fragen zur Installation",
     faq: [

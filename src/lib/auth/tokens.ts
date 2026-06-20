@@ -7,9 +7,9 @@
 //   effectively single-use without server-side storage); verify tokens bind
 //   to the email address.
 
-import { getAuthSecret } from "./session";
+import { getAuthSecret, b64url, b64urlDecode, hmacKey } from "./session";
 
-export type TokenPurpose = "reset" | "verify" | "invite";
+export type TokenPurpose = "reset" | "verify" | "invite" | "2fa_challenge";
 
 export interface ActionTokenPayload {
   uid: string;
@@ -21,31 +21,9 @@ export interface ActionTokenPayload {
 export const RESET_TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
 export const VERIFY_TOKEN_TTL_SECONDS = 48 * 3600; // 48 hours
 export const INVITE_TOKEN_TTL_SECONDS = 7 * 24 * 3600; // 7 days
+export const CHALLENGE_TOKEN_TTL_SECONDS = 5 * 60; // 5 minutes
 
 const encoder = new TextEncoder();
-
-function b64url(data: ArrayBuffer | string): string {
-  const bytes = typeof data === "string" ? encoder.encode(data) : new Uint8Array(data);
-  let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function b64urlDecode(input: string): string {
-  const b64 = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-  return atob(padded);
-}
-
-async function hmacKey(secret: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign", "verify"],
-  );
-}
 
 /** Short, stable digest of a value for token binding (not a secret itself). */
 export async function bindFragment(value: string): Promise<string> {

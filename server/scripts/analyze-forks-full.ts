@@ -3,6 +3,7 @@
  * Analysiert die Top N Forks: Commits, neue Dateien, modifizierte Dateien
  * Output: /tmp/gbrain-forks-detailed.json + /tmp/gbrain-forks-detailed.md
  */
+export {};
 
 // ---------------------------------------------------------------
 // 1. KONFIGURATION

@@ -19,7 +19,7 @@ import {
 } from "framer-motion";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SigmaMark } from "@/components/brand/logo";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
@@ -28,7 +28,10 @@ import {
   MarketingNav,
   MarketingFooter,
   ICONS,
+  useSiteBrand,
 } from "./chrome";
+import { ScrollProgress } from "./motion-system";
+import BackToTop from "./back-to-top";
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -239,7 +242,8 @@ function HowItWorks({ lang }: { lang: Lang }) {
 
 export default function FeaturesPage({ lang }: { lang: Lang }) {
   const t = FEATURES_PAGE[lang];
-  const isSubsumio = true;
+  const brand = useSiteBrand();
+  const isSubsumio = brand === "subsumio";
   const [active, setActive] = useState(t.categories[0].id);
   const cat = t.categories.find((c) => c.id === active) ?? t.categories[0];
   const CatIcon = ICONS[cat.icon];
@@ -261,7 +265,8 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+        <ScrollProgress />
         <MarketingBackground />
         <MarketingNav lang={lang} />
 
@@ -411,7 +416,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.06 * i, duration: 0.22 }}
-                      className="flex gap-3 p-4 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:brand-border hover:bg-[#0f0f20] transition-colors"
+                      className="flex gap-3 p-4 rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:brand-border hover:[background:var(--mk-hover)] transition-colors"
                     >
                       <CheckCircle2 size={16} className="brand-text shrink-0 mt-0.5" />
                       <div>
@@ -444,7 +449,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                             line.startsWith("$") || line.startsWith(">")
                               ? "[color:var(--mk-text)]"
                               : line.includes("⚠")
-                                ? "text-amber-400"
+                                ? "[color:var(--signal-amber)]"
                                 : line.startsWith("→") || line.match(/^\d\d:\d\d/)
                                   ? "brand-text"
                                   : "[color:var(--mk-text-muted)]"
@@ -492,7 +497,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={viewport}
                   transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
-                  className="group text-left p-6 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:brand-border hover:bg-[#0f0f20] hover:-translate-y-1 transition-all"
+                  className="group text-left p-6 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] hover:brand-border hover:[background:var(--mk-hover)] hover:-translate-y-1 transition-all"
                 >
                   <div className="w-11 h-11 rounded-xl brand-soft border brand-border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     {Icon && <Icon size={20} className="brand-text" />}
@@ -510,7 +515,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
         {/* CTA */}
         <section className="relative z-10 py-24 px-6 text-center max-w-3xl mx-auto border-t [border-color:var(--mk-border)]">
-          <SigmaMark size={64} className="mx-auto mb-8 rounded-[15px] glow" />
+          <SubsumioMark size={64} className="mx-auto mb-8 rounded-[15px] glow" />
           <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
           <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
@@ -521,6 +526,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
         </section>
 
         <MarketingFooter lang={lang} />
+        <BackToTop lang={lang} />
       </div>
     </MotionConfig>
   );

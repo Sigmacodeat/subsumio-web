@@ -1,0 +1,407 @@
+openapi: 3.1.0
+info:
+  title: GBrain API
+  description: |
+    GBrain HTTP API for brain operations, search, extraction, and management.
+    Mounted by `gbrain serve --http` at `/api/*` and `/mcp`.
+  version: 0.42.38.0
+  contact:
+    name: GBrain
+    url: https://github.com/garrytan/gbrain
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: https://api.sigmabrain.com
+    description: Production
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns service status and version.
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Service unavailable
+
+  /api/stats:
+    get:
+      summary: Brain statistics
+      description: Get total pages, entities, queries, and storage metrics.
+      responses:
+        "200":
+          description: Brain statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainStats"
+
+  /api/search:
+    get:
+      summary: Hybrid search
+      description: Full-text + vector hybrid search across the brain.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Max results
+        - name: source
+          in: query
+          schema:
+            type: string
+          description: Filter by source
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by page type
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+
+  /api/pages:
+    get:
+      summary: List pages
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrainPage"
+    post:
+      summary: Create or update page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageInput"
+      responses:
+        "200":
+          description: Page created/updated
+
+  /api/pages/{slug}:
+    get:
+      summary: Get page by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Page details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrainPage"
+        "404":
+          description: Page not found
+    delete:
+      summary: Delete page
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Page deleted
+
+  /api/graph:
+    get:
+      summary: Get knowledge graph
+      responses:
+        "200":
+          description: Graph nodes and links
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GraphData"
+
+  /api/think:
+    post:
+      summary: AI query with citations
+      description: |
+        Streaming SSE endpoint. Returns `data:` events with chunks,
+        then a final JSON object with citations and gaps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                mode:
+                  type: string
+                  enum: [conservative, balanced, tokenmax]
+                  default: balanced
+      responses:
+        "200":
+          description: SSE stream or JSON response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/upload:
+    post:
+      summary: Upload file
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+                source:
+                  type: string
+                tags:
+                  type: string
+      responses:
+        "200":
+          description: Upload successful
+
+  /api/legal/conflict-check:
+    post:
+      summary: Conflict of interest check
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Conflict check result
+
+  /api/legal/anonymize:
+    post:
+      summary: Anonymize text
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                types:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Anonymized text
+
+  /api/connectors:
+    get:
+      summary: List connectors
+      responses:
+        "200":
+          description: Connector statuses
+
+  /api/connectors/{service}/sync:
+    post:
+      summary: Sync connector
+      parameters:
+        - name: service
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sync started
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-sigmabrain-api-key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        engine:
+          type: string
+
+    BrainStats:
+      type: object
+      properties:
+        total_pages:
+          type: integer
+        total_entities:
+          type: integer
+        total_queries:
+          type: integer
+        total_edges:
+          type: integer
+        last_synced:
+          type: string
+          format: date-time
+        storage_used_mb:
+          type: number
+
+    SearchResult:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        snippet:
+          type: string
+        score:
+          type: number
+        evidence:
+          type: string
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    BrainPage:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        frontmatter:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PageInput:
+      type: object
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        type:
+          type: string
+        frontmatter:
+          type: object
+        merge:
+          type: boolean
+
+    GraphData:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphNode"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/GraphLink"
+
+    GraphNode:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        connections:
+          type: integer
+
+    GraphLink:
+      type: object
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        type:
+          type: string
+        weight:
+          type: number

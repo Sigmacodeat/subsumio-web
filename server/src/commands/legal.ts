@@ -19,6 +19,10 @@
  */
 
 import * as db from "../core/db.ts";
+import { loadConfig, toEngineConfig } from "../core/config.ts";
+import { createEngine } from "../core/engine-factory.ts";
+import type { BrainEngine } from "../core/engine.ts";
+import { embedQuery } from "../core/embedding.ts";
 import {
   LegalEntityRepository,
   LegalCaseRepository,
@@ -677,30 +681,163 @@ async function handlePrecedent(flags: ParsedFlags): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`Searching precedents for: "${query}"`);
-  console.log("(Full implementation connects to perplexity-research for live case law)");
+  const limit = flags.limit ?? 10;
+  const config = loadConfig();
+  if (!config) {
+    console.error("No brain configured. Run: gbrain init");
+    process.exit(1);
+  }
+  const engineConfig = toEngineConfig(config);
+  const engine = await createEngine(engineConfig);
+  await engine.connect(engineConfig);
 
-  const results = [
-    {
-      id: "prec-1",
-      title: `Precedent related to ${query}`,
-      court: "Bundesverfassungsgericht",
-      date: "2023-05-12",
-      legalArea: "Amtshaftungsrecht",
-      keyHolding: "State liability requires demonstrable breach of official duty.",
-      relevanceScore: 0.87,
-      source: "external" as const,
-    },
-  ];
+  // Search legal_case pages using keyword + vector search
+  const searchOpts: Record<string, unknown> = {
+    limit: limit * 3,
+    types: ["legal_case"],
+  };
 
-  if (flags.json) printJson(results);
-  else {
-    console.log(`\nFound ${results.length} precedent(s):`);
-    for (const r of results) {
+  let keywordResults: Array<{ slug: string; title: string; score?: number }> = [];
+  let vectorResults: Array<{ slug: string; title: string; score?: number }> = [];
+
+  try {
+    keywordResults = await engine.searchKeyword(query, searchOpts as any);
+  } catch {
+    // keyword search should always work
+  }
+
+  try {
+    const embedding = await embedQuery(query);
+    vectorResults = await engine.searchVector(embedding, searchOpts as any);
+  } catch {
+    // vector search may not be available (no embedding provider configured)
+  }
+
+  // Merge + dedup by slug
+  const seen = new Map<string, { title: string; score: number }>();
+  for (const r of keywordResults) {
+    seen.set(r.slug, { title: r.title, score: r.score ?? 0 });
+  }
+  for (const r of vectorResults) {
+    const existing = seen.get(r.slug);
+    if (existing) {
+      existing.score = Math.max(existing.score, r.score ?? 0);
+    } else {
+      seen.set(r.slug, { title: r.title, score: r.score ?? 0 });
+    }
+  }
+
+  if (seen.size === 0) {
+    if (flags.json) printJson([]);
+    else console.log(`No precedents found for: "${query}"`);
+    return;
+  }
+
+  // Fetch frontmatter for scoring
+  const slugs = Array.from(seen.keys());
+  const fmRows = await engine.executeRaw<{
+    slug: string;
+    title: string;
+    frontmatter: Record<string, unknown> | null;
+    body: string;
+    updated_at: string;
+  }>(
+    `SELECT slug, title, frontmatter, compiled_truth as body, updated_at::text
+     FROM pages
+     WHERE slug = ANY($1::text[])
+       AND deleted_at IS NULL`,
+    [slugs],
+  );
+
+  const queryLower = query.toLowerCase();
+  const queryTokens = new Set(queryLower.split(/\s+/).filter((t) => t.length > 2));
+
+  const results: Array<{
+    id: string;
+    title: string;
+    case_number: string;
+    legal_area: string;
+    status: string;
+    jurisdiction: string;
+    court: string;
+    relevanceScore: number;
+    keyHolding: string;
+    source: "brain";
+  }> = [];
+
+  for (const row of fmRows) {
+    const fm = row.frontmatter ?? {};
+    const legalArea = typeof fm.legal_area === "string" ? fm.legal_area : "";
+    const subArea = typeof fm.sub_area === "string" ? fm.sub_area : "";
+    const caseStatus = typeof fm.status === "string" ? fm.status : "unknown";
+    const caseNumber = typeof fm.case_number === "string" ? fm.case_number : "";
+    const caseJurisdiction = typeof fm.jurisdiction === "string" ? fm.jurisdiction : "";
+    const court = typeof fm.court === "string" ? fm.court : "";
+
+    // Apply filters
+    if (flags.jurisdiction && caseJurisdiction !== flags.jurisdiction) continue;
+    if (flags.area && legalArea.toLowerCase() !== flags.area.toLowerCase()) continue;
+
+    const base = seen.get(row.slug)?.score ?? 0;
+    let score = base;
+
+    // Legal area match boost
+    if (legalArea && queryLower.includes(legalArea.toLowerCase())) score += 0.2;
+    if (subArea && queryLower.includes(subArea.toLowerCase())) score += 0.1;
+
+    // Keyword overlap in body
+    const bodyLower = (row.body ?? "").toLowerCase();
+    let overlap = 0;
+    for (const token of queryTokens) {
+      if (bodyLower.includes(token)) overlap++;
+    }
+    if (queryTokens.size > 0) score += 0.15 * Math.min(overlap / queryTokens.size, 1);
+
+    // Recency boost
+    if (row.updated_at) {
+      const ageDays = (Date.now() - new Date(row.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+      if (ageDays < 730) score += 0.05;
+    }
+
+    // Outcome availability boost
+    if (fm.outcome) score += 0.05;
+
+    score = Math.min(score, 1.0);
+
+    // Extract key holding
+    const lines = (row.body ?? "").split("\n").filter((l) => l.trim().length > 50);
+    const keyHolding = lines.length > 0 ? lines[0].trim().slice(0, 300) : "";
+
+    results.push({
+      id: row.slug,
+      title: row.title,
+      case_number: caseNumber,
+      legal_area: legalArea,
+      status: caseStatus,
+      jurisdiction: caseJurisdiction,
+      court,
+      relevanceScore: Math.round(score * 100) / 100,
+      keyHolding,
+      source: "brain",
+    });
+  }
+
+  // Sort by relevance, take top N
+  results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  const top = results.slice(0, limit);
+
+  if (flags.json) {
+    printJson(top);
+  } else {
+    console.log(`Found ${results.length} precedent(s) for: "${query}" (showing top ${top.length})`);
+    for (const r of top) {
       console.log(`\n  ${r.title}`);
-      console.log(`  Court: ${r.court} (${r.date})`);
+      if (r.case_number) console.log(`  Case #: ${r.case_number}`);
+      if (r.court) console.log(`  Court: ${r.court}`);
+      if (r.legal_area) console.log(`  Area: ${r.legal_area}`);
+      console.log(`  Status: ${r.status}`);
       console.log(`  Relevance: ${(r.relevanceScore * 100).toFixed(0)}%`);
-      console.log(`  Holding: ${r.keyHolding}`);
+      if (r.keyHolding) console.log(`  Holding: ${r.keyHolding}`);
     }
   }
 }

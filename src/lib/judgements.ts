@@ -1,6 +1,10 @@
-// Geteilte Judikatur-Suche: AT (RIS-OGD v2.6) + DE (openlegaldata.io).
+// Geteilte Judikatur-Suche: AT (RIS-OGD v2.6) + DE (openlegaldata.io) + CH (OpenCaseLaw.ch).
 // Genutzt von /api/legal/judgements-search (interaktiv) UND vom Cron
 // /api/cron/case-law (proaktives Monitoring).
+
+import { withRetry } from "@/lib/retry";
+
+import { JudgementsSearchError } from "@/lib/errors";
 
 export interface JudgementHit {
   id: string;
@@ -15,7 +19,7 @@ export interface JudgementHit {
   summary?: string;
   legalArea?: string;
   keywords?: string[];
-  source: "ris-ogd" | "openlegaldata";
+  source: "ris-ogd" | "openlegaldata" | "opencaselaw";
 }
 
 function risFirstListItem(value: unknown): string {
@@ -43,8 +47,8 @@ export async function searchRisOgd(opts: {
   risUrl.searchParams.set("DokumenteProSeite", pageSize);
   risUrl.searchParams.set("Seitennummer", String((opts.page ?? 0) + 1));
 
-  const res = await fetch(risUrl.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`RIS-OGD ${res.status}`);
+  const res = await withRetry(() => fetch(risUrl.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  if (!res.ok) throw new JudgementsSearchError(`RIS-OGD ${res.status}`, { code: "RIS_OGD_FETCH_FAILED", details: { status: res.status, url: risUrl.toString() } });
 
   const data = (await res.json()) as Record<string, unknown>;
   const result = (data.OgdSearchResult ?? data) as Record<string, unknown>;
@@ -93,8 +97,8 @@ export async function searchOpenLegalData(opts: {
   url.searchParams.set("page_size", String(limit));
   if ((opts.page ?? 0) > 0) url.searchParams.set("page", String((opts.page ?? 0) + 1));
 
-  const res = await fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
-  if (!res.ok) throw new Error(`openlegaldata ${res.status}`);
+  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  if (!res.ok) throw new JudgementsSearchError(`openlegaldata ${res.status}`, { code: "OPENLEGALDATA_FETCH_FAILED", details: { status: res.status, url: url.toString() } });
 
   const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
   return (data.results ?? []).map((entry): JudgementHit => {
@@ -115,13 +119,50 @@ export async function searchOpenLegalData(opts: {
   });
 }
 
-/** Sucht in beiden Quellen je nach Jurisdiktion und vereint die Treffer. */
+export async function searchOpenCaseLaw(opts: {
+  q: string; court?: string; from?: string; to?: string; page?: number; limit?: number;
+}): Promise<JudgementHit[]> {
+  const limit = Math.min(opts.limit ?? 20, 50);
+  const url = new URL("https://mcp.opencaselaw.ch/api/decisions");
+  url.searchParams.set("q", opts.q);
+  if (opts.court) url.searchParams.set("court", opts.court);
+  if (opts.from) url.searchParams.set("date_from", opts.from);
+  if (opts.to) url.searchParams.set("date_to", opts.to);
+  url.searchParams.set("language", "de");
+  url.searchParams.set("limit", String(limit));
+  if ((opts.page ?? 0) > 0) url.searchParams.set("offset", String((opts.page ?? 0) * limit));
+
+  const res = await withRetry(() => fetch(url.toString(), { headers: { Accept: "application/json" }, next: { revalidate: 3600 } }));
+  if (!res.ok) throw new JudgementsSearchError(`OpenCaseLaw ${res.status}`, { code: "OPENCASELAW_FETCH_FAILED", details: { status: res.status, url: url.toString() } });
+
+  const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
+  return (data.results ?? []).map((entry): JudgementHit => {
+    const decisionId = String(entry.decision_id ?? "");
+    const court = String(entry.court ?? "bger");
+    const citation = String(entry.citation_string_de ?? entry.citation_string ?? "");
+    return {
+      id: decisionId || `swiss-${entry.decision_id ?? ""}`,
+      title: String(entry.title ?? `${court} — ${decisionId}`),
+      court,
+      date: String(entry.decision_date ?? ""),
+      caseNumber: citation,
+      ecli: "",
+      type: String(entry.legal_area ?? ""),
+      url: String(entry.canonical_url ?? `https://opencaselaw.ch/entscheid/${decisionId}`),
+      snippet: String(entry.regeste ?? ""),
+      source: "opencaselaw",
+    };
+  });
+}
+
+/** Sucht in allen Quellen je nach Jurisdiktion und vereint die Treffer. */
 export async function searchJudgements(opts: {
-  q: string; jurisdiction: "at" | "de" | "all"; court?: string; from?: string; to?: string; page?: number; limit?: number;
+  q: string; jurisdiction: "at" | "de" | "ch" | "all"; court?: string; from?: string; to?: string; page?: number; limit?: number;
 }): Promise<{ results: JudgementHit[]; errors: string[] }> {
   const tasks: Array<Promise<JudgementHit[]>> = [];
   if (opts.jurisdiction === "at" || opts.jurisdiction === "all") tasks.push(searchRisOgd(opts));
   if (opts.jurisdiction === "de" || opts.jurisdiction === "all") tasks.push(searchOpenLegalData(opts));
+  if (opts.jurisdiction === "ch" || opts.jurisdiction === "all") tasks.push(searchOpenCaseLaw(opts));
   const settled = await Promise.allSettled(tasks);
   const results: JudgementHit[] = [];
   const errors: string[] = [];

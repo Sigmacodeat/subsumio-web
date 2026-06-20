@@ -1,13 +1,7 @@
-// Per-branch pricing. Each branded page (/subsumio, /taxumio, …) can show its
-// OWN pricing block (own tier names + framing), with signup deep-links that
-// carry ?industry= so the brain is provisioned for that vertical. Verticals
-// without an entry fall back to the global PRICING tiers (still rendered on the
-// branch page, branded, with the industry deep-link) — so every branch has a
-// pricing section, and launch products (Subsumio) get bespoke tiers.
+// Subsumio pricing. Signup deep-links carry ?industry=legal so the product
+// provisions the legal workspace.
 
 import type { Lang, PricingTier } from "./site";
-import { PRICING } from "./site";
-import { profileForIndustry } from "@/lib/industry-pack";
 
 export interface VerticalPricing {
   title: string;
@@ -79,7 +73,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
             "Maximum-recall search mode",
             "Dedicated CSM · custom retention & storage",
           ],
-          cta: "Talk to us", href: "mailto:hello@sigmabrain.com",
+          cta: "Talk to us", href: "mailto:hello@subsum.eu",
         },
       ],
     },
@@ -145,7 +139,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
             "Maximaler Recall-Modus",
             "Dedizierter CSM · individuelle Aufbewahrung & Speicher",
           ],
-          cta: "Kontakt aufnehmen", href: "mailto:hello@sigmabrain.com",
+          cta: "Kontakt aufnehmen", href: "mailto:hello@subsum.eu",
         },
       ],
     },
@@ -153,23 +147,6 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
 };
 
 export function pricingForIndustry(lang: Lang, industry: string | null | undefined): VerticalPricing | null {
-  if (!industry) return null;
-  const bespoke = VERTICAL_PRICING[lang][industry];
-  if (bespoke) return bespoke;
-
-  const profile = profileForIndustry(industry);
-  if (!profile) return null;
-  const label = profile.label[lang].toLowerCase();
-  return {
-    title: lang === "en" ? `Pricing for ${profile.brand}` : `Preise für ${profile.brand}`,
-    sub: lang === "en"
-      ? `Sigmabrain tuned for ${label}: same platform, industry-specific onboarding, prompts and schema pack.`
-      : `Sigmabrain für ${label}: gleiche Plattform, branchenspezifisches Onboarding, Prompts und Schema-Pack.`,
-    tiers: PRICING[lang].tiers.map((tier) => ({
-      ...tier,
-      cta: tier.href === "/signup"
-        ? (lang === "en" ? `Start ${profile.brand}` : `${profile.brand} starten`)
-        : tier.cta,
-    })),
-  };
+  if (industry !== "legal") return null;
+  return VERTICAL_PRICING[lang].legal ?? null;
 }

@@ -876,6 +876,30 @@ const put_page: Operation = {
       }
     }
 
+    // v0.43 — Invalidate query cache on legal page writes. Legal pages
+    // (legal_case, legal_entity, evidence, law/statute sections) change
+    // the corpus in ways that affect search results for active cases.
+    // Without invalidation, an agent who writes a new legal_case page
+    // and immediately re-queries sees stale results from the pre-write cache.
+    // Best-effort: failures are non-fatal (the cache will eventually expire
+    // via TTL). Uses the existing invalidateQueryCache infrastructure.
+    if (result.status === 'imported') {
+      try {
+        const pageType = (result as { page?: { type?: string } }).page?.type ?? null;
+        if (pageType && (
+          pageType.startsWith('legal_') ||
+          pageType === 'law' ||
+          pageType === 'evidence' ||
+          pageType === 'legal_deadline'
+        )) {
+          const { invalidateQueryCache } = await import('./schema-pack/query-cache-invalidator.ts');
+          await invalidateQueryCache(ctx.engine, ctx.sourceId ?? undefined);
+        }
+      } catch {
+        // best-effort; never block put_page
+      }
+    }
+
     // v0.38 put_page write-through (ingestion cathedral):
     // After importFromContent succeeds, if `sync.repo_path` resolves to a
     // real directory, persist the markdown file to disk alongside the DB
@@ -1792,6 +1816,7 @@ const think: Operation = {
     model: { type: 'string', description: 'Model override (alias or full id). Falls through models.think → models.default → GBRAIN_MODEL → opus.' },
     since: { type: 'string', description: 'Start of temporal window (YYYY-MM-DD or YYYY-MM)' },
     until: { type: 'string', description: 'End of temporal window' },
+    legal_mode: { type: 'boolean', description: 'Activate legal-aware synthesis prompt (statute citations with version dates, jurisdiction awareness, attorney review disclaimers). Auto-detected when gathered pages contain legal page types.' },
   },
   mutating: true,
   handler: async (ctx, p) => {
@@ -1824,6 +1849,7 @@ const think: Operation = {
       ...(scope.sourceId !== undefined ? { sourceId: scope.sourceId } : {}),
       ...(scope.sourceIds !== undefined ? { allowedSources: scope.sourceIds } : {}),
       remote: ctx.remote === true,
+      ...(p.legal_mode !== undefined ? { legalMode: Boolean(p.legal_mode) } : {}),
     });
 
     // Persist if --save was passed locally
@@ -2701,14 +2727,28 @@ const file_url: Operation = {
   },
   scope: 'admin',
   localOnly: true,
-  handler: async (_ctx, p) => {
+  handler: async (ctx, p) => {
     const sql = db.getConnection();
     const rows = await sql`SELECT storage_path, mime_type, size_bytes FROM files WHERE storage_path = ${p.storage_path as string}`;
     if (rows.length === 0) {
       throw new OperationError('storage_error', `File not found: ${p.storage_path}`);
     }
-    // TODO: generate signed URL from Supabase Storage
-    return { storage_path: rows[0].storage_path, url: `gbrain:files/${rows[0].storage_path}` };
+    const storagePath = rows[0].storage_path as string;
+
+    // Generate a signed URL via the configured storage backend (Supabase, S3, etc.).
+    // Falls back to a local pseudo-URL when no cloud storage is configured.
+    if (ctx.config.storage) {
+      try {
+        const { createStorage } = await import('./storage.ts');
+        const storage = await createStorage(ctx.config.storage as any);
+        const url = await storage.getUrl(storagePath);
+        return { storage_path: storagePath, url };
+      } catch (err) {
+        throw new OperationError('storage_error', `Failed to generate URL: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    return { storage_path: storagePath, url: `gbrain:files/${storagePath}` };
   },
 };
 
@@ -4883,6 +4923,929 @@ const run_skillopt: Operation = {
   },
 };
 
+// ============================================================
+// v0.43 — Legal Domain MCP Operations
+// ============================================================
+// 8 read-only ops wrapping the legal modules so agents connected via
+// MCP can call them as first-class tools. All source-scoped via
+// sourceScopeOpts(ctx). Safe for remote callers. Each module already
+// implements grounding (verbatim quote matching) and returns
+// attorney_review_required: true on every output.
+
+const legal_analyze_document: Operation = {
+  name: 'legal_analyze_document',
+  description: 'Analyze a legal document for issues, parties, key dates, and relevant statutes. Every issue is grounded with a verbatim quote from the document — ungrounded issues are dropped. Returns attorney_review_required: true.',
+  params: {
+    slug: { type: 'string', required: true, description: 'Page slug of the document to analyze' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { analyzeDocument } = await import('./legal/analyze-document.ts');
+    return analyzeDocument(ctx.engine, {
+      slug: String(p.slug),
+      ...(scope.sourceId !== undefined ? { sourceId: scope.sourceId } : {}),
+      ...(scope.sourceIds !== undefined ? { sourceIds: scope.sourceIds } : {}),
+    });
+  },
+};
+
+const legal_document_review: Operation = {
+  name: 'legal_document_review',
+  description: 'Q&A-style review of a legal document. Generates findings with grounded citations (every citation must appear verbatim in the source). Supports focus areas: clauses, risks, compliance, general. Returns attorney_review_required: true.',
+  params: {
+    document_slug: { type: 'string', description: 'Page slug of the document to review' },
+    text: { type: 'string', description: 'Raw document text (alternative to document_slug)' },
+    questions: { type: 'array', items: { type: 'string' }, description: 'Custom review questions' },
+    focus: { type: 'string', enum: ['clauses', 'risks', 'compliance', 'general'], description: 'Review focus area (default: general)' },
+    jurisdiction: { type: 'string', description: 'Jurisdiction code (de, at, ch, or all)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { reviewDocument } = await import('./legal/document-review.ts');
+    return reviewDocument(ctx.engine, {
+      ...scope,
+      ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
+      ...(p.text ? { text: String(p.text) } : {}),
+      questions: Array.isArray(p.questions) ? (p.questions as unknown[]).filter((q): q is string => typeof q === 'string') : [],
+      focus: (['clauses', 'risks', 'compliance', 'general'].includes(String(p.focus)) ? p.focus : 'general') as 'clauses' | 'risks' | 'compliance' | 'general',
+      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
+    });
+  },
+};
+
+const legal_summarize: Operation = {
+  name: 'legal_summarize',
+  description: 'Generate an executive summary with structured key points for a legal document, case file, or judgement. Reports word_count and reading_time. Paraphrasing by nature (not quote-grounded). Returns attorney_review_required: true.',
+  params: {
+    document_slug: { type: 'string', description: 'Page slug of the document to summarize' },
+    text: { type: 'string', description: 'Raw document text (alternative to document_slug)' },
+    type: { type: 'string', enum: ['document', 'case', 'judgement', 'contract', 'general'], description: 'Document type (default: general)' },
+    depth: { type: 'string', enum: ['brief', 'standard', 'detailed'], description: 'Summary depth (default: standard)' },
+    focus: { type: 'string', description: 'Optional focus area' },
+    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { summarizeDocument } = await import('./legal/summarize.ts');
+    return summarizeDocument(ctx.engine, {
+      ...scope,
+      ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
+      ...(p.text ? { text: String(p.text) } : {}),
+      type: (['document', 'case', 'judgement', 'contract', 'general'].includes(String(p.type)) ? p.type : 'general') as 'document' | 'case' | 'judgement' | 'contract' | 'general',
+      depth: (['brief', 'standard', 'detailed'].includes(String(p.depth)) ? p.depth : 'standard') as 'brief' | 'standard' | 'detailed',
+      ...(typeof p.focus === 'string' ? { focus: p.focus } : {}),
+      language: p.language === 'en' ? 'en' : 'de',
+    });
+  },
+};
+
+const legal_memo: Operation = {
+  name: 'legal_memo',
+  description: 'Generate a structured legal memorandum (Sachverhalt → Rechtsfragen → rechtliche Würdigung → Ergebnis). Can incorporate case context from the brain. Requires question and facts. Returns attorney_review_required: true.',
+  params: {
+    question: { type: 'string', required: true, description: 'Legal question to address' },
+    facts: { type: 'string', required: true, description: 'Case facts / Sachverhalt' },
+    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code' },
+    legal_area: { type: 'string', description: 'Legal area (e.g. Mietrecht, Arbeitsrecht)' },
+    case_slug: { type: 'string', description: 'Optional case slug to pull context from' },
+    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+    depth: { type: 'string', enum: ['brief', 'standard', 'comprehensive'], description: 'Memo depth (default: standard)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { generateMemo } = await import('./legal/memo.ts');
+    return generateMemo(ctx.engine, {
+      ...scope,
+      question: String(p.question),
+      facts: String(p.facts),
+      jurisdiction: String(p.jurisdiction) as 'at' | 'de' | 'ch',
+      ...(typeof p.legal_area === 'string' ? { legal_area: p.legal_area } : {}),
+      ...(typeof p.case_slug === 'string' ? { case_slug: p.case_slug } : {}),
+      language: p.language === 'en' ? 'en' : 'de',
+      depth: (['brief', 'standard', 'comprehensive'].includes(String(p.depth)) ? p.depth : 'standard') as 'brief' | 'standard' | 'comprehensive',
+    });
+  },
+};
+
+const legal_risk_analysis: Operation = {
+  name: 'legal_risk_analysis',
+  description: 'Clause-level risk scoring for contracts. Each identified risk includes a text_excerpt that must appear verbatim in the source document (anti-hallucination grounding). Identifies red flags and missing clauses. Returns attorney_review_required: true.',
+  params: {
+    document_slug: { type: 'string', description: 'Page slug of the contract to analyze' },
+    text: { type: 'string', description: 'Raw contract text (alternative to document_slug)' },
+    contract_type: { type: 'string', description: 'Contract type (e.g. NDA, Mietvertrag)' },
+    jurisdiction: { type: 'string', description: 'Jurisdiction code (de, at, ch, or all)' },
+    perspective: { type: 'string', enum: ['party_a', 'party_b', 'neutral'], description: 'Analysis perspective (default: neutral)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { analyzeRisk } = await import('./legal/risk-analysis.ts');
+    return analyzeRisk(ctx.engine, {
+      ...scope,
+      ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
+      ...(p.text ? { text: String(p.text) } : {}),
+      ...(typeof p.contract_type === 'string' ? { contract_type: p.contract_type } : {}),
+      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
+      perspective: (['party_a', 'party_b', 'neutral'].includes(String(p.perspective)) ? p.perspective : 'neutral') as 'party_a' | 'party_b' | 'neutral',
+    });
+  },
+};
+
+const legal_contract_draft: Operation = {
+  name: 'legal_contract_draft',
+  description: 'Generate a first-draft contract using an LLM with optional template seeding from the brain. Output includes an AI banner and attorney_review_required: true flag. Requires contract type, jurisdiction, and both parties.',
+  params: {
+    type: { type: 'string', required: true, description: 'Contract type (e.g. NDA, Mietvertrag, Kaufvertrag)' },
+    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code' },
+    parties: { type: 'object', required: true, description: 'Object with "a" and "b" keys for party names' },
+    instructions: { type: 'string', description: 'Additional drafting instructions' },
+    template_slug: { type: 'string', description: 'Optional template page slug to seed from' },
+    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { draftContract } = await import('./legal/contract-draft.ts');
+    const parties = p.parties as Record<string, unknown> | undefined;
+    return draftContract(ctx.engine, {
+      ...scope,
+      type: String(p.type),
+      jurisdiction: String(p.jurisdiction) as 'at' | 'de' | 'ch',
+      parties: {
+        a: String(parties?.a ?? ''),
+        b: String(parties?.b ?? ''),
+      },
+      ...(typeof p.instructions === 'string' ? { instructions: p.instructions } : {}),
+      ...(typeof p.template_slug === 'string' ? { template_slug: p.template_slug } : {}),
+      language: p.language === 'en' ? 'en' : 'de',
+    });
+  },
+};
+
+const legal_contract_redline: Operation = {
+  name: 'legal_contract_redline',
+  description: 'Suggest tracked-changes-style edits to a contract. Each redline\'s original_clause must appear verbatim in the source text (modify/remove) — fabricated clauses are dropped. Supports counterparty comparison and playbook alignment with deviation flagging. When a playbook_slug is provided, rules from the playbook page (type: legal_playbook) are parsed and the LLM flags deviations per rule. Returns attorney_review_required: true.',
+  params: {
+    original_text: { type: 'string', required: true, description: 'The original contract text' },
+    counterparty_text: { type: 'string', description: 'Counterparty version for comparison' },
+    playbook_slug: { type: 'string', description: 'Optional clause playbook page slug' },
+    contract_type: { type: 'string', description: 'Contract type' },
+    jurisdiction: { type: 'string', description: 'Jurisdiction code' },
+    perspective: { type: 'string', enum: ['client', 'counterparty', 'neutral'], description: 'Redlining perspective (default: client)' },
+    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { redlineContract } = await import('./legal/contract-redline.ts');
+    return redlineContract(ctx.engine, {
+      ...scope,
+      original_text: String(p.original_text),
+      ...(typeof p.counterparty_text === 'string' ? { counterparty_text: p.counterparty_text } : {}),
+      ...(typeof p.playbook_slug === 'string' ? { playbook_slug: p.playbook_slug } : {}),
+      ...(typeof p.contract_type === 'string' ? { contract_type: p.contract_type } : {}),
+      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
+      perspective: (['client', 'counterparty', 'neutral'].includes(String(p.perspective)) ? p.perspective : 'client') as 'client' | 'counterparty' | 'neutral',
+      language: p.language === 'en' ? 'en' : 'de',
+    });
+  },
+};
+
+const legal_due_diligence: Operation = {
+  name: 'legal_due_diligence',
+  description: 'Checklist-driven due diligence review across multiple documents. Supports M&A, real estate, financing, and general categories. Each finding includes page_refs for traceability. Returns attorney_review_required: true.',
+  params: {
+    case_slug: { type: 'string', description: 'Case slug to pull documents from' },
+    document_slugs: { type: 'array', items: { type: 'string' }, description: 'Document slugs to review' },
+    category: { type: 'string', enum: ['m_and_a', 'real_estate', 'financing', 'general'], description: 'DD category (default: general)' },
+    jurisdiction: { type: 'string', enum: ['at', 'de', 'ch'], description: 'Jurisdiction code (default: de)' },
+    checklist: { type: 'array', items: { type: 'string' }, description: 'Custom checklist items' },
+    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { runDueDiligence } = await import('./legal/due-diligence.ts');
+    return runDueDiligence(ctx.engine, {
+      ...scope,
+      ...(typeof p.case_slug === 'string' ? { case_slug: p.case_slug } : {}),
+      ...(Array.isArray(p.document_slugs) ? { document_slugs: (p.document_slugs as unknown[]).filter((s): s is string => typeof s === 'string') } : {}),
+      category: (['m_and_a', 'real_estate', 'financing', 'general'].includes(String(p.category)) ? p.category : 'general') as 'm_and_a' | 'real_estate' | 'financing' | 'general',
+      jurisdiction: (['at', 'de', 'ch'].includes(String(p.jurisdiction)) ? p.jurisdiction : 'de') as 'at' | 'de' | 'ch',
+      ...(Array.isArray(p.checklist) ? { checklist: (p.checklist as unknown[]).filter((s): s is string => typeof s === 'string') } : {}),
+      language: p.language === 'en' ? 'en' : 'de',
+    });
+  },
+};
+
+const legal_precedent_search: Operation = {
+  name: 'legal_precedent_search',
+  description: 'Search for legal precedents (case law) in the brain with relevance scoring. Queries legal_case pages using keyword + vector search, ranks by legal area match, keyword overlap, recency, and outcome similarity. Returns structured results with case details and relevance scores.',
+  params: {
+    query: { type: 'string', required: true, description: 'Search query (legal issue, area, or fact pattern)' },
+    jurisdiction: { type: 'string', enum: ['at', 'de', 'ch'], description: 'Filter by jurisdiction' },
+    legal_area: { type: 'string', description: 'Filter by legal area (e.g. "Amtshaftungsrecht", "Vertragsrecht")' },
+    limit: { type: 'number', description: 'Max results (default: 10, max: 50)' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const query = String(p.query);
+    const jurisdiction = typeof p.jurisdiction === 'string' ? p.jurisdiction as string : undefined;
+    const legalArea = typeof p.legal_area === 'string' ? p.legal_area : undefined;
+    const limit = Math.min(Math.max(typeof p.limit === 'number' ? (p.limit as number) : 10, 1), 50);
+
+    // 1. Keyword search on legal_case pages
+    const searchOpts: Record<string, unknown> = {
+      limit: limit * 3,
+      types: ['legal_case'],
+    };
+    if (scope.sourceId !== undefined) searchOpts.sourceId = scope.sourceId;
+    if (scope.sourceIds !== undefined) searchOpts.sourceIds = scope.sourceIds;
+
+    const keywordResults = await ctx.engine.searchKeyword(query, searchOpts as any);
+
+    // 2. Also try vector search if available
+    let vectorResults: typeof keywordResults = [];
+    try {
+      const { embedQuery } = await import('./embedding.ts');
+      const embedding = await embedQuery(query);
+      vectorResults = await ctx.engine.searchVector(embedding, searchOpts as any);
+    } catch {
+      // Vector search may not be available (no embedding provider) — keyword-only is fine
+    }
+
+    // 3. Merge + dedup by slug
+    const seen = new Map<string, { row: typeof keywordResults[number]; score: number }>();
+    for (const r of keywordResults) {
+      seen.set(r.slug, { row: r, score: r.score ?? 0 });
+    }
+    for (const r of vectorResults) {
+      const existing = seen.get(r.slug);
+      if (existing) {
+        existing.score = Math.max(existing.score, r.score ?? 0);
+      } else {
+        seen.set(r.slug, { row: r, score: r.score ?? 0 });
+      }
+    }
+
+    // 4. Fetch frontmatter for each candidate to apply legal-specific scoring
+    const candidates = Array.from(seen.values());
+    if (candidates.length === 0) {
+      return { query, total: 0, results: [] };
+    }
+
+    const slugs = candidates.map(c => c.row.slug);
+    const fmParams: unknown[] = [slugs];
+    let fmSourceClause = '';
+    if (scope.sourceIds) {
+      fmSourceClause = `AND source_id = ANY($2::text[])`;
+      fmParams.push(scope.sourceIds);
+    } else if (scope.sourceId) {
+      fmSourceClause = `AND source_id = $2`;
+      fmParams.push(scope.sourceId);
+    }
+
+    const fmRows = await ctx.engine.executeRaw<{
+      slug: string;
+      title: string;
+      frontmatter: Record<string, unknown> | null;
+      body: string;
+      updated_at: string;
+    }>(
+      `SELECT slug, title, frontmatter, compiled_truth as body, updated_at::text
+       FROM pages
+       WHERE slug = ANY($1::text[])
+         AND deleted_at IS NULL
+         ${fmSourceClause}`,
+      fmParams,
+    );
+
+    const fmMap = new Map(fmRows.map(r => [r.slug, r]));
+
+    // 5. Score each candidate
+    const queryLower = query.toLowerCase();
+    const queryTokens = new Set(queryLower.split(/\s+/).filter(t => t.length > 2));
+
+    const scored: Array<{
+      slug: string;
+      title: string;
+      case_number: string;
+      legal_area: string;
+      sub_area: string;
+      status: string;
+      jurisdiction: string;
+      relevance_score: number;
+      key_holding: string;
+      outcome: string | null;
+      updated_at: string;
+      source: 'brain';
+    }> = [];
+
+    for (const candidate of candidates) {
+      const fm = fmMap.get(candidate.row.slug);
+      if (!fm) continue;
+
+      const frontmatter = fm.frontmatter ?? {};
+      const caseLegalArea = typeof frontmatter.legal_area === 'string' ? frontmatter.legal_area : '';
+      const caseSubArea = typeof frontmatter.sub_area === 'string' ? frontmatter.sub_area : '';
+      const caseStatus = typeof frontmatter.status === 'string' ? frontmatter.status : 'unknown';
+      const caseNumber = typeof frontmatter.case_number === 'string' ? frontmatter.case_number : '';
+      const caseJurisdiction = typeof frontmatter.jurisdiction === 'string' ? frontmatter.jurisdiction : '';
+
+      // Apply filters
+      if (jurisdiction && caseJurisdiction !== jurisdiction) continue;
+      if (legalArea && caseLegalArea.toLowerCase() !== legalArea.toLowerCase()) continue;
+
+      // Relevance scoring (0-1 scale)
+      let relevanceScore = candidate.score; // base from search engine
+
+      // Legal area match boost (0.2)
+      if (caseLegalArea && queryLower.includes(caseLegalArea.toLowerCase())) {
+        relevanceScore += 0.2;
+      }
+
+      // Sub-area match boost (0.1)
+      if (caseSubArea && queryLower.includes(caseSubArea.toLowerCase())) {
+        relevanceScore += 0.1;
+      }
+
+      // Keyword overlap in body text (0.15)
+      const bodyLower = (fm.body ?? '').toLowerCase();
+      let overlapCount = 0;
+      for (const token of queryTokens) {
+        if (bodyLower.includes(token)) overlapCount++;
+      }
+      if (queryTokens.size > 0) {
+        relevanceScore += 0.15 * Math.min(overlapCount / queryTokens.size, 1);
+      }
+
+      // Recency boost — cases updated in the last 2 years get a small boost (0.05)
+      const updatedAt = fm.updated_at;
+      if (updatedAt) {
+        const ageDays = (Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (ageDays < 730) relevanceScore += 0.05;
+      }
+
+      // Outcome availability boost — cases with outcomes are more useful as precedents (0.05)
+      const outcome = frontmatter.outcome;
+      if (outcome && typeof outcome === 'object') {
+        relevanceScore += 0.05;
+      }
+
+      // Cap at 1.0
+      relevanceScore = Math.min(relevanceScore, 1.0);
+
+      // Extract a key holding from the body (first substantive paragraph)
+      const bodyText = fm.body ?? '';
+      const lines = bodyText.split('\n').filter(l => l.trim().length > 50);
+      const keyHolding = lines.length > 0 ? lines[0].trim().slice(0, 300) : '';
+
+      scored.push({
+        slug: fm.slug,
+        title: fm.title,
+        case_number: caseNumber,
+        legal_area: caseLegalArea,
+        sub_area: caseSubArea,
+        status: caseStatus,
+        jurisdiction: caseJurisdiction,
+        relevance_score: Math.round(relevanceScore * 100) / 100,
+        key_holding: keyHolding,
+        outcome: outcome ? JSON.stringify(outcome) : null,
+        updated_at: updatedAt,
+        source: 'brain',
+      });
+    }
+
+    // 6. Sort by relevance score descending, take top N
+    scored.sort((a, b) => b.relevance_score - a.relevance_score);
+    const finalResults = scored.slice(0, limit);
+
+    return {
+      query,
+      total: scored.length,
+      returned: finalResults.length,
+      results: finalResults,
+    };
+  },
+  cliHints: { name: 'legal-precedent-search', positional: ['query'] },
+};
+
+const statute_currency_check: Operation = {
+  name: 'statute_currency_check',
+  description: 'Check the version currency of statute sections in the brain. Returns per-statute version_date and status (current/outdated/unknown). For local CLI callers, compares brain versions against the law-corpus reference directory and/or live external sources (RIS-OGD for AT, buzer.de for DE, OpenCaseLaw for CH) to detect outdated statutes.',
+  params: {
+    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code to check' },
+    statute_id: { type: 'string', description: 'Optional statute abbreviation filter (e.g. "bgb", "estg")' },
+    compare_corpus: { type: 'boolean', description: 'Compare against law-corpus reference files (local CLI only, default: true for local callers)' },
+    compare_live: { type: 'boolean', description: 'Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI' },
+  },
+  scope: 'read',
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const jurisdiction = String(p.jurisdiction) as 'at' | 'de' | 'ch';
+    const statuteFilter = typeof p.statute_id === 'string' ? p.statute_id.toLowerCase() : undefined;
+    const isLocal = ctx.remote === false;
+    const compareCorpus = typeof p.compare_corpus === 'boolean' ? p.compare_corpus : isLocal;
+    const compareLive = typeof p.compare_live === 'boolean' ? p.compare_live : isLocal;
+
+    // Query law pages from the brain. The slug pattern is:
+    //   legal/statutes/<jur>/<abbr>/<section-id>
+    const slugPattern = `legal/statutes/${jurisdiction}/${statuteFilter ? statuteFilter + '/%' : '%'}`;
+
+    const params: unknown[] = [slugPattern];
+    let sourceClause = '';
+    if (scope.sourceIds) {
+      sourceClause = `AND source_id = ANY($2::text[])`;
+      params.push(scope.sourceIds);
+    } else if (scope.sourceId) {
+      sourceClause = `AND source_id = $2`;
+      params.push(scope.sourceId);
+    }
+
+    const rows = await ctx.engine.executeRaw<{
+      slug: string;
+      frontmatter: Record<string, unknown> | null;
+      updated_at: string;
+    }>(
+      `SELECT slug, frontmatter, updated_at::text
+       FROM pages
+       WHERE slug LIKE $1
+         AND deleted_at IS NULL
+         ${sourceClause}
+       ORDER BY slug
+       LIMIT 5000`,
+      params,
+    );
+
+    // Group by statute abbreviation (4th slug segment).
+    const byStatute = new Map<string, { abbreviation: string; version_date: string | null; section_count: number; oldest_update: string; newest_update: string }>();
+
+    for (const row of rows) {
+      const parts = row.slug.split('/');
+      const abbr = parts[3] ?? 'unknown';
+      const fm = row.frontmatter ?? {};
+      const versionDate = typeof fm.version_date === 'string' ? fm.version_date : null;
+
+      const existing = byStatute.get(abbr);
+      if (existing) {
+        existing.section_count++;
+        if (versionDate && (!existing.version_date || versionDate > existing.version_date)) {
+          existing.version_date = versionDate;
+        }
+        if (row.updated_at < existing.oldest_update) existing.oldest_update = row.updated_at;
+        if (row.updated_at > existing.newest_update) existing.newest_update = row.updated_at;
+      } else {
+        byStatute.set(abbr, {
+          abbreviation: abbr.toUpperCase(),
+          version_date: versionDate,
+          section_count: 1,
+          oldest_update: row.updated_at,
+          newest_update: row.updated_at,
+        });
+      }
+    }
+
+    // For local callers, compare against law-corpus reference files.
+    // The law-corpus directory contains the canonical statute markdown files
+    // with frontmatter version_date. If the brain's version_date is older
+    // than the corpus version_date, the statute is outdated.
+    let corpusComparison: Array<{ statute_id: string; corpus_version_date: string | null; brain_version_date: string | null; status: 'current' | 'outdated' | 'unknown' }> | undefined;
+
+    if (compareCorpus && isLocal) {
+      try {
+        const { existsSync } = await import('fs');
+        const { join } = await import('path');
+        const corpusBase = join(process.cwd(), 'law-corpus', jurisdiction);
+        if (existsSync(corpusBase)) {
+          const { readdirSync, readFileSync } = await import('fs');
+          const files = readdirSync(corpusBase).filter((f: string) => f.endsWith('.md'));
+          const corpusVersions = new Map<string, string | null>();
+
+          for (const file of files) {
+            const content = readFileSync(join(corpusBase, file), 'utf-8');
+            // Extract abbreviation from frontmatter
+            const abbrMatch = content.match(/^abbreviation:\s*"?([^"\n]+)"?$/im);
+            const versionMatch = content.match(/^version_date:\s*"?(\d{4}-\d{2}-\d{2})"?$/im);
+            const fileAbbr = abbrMatch ? abbrMatch[1].trim().toLowerCase() : file.replace('.md', '').toLowerCase();
+            corpusVersions.set(fileAbbr, versionMatch ? versionMatch[1] : null);
+          }
+
+          corpusComparison = [];
+          for (const [abbr, info] of byStatute) {
+            const corpusVersion = corpusVersions.get(abbr) ?? null;
+            let status: 'current' | 'outdated' | 'unknown';
+            if (!info.version_date && !corpusVersion) {
+              status = 'unknown';
+            } else if (!info.version_date) {
+              status = 'outdated'; // brain has no version, corpus does
+            } else if (!corpusVersion) {
+              status = 'current'; // brain has version, corpus doesn't (can't compare)
+            } else if (info.version_date < corpusVersion) {
+              status = 'outdated';
+            } else {
+              status = 'current';
+            }
+            corpusComparison.push({
+              statute_id: abbr,
+              corpus_version_date: corpusVersion,
+              brain_version_date: info.version_date,
+              status,
+            });
+          }
+        }
+      } catch {
+        // law-corpus directory not accessible — skip comparison
+      }
+    }
+
+    // Live external source comparison (RIS-OGD for AT, buzer.de for DE, OpenCaseLaw for CH)
+    let liveComparison: Array<{ statute_id: string; live_version_date: string | null; live_source: string; live_title: string | null; live_url: string | null; status: 'current' | 'outdated' | 'unknown' }> | undefined;
+
+    if (compareLive) {
+      try {
+        const { fetchLiveStatuteVersions } = await import('../lib/statute-live-source.ts');
+        const abbrs = Array.from(byStatute.keys());
+        // Limit to first 20 statutes to avoid hammering external APIs
+        const liveResults = await fetchLiveStatuteVersions(jurisdiction, abbrs.slice(0, 20));
+        const liveMap = new Map(liveResults.map(r => [r.statute_id.toLowerCase(), r]));
+
+        liveComparison = [];
+        for (const [abbr, info] of byStatute) {
+          const live = liveMap.get(abbr);
+          if (!live) {
+            liveComparison.push({
+              statute_id: abbr,
+              live_version_date: null,
+              live_source: '',
+              live_title: null,
+              live_url: null,
+              status: 'unknown',
+            });
+            continue;
+          }
+
+          let status: 'current' | 'outdated' | 'unknown';
+          if (!info.version_date && !live.version_date) {
+            status = 'unknown';
+          } else if (!info.version_date) {
+            status = 'outdated';
+          } else if (!live.version_date) {
+            status = 'current';
+          } else if (info.version_date < live.version_date) {
+            status = 'outdated';
+          } else {
+            status = 'current';
+          }
+
+          liveComparison.push({
+            statute_id: abbr,
+            live_version_date: live.version_date,
+            live_source: live.source,
+            live_title: live.title,
+            live_url: live.source_url,
+            status,
+          });
+        }
+      } catch {
+        // Live source comparison failed — skip silently
+      }
+    }
+
+    const results: Array<{
+      statute_id: string;
+      abbreviation: string;
+      brain_version_date: string | null;
+      corpus_version_date: string | null;
+      live_version_date: string | null;
+      live_source: string | null;
+      section_count: number;
+      oldest_update: string;
+      newest_update: string;
+      status: 'current' | 'outdated' | 'unknown';
+    }> = [];
+
+    for (const [abbr, info] of byStatute) {
+      let status: 'current' | 'outdated' | 'unknown' = info.version_date ? 'current' : 'unknown';
+      let corpusVersion: string | null = null;
+      let liveVersion: string | null = null;
+      let liveSource: string | null = null;
+
+      if (corpusComparison) {
+        const cmp = corpusComparison.find(c => c.statute_id === abbr);
+        if (cmp) {
+          status = cmp.status;
+          corpusVersion = cmp.corpus_version_date;
+        }
+      }
+
+      // Live comparison takes precedence over corpus comparison
+      if (liveComparison) {
+        const live = liveComparison.find(c => c.statute_id === abbr);
+        if (live && live.live_version_date !== null) {
+          liveVersion = live.live_version_date;
+          liveSource = live.live_source;
+          // If live says outdated, override corpus status
+          if (live.status === 'outdated') {
+            status = 'outdated';
+          } else if (live.status === 'current' && status === 'unknown') {
+            status = 'current';
+          }
+        }
+      }
+
+      results.push({
+        statute_id: abbr,
+        abbreviation: info.abbreviation,
+        brain_version_date: info.version_date,
+        corpus_version_date: corpusVersion,
+        live_version_date: liveVersion,
+        live_source: liveSource,
+        section_count: info.section_count,
+        oldest_update: info.oldest_update,
+        newest_update: info.newest_update,
+        status,
+      });
+    }
+
+    return {
+      jurisdiction,
+      statute_count: results.length,
+      total_sections: rows.length,
+      corpus_comparison: corpusComparison ? true : false,
+      live_comparison: liveComparison ? true : false,
+      statutes: results,
+    };
+  },
+};
+
+const rotate_pseudonymization_key: Operation = {
+  name: 'rotate_pseudonymization_key',
+  description: 'Rotate the HMAC pseudonymization key across all legal_entity and legal_case pages. Re-hashes every pseudonymized value from oldKey to newKey. Required for GDPR Art. 32 incident response. Local CLI only — remote callers cannot access this.',
+  params: {
+    old_key: { type: 'string', required: true, description: 'The current HMAC owner key' },
+    new_key: { type: 'string', required: true, description: 'The new HMAC owner key (must differ from old_key)' },
+  },
+  scope: 'admin',
+  localOnly: true,
+  handler: async (ctx, p) => {
+    const { rotatePseudonymizationKey } = await import('./legal/anonymizer.ts');
+    const scope = sourceScopeOpts(ctx);
+    return rotatePseudonymizationKey(ctx.engine, String(p.old_key), String(p.new_key), {
+      ...(scope.sourceId !== undefined ? { sourceId: scope.sourceId } : {}),
+    });
+  },
+  cliHints: { name: 'legal-rotate-key', positional: ['old_key', 'new_key'] },
+};
+
+// ============================================================
+// v0.43 — DMS (Document Management System) MCP Operations
+// ============================================================
+// Three ops that let agents search, retrieve, and import documents
+// from external DMS providers (iManage Work, NetDocuments) via MCP.
+// Configuration via DMS_PROVIDER + DMS_BASE_URL + DMS_API_KEY env vars.
+// The connector logic lives in the frontend (src/lib/dms/) — these ops
+// shell out to the same interface via a dynamic import.
+
+interface DMSDocument {
+  id: string;
+  name: string;
+  type: string;
+  author: string;
+  modifiedDate: string;
+  size?: number;
+  version?: string;
+  checkoutStatus?: string;
+  content?: string;
+}
+
+interface DMSSearchResult {
+  documents: DMSDocument[];
+  folders: Array<{ id: string; name: string; path: string; documentCount?: number }>;
+  totalCount: number;
+}
+
+interface DMSConnector {
+  name: string;
+  isConfigured(): boolean;
+  search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult>;
+  getDocument(docId: string): Promise<DMSDocument | null>;
+  importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>): Promise<{ slug: string; success: boolean }>;
+}
+
+async function getDMSConnector(): Promise<DMSConnector | null> {
+  const provider = process.env.DMS_PROVIDER;
+  const baseUrl = process.env.DMS_BASE_URL || '';
+  const apiKey = process.env.DMS_API_KEY || '';
+
+  if (!provider || !baseUrl || !apiKey) return null;
+
+  // Inline connector factory — mirrors src/lib/dms/ but runs server-side.
+  // We avoid importing the frontend module (which pulls in Next.js deps).
+  const authHeaders = (): Record<string, string> => ({
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  });
+
+  if (provider === 'imanager') {
+    return {
+      name: 'iManage Work',
+      isConfigured: () => true,
+      async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+        const url = new URL(`${baseUrl}/api/v2/search`);
+        url.searchParams.set('q', query);
+        if (opts?.limit) url.searchParams.set('limit', String(opts.limit));
+        if (opts?.folderId) url.searchParams.set('folder_id', opts.folderId);
+        const res = await fetch(url.toString(), { headers: authHeaders() });
+        const data = await res.json() as {
+          documents?: Array<{ id: string; name: string; document_type?: string; author?: string; last_modified?: string; size?: number; version?: string; checkout_status?: string }>;
+          folders?: Array<{ id: string; name: string; path?: string; document_count?: number }>;
+          total_count?: number;
+        };
+        return {
+          documents: (data.documents ?? []).map((d) => ({
+            id: d.id, name: d.name, type: d.document_type ?? 'document',
+            author: d.author ?? '—', modifiedDate: d.last_modified ?? new Date().toISOString(),
+            size: d.size, version: d.version, checkoutStatus: d.checkout_status,
+          })),
+          folders: (data.folders ?? []).map((f) => ({
+            id: f.id, name: f.name, path: f.path ?? f.name, documentCount: f.document_count,
+          })),
+          totalCount: data.total_count ?? 0,
+        };
+      },
+      async getDocument(docId: string): Promise<DMSDocument | null> {
+        const res = await fetch(`${baseUrl}/api/v2/documents/${docId}`, { headers: authHeaders() });
+        if (!res.ok) return null;
+        const d = await res.json() as { id: string; name: string; document_type?: string; author?: string; last_modified?: string; size?: number; version?: string; checkout_status?: string };
+        return {
+          id: d.id, name: d.name, type: d.document_type ?? 'document',
+          author: d.author ?? '—', modifiedDate: d.last_modified ?? new Date().toISOString(),
+          size: d.size, version: d.version, checkoutStatus: d.checkout_status,
+        };
+      },
+      async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>) {
+        let content = doc.content;
+        if (!content) {
+          const contentRes = await fetch(`${baseUrl}/api/v2/documents/${doc.id}/content`, { headers: authHeaders() });
+          if (contentRes.ok) {
+            const blob = await contentRes.arrayBuffer();
+            content = Buffer.from(blob).toString('base64');
+          }
+        }
+        const slug = `dms/import/${doc.id}`;
+        const pageRes = await fetch(`${process.env.ENGINE_URL || 'http://localhost:3000'}/api/pages`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug, title: doc.name, type: 'dms_document',
+            content: `Imported from iManage Work. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
+            frontmatter: {
+              dms_provider: 'imanager', dms_document_id: doc.id,
+              dms_version: doc.version ?? '1', dms_author: doc.author,
+              dms_modified: doc.modifiedDate, document_base64: content ?? null,
+              imported_at: new Date().toISOString(),
+            },
+          }),
+        });
+        return { slug, success: pageRes.ok };
+      },
+    };
+  }
+
+  if (provider === 'netdocuments') {
+    return {
+      name: 'NetDocuments',
+      isConfigured: () => true,
+      async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+        const url = new URL(`${baseUrl}/v1/Repository`);
+        url.searchParams.set('search', query);
+        if (opts?.limit) url.searchParams.set('count', String(opts.limit));
+        const res = await fetch(url.toString(), { headers: authHeaders() });
+        const data = await res.json() as {
+          results?: Array<{ id: string; name: string; extension?: string; author?: { name?: string }; lastModified?: string; size?: number; version?: string; checkedOut?: boolean }>;
+          totalCount?: number;
+        };
+        return {
+          documents: (data.results ?? []).map((d) => ({
+            id: d.id, name: d.name, type: d.extension ?? 'document',
+            author: d.author?.name ?? '—', modifiedDate: d.lastModified ?? new Date().toISOString(),
+            size: d.size, version: d.version,
+            checkoutStatus: d.checkedOut ? 'checked_out' : 'available',
+          })),
+          folders: [],
+          totalCount: data.totalCount ?? 0,
+        };
+      },
+      async getDocument(docId: string): Promise<DMSDocument | null> {
+        const res = await fetch(`${baseUrl}/v1/Documents/${docId}`, { headers: authHeaders() });
+        if (!res.ok) return null;
+        const d = await res.json() as { id: string; name: string; extension?: string; author?: { name?: string }; lastModified?: string; size?: number; version?: string; checkedOut?: boolean };
+        return {
+          id: d.id, name: d.name, type: d.extension ?? 'document',
+          author: d.author?.name ?? '—', modifiedDate: d.lastModified ?? new Date().toISOString(),
+          size: d.size, version: d.version,
+          checkoutStatus: d.checkedOut ? 'checked_out' : 'available',
+        };
+      },
+      async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>) {
+        let content = doc.content;
+        if (!content) {
+          const contentRes = await fetch(`${baseUrl}/v1/Documents/${doc.id}/content`, { headers: authHeaders() });
+          if (contentRes.ok) {
+            const blob = await contentRes.arrayBuffer();
+            content = Buffer.from(blob).toString('base64');
+          }
+        }
+        const slug = `dms/import/${doc.id}`;
+        const pageRes = await fetch(`${process.env.ENGINE_URL || 'http://localhost:3000'}/api/pages`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slug, title: doc.name, type: 'dms_document',
+            content: `Imported from NetDocuments. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
+            frontmatter: {
+              dms_provider: 'netdocuments', dms_document_id: doc.id,
+              dms_version: doc.version ?? '1', dms_author: doc.author,
+              dms_modified: doc.modifiedDate, document_base64: content ?? null,
+              imported_at: new Date().toISOString(),
+            },
+          }),
+        });
+        return { slug, success: pageRes.ok };
+      },
+    };
+  }
+
+  return null;
+}
+
+const dms_search: Operation = {
+  name: 'dms_search',
+  description: 'Search documents in an external DMS (iManage Work or NetDocuments). Returns matching documents and folders. Requires DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY to be configured.',
+  params: {
+    query: { type: 'string', required: true, description: 'Search query (full-text or metadata)' },
+    limit: { type: 'number', description: 'Max results (default: 20)' },
+    folder_id: { type: 'string', description: 'Restrict search to a specific folder/cabinet' },
+  },
+  scope: 'read',
+  handler: async (_ctx, p) => {
+    const connector = await getDMSConnector();
+    if (!connector) {
+      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+    }
+    const limit = typeof p.limit === 'number' ? p.limit : 20;
+    const folderId = typeof p.folder_id === 'string' ? p.folder_id : undefined;
+    return connector.search(String(p.query), { limit, ...(folderId ? { folderId } : {}) });
+  },
+  cliHints: { name: 'dms-search', positional: ['query'] },
+};
+
+const dms_get_document: Operation = {
+  name: 'dms_get_document',
+  description: 'Retrieve a single document from the external DMS by its ID. Returns metadata (name, author, version, checkout status) without the document content. Use dms_import_document to pull content into the brain.',
+  params: {
+    document_id: { type: 'string', required: true, description: 'DMS document ID' },
+  },
+  scope: 'read',
+  handler: async (_ctx, p) => {
+    const connector = await getDMSConnector();
+    if (!connector) {
+      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+    }
+    const doc = await connector.getDocument(String(p.document_id));
+    if (!doc) return { error: 'document_not_found', message: `No document with ID ${p.document_id}` };
+    return doc;
+  },
+  cliHints: { name: 'dms-get', positional: ['document_id'] },
+};
+
+const dms_import_document: Operation = {
+  name: 'dms_import_document',
+  description: 'Import a document from the external DMS into the brain as a dms_document page. Fetches document content (base64-encoded) and stores it in frontmatter. Returns the slug and success status.',
+  params: {
+    document_id: { type: 'string', required: true, description: 'DMS document ID to import' },
+  },
+  scope: 'write',
+  handler: async (ctx, p) => {
+    const connector = await getDMSConnector();
+    if (!connector) {
+      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+    }
+    const doc = await connector.getDocument(String(p.document_id));
+    if (!doc) return { error: 'document_not_found', message: `No document with ID ${p.document_id}` };
+    const headers: Record<string, string> = {};
+    if (ctx.sourceId !== undefined) headers['x-source-id'] = String(ctx.sourceId);
+    return connector.importToBrain(doc, String(ctx.sourceId ?? 'default'), headers);
+  },
+  cliHints: { name: 'dms-import', positional: ['document_id'] },
+};
+
 export const operations: Operation[] = [
   // Page CRUD
   get_page, put_page, delete_page, list_pages,
@@ -4962,6 +5925,28 @@ export const operations: Operation[] = [
   // deny-all for remote callers). NOT localOnly so admin OAuth clients
   // can submit; CLI bypass via ctx.remote === false.
   run_skillopt,
+  // v0.43 Legal Domain MCP operations — 8 read-only ops wrapping the
+  // legal modules (analyze-document, document-review, summarize, memo,
+  // risk-analysis, contract-draft, contract-redline, due-diligence).
+  // All source-scoped via sourceScopeOpts(ctx). Safe for remote callers.
+  legal_analyze_document,
+  legal_document_review,
+  legal_summarize,
+  legal_memo,
+  legal_risk_analysis,
+  legal_contract_draft,
+  legal_contract_redline,
+  legal_due_diligence,
+  // v0.43 Legal precedent search with relevance scoring
+  legal_precedent_search,
+  // v0.43 Statute version tracking
+  statute_currency_check,
+  // v0.43 HMAC key rotation (admin, local-only)
+  rotate_pseudonymization_key,
+  // v0.43 DMS MCP operations — search, retrieve, import from iManage / NetDocuments
+  dms_search,
+  dms_get_document,
+  dms_import_document,
 ];
 
 export const operationsByName = Object.fromEntries(

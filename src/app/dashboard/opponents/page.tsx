@@ -1,0 +1,262 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  ShieldAlert,
+  Loader2,
+  ChevronRight,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { caseFrontmatter } from "@/lib/legal-types";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { RotateCcw } from "lucide-react";
+
+interface OpponentStats {
+  name: string;
+  caseCount: number;
+  wins: number;
+  losses: number;
+  settlements: number;
+  winRate: number;
+  settlementRate: number;
+  avgCaseValue?: number;
+  preferredAreas: string[];
+  recentCases: Array<{ slug: string; title: string; status: string; date: string }>;
+}
+
+export default function OpponentsPage() {
+  const [opponents, setOpponents] = useState<OpponentStats[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedOpponent, setSelectedOpponent] = useState<OpponentStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        if (cancelled) return;
+
+        // Aggregate opponent data from cases
+        const opponentMap: Record<string, OpponentStats> = {};
+
+        for (const page of pages) {
+          const fm = caseFrontmatter(page);
+          const opponentName = fm.opponent_name;
+          if (!opponentName) continue;
+
+          if (!opponentMap[opponentName]) {
+            opponentMap[opponentName] = {
+              name: opponentName,
+              caseCount: 0,
+              wins: 0,
+              losses: 0,
+              settlements: 0,
+              winRate: 0,
+              settlementRate: 0,
+              preferredAreas: [],
+              recentCases: [],
+            };
+          }
+
+          const stats = opponentMap[opponentName];
+          stats.caseCount++;
+
+          const status = fm.status || "open";
+          if (status === "won") stats.wins++;
+          else if (status === "lost") stats.losses++;
+          else if (status === "settled") stats.settlements++;
+
+          if (fm.legal_area && !stats.preferredAreas.includes(fm.legal_area)) {
+            stats.preferredAreas.push(fm.legal_area);
+          }
+
+          stats.recentCases.push({
+            slug: page.slug,
+            title: page.title,
+            status,
+            date: page.updated_at,
+          });
+        }
+
+        // Calculate rates and sort
+        for (const stats of Object.values(opponentMap)) {
+          const decided = stats.wins + stats.losses;
+          stats.winRate = decided > 0 ? stats.wins / decided : 0;
+          stats.settlementRate = stats.caseCount > 0 ? stats.settlements / stats.caseCount : 0;
+          stats.recentCases.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }
+
+        setOpponents(Object.values(opponentMap).sort((a, b) => b.caseCount - a.caseCount));
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : "Daten konnten nicht geladen werden.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+      <PageHeader
+        title="Gegner-Analyse"
+        description="Intelligence über Gegner aus allen Akten"
+      />
+
+      {/* Stats summary */}
+      {opponents.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Gegner gesamt</div>
+            <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.length}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Häufigster Gegner</div>
+            <div className="text-sm font-bold text-[color:var(--ds-text)] truncate">{opponents[0]?.name}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamt-Akten</div>
+            <div className="text-xl font-bold text-[color:var(--ds-text)]">{opponents.reduce((s, o) => s + o.caseCount, 0)}</div>
+          </div>
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
+            <div className="text-xl font-bold text-emerald-600">{opponents.reduce((s, o) => s + o.wins, 0)}</div>
+          </div>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+          <span>{loadError}</span>
+          <Button variant="ghost" size="sm" onClick={() => { setLoading(true); setLoadError(null); void (async () => { try { await api.brain.listPages({ type: "legal_case", limit: 200 }); setOpponents([]); } catch (e) { setLoadError(e instanceof Error ? e.message : "Fehler"); } finally { setLoading(false); } })(); }} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5 shrink-0">
+            <RotateCcw size={13} /> Erneut versuchen
+          </Button>
+        </div>
+      )}
+
+      {/* Opponent list */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20" role="status" aria-label="Wird geladen">
+          <Loader2 size={24} className="brand-text animate-spin" />
+        </div>
+      ) : opponents.length === 0 ? (
+        <div className="text-center py-20 space-y-4">
+          <ShieldAlert size={48} className="mx-auto text-[color:var(--ds-border)]" />
+          <p className="text-[color:var(--ds-text-muted)]">Noch keine Gegner in den Akten erfasst.</p>
+          <p className="text-[color:var(--ds-text-muted)] text-sm">Füge Gegner bei der Akten-Erstellung hinzu.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {selectedOpponent ? (
+            <div className="space-y-4">
+              <button
+                onClick={() => setSelectedOpponent(null)}
+                className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] transition-colors"
+              >
+                ← Zurück zur Übersicht
+              </button>
+
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                <h2 className="text-lg font-bold text-[color:var(--ds-text)]">{selectedOpponent.name}</h2>
+                <div className="flex items-center gap-3 text-sm text-[color:var(--ds-text-muted)] mt-1">
+                  <span>{selectedOpponent.caseCount} Akten</span>
+                  <span className={selectedOpponent.winRate >= 0.5 ? "text-emerald-600" : "text-red-600"}>
+                    {Math.round(selectedOpponent.winRate * 100)}% Siegquote
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
+                  <div className="text-xl font-bold text-emerald-600">{selectedOpponent.wins}</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">Gewonnen</div>
+                </div>
+                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
+                  <div className="text-xl font-bold text-red-600">{selectedOpponent.losses}</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">Verloren</div>
+                </div>
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-3 text-center">
+                  <div className="text-xl font-bold text-blue-600">{selectedOpponent.settlements}</div>
+                  <div className="text-xs text-[color:var(--ds-text-muted)]">Erledigt</div>
+                </div>
+              </div>
+
+              {selectedOpponent.preferredAreas.length > 0 && (
+                <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">Rechtsgebiete</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedOpponent.preferredAreas.map((area) => (
+                      <Badge key={area} variant="default" className="text-[10px] brand-soft brand-border/10 brand-text">
+                        {area}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">Akten</h3>
+                <div className="space-y-2">
+                  {selectedOpponent.recentCases.map((c) => {
+                    const statusColor =
+                      c.status === "won" ? "text-emerald-600" :
+                      c.status === "lost" ? "text-red-600" :
+                      c.status === "settled" ? "text-blue-600" :
+                      "text-amber-600";
+                    return (
+                      <Link
+                        key={c.slug}
+                        href={`/dashboard/cases/${encodeURIComponent(c.slug)}`}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[color:var(--ds-hover)] transition-colors group"
+                      >
+                        <span className="text-sm text-[color:var(--ds-text)]">{c.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs ${statusColor}`}>
+                            {c.status === "won" ? "Gewonnen" : c.status === "lost" ? "Verloren" : c.status === "settled" ? "Erledigt" : c.status}
+                          </span>
+                          <ChevronRight size={12} className="text-[color:var(--ds-text-muted)] group-hover:brand-text" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {opponents.map((o) => (
+                <button
+                  key={o.name}
+                  onClick={() => setSelectedOpponent(o)}
+                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:brand-border hover:brand-soft transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] flex items-center justify-center shrink-0">
+                    <ShieldAlert size={18} className="text-red-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-[color:var(--ds-text)]">{o.name}</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {o.caseCount} Akten · {o.preferredAreas.slice(0, 2).join(", ")}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className={cn("text-sm font-medium", o.winRate >= 0.5 ? "text-emerald-600" : "text-red-600")}>
+                      {Math.round(o.winRate * 100)}%
+                    </div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">Siegquote</div>
+                  </div>
+                  <ChevronRight size={16} className="text-[color:var(--ds-text-muted)] group-hover:brand-text shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

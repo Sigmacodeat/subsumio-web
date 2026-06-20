@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { BrainStats, RecentQuery, SearchResult } from "./types";
 
-interface QueryMessage {
+export interface QueryMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
@@ -13,7 +13,7 @@ interface QueryMessage {
   createdAt: Date;
 }
 
-interface SigmabrainStore {
+interface SubsumioStore {
   stats: BrainStats | null;
   setStats: (stats: BrainStats) => void;
 
@@ -35,7 +35,7 @@ interface SigmabrainStore {
   setSidebarOpen: (open: boolean) => void;
 }
 
-export const useStore = create<SigmabrainStore>((set) => ({
+export const useStore = create<SubsumioStore>((set) => ({
   stats: null,
   setStats: (stats) => set({ stats }),
 

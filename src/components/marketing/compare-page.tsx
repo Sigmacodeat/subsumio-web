@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { motion, MotionConfig } from "framer-motion";
 import { ArrowRight, Check, X, Minus, CircleHelp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { COMPARE, type CompareTable } from "@/content/compare";
 import {
@@ -22,6 +23,8 @@ import {
   SectionHeading,
   FaqList,
 } from "./chrome";
+import { ScrollProgress } from "./motion-system";
+import BackToTop from "./back-to-top";
 
 function CellValue({ value }: { value: string }) {
   if (value.startsWith("✓")) {
@@ -34,7 +37,7 @@ function CellValue({ value }: { value: string }) {
   }
   if (value.startsWith("✗")) {
     return (
-      <span className="inline-flex items-start gap-1.5 text-rose-400">
+      <span className="inline-flex items-start gap-1.5 [color:var(--signal-rose)]">
         <X size={14} className="shrink-0 mt-0.5" />
         <span className="[color:var(--mk-text-muted)]">{value.slice(1).trim() || "Nein"}</span>
       </span>
@@ -42,7 +45,7 @@ function CellValue({ value }: { value: string }) {
   }
   if (value.startsWith("~")) {
     return (
-      <span className="inline-flex items-start gap-1.5 text-amber-400">
+      <span className="inline-flex items-start gap-1.5 [color:var(--signal-amber)]">
         <Minus size={14} className="shrink-0 mt-0.5" />
         <span className="[color:var(--mk-text-muted)]">{value.slice(1).trim()}</span>
       </span>
@@ -102,7 +105,7 @@ function CompareMatrix({ table }: { table: CompareTable }) {
             {table.rows.map((row, ri) => (
               <motion.tr
                 key={row.label}
-                className="align-top hover:bg-white/[0.015] transition-colors"
+                className="align-top hover:[background:var(--mk-hover)] transition-colors"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={viewport}
@@ -133,7 +136,7 @@ function CompareMatrix({ table }: { table: CompareTable }) {
             transition={{ duration: 0.3, delay: Math.min(ri * 0.03, 0.25) }}
             className="rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] overflow-hidden"
           >
-            <p className="px-4 py-3 text-sm font-semibold [color:var(--mk-text)] border-b [border-color:var(--mk-border)] bg-white/[0.02]">
+            <p className="px-4 py-3 text-sm font-semibold [color:var(--mk-text)] border-b [border-color:var(--mk-border)] [background:var(--mk-hover)]">
               {row.label}
             </p>
             <dl className="divide-y divide-[var(--mk-border)]">
@@ -177,7 +180,8 @@ export default function ComparePage({ lang }: { lang: Lang }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+        <ScrollProgress />
         <MarketingBackground />
         <MarketingNav lang={lang} />
 
@@ -211,7 +215,7 @@ export default function ComparePage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.4 }}
             className="max-w-4xl mx-auto p-7 rounded-2xl border border-amber-500/20 bg-amber-500/[0.04]"
           >
-            <h2 className="text-lg font-bold text-amber-300 mb-3">{t.honestyTitle}</h2>
+            <h2 className="text-lg font-bold [color:var(--signal-amber)] mb-3">{t.honestyTitle}</h2>
             <p className="text-sm [color:var(--mk-text-muted)] leading-relaxed">{t.honestyText}</p>
           </motion.div>
         </section>
@@ -224,7 +228,7 @@ export default function ComparePage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Matrix 2: governance & EU compliance */}
-        <section className="relative z-10 py-16 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+        <section className="relative z-10 py-16 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
           <div className="max-w-6xl mx-auto">
             <CompareMatrix table={t.gov} />
           </div>
@@ -238,7 +242,7 @@ export default function ComparePage({ lang }: { lang: Lang }) {
         </section>
 
         {/* When them / when us */}
-        <section className="relative z-10 py-20 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+        <section className="relative z-10 py-20 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
             <motion.div
               initial={{ opacity: 0, x: -16 }}
@@ -286,7 +290,7 @@ export default function ComparePage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Sources + disclaimer */}
-        <section className="relative z-10 py-16 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+        <section className="relative z-10 py-16 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
           <div className="max-w-4xl mx-auto">
             <h3 className="text-sm font-semibold [color:var(--mk-text-muted)] mb-4">{t.sourcesTitle}</h3>
             <ul className="grid sm:grid-cols-2 gap-x-8 gap-y-2 mb-8">
@@ -308,20 +312,20 @@ export default function ComparePage({ lang }: { lang: Lang }) {
         </section>
 
         {/* CTA */}
-        <section className="relative z-10 py-24 px-6">
+        <section className="relative z-10 py-28 px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
-            <p className="[color:var(--mk-text-muted)] mb-8">{t.ctaSub}</p>
-            <Link
-              href={p(lang, "/signup")}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl brand-bg text-white font-semibold transition-colors hover:brightness-110"
-            >
-              {t.ctaButton} <ArrowRight size={16} />
+            <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
+            <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
+            <Link href={p(lang, "/signup")}>
+              <Button size="xl" variant="glow">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
             </Link>
           </div>
         </section>
 
         <MarketingFooter lang={lang} />
+        <BackToTop lang={lang} />
       </div>
     </MotionConfig>
   );

@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import ServiceWorkerRegister from "@/components/pwa/sw-register";
 import RefConsentBanner from "@/components/marketing/ref-consent";
 import SubsumioTheme from "@/components/brand/subsumio-theme";
+import LangSetter from "@/components/brand/lang-setter";
+import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
+import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
 
 // next/font self-hosts at build time — zero runtime requests to Google
@@ -13,35 +19,35 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jet
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — AI case management for law firms in Austria & Germany",
+    default: "Subsumio — AI Legal Workspace for DACH Law Firms",
     template: "%s — Subsumio",
   },
   description:
-    "Subsumio is the AI legal software for lawyers: manage case files & documents, automate deadlines per ZPO/BGB/ABGB, get AI analysis with citations — GDPR-compliant, EU-hosted or self-hosted.",
+    "Subsumio is legal software for matters, deadlines, documents, research and cited AI answers — built for law firms in Austria, Germany and Switzerland.",
   keywords: [
     "Subsumio",
-    "AI case management",
-    "legal software",
-    "law firm software",
-    "Anwaltssoftware",
+    "Legal Software",
     "Kanzleisoftware",
-    "AI legal analysis",
-    "GDPR compliant legal AI",
-    "EU hosted legal software",
+    "Legal AI",
+    "Fristenmanagement",
+    "Aktenverwaltung",
+    "Legal Research",
+    "Dokumentenmanagement",
+    "Subsumio",
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
   openGraph: {
-    title: "Subsumio — AI case management for law firms",
+    title: "Subsumio — AI Legal Workspace for DACH Law Firms",
     description:
-      "Manage case files, automate deadlines, get AI legal analysis with citations. GDPR-compliant, EU-hosted or self-hosted.",
+      "Matter management, deadlines, document vault, legal research and cited AI answers for law firms.",
     type: "website",
     siteName: "Subsumio",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Subsumio — AI case management for law firms" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Subsumio — AI Legal Workspace for DACH Law Firms" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Subsumio — AI case management for law firms",
-    description: "Manage case files, automate deadlines, get AI legal analysis with citations.",
+    title: "Subsumio — AI Legal Workspace for DACH Law Firms",
+    description: "Legal software for matters, deadlines, documents and cited AI answers.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -59,21 +65,35 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06060f",
-  colorScheme: "dark",
+  themeColor: "#eef0f4",
+  colorScheme: "light",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "/";
+  const lang = pathname.startsWith("/de") ? "de" : "en";
+  // Dashboard and portal render their own <main> landmark; wrap other routes here.
+  const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
+
   return (
-    <html lang="en" className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} style={{ colorScheme: "dark" }}>
-      <body className="min-h-full bg-[#06060f] text-[#e8e8f0] antialiased noise">
+    <html lang={lang} className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`} style={{ colorScheme: "light" }}>
+      <body className="min-h-full bg-[#eef0f4] text-[#0f0f1a] antialiased noise">
+        <LangSetter />
         <SubsumioTheme />
-        {children}
+        <QueryProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              {hasOwnMain ? children : <main role="main">{children}</main>}
+            </ConfirmProvider>
+          </ToastProvider>
+        </QueryProvider>
         <RefConsentBanner />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

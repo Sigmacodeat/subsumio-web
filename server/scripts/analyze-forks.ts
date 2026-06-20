@@ -3,6 +3,7 @@
  * Sammelt ALLE Forks via GitHub API, sortiert nach Aktivität,
  * und analysiert Commits/Diffs für übernahmewürdige Features.
  */
+export {};
 
 // ---------------------------------------------------------------
 // 1. KONFIGURATION

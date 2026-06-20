@@ -1,4 +1,4 @@
-// Subsumio vertical content — legal (law firms) only. EN + DE.
+// Subsumio legal funnel content. EN + DE.
 
 import type { Lang } from "./site";
 

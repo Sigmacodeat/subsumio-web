@@ -4,12 +4,14 @@ import { motion, MotionConfig } from "framer-motion";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SigmaMark } from "@/components/brand/logo";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs, type Lang } from "@/content/docs";
 import { getCompetitors } from "@/content/competitors";
 import { p } from "@/content/site";
 import { ICONS } from "./chrome";
-import { MarketingBackground, MarketingNav, MarketingFooter, useSiteBrand } from "./chrome";
+import { MarketingBackground, MarketingNav, MarketingFooter } from "./chrome";
+import { ScrollProgress } from "./motion-system";
+import BackToTop from "./back-to-top";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
@@ -58,8 +60,8 @@ function ComparisonSection({ lang }: { lang: Lang }) {
     <section className="relative z-10 py-24 px-6">
       <div className="max-w-6xl mx-auto">
         <motion.div {...reveal} className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ color: "var(--signal-blue)", background: "rgba(29,78,216,0.08)" }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--signal-blue)" }} />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#60a5fa" }} />
             {c.badge}
           </div>
           <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-3">{c.title}<br /><span className="gradient-text">{c.claim}</span></h2>
@@ -71,7 +73,7 @@ function ComparisonSection({ lang }: { lang: Lang }) {
             <thead>
               <tr className="border-b [border-color:var(--mk-border)]">
                 <th className="py-3 pr-4 text-xs font-semibold [color:var(--mk-text-muted)] uppercase tracking-wider whitespace-nowrap">{c.tableTitle}</th>
-                <th className="py-3 px-3 text-xs font-semibold text-[var(--brand-primary)] uppercase tracking-wider text-center whitespace-nowrap">{c.sigmabrainLabel}</th>
+                <th className="py-3 px-3 text-xs font-semibold text-[var(--brand-primary)] uppercase tracking-wider text-center whitespace-nowrap">{c.subsumioLabel}</th>
                 <th className="py-3 px-3 text-xs font-semibold [color:var(--mk-text-subtle)] uppercase tracking-wider text-center whitespace-nowrap">{c.harveyLabel}</th>
                 <th className="py-3 px-3 text-xs font-semibold [color:var(--mk-text-subtle)] uppercase tracking-wider text-center whitespace-nowrap">{c.leyaLabel}</th>
                 <th className="py-3 px-3 text-xs font-semibold [color:var(--mk-text-subtle)] uppercase tracking-wider text-center whitespace-nowrap">{c.josefLabel}</th>
@@ -80,9 +82,9 @@ function ComparisonSection({ lang }: { lang: Lang }) {
             </thead>
             <tbody>
               {c.rows.map((row, i) => (
-                <tr key={row.feature} className={`border-b [border-color:var(--mk-border)] ${i % 2 === 0 ? "[background:color-mix(in_srgb,var(--mk-surface)_30%,transparent)]" : ""}`}>
+                <tr key={row.feature} className={`border-b [border-color:var(--mk-border)] ${i % 2 === 0 ? "[background:var(--mk-surface)]" : ""}`}>
                   <td className="py-2.5 pr-4 text-sm [color:var(--mk-text)]">{row.feature}</td>
-                  <td className="py-2.5 px-3 text-center"><StatusBadge status={row.sigmabrain} labels={c} /></td>
+                  <td className="py-2.5 px-3 text-center"><StatusBadge status={row.subsumio} labels={c} /></td>
                   <td className="py-2.5 px-3 text-center"><StatusBadge status={row.harvey} labels={c} /></td>
                   <td className="py-2.5 px-3 text-center"><StatusBadge status={row.leya} labels={c} /></td>
                   <td className="py-2.5 px-3 text-center"><StatusBadge status={row.josef} labels={c} /></td>
@@ -105,12 +107,12 @@ function ComparisonSection({ lang }: { lang: Lang }) {
 }
 
 export default function DocsPage({ lang }: { lang: Lang }) {
-  const brand = useSiteBrand();
-  const d = getDocs(lang, brand);
+  const d = getDocs(lang);
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+      <div data-tone="dark" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+        <ScrollProgress />
         <MarketingBackground />
         <MarketingNav lang={lang} theme="dark" />
 
@@ -122,8 +124,8 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-8" style={{ color: "var(--signal-blue)", background: "rgba(29,78,216,0.08)" }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--signal-blue)" }} />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-8" style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#60a5fa" }} />
               {d.hero.badge}
             </div>
             <h1 className="text-5xl md:text-6xl font-black leading-[1.05] tracking-tight mb-5 [color:var(--mk-text)]">
@@ -138,7 +140,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         {/* Categories */}
         <section className="relative z-10 pb-28 px-6">
           <div className="max-w-7xl mx-auto space-y-20">
-            {d.categories.map((cat, ci) => (
+            {d.categories.map((cat, _ci) => (
               <motion.div key={cat.id} {...reveal}>
                 <div className="mb-8">
                   <h2 className="text-2xl md:text-3xl font-black [color:var(--mk-text)] mb-2">{cat.title}</h2>
@@ -158,7 +160,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         <ComparisonSection lang={lang} />
 
         {/* Architecture */}
-        <section className="relative z-10 py-24 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)]">
+        <section className="relative z-10 py-24 px-6 [background:var(--mk-surface)]">
           <div className="max-w-7xl mx-auto">
             <motion.div {...reveal} className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-3">{d.arch.title}</h2>
@@ -174,17 +176,18 @@ export default function DocsPage({ lang }: { lang: Lang }) {
 
         {/* CTA */}
         <motion.section {...reveal} className="relative z-10 py-28 px-6 text-center max-w-3xl mx-auto">
-          <SigmaMark size={56} className="mx-auto mb-6 rounded-[15px] glow-purple" />
-          <h2 className="text-3xl font-black [color:var(--mk-text)] mb-3">{d.cta.title}</h2>
-          <p className="text-base [color:var(--mk-text-muted)] mb-8">{d.cta.sub}</p>
+          <SubsumioMark size={56} className="mx-auto mb-7" />
+          <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{d.cta.title}</h2>
+          <p className="text-lg [color:var(--mk-text-muted)] mb-10">{d.cta.sub}</p>
           <Link href={p(lang, "/login")}>
             <Button size="lg" variant="glow">
-              <SigmaMark size={16} tile={false} /> {d.cta.button} <ArrowRight size={16} />
+              <SubsumioMark size={16} tile={false} /> {d.cta.button} <ArrowRight size={16} />
             </Button>
           </Link>
         </motion.section>
 
         <MarketingFooter lang={lang} />
+        <BackToTop lang={lang} />
       </div>
     </MotionConfig>
   );

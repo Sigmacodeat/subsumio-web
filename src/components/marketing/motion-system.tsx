@@ -118,26 +118,30 @@ export function StaggerContainer({
     },
   }), [reduce, y, duration]);
 
+  // The grid/flex className MUST sit on the element that DIRECTLY contains the
+  // StaggerItems, otherwise the items aren't grid children and collapse into a
+  // single column. A Context.Provider renders no DOM node, so children become
+  // direct children of the motion element. We pick the motion component that
+  // matches the requested semantic tag (div/section/ul/ol).
+  const MotionTag =
+    Tag === "section"
+      ? motion.section
+      : Tag === "ul"
+        ? motion.ul
+        : Tag === "ol"
+          ? motion.ol
+          : motion.div;
+
   return (
-    <motion.div
+    <MotionTag
       initial="hidden"
       whileInView="visible"
       viewport={viewport}
       variants={container}
       className={className}
     >
-      <StaggerContext.Provider value={child}>
-        {Tag === "div" ? (
-          <div>{children}</div>
-        ) : Tag === "section" ? (
-          <section>{children}</section>
-        ) : Tag === "ul" ? (
-          <ul>{children}</ul>
-        ) : (
-          <ol>{children}</ol>
-        )}
-      </StaggerContext.Provider>
-    </motion.div>
+      <StaggerContext.Provider value={child}>{children}</StaggerContext.Provider>
+    </MotionTag>
   );
 }
 

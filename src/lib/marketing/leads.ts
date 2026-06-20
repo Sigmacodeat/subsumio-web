@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { sendMail } from "@/lib/mail";
 import { getSharedPgPool } from "@/lib/auth/store";
+import { createSchemaInit } from "@/lib/schema-init";
 
 export type LeadScore = "low" | "medium" | "high" | "enterprise";
 
@@ -29,35 +30,32 @@ export interface MarketingLead extends MarketingLeadInput {
   };
 }
 
-const DATA_DIR = process.env.SIGMABRAIN_DATA_DIR || path.join(process.cwd(), ".data");
+import { env } from "@/lib/env";
+
+const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
 const LEADS_FILE = path.join(DATA_DIR, "marketing-leads.json");
 
 let cache: MarketingLead[] | null = null;
 let writeQueue: Promise<void> = Promise.resolve();
-let pgSchemaReady: Promise<void> | null = null;
+const ensureLeadsSchema = createSchemaInit([
+  `CREATE TABLE IF NOT EXISTS subsumio_marketing_leads (
+    id text PRIMARY KEY,
+    email text NOT NULL,
+    lead_score text NOT NULL,
+    product text NOT NULL,
+    plan text NOT NULL,
+    data jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  "CREATE INDEX IF NOT EXISTS subsumio_marketing_leads_created_idx ON subsumio_marketing_leads (created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS subsumio_marketing_leads_email_idx ON subsumio_marketing_leads (email)",
+  "CREATE INDEX IF NOT EXISTS subsumio_marketing_leads_score_idx ON subsumio_marketing_leads (lead_score)",
+]);
 
 async function pgReady() {
   const pool = getSharedPgPool();
   if (!pool) return null;
-  if (!pgSchemaReady) {
-    pgSchemaReady = (async () => {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_marketing_leads (
-          id text PRIMARY KEY,
-          email text NOT NULL,
-          lead_score text NOT NULL,
-          product text NOT NULL,
-          plan text NOT NULL,
-          data jsonb NOT NULL,
-          created_at timestamptz NOT NULL DEFAULT now()
-        )
-      `);
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_marketing_leads_created_idx ON sigmabrain_marketing_leads (created_at DESC)");
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_marketing_leads_email_idx ON sigmabrain_marketing_leads (email)");
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_marketing_leads_score_idx ON sigmabrain_marketing_leads (lead_score)");
-    })();
-  }
-  await pgSchemaReady;
+  await ensureLeadsSchema();
   return pool;
 }
 
@@ -90,7 +88,7 @@ export async function listMarketingLeads(): Promise<MarketingLead[]> {
   const pool = await pgReady();
   if (pool) {
     const { rows } = await pool.query<{ data: MarketingLead }>(
-      "SELECT data FROM sigmabrain_marketing_leads ORDER BY created_at DESC LIMIT 500",
+      "SELECT data FROM subsumio_marketing_leads ORDER BY created_at DESC LIMIT 500",
     );
     return rows.map(rowToLead);
   }
@@ -110,7 +108,7 @@ export async function createMarketingLead(input: MarketingLeadInput): Promise<Ma
   const pool = await pgReady();
   if (pool) {
     await pool.query(
-      `INSERT INTO sigmabrain_marketing_leads (id, email, lead_score, product, plan, data, created_at)
+      `INSERT INTO subsumio_marketing_leads (id, email, lead_score, product, plan, data, created_at)
        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
       [lead.id, lead.email, lead.leadScore, lead.product, lead.plan, JSON.stringify(lead), lead.createdAt],
     );
@@ -137,7 +135,7 @@ export function summarizeLead(input: Omit<MarketingLeadInput, "summary" | "conse
 
 async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["notified"]> {
   const text = [
-    `New Sigmabrain marketing lead`,
+    `New Subsumio marketing lead`,
     ``,
     `Email: ${lead.email}`,
     `Product: ${lead.product}`,
@@ -151,7 +149,7 @@ async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["
     `Fields: ${JSON.stringify(lead.fields, null, 2)}`,
   ].join("\n");
 
-  const to = process.env.SALES_NOTIFY_EMAIL || process.env.MAIL_FROM?.match(/<([^>]+)>/)?.[1] || "hello@sigmabrain.com";
+  const to = process.env.SALES_NOTIFY_EMAIL || process.env.MAIL_FROM?.match(/<([^>]+)>/)?.[1] || "hello@subsum.eu";
   const mail = await sendMail({ to, subject: `New ${lead.leadScore} lead: ${lead.product}`, text });
 
   let slack = false;
@@ -161,7 +159,7 @@ async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: `New ${lead.leadScore} Sigmabrain lead: ${lead.product} / ${lead.plan}\n${lead.email}\n${lead.summary}`,
+          text: `New ${lead.leadScore} Subsumio lead: ${lead.product} / ${lead.plan}\n${lead.email}\n${lead.summary}`,
         }),
       });
       slack = res.ok;

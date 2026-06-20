@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { put } from "@vercel/blob";
+import { withRetry } from "@/lib/retry";
 import type { WhatsAppMediaMessage } from "./types";
 
 export interface StoredWhatsAppMedia {
@@ -78,9 +79,9 @@ async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
   const params = new URLSearchParams();
   if (phoneNumberId) params.set("phone_number_id", phoneNumberId);
   const qs = params.toString();
-  const res = await fetch(`https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(mediaId)}${qs ? `?${qs}` : ""}`, {
+  const res = await withRetry(() => fetch(`https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(mediaId)}${qs ? `?${qs}` : ""}`, {
     headers: { Authorization: `Bearer ${token}` },
-  });
+  }));
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp Media URL failed: HTTP ${res.status}`);
@@ -94,10 +95,11 @@ export async function downloadAndStoreWhatsAppMedia(message: WhatsAppMediaMessag
 
   const meta = await getMediaUrl(message.mediaId);
   if (!meta.url) throw new Error("WhatsApp Media API lieferte keine Download-URL.");
+  const downloadUrl = meta.url;
   const expectedSize = Number(meta.file_size || 0);
   if (expectedSize > maxBytes()) throw new Error(`WhatsApp-Medium ist zu groß (${expectedSize} Bytes). Limit: ${maxBytes()} Bytes.`);
 
-  const res = await fetch(meta.url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await withRetry(() => fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } }));
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp media download failed: HTTP ${res.status}`);

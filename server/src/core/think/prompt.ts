@@ -35,6 +35,13 @@ export interface ThinkSystemPromptOpts {
    * message via buildThinkUserMessage.calibration.
    */
   withCalibration?: boolean;
+  /**
+   * v0.43 — when true (or auto-detected from gathered page types), the
+   * system prompt gains legal-specific instructions: statute citations with
+   * version dates, jurisdiction awareness, attorney review disclaimers, and
+   * legal confidentiality discipline.
+   */
+  legalMode?: boolean;
 }
 
 export const THINK_SYSTEM_PROMPT_BASE = `You are gbrain's synthesis engine. You answer questions by reasoning across the user's personal knowledge brain. Your inputs are wrapped in structural tags:
@@ -93,6 +100,18 @@ export function buildThinkSystemPrompt(opts: ThinkSystemPromptOpts = {}): string
     lines.push(`- Reference active bias tags by name when relevant ("this fits the over-confident-geography pattern").`);
     lines.push(`- Do NOT silently substitute the debiased answer. ALWAYS surface both priors transparently.`);
     lines.push(`- Track-record sentences belong in a "Calibration" section in the answer body, between Conflicts and Gaps.`);
+  }
+  if (opts.legalMode) {
+    lines.push(
+      `\nLEGAL MODE ACTIVE — Additional rules for legal synthesis:`,
+    );
+    lines.push(`- Cite statutes with version date when known: "§ 823 BGB (Fassung vom 2024-01-01)". If the version date is unknown, note: "Fassungsdatum nicht verifiziert".`);
+    lines.push(`- When citing case law, include court and date: "BGH, Urteil vom 2024-03-15, Az. XII ZR 123/21".`);
+    lines.push(`- Flag jurisdiction-specific rules: "Hinweis: Dies gilt im deutschen Recht; in Österreich vgl. § 1311 ABGB."`);
+    lines.push(`- Mark every legal conclusion as assistive: "Diese Einschätzung ersetzt keine anwaltliche Prüfung."`);
+    lines.push(`- If a statute citation's currency cannot be verified, note it explicitly in the Gaps section.`);
+    lines.push(`- Never provide definitive legal advice. You are a research tool, not an attorney.`);
+    lines.push(`- Treat all retrieved case data as confidential — never disclose client names or case details beyond what is in the cited brain pages.`);
   }
   return lines.join('\n');
 }

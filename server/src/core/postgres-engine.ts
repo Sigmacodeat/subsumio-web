@@ -61,6 +61,7 @@ import { resolveBoostMap, resolveHardExcludes } from './search/source-boost.ts';
 import { buildSourceFactorCase, buildHardExcludeClause, buildVisibilityClause, buildRecencyComponentSql, buildBestPerPagePoolCte } from './search/sql-ranking.ts';
 import { DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_DIMENSIONS } from './ai/defaults.ts';
 import { DELETE_BATCH_SIZE } from './engine-constants.ts';
+import { ConfigError, NotFoundError, QueryError } from './engine-errors.ts';
 
 function escapeSqlStringLiteral(value: string): string {
   return value.replace(/'/g, "''");
@@ -72,7 +73,7 @@ export function getPostgresSchema(
 ): string {
   const parsedDims = Number(dims);
   if (!Number.isInteger(parsedDims) || parsedDims <= 0) {
-    throw new Error(`Invalid embedding dimensions: ${dims}`);
+    throw new ConfigError(`Invalid embedding dimensions: ${dims}`);
   }
   const sanitizedModel = escapeSqlStringLiteral(String(model));
   return applyChunkEmbeddingIndexPolicy(SCHEMA_SQL, parsedDims)
@@ -1023,7 +1024,7 @@ export class PostgresEngine implements BrainEngine {
   async deletePages(slugs: string[], opts: { sourceId: string }): Promise<string[]> {
     if (slugs.length === 0) return [];
     if (slugs.length > DELETE_BATCH_SIZE) {
-      throw new Error(
+      throw new ConfigError(
         `deletePages: input size ${slugs.length} exceeds DELETE_BATCH_SIZE=${DELETE_BATCH_SIZE}. Caller must chunk.`,
       );
     }
@@ -1046,7 +1047,7 @@ export class PostgresEngine implements BrainEngine {
   ): Promise<Map<string, string>> {
     if (paths.length === 0) return new Map();
     if (paths.length > DELETE_BATCH_SIZE) {
-      throw new Error(
+      throw new ConfigError(
         `resolveSlugsByPaths: input size ${paths.length} exceeds DELETE_BATCH_SIZE=${DELETE_BATCH_SIZE}. Caller must chunk.`,
       );
     }
@@ -2062,7 +2063,7 @@ export class PostgresEngine implements BrainEngine {
     // brains where the slug exists in 2+ sources return >1 row and the
     // chunk replacement targets the wrong page (or fans out across pages).
     const pages = await sql`SELECT id FROM pages WHERE slug = ${slug} AND source_id = ${sourceId}`;
-    if (pages.length === 0) throw new Error(`Page not found: ${slug} (source=${sourceId})`);
+    if (pages.length === 0) throw new NotFoundError(`Page not found: ${slug} (source=${sourceId})`);
     const pageId = pages[0].id;
 
     // Remove chunks that no longer exist (chunk_index beyond new count)
@@ -2510,7 +2511,7 @@ export class PostgresEngine implements BrainEngine {
       SELECT 1 FROM pages WHERE slug = ${to} AND source_id = ${toSrc}
     `;
     if (exists.length === 0) {
-      throw new Error(`addLink failed: page "${from}" (source=${fromSrc}) or "${to}" (source=${toSrc}) not found`);
+      throw new NotFoundError(`addLink failed: page "${from}" (source=${fromSrc}) or "${to}" (source=${toSrc}) not found`);
     }
     // Default link_source to 'markdown' for back-compat with pre-v0.13 callers.
     // Mirror addLinksBatch's VALUES + JOIN-on-(slug, source_id) shape. The old
@@ -3333,7 +3334,7 @@ export class PostgresEngine implements BrainEngine {
     // pages). Source-scoped lookup — pre-v0.18 the bare-slug subquery returned
     // multiple rows in multi-source brains and crashed with Postgres 21000.
     const page = await sql`SELECT id FROM pages WHERE slug = ${slug} AND source_id = ${sourceId}`;
-    if (page.length === 0) throw new Error(`addTag failed: page "${slug}" (source=${sourceId}) not found`);
+    if (page.length === 0) throw new NotFoundError(`addTag failed: page "${slug}" (source=${sourceId}) not found`);
     await sql`
       INSERT INTO tags (page_id, tag)
       VALUES (${page[0].id}, ${tag})
@@ -3373,7 +3374,7 @@ export class PostgresEngine implements BrainEngine {
     if (!opts?.skipExistenceCheck) {
       const exists = await sql`SELECT 1 FROM pages WHERE slug = ${slug} AND source_id = ${sourceId}`;
       if (exists.length === 0) {
-        throw new Error(`addTimelineEntry failed: page "${slug}" (source=${sourceId}) not found`);
+        throw new NotFoundError(`addTimelineEntry failed: page "${slug}" (source=${sourceId}) not found`);
       }
     }
     // ON CONFLICT DO NOTHING via the (page_id, date, summary) unique index.
@@ -3489,7 +3490,7 @@ export class PostgresEngine implements BrainEngine {
         RETURNING id
       `;
       if (result.length === 0) {
-        throw new Error(`putRawData failed: page "${slug}" (source=${opts.sourceId}) not found`);
+        throw new NotFoundError(`putRawData failed: page "${slug}" (source=${opts.sourceId}) not found`);
       }
       return;
     }
@@ -3502,7 +3503,7 @@ export class PostgresEngine implements BrainEngine {
         fetched_at = now()
       RETURNING id
     `;
-    if (result.length === 0) throw new Error(`putRawData failed: page "${slug}" not found`);
+    if (result.length === 0) throw new NotFoundError(`putRawData failed: page "${slug}" not found`);
   }
 
   async getRawData(
@@ -3557,7 +3558,7 @@ export class PostgresEngine implements BrainEngine {
         metadata = EXCLUDED.metadata
       RETURNING id, (xmax = 0) AS created
     `;
-    if (rows.length === 0) throw new Error(`upsertFile returned no rows for ${spec.storage_path}`);
+    if (rows.length === 0) throw new QueryError(`upsertFile returned no rows for ${spec.storage_path}`);
     return { id: rows[0].id, created: !!rows[0].created };
   }
 
@@ -4634,7 +4635,7 @@ export class PostgresEngine implements BrainEngine {
       FROM pages WHERE slug = ${slug} AND source_id = ${sourceId}
       RETURNING *
     `;
-    if (rows.length === 0) throw new Error(`createVersion failed: page "${slug}" (source=${sourceId}) not found`);
+    if (rows.length === 0) throw new NotFoundError(`createVersion failed: page "${slug}" (source=${sourceId}) not found`);
     return rows[0] as unknown as PageVersion;
   }
 

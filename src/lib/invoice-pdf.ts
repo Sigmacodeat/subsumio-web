@@ -43,7 +43,7 @@ export function generateInvoicePdf(data: InvoicePdfData): jsPDF {
 
   const darkText = 40;
   const lightText = 100;
-  const accentColor = [99, 102, 241]; // violet-500
+  const accentColor = [47, 107, 255]; // brand-primary #2f6bff
 
   // --- Kanzlei-Kopf ---
   doc.setFontSize(10);

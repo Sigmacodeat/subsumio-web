@@ -28,7 +28,7 @@ export interface FeaturesContent {
 
 export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
   en: {
-    metaTitle: "Features — everything Sigmabrain does",
+    metaTitle: "Features — everything Subsumio does",
     metaDesc: "Synthesis with citations, self-wiring knowledge graph, hybrid retrieval, the 24/7 Dream Cycle, agent integrations and team-safe access control — in depth.",
     badge: "Full capability tour",
     h1a: "Everything it does.",
@@ -40,7 +40,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Brain",
         label: "Answers & Synthesis",
         title: "One answer instead of ten documents",
-        intro: "Most tools stop at retrieval: here are your chunks, good luck. Sigmabrain reads them for you and writes the answer — and tells you what it couldn't find.",
+        intro: "Most tools stop at retrieval: here are your chunks, good luck. Subsumio reads them for you and writes the answer — and tells you what it couldn't find.",
         items: [
           { title: "Synthesized prose answers", desc: "Cross-document synthesis over people, companies, deals and ideas — written out, not pasted together." },
           { title: "Citations on every claim", desc: "Each statement links to its source page. One click to verify before you rely on it." },
@@ -48,14 +48,14 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Meeting prep mode", desc: "Ask about a person before a meeting: last contact, open commitments, what changed since." },
         ],
         demo: {
-          windowTitle: "sigmabrain — ask",
+          windowTitle: "subsumio — ask",
           lines: [
-            "$ what's still open with the founders I met this week?",
-            "→ 3 commitments found across 4 meetings:",
-            "  1. Intro to fund-a partner (promised Tue, not sent)",
-            "  2. Term sheet feedback for acme-example (due Fri)",
-            "  3. Follow-up deck from widget-co (they owe YOU)",
-            "  ⚠ Gap: no notes filed for Thursday's 2pm meeting",
+            "$ what's still open in the Bauer matter?",
+            "→ 3 open items across 4 documents:",
+            "  1. Reply brief to the court (drafted, not filed)",
+            "  2. Expert report from Dr. Klein (requested, overdue)",
+            "  3. Settlement range to confirm with the client",
+            "  ⚠ Gap: no note filed for Thursday's client call",
           ],
         },
       },
@@ -72,14 +72,14 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Benchmarked recall", desc: "97.9% Recall@5 and +31.4 P@5 points over vector-only RAG on a 240-page benchmark corpus." },
         ],
         demo: {
-          windowTitle: "sigmabrain — graph",
+          windowTitle: "subsumio — graph",
           lines: [
-            "$ who works at acme-example?",
-            "→ 4 people via works_at edges:",
-            "  alice-example (Head of Eng, since 2024)",
-            "  bob-example (CFO) · 2 more",
-            "$ what connects alice-example and fund-a?",
-            "→ alice-example —works_at→ acme-example ←invested_in— fund-a",
+            "$ who acts in the Bauer matter?",
+            "→ 4 parties via represents / opposing edges:",
+            "  Dr. Weber (our counsel, since 2024)",
+            "  Hofer GmbH (opposing party) · 2 more",
+            "$ what connects Hofer GmbH and Dr. Klein?",
+            "→ Hofer GmbH —retained→ Dr. Klein —expert_in→ Bauer matter",
           ],
         },
       },
@@ -96,13 +96,13 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Intent-aware ranking", desc: "Relational questions trigger graph recall automatically; lookups stay lean. The engine adapts per query." },
         ],
         demo: {
-          windowTitle: "sigmabrain — search modes",
+          windowTitle: "subsumio — search modes",
           lines: [
-            "$ sigmabrain search modes",
+            "$ subsumio search modes",
             "→ mode: balanced",
             "  cache: on (hit rate 30d: 47%)",
             "  token budget: 12,000 · relational recall: on",
-            "$ sigmabrain search stats --days 30",
+            "$ subsumio search stats --days 30",
             "→ 1,204 queries · 47% cached · avg 9.2k tokens",
           ],
         },
@@ -120,7 +120,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Scheduled jobs", desc: "Cron-based ingestion, enrichment and reports. The production deployment runs 66 autonomous jobs." },
         ],
         demo: {
-          windowTitle: "sigmabrain — overnight",
+          windowTitle: "subsumio — overnight",
           lines: [
             "03:00 dream cycle started",
             "  merged 3 duplicate person pages",
@@ -144,10 +144,10 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Web dashboard & PWA", desc: "Query, graph explorer, upload, settings — installable on iOS, iPadOS and Android as an app." },
         ],
         demo: {
-          windowTitle: "claude code — with sigmabrain",
+          windowTitle: "claude code — with subsumio",
           lines: [
             "> claude: before I refactor, what do we know about this client's auth requirements?",
-            "→ [sigmabrain MCP] 3 pages found:",
+            "→ [subsumio MCP] 3 pages found:",
             "  meetings/2026-03-kickoff: SSO mandatory (Okta)",
             "  notes/security-review: no PII in logs",
             "  Your agent now remembers everything that isn't code.",
@@ -159,7 +159,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Shield",
         label: "Security & Teams",
         title: "Team-safe and audit-friendly by architecture",
-        intro: "Knowledge tools fail on trust. Sigmabrain's answer: infrastructure you own, auditable answers, and access control that's been attacked on purpose.",
+        intro: "Knowledge tools fail on trust. Subsumio's answer: infrastructure you own, auditable answers, and access control that's been attacked on purpose.",
         items: [
           { title: "Scoped access, fuzz-tested", desc: "Per-user, per-source scoping across every read path — search, lists, lookups, multi-source reads. Fuzzed for zero cross-user leaks." },
           { title: "Self-hosted or EU cloud", desc: "Run the full engine on your hardware, or choose managed EU hosting with a DPA. Your data never trains anyone's model." },
@@ -173,7 +173,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ctaButton: "Get started",
   },
   de: {
-    metaTitle: "Features — alles, was Sigmabrain kann",
+    metaTitle: "Features — alles, was Subsumio kann",
     metaDesc: "Synthese mit Zitaten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, der 24/7 Dream Cycle, Agent-Integrationen und team-sichere Zugriffskontrolle — im Detail.",
     badge: "Die komplette Capability-Tour",
     h1a: "Alles, was es kann.",
@@ -185,7 +185,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Brain",
         label: "Antworten & Synthese",
         title: "Eine Antwort statt zehn Dokumenten",
-        intro: "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Sigmabrain liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
+        intro: "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Subsumio liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
         items: [
           { title: "Synthetisierte Prosa-Antworten", desc: "Dokumentübergreifende Synthese über Personen, Firmen, Deals und Ideen — ausformuliert, nicht zusammengeklebt." },
           { title: "Zitate an jeder Behauptung", desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor du dich darauf verlässt." },
@@ -193,14 +193,14 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Meeting-Prep-Modus", desc: "Frag vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat." },
         ],
         demo: {
-          windowTitle: "sigmabrain — fragen",
+          windowTitle: "subsumio — fragen",
           lines: [
-            "$ was ist mit den Foundern dieser Woche noch offen?",
-            "→ 3 Zusagen in 4 Meetings gefunden:",
-            "  1. Intro zum fund-a-Partner (Di versprochen, nicht gesendet)",
-            "  2. Term-Sheet-Feedback für acme-example (bis Fr)",
-            "  3. Follow-up-Deck von widget-co (DIR geschuldet)",
-            "  ⚠ Lücke: keine Notizen zum Meeting Do 14 Uhr",
+            "$ was ist in der Akte Bauer noch offen?",
+            "→ 3 offene Punkte in 4 Dokumenten:",
+            "  1. Replik ans Gericht (entworfen, nicht eingebracht)",
+            "  2. Gutachten von Dr. Klein (angefordert, überfällig)",
+            "  3. Vergleichsrahmen mit Mandant zu bestätigen",
+            "  ⚠ Lücke: keine Notiz zum Mandantengespräch Do",
           ],
         },
       },
@@ -217,14 +217,14 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Benchmark-belegt", desc: "97,9 % Recall@5 und +31,4 P@5-Punkte gegenüber reinem Vector-RAG auf einem 240-Seiten-Benchmark-Korpus." },
         ],
         demo: {
-          windowTitle: "sigmabrain — graph",
+          windowTitle: "subsumio — graph",
           lines: [
-            "$ wer arbeitet bei acme-example?",
-            "→ 4 Personen via works_at-Kanten:",
-            "  alice-example (Head of Eng, seit 2024)",
-            "  bob-example (CFO) · 2 weitere",
-            "$ was verbindet alice-example und fund-a?",
-            "→ alice-example —works_at→ acme-example ←invested_in— fund-a",
+            "$ wer wirkt in der Akte Bauer mit?",
+            "→ 4 Beteiligte via vertritt / Gegenseite-Kanten:",
+            "  Dr. Weber (unser Anwalt, seit 2024)",
+            "  Hofer GmbH (Gegenpartei) · 2 weitere",
+            "$ was verbindet Hofer GmbH und Dr. Klein?",
+            "→ Hofer GmbH —beauftragt→ Dr. Klein —gutachter_in→ Akte Bauer",
           ],
         },
       },
@@ -241,13 +241,13 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Intent-bewusstes Ranking", desc: "Beziehungsfragen aktivieren Graph-Recall automatisch; einfache Lookups bleiben schlank. Die Engine passt sich pro Query an." },
         ],
         demo: {
-          windowTitle: "sigmabrain — search modes",
+          windowTitle: "subsumio — search modes",
           lines: [
-            "$ sigmabrain search modes",
+            "$ subsumio search modes",
             "→ Modus: balanced",
             "  Cache: an (Hit-Rate 30 Tage: 47 %)",
             "  Token-Budget: 12.000 · relationaler Recall: an",
-            "$ sigmabrain search stats --days 30",
+            "$ subsumio search stats --days 30",
             "→ 1.204 Queries · 47 % gecacht · ø 9,2k Tokens",
           ],
         },
@@ -265,7 +265,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Geplante Jobs", desc: "Cron-basierte Ingestion, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs." },
         ],
         demo: {
-          windowTitle: "sigmabrain — über nacht",
+          windowTitle: "subsumio — über nacht",
           lines: [
             "03:00 Dream Cycle gestartet",
             "  3 doppelte Personenseiten gemerged",
@@ -289,10 +289,10 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           { title: "Web-Dashboard & PWA", desc: "Query, Graph-Explorer, Upload, Einstellungen — installierbar auf iOS, iPadOS und Android als App." },
         ],
         demo: {
-          windowTitle: "claude code — mit sigmabrain",
+          windowTitle: "claude code — mit subsumio",
           lines: [
             "> claude: bevor ich refactore — was wissen wir über die Auth-Anforderungen dieses Kunden?",
-            "→ [sigmabrain MCP] 3 Seiten gefunden:",
+            "→ [subsumio MCP] 3 Seiten gefunden:",
             "  meetings/2026-03-kickoff: SSO Pflicht (Okta)",
             "  notes/security-review: keine PII in Logs",
             "  Dein Agent erinnert sich jetzt an alles, was nicht Code ist.",
@@ -304,7 +304,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         icon: "Shield",
         label: "Sicherheit & Teams",
         title: "Team-sicher und audit-freundlich per Architektur",
-        intro: "Wissens-Tools scheitern am Vertrauen. Sigmabrains Antwort: Infrastruktur zum Besitzen, auditierbare Antworten, und Zugriffskontrolle, die absichtlich angegriffen wurde.",
+        intro: "Wissens-Tools scheitern am Vertrauen. Subsumios Antwort: Infrastruktur zum Besitzen, auditierbare Antworten, und Zugriffskontrolle, die absichtlich angegriffen wurde.",
         items: [
           { title: "Scoped Access, fuzz-getestet", desc: "Scoping pro Nutzer und Quelle über jeden Lesepfad — Suche, Listen, Lookups, Multi-Source-Reads. Gefuzzt auf null Leaks zwischen Nutzern." },
           { title: "Self-hosted oder EU-Cloud", desc: "Volle Engine auf eigener Hardware, oder verwaltetes EU-Hosting mit AVV. Deine Daten trainieren niemals fremde Modelle." },

@@ -19,7 +19,7 @@ export interface VerfahrensdokuInput {
   ustId: string;
   /** Verantwortliche/r für die Ordnungsmäßigkeit der Ablage. */
   verantwortlich: string;
-  /** Eingesetzte DV-Systeme, frei (z. B. "Sigmabrain, DATEV, beA"). */
+  /** Eingesetzte DV-Systeme, frei (z. B. "Subsumio, DATEV, beA"). */
   systeme: string;
   /** Wie Belege eingehen (Post, E-Mail, Upload, Scan-Eingang). */
   belegEingang: string;
@@ -58,7 +58,7 @@ export function buildVerfahrensdoku(input: VerfahrensdokuInput): string {
 > generiert (GoBD Rz. 151 ff.). Sie ist eine **Vorlage**, kein prüfungssicheres
 > Dokument: Sie muss an den tatsächlichen Ablauf angepasst, anwaltlich/steuerlich
 > geprüft und vom steuerlichen Berater bzw. Betriebsprüfer abgenommen werden.
-> Sigmabrain liefert hierfür technische Bausteine (Aufbewahrungsfrist-Stempel,
+> Subsumio liefert hierfür technische Bausteine (Aufbewahrungsfrist-Stempel,
 > Inhalts-Hash zur Manipulations-Evidenz) — keine Zusage der GoBD-Konformität.
 
 **Stand:** ${v(input.stand)}
@@ -133,7 +133,7 @@ die Protokollierung von Änderungen.
 
 ---
 
-*Generiert mit Sigmabrain. Diese Vorlage ersetzt keine steuerliche oder
+*Generiert mit Subsumio. Diese Vorlage ersetzt keine steuerliche oder
 rechtliche Beratung. Vor Verwendung durch den steuerlichen Berater prüfen und
 an den tatsächlichen Kanzleiablauf anpassen.*
 `;

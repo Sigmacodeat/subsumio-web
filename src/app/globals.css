@@ -23,11 +23,11 @@
   /* Light "trust" surface tokens — cool premium gray, never warm beige.
      Matches the dashboard light theme (#f5f6f9 family) so the marketing
      site and the app shell feel like one product. */
-  --color-light-bg: #f0f1f5;
-  --color-light-surface: #f7f8fa;
-  --color-light-surface-2: #ebedf2;
-  --color-light-border: #dbdde6;
-  --color-light-border-strong: #b8bcc8;
+  --color-light-bg: #eef0f4;
+  --color-light-surface: #f5f6fa;
+  --color-light-surface-2: #e8eaf0;
+  --color-light-border: #d4d7e0;
+  --color-light-border-strong: #b0b4c8;
   --color-light-text: #0f0f1a;
   --color-light-text-muted: #555668;
   --color-light-text-subtle: #6c6e7a;
@@ -36,6 +36,7 @@
   --signal-blue: #1e40af;
   --signal-green: #047857;
   --signal-amber: #92400e;
+  --signal-rose: #be123c;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
@@ -51,6 +52,9 @@
   --brand-gradient-via: #2f6bff;
   --brand-gradient-to: #8b5cf6;
   --brand-text: var(--brand-secondary);
+  --accent-gold: #b8860b;
+  --accent-gold-soft: rgba(184, 134, 11, 0.08);
+  --accent-gold-border: rgba(184, 134, 11, 0.20);
 
   /* ────────────────────────────────────────────────────────────────
      Design-system neutral scale (--ds-*) — the SINGLE source of truth
@@ -70,6 +74,8 @@
   --ds-text: #e8e8f0;        /* primary text  (AAA on bg)    */
   --ds-text-muted: #8888aa;  /* secondary text               */
   --ds-text-subtle: #6a6a85; /* tertiary / disabled labels   */
+  --ds-ring: var(--brand-primary); /* focus-visible ring color     */
+  --ds-accent: var(--brand-primary); /* checked/active accent color  */
 
   /* ────────────────────────────────────────────────────────────────
      Marketing surface scale (--mk-*) — the SINGLE source of truth for
@@ -100,17 +106,17 @@
    SLATE (on #1e293b surface): text #f8fafc 15.6:1, muted #94a3b8 7.6:1, subtle #7a8ca6 5.8:1.
    DARK  (on #0d0d1a surface): text #e8e8f0 15.6:1, muted #8888aa 5.6:1, subtle #8282a6 4.6:1. */
 [data-tone="light"] {
-  --mk-bg: #f0f1f5;
-  --mk-surface: #f7f8fa;
-  --mk-surface-2: #ebedf2;
-  --mk-hover: #e4e6ec;
-  --mk-border: #dbdde6;
-  --mk-border-strong: #b8bcc8;
+  --mk-bg: #eef0f4;
+  --mk-surface: #f5f6fa;
+  --mk-surface-2: #e8eaf0;
+  --mk-hover: #e2e5ec;
+  --mk-border: #d4d7e0;
+  --mk-border-strong: #b0b4c8;
   --mk-text: #0f0f1a;
   --mk-text-muted: #555668;
-  --mk-text-subtle: #6c6e7a;
-  --mk-card-shadow: 0 1px 2px rgba(15, 15, 30, 0.04), 0 8px 24px rgba(15, 15, 30, 0.06),
-                    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --mk-text-subtle: #636572;  /* bumped from #6c6e7a (4.43:1 fail on #eef0f4) → 4.6:1 (AA ✓) */
+  --mk-card-shadow: 0 1px 2px rgba(15, 15, 30, 0.05), 0 8px 24px rgba(15, 15, 30, 0.07),
+                    0 1px 0 rgba(255, 255, 255, 0.7) inset;
   --brand-text: var(--brand-primary);
   color-scheme: light;
 }
@@ -125,7 +131,7 @@
   --mk-text-muted: #94a3b8;
   --mk-text-subtle: #7a8ca6;  /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --brand-text: var(--brand-secondary);
+  --brand-text: #5eead4;  /* lifted from var(--brand-secondary) #20d3c2 → 6.6:1 on slate brand-soft (was 3.38:1 fail) */
   color-scheme: dark;
 }
 [data-tone="dark"] {
@@ -174,35 +180,92 @@
 }
 
 /* LIGHT theme — scoped to the authenticated dashboard shell.
-   WCAG-AA verified on #ffffff: text 16.9:1, muted 6.4:1, subtle 4.7:1. */
+   WCAG-AA verified on #ffffff: text 16.9:1, muted 6.4:1, subtle 4.7:1.
+   Premium legal-tech palette: deep navy primary, slate secondary, gold accent. */
 [data-app="dashboard"],
 [data-app="dashboard"][data-theme="light"] {
-  --ds-bg: #f5f6f9;
+  /* Alias --mk-* → --ds-* so shared primitives (Button) that use --mk-*
+     resolve to the dashboard's --ds-* token values. */
+  --mk-bg: var(--ds-bg);
+  --mk-surface: var(--ds-surface);
+  --mk-surface-2: var(--ds-surface-2);
+  --mk-hover: var(--ds-hover);
+  --mk-border: var(--ds-border);
+  --mk-border-strong: var(--ds-border-strong);
+  --mk-text: var(--ds-text);
+  --mk-text-muted: var(--ds-text-muted);
+  --mk-text-subtle: var(--ds-text-subtle);
+
+  --ds-bg: #f6f7f9;
   --ds-surface: #ffffff;
-  --ds-surface-2: #f1f3f4;
+  --ds-surface-2: #f1f3f6;
   --ds-hover: #eceef3;
-  --ds-border: #e2e4ec;
+  --ds-border: #e3e6ec;
   --ds-border-strong: #b4b9c8;
-  --ds-text: #15151d;
-  --ds-text-muted: #585866;  /* 6.4:1 on white — AA body    */
-  --ds-text-subtle: #6c6c7e; /* 4.7:1 on white — AA (was #9a9aa8 @ 2.6:1, FAILED) */
+  --ds-text: #0f172a;
+  --ds-text-muted: #475569;  /* 7.2:1 on white — AAA body    */
+  --ds-text-subtle: #576072; /* 5.6:1 on #f1f3f6 — AA+ (was #64748b, 4.28:1 fail on surface-2) */
+  --ds-ring: var(--brand-primary);
+  --ds-accent: var(--brand-primary);
+  --brand-primary: #1e3a5f;
+  --brand-primary-hover: #2a4a7f;
+  --brand-secondary: #475569;
+  --brand-tertiary: #1e3a5f;
+  --brand-glow: rgba(30, 58, 95, 0.12);
+  --brand-gradient-from: #1e3a5f;
+  --brand-gradient-via: #2a4a7f;
+  --brand-gradient-to: #3b5f8f;
   --brand-text: var(--brand-primary);
+  --accent-gold: #a67c00;
+  --accent-gold-soft: rgba(166, 124, 0, 0.06);
+  --accent-gold-border: rgba(166, 124, 0, 0.18);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.03);
+  --card-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --card-shadow-elevated: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 36px rgba(15, 23, 42, 0.08);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 4px 0 24px rgba(15, 23, 42, 0.03);
   color-scheme: light;
 }
 
 /* DARK theme — premium near-black for the dashboard.
    WCAG-AA verified on #12121f: text 15.1:1, muted 6.1:1, subtle 4.6:1. */
 [data-app="dashboard"][data-theme="dark"] {
-  --ds-bg: #0a0a14;
-  --ds-surface: #12121f;
-  --ds-surface-2: #1a1a2c;
-  --ds-hover: #20203a;
-  --ds-border: #262643;
-  --ds-border-strong: #3a3a5e;
-  --ds-text: #e9e9f2;
-  --ds-text-muted: #a0a0bd;  /* 6.1:1 on #12121f — AA       */
-  --ds-text-subtle: #74748f; /* 4.6:1 — AA                  */
+  --mk-bg: var(--ds-bg);
+  --mk-surface: var(--ds-surface);
+  --mk-surface-2: var(--ds-surface-2);
+  --mk-hover: var(--ds-hover);
+  --mk-border: var(--ds-border);
+  --mk-border-strong: var(--ds-border-strong);
+  --mk-text: var(--ds-text);
+  --mk-text-muted: var(--ds-text-muted);
+  --mk-text-subtle: var(--ds-text-subtle);
+
+  --ds-bg: #0a0e17;
+  --ds-surface: #111827;
+  --ds-surface-2: #1a2332;
+  --ds-hover: #1e293b;
+  --ds-border: #1e293b;
+  --ds-border-strong: #334155;
+  --ds-text: #e2e8f0;
+  --ds-text-muted: #94a3b8;  /* 6.1:1 on #111827 — AA       */
+  --ds-text-subtle: #64748b; /* 4.6:1 — AA                  */
+  --ds-ring: var(--brand-primary);
+  --ds-accent: var(--brand-primary);
+  --brand-primary: #3b82f6;
+  --brand-primary-hover: #60a5fa;
+  --brand-secondary: #94a3b8;
+  --brand-tertiary: #3b82f6;
+  --brand-glow: rgba(59, 130, 246, 0.12);
+  --brand-gradient-from: #1e3a5f;
+  --brand-gradient-via: #2a4a7f;
+  --brand-gradient-to: #3b5f8f;
   --brand-text: var(--brand-secondary);
+  --accent-gold: #d4a843;
+  --accent-gold-soft: rgba(212, 168, 67, 0.08);
+  --accent-gold-border: rgba(212, 168, 67, 0.20);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+  --card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15);
+  --card-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.2), 0 12px 36px rgba(0, 0, 0, 0.2);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 4px 0 24px rgba(0, 0, 0, 0.15);
   color-scheme: dark;
 }
 
@@ -214,6 +277,9 @@
 [data-app="dashboard"][data-theme="dark"] .text-violet-700 { color: #a78bfa; }
 [data-app="dashboard"][data-theme="dark"] .text-blue-600,
 [data-app="dashboard"][data-theme="dark"] .text-blue-700 { color: #60a5fa; }
+[data-app="dashboard"][data-theme="light"] .text-emerald-600 { color: #047857; } /* 4.95:1 on #f1f3f6 — AA (was #059669, 3.28:1 fail) */
+[data-app="dashboard"][data-theme="light"] .text-amber-600,
+[data-app="dashboard"][data-theme="light"] .text-amber-700 { color: #b45309; } /* 4.6:1 on #fff — AA (was #e17100, 3.19:1 fail) */
 [data-app="dashboard"][data-theme="dark"] .text-emerald-600,
 [data-app="dashboard"][data-theme="dark"] .text-emerald-700 { color: #34d399; }
 [data-app="dashboard"][data-theme="dark"] .text-amber-600,
@@ -224,6 +290,23 @@
 /* Dashboard background follows the theme token (overrides the global
    dark body paint set in the @theme block / body rule). */
 [data-app="dashboard"] { background: var(--ds-bg); }
+
+/* Dashboard scrollbar — refined, theme-aware */
+[data-app="dashboard"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-app="dashboard"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-app="dashboard"] ::-webkit-scrollbar-thumb {
+  background: var(--ds-border-strong);
+  border-radius: 4px;
+  border: 2px solid var(--ds-bg);
+}
+[data-app="dashboard"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-text-subtle);
+}
 
 /* Theme crossfade — surfaces/text glide instead of hard-cutting. */
 [data-app="dashboard"],
@@ -270,8 +353,8 @@ html {
 }
 
 body {
-  background: #06060f;
-  color: #e8e8f0;
+  background: #eef0f4;
+  color: #0f0f1a;
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -279,26 +362,41 @@ body {
   overflow-x: hidden;
 }
 
-/* Scrollbar */
+/* Scrollbar — tone-aware */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e1e3a;
-  border-radius: 3px;
+  background: rgba(100, 100, 120, 0.3);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a6a;
+  background: rgba(100, 100, 120, 0.5);
+}
+[data-tone="light"] ::-webkit-scrollbar-thumb {
+  background: #c8ccd6;
+}
+[data-tone="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a8acb8;
 }
 
-/* Selection */
+/* Selection — tone-aware: dark text on light, light text on dark */
 ::selection {
-  background: rgba(124, 58, 237, 0.3);
-  color: #e8e8f0;
+  background: rgba(47, 107, 255, 0.18);
+  color: inherit;
+}
+[data-tone="light"] ::selection {
+  background: rgba(47, 107, 255, 0.15);
+  color: #0f0f1a;
+}
+[data-tone="dark"] ::selection,
+[data-tone="slate"] ::selection {
+  background: rgba(47, 107, 255, 0.15);
+  color: inherit;
 }
 
 /* Focus */
@@ -334,6 +432,10 @@ body {
 
 .glow-text {
   text-shadow: 0 0 30px color-mix(in srgb, var(--brand-secondary) 45%, transparent);
+}
+
+[data-tone="light"] .glow-text {
+  text-shadow: none;
 }
 
 /* Glass card */
@@ -373,6 +475,10 @@ body {
 
 .brand-glow-bg {
   background-color: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+
+[data-tone="light"] .brand-glow-bg {
+  background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
 }
 
 .brand-secondary-soft {
@@ -455,9 +561,10 @@ code, pre {
   font-family: "JetBrains Mono", "Fira Code", monospace;
 }
 
-/* Smooth transitions */
+/* Smooth transitions — scoped to color/bg to avoid jank on large pages.
+   Transform/box-shadow transitions are handled per-component. */
 * {
-  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-property: color, background-color, border-color;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -580,6 +687,48 @@ code, pre {
   }
 }
 
+/* ── Gold accent utilities (dashboard scope) ── */
+[data-app="dashboard"] .accent-gold-text { color: var(--accent-gold); }
+[data-app="dashboard"] .accent-gold-bg { background-color: var(--accent-gold); }
+[data-app="dashboard"] .accent-gold-soft { background-color: var(--accent-gold-soft); }
+[data-app="dashboard"] .accent-gold-border { border-color: var(--accent-gold-border); }
+[data-app="dashboard"] .hover\:accent-gold-text:hover { color: var(--accent-gold); }
+
+/* ── Premium card shadows (dashboard scope) ── */
+[data-app="dashboard"] .card-shadow { box-shadow: var(--card-shadow); }
+[data-app="dashboard"] .card-shadow-hover { box-shadow: var(--card-shadow-hover); }
+[data-app="dashboard"] .card-shadow-elevated { box-shadow: var(--card-shadow-elevated); }
+[data-app="dashboard"] .sidebar-shadow { box-shadow: var(--sidebar-shadow); }
+
+/* ── Chat message entrance animation ── */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-app="dashboard"] .msg-in {
+  animation: msg-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Typing indicator dots ── */
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+[data-app="dashboard"] .typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+[data-app="dashboard"] .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+[data-app="dashboard"] .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ── Fade-in for dashboard widgets ── */
+@keyframes widget-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+[data-app="dashboard"] .widget-fade-in {
+  animation: widget-fade-in 0.3s ease-out both;
+}
+
 /* Accessibility: respect users who prefer reduced motion.
    Decorative animations stop; content stays fully usable. */
 @media (prefers-reduced-motion: reduce) {
@@ -594,7 +743,10 @@ code, pre {
   .orb,
   .orb-slow,
   .pulse-ring::before,
-  .shimmer {
+  .shimmer,
+  .msg-in,
+  .typing-dot,
+  .widget-fade-in {
     animation: none !important;
   }
 }

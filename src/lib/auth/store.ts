@@ -6,6 +6,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomBytes, randomUUID } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
+import { AuthError } from "@/lib/errors";
 
 export type Plan = "free" | "pro" | "team" | "enterprise";
 
@@ -19,11 +20,11 @@ export interface User {
   role: KanzleiRole;
   plan: Plan;
   locale: "en" | "de";
-  /** This user's own referral code (sigmabrain.com/?ref=CODE). */
+  /** This user's own referral code (subsum.eu/?ref=CODE). */
   referralCode: string;
   /** Referral code of the user who referred this one, if any. */
   referredBy: string | null;
-  /** Brain identifier for multi-tenant provisioning against the Sigmabrain Engine. */
+  /** Brain identifier for multi-tenant provisioning against the Subsumio Engine. */
   brainId: string;
   stripeCustomerId: string | null;
   /** ISO timestamp once the verification link was clicked; null until then. */
@@ -40,6 +41,8 @@ export interface User {
   pendingTwoFactorSecret?: string | null;
   /** ISO timestamp when the pending secret expires (typically 10 minutes). */
   pendingTwoFactorExpiresAt?: string | null;
+  /** Hashed 2FA backup/recovery codes (SHA-256 hex). Consumed on use. */
+  twoFactorBackupCodes?: string[] | null;
   /** Docusign OAuth tokens (server-persisted, encrypt-at-rest in production). */
   docusignAccessToken?: string | null;
   docusignRefreshToken?: string | null;
@@ -47,10 +50,16 @@ export interface User {
   /** SSO identity link (WorkOS). */
   workosUserId?: string | null;
   ssoProvider?: string | null;
+  /** SCIM external ID from IdP directory sync. */
+  scimExternalId?: string | null;
+  /** ISO timestamp when user was deactivated via SCIM (null = active). Not deleted for audit-trail. */
+  deactivatedAt?: string | null;
   /** API keys (server-persisted, encrypt-at-rest in production). */
   openaiKey?: string | null;
   anthropicKey?: string | null;
   zeroEntropyKey?: string | null;
+  /** Preferred AI model ID (brain-scoped setting, see model-config.ts). */
+  preferredModel?: string | null;
   createdAt: string;
 }
 
@@ -76,6 +85,7 @@ export interface UserStore {
   getById(id: string): Promise<User | null>;
   getByEmail(email: string): Promise<User | null>;
   getByReferralCode(code: string): Promise<User | null>;
+  getByScimExternalId(externalId: string): Promise<User | null>;
   create(user: User): Promise<User>;
   update(id: string, patch: Partial<User>): Promise<User | null>;
   list(): Promise<User[]>;
@@ -85,7 +95,9 @@ export interface UserStore {
 
 // --- File adapter -----------------------------------------------------------
 
-const DATA_DIR = process.env.SIGMABRAIN_DATA_DIR || path.join(process.cwd(), ".data");
+import { env } from "@/lib/env";
+
+const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
 class FileUserStore implements UserStore {
@@ -125,6 +137,9 @@ class FileUserStore implements UserStore {
   }
   async getByReferralCode(code: string) {
     return (await this.load()).find((u) => u.referralCode === code) ?? null;
+  }
+  async getByScimExternalId(externalId: string) {
+    return (await this.load()).find((u) => u.scimExternalId === externalId) ?? null;
   }
   async create(user: User) {
     const users = await this.load();
@@ -222,22 +237,20 @@ export function getOrgStore(): OrgStore {
 // --- Postgres adapter -------------------------------------------------------
 
 const AUTH_DB_URL =
-  process.env.SIGMABRAIN_AUTH_DATABASE_URL ||
+  env("SIGMABRAIN_AUTH_DATABASE_URL") ||
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL;
 
-const ALLOW_FILE_AUTH_IN_PRODUCTION = process.env.SIGMABRAIN_ALLOW_FILE_AUTH_IN_PRODUCTION === "true";
-
 declare global {
-  var __sigmabrainAuthPool: Pool | undefined;
+  var __subsumioAuthPool: Pool | undefined;
 }
 
 function authPool(): Pool {
   if (!AUTH_DB_URL) {
-    throw new Error("A Postgres URL is required for the production auth store.");
+    throw new AuthError("A Postgres URL is required for the production auth store.", { code: "AUTH_DB_URL_MISSING" });
   }
-  if (!globalThis.__sigmabrainAuthPool) {
+  if (!globalThis.__subsumioAuthPool) {
     const config: PoolConfig = {
       connectionString: AUTH_DB_URL,
       max: 5,
@@ -253,9 +266,9 @@ function authPool(): Pool {
     } else if (process.env.NODE_ENV === "production") {
       config.ssl = { rejectUnauthorized: true };
     }
-    globalThis.__sigmabrainAuthPool = new Pool(config);
+    globalThis.__subsumioAuthPool = new Pool(config);
   }
-  return globalThis.__sigmabrainAuthPool;
+  return globalThis.__subsumioAuthPool;
 }
 
 let schemaReady: Promise<void> | null = null;
@@ -264,7 +277,7 @@ function ensureSchema(): Promise<void> {
     schemaReady = (async () => {
       const pool = authPool();
       await pool.query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_users (
+        CREATE TABLE IF NOT EXISTS subsumio_users (
           id text PRIMARY KEY,
           email text NOT NULL UNIQUE,
           referral_code text NOT NULL UNIQUE,
@@ -275,7 +288,7 @@ function ensureSchema(): Promise<void> {
         )
       `);
       await pool.query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_orgs (
+        CREATE TABLE IF NOT EXISTS subsumio_orgs (
           id text PRIMARY KEY,
           owner_id text NOT NULL,
           data jsonb NOT NULL,
@@ -283,8 +296,8 @@ function ensureSchema(): Promise<void> {
           updated_at timestamptz NOT NULL DEFAULT now()
         )
       `);
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_users_org_id_idx ON sigmabrain_users ((data->>'orgId'))");
-      await pool.query("CREATE INDEX IF NOT EXISTS sigmabrain_orgs_owner_id_idx ON sigmabrain_orgs (owner_id)");
+      await pool.query("CREATE INDEX IF NOT EXISTS subsumio_users_org_id_idx ON subsumio_users ((data->>'orgId'))");
+      await pool.query("CREATE INDEX IF NOT EXISTS subsumio_orgs_owner_id_idx ON subsumio_orgs (owner_id)");
     })();
   }
   return schemaReady;
@@ -306,20 +319,29 @@ class PostgresUserStore implements UserStore {
 
   async getById(id: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM sigmabrain_users WHERE id = $1", [id]);
+    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE id = $1", [id]);
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
   async getByEmail(email: string) {
     const pool = await this.ready();
     const norm = email.trim().toLowerCase();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM sigmabrain_users WHERE email = $1", [norm]);
+    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE email = $1", [norm]);
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
   async getByReferralCode(code: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM sigmabrain_users WHERE referral_code = $1", [code]);
+    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users WHERE referral_code = $1", [code]);
+    return rows[0] ? rowToUser(rows[0]) : null;
+  }
+
+  async getByScimExternalId(externalId: string) {
+    const pool = await this.ready();
+    const { rows } = await pool.query<{ data: User }>(
+      "SELECT data FROM subsumio_users WHERE data->>'scimExternalId' = $1",
+      [externalId],
+    );
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
@@ -327,7 +349,7 @@ class PostgresUserStore implements UserStore {
     const pool = await this.ready();
     const normalized: User = { ...user, email: user.email.trim().toLowerCase() };
     await pool.query(
-      `INSERT INTO sigmabrain_users (id, email, referral_code, password_hash, data, created_at, updated_at)
+      `INSERT INTO subsumio_users (id, email, referral_code, password_hash, data, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5::jsonb, $6, now())`,
       [
         normalized.id,
@@ -352,7 +374,7 @@ class PostgresUserStore implements UserStore {
     };
     const pool = await this.ready();
     await pool.query(
-      `UPDATE sigmabrain_users
+      `UPDATE subsumio_users
           SET email = $2,
               referral_code = $3,
               password_hash = $4,
@@ -366,13 +388,13 @@ class PostgresUserStore implements UserStore {
 
   async list() {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: User }>("SELECT data FROM sigmabrain_users ORDER BY created_at ASC");
+    const { rows } = await pool.query<{ data: User }>("SELECT data FROM subsumio_users ORDER BY created_at ASC");
     return rows.map(rowToUser);
   }
   async countReferrals(code: string) {
     const pool = await this.ready();
     const { rows } = await pool.query<{ count: string }>(
-      "SELECT COUNT(*) as count FROM sigmabrain_users WHERE data->>'referredBy' = $1",
+      "SELECT COUNT(*) as count FROM subsumio_users WHERE data->>'referredBy' = $1",
       [code],
     );
     return parseInt(rows[0]?.count ?? "0", 10);
@@ -387,14 +409,14 @@ class PostgresOrgStore implements OrgStore {
 
   async getById(id: string) {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM sigmabrain_orgs WHERE id = $1", [id]);
+    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM subsumio_orgs WHERE id = $1", [id]);
     return rows[0] ? rowToOrg(rows[0]) : null;
   }
 
   async create(org: Org) {
     const pool = await this.ready();
     await pool.query(
-      `INSERT INTO sigmabrain_orgs (id, owner_id, data, created_at, updated_at)
+      `INSERT INTO subsumio_orgs (id, owner_id, data, created_at, updated_at)
        VALUES ($1, $2, $3::jsonb, $4, now())`,
       [org.id, org.ownerId, JSON.stringify(org), org.createdAt],
     );
@@ -407,7 +429,7 @@ class PostgresOrgStore implements OrgStore {
     const next: Org = { ...current, ...patch, id: current.id };
     const pool = await this.ready();
     await pool.query(
-      `UPDATE sigmabrain_orgs
+      `UPDATE subsumio_orgs
           SET owner_id = $2,
               data = $3::jsonb,
               updated_at = now()
@@ -419,12 +441,12 @@ class PostgresOrgStore implements OrgStore {
 
   async delete(id: string) {
     const pool = await this.ready();
-    await pool.query("DELETE FROM sigmabrain_orgs WHERE id = $1", [id]);
+    await pool.query("DELETE FROM subsumio_orgs WHERE id = $1", [id]);
   }
 
   async list() {
     const pool = await this.ready();
-    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM sigmabrain_orgs ORDER BY created_at ASC");
+    const { rows } = await pool.query<{ data: Org }>("SELECT data FROM subsumio_orgs ORDER BY created_at ASC");
     return rows.map(rowToOrg);
   }
 }
@@ -440,16 +462,16 @@ export function getSharedPgPool(): Pool | null {
 
 function createUserStore(): UserStore {
   if (AUTH_DB_URL) return new PostgresUserStore();
-  if (process.env.NODE_ENV === "production" && !ALLOW_FILE_AUTH_IN_PRODUCTION) {
-    throw new Error("Production auth requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.");
+  if (process.env.NODE_ENV === "production") {
+    throw new AuthError("Production auth requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.", { code: "AUTH_DB_URL_MISSING" });
   }
   return new FileUserStore();
 }
 
 function createOrgStore(): OrgStore {
   if (AUTH_DB_URL) return new PostgresOrgStore();
-  if (process.env.NODE_ENV === "production" && !ALLOW_FILE_AUTH_IN_PRODUCTION) {
-    throw new Error("Production org storage requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.");
+  if (process.env.NODE_ENV === "production") {
+    throw new AuthError("Production org storage requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.", { code: "AUTH_DB_URL_MISSING" });
   }
   return new FileOrgStore();
 }

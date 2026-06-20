@@ -2,6 +2,54 @@
 
 All notable changes to GBrain will be documented in this file.
 
+## [Unreleased] — Business Logic / Lib Optimization
+
+### Added — P3 SaaS Enhancements (Score >90%)
+- **Env-Var Migration `SIGMABRAIN_*` → `SUBSUMIO_*`** — Backward-compatible env var resolution via `src/lib/env.ts` helper. `SUBSUMIO_*` is primary, `SIGMABRAIN_*` is fallback. All 18+ files updated. `.env.example` shows new prefix as primary, old as deprecated.
+- **SSE Real-time (Vercel-native)** — `GET /api/realtime/sse` endpoint with per-brain connection registry, heartbeat keepalive, and `broadcastSseEvent()` for server→client push. Client `realtime.ts` enhanced with EventSource fallback when WebSocket backend not configured. SSE broadcasts integrated into page create/update and comment add/delete routes.
+- **Comment System Enhancement** — `src/lib/comments.ts` extended with: `parentCommentId` for nested replies, `deleteComment()` with soft-delete (author/admin only), `extractMentions()` for @mention parsing, and full notification system (`Notification` interface, `listNotifications`, `markNotificationRead`, `markAllNotificationsRead`) with Postgres + file fallback. `POST /api/comments` now accepts `parent_comment_id`. `DELETE /api/comments` uses new `deleteComment()`.
+- **Notification System** — `GET/POST /api/notifications` API route. Topbar bell enhanced to fetch API notifications (mentions, replies, system), poll every 60s, listen to realtime events for instant updates, and "Alle als gelesen markieren" button. Color-coded notification types (deadline=amber, mention=blue, reply=purple, system=default).
+- **Custom Dashboard Widgets** — `WidgetDashboard` component with 6 widget types (stats, recent-activity, deadlines, quick-actions, dream-cycle, getting-started). Edit mode with drag-and-drop reordering, show/hide toggles, reset to default. Preferences persisted to localStorage + `GET/POST /api/dashboard/widgets` API (Postgres + file fallback).
+
+### Added — External Integrations Optimization
+- **Shared retry utility (`src/lib/retry.ts`)** — Exponential backoff with jitter, configurable max retries/delays, `RetryableError`/`PermanentError` classes for explicit error classification, `fetchWithRetry` wrapper. Retryable HTTP statuses: 429, 500, 502, 503, 504. Network errors (ECONNRESET, ETIMEDOUT, ENOTFOUND) auto-detected as retryable.
+- **WhatsApp webhook idempotency** — Message IDs tracked in TTL-based `Map` (30 min) to prevent duplicate processing on redelivery.
+- **Generic webhook idempotency** — Event IDs tracked in TTL-based `Map` (1h). Event ID extracted from `eventId`, `id`, or `event_id` body fields.
+- **Email import idempotency** — Duplicate detection prevents re-importing the same email into a case (matched by subject + sender).
+- **Rate limiting** added to DocuSign envelopes (standard tier), email import (heavy tier), GDPR export (heavy tier), backup export (heavy tier).
+
+### Fixed — External Integrations Optimization
+- **DocuSign webhook HMAC** now uses `timingSafeEqual` instead of string `!==` comparison, preventing timing attacks.
+- **DocuSign API calls** (token, create envelope, list envelopes, get status) now wrapped with `withRetry` for automatic retry on transient failures.
+- **DocuSign `listEnvelopes`** now supports pagination via `count` + `start_position` parameters.
+- **WhatsApp send + media download** now wrapped with `withRetry` for Graph API transient failure retry.
+- **Email parser** now correctly handles multipart MIME boundaries — extracts `text/plain` part as body and identifies attachments from `Content-Disposition: attachment` parts.
+- **Judgements API** (RIS-OGD + openlegaldata) now wrapped with `withRetry` for transient failure retry.
+- **GDPR data export** now paginates through all pages per type (up to 5000 items per type) instead of a single `limit=500` batch.
+
+### Fixed — Cross-Area Integration Audit
+- **Dashboard ↔ API Layer**: `WhatsApp`, `Rechtsprechung`, `Data Export`, and `Email Import` dashboard pages now use `src/lib/api.ts` instead of direct `fetch` calls.
+- **Topbar** now uses `api.brain.listPages` and `api.brain.stats` instead of direct `fetch`.
+- **Email import dashboard page** now routes through `POST /api/email-import` instead of creating Brain pages directly, leveraging server-side case matching and duplicate detection.
+- **API client** (`src/lib/api.ts`) extended with `api.whatsapp.status`, `api.legal.judgementsSearch`, `api.email.import`, `api.dataExport.gdpr`, `api.user.me`, and `api.auth.logout`.
+- **Build fix**: `ref-consent.tsx` now imports `REF_COOKIE` from the edge-safe `session-core.ts` instead of `session.ts`, preventing the `pg` driver from being bundled into the client build.
+- **Type fix**: `src/app/api/team/role/route.ts` Zod enum message parameter corrected to `RawCreateParams` object format.
+
+### Added
+- **Domain-specific error classes** (`src/lib/errors.ts`): `AppError` base class with `code`, `details`, `statusCode`, `toJSON()`. Subclasses: `LegalDeadlineError`, `RvgCalculationError`, `AuthError`, `ForbiddenError`, `EncryptionError`, `DocusignError`, `JudgementsSearchError`, `ValidationError`, `QuotaExceededError`. Helpers: `isAppError()`, `errorResponse()`.
+- **Structured JSON logger** (`src/lib/logger.ts`): Module-scoped logger with `debug`/`info`/`warn`/`error` levels, request-ID correlation via `setRequestId()`, `LOG_LEVEL` env filtering, stderr/stdout routing.
+- **Zod validation schemas for legal domain** (`src/lib/schemas/legal.ts`): `deadlineRuleSchema`, `deadlineInputSchema`, `rvgInputSchema`, `deadlineDetectInputSchema`, `portalTokenInputSchema` with `.refine()` constraints.
+- **Test coverage for 8 core modules** (122 new tests): `legal-deadlines.test.ts` (38), `rvg.test.ts` (16), `permissions.test.ts` (19), `ai-deadline-detect.test.ts` (15), `encryption.test.ts` (9 extended), `gobd-verfahrensdoku.test.ts` (9), `kanzlei-settings.test.ts` (9), `plans.test.ts` (6).
+
+### Fixed
+- **Greedy regex in `ai-deadline-detect.ts`**: `[\s\S]{0,30}` in `payment_deadline` and `court_date` rules was greedy, consuming the first digit of multi-digit days (e.g., "15.09.2024" → captured as "5.09.2024"). Changed to lazy `[\s\S]{0,30}?`.
+- **`decrypt()` crash on corrupted data** (`encryption.ts`): `atob()` was outside the try-catch block, causing unhandled `InvalidCharacterError` on invalid base64. Now wrapped in try-catch returning `null`.
+- **`calculateRvg(NaN/Infinity)`** (`rvg.ts`): Produced non-zero results. Now guards with `Number.isFinite()` and returns `basisGebuehr: 0, streitwert: 0`.
+
+### Changed
+- **Error class integration**: Replaced generic `throw new Error("string")` with typed domain errors in `encryption.ts`, `docusign.ts`, `judgements.ts`, `portal-token.ts`, `auth/store.ts`.
+- **Holiday caching** (`legal-deadlines.ts`): `publicHolidays()` results cached in `Map<year:state>` to avoid recomputation on every call.
+
 ## [0.42.38.0] - 2026-06-09
 
 **Three independent job-layer bugs that left autopilot wedged or swallowed a command's output are fixed, each traced to source.** A triage of the job/lock/teardown layer (gbrain#1972) pulled them into one wave.

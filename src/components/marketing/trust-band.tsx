@@ -37,17 +37,17 @@ const COPY = {
 } as const;
 
 const SIGNAL: Record<string, { text: string; bg: string; ring: string }> = {
-  blue: { text: "var(--signal-blue)", bg: "rgba(29,78,216,0.08)", ring: "rgba(29,78,216,0.18)" },
-  green: { text: "var(--signal-green)", bg: "rgba(4,120,87,0.08)", ring: "rgba(4,120,87,0.18)" },
-  amber: { text: "var(--signal-amber)", bg: "rgba(180,83,9,0.08)", ring: "rgba(180,83,9,0.18)" },
+  blue: { text: "#60a5fa", bg: "rgba(96,165,250,0.10)", ring: "rgba(96,165,250,0.20)" },
+  green: { text: "#34d399", bg: "rgba(52,211,153,0.10)", ring: "rgba(52,211,153,0.20)" },
+  amber: { text: "#fbbf24", bg: "rgba(251,191,36,0.10)", ring: "rgba(251,191,36,0.20)" },
 };
 
 export default function TrustBand({ lang, industry }: { lang: Lang; industry?: string }) {
   const c = COPY[lang];
-  const brand = profileForIndustry(industry)?.brand ?? "Sigmabrain";
+  const brand = profileForIndustry(industry)?.brand ?? "Subsumio";
   const sub = c.sub.replace("{brand}", brand);
   return (
-    <section data-tone="light" className="relative z-10 py-28 px-6" style={{ background: "var(--mk-bg)" }}>
+    <section data-tone="slate" className="relative z-10 py-28 px-6" style={{ background: "var(--mk-bg)" }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -58,9 +58,9 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
         >
           <span
             className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-5"
-            style={{ color: "var(--signal-blue)", background: "rgba(29,78,216,0.08)" }}
+            style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}
           >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--signal-blue)" }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#60a5fa" }} />
             {c.eyebrow}
           </span>
           <h2 className="text-3xl md:text-4xl font-black mb-4 [color:var(--mk-text)]">

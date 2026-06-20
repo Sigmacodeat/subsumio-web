@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// Sigmabrain native shell (iOS + Android) via Capacitor.
+// Subsumio native shell (iOS + Android) via Capacitor.
 //
 // Strategy: the native apps load the HOSTED web app (server.url) instead of
 // bundling static assets. Why: the app is server-rendered with live API routes
@@ -12,17 +12,17 @@ import type { CapacitorConfig } from "@capacitor/cli";
 //   server: { url: "http://<your-lan-ip>:3000", cleartext: true }
 
 const config: CapacitorConfig = {
-  appId: "com.sigmabrain.app",
-  appName: "Sigmabrain",
+  appId: "io.subsum.app",
+  appName: "Subsumio",
   webDir: "public", // placeholder; remote server.url is the real source
   server: {
-    url: process.env.CAP_SERVER_URL || "https://sigmabrain.com",
-    allowNavigation: ["sigmabrain.com", "*.sigmabrain.com"],
+    url: process.env.CAP_SERVER_URL || "https://subsum.io",
+    allowNavigation: ["subsum.io", "*.subsum.io"],
   },
   backgroundColor: "#06060f",
   ios: {
     contentInset: "automatic",
-    scheme: "Sigmabrain",
+    scheme: "Subsumio",
   },
   android: {
     allowMixedContent: false,

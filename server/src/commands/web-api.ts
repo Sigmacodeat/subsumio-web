@@ -20,6 +20,7 @@ import {
 import { slugifySegment, isImageFilePath } from '../core/sync.ts';
 import { loadConfig } from '../core/config.ts';
 import { OperationError } from '../core/operations.ts';
+import { isEngineError, NotFoundError as EngineNotFoundError, ConnectionError as EngineConnectionError } from '../core/engine-errors.ts';
 import type { ThinkResult } from '../core/think/index.ts';
 import { MinionQueue } from '../core/minions/queue.ts';
 
@@ -294,10 +295,15 @@ async function invokeOp(
   });
   if (result.isError) {
     let msg = 'operation_failed';
+    let errorKind: string | undefined;
     try {
       const parsed = JSON.parse(result.content[0]?.text ?? '{}');
       msg = parsed.error?.message ?? parsed.message ?? msg;
+      errorKind = parsed.error === 'not_found' ? 'not_found' : undefined;
     } catch { /* ignore */ }
+    if (errorKind === 'not_found') {
+      throw new EngineNotFoundError(msg);
+    }
     throw new OperationError('web_api_error', msg);
   }
   try {
@@ -522,8 +528,233 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.json(analysis);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown';
-      res.status(/not found/i.test(msg) ? 404 : 500).json({ error: 'analyze_failed', message: msg });
+      const status = e instanceof EngineNotFoundError ? 404 : /not found/i.test(msg) ? 404 : 500;
+      res.status(status).json({ error: 'analyze_failed', message: msg });
     }
+  });
+
+  // ── Legal assistant suite (document-review, summarize, memo, risk-analysis,
+  //    contract-draft, contract-redline, due-diligence) ─────────────────────
+  // Each is source-scoped (requestSourceId + federated readSourcesFor) and
+  // backed by a core/legal/* module. The web app proxies to these 1:1.
+  const legalScope = (req: Request) => {
+    const federated = readSourcesFor(req);
+    return {
+      sourceId: requestSourceId(req),
+      ...(federated ? { sourceIds: federated } : {}),
+    } as { sourceId?: string; sourceIds?: string[] };
+  };
+  const legalErr = (res: Response, name: string, e: unknown) => {
+    const msg = e instanceof Error ? e.message : 'unknown';
+    const status = e instanceof EngineNotFoundError ? 404 : /not found/i.test(msg) ? 404 : 500;
+    res.status(status).json({ error: `${name}_failed`, message: msg });
+  };
+
+  app.post('/api/legal/document-review', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slug = typeof b.document_slug === 'string' ? b.document_slug : '';
+      const text = typeof b.text === 'string' ? b.text : '';
+      if (!slug && !text.trim()) { res.status(400).json({ error: 'document_slug_or_text_required' }); return; }
+      const { reviewDocument } = await import('../core/legal/document-review.ts');
+      const result = await reviewDocument(engine, {
+        ...legalScope(req),
+        ...(slug ? { slug } : {}),
+        ...(text ? { text } : {}),
+        questions: Array.isArray(b.questions) ? (b.questions as unknown[]).filter((q): q is string => typeof q === 'string') : [],
+        focus: (['clauses', 'risks', 'compliance', 'general'].includes(String(b.focus)) ? b.focus : 'general') as 'clauses' | 'risks' | 'compliance' | 'general',
+        jurisdiction: typeof b.jurisdiction === 'string' ? b.jurisdiction : 'all',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'document_review', e); }
+  });
+
+  app.post('/api/legal/summarize', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slug = typeof b.document_slug === 'string' ? b.document_slug : '';
+      const text = typeof b.text === 'string' ? b.text : '';
+      if (!slug && !text.trim()) { res.status(400).json({ error: 'document_slug_or_text_required' }); return; }
+      const { summarizeDocument } = await import('../core/legal/summarize.ts');
+      const result = await summarizeDocument(engine, {
+        ...legalScope(req),
+        ...(slug ? { slug } : {}),
+        ...(text ? { text } : {}),
+        type: (['document', 'case', 'judgement', 'contract', 'general'].includes(String(b.type)) ? b.type : 'general') as 'document' | 'case' | 'judgement' | 'contract' | 'general',
+        depth: (['brief', 'standard', 'detailed'].includes(String(b.depth)) ? b.depth : 'standard') as 'brief' | 'standard' | 'detailed',
+        ...(typeof b.focus === 'string' ? { focus: b.focus } : {}),
+        language: b.language === 'en' ? 'en' : 'de',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'summarize', e); }
+  });
+
+  app.post('/api/legal/memo', express.json({ limit: '256kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const question = typeof b.question === 'string' ? b.question.trim() : '';
+      const facts = typeof b.facts === 'string' ? b.facts.trim() : '';
+      const jurisdiction = String(b.jurisdiction);
+      if (!question) { res.status(400).json({ error: 'question_required' }); return; }
+      if (!facts) { res.status(400).json({ error: 'facts_required' }); return; }
+      if (!['at', 'de', 'ch'].includes(jurisdiction)) { res.status(400).json({ error: 'invalid_jurisdiction' }); return; }
+      const { generateMemo } = await import('../core/legal/memo.ts');
+      const result = await generateMemo(engine, {
+        ...legalScope(req),
+        question,
+        facts,
+        jurisdiction: jurisdiction as 'at' | 'de' | 'ch',
+        ...(typeof b.legal_area === 'string' ? { legal_area: b.legal_area } : {}),
+        ...(typeof b.case_slug === 'string' ? { case_slug: b.case_slug } : {}),
+        language: b.language === 'en' ? 'en' : 'de',
+        depth: (['brief', 'standard', 'comprehensive'].includes(String(b.depth)) ? b.depth : 'standard') as 'brief' | 'standard' | 'comprehensive',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'memo', e); }
+  });
+
+  app.post('/api/legal/risk-analysis', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slug = typeof b.document_slug === 'string' ? b.document_slug : '';
+      const text = typeof b.text === 'string' ? b.text : '';
+      if (!slug && !text.trim()) { res.status(400).json({ error: 'document_slug_or_text_required' }); return; }
+      const { analyzeRisk } = await import('../core/legal/risk-analysis.ts');
+      const result = await analyzeRisk(engine, {
+        ...legalScope(req),
+        ...(slug ? { slug } : {}),
+        ...(text ? { text } : {}),
+        ...(typeof b.contract_type === 'string' ? { contract_type: b.contract_type } : {}),
+        jurisdiction: typeof b.jurisdiction === 'string' ? b.jurisdiction : 'all',
+        perspective: (['party_a', 'party_b', 'neutral'].includes(String(b.perspective)) ? b.perspective : 'neutral') as 'party_a' | 'party_b' | 'neutral',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'risk_analysis', e); }
+  });
+
+  app.post('/api/legal/contract-draft', express.json({ limit: '256kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const type = typeof b.type === 'string' ? b.type.trim() : '';
+      const jurisdiction = String(b.jurisdiction);
+      const parties = b.parties && typeof b.parties === 'object' ? b.parties as Record<string, string> : null;
+      if (!type) { res.status(400).json({ error: 'type_required' }); return; }
+      if (!['at', 'de', 'ch'].includes(jurisdiction)) { res.status(400).json({ error: 'invalid_jurisdiction' }); return; }
+      if (!parties?.a || !parties?.b) { res.status(400).json({ error: 'parties_required' }); return; }
+      const { draftContract } = await import('../core/legal/contract-draft.ts');
+      const result = await draftContract(engine, {
+        ...legalScope(req),
+        type,
+        jurisdiction: jurisdiction as 'at' | 'de' | 'ch',
+        parties: { a: String(parties.a), b: String(parties.b) },
+        ...(typeof b.instructions === 'string' ? { instructions: b.instructions } : {}),
+        ...(typeof b.template_slug === 'string' ? { template_slug: b.template_slug } : {}),
+        language: b.language === 'en' ? 'en' : 'de',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'contract_draft', e); }
+  });
+
+  app.post('/api/legal/contract-redline', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const original_text = typeof b.original_text === 'string' ? b.original_text : '';
+      if (!original_text.trim()) { res.status(400).json({ error: 'original_text_required' }); return; }
+      const { redlineContract } = await import('../core/legal/contract-redline.ts');
+      const result = await redlineContract(engine, {
+        ...legalScope(req),
+        original_text,
+        ...(typeof b.counterparty_text === 'string' ? { counterparty_text: b.counterparty_text } : {}),
+        ...(typeof b.playbook_slug === 'string' ? { playbook_slug: b.playbook_slug } : {}),
+        ...(typeof b.contract_type === 'string' ? { contract_type: b.contract_type } : {}),
+        jurisdiction: typeof b.jurisdiction === 'string' ? b.jurisdiction : 'all',
+        perspective: (['client', 'counterparty', 'neutral'].includes(String(b.perspective)) ? b.perspective : 'client') as 'client' | 'counterparty' | 'neutral',
+        language: b.language === 'en' ? 'en' : 'de',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'contract_redline', e); }
+  });
+
+  app.post('/api/legal/due-diligence', express.json({ limit: '256kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const case_slug = typeof b.case_slug === 'string' ? b.case_slug : '';
+      const document_slugs = Array.isArray(b.document_slugs)
+        ? (b.document_slugs as unknown[]).filter((s): s is string => typeof s === 'string')
+        : [];
+      if (!case_slug && document_slugs.length === 0) { res.status(400).json({ error: 'case_slug_or_document_slugs_required' }); return; }
+      const { runDueDiligence } = await import('../core/legal/due-diligence.ts');
+      const result = await runDueDiligence(engine, {
+        ...legalScope(req),
+        ...(case_slug ? { case_slug } : {}),
+        ...(document_slugs.length > 0 ? { document_slugs } : {}),
+        category: (['m_and_a', 'real_estate', 'financing', 'general'].includes(String(b.category)) ? b.category : 'general') as 'm_and_a' | 'real_estate' | 'financing' | 'general',
+        jurisdiction: (['at', 'de', 'ch'].includes(String(b.jurisdiction)) ? b.jurisdiction : 'de') as 'at' | 'de' | 'ch',
+        ...(Array.isArray(b.checklist) ? { checklist: (b.checklist as unknown[]).filter((s): s is string => typeof s === 'string') } : {}),
+        language: b.language === 'en' ? 'en' : 'de',
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'due_diligence', e); }
+  });
+
+  // ── Legal Translation: jurisdiction-aware translation preserving legal
+  //    terminology, statute references, and formatting. ──
+  app.post('/api/legal/translate', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slug = typeof b.document_slug === 'string' ? b.document_slug : '';
+      const text = typeof b.text === 'string' ? b.text : '';
+      const targetLang = typeof b.target_language === 'string' ? b.target_language : '';
+      if (!slug && !text.trim()) { res.status(400).json({ error: 'document_slug_or_text_required' }); return; }
+      if (!targetLang) { res.status(400).json({ error: 'target_language_required' }); return; }
+      const { translateDocument } = await import('../core/legal/translate.ts');
+      const result = await translateDocument(engine, {
+        ...legalScope(req),
+        ...(slug ? { slug } : {}),
+        ...(text ? { text } : {}),
+        target_language: targetLang,
+        ...(typeof b.source_language === 'string' ? { source_language: b.source_language } : {}),
+        legal_terminology: b.legal_terminology !== false,
+        preserve_formatting: b.preserve_formatting !== false,
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'translate', e); }
+  });
+
+  // ── Obligation Extraction: extract contractual obligations, deadlines,
+  //    renewal triggers, payment terms, and notice periods from contracts. ──
+  app.post('/api/legal/obligation-extract', express.json({ limit: '512kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slug = typeof b.document_slug === 'string' ? b.document_slug : '';
+      const text = typeof b.text === 'string' ? b.text : '';
+      if (!slug && !text.trim()) { res.status(400).json({ error: 'document_slug_or_text_required' }); return; }
+      const { extractObligations } = await import('../core/legal/obligation-extract.ts');
+      const result = await extractObligations(engine, {
+        ...legalScope(req),
+        ...(slug ? { slug } : {}),
+        ...(text ? { text } : {}),
+        ...(typeof b.jurisdiction === 'string' ? { jurisdiction: b.jurisdiction as 'at' | 'de' | 'ch' | 'all' } : {}),
+      });
+      res.json(result);
+    } catch (e) { legalErr(res, 'obligation_extract', e); }
+  });
+
+  // ── Precedent Search: keyword + vector search over legal_case pages with
+  //    legal-specific relevance scoring (area match, recency, outcome). ──
+  app.post('/api/legal/precedent-search', express.json({ limit: '64kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const query = typeof b.query === 'string' ? b.query.trim() : '';
+      if (!query) { res.status(400).json({ error: 'query_required' }); return; }
+      const result = await invokeOp(engine, 'legal_precedent_search', {
+        query,
+        ...(typeof b.jurisdiction === 'string' ? { jurisdiction: b.jurisdiction } : {}),
+        ...(typeof b.legal_area === 'string' ? { legal_area: b.legal_area } : {}),
+        ...(typeof b.limit === 'number' ? { limit: b.limit } : {}),
+      }, requestSourceId(req));
+      res.json(result);
+    } catch (e) { legalErr(res, 'precedent_search', e); }
   });
 
   app.get('/api/pages', async (req: Request, res: Response) => {
@@ -573,7 +804,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       res.json(mapPage(page, tags));
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown';
-      const status = msg.includes('not found') || msg.includes('page_not_found') ? 404 : 500;
+      const status = e instanceof EngineNotFoundError ? 404 : msg.includes('not found') || msg.includes('page_not_found') ? 404 : 500;
       res.status(status).json({ error: 'get_page_failed', message: msg });
     }
   });

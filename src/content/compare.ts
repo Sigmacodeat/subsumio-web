@@ -15,7 +15,7 @@ import type { Lang } from "./site";
 export interface CompareTable {
   title: string;
   sub: string;
-  cols: string[]; // first column is Sigmabrain
+  cols: string[]; // first column is Subsumio
   rows: { label: string; cells: string[] }[];
   footnotes: string[];
 }
@@ -47,19 +47,19 @@ export interface CompareContent {
 
 export const COMPARE: Record<Lang, CompareContent> = {
   en: {
-    metaTitle: "Sigmabrain vs. Harvey, Legora, CoCounsel, Glean — an honest comparison",
-    metaDesc: "Where enterprise legal AI beats Sigmabrain (legal research, drafting), and where Sigmabrain wins (your own files, self-hosting, EU data residency, confidentiality by architecture). No sugarcoating — every claim sourced.",
+    metaTitle: "Subsumio vs. Harvey, Legora, CoCounsel, Glean — an honest comparison",
+    metaDesc: "Where enterprise legal AI beats Subsumio (legal research, drafting), and where Subsumio wins (your own files, self-hosting, EU data residency, confidentiality by architecture). No sugarcoating — every claim sourced.",
     badge: "Honest comparison · June 2026",
     h1a: "We lose several rows of this table.",
     h1b: "That's why you can trust the rest.",
-    sub: "Sigmabrain is not a legal research tool and not a contract drafter. It's the knowledge layer over your firm's OWN files. Here is exactly where the market leaders are better — and where we are.",
+    sub: "Subsumio is not a legal research tool and not a contract drafter. It's the knowledge layer over your firm's OWN files. Here is exactly where the market leaders are better — and where we are.",
     snapshot: "Snapshot: June 2026. Third-party data from public sources (linked below). Prices marked “individual” are not published by the vendor.",
-    honestyTitle: "What Sigmabrain is NOT built for",
-    honestyText: "If you need any of the following as your primary tool, buy it from the companies below — they are genuinely good at it: legal research against case-law databases (CoCounsel/Westlaw, Lexis+ AI, vLex, Beck-Noxtua/beck-online), contract drafting and redlining (Harvey, Legora, Spellbook in Word), M&A due-diligence workflows (Luminance, Harvey). Sigmabrain answers a different question: what does YOUR firm already know — across matters, emails, memos and meetings — with citations and explicit gaps.",
+    honestyTitle: "What Subsumio is NOT built for",
+    honestyText: "If you need any of the following as your primary tool, buy it from the companies below — they are genuinely good at it: legal research against case-law databases (CoCounsel/Westlaw, Lexis+ AI, vLex, Beck-Noxtua/beck-online), contract drafting and redlining (Harvey, Legora, Spellbook in Word), M&A due-diligence workflows (Luminance, Harvey). Subsumio answers a different question: what does YOUR firm already know — across matters, emails, memos and meetings — with citations and explicit gaps.",
     legal: {
-      title: "Sigmabrain vs. enterprise legal AI",
+      title: "Subsumio vs. enterprise legal AI",
       sub: "Harvey, Legora, CoCounsel (Thomson Reuters), Beck-Noxtua, Luminance — against the knowledge layer.",
-      cols: ["Sigmabrain", "Harvey", "Legora", "CoCounsel", "Beck-Noxtua", "Luminance"],
+      cols: ["Subsumio", "Harvey", "Legora", "CoCounsel", "Beck-Noxtua", "Luminance"],
       rows: [
         { label: "Legal research w/ case-law database", cells: ["✗ none — not our category", "✓ (LexisNexis partnership)", "✓", "✓ Westlaw — category leader", "✓ beck-online, German law", "✗ contract focus"] },
         { label: "Drafting / contract redlining", cells: ["✗", "✓", "✓", "✓", "✓", "✓ (contracts)"] },
@@ -78,19 +78,19 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
       footnotes: [
         "“k. A.” = no public information found; we do not guess competitors' gaps.",
-        "Harvey/CoCounsel benchmark standing: Vals Legal AI Report (VLAIR). Sigmabrain has not participated in any legal benchmark — our published numbers are retrieval benchmarks (Recall@5, P@5), a different discipline.",
-        "Luminance offers on-premise deployment — self-hosting is NOT unique to Sigmabrain. The difference: with Subsumio it's your own matter files made answerable, on infrastructure you fully control.",
+        "Harvey/CoCounsel benchmark standing: Vals Legal AI Report (VLAIR). Subsumio has not participated in any legal benchmark — our published numbers are retrieval benchmarks (Recall@5, P@5), a different discipline.",
+        "Luminance offers on-premise deployment — self-hosting is NOT unique to Subsumio. The difference: with Subsumio it's your own matter files made answerable, on infrastructure you fully control.",
       ],
     },
     gov: {
       title: "Governance, security & EU compliance",
-      sub: "The questions a DACH/EU firm's IT and data-protection officer ask first — and where Sigmabrain already has a shipped answer.",
-      cols: ["Sigmabrain", "Harvey", "CoCounsel", "Beck-Noxtua", "Glean"],
+      sub: "The questions a DACH/EU firm's IT and data-protection officer ask first — and where Subsumio already has a shipped answer.",
+      cols: ["Subsumio", "Harvey", "CoCounsel", "Beck-Noxtua", "Glean"],
       rows: [
         { label: "EU AI Act Art. 50 — AI output labeled (visible + machine-readable)", cells: ["✓ badge + frontmatter + X-AI-Generated header", "k. A.", "k. A.", "k. A.", "k. A."] },
         { label: "Four-eyes / human approval gate for agent actions", cells: ["✓ approval queue, documented reason", "k. A.", "k. A.", "k. A.", "k. A."] },
         { label: "Source-coverage / hallucination-caution badge on answers", cells: ["✓ grounded / partial / unsupported", "k. A.", "k. A.", "k. A.", "k. A."] },
-        { label: "GoBD building blocks (10-yr retention stamp, tamper-evidence, Verfahrensdoku)", cells: ["✓ for tax vertical — building blocks, not a “audit-proof” claim", "✗ not a tax tool", "✗", "✗", "✗"] },
+        { label: "GoBD building blocks (10-yr retention stamp, tamper-evidence, Verfahrensdoku)", cells: ["✓ for law firms — building blocks, not a “audit-proof” claim", "✗", "✗", "✗", "✗"] },
         { label: "DACH legal interfaces (beA drafts, RVG, conflict check, RIS/openlegaldata)", cells: ["✓ native", "✗", "✗", "~ German law focus", "✗"] },
         { label: "MFA / 2FA (TOTP) for the dashboard", cells: ["✓ built in", "k. A.", "k. A.", "k. A.", "✓ via SSO/IdP"] },
         { label: "Team / org model with roles & invites", cells: ["✓ org entity, member/admin/owner", "k. A.", "k. A.", "k. A.", "✓ enterprise admin console"] },
@@ -105,9 +105,9 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
     },
     km: {
-      title: "Sigmabrain vs. enterprise knowledge tools",
-      sub: "Glean and Notion AI organize company knowledge — the closest neighbors to what Sigmabrain actually does.",
-      cols: ["Sigmabrain", "Glean", "Notion AI"],
+      title: "Subsumio vs. enterprise knowledge tools",
+      sub: "Glean and Notion AI organize company knowledge — the closest neighbors to what Subsumio actually does.",
+      cols: ["Subsumio", "Glean", "Notion AI"],
       rows: [
         { label: "Q&A over company knowledge, cited", cells: ["✓ + explicit gap analysis", "✓", "~ within Notion content"] },
         { label: "Knowledge graph", cells: ["✓ typed edges (invested_in, works_at, …), queryable", "✓ enterprise graph (people, docs, activity)", "✗"] },
@@ -119,7 +119,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
       footnotes: [
         "Glean's connector catalog and enterprise rollout tooling are ahead of ours — for a 5,000-person company wiring 30 SaaS tools, Glean is the safer pick today.",
-        "Notion AI assumes your knowledge lives in Notion. Sigmabrain assumes it lives in files, emails and notes — wherever they are.",
+        "Notion AI assumes your knowledge lives in Notion. Subsumio assumes it lives in files, emails and notes — wherever they are.",
       ],
     },
     whenThem: {
@@ -132,7 +132,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
     },
     whenUs: {
-      title: "Choose Sigmabrain when…",
+      title: "Choose Subsumio when…",
       items: [
         "The knowledge that wins your cases sits in YOUR files, emails and notes — and nobody can query it.",
         "Confidentiality rules out third-party clouds: self-host the full engine on your own hardware, in your own jurisdiction.",
@@ -140,7 +140,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
         "Your firm's memory spans more than law: clients, deals, relationships — one graph, one brain.",
       ],
     },
-    disclaimer: "All third-party information from public sources as of June 2026, linked below; no guarantee of completeness. Vendors change pricing and features — corrections welcome at hello@sigmabrain.com and will be published.",
+    disclaimer: "All third-party information from public sources as of June 2026, linked below; no guarantee of completeness. Vendors change pricing and features — corrections welcome at hello@subsum.eu and will be published.",
     sourcesTitle: "Sources",
     sources: [
       { label: "Vals Legal AI Report (benchmark)", href: "https://www.vals.ai/industry-reports/vlair-2-27-25" },
@@ -156,7 +156,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
     faqTitle: "Fair questions",
     faq: [
       { q: "Why should I trust a comparison you wrote yourselves?", a: "Because we publish the rows we lose: no legal research, no drafting, no legal benchmark participation, fewer connectors than Glean. Every third-party claim links to a public source, unknowns are marked “k. A.” instead of guessed, and we publish corrections." },
-      { q: "Is Sigmabrain a Harvey alternative?", a: "Only if what you actually need is the knowledge layer, not the legal workspace. Many firms will run both: Harvey/Noxtua for research and drafting, Sigmabrain as the queryable memory over their own matters. We replace neither Westlaw nor a lawyer." },
+      { q: "Is Subsumio a Harvey alternative?", a: "Only if what you actually need is the knowledge layer, not the legal workspace. Many firms will run both: Harvey/Noxtua for research and drafting, Subsumio as the queryable memory over their own matters. We replace neither Westlaw nor a lawyer." },
       { q: "Why choose Subsumio over Harvey or CoCounsel?", a: "Because they run on someone else's cloud and someone else's model, and they index licensed case law. Subsumio indexes YOUR matters and runs on infrastructure you control — self-hosted or EU cloud — with a WhatsApp copilot your lawyers use daily. Same calibre of synthesis, your jurisdiction, your data. The honest catch, stated above: we don't do legal research." },
       { q: "Self-hosting exists at Luminance too. What's different?", a: "Correct — and we say so in the table. The difference: with Subsumio it's your own matter files made answerable, on your own hardware, with deterministic page-level citations your IT can verify." },
     ],
@@ -165,19 +165,19 @@ export const COMPARE: Record<Lang, CompareContent> = {
     ctaButton: "Test it on your own files",
   },
   de: {
-    metaTitle: "Sigmabrain vs. Harvey, Legora, CoCounsel, Glean — der ehrliche Vergleich",
-    metaDesc: "Wo Enterprise-Legal-AI Sigmabrain schlägt (Rechtsrecherche, Drafting) — und wo Sigmabrain gewinnt (eigene Akten, Self-Hosting, EU-Datenhaltung, Vertraulichkeit per Architektur). Ohne Schönreden, jede Angabe mit Quelle.",
+    metaTitle: "Subsumio vs. Harvey, Legora, CoCounsel, Glean — der ehrliche Vergleich",
+    metaDesc: "Wo Enterprise-Legal-AI Subsumio schlägt (Rechtsrecherche, Drafting) — und wo Subsumio gewinnt (eigene Akten, Self-Hosting, EU-Datenhaltung, Vertraulichkeit per Architektur). Ohne Schönreden, jede Angabe mit Quelle.",
     badge: "Ehrlicher Vergleich · Juni 2026",
     h1a: "Wir verlieren mehrere Zeilen dieser Tabelle.",
     h1b: "Deshalb kannst du dem Rest vertrauen.",
-    sub: "Sigmabrain ist kein Rechtsrecherche-Tool und kein Vertragsgenerator. Es ist die Wissensschicht über den EIGENEN Akten eurer Kanzlei. Hier steht exakt, wo die Marktführer besser sind — und wo wir.",
+    sub: "Subsumio ist kein Rechtsrecherche-Tool und kein Vertragsgenerator. Es ist die Wissensschicht über den EIGENEN Akten eurer Kanzlei. Hier steht exakt, wo die Marktführer besser sind — und wo wir.",
     snapshot: "Stand: Juni 2026. Drittanbieter-Daten aus öffentlichen Quellen (unten verlinkt). Mit „individuell“ markierte Preise veröffentlicht der Anbieter nicht.",
-    honestyTitle: "Wofür Sigmabrain NICHT gebaut ist",
-    honestyText: "Wer Folgendes als Hauptwerkzeug braucht, kauft es bei den Anbietern unten — die sind darin wirklich gut: Rechtsrecherche gegen Rechtsdatenbanken (CoCounsel/Westlaw, Lexis+ AI, vLex, Beck-Noxtua/beck-online), Schriftsatz- und Vertragsentwurf inkl. Redlining (Harvey, Legora, Spellbook in Word), M&A-Due-Diligence-Workflows (Luminance, Harvey). Sigmabrain beantwortet eine andere Frage: Was weiß EURE Kanzlei bereits — über Mandate, Mails, Memos und Besprechungen hinweg — mit Zitaten und expliziten Lücken.",
+    honestyTitle: "Wofür Subsumio NICHT gebaut ist",
+    honestyText: "Wer Folgendes als Hauptwerkzeug braucht, kauft es bei den Anbietern unten — die sind darin wirklich gut: Rechtsrecherche gegen Rechtsdatenbanken (CoCounsel/Westlaw, Lexis+ AI, vLex, Beck-Noxtua/beck-online), Schriftsatz- und Vertragsentwurf inkl. Redlining (Harvey, Legora, Spellbook in Word), M&A-Due-Diligence-Workflows (Luminance, Harvey). Subsumio beantwortet eine andere Frage: Was weiß EURE Kanzlei bereits — über Mandate, Mails, Memos und Besprechungen hinweg — mit Zitaten und expliziten Lücken.",
     legal: {
-      title: "Sigmabrain vs. Enterprise-Legal-AI",
+      title: "Subsumio vs. Enterprise-Legal-AI",
       sub: "Harvey, Legora, CoCounsel (Thomson Reuters), Beck-Noxtua, Luminance — gegen die Wissensschicht.",
-      cols: ["Sigmabrain", "Harvey", "Legora", "CoCounsel", "Beck-Noxtua", "Luminance"],
+      cols: ["Subsumio", "Harvey", "Legora", "CoCounsel", "Beck-Noxtua", "Luminance"],
       rows: [
         { label: "Rechtsrecherche mit Rechtsdatenbank", cells: ["✗ keine — nicht unsere Kategorie", "✓ (LexisNexis-Partnerschaft)", "✓", "✓ Westlaw — Kategorie-Führer", "✓ beck-online, deutsches Recht", "✗ Vertragsfokus"] },
         { label: "Drafting / Vertrags-Redlining", cells: ["✗", "✓", "✓", "✓", "✓", "✓ (Verträge)"] },
@@ -196,19 +196,19 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
       footnotes: [
         "„k. A.“ = keine öffentliche Angabe gefunden; wir raten Lücken der Konkurrenz nicht.",
-        "Benchmark-Stand Harvey/CoCounsel: Vals Legal AI Report (VLAIR). Sigmabrain hat an keinem Legal-Benchmark teilgenommen — unsere veröffentlichten Zahlen sind Retrieval-Benchmarks (Recall@5, P@5), eine andere Disziplin.",
-        "Luminance bietet On-Premise — Self-Hosting ist NICHT einzigartig bei Sigmabrain. Der Unterschied: mit Subsumio sind es eure eigenen Aktendaten, abfragbar gemacht, auf Infrastruktur, die ihr vollständig kontrolliert.",
+        "Benchmark-Stand Harvey/CoCounsel: Vals Legal AI Report (VLAIR). Subsumio hat an keinem Legal-Benchmark teilgenommen — unsere veröffentlichten Zahlen sind Retrieval-Benchmarks (Recall@5, P@5), eine andere Disziplin.",
+        "Luminance bietet On-Premise — Self-Hosting ist NICHT einzigartig bei Subsumio. Der Unterschied: mit Subsumio sind es eure eigenen Aktendaten, abfragbar gemacht, auf Infrastruktur, die ihr vollständig kontrolliert.",
       ],
     },
     gov: {
       title: "Governance, Sicherheit & EU-Compliance",
-      sub: "Die Fragen, die IT und Datenschutzbeauftragte einer DACH/EU-Kanzlei zuerst stellen — und wo Sigmabrain bereits eine ausgelieferte Antwort hat.",
-      cols: ["Sigmabrain", "Harvey", "CoCounsel", "Beck-Noxtua", "Glean"],
+      sub: "Die Fragen, die IT und Datenschutzbeauftragte einer DACH/EU-Kanzlei zuerst stellen — und wo Subsumio bereits eine ausgelieferte Antwort hat.",
+      cols: ["Subsumio", "Harvey", "CoCounsel", "Beck-Noxtua", "Glean"],
       rows: [
         { label: "EU AI Act Art. 50 — KI-Output gekennzeichnet (sichtbar + maschinenlesbar)", cells: ["✓ Badge + Frontmatter + X-AI-Generated-Header", "k. A.", "k. A.", "k. A.", "k. A."] },
         { label: "Vier-Augen-/Freigabe-Gate für Agenten-Aktionen", cells: ["✓ Freigabe-Queue, dokumentierter Grund", "k. A.", "k. A.", "k. A.", "k. A."] },
         { label: "Quellendeckungs-/Halluzinations-Vorsicht-Badge an Antworten", cells: ["✓ gut gestützt / teilweise / ungestützt", "k. A.", "k. A.", "k. A.", "k. A."] },
-        { label: "GoBD-Bausteine (10-J-Aufbewahrungsstempel, Manipulations-Evidenz, Verfahrensdoku)", cells: ["✓ für Steuer-Vertikale — Bausteine, kein „revisionssicher“-Claim", "✗ kein Steuer-Tool", "✗", "✗", "✗"] },
+        { label: "GoBD-Bausteine (10-J-Aufbewahrungsstempel, Manipulations-Evidenz, Verfahrensdoku)", cells: ["✓ für Kanzleien — Bausteine, kein „revisionssicher“-Claim", "✗", "✗", "✗", "✗"] },
         { label: "DACH-Legal-Schnittstellen (beA-Entwürfe, RVG, Kollisionsprüfung, RIS/openlegaldata)", cells: ["✓ nativ", "✗", "✗", "~ deutsches Recht", "✗"] },
         { label: "MFA / 2FA (TOTP) fürs Dashboard", cells: ["✓ eingebaut", "k. A.", "k. A.", "k. A.", "✓ via SSO/IdP"] },
         { label: "Team-/Org-Modell mit Rollen & Invites", cells: ["✓ Org-Entity, member/admin/owner", "k. A.", "k. A.", "k. A.", "✓ Enterprise-Admin-Konsole"] },
@@ -223,9 +223,9 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
     },
     km: {
-      title: "Sigmabrain vs. Enterprise-Wissens-Tools",
-      sub: "Glean und Notion AI organisieren Firmenwissen — die nächsten Nachbarn dessen, was Sigmabrain wirklich tut.",
-      cols: ["Sigmabrain", "Glean", "Notion AI"],
+      title: "Subsumio vs. Enterprise-Wissens-Tools",
+      sub: "Glean und Notion AI organisieren Firmenwissen — die nächsten Nachbarn dessen, was Subsumio wirklich tut.",
+      cols: ["Subsumio", "Glean", "Notion AI"],
       rows: [
         { label: "Q&A über Firmenwissen, mit Quellen", cells: ["✓ + explizite Gap-Analyse", "✓", "~ innerhalb von Notion-Inhalten"] },
         { label: "Wissensgraph", cells: ["✓ typisierte Kanten (invested_in, works_at, …), abfragbar", "✓ Enterprise-Graph (Personen, Docs, Aktivität)", "✗"] },
@@ -237,7 +237,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
       footnotes: [
         "Gleans Konnektoren-Katalog und Enterprise-Rollout-Tooling sind unserem voraus — für 5.000 Mitarbeiter mit 30 SaaS-Tools ist Glean heute die sicherere Wahl.",
-        "Notion AI setzt voraus, dass euer Wissen in Notion liegt. Sigmabrain setzt voraus, dass es in Dateien, Mails und Notizen liegt — wo auch immer.",
+        "Notion AI setzt voraus, dass euer Wissen in Notion liegt. Subsumio setzt voraus, dass es in Dateien, Mails und Notizen liegt — wo auch immer.",
       ],
     },
     whenThem: {
@@ -250,7 +250,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
       ],
     },
     whenUs: {
-      title: "Wählt Sigmabrain, wenn…",
+      title: "Wählt Subsumio, wenn…",
       items: [
         "das Wissen, das eure Fälle gewinnt, in EUREN Akten, Mails und Notizen liegt — und niemand es abfragen kann.",
         "Verschwiegenheit Dritt-Clouds ausschließt: volle Engine self-hosted auf eurer Hardware, in eurer Jurisdiktion.",
@@ -258,7 +258,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
         "das Gedächtnis eurer Firma mehr als Recht umfasst: Mandanten, Deals, Beziehungen — ein Graph, ein Brain.",
       ],
     },
-    disclaimer: "Alle Drittanbieter-Angaben aus öffentlichen Quellen, Stand Juni 2026, unten verlinkt; keine Gewähr für Vollständigkeit. Anbieter ändern Preise und Funktionen — Korrekturen an hello@sigmabrain.com werden veröffentlicht.",
+    disclaimer: "Alle Drittanbieter-Angaben aus öffentlichen Quellen, Stand Juni 2026, unten verlinkt; keine Gewähr für Vollständigkeit. Anbieter ändern Preise und Funktionen — Korrekturen an hello@subsum.eu werden veröffentlicht.",
     sourcesTitle: "Quellen",
     sources: [
       { label: "Vals Legal AI Report (Benchmark)", href: "https://www.vals.ai/industry-reports/vlair-2-27-25" },
@@ -274,7 +274,7 @@ export const COMPARE: Record<Lang, CompareContent> = {
     faqTitle: "Faire Fragen",
     faq: [
       { q: "Warum sollte ich einem Vergleich trauen, den ihr selbst geschrieben habt?", a: "Weil wir die Zeilen veröffentlichen, die wir verlieren: keine Rechtsrecherche, kein Drafting, keine Legal-Benchmark-Teilnahme, weniger Konnektoren als Glean. Jede Drittanbieter-Angabe verlinkt eine öffentliche Quelle, Unbekanntes steht als „k. A.“ statt geraten — und Korrekturen werden veröffentlicht." },
-      { q: "Ist Sigmabrain eine Harvey-Alternative?", a: "Nur wenn ihr tatsächlich die Wissensschicht braucht, nicht den Legal-Workspace. Viele Kanzleien werden beides fahren: Harvey/Noxtua für Recherche und Drafting, Sigmabrain als abfragbares Gedächtnis über die eigenen Mandate. Wir ersetzen weder Westlaw noch einen Anwalt." },
+      { q: "Ist Subsumio eine Harvey-Alternative?", a: "Nur wenn ihr tatsächlich die Wissensschicht braucht, nicht den Legal-Workspace. Viele Kanzleien werden beides fahren: Harvey/Noxtua für Recherche und Drafting, Subsumio als abfragbares Gedächtnis über die eigenen Mandate. Wir ersetzen weder Westlaw noch einen Anwalt." },
       { q: "Warum Subsumio statt Harvey oder CoCounsel?", a: "Weil die auf fremder Cloud und fremdem Modell laufen und lizenzierte Rechtsprechung indexieren. Subsumio indexiert EURE Mandate und läuft auf Infrastruktur, die ihr kontrolliert — self-hosted oder EU-Cloud — mit einem WhatsApp-Copilot, den eure Anwälte täglich nutzen. Gleiche Synthese-Qualität, eure Jurisdiktion, eure Daten. Der ehrliche Haken, siehe oben: Wir machen keine Rechtsrecherche." },
       { q: "Self-Hosting gibt es bei Luminance auch. Was ist anders?", a: "Korrekt — und das steht in der Tabelle. Der Unterschied: mit Subsumio sind es eure eigenen Aktendaten, abfragbar gemacht, auf eurer eigenen Hardware, mit deterministischen seitengenauen Zitaten, die eure IT prüfen kann." },
     ],

@@ -3,10 +3,10 @@
 // Vertical funnel page template — one component, three industries, two languages.
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SigmaMark } from "@/components/brand/logo";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
@@ -24,11 +24,11 @@ import BranchPricing from "./branch-pricing";
 import IndustryHeroMotif from "./industry-hero-motif";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
-import TrustBand from "./trust-band";
 import { AnimatedFaqList } from "./animated-faq";
+import { ScrollProgress } from "./motion-system";
+import BackToTop from "./back-to-top";
 
-/** Product-line branding (Subsumio, Taxumio, …): same funnel body, branded
- *  hero, and signup deep-links carrying the industry for prefill. */
+/** Subsumio product branding — funnel body, hero, and signup deep-links. */
 export interface ProductBrand {
   name: string;
   claim: string;
@@ -45,7 +45,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
 
   return (
     <section className="relative z-10 px-6 pb-20">
-      <div className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl border brand-border [background:color-mix(in_srgb,var(--mk-surface)_90%,transparent)] p-6 md:p-8">
+      <div className="max-w-5xl mx-auto relative overflow-hidden rounded-2xl border brand-border [background:var(--mk-surface)] p-6 md:p-8">
         <div className="absolute inset-y-0 left-0 w-1/2 brand-glow-bg blur-3xl" />
         <div className="relative grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
@@ -85,9 +85,11 @@ export default function VerticalPage({
   const sub = (path: string) => p(lang, `/subsumio${path}`);
 
   return (
-    <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang} style={styleForIndustry(industry)}>
-      <MarketingBackground />
-      <MarketingNav lang={lang} theme="slate" />
+    <MotionConfig reducedMotion="user">
+      <div data-tone="slate" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang} style={styleForIndustry(industry)}>
+        <ScrollProgress />
+        <MarketingBackground />
+        <MarketingNav lang={lang} theme="slate" />
 
       {/* HERO — slate editorial surface for stronger contrast */}
       <Section tone="slate" className="pt-16 pb-24 px-6">
@@ -113,7 +115,7 @@ export default function VerticalPage({
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
           <Link href={signupHref}>
             <Button size="xl" variant="glow" className="min-w-[220px]">
-              <SigmaMark size={18} tile={false} /> {t.ctaButton}
+              <SubsumioMark size={18} tile={false} /> {t.ctaButton}
             </Button>
           </Link>
           <a href={isSubsumio ? "#pricing" : "#demo"}>
@@ -186,7 +188,7 @@ export default function VerticalPage({
       </Section>
 
       {/* Capabilities — Subsumio shows a six-tile preview that links to the
-          full /produkt page (keeps the homepage focused); other verticals keep
+          full /subsumio page (keeps the homepage focused); other verticals keep
           their full grid inline. */}
       {isSubsumio ? (
         <Section tone="light" className="py-24 px-6">
@@ -222,7 +224,7 @@ export default function VerticalPage({
               })}
             </div>
             <div className="text-center mt-10">
-              <Link href={sub("/produkt")}>
+              <Link href={p(lang, "/subsumio")}>
                 <Button size="lg" variant="secondary">
                   {lang === "de" ? "Alle Funktionen ansehen" : "See all capabilities"} <ArrowRight size={16} />
                 </Button>
@@ -263,18 +265,6 @@ export default function VerticalPage({
         </Section>
       )}
 
-      {/* TrustBand — LIGHT section: credibility, security, GDPR */}
-      <div data-tone="light" style={{ background: "var(--mk-bg)" }}>
-        <TrustBand lang={lang} industry={industry} />
-        {isSubsumio && (
-          <div className="text-center -mt-6 pb-16">
-            <Link href={sub("/sicherheit")} className="inline-flex items-center gap-1.5 text-sm font-semibold brand-text transition-all hover:gap-2.5">
-              {lang === "de" ? "Sicherheit & DSGVO im Detail" : "Security & GDPR in depth"} <ArrowRight size={15} />
-            </Link>
-          </div>
-        )}
-      </div>
-
       {/* Proof — LIGHT section with visual flair */}
       <Section tone="light" className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
@@ -300,6 +290,15 @@ export default function VerticalPage({
         </div>
       </Section>
 
+      {/* Security link — compact bridge to /security (Subsumio only) */}
+      {isSubsumio && (
+        <div className="text-center pb-16">
+          <Link href={p(lang, "/security")} className="inline-flex items-center gap-1.5 text-sm font-semibold brand-text transition-all hover:gap-2.5">
+            {lang === "de" ? "Sicherheit & DSGVO im Detail" : "Security & GDPR in depth"} <ArrowRight size={15} />
+          </Link>
+        </div>
+      )}
+
       {/* Pricing — this branch's own tiers (or global fallback) */}
       <Section tone="light" id="pricing" className="py-20 px-6 scroll-mt-20">
         <BranchPricing lang={lang} industry={product?.industry ?? slug} />
@@ -316,7 +315,7 @@ export default function VerticalPage({
       {/* CTA — dark spotlight close */}
       <Section tone="dark" className="py-24 px-6 text-center">
         <div className="max-w-3xl mx-auto">
-          <SigmaMark size={56} className="mx-auto mb-7" />
+          <SubsumioMark size={56} className="mx-auto mb-7" />
           <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
           <p className="text-lg [color:var(--mk-text-muted)] mb-10">{t.ctaSub}</p>
           <Link href={signupHref}>
@@ -328,6 +327,8 @@ export default function VerticalPage({
       </Section>
 
       <MarketingFooter lang={lang} />
+      <BackToTop lang={lang} />
     </div>
+    </MotionConfig>
   );
 }

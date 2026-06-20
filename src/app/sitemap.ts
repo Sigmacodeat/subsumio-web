@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.io";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu";
 
-// Subsumio-only marketing routes, EN + DE.
+// Every public marketing route, EN + DE, with hreflang alternates.
 const PAGES = [
   "",
   "/features",
@@ -13,9 +13,7 @@ const PAGES = [
   "/download",
   "/docs",
   "/subsumio",
-  "/subsumio/produkt",
-  "/subsumio/sicherheit",
-  "/subsumio/whatsapp",
+  "/whatsapp",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -41,9 +39,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
-  // Legal pages
-  for (const page of ["/privacy", "/imprint", "/terms"]) {
+  // Auth + legal — bilingual, include DE variants
+  for (const page of ["/login", "/signup", "/privacy", "/imprint", "/terms"]) {
     entries.push({ url: `${BASE}${page}`, lastModified: now, changeFrequency: "monthly", priority: 0.3 });
+    entries.push({ url: `${BASE}/de${page}`, lastModified: now, changeFrequency: "monthly", priority: 0.3 });
   }
 
   return entries;

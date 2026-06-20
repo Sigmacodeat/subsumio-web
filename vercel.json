@@ -5,7 +5,9 @@
     { "path": "/api/cron/deadlines", "schedule": "0 6 * * *" },
     { "path": "/api/cron/deadline-reminders", "schedule": "0 7 * * *" },
     { "path": "/api/cron/case-law", "schedule": "30 6 * * *" },
-    { "path": "/api/cron/case-scanner", "schedule": "0 2 * * *" }
+    { "path": "/api/cron/regulatory-monitors", "schedule": "45 6 * * *" },
+    { "path": "/api/cron/case-scanner", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/retention", "schedule": "0 8 * * *" }
   ],
   "headers": [
     {

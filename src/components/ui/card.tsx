@@ -9,9 +9,9 @@ function Card({ className, glass, glow, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+        "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] card-shadow transition-all duration-200 hover:card-shadow-hover hover:border-[color:var(--ds-border-strong)]",
         glass && "backdrop-blur-md bg-[color:var(--ds-surface)]/80",
-        glow && "shadow-lg shadow-violet-900/10",
+        glow && "shadow-lg shadow-[color:var(--brand-primary)]/10",
         className
       )}
       {...props}

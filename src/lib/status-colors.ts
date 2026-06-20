@@ -23,7 +23,7 @@ export const STATUS_TEXT: Record<StatusColor, string> = {
   red: "text-red-400",
   rose: "text-rose-400",
   emerald: "text-emerald-400",
-  violet: "text-violet-400",
+  violet: "brand-text",
   orange: "text-orange-400",
   gray: "text-gray-400",
 };
@@ -34,7 +34,7 @@ export const STATUS_BG: Record<StatusColor, string> = {
   red: "bg-red-500/10",
   rose: "bg-rose-500/10",
   emerald: "bg-emerald-500/10",
-  violet: "bg-violet-500/10",
+  violet: "brand-soft",
   orange: "bg-orange-500/10",
   gray: "bg-gray-500/10",
 };
@@ -45,7 +45,7 @@ export const STATUS_BORDER: Record<StatusColor, string> = {
   red: "border-red-500/20",
   rose: "border-rose-500/20",
   emerald: "border-emerald-500/20",
-  violet: "border-violet-500/20",
+  violet: "brand-border",
   orange: "border-orange-500/20",
   gray: "border-gray-500/20",
 };

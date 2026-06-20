@@ -1,74 +1,43 @@
 /**
  * Audit-Trail Logger für SigmaBrain.
- * Speichert Aktionen als Brain-Pages vom Typ "audit_log".
- * Jeder Tenant hat seinen eigenen Audit-Trail isoliert durch Brain-Routing.
+ * In production: stores audit entries in a dedicated Postgres table (subsumio_audit_log).
+ * In dev (no Postgres): falls back to brain pages of type "audit_log".
+ * Each tenant's audit trail is isolated by brain_id.
  */
 
 import { api } from "@/lib/api";
+import { getSharedPgPool } from "@/lib/auth/store";
+import { createHash } from "node:crypto";
+import { createSchemaInit } from "@/lib/schema-init";
+export type { AuditEntry, AuditAction } from "@/lib/audit-labels";
+export { auditLabel } from "@/lib/audit-labels";
+import type { AuditEntry, AuditAction } from "@/lib/audit-labels";
+import { auditLabel } from "@/lib/audit-labels";
 
-export interface AuditEntry {
-  id: string;
-  action: string;
-  entityType: string;
-  entityId?: string;
-  userId?: string;
-  userEmail?: string;
-  details?: Record<string, unknown>;
-  ip?: string;
-  timestamp: string;
-}
+const ensureAuditSchema = createSchemaInit([
+  `CREATE TABLE IF NOT EXISTS subsumio_audit_log (
+    id bigserial PRIMARY KEY,
+    brain_id text NOT NULL,
+    action text NOT NULL,
+    entity_type text NOT NULL,
+    entity_id text,
+    user_id text,
+    user_email text,
+    details jsonb,
+    ip text,
+    hash text,
+    prev_hash text,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  "CREATE INDEX IF NOT EXISTS subsumio_audit_log_brain_id_idx ON subsumio_audit_log (brain_id)",
+  "CREATE INDEX IF NOT EXISTS subsumio_audit_log_action_idx ON subsumio_audit_log (action)",
+  "CREATE INDEX IF NOT EXISTS subsumio_audit_log_created_at_idx ON subsumio_audit_log (created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS subsumio_audit_log_entity_idx ON subsumio_audit_log (entity_type, entity_id)",
+]);
 
-export type AuditAction =
-  | "user.login" | "user.logout" | "user.signup"
-  | "case.create" | "case.update" | "case.delete" | "case.view"
-  | "invoice.create" | "invoice.update" | "invoice.delete" | "invoice.send" | "invoice.remind"
-  | "document.upload" | "document.delete"
-  | "deadline.create" | "deadline.update" | "deadline.delete"
-  | "evidence.create" | "evidence.update" | "evidence.delete"
-  | "drafting.generate" | "drafting.export"
-  | "conflict.check" | "judgements.search"
-  | "legal.contract_draft" | "legal.document_review" | "legal.due_diligence"
-  | "legal.risk_analysis" | "legal.memo" | "legal.redline" | "legal.anonymize"
-  | "settings.update" | "billing.upgrade"
-  | "team.invite" | "team.remove" | "team.role_change"
-  | "connector.add" | "connector.remove" | "connector.sync"
-  | "query.submit";
-
-const ACTION_LABELS: Record<string, string> = {
-  "user.login": "Login",
-  "user.logout": "Logout",
-  "user.signup": "Registrierung",
-  "case.create": "Akte angelegt",
-  "case.update": "Akte aktualisiert",
-  "case.delete": "Akte gelöscht",
-  "case.view": "Akte geöffnet",
-  "invoice.create": "Rechnung erstellt",
-  "invoice.update": "Rechnung aktualisiert",
-  "invoice.delete": "Rechnung gelöscht",
-  "document.upload": "Dokument hochgeladen",
-  "document.delete": "Dokument gelöscht",
-  "deadline.create": "Frist erstellt",
-  "deadline.update": "Frist aktualisiert",
-  "deadline.delete": "Frist gelöscht",
-  "evidence.create": "Beweismittel erstellt",
-  "evidence.update": "Beweismittel aktualisiert",
-  "evidence.delete": "Beweismittel gelöscht",
-  "drafting.generate": "Schriftsatz generiert",
-  "drafting.export": "Schriftsatz exportiert",
-  "conflict.check": "Kollisionsprüfung",
-  "judgements.search": "Rechtsprechung gesucht",
-  "settings.update": "Einstellungen geändert",
-  "billing.upgrade": "Plan geändert",
-  "team.invite": "Team-Einladung",
-  "team.remove": "Team-Mitglied entfernt",
-  "connector.add": "Konnektor hinzugefügt",
-  "connector.remove": "Konnektor entfernt",
-  "connector.sync": "Konnektor synchronisiert",
-  "query.submit": "KI-Query",
-};
-
-export function auditLabel(action: string): string {
-  return ACTION_LABELS[action] || action;
+/** Compute a hash chain for tamper-evidence. */
+function computeHash(prevHash: string | null, data: string): string {
+  return createHash("sha256").update(`${prevHash ?? ""}${data}`).digest("hex");
 }
 
 export async function logAudit(
@@ -77,9 +46,40 @@ export async function logAudit(
   opts?: {
     entityId?: string;
     details?: Record<string, unknown>;
+    brainId?: string;
+    userId?: string;
+    userEmail?: string;
+    ip?: string;
   }
 ): Promise<void> {
   const now = new Date().toISOString();
+  const pool = getSharedPgPool();
+
+  if (pool) {
+    try {
+      await ensureAuditSchema();
+      const brainId = opts?.brainId ?? "system";
+      const detailsStr = JSON.stringify(opts?.details ?? {});
+      // Get previous hash for chain
+      const { rows } = await pool.query<{ hash: string }>(
+        "SELECT hash FROM subsumio_audit_log WHERE brain_id = $1 ORDER BY id DESC LIMIT 1",
+        [brainId],
+      );
+      const prevHash = rows[0]?.hash ?? null;
+      const hash = computeHash(prevHash, `${action}:${entityType}:${opts?.entityId ?? ""}:${opts?.userId ?? ""}:${opts?.userEmail ?? ""}:${detailsStr}:${opts?.ip ?? ""}:${now}`);
+      await pool.query(
+        `INSERT INTO subsumio_audit_log (brain_id, action, entity_type, entity_id, user_id, user_email, details, ip, hash, prev_hash)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10)`,
+        [brainId, action, entityType, opts?.entityId, opts?.userId, opts?.userEmail, detailsStr, opts?.ip, hash, prevHash],
+      );
+      return;
+    } catch (err) {
+      console.error(`[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`);
+      // Fall through to brain-page fallback
+    }
+  }
+
+  // Dev fallback: store as brain page
   const id = `audit/${now.slice(0, 10)}/${action.replace(/\./g, "-")}-${Date.now()}`;
   try {
     await api.brain.createPage({
@@ -97,8 +97,6 @@ export async function logAudit(
         action,
         entity_type: entityType,
         entity_id: opts?.entityId,
-        // details must live in the frontmatter: the list API doesn't return
-        // page bodies, so frontmatter is the only place list views can read.
         details: opts?.details,
         timestamp: now,
         date: now.split("T")[0],
@@ -109,13 +107,71 @@ export async function logAudit(
   }
 }
 
-export async function listAuditLogs(opts?: {
+export async function listAuditLogs(opts: {
+  brainId: string;
   action?: string;
   entityType?: string;
   from?: string;
   to?: string;
   limit?: number;
 }): Promise<AuditEntry[]> {
+  const pool = getSharedPgPool();
+
+  if (pool) {
+    try {
+      await ensureAuditSchema();
+      const conditions: string[] = [`brain_id = $1`];
+      const params: unknown[] = [opts.brainId];
+      let paramIdx = 2;
+
+      if (opts?.action) {
+        conditions.push(`action LIKE $${paramIdx++}`);
+        params.push(`%${opts.action}%`);
+      }
+      if (opts?.entityType) {
+        conditions.push(`entity_type = $${paramIdx++}`);
+        params.push(opts.entityType);
+      }
+      if (opts?.from) {
+        conditions.push(`created_at >= $${paramIdx++}`);
+        params.push(opts.from);
+      }
+      if (opts?.to) {
+        conditions.push(`created_at <= $${paramIdx++}`);
+        params.push(opts.to);
+      }
+
+      const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+      const limit = opts?.limit ?? 200;
+      params.push(limit);
+
+      const { rows } = await pool.query(
+        `SELECT id::text, action, entity_type, entity_id, user_id, user_email, details, ip,
+                created_at::text as timestamp
+         FROM subsumio_audit_log
+         ${where}
+         ORDER BY created_at DESC
+         LIMIT $${paramIdx}`,
+        params,
+      );
+
+      return rows.map((r) => ({
+        id: r.id,
+        action: r.action,
+        entityType: r.entity_type,
+        entityId: r.entity_id ?? undefined,
+        userId: r.user_id ?? undefined,
+        userEmail: r.user_email ?? undefined,
+        details: r.details ?? undefined,
+        ip: r.ip ?? undefined,
+        timestamp: r.timestamp,
+      }));
+    } catch (err) {
+      console.error(`[audit] postgres list failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // Dev fallback: read from brain pages
   try {
     const pages = await api.brain.listPages({ type: "audit_log", limit: opts?.limit || 200 });
     const entries: AuditEntry[] = pages.map((p) => {
@@ -139,7 +195,6 @@ export async function listAuditLogs(opts?: {
       };
     });
 
-    // Client-side filtering (brain list doesn't support all filters)
     return entries.filter((e) => {
       if (opts?.action && !e.action.includes(opts.action)) return false;
       if (opts?.entityType && e.entityType !== opts.entityType) return false;

@@ -209,12 +209,12 @@ async function main(): Promise<void> {
       judgeFn: async (input) => {
         candidatePairs.push({
           kind: 'cross_slug_chunks',  // best-effort label; runner emits both kinds
-          a: { slug: input.a.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.a.holder ?? null, text: input.a.text },
-          b: { slug: input.b.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.b.holder ?? null, text: input.b.text },
+          a: { slug: input.a.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.a.holder ?? null, text: input.a.text, effective_date: null, effective_date_source: null },
+          b: { slug: input.b.slug, chunk_id: 0, take_id: null, source_tier: 'curated', holder: input.b.holder ?? null, text: input.b.text, effective_date: null, effective_date_source: null },
           combined_score: 0,
         });
         return {
-          verdict: { contradicts: false, severity: 'low', axis: '', confidence: 0, resolution_kind: null },
+          verdict: { verdict: 'no_contradiction' as const, severity: 'low' as const, axis: '', confidence: 0, resolution_kind: null },
           usage: { inputTokens: 0, outputTokens: 0 },
         };
       },

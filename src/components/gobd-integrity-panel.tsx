@@ -68,28 +68,28 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
   }
 
   return (
-    <div className="mt-10 rounded-xl border border-violet-500/20 bg-violet-500/5 p-5 space-y-4">
+    <div className="mt-10 rounded-xl border brand-border brand-soft/5 p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <Archive size={15} className="text-violet-400" />
-        <h3 className="text-sm font-semibold text-[#e8e8f0]">GoBD-Beleg — Integrität</h3>
+        <Archive size={15} className="brand-text" />
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">GoBD-Beleg — Integrität</h3>
       </div>
 
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
         {retentionUntil && (
           <div className="flex justify-between gap-2">
-            <dt className="text-[#8a8aa8]">Aufbewahrung bis</dt>
-            <dd className="text-[#e8e8f0] font-mono">{retentionUntil}</dd>
+            <dt className="text-[color:var(--ds-text-muted)]">Aufbewahrung bis</dt>
+            <dd className="text-[color:var(--ds-text)] font-mono">{retentionUntil}</dd>
           </div>
         )}
         {hashedAt && (
           <div className="flex justify-between gap-2">
-            <dt className="text-[#8a8aa8]">Gestempelt am</dt>
-            <dd className="text-[#e8e8f0] font-mono">{hashedAt.split("T")[0]}</dd>
+            <dt className="text-[color:var(--ds-text-muted)]">Gestempelt am</dt>
+            <dd className="text-[color:var(--ds-text)] font-mono">{hashedAt.split("T")[0]}</dd>
           </div>
         )}
         <div className="sm:col-span-2 flex flex-col gap-1">
-          <dt className="text-[#8a8aa8]">Gespeicherter Hash (SHA-256)</dt>
-          <dd className="text-[#8888aa] font-mono break-all">{storedHash}</dd>
+          <dt className="text-[color:var(--ds-text-muted)]">Gespeicherter Hash (SHA-256)</dt>
+          <dd className="text-[color:var(--ds-text-muted)] font-mono break-all">{storedHash}</dd>
         </div>
       </dl>
 
@@ -99,7 +99,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
           <button
             onClick={verifyInvoice}
             disabled={state.kind === "checking"}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-violet-600/15 text-violet-300 border border-violet-500/30 hover:bg-violet-600/25 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium brand-soft brand-text border brand-border hover:brand-soft-strong transition-all disabled:opacity-50"
           >
             {state.kind === "checking" ? <Loader2 size={13} className="animate-spin" /> : <FileSearch size={13} />}
             Integrität prüfen
@@ -109,7 +109,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={state.kind === "checking"}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-violet-600/15 text-violet-300 border border-violet-500/30 hover:bg-violet-600/25 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium brand-soft brand-text border brand-border hover:brand-soft-strong transition-all disabled:opacity-50"
             >
               {state.kind === "checking" ? <Loader2 size={13} className="animate-spin" /> : <FileSearch size={13} />}
               Originaldatei prüfen
@@ -124,7 +124,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
                 e.target.value = "";
               }}
             />
-            <p className="text-[11px] text-[#8a8aa8]">
+            <p className="text-[11px] text-[color:var(--ds-text-muted)]">
               Wähle die Originaldatei — sie wird lokal im Browser gehasht und gegen den
               gespeicherten Wert geprüft. Die Datei verlässt den Browser nicht.
             </p>
@@ -133,8 +133,8 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
 
         {state.kind === "match" && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
-            <ShieldCheck size={15} className="text-emerald-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-emerald-300">
+            <ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-emerald-600 dark:text-emerald-400">
               <strong>Unverändert seit Ausstellung.</strong> Der neu berechnete Hash stimmt
               mit dem gespeicherten überein.
             </div>
@@ -142,15 +142,15 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
         )}
         {state.kind === "mismatch" && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg border border-red-500/30 bg-red-500/10">
-            <ShieldAlert size={15} className="text-red-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-red-300 space-y-1">
+            <ShieldAlert size={15} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-red-600 dark:text-red-400 space-y-1">
               <div><strong>Verändert seit Ausstellung.</strong> Der berechnete Hash weicht ab.</div>
-              <div className="font-mono break-all text-red-400/80">Ist: {state.computed}</div>
+              <div className="font-mono break-all text-red-600/80 dark:text-red-400/80">Ist: {state.computed}</div>
             </div>
           </div>
         )}
         {state.kind === "error" && (
-          <div className="text-xs text-red-400">Prüfung fehlgeschlagen: {state.message}</div>
+          <div className="text-xs text-red-600 dark:text-red-400">Prüfung fehlgeschlagen: {state.message}</div>
         )}
       </div>
     </div>

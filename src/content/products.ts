@@ -1,4 +1,5 @@
-// Subsumio — product content for the law-firm vertical.
+// Product-line landing pages. This codebase serves Subsumio only:
+// AI legal software for law firms in Austria, Germany and Switzerland.
 
 import type { Lang } from "./site";
 import type { VerticalSlug } from "./verticals";

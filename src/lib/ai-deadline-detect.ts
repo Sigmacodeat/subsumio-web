@@ -108,7 +108,7 @@ const RULES: Array<{
   // Gerichtstermine
   {
     name: "court_date",
-    regex: /(?:Verhandlung|Hauptverhandlung|Beweisaufnahme|Gerichtstag)[\s\S]{0,50}(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
+    regex: /(?:Verhandlung|Hauptverhandlung|Beweisaufnahme|Gerichtstag)[\s\S]{0,50}?(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
     type: "court_hearing",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);
@@ -126,7 +126,7 @@ const RULES: Array<{
   // "Mahnfrist" / "Zahlungsfrist"
   {
     name: "payment_deadline",
-    regex: /(?:Zahlungsfrist|Mahnfrist|fristgerecht)[\s\S]{0,30}(\d{1,2})[.\s]\s*(\d{1,2})[.\s]\s*(\d{4})/i,
+    regex: /(?:Zahlungsfrist|Mahnfrist|fristgerecht)[\s\S]{0,30}?(\d{1,2})[.\s]\s*(\d{1,2})[.\s]\s*(\d{4})/i,
     type: "payment_deadline",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);

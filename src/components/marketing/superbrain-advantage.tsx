@@ -20,9 +20,9 @@ import { Button } from "@/components/ui/button";
 
 const copy = {
   en: {
-    eyebrow: "Sigma Superbrain",
+    eyebrow: "The Subsumio engine",
     title: "Not another chatbot. The memory layer your firm can run on.",
-    sub: "Most AI tools answer one prompt. Sigmabrain builds a durable, permission-aware brain over your own work: files, messages, meetings, entities, decisions and open loops.",
+    sub: "Most AI tools answer one prompt. Subsumio builds a durable, permission-aware brain over your own work: files, messages, meetings, entities, decisions and open loops.",
     center: "Your firm brain",
     proof: [
       { icon: Database, title: "Own data first", desc: "Answers come from your matters, clients, deals and documents, not generic web guesses." },
@@ -30,7 +30,7 @@ const copy = {
       { icon: FileSearch, title: "Cited answers", desc: "Every synthesis keeps source trails visible, with gaps called out instead of hidden." },
       { icon: ShieldCheck, title: "Deployment choice", desc: "Self-hosted on your keys and hardware, or managed EU cloud when you want speed." },
     ],
-    comparisonTitle: "Where Sigmabrain wins",
+    comparisonTitle: "Where Subsumio wins",
     comparisons: [
       { label: "Chatbots", weak: "forget context after the conversation", strong: "compound your institutional memory" },
       { label: "DMS / Drive", weak: "store files and folders", strong: "answer across files, notes and relationships" },
@@ -39,9 +39,9 @@ const copy = {
     cta: "Compare honestly",
   },
   de: {
-    eyebrow: "Sigma Superbrain",
+    eyebrow: "Die Subsumio-Engine",
     title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der eure Firma laufen kann.",
-    sub: "Die meisten KI-Tools beantworten einen Prompt. Sigmabrain baut ein dauerhaftes, rechtebewusstes Brain über eure eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
+    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über eure eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
     center: "Euer Firmen-Brain",
     proof: [
       { icon: Database, title: "Eigene Daten zuerst", desc: "Antworten kommen aus euren Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen." },
@@ -49,7 +49,7 @@ const copy = {
       { icon: FileSearch, title: "Belegte Antworten", desc: "Jede Synthese zeigt Quellen, und markiert Lücken, statt sie elegant zu verstecken." },
       { icon: ShieldCheck, title: "Deployment-Wahl", desc: "Self-hosted mit eigenen Keys und Hardware, oder gemanagte EU-Cloud wenn es schnell gehen soll." },
     ],
-    comparisonTitle: "Wo Sigmabrain gewinnt",
+    comparisonTitle: "Wo Subsumio gewinnt",
     comparisons: [
       { label: "Chatbots", weak: "vergessen Kontext nach dem Gespräch", strong: "verzinsen euer Firmenwissen" },
       { label: "DMS / Drive", weak: "speichern Dateien und Ordner", strong: "antworten über Dateien, Notizen und Beziehungen" },
@@ -71,8 +71,8 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   const reduced = useReducedMotion();
 
   return (
-    <section className="relative z-10 py-28 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)] overflow-hidden">
-      <div className="absolute inset-x-0 top-16 h-72 brand-glow-bg blur-3xl opacity-60" />
+    <section data-tone="slate" className="relative z-10 py-28 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)] overflow-hidden">
+      <div className="absolute inset-x-0 top-16 h-72 brand-glow-bg blur-3xl opacity-50" />
       <div className="max-w-7xl mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-12 items-center">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -95,7 +95,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.35, delay: i * 0.06 }}
-                  className="rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] p-4"
+                  className="rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface-2)] p-4"
                 >
                   <Icon size={18} className="brand-text mb-3" />
                   <h3 className="text-sm font-semibold [color:var(--mk-text)] mb-1.5">{item.title}</h3>
@@ -112,7 +112,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
             transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
             className="absolute inset-8 rounded-full border border-dashed border-[var(--brand-primary)]/20"
           />
-          <div className="relative min-h-[560px] rounded-2xl border [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] overflow-hidden shadow-2xl shadow-black/50">
+          <div data-tone="slate" className="relative min-h-[560px] rounded-2xl border [border-color:var(--mk-border-strong)] [background:var(--mk-bg)] overflow-hidden shadow-2xl shadow-black/20">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,var(--brand-glow),transparent_42%)]" />
             <div className="relative h-[300px]">
               <motion.div
@@ -135,7 +135,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true, amount: 0.4 }}
                     transition={{ duration: 0.35, delay: 0.1 + i * 0.08 }}
-                    className={`absolute ${node.className} rounded-xl border [border-color:var(--mk-border)] [background:color-mix(in_srgb,var(--mk-surface)_95%,transparent)] px-4 py-3 flex items-center gap-2`}
+                    className={`absolute ${node.className} rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] px-4 py-3 flex items-center gap-2`}
                   >
                     <Icon size={16} className="brand-text" />
                     <span className="text-xs font-medium [color:var(--mk-text)]">{node.label}</span>

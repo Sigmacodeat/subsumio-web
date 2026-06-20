@@ -7,6 +7,13 @@
 // in-memory-Schicht zurück (fail-open wäre für Brute-Force-Schutz falsch,
 // komplett fail-closed würde Login bei Redis-Ausfall sperren — der
 // per-Instanz-Fallback ist der Mittelweg).
+//
+// For production self-hosted without Upstash: a file-based fallback ensures
+// rate limits persist across restarts. The in-memory map is still used for
+// hot-path reads; the file is the source of truth for persistence.
+
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 interface Window {
   count: number;
@@ -14,6 +21,47 @@ interface Window {
 }
 
 const windows = new Map<string, Window>();
+import { env } from "@/lib/env";
+
+const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const RATE_LIMIT_FILE = path.join(DATA_DIR, "rate-limits.json");
+
+let fileCache: Record<string, { count: number; resetAt: number }> | null = null;
+let writeQueue: Promise<void> = Promise.resolve();
+let lastFileSync = 0;
+const FILE_SYNC_INTERVAL = 10_000; // sync to file every 10s max
+
+async function loadRateLimitFile(): Promise<Record<string, { count: number; resetAt: number }>> {
+  if (fileCache) return fileCache;
+  try {
+    const raw = await fs.readFile(RATE_LIMIT_FILE, "utf8");
+    fileCache = JSON.parse(raw) as Record<string, { count: number; resetAt: number }>;
+  } catch {
+    fileCache = {};
+  }
+  return fileCache!;
+}
+
+function persistRateLimitFile() {
+  const now = Date.now();
+  if (now - lastFileSync < FILE_SYNC_INTERVAL) return;
+  lastFileSync = now;
+  const snapshot: Record<string, { count: number; resetAt: number }> = {};
+  for (const [key, w] of windows) {
+    if (w.resetAt > now) snapshot[key] = { count: w.count, resetAt: w.resetAt };
+  }
+  writeQueue = writeQueue.then(async () => {
+    try {
+      await fs.mkdir(DATA_DIR, { recursive: true });
+      const tmp = `${RATE_LIMIT_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(snapshot), "utf8");
+      await fs.rename(tmp, RATE_LIMIT_FILE);
+    } catch {
+      // non-fatal — in-memory still works
+    }
+  });
+  return writeQueue;
+}
 
 /** Periodic sweep so abandoned keys don't accumulate forever. */
 let lastSweep = Date.now();
@@ -93,7 +141,24 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
       console.error(`[rate-limit] upstash unreachable, per-instance fallback: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  return hitMemory(key, max, windowMs);
+  // Production without Upstash: load persisted state from file on first call,
+  // then use in-memory logic. This allows self-hosted single-node deployments
+  // to maintain rate limits across restarts without external dependencies.
+  if (process.env.NODE_ENV === "production" && !fileCache) {
+    const persisted = await loadRateLimitFile();
+    const now = Date.now();
+    for (const [k, v] of Object.entries(persisted)) {
+      if (v.resetAt > now && !windows.has(k)) {
+        windows.set(k, { count: v.count, resetAt: v.resetAt });
+      }
+    }
+  }
+  const result = hitMemory(key, max, windowMs);
+  // Best-effort persist for production self-hosted
+  if (process.env.NODE_ENV === "production") {
+    void persistRateLimitFile();
+  }
+  return result;
 }
 
 /** Best-effort client IP behind proxies; falls back to a shared bucket. */

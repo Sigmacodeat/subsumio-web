@@ -99,7 +99,7 @@ export async function biometricAuth(): Promise<{ success: boolean; error?: strin
     const available = await NativeBiometric.isAvailable();
     if (!available) return { success: false, error: "Biometrie nicht verfügbar" };
     await NativeBiometric.verifyIdentity({
-      reason: "Sigmabrain entsperren",
+      reason: "Subsumio entsperren",
       title: "Biometrische Authentifizierung",
       subtitle: "Verifiziere deine Identität",
       description: "Nutze Face ID / Touch ID / Fingerabdruck",

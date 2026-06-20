@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import VerticalPage from "@/components/marketing/vertical";
-import { PRODUCTS } from "@/content/products";
-import { VERTICALS } from "@/content/verticals";
-import { JsonLd, faqPageLd, organizationLd, verticalSoftwareApplicationLd, breadcrumbLd } from "@/components/seo/jsonld";
-
-const product = PRODUCTS.en.subsumio;
+import LandingPage from "@/components/marketing/landing";
+import { JsonLd, organizationLd, softwareApplicationLd, faqPageLd } from "@/components/seo/jsonld";
+import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: { absolute: product.metaTitle },
-  description: product.metaDesc,
-  alternates: {
-    canonical: "/",
-    languages: { en: "/", de: "/de" },
+  title: "Subsumio — the brain your firm never had",
+  description:
+    "Every meeting, deal, email and document — turned into one answer instead of ten search results. Self-hosted or EU cloud, built on an open-source engine.",
+  alternates: { canonical: "/", languages: { en: "/", de: "/de" } },
+  openGraph: {
+    title: "Subsumio — the brain your firm never had",
+    description: "Every meeting, deal, email and document — one answer instead of ten search results. Self-hosted or EU cloud.",
+    url: "/",
+    type: "website",
   },
 };
 
@@ -19,10 +20,9 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={verticalSoftwareApplicationLd({ name: product.name, description: product.metaDesc, url: "/", price: "299" })} />
-      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/" }])} />
-      <JsonLd data={faqPageLd(VERTICALS.en[product.vertical].faq)} />
-      <VerticalPage lang="en" slug={product.vertical} product={product} />
+      <JsonLd data={softwareApplicationLd("en")} />
+      <JsonLd data={faqPageLd(LANDING.en.faq)} />
+      <LandingPage lang="en" />
     </>
   );
 }

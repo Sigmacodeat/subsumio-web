@@ -34,12 +34,12 @@ export interface SecurityContent {
 
 export const SECURITY: Record<Lang, SecurityContent> = {
   en: {
-    metaTitle: "Security & data protection — Sigmabrain",
+    metaTitle: "Security & data protection — Subsumio",
     metaDesc: "Self-host the full engine on your hardware or use EU cloud with a DPA. Per-user scoped access fuzz-tested for zero leaks. Honest about what we have — and what's still on the compliance roadmap.",
     badge: "Security & data protection",
     h1a: "Your data is the product's value.",
     h1b: "So it stays under your control.",
-    sub: "Sigmabrain is built for professions where confidentiality is law, not preference: law firms, tax advisors, funds. Here is the architecture — and an honest list of what's still in progress.",
+    sub: "Subsumio is built for professions where confidentiality is law, not preference: law firms in the DACH region. Here is the architecture — and an honest list of what's still in progress.",
     pillars: [
       { icon: "Shield", title: "Self-hosting, fully", desc: "The complete engine runs on your hardware — the full product, nothing held back. Client data never reaches a third party at all, and your IT controls every system that touches your files." },
       { icon: "Layers", title: "Isolation, fuzz-tested", desc: "Per-user and per-source scoped access is enforced on every read path and fuzz-tested for zero cross-tenant leaks. A user sees their scope — never another's." },
@@ -55,7 +55,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     complianceTitle: "What we have today",
     complianceItems: [
       { title: "GDPR-aligned processing", desc: "DPA for hosted plans, EU data location, documented subprocessors, deletion on request. Self-hosted deployments process nothing on our side at all." },
-      { title: "Professional secrecy (§ 203 StGB, § 43e BRAO)", desc: "Self-hosting means no third party is involved — the cleanest answer to professional-secrecy rules for lawyers and tax advisors. Hosted plans add a contractual confidentiality commitment on top of the DPA, covering involved parties under § 43e BRAO / § 203 (4) StGB." },
+      { title: "Professional secrecy (§ 203 StGB, § 43e BRAO)", desc: "Self-hosting means no third party is involved — the cleanest answer to professional-secrecy rules for lawyers. Hosted plans add a contractual confidentiality commitment on top of the DPA, covering involved parties under § 43e BRAO / § 203 (4) StGB." },
       { title: "Built-in anonymization before the cloud", desc: "A one-click tool redacts client names, IBANs, case numbers and contact data from any text before it is shared or sent to a cloud LLM — with a re-identification map only the authorized holder keeps. Pattern-based offline; name detection adds an optional LLM layer." },
       { title: "Tested isolation", desc: "Multi-tenant scoping is enforced in the engine and pinned by fuzz tests across every read path — not a dashboard checkbox." },
     ],
@@ -63,7 +63,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     aiActText: "The AI Act's transparency duties (Art. 50) and most high-risk obligations apply from 2 August 2026. Our honest position before that date:",
     aiActItems: [
       { title: "AI output is labelled (Art. 50)", desc: "Every AI-generated draft and answer is marked as AI-generated — visibly in the app and as a machine-readable marker on the API response and on saved documents. A human signs off; the machine never poses as the author." },
-      { title: "Human oversight, always", desc: "Sigmabrain drafts and suggests; it never files, books, or sends on its own. A qualified professional reviews and approves every output — the human-in-the-loop the Act requires for high-risk use." },
+      { title: "Human oversight, always", desc: "Subsumio drafts and suggests; it never files, books, or sends on its own. A qualified professional reviews and approves every output — the human-in-the-loop the Act requires for high-risk use." },
       { title: "Risk classification, documented", desc: "We assess each feature against Annex III instead of assuming. Lawyer-facing assistance is generally not high-risk on its own; where a feature touches deadlines or legal consequences, we document the classification and keep the audit log." },
     ],
     roadmapTitle: "What we don't have yet — honestly",
@@ -74,11 +74,11 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       "Source-system permission inheritance for connector-synced content in shared brains — until it lands, we document connectors for single-user brains.",
     ],
     disclosureTitle: "Responsible disclosure",
-    disclosureText: "Found a vulnerability? Email security@sigmabrain.com. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.",
+    disclosureText: "Found a vulnerability? Email security@subsum.eu. We confirm receipt within 48 hours, keep you updated, and credit researchers who wish to be named. Please don't test against systems holding real customer data — self-host a copy on your own hardware instead.",
     faqTitle: "Security questions, answered plainly",
     faq: [
       { q: "Where exactly does my data live?", a: "Self-hosted: on your machines, full stop. Hosted: in EU data centers, with the location named in your DPA. Synthesis requests go to the LLM provider configured for your plan — enterprise setups can route through EU endpoints or their own gateway." },
-      { q: "Can Sigmabrain employees read my brain?", a: "Self-hosted: no, structurally — we have no access path. Hosted: access is restricted to break-glass operational procedures, logged, and covered by the DPA and confidentiality commitment. We don't browse customer content, and your content never trains models." },
+      { q: "Can Subsumio employees read my brain?", a: "Self-hosted: no, structurally — we have no access path. Hosted: access is restricted to break-glass operational procedures, logged, and covered by the DPA and confidentiality commitment. We don't browse customer content, and your content never trains models." },
       { q: "What happens to my data if I leave?", a: "Export everything at any time (the engine's export is a first-class command, not a support ticket). Hosted data is deleted on contract end per the DPA. Self-hosted: it was never with us." },
       { q: "Is self-hosting less secure than your cloud?", a: "It's the same engine. Security-relevant behavior — scoping, trust boundaries, isolation — is identical and test-pinned. The difference is who operates it: you, instead of us." },
     ],
@@ -87,12 +87,12 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ctaButton: "Talk to us",
   },
   de: {
-    metaTitle: "Sicherheit & Datenschutz — Sigmabrain",
+    metaTitle: "Sicherheit & Datenschutz — Subsumio",
     metaDesc: "Volle Engine self-hosted auf eurer Hardware oder EU-Cloud mit AVV. Zugriff pro Nutzer gescoped, fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was noch auf der Compliance-Roadmap steht.",
     badge: "Sicherheit & Datenschutz",
     h1a: "Eure Daten sind der Wert des Produkts.",
     h1b: "Deshalb bleiben sie unter eurer Kontrolle.",
-    sub: "Sigmabrain ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien, Steuerberater, Fonds. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
+    sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
     pillars: [
       { icon: "Shield", title: "Self-Hosting, vollständig", desc: "Die komplette Engine läuft auf eurer Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und eure IT kontrolliert jedes System, das eure Akten berührt." },
       { icon: "Layers", title: "Isolation, fuzz-getestet", desc: "Zugriff pro Nutzer und pro Quelle wird auf jedem Lesepfad erzwungen und auf null Cross-Tenant-Leaks fuzz-getestet. Ein Nutzer sieht seinen Scope — nie den eines anderen." },
@@ -116,7 +116,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     aiActText: "Die Transparenzpflichten des AI Act (Art. 50) und die meisten Hochrisiko-Pflichten gelten ab dem 2. August 2026. Unsere ehrliche Position vor diesem Stichtag:",
     aiActItems: [
       { title: "KI-Output ist gekennzeichnet (Art. 50)", desc: "Jeder KI-generierte Entwurf und jede KI-Antwort ist als KI-generiert markiert — sichtbar in der App und als maschinenlesbares Kennzeichen auf der API-Antwort und in gespeicherten Dokumenten. Ein Mensch zeichnet ab; die Maschine gibt sich nie als Urheber aus." },
-      { title: "Menschliche Aufsicht, immer", desc: "Sigmabrain entwirft und schlägt vor — es reicht nichts ein, bucht nichts und versendet nichts von selbst. Eine qualifizierte Fachkraft prüft und gibt jeden Output frei: der vom Act geforderte Human-in-the-Loop für Hochrisiko-Nutzung." },
+      { title: "Menschliche Aufsicht, immer", desc: "Subsumio entwirft und schlägt vor — es reicht nichts ein, bucht nichts und versendet nichts von selbst. Eine qualifizierte Fachkraft prüft und gibt jeden Output frei: der vom Act geforderte Human-in-the-Loop für Hochrisiko-Nutzung." },
       { title: "Risiko-Einstufung, dokumentiert", desc: "Wir prüfen jedes Feature gegen Annex III, statt zu vermuten. Anwaltsunterstützung allein ist i. d. R. nicht hochrisiko; wo ein Feature Fristen oder Rechtsfolgen berührt, dokumentieren wir die Einstufung und führen das Audit-Log." },
     ],
     roadmapTitle: "Was wir noch nicht haben — ehrlich",
@@ -127,11 +127,11 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       "Berechtigungs-Vererbung aus Quellsystemen für Konnektor-Inhalte in geteilten Brains — bis dahin dokumentieren wir Konnektoren für Einzel-Nutzer-Brains.",
     ],
     disclosureTitle: "Responsible Disclosure",
-    disclosureText: "Schwachstelle gefunden? E-Mail an security@sigmabrain.com. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten euch auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — self-hostet stattdessen eine Kopie auf eigener Hardware.",
+    disclosureText: "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten euch auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — self-hostet stattdessen eine Kopie auf eigener Hardware.",
     faqTitle: "Sicherheitsfragen, klar beantwortet",
     faq: [
       { q: "Wo genau liegen meine Daten?", a: "Self-hosted: auf euren Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für euren Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen." },
-      { q: "Können Sigmabrain-Mitarbeiter mein Brain lesen?", a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und eure Inhalte trainieren keine Modelle." },
+      { q: "Können Subsumio-Mitarbeiter mein Brain lesen?", a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und eure Inhalte trainieren keine Modelle." },
       { q: "Was passiert mit meinen Daten, wenn ich kündige?", a: "Export jederzeit (der Export der Engine ist ein vollwertiger Befehl, kein Support-Ticket). Gehostete Daten werden zum Vertragsende gemäß AVV gelöscht. Self-hosted: sie waren nie bei uns." },
       { q: "Ist Self-Hosting unsicherer als eure Cloud?", a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: ihr statt wir." },
     ],

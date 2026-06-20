@@ -10,7 +10,7 @@ interface BrainPage {
   frontmatter?: Record<string, unknown>;
 }
 
-const API_BASE = "https://sigmabrain.com";
+const API_BASE = "https://subsum.io";
 let token = "";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,7 +66,7 @@ async function insertDoc(page: BrainPage) {
   try {
     await Office.context.document.setSelectedDataAsync(page.content, { coercionType: Office.CoercionType.Text });
     showStatus(`„${page.title}" eingefügt.`, true);
-  } catch (e) {
+  } catch (_e) {
     showStatus("Einfügen fehlgeschlagen. Word API nicht verfügbar?", false);
   }
 }

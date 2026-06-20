@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { Send, Loader2, Sparkles } from "lucide-react";
-import { SigmaMark } from "@/components/brand/logo";
+import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
 
 interface DemoResult {
@@ -91,13 +91,17 @@ export default function LiveDemo({
   }
 
   return (
-    <div className="rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/50 overflow-hidden text-left">
+    <div
+      className="rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/10 overflow-hidden text-left"
+      role="region"
+      aria-label={lang === "de" ? "Live-Demo" : "Live demo"}
+    >
       {/* window bar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b [border-color:var(--mk-border)] [background:var(--mk-bg)]">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/60" />
-        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
-        <div className="flex-1 ml-4 text-xs [color:var(--mk-text-subtle)] font-mono">{windowTitle}</div>
+        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+        <div className="flex-1 ml-4 text-xs [color:var(--mk-text)] opacity-60 font-mono">{windowTitle}</div>
       </div>
 
       {/* editable question */}
@@ -113,13 +117,14 @@ export default function LiveDemo({
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } }}
               rows={2}
               placeholder={t.placeholder}
+              aria-label={t.placeholder}
               className="flex-1 bg-transparent text-sm [color:var(--mk-text)] placeholder:[color:var(--mk-text-subtle)] resize-none focus:outline-none leading-relaxed"
             />
             <button
               onClick={ask}
               disabled={loading || !input.trim()}
               aria-label={t.ask}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg brand-bg disabled:opacity-40 text-white text-xs font-medium px-3 py-1.5 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg brand-bg disabled:opacity-40 text-white text-sm font-medium px-4 py-2.5 transition-colors"
             >
               {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} {t.ask}
             </button>
@@ -130,7 +135,7 @@ export default function LiveDemo({
       {/* answer */}
       <div className="px-5 pb-4 pt-4">
         <div className="flex items-start gap-3">
-          <SigmaMark size={28} className="shrink-0 mt-0.5" />
+          <SubsumioMark size={28} className="shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             {live ? (
               <div>
@@ -145,7 +150,7 @@ export default function LiveDemo({
                 </ul>
               </div>
             ) : (
-              <div className="text-sm [color:var(--mk-text-muted)] leading-relaxed whitespace-pre-line">
+              <div className="text-sm [color:var(--mk-text)] leading-relaxed whitespace-pre-line">
                 {renderStrongText(a)}
               </div>
             )}
@@ -156,10 +161,10 @@ export default function LiveDemo({
       {/* sources / note */}
       <div className="px-5 py-3 border-t [border-color:var(--mk-border)] [background:var(--mk-bg)] flex items-center gap-2 flex-wrap min-h-[40px]">
         {note ? (
-          <span className="text-xs text-amber-400/80">{note}</span>
+          <span className="text-xs [color:var(--signal-amber)] opacity-80">{note}</span>
         ) : !live ? (
           <>
-            <span className="text-xs [color:var(--mk-text-subtle)]">{sourcesLabel}</span>
+            <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
             {sources.map((slug) => (
               <span key={slug} className="text-xs font-mono brand-text brand-soft px-2 py-0.5 rounded">{slug}</span>
             ))}

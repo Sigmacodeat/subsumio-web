@@ -6,7 +6,7 @@
 // nothing; regular visitors never see this.
 
 import { useEffect, useState } from "react";
-import { REF_COOKIE } from "@/lib/auth/session";
+import { REF_COOKIE } from "@/lib/auth/session-core";
 
 const CODE_RE = /^[a-z0-9]{4,16}$/;
 const DECISION_KEY = "sb_ref_consent"; // "accepted" | "declined"
@@ -69,7 +69,7 @@ export default function RefConsentBanner() {
       <div className="flex gap-2">
         <button
           onClick={accept}
-          className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-colors"
+          className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white text-xs font-semibold transition-colors"
         >
           {isGerman ? "Einverstanden" : "Accept"}
         </button>

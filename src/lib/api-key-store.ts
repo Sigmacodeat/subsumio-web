@@ -35,7 +35,9 @@ export interface ApiKeyStore {
 
 // ── File adapter (dev / self-hosted) ─────────────────────────────────────────
 
-const DATA_DIR = process.env.SIGMABRAIN_DATA_DIR || path.join(process.cwd(), ".data");
+import { env } from "@/lib/env";
+
+const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
 const KEYS_FILE = path.join(DATA_DIR, "api-keys.json");
 
 class FileApiKeyStore implements ApiKeyStore {
@@ -101,7 +103,7 @@ class FileApiKeyStore implements ApiKeyStore {
 // ── Postgres adapter (production) ────────────────────────────────────────────
 
 const AUTH_DB_URL =
-  process.env.SIGMABRAIN_AUTH_DATABASE_URL ||
+  env("SIGMABRAIN_AUTH_DATABASE_URL") ||
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL;
@@ -110,10 +112,10 @@ class PgApiKeyStore implements ApiKeyStore {
   private ready: Promise<void> | null = null;
 
   private pool(): import("pg").Pool {
-    if (!globalThis.__sigmabrainApiKeyPool) {
+    if (!globalThis.__subsumioApiKeyPool) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { Pool } = require("pg") as typeof import("pg");
-      globalThis.__sigmabrainApiKeyPool = new Pool({
+      globalThis.__subsumioApiKeyPool = new Pool({
         connectionString: AUTH_DB_URL,
         max: 3,
         idleTimeoutMillis: 30_000,
@@ -121,13 +123,13 @@ class PgApiKeyStore implements ApiKeyStore {
         ...(process.env.NODE_ENV === "production" ? { ssl: { rejectUnauthorized: true } } : {}),
       });
     }
-    return globalThis.__sigmabrainApiKeyPool as import("pg").Pool;
+    return globalThis.__subsumioApiKeyPool as import("pg").Pool;
   }
 
   private ensureSchema(): Promise<void> {
     if (!this.ready) {
       this.ready = this.pool().query(`
-        CREATE TABLE IF NOT EXISTS sigmabrain_api_keys (
+        CREATE TABLE IF NOT EXISTS subsumio_api_keys (
           id text PRIMARY KEY,
           owner_id text NOT NULL,
           name text NOT NULL,
@@ -162,7 +164,7 @@ class PgApiKeyStore implements ApiKeyStore {
   async getById(id: string) {
     await this.ensureSchema();
     const { rows } = await this.pool().query(
-      `SELECT * FROM sigmabrain_api_keys WHERE id = $1`,
+      `SELECT * FROM subsumio_api_keys WHERE id = $1`,
       [id],
     );
     return rows[0] ? this.row(rows[0]) : null;
@@ -171,7 +173,7 @@ class PgApiKeyStore implements ApiKeyStore {
   async listByOwner(ownerId: string) {
     await this.ensureSchema();
     const { rows } = await this.pool().query(
-      `SELECT * FROM sigmabrain_api_keys WHERE owner_id = $1 ORDER BY created_at DESC`,
+      `SELECT * FROM subsumio_api_keys WHERE owner_id = $1 ORDER BY created_at DESC`,
       [ownerId],
     );
     return rows.map((r) => this.row(r));
@@ -180,7 +182,7 @@ class PgApiKeyStore implements ApiKeyStore {
   async create(key: StoredApiKey) {
     await this.ensureSchema();
     await this.pool().query(
-      `INSERT INTO sigmabrain_api_keys
+      `INSERT INTO subsumio_api_keys
          (id, owner_id, name, prefix, secret_hash, scopes, active, created_at, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
@@ -203,7 +205,7 @@ class PgApiKeyStore implements ApiKeyStore {
     if (sets.length === 0) return this.getById(id);
     vals.push(id);
     await this.pool().query(
-      `UPDATE sigmabrain_api_keys SET ${sets.join(", ")} WHERE id = $${i}`,
+      `UPDATE subsumio_api_keys SET ${sets.join(", ")} WHERE id = $${i}`,
       vals,
     );
     return this.getById(id);
@@ -211,24 +213,24 @@ class PgApiKeyStore implements ApiKeyStore {
 
   async delete(id: string) {
     await this.ensureSchema();
-    await this.pool().query(`DELETE FROM sigmabrain_api_keys WHERE id = $1`, [id]);
+    await this.pool().query(`DELETE FROM subsumio_api_keys WHERE id = $1`, [id]);
   }
 }
 
 // ── Singleton factory ─────────────────────────────────────────────────────────
 
 declare global {
-  var __sigmabrainApiKeyPool: InstanceType<typeof import("pg").Pool> | undefined;
-  var __sigmabrainApiKeyStore: ApiKeyStore | undefined;
+  var __subsumioApiKeyPool: InstanceType<typeof import("pg").Pool> | undefined;
+  var __subsumioApiKeyStore: ApiKeyStore | undefined;
 }
 
 export function getApiKeyStore(): ApiKeyStore {
-  if (!globalThis.__sigmabrainApiKeyStore) {
+  if (!globalThis.__subsumioApiKeyStore) {
     const useFile =
       !AUTH_DB_URL ||
       (process.env.NODE_ENV !== "production" &&
-        process.env.SIGMABRAIN_ALLOW_FILE_AUTH_IN_PRODUCTION !== "true");
-    globalThis.__sigmabrainApiKeyStore = useFile ? new FileApiKeyStore() : new PgApiKeyStore();
+        env("SIGMABRAIN_ALLOW_FILE_AUTH_IN_PRODUCTION") !== "true");
+    globalThis.__subsumioApiKeyStore = useFile ? new FileApiKeyStore() : new PgApiKeyStore();
   }
-  return globalThis.__sigmabrainApiKeyStore as ApiKeyStore;
+  return globalThis.__subsumioApiKeyStore as ApiKeyStore;
 }

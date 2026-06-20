@@ -1,10 +1,13 @@
 "use client";
 
-// /security — trust & data-protection page. Renders content/security.ts.
-// The roadmap section deliberately lists what we DON'T have yet; keep it.
+// /security — agency-grade trust & data-protection page.
+// MotionConfig wraps the page; ScrollProgress shows reading position;
+// every section scroll-reveals with reduced-motion safety.
 
+import { MotionConfig } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Check, Shield, Layers, Lock, Eye, type LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
 import {
@@ -14,7 +17,8 @@ import {
   SectionHeading,
   FaqList,
 } from "./chrome";
-import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { Reveal, ScrollProgress, StaggerContainer, StaggerItem } from "./motion-system";
+import BackToTop from "./back-to-top";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -22,9 +26,11 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
   const t = SECURITY[lang];
 
   return (
-    <div className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
-      <MarketingBackground />
-      <MarketingNav lang={lang} />
+    <MotionConfig reducedMotion="user">
+      <div data-tone="light" className="min-h-screen [background:var(--mk-bg)] overflow-x-hidden" lang={lang}>
+        <ScrollProgress />
+        <MarketingBackground />
+        <MarketingNav lang={lang} />
 
       {/* Hero */}
       <section className="relative z-10 pt-20 pb-16 px-6">
@@ -58,7 +64,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Hosting options */}
-      <section className="relative z-10 py-16 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+      <section className="relative z-10 py-16 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
         <div className="max-w-5xl mx-auto">
           <Reveal variant="up">
             <SectionHeading title={t.hostingTitle} sub={t.hostingSub} />
@@ -120,12 +126,12 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       {/* Honest roadmap */}
       <section className="relative z-10 py-12 px-6">
         <Reveal variant="up" className="max-w-4xl mx-auto p-7 rounded-2xl border border-amber-500/20 bg-amber-500/[0.04]">
-          <h2 className="text-lg font-bold text-amber-300 mb-2">{t.roadmapTitle}</h2>
+          <h2 className="text-lg font-bold [color:var(--signal-amber)] mb-2">{t.roadmapTitle}</h2>
           <p className="text-sm [color:var(--mk-text-muted)] leading-relaxed mb-4">{t.roadmapText}</p>
           <StaggerContainer className="space-y-2.5" stagger={0.06}>
             {t.roadmapItems.map((item, i) => (
               <StaggerItem key={i} className="flex gap-2.5 text-sm leading-relaxed">
-                <ArrowRight size={14} className="text-amber-400 shrink-0 mt-1" />
+                <ArrowRight size={14} className="[color:var(--signal-amber)] shrink-0 mt-1" />
                 <span className="[color:var(--mk-text-muted)]">{item}</span>
               </StaggerItem>
             ))}
@@ -134,10 +140,14 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 py-20 px-6 [background:color-mix(in_srgb,var(--mk-surface)_50%,transparent)] border-y [border-color:var(--mk-border)]">
+      <section className="relative z-10 py-20 px-6 [background:var(--mk-surface)] border-y [border-color:var(--mk-border)]">
         <div className="max-w-5xl mx-auto">
-          <SectionHeading title={t.faqTitle} />
-          <FaqList items={t.faq} />
+          <Reveal variant="up">
+            <SectionHeading title={t.faqTitle} />
+          </Reveal>
+          <Reveal variant="up" delay={0.1}>
+            <FaqList items={t.faq} />
+          </Reveal>
         </div>
       </section>
 
@@ -152,18 +162,19 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <section className="relative z-10 py-24 px-6">
         <Reveal variant="upLg" className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
-          <p className="[color:var(--mk-text-muted)] mb-8">{t.ctaSub}</p>
-          <Link
-            href={p(lang, "/signup")}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl brand-bg text-white font-semibold transition-colors hover:brightness-110"
-          >
-            {t.ctaButton} <ArrowRight size={16} />
+          <h2 className="text-3xl md:text-4xl font-black [color:var(--mk-text)] mb-4">{t.ctaTitle}</h2>
+          <p className="text-lg [color:var(--mk-text-muted)] mb-8">{t.ctaSub}</p>
+          <Link href={p(lang, "/signup")}>
+            <Button size="xl" variant="glow">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
           </Link>
         </Reveal>
       </section>
 
       <MarketingFooter lang={lang} />
+      <BackToTop lang={lang} />
     </div>
+    </MotionConfig>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import FeaturesPage from "@/components/marketing/features-page";
 import { FEATURES_PAGE } from "@/content/features";
+import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
   title: FEATURES_PAGE.de.metaTitle,
@@ -9,5 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <FeaturesPage lang="de" />;
+  return (
+    <>
+      <JsonLd data={softwareApplicationLd("de")} />
+      <FeaturesPage lang="de" />
+    </>
+  );
 }
