@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
-import { validateCronAuth } from "@/lib/cron-auth";
+import { createCronHandler } from "@/lib/api-handler";
 import { type EnginePage, fetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
 import { sendWhatsAppText } from "@/lib/whatsapp/send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
@@ -122,10 +122,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
 
 const alreadyNotifiedToday = createDailyDedup("subsumio_notify_log");
 
-export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
-  if (authError) return authError;
-
+export const GET = createCronHandler(async (_req: NextRequest) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
 
   const recipientsByBrain = await getRecipientsByBrain();
@@ -179,4 +176,4 @@ export async function GET(req: NextRequest) {
     mails_sent: mailsSent,
     whatsapp_sent: whatsappSent,
   });
-}
+});

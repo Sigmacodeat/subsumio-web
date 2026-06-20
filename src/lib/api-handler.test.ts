@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 import { NextRequest as NextRequestImpl } from "next/server";
-import { createHandler } from "./api-handler";
+import { createHandler, createCronHandler } from "./api-handler";
 import { AppError } from "./errors";
 import { z } from "zod";
 
@@ -16,6 +16,43 @@ vi.mock("./engine", () => ({
 
 vi.mock("./audit", () => ({
   logAudit: vi.fn(),
+}));
+
+vi.mock("./cron-auth", () => ({
+  validateCronAuth: vi.fn((req: Request) => {
+    const auth = req.headers.get("authorization");
+    if (!auth || auth !== "Bearer test-cron-secret") {
+      return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return null;
+  }),
+}));
+
+vi.mock("./env", () => ({
+  env: vi.fn((key: string) => {
+    if (key === "SUBSUMIO_INTERNAL_SECRET") return "test-internal-secret";
+    if (key === "SUBSUMIO_WEB_API_KEY") return "test-api-key";
+    return undefined;
+  }),
+}));
+
+vi.mock("./crypto-utils", () => ({
+  timingSafeCompare: vi.fn((a: string, b: string) => a === b),
+}));
+
+vi.mock("./prompt-sanitizer", () => ({
+  sanitizeObjectStrings: vi.fn((obj: unknown) => obj),
+}));
+
+vi.mock("./citation-gate", () => ({
+  createCitationGateStream: vi.fn((body: unknown) => body),
+  groundJsonResponse: vi.fn(() => ({}),
+  ),
+  emptyGroundingMetadata: vi.fn(() => ({})),
+}));
+
+vi.mock("./auth/api-key-auth", () => ({
+  verifyApiKey: vi.fn(() => null),
 }));
 
 vi.mock("./csrf", async () => {
@@ -91,6 +128,9 @@ function mockCtx(overrides?: Partial<{ role: string; id: string; email: string }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Reset default mock implementations
+  vi.mocked(requireEngineContext).mockReset();
+  vi.mocked(requireEngineContext).mockResolvedValue(mockCtx() as any);
 });
 
 // ── Tests ──────────────────────────────────────────────────────────────
@@ -333,5 +373,229 @@ describe("createHandler Guard-Chain", () => {
 
     expect(res.status).toBe(400);
     expect(logAudit).not.toHaveBeenCalled();
+  });
+});
+
+// ── createCronHandler Tests ───────────────────────────────────────────
+
+describe("createCronHandler", () => {
+  it("1. Valid cron auth → 200", async () => {
+    const handler = createCronHandler(async () =>
+      Response.json({ ok: true, ran: true }),
+    );
+
+    const headers = new Headers();
+    headers.set("authorization", "Bearer test-cron-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
+      method: "GET",
+      headers,
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ran).toBe(true);
+  });
+
+  it("2. Missing cron auth → 401", async () => {
+    const handler = createCronHandler(async () =>
+      Response.json({ ok: true }),
+    );
+
+    const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
+      method: "GET",
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe("unauthorized");
+  });
+
+  it("3. Wrong cron secret → 401", async () => {
+    const handler = createCronHandler(async () =>
+      Response.json({ ok: true }),
+    );
+
+    const headers = new Headers();
+    headers.set("authorization", "Bearer wrong-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
+      method: "GET",
+      headers,
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(401);
+  });
+
+  it("4. Handler throws AppError → structured error", async () => {
+    const handler = createCronHandler(async () => {
+      throw new AppError("Cron failed", { code: "cron_error", statusCode: 503 });
+    });
+
+    const headers = new Headers();
+    headers.set("authorization", "Bearer test-cron-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
+      method: "GET",
+      headers,
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("cron_error");
+  });
+
+  it("5. Handler throws generic Error → 500", async () => {
+    const handler = createCronHandler(async () => {
+      throw new Error("boom");
+    });
+
+    const headers = new Headers();
+    headers.set("authorization", "Bearer test-cron-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/cron/test", {
+      method: "GET",
+      headers,
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.code).toBe("internal_error");
+  });
+});
+
+// ── allowInternal Tests ───────────────────────────────────────────────
+
+describe("createHandler allowInternal", () => {
+  it("1. Internal secret bypasses auth → 200", async () => {
+    // requireEngineContext should NOT be called when internal secret is valid
+    vi.mocked(requireEngineContext).mockResolvedValueOnce(
+      Response.json({ error: "should_not_reach_here" }, { status: 500 }),
+    );
+
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        allowInternal: true,
+        body: z.object({ text: z.string() }),
+      },
+      async (ctx, body) => Response.json({ ok: true, brainId: ctx.brainId, text: body.text }),
+    );
+
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    headers.set("x-internal-secret", "test-internal-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/test", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "hello" }),
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.brainId).toBe("internal");
+    expect(body.text).toBe("hello");
+    // requireEngineContext should not have been called
+    expect(requireEngineContext).not.toHaveBeenCalled();
+  });
+
+  it("2. Wrong internal secret falls through to normal auth", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValue(mockCtx() as any);
+
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        allowInternal: true,
+      },
+      async () => Response.json({ ok: true }),
+    );
+
+    const req = makeMockRequest("POST", {}, {
+      csrfCookie: "tok",
+      csrfHeader: "tok",
+    });
+    // Add wrong internal secret — should fall through to normal auth
+    req.headers.set("x-internal-secret", "wrong-secret");
+    const res = await handler(req);
+
+    expect(res.status).toBe(200);
+    // requireEngineContext SHOULD have been called (fell through to normal auth)
+    expect(requireEngineContext).toHaveBeenCalledOnce();
+  });
+
+  it("3. No internal secret falls through to normal auth", async () => {
+    vi.mocked(requireEngineContext).mockResolvedValueOnce(mockCtx() as any);
+
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        allowInternal: true,
+      },
+      async () => Response.json({ ok: true }),
+    );
+
+    const req = makeMockRequest("POST", {}, {
+      csrfCookie: "tok",
+      csrfHeader: "tok",
+    });
+    const res = await handler(req);
+
+    expect(res.status).toBe(200);
+    expect(requireEngineContext).toHaveBeenCalledOnce();
+  });
+
+  it("4. Internal secret bypasses CSRF", async () => {
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        allowInternal: true,
+        body: z.object({ text: z.string() }),
+      },
+      async (ctx) => Response.json({ ok: true, brainId: ctx.brainId }),
+    );
+
+    // POST with internal secret but NO CSRF cookie/header
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    headers.set("x-internal-secret", "test-internal-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/test", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "hello" }),
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.brainId).toBe("internal");
+    // CSRF should not have been checked
+    expect(validateCsrf).not.toHaveBeenCalled();
+  });
+
+  it("5. Internal context has correct headers from env", async () => {
+    const handler = createHandler(
+      {
+        action: "legal.document_review" as any,
+        allowInternal: true,
+        body: z.object({ text: z.string() }),
+      },
+      async (ctx) => Response.json({ ok: true, headers: ctx.headers }),
+    );
+
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    headers.set("x-internal-secret", "test-internal-secret");
+    const req = new NextRequestImpl("http://localhost:3000/api/test", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: "hello" }),
+    });
+    const res = await handler(req as unknown as NextRequest);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.headers["x-subsumio-api-key"]).toBe("test-api-key");
   });
 });

@@ -116,6 +116,33 @@ export interface StrategyInfo {
   risks?: StrategyRisk[];
 }
 
+export interface CommunicationEntry {
+  id: string;
+  channel: "email" | "whatsapp" | "phone" | "letter" | "portal" | "bea" | "other";
+  direction: "incoming" | "outgoing";
+  subject?: string;
+  summary?: string;
+  timestamp: string;
+  counterpart?: string;
+  counterpart_slug?: string;
+  lawyer?: string;
+  privileged?: boolean;
+  attachment_slugs?: string[];
+}
+
+export interface PermissionInfo {
+  /** User-IDs oder Rollen mit Zugriff auf diese Akte. */
+  allowed_users?: string[];
+  /** User-IDs oder Rollen, die von dieser Akte ausgeschlossen sind (Ethical Wall). */
+  blocked_users?: string[];
+  /** Ob die Akte als vertraulich markiert ist (Privilege). */
+  privileged?: boolean;
+  /** Ob ein Legal Hold aktiv ist. */
+  legal_hold?: boolean;
+  /** Sichtbarkeitseinschränkung: 'full' = alle im Team, 'restricted' = nur allowed_users, 'confidential' = nur Owner. */
+  visibility?: "full" | "restricted" | "confidential";
+}
+
 export interface CaseFrontmatter {
   type?: string;
   case_number?: string;
@@ -155,6 +182,8 @@ export interface CaseFrontmatter {
   documents?: DocumentEntry[];
   portal_enabled?: boolean;
   portal_note?: string;
+  communications?: CommunicationEntry[];
+  permissions?: PermissionInfo;
   audit_log?: AuditLogEntry[];
   /** Optimistic locking version — incremented on every update */
   version?: number;

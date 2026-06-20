@@ -31,6 +31,19 @@ jobs:
       - run: bun install
       - run: bun run test:unit
 
+  check-resolvable:
+    name: Skill Tree (Reachability/MECE/DRY)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - working-directory: server
+        run: bun install
+      - name: Run check-resolvable --strict
+        working-directory: server
+        run: bun run check:resolver
+
   e2e:
     runs-on: ubuntu-latest
     steps:
@@ -39,3 +52,16 @@ jobs:
       - run: bun install
       - run: bunx playwright install --with-deps
       - run: bun run test:e2e
+
+  server-verify:
+    name: Server Engine Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - working-directory: server
+        run: bun install
+      - name: Run engine verify
+        working-directory: server
+        run: bun run verify

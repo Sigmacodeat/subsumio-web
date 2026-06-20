@@ -82,6 +82,31 @@ export interface MatterFactEntry {
   contradicts?: string[];
 }
 
+// ── Communication Summary ─────────────────────────────────────────────
+
+export interface MatterCommunicationEntry {
+  id: string;
+  channel: "email" | "whatsapp" | "phone" | "letter" | "portal" | "bea" | "other";
+  direction: "incoming" | "outgoing";
+  subject: string;
+  timestamp: string;
+  counterpart?: string;
+  lawyer?: string;
+  privileged: boolean;
+  has_attachments: boolean;
+}
+
+// ── Permission Summary ────────────────────────────────────────────────
+
+export interface MatterPermissionSummary {
+  visibility: "full" | "restricted" | "confidential";
+  privileged: boolean;
+  legal_hold: boolean;
+  allowed_users: string[];
+  blocked_users: string[];
+  ethical_wall_active: boolean;
+}
+
 export interface MatterContextBundle {
   case_slug: string;
   case_title: string;
@@ -93,6 +118,8 @@ export interface MatterContextBundle {
   documents: MatterDocumentSummary[];
   recent_activity: MatterActivityEntry[];
   facts: MatterFactEntry[];
+  communications: MatterCommunicationEntry[];
+  permissions: MatterPermissionSummary;
   coverage: MatterCoverageStatus;
   gaps: MatterGap[];
   generated_at: string;
@@ -140,7 +167,10 @@ export type GapType =
   | "stale_knowledge_asset"
   | "missing_client_info"
   | "engine_unreachable"
-  | "incomplete_coverage";
+  | "incomplete_coverage"
+  | "missing_communication_log"
+  | "unprivileged_communication"
+  | "ethical_wall_violation";
 
 export type GapSeverity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -197,4 +227,52 @@ export interface BrainQualitySummary {
     fresh: boolean;
   }>;
   quality_issues: string[];
+}
+
+// ── Matter Understanding Panel ("Akte verstanden?") ───────────────────
+
+export interface MatterRiskItem {
+  id: string;
+  title: string;
+  severity: "critical" | "high" | "medium" | "low";
+  source: string;
+  recommendation?: string;
+}
+
+export interface RecentlyChangedSource {
+  source_id: string;
+  source_type: string;
+  last_sync_at: string | null;
+  change_type: "created" | "updated" | "synced" | "reviewed";
+  document_count: number;
+  fresh: boolean;
+}
+
+export interface MatterUnderstandingPanel {
+  case_slug: string;
+  case_title: string;
+  /** Overall understanding score 0..1 — how well the brain knows this case. */
+  understanding_score: number;
+  /** Human-readable summary of what the brain knows about this case. */
+  summary: string;
+  /** Key facts extracted from the case. */
+  facts: MatterFactEntry[];
+  /** Detected gaps — missing info, contradictions, risks. */
+  gaps: MatterGap[];
+  /** Risk items derived from case strategy, deadlines, and contradictions. */
+  risks: MatterRiskItem[];
+  /** Freshness status of the case knowledge. */
+  freshness: {
+    overall: "fresh" | "stale" | "unknown";
+    completeness_score: number;
+    stale_sources: number;
+    fresh_sources: number;
+    total_sources: number;
+    last_activity: string | null;
+  };
+  /** Sources recently changed — last syncs, uploads, reviews. */
+  recently_changed_sources: RecentlyChangedSource[];
+  /** Whether the engine was reachable for this assessment. */
+  engine_reachable: boolean;
+  generated_at: string;
 }

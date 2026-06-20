@@ -59,6 +59,9 @@ import {
   CheckSquare,
   History,
   Database,
+  Workflow,
+  Inbox,
+  FileClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -84,6 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/query", icon: MessageSquare, labelKey: "nav.query" },
       { href: "/dashboard/agents", icon: Sparkles, labelKey: "nav.agents" },
       { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+      { href: "/dashboard/workflows", icon: Workflow, labelKey: "nav.workflows" },
       { href: "/dashboard/brain", icon: BookOpen, labelKey: "nav.brain" },
       { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
       { href: "/dashboard/upload", icon: Upload, labelKey: "nav.upload" },
@@ -147,6 +151,8 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
       { href: "/dashboard/whatsapp", icon: MessageSquare, labelKey: "nav.whatsapp" },
+      { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
+      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
       { href: "/dashboard/import-kanzlei", icon: FileSpreadsheet, labelKey: "nav.import_kanzlei" },
       { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
       { href: "/dashboard/email-import", icon: Mail, labelKey: "nav.email_import" },
@@ -255,11 +261,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     setMobileOpen,
     pages,
     entities,
-    dreamCycle,
-    userName,
-    userEmail,
+  dreamCycle,
+  userName,
+  userEmail,
   },
-  ref
+  _ref
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL, engineHeadersForBrain, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
@@ -68,12 +68,20 @@ interface EnginePageInput {
   merge?: boolean;
 }
 
-async function engineRequest<T>(brainId: string, path: string, init?: RequestInit): Promise<T> {
+async function engineRequest<T>(
+  brainId: string,
+  path: string,
+  init?: RequestInit,
+  matterScope?: string[] | "all",
+): Promise<T> {
+  const headers = matterScope
+    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
+    : engineHeadersForBrain(brainId);
   const res = await fetch(`${ENGINE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...engineHeadersForBrain(brainId),
+      ...headers,
       ...(init?.headers ?? {}),
     },
   });
@@ -1277,12 +1285,19 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
   throw new Error(`unsupported action intent: ${String(front.intent)}`);
 }
 
-async function think(brainId: string, query: string): Promise<string> {
+async function think(
+  brainId: string,
+  query: string,
+  matterScope?: string[] | "all",
+): Promise<string> {
+  const headers = matterScope
+    ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
+    : engineHeadersForBrain(brainId);
   const res = await fetch(`${ENGINE_URL}/api/think`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...engineHeadersForBrain(brainId),
+      ...headers,
     },
     body: JSON.stringify({ query, mode: "conservative" }),
   });
@@ -1594,7 +1609,7 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       recentMessages.length > 0
         ? `[Kontext: Letzte Nachrichten von diesem Anwalt — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
         : "";
-    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.query}`);
+    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.query}`, ctx.sender.matterScope);
     return answer.slice(0, 3500);
   }
 
@@ -1637,7 +1652,7 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...engineHeadersForBrain(ctx.sender.brainId),
+          ...engineHeadersForBrainWithMatterScope(ctx.sender.brainId, ctx.sender.matterScope),
         },
         body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
       });
@@ -2141,7 +2156,7 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       recentMessages.length > 0
         ? `[Kontext: Letzte Nachrichten — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
         : "";
-    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.text}`);
+    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.text}`, ctx.sender.matterScope);
     return answer.slice(0, 3500);
   }
 

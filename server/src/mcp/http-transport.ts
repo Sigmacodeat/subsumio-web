@@ -224,12 +224,22 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
         .catch(() => { /* fire-and-forget */ });
       // v0.28: extract per-token takes-holder allow-list. Fail-safe default
       // is ['world'] — a token with no permissions row sees public claims only.
-      const perms = (row as { permissions?: { takes_holders?: unknown; source_id?: unknown } }).permissions;
+      const perms = (row as { permissions?: { takes_holders?: unknown; source_id?: unknown; matter_scope?: unknown } }).permissions;
       const allowList = Array.isArray(perms?.takes_holders)
         ? (perms!.takes_holders as unknown[]).filter(h => typeof h === 'string') as string[]
         : ['world'];
       // #1336: honor the operator-set source grant stored on the token.
       const { sourceId, allowedSources } = parseLegacyTokenScope(perms?.source_id);
+      // Subsumio P0-SECR-002: honor per-token matter scope. Stored as
+      // permissions.matter_scope: "all" or string[] of allowed case-slug prefixes.
+      // Undefined = no enforcement (legacy tokens, non-Subsumio deployments).
+      let matterScope: string[] | 'all' | undefined;
+      if (perms?.matter_scope === 'all') {
+        matterScope = 'all';
+      } else if (Array.isArray(perms?.matter_scope)) {
+        const scopes = (perms!.matter_scope as unknown[]).filter(s => typeof s === 'string' && s.length > 0) as string[];
+        matterScope = scopes.length > 0 ? scopes : undefined;
+      }
       const auth: AuthInfo = {
         token,
         clientId: rowId,
@@ -237,6 +247,7 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
         scopes: [],
         sourceId,
         ...(allowedSources ? { allowedSources } : {}),
+        ...(matterScope ? { matterScope } : {}),
       };
       return {
         ok: true,
@@ -404,6 +415,11 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
           // #1336: thread the token's federated_read grant so read ops scope
           // to the operator-granted sources via sourceScopeOpts.
           auth: auth.auth,
+          // Subsumio P0-SECR-002: thread verified matter scope from token
+          // permissions so operations can filter results via matterScopeFilter.
+          // This closes the MCP bypass — direct MCP calls now enforce
+          // matter scope the same way as web-api calls.
+          ...(auth.auth?.matterScope ? { matterScope: auth.auth.matterScope } : {}),
         });
         const status = result.isError ? 'error' : 'success';
         logRequest(auth.tokenName!, `tools/call:${toolName}`, status, Date.now() - startedMs);

@@ -167,23 +167,22 @@ export function scimListResponse<T>(
 
 // ── Bearer Token Authentication ───────────────────────────────────────
 
-const SCIM_TOKEN = process.env.SCIM_BEARER_TOKEN || "";
-
 /**
  * Validate the Authorization header for inbound SCIM requests.
  * SCIM requests use a bearer token, not session cookies.
  * Returns true if authorized, false otherwise.
  */
 export function validateScimAuth(req: Request): boolean {
-  if (!SCIM_TOKEN) return false;
+  const scimToken = process.env.SCIM_BEARER_TOKEN || "";
+  if (!scimToken) return false;
   const auth = req.headers.get("authorization") || "";
   if (!auth.startsWith("Bearer ")) return false;
   const token = auth.slice(7);
   // Timing-safe comparison
-  if (token.length !== SCIM_TOKEN.length) return false;
+  if (token.length !== scimToken.length) return false;
   let diff = 0;
   for (let i = 0; i < token.length; i++) {
-    diff |= token.charCodeAt(i) ^ SCIM_TOKEN.charCodeAt(i);
+    diff |= token.charCodeAt(i) ^ scimToken.charCodeAt(i);
   }
   return diff === 0;
 }
@@ -399,11 +398,9 @@ export function parseScimFilter(filter: string): (user: SCIMUser) => boolean {
 // ── WorkOS Directory Sync API Client ──────────────────────────────────
 
 const WORKOS_API_BASE = "https://api.workos.com";
-const WORKOS_API_KEY = process.env.WORKOS_API_KEY || "";
-const WORKOS_DIRECTORY_ID = process.env.WORKOS_DIRECTORY_ID || "";
 
 export function isWorkosDirectorySyncConfigured(): boolean {
-  return Boolean(WORKOS_API_KEY && WORKOS_DIRECTORY_ID);
+  return Boolean(process.env.WORKOS_API_KEY && process.env.WORKOS_DIRECTORY_ID);
 }
 
 export interface WorkOSDirectoryUser {
@@ -439,12 +436,12 @@ export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]>
   const perPage = 100;
 
   do {
-    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/users`);
+    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/users`);
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${WORKOS_API_KEY}` },
+      headers: { Authorization: `Bearer ${process.env.WORKOS_API_KEY}` },
     });
 
     if (!res.ok) {
@@ -478,12 +475,12 @@ export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[
   const perPage = 100;
 
   do {
-    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/groups`);
+    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/groups`);
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${WORKOS_API_KEY}` },
+      headers: { Authorization: `Bearer ${process.env.WORKOS_API_KEY}` },
     });
 
     if (!res.ok) {

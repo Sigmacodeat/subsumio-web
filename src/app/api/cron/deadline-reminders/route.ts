@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import nodemailer from "nodemailer";
-import { validateCronAuth } from "@/lib/cron-auth";
+import { createCronHandler } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 
@@ -41,10 +41,7 @@ async function updatePageDeadlines(brainId: string, slug: string, fm: Record<str
   }
 }
 
-export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
-  if (authError) return authError;
-
+export const GET = createCronHandler(async (_req: NextRequest) => {
   const settings = await loadKanzleiSettings();
   if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 400 });
@@ -118,4 +115,4 @@ ${upcoming.map((d) => `<li><strong>${String(d.title ?? "Frist")}</strong> — ${
   }
 
   return NextResponse.json({ ok: true, brains_checked: brainsChecked, sent: totalSent, errors: errors.length > 0 ? errors : undefined });
-}
+});

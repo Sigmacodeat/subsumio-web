@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
+import { createWebhookHandler } from "@/lib/api-handler";
 
 // In-memory fallback for dev mode (no Postgres)
 const processedEventIds = new Set<string>();
@@ -49,7 +50,7 @@ async function isDuplicateEvent(eventId: string, eventType: string): Promise<boo
   return false;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
     return NextResponse.json({ error: "webhook_not_configured" }, { status: 501 });
@@ -144,4 +145,4 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
-}
+});

@@ -1,18 +1,12 @@
-import { NextRequest } from "next/server";
 import { z } from "zod";
-import { ENGINE_URL, engineConfigurationResponse, requireEngineContext } from "@/lib/engine";
-import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
-import { apiError } from "@/lib/api-handler";
-import { env } from "@/lib/env";
-import { timingSafeCompare } from "@/lib/crypto-utils";
+import { ENGINE_URL } from "@/lib/engine";
+import { createHandler } from "@/lib/api-handler";
+import { apiError } from "@/lib/api-response";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { groundCitations } from "@/lib/legal-grounding";
 import type { RawCitation } from "@/lib/types";
 
 export const maxDuration = 120;
-
-// ── Internal service auth ─────────────────────────────────────────────
-const INTERNAL_SECRET = env("SUBSUMIO_INTERNAL_SECRET");
 
 // ── Zod validation ────────────────────────────────────────────────────
 const analyzeSchema = z
@@ -109,52 +103,17 @@ Antworte JETZT mit reinem JSON:
 
 // ── Route handler ─────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
-  // Determine auth: internal service call vs. authenticated user session
-  const internalSecret = req.headers.get("x-internal-secret");
-  const isInternal =
-    Boolean(INTERNAL_SECRET) &&
-    Boolean(internalSecret) &&
-    timingSafeCompare(internalSecret!, INTERNAL_SECRET!);
-
-  let engineHeaders: Record<string, string> = {};
-
-  if (!isInternal) {
-    // User session path: full auth + RBAC + rate limit + quota + CSRF
-    const ctx = await requireEngineContext(req, "legal.document_review", "heavy", "queries");
-    if (ctx instanceof Response) return ctx;
-
-    // CSRF check for user session path
-    const cookieValue = req.cookies.get(CSRF_COOKIE_NAME)?.value;
-    if (!validateCsrf(req, cookieValue)) {
-      return apiError("csrf_invalid", "CSRF token missing or invalid", 403);
-    }
-
-    engineHeaders = ctx.headers;
-  } else {
-    // Internal: build engine headers from environment
-    const apiKey = env("SUBSUMIO_WEB_API_KEY") || "";
-    engineHeaders = apiKey ? { "x-subsumio-api-key": apiKey } : {};
-  }
-
-  const configError = engineConfigurationResponse();
-  if (configError) return configError;
-
-  // Zod validation
-  let raw: unknown;
-  try {
-    raw = await req.json();
-  } catch {
-    return apiError("invalid_json", "Request body is not valid JSON", 400);
-  }
-
-  const result = analyzeSchema.safeParse(raw);
-  if (!result.success) {
-    return apiError("validation_failed", "Request body validation failed", 400, {
-      issues: result.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
-    });
-  }
-  const body = result.data;
+export const POST = createHandler(
+  {
+    action: "legal.document_review",
+    rateTier: "heavy",
+    quota: "queries",
+    body: analyzeSchema,
+    maxDuration: 120,
+  },
+  async (ctx, body, _query, req) => {
+    const isInternal = ctx.brainId === "internal";
+    let engineHeaders: Record<string, string> = ctx.headers;
 
   const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
   const jurisdiction =
@@ -263,5 +222,6 @@ export async function POST(req: NextRequest) {
     })();
   }
 
-  return Response.json(parsed);
-}
+    return Response.json(parsed);
+  },
+);

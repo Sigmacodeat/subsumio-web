@@ -52,6 +52,10 @@ import { apiError, apiRateLimited, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
 import { createCitationGateStream, groundJsonResponse, emptyGroundingMetadata } from "@/lib/citation-gate";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
+import { validateCronAuth } from "@/lib/cron-auth";
+import { timingSafeCompare } from "@/lib/crypto-utils";
+import { env } from "@/lib/env";
+import { verifyApiKey } from "@/lib/auth/api-key-auth";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -84,6 +88,8 @@ export interface HandlerOptions<
   skipCsrf?: boolean;
   /** Whether this is a public route (no auth required). */
   public?: boolean;
+  /** Whether to allow internal service calls via x-internal-secret header (skips auth/CSRF). */
+  allowInternal?: boolean;
   /** Whether to add CORS headers for cross-origin access (portal, webhooks). */
   cors?: boolean;
   /** Cache-Control max-age for GET responses (seconds). */
@@ -218,18 +224,65 @@ export function createHandler<
     const configError = engineConfigurationResponse();
     if (configError) return withCorsHeaders(configError, options.cors ?? false);
 
-    // 2. Auth + RBAC + Rate-limit + Quota
-    const ctx = await requireEngineContext(
-      req,
-      options.action,
-      options.rateTier ?? "standard",
-      options.quota
-    );
-    if (ctx instanceof Response) return withCorsHeaders(ctx, options.cors ?? false);
+    // 1b. Internal service bypass (x-internal-secret)
+    let internalContext: EngineContext | null = null;
+    if (options.allowInternal) {
+      const internalSecret = req.headers.get("x-internal-secret");
+      const expected = env("SUBSUMIO_INTERNAL_SECRET");
+      if (expected && internalSecret && timingSafeCompare(internalSecret, expected)) {
+        const apiKey = env("SUBSUMIO_WEB_API_KEY") || "";
+        internalContext = {
+          brainId: "internal",
+          plan: "enterprise",
+          user: {
+            id: "internal",
+            email: "internal@subsumio",
+            name: "Internal Service",
+            passwordHash: "",
+            role: "admin",
+            plan: "enterprise",
+            locale: "de",
+            referralCode: "",
+            referredBy: null,
+            brainId: "internal",
+            stripeCustomerId: null,
+          } as EngineContext["user"],
+          headers: apiKey ? { "x-subsumio-api-key": apiKey } : {},
+        };
+      }
+    }
 
-    // 3. CSRF (state-changing methods only)
-    const csrfError = checkCsrf(req, options.skipCsrf ?? false);
-    if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false);
+    // 2. Auth + RBAC + Rate-limit + Quota (skip if internal)
+    let ctx: EngineContext;
+    let isApiKeyAuth = false;
+    if (internalContext) {
+      ctx = internalContext;
+    } else {
+      const authCtx = await requireEngineContext(
+        req,
+        options.action,
+        options.rateTier ?? "standard",
+        options.quota
+      );
+      if (authCtx instanceof Response) {
+        // Session auth failed — try API key auth (Bearer token)
+        const apiKeyResult = await verifyApiKey(req.headers.get("authorization"));
+        if (apiKeyResult) {
+          ctx = apiKeyResult.ctx;
+          isApiKeyAuth = true;
+        } else {
+          return withCorsHeaders(authCtx, options.cors ?? false);
+        }
+      } else {
+        ctx = authCtx;
+      }
+    }
+
+    // 3. CSRF (state-changing methods only, skip for internal and API key auth)
+    if (!internalContext && !isApiKeyAuth) {
+      const csrfError = checkCsrf(req, options.skipCsrf ?? false);
+      if (csrfError) return withCorsHeaders(csrfError, options.cors ?? false);
+    }
 
     // 4. Input validation
     let body: ValidatedBody<B> = undefined as ValidatedBody<B>;
@@ -417,6 +470,54 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     }
 
     return withCorsHeaders(response, options.cors ?? false);
+  };
+}
+
+// ── Cron handler ─────────────────────────────────────────────────────
+
+/**
+ * Create a cron route handler with cron-auth guard.
+ *
+ * All cron endpoints must use this instead of calling validateCronAuth
+ * manually. Wraps the handler with auth, error handling, and CORS.
+ *
+ * ```ts
+ * export const GET = createCronHandler(async (req) => {
+ *   // ... cron logic ...
+ *   return Response.json({ ok: true });
+ * });
+ * ```
+ */
+export function createCronHandler(
+  handler: (req: NextRequest) => Promise<Response>,
+  options?: { maxDuration?: number }
+): (req: NextRequest) => Promise<Response> {
+  return async (req: NextRequest) => {
+    // CORS preflight
+    const corsResponse = handleCors(req, false);
+    if (corsResponse) return corsResponse;
+
+    // Cron auth
+    const authError = validateCronAuth(req);
+    if (authError) return authError;
+
+    // Handler
+    let response: Response;
+    try {
+      response = await handler(req);
+    } catch (err) {
+      if (isAppError(err)) {
+        response = apiError(err.code, err.message, err.statusCode, err.details);
+      } else {
+        console.error(
+          "[api-handler] uncaught error in cron handler:",
+          err instanceof Error ? err.message : String(err)
+        );
+        response = apiError("internal_error", "Cron job failed", 500);
+      }
+    }
+
+    return response;
   };
 }
 

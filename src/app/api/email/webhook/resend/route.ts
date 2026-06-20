@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { storeInboundResendEmail, verifyResendWebhook } from "@/lib/email/mailbox";
+import { createWebhookHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const payload = await req.text();
 
   try {
@@ -19,4 +20,4 @@ export async function POST(req: NextRequest) {
     console.error("[email] failed to process Resend webhook:", message);
     return NextResponse.json({ ok: false, error: message }, { status });
   }
-}
+});

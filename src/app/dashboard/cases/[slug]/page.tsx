@@ -53,7 +53,7 @@ import { cn } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter, type EvidenceEntry, type StrategyInfo, type TaskEntry, type TimeEntry, type TimelineEntry, type DocumentEntry, type DeadlineEntry, type ExpenseEntry, type AuditLogEntry } from "@/lib/legal-types";
 import { DEADLINE_RULES, calculateDeadline, computeDeadlineStatus, timelineToDeadline, withDeadlineAudit } from "@/lib/legal-deadlines";
-import { canTransition, validateTransition, getAllowedTransitions, transitionDescription, STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
+import { validateTransition, getAllowedTransitions, transitionDescription, STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
 import {
   deadlineFormSchema,
   evidenceFormSchema,
@@ -747,6 +747,76 @@ export default function CaseDetailPage() {
                   </>
                 )}
 	            </div>
+
+            {/* Status Change Dialog */}
+            {showStatusDialog && (
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Aktenstatus ändern</h3>
+                  <button onClick={() => { setShowStatusDialog(false); setStatusError(null); setPendingStatus(null); }} className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] text-xs">Abbrechen</button>
+                </div>
+                <p className="text-xs text-[color:var(--ds-text-muted)]">
+                  Aktueller Status: <span className="font-semibold">{STATUS_LABELS_DE[caseData.status as CaseStatus] ?? caseData.status}</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {getAllowedTransitions(caseData.status as CaseStatus).map((target) => {
+                    const cfg = STATUS_CONFIG[target];
+                    const Icon = cfg?.icon ?? ChevronRight;
+                    return (
+                      <button
+                        key={target}
+                        onClick={() => {
+                          const result = validateTransition(caseData.status as CaseStatus, target);
+                          if (result.allowed) {
+                            setPendingStatus(target);
+                            setStatusError(null);
+                          } else {
+                            setStatusError(result.reason || "Übergang nicht erlaubt");
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                          pendingStatus === target
+                            ? "brand-bg text-white border-transparent"
+                            : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] hover:border-[color:var(--brand-primary)]",
+                        )}
+                      >
+                        <Icon size={12} />
+                        {cfg?.label ?? STATUS_LABELS_DE[target] ?? target}
+                      </button>
+                    );
+                  })}
+                </div>
+                {statusError && (
+                  <p className="text-xs text-red-600 flex items-center gap-1.5">
+                    <AlertTriangle size={12} />
+                    {statusError}
+                  </p>
+                )}
+                {pendingStatus && (
+                  <div className="flex items-center justify-between pt-2 border-t border-[color:var(--ds-border)]">
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {transitionDescription(caseData.status as CaseStatus, pendingStatus)}
+                    </p>
+                    <Button
+                      variant="primary"
+                      className="brand-bg text-white text-xs gap-1.5"
+                      onClick={() => {
+                        const updated = { ...caseData, status: pendingStatus };
+                        setCaseData(updated);
+                        saveCaseUpdate(updated);
+                        setShowStatusDialog(false);
+                        setPendingStatus(null);
+                        setStatusError(null);
+                      }}
+                    >
+                      <Check size={12} />
+                      Bestätigen
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
                 {/* Portal link display */}
                 {portalUrl && (userRole === "admin" || userRole === "lawyer") && (

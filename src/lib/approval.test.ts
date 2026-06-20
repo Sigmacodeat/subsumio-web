@@ -4,22 +4,33 @@ import { describe, test, expect } from "vitest";
 import {
   ActionType,
   ApprovalStatus,
-  AgentActionFrontmatter,
   REQUIRES_APPROVAL,
   requiresApproval,
   ACTION_LABELS,
   agentActionFrontmatter,
 } from "./approval";
 
+const ALL_ACTION_TYPES: ActionType[] = [
+  "document_finalize",
+  "deadline_create",
+  "booking_create",
+  "message_send",
+  "case_create",
+  "case_close",
+  "invoice_create",
+  "client_message_send",
+  "document_request_send",
+  "deadline_confirm",
+];
+
 // ── REQUIRES_APPROVAL ───────────────────────────────────────────────────
 
 describe("REQUIRES_APPROVAL", () => {
-  test("contains all 4 action types", () => {
-    expect(REQUIRES_APPROVAL.size).toBe(4);
-    expect(REQUIRES_APPROVAL.has("document_finalize")).toBe(true);
-    expect(REQUIRES_APPROVAL.has("deadline_create")).toBe(true);
-    expect(REQUIRES_APPROVAL.has("booking_create")).toBe(true);
-    expect(REQUIRES_APPROVAL.has("message_send")).toBe(true);
+  test("contains all action types", () => {
+    expect(REQUIRES_APPROVAL.size).toBe(ALL_ACTION_TYPES.length);
+    for (const t of ALL_ACTION_TYPES) {
+      expect(REQUIRES_APPROVAL.has(t)).toBe(true);
+    }
   });
 
   test("is a ReadonlySet", () => {
@@ -47,8 +58,7 @@ describe("requiresApproval", () => {
   });
 
   test("returns true for ALL defined ActionTypes (all require approval)", () => {
-    const allTypes: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const t of allTypes) {
+    for (const t of ALL_ACTION_TYPES) {
       expect(requiresApproval(t)).toBe(true);
     }
   });
@@ -58,8 +68,7 @@ describe("requiresApproval", () => {
 
 describe("ACTION_LABELS", () => {
   test("has a label for every ActionType", () => {
-    const allTypes: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const t of allTypes) {
+    for (const t of ALL_ACTION_TYPES) {
       expect(ACTION_LABELS[t]).toBeDefined();
       expect(typeof ACTION_LABELS[t]).toBe("string");
       expect(ACTION_LABELS[t].length).toBeGreaterThan(0);
@@ -83,7 +92,7 @@ describe("ACTION_LABELS", () => {
   });
 
   test("number of labels matches number of ActionTypes", () => {
-    expect(Object.keys(ACTION_LABELS)).toHaveLength(4);
+    expect(Object.keys(ACTION_LABELS)).toHaveLength(ALL_ACTION_TYPES.length);
   });
 });
 
@@ -197,9 +206,8 @@ describe("agentActionFrontmatter", () => {
     expect(fm.status).toBe("approved");
   });
 
-  test("works with all 4 action types", () => {
-    const types: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const action_type of types) {
+  test("works with all action types", () => {
+    for (const action_type of ALL_ACTION_TYPES) {
       const fm = agentActionFrontmatter({
         action_type,
         proposed_by: "test-agent",
@@ -274,22 +282,19 @@ describe("Type invariants", () => {
   });
 
   test("every ActionType has a matching label", () => {
-    const allTypes: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const t of allTypes) {
+    for (const t of ALL_ACTION_TYPES) {
       expect(ACTION_LABELS[t]).toBeTruthy();
     }
   });
 
   test("every ActionType requires approval (human oversight is mandatory)", () => {
-    const allTypes: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const t of allTypes) {
+    for (const t of ALL_ACTION_TYPES) {
       expect(requiresApproval(t)).toBe(true);
     }
   });
 
   test("agentActionFrontmatter always creates status=pending (never approved/rejected)", () => {
-    const types: ActionType[] = ["document_finalize", "deadline_create", "booking_create", "message_send"];
-    for (const action_type of types) {
+    for (const action_type of ALL_ACTION_TYPES) {
       const fm = agentActionFrontmatter({
         action_type,
         proposed_by: "test",

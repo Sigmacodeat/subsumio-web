@@ -21,24 +21,34 @@ import {
   type SCIMUser,
   type WorkOSDirectoryUser,
 } from "./scim";
-import type { User } from "@/lib/auth/store";
+// Minimal mock user type matching the fields used by userToScim
+interface MockUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  brainId: string;
+  createdAt: string;
+  updatedAt: string;
+  deactivatedAt: string | null;
+  scimExternalId: string | null;
+  ssoProvider: string | null;
+}
 
-function makeUser(overrides: Partial<User> = {}): User {
+function makeUser(overrides: Partial<MockUser> = {}): MockUser {
   return {
     id: "user-123",
     email: "max@example.com",
     name: "Max Mustermann",
     role: "lawyer",
     brainId: "brain-123",
-    passwordHash: "hash",
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
-    emailVerifiedAt: "2024-01-01T00:00:00Z",
     deactivatedAt: null,
     scimExternalId: null,
     ssoProvider: null,
     ...overrides,
-  } as User;
+  };
 }
 
 describe("SCIM Constants", () => {
@@ -131,61 +141,59 @@ describe("validateScimAuth", () => {
 
   afterEach(() => {
     process.env = { ...origEnv };
-    vi.resetModules();
   });
 
-  test("returns false when SCIM_BEARER_TOKEN is not set", () => {
-    delete process.env.SCIM_BEARER_TOKEN;
+  async function freshImport() {
     vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    return await import("./scim");
+  }
+
+  test("returns false when SCIM_BEARER_TOKEN is not set", async () => {
+    delete process.env.SCIM_BEARER_TOKEN;
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer some-token" },
     });
     expect(fresh(req)).toBe(false);
   });
 
-  test("returns false when Authorization header is missing", () => {
+  test("returns false when Authorization header is missing", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users");
     expect(fresh(req)).toBe(false);
   });
 
-  test("returns false when Authorization header is not Bearer", () => {
+  test("returns false when Authorization header is not Bearer", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Basic abc123" },
     });
     expect(fresh(req)).toBe(false);
   });
 
-  test("returns true for valid bearer token", () => {
+  test("returns true for valid bearer token", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer valid-token" },
     });
     expect(fresh(req)).toBe(true);
   });
 
-  test("returns false for wrong token", () => {
+  test("returns false for wrong token", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer wrong-token" },
     });
     expect(fresh(req)).toBe(false);
   });
 
-  test("returns false for token of different length", () => {
+  test("returns false for token of different length", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { validateScimAuth: fresh } = require("./scim");
+    const { validateScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer valid-token-extra" },
     });
@@ -194,22 +202,29 @@ describe("validateScimAuth", () => {
 });
 
 describe("requireScimAuth", () => {
-  afterEach(() => vi.resetModules());
+  const origEnv = { ...process.env };
 
-  test("returns null when authorized", () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
+  afterEach(() => {
+    process.env = { ...origEnv };
+  });
+
+  async function freshImport() {
     vi.resetModules();
-    const { requireScimAuth: fresh } = require("./scim");
+    return await import("./scim");
+  }
+
+  test("returns null when authorized", async () => {
+    process.env.SCIM_BEARER_TOKEN = "valid-token";
+    const { requireScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer valid-token" },
     });
     expect(fresh(req)).toBeNull();
   });
 
-  test("returns 401 Response when not authorized", () => {
+  test("returns 401 Response when not authorized", async () => {
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    vi.resetModules();
-    const { requireScimAuth: fresh } = require("./scim");
+    const { requireScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users");
     const result = fresh(req);
     expect(result).toBeInstanceOf(Response);
@@ -241,7 +256,7 @@ describe("userToScim", () => {
     const user = makeUser({ name: "Max" });
     const scim = userToScim(user, "https://app.example.com");
     expect(scim.name?.givenName).toBe("Max");
-    expect(scim.name?.familyName).toBe("");
+    expect(scim.name?.familyName).toBeUndefined();
   });
 
   test("handles multi-word name", () => {
@@ -477,30 +492,31 @@ describe("isWorkosDirectorySyncConfigured", () => {
 
   afterEach(() => {
     process.env = { ...origEnv };
-    vi.resetModules();
   });
 
-  test("returns false when no env vars set", () => {
+  async function freshImport() {
+    vi.resetModules();
+    return await import("./scim");
+  }
+
+  test("returns false when no env vars set", async () => {
     delete process.env.WORKOS_API_KEY;
     delete process.env.WORKOS_DIRECTORY_ID;
-    vi.resetModules();
-    const { isWorkosDirectorySyncConfigured: fresh } = require("./scim");
+    const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
     expect(fresh()).toBe(false);
   });
 
-  test("returns true when both env vars are set", () => {
+  test("returns true when both env vars are set", async () => {
     process.env.WORKOS_API_KEY = "key";
     process.env.WORKOS_DIRECTORY_ID = "dir-123";
-    vi.resetModules();
-    const { isWorkosDirectorySyncConfigured: fresh } = require("./scim");
+    const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
     expect(fresh()).toBe(true);
   });
 
-  test("returns false when only API key is set", () => {
+  test("returns false when only API key is set", async () => {
     process.env.WORKOS_API_KEY = "key";
     delete process.env.WORKOS_DIRECTORY_ID;
-    vi.resetModules();
-    const { isWorkosDirectorySyncConfigured: fresh } = require("./scim");
+    const { isWorkosDirectorySyncConfigured: fresh } = await freshImport();
     expect(fresh()).toBe(false);
   });
 });

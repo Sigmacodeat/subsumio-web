@@ -80,6 +80,17 @@ export interface DispatchOpts {
    * Ignored when `auth` is provided (OAuth clients carry their own grant).
    */
   allowedSources?: string[];
+  /**
+   * Subsumio P0-SECR-002: Verified matter scope for this caller.
+   * Set by the web-api after verifying a signed identity token.
+   * Threading through to OperationContext.matterScope so operations
+   * can filter results via matterScopeFilter().
+   *
+   * "all" = no per-matter restriction (trusted admin).
+   * string[] = only pages whose slug starts with one of these prefixes.
+   * undefined = no enforcement (legacy callers, CLI, tests).
+   */
+  matterScope?: string[] | 'all';
 }
 
 /**
@@ -227,6 +238,10 @@ export function buildOperationContext(
       ?? (opts.allowedSources && opts.allowedSources.length > 0
         ? { token: '', clientId: 'local', scopes: [], allowedSources: opts.allowedSources }
         : undefined),
+    // Subsumio P0-SECR-002: Thread verified matter scope into the context.
+    // Source precedence: explicit opts.matterScope > opts.auth.matterScope
+    // (OAuth token permissions). Undefined = no enforcement (legacy/CLI).
+    matterScope: opts.matterScope ?? opts.auth?.matterScope,
   };
 }
 

@@ -25,6 +25,7 @@ export const D = {
   "nav.query": { de: "Query", en: "Query" },
   "nav.agents": { de: "Agenten", en: "Agents" },
   "nav.approvals": { de: "Freigaben", en: "Approvals" },
+  "nav.workflows": { de: "Workflows", en: "Workflows" },
   "nav.brain": { de: "Brain", en: "Brain" },
   "nav.graph": { de: "Graph", en: "Graph" },
   "nav.upload": { de: "Upload", en: "Upload" },
@@ -67,6 +68,8 @@ export const D = {
   // ── Sidebar: nav items (data & integration) ──
   "nav.connectors": { de: "Konnektoren", en: "Connectors" },
   "nav.whatsapp": { de: "WhatsApp", en: "WhatsApp" },
+  "nav.intake": { de: "Intake", en: "Intake" },
+  "nav.document_requests": { de: "Dokumentenanfragen", en: "Document Requests" },
   "nav.import_kanzlei": { de: "Kanzlei-Import", en: "Firm Import" },
   "nav.bea": { de: "beA", en: "beA" },
   "nav.email_import": { de: "E-Mail-Import", en: "Email Import" },

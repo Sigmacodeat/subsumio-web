@@ -75,7 +75,8 @@ export type AuditAction =
   | "whatsapp.consent_revoked"
   | "whatsapp.outbound_sent"
   | "whatsapp.outbound_blocked"
-  | "whatsapp.briefing_feedback";
+  | "whatsapp.briefing_feedback"
+  | "feedback.submit";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -132,6 +133,7 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.outbound_sent": "WhatsApp proaktiv gesendet",
   "whatsapp.outbound_blocked": "WhatsApp-Versand geblockt",
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
+  "feedback.submit": "Retrieval-Feedback",
 };
 
 export function auditLabel(action: string): string {

@@ -3,7 +3,7 @@ export interface WhatsAppSenderBinding {
   brainId: string;
   userId?: string;
   name?: string;
-  role?: "admin" | "lawyer" | "assistant";
+  role?: "admin" | "lawyer" | "assistant" | "client" | "external" | "intake";
 }
 
 /**

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateCronAuth } from "@/lib/cron-auth";
+import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, createDailyDedup } from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
 import { buildDailyBriefing, type BriefingCase } from "@/lib/whatsapp/daily-briefing";
@@ -36,10 +36,7 @@ function quietHoursFromEnv(now: Date): QuietHours | undefined {
   };
 }
 
-export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
-  if (authError) return authError;
-
+export const GET = createCronHandler(async (_req: NextRequest) => {
   const now = new Date();
   const senders = loadAllowedSenders().filter((s) => s.role !== "assistant");
   const briefingTemplate = process.env.WHATSAPP_BRIEFING_TEMPLATE;
@@ -99,4 +96,4 @@ export async function GET(req: NextRequest) {
     empty,
     errors: errors.length > 0 ? errors : undefined,
   });
-}
+});

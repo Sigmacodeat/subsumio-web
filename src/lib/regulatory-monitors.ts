@@ -212,8 +212,8 @@ export function inferSeverity(hit: {
   snippet?: string;
 }): Severity {
   const text = `${hit.legalArea ?? ""} ${hit.keywords?.join(" ") ?? ""} ${hit.snippet ?? ""}`.toLowerCase();
-  if (/(grundgesetz|verfassung|bverfg|euGH|eu-?verordnung|dsgvo|gdpr)/.test(text)) return "high";
-  if (/(bgh|bfh|bverwg|bsg|bag|olg|ovg|sg|lag)/.test(text)) return "medium";
+  if (/(grundgesetz|verfassung|bverfg|eugh|eu-?verordnung|dsgvo|gdpr)/.test(text)) return "high";
+  if (/(bgh|bfh|bverwg|bsg|bag|olg|ovg|\bsg\b|lag)/.test(text)) return "medium";
   return "low";
 }
 

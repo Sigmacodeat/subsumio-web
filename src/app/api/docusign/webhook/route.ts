@@ -5,6 +5,7 @@ import {
   markWebhookProcessed,
   verifyDocusignConnectSignature,
 } from "@/lib/docusign";
+import { createWebhookHandler } from "@/lib/api-handler";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
  *   - envelope-declined → Update zu "declined"
  *   - envelope-voided   → Update zu "expired"
  */
-export async function POST(req: NextRequest) {
+export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const rawBody = await req.clone().text();
   const body = (await req.json()) as {
     event?: string;
@@ -124,4 +125,4 @@ export async function POST(req: NextRequest) {
   if (eventId) await markWebhookProcessed(eventId, envelopeId, body.event);
 
   return Response.json({ ok: true, envelopeId, mapped, updated });
-}
+});

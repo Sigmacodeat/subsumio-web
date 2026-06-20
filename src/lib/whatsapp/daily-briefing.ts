@@ -7,8 +7,8 @@
  * days). Kept I/O-free so it is fully unit-testable; the cron does the fetching
  * and the gated send.
  *
- * Full Superbrain grounding (facts, gaps, freshness per Paket 31) layers on later;
- * this first version surfaces upcoming deadlines from the existing case pages.
+ * v2: Extended with pending approvals, new documents, and conflict alerts
+ * (P1-SECR-004 completion).
  */
 
 export interface BriefingDeadline {
@@ -17,6 +17,29 @@ export interface BriefingDeadline {
   date?: string;
   reminder_sent_at?: string;
   done?: boolean;
+}
+
+export interface BriefingApproval {
+  id: string;
+  action_type: string;
+  summary: string;
+  case_slug?: string;
+  proposed_at: string;
+}
+
+export interface BriefingDocument {
+  id: string;
+  title: string;
+  case_slug?: string;
+  created_at: string;
+}
+
+export interface BriefingConflict {
+  id: string;
+  description: string;
+  severity: "low" | "medium" | "high";
+  case_slug?: string;
+  detected_at: string;
 }
 
 export interface BriefingCase {
@@ -31,6 +54,12 @@ export interface BuildBriefingInput {
   now: Date;
   /** How many days ahead to include. Default 3. */
   horizonDays?: number;
+  /** Pending approvals awaiting the lawyer's decision. */
+  pendingApprovals?: BriefingApproval[];
+  /** New documents uploaded since last briefing. */
+  newDocuments?: BriefingDocument[];
+  /** Active conflict alerts. */
+  conflicts?: BriefingConflict[];
 }
 
 interface CollectedDeadline {
@@ -70,25 +99,61 @@ export function collectUpcomingDeadlines(input: BuildBriefingInput): CollectedDe
  */
 export function buildDailyBriefing(input: BuildBriefingInput): string | null {
   const deadlines = collectUpcomingDeadlines(input);
-  if (deadlines.length === 0) return null;
+  const approvals = input.pendingApprovals ?? [];
+  const documents = input.newDocuments ?? [];
+  const conflicts = input.conflicts ?? [];
+
+  if (deadlines.length === 0 && approvals.length === 0 && documents.length === 0 && conflicts.length === 0) {
+    return null;
+  }
 
   const today = ymd(input.now);
   const greeting = `Guten Morgen${input.anwaltName ? `, ${input.anwaltName}` : ""}! ☀️`;
   const dueToday = deadlines.filter((d) => d.dueDate === today);
-  const lines: string[] = [
-    greeting,
-    "",
-    `📋 ${deadlines.length} Frist${deadlines.length === 1 ? "" : "en"} in den nächsten Tagen${
-      dueToday.length > 0 ? ` (${dueToday.length} heute fällig)` : ""
-    }:`,
-  ];
+  const lines: string[] = [greeting, ""];
 
-  for (const d of deadlines) {
-    const flag = d.dueDate === today ? "🔴" : "•";
-    lines.push(`${flag} ${d.dueDate} — ${d.title} (Akte ${d.caseNumber})`);
+  // Deadlines section
+  if (deadlines.length > 0) {
+    lines.push(
+      `📋 ${deadlines.length} Frist${deadlines.length === 1 ? "" : "en"} in den nächsten Tagen${
+        dueToday.length > 0 ? ` (${dueToday.length} heute fällig)` : ""
+      }:`,
+    );
+    for (const d of deadlines) {
+      const flag = d.dueDate === today ? "🔴" : "•";
+      lines.push(`${flag} ${d.dueDate} — ${d.title} (Akte ${d.caseNumber})`);
+    }
+    lines.push("");
   }
 
-  lines.push("");
+  // Pending approvals section
+  if (approvals.length > 0) {
+    lines.push(`⚖️ ${approvals.length} Freigabe${approvals.length === 1 ? "" : "n"} wartet:`);
+    for (const a of approvals) {
+      lines.push(`• ${a.summary}${a.case_slug ? ` (Akte ${a.case_slug})` : ""}`);
+    }
+    lines.push("");
+  }
+
+  // New documents section
+  if (documents.length > 0) {
+    lines.push(`📄 ${documents.length} neue${documents.length === 1 ? "s Dokument" : " Dokumente"}:`);
+    for (const doc of documents) {
+      lines.push(`• ${doc.title}${doc.case_slug ? ` (Akte ${doc.case_slug})` : ""}`);
+    }
+    lines.push("");
+  }
+
+  // Conflict alerts section
+  if (conflicts.length > 0) {
+    lines.push(`⚠️ ${conflicts.length} Konflikt-Alarm${conflicts.length === 1 ? "" : "e"}:`);
+    for (const c of conflicts) {
+      const icon = c.severity === "high" ? "🔴" : c.severity === "medium" ? "🟡" : "🟢";
+      lines.push(`${icon} ${c.description}${c.case_slug ? ` (Akte ${c.case_slug})` : ""}`);
+    }
+    lines.push("");
+  }
+
   lines.push('Antworten Sie mit "heute" für die volle Tagesübersicht.');
   return lines.join("\n");
 }

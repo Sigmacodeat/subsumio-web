@@ -14,6 +14,8 @@ interface CaseSuggestion {
 
 const API_BASE = "https://subsum.eu";
 let token = "";
+let tokenName = "";
+let connected = false;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
 
@@ -34,7 +36,12 @@ function hideStatus() {
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
   token = input.value.trim();
-  if (!token) { showStatus("Bitte API-Token eingeben.", "err"); return; }
+  if (!token) { showStatus("Bitte API-Key eingeben (sk_live_...).", "err"); return; }
+
+  if (!token.startsWith("sk_live_")) {
+    showStatus("API-Key muss mit 'sk_live_' beginnen.", "err");
+    return;
+  }
 
   const btn = document.getElementById("connectBtn") as HTMLButtonElement;
   btn.disabled = true;
@@ -46,13 +53,36 @@ async function connect() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showStatus("Verbunden.", "ok");
+    connected = true;
+    localStorage.setItem("subsumio_api_key", token);
     document.getElementById("mainSection")!.style.display = "block";
+    document.getElementById("authSection")!.style.display = "none";
+    document.getElementById("connectedSection")!.style.display = "flex";
     loadCurrentMail();
   } catch (e) {
     showStatus(e instanceof Error ? e.message : "Verbindung fehlgeschlagen.", "err");
   } finally {
     btn.disabled = false;
     btn.innerHTML = "Verbinden";
+  }
+}
+
+function disconnect() {
+  token = "";
+  connected = false;
+  localStorage.removeItem("subsumio_api_key");
+  document.getElementById("mainSection")!.style.display = "none";
+  document.getElementById("authSection")!.style.display = "block";
+  document.getElementById("connectedSection")!.style.display = "none";
+  (document.getElementById("token") as HTMLInputElement).value = "";
+  showStatus("Getrennt.", "info");
+}
+
+function tryRestoreSession() {
+  const saved = localStorage.getItem("subsumio_api_key");
+  if (saved && saved.startsWith("sk_live_")) {
+    (document.getElementById("token") as HTMLInputElement).value = saved;
+    connect();
   }
 }
 
@@ -257,11 +287,12 @@ function escapeHtml(text: string): string {
 
 // Office initialization
 Office.onReady(() => {
-  // Ready — UI is already rendered
+  tryRestoreSession();
 });
 
 // Expose to global scope for inline onclick handlers
 (window as unknown as Record<string, unknown>).connect = connect;
+(window as unknown as Record<string, unknown>).disconnect = disconnect;
 (window as unknown as Record<string, unknown>).importMail = importMail;
 (window as unknown as Record<string, unknown>).runQuery = runQuery;
 (window as unknown as Record<string, unknown>).switchTab = switchTab;

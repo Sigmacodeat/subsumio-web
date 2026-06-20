@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { sendMail } from "@/lib/mail";
 import { searchJudgements, type JudgementHit } from "@/lib/judgements";
-import { validateCronAuth } from "@/lib/cron-auth";
+import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 
@@ -102,10 +102,7 @@ function renderDigest(hitsByTerm: { term: string; hits: JudgementHit[] }[], appU
   return { subject: `⚖️ ${total} neue Entscheidung(en) zu Ihren Themen`, text: parts.join("\n") };
 }
 
-export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
-  if (authError) return authError;
-
+export const GET = createCronHandler(async (req: NextRequest) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
   const from = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
@@ -147,4 +144,4 @@ export async function GET(req: NextRequest) {
   }
 
   return Response.json({ ok: true, brains_checked: brainsChecked, brains_with_hits: brainsWithHits, mails_sent: mailsSent });
-}
+});

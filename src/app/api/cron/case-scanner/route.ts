@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
-import { validateCronAuth } from "@/lib/cron-auth";
+import { createCronHandler } from "@/lib/api-handler";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 
 export const dynamic = "force-dynamic";
@@ -45,10 +45,7 @@ async function triggerCaseScanner(brainId: string): Promise<{ ok: boolean; job_i
   }
 }
 
-export async function GET(req: NextRequest) {
-  const authError = validateCronAuth(req);
-  if (authError) return authError;
-
+export const GET = createCronHandler(async (_req: NextRequest) => {
   // Brain → Org-Mapping (shared helper)
   const recipientsByBrain = await getRecipientsByBrain();
   const brainIds = new Set(recipientsByBrain.keys());
@@ -74,4 +71,4 @@ export async function GET(req: NextRequest) {
     jobs_queued: jobsQueued,
     failures,
   });
-}
+});

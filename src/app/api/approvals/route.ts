@@ -7,7 +7,9 @@ import {
   type ActionType,
   type ApprovalStatus,
 } from "@/lib/approval";
+import { executeApprovedAction } from "@/lib/approval-execution";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { sendWhatsAppText } from "@/lib/whatsapp/send";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +19,31 @@ const approvalsQuerySchema = z.object({
 });
 
 const approvalsPostSchema = z.object({
-  action_type: z.enum(["document_finalize", "deadline_create", "booking_create", "message_send"]),
+  action_type: z.enum([
+    "document_finalize",
+    "deadline_create",
+    "booking_create",
+    "message_send",
+    "case_create",
+    "case_close",
+    "invoice_create",
+    "client_message_send",
+    "document_request_send",
+    "deadline_confirm",
+  ]),
   summary: z.string().min(1, "summary_required").max(500),
   target_slug: z.string().optional(),
+  source_event_slug: z.string().optional(),
+  workflow_run_slug: z.string().optional(),
+  payload: z.record(z.unknown()).optional(),
 });
 
 const approvalsPatchSchema = z.object({
   id: z.string().min(1, "id_required"),
   decision: z.enum(["approved", "rejected"]),
   reject_reason: z.string().max(500).optional(),
+  execute: z.boolean().optional(),
+  force: z.boolean().optional(),
 });
 
 export const GET = createHandler(
@@ -92,6 +110,9 @@ export const POST = createHandler(
         proposed_by: ctx.user.email,
         summary: body.summary,
         target_slug: body.target_slug,
+        source_event_slug: body.source_event_slug,
+        workflow_run_slug: body.workflow_run_slug,
+        payload: body.payload,
         at: now,
       }),
     });
@@ -125,6 +146,29 @@ export const PATCH = createHandler(
           : {}),
       },
     });
+
+    if (body.decision === "approved" && body.execute === true) {
+      try {
+        const result = await executeApprovedAction({
+          getPage: api.brain.getPage,
+          createPage: api.brain.createPage,
+          updatePage: api.brain.updatePage,
+          sendWhatsAppText,
+        }, {
+          actionSlug: body.id,
+          executedBy: ctx.user.email,
+          force: body.force === true,
+        });
+        return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now, execution: result });
+      } catch (err) {
+        console.error("[approvals] execute after decision failed:", err instanceof Error ? err.message : String(err));
+        return apiError(
+          "approval_execution_failed",
+          err instanceof Error ? err.message : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
+          400
+        );
+      }
+    }
 
     return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
   },

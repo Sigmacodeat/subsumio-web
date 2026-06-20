@@ -1,5 +1,38 @@
 # TODOS
 
+> **Status-Update: 2026-06-20** — Code-Audit durchgeführt.
+>
+> **Gesamtstatistik:** 4.381 Zeilen | 75 Sektionen | 291 offene Items | 8 als `[x]` markiert | ~115 inline "Completed/DONE" Erwähnungen
+>
+> **Verifizierte Implementierungen (Code vorhanden, aber noch nicht als `[x]` markiert):**
+> - `requiredScope` per-op dispatch gate (T13a) — `src/core/scope.ts` + `serve-http.ts`
+> - `mcp_request_log` real operation names (T13b) — `serve-http.ts` + `http-transport.ts`
+> - `FORCE_EVICT_DEADLINE_MS` phase-duration attribution — `src/core/cycle.ts`
+> - `abort-check.ts` cooperative-abort infrastructure (`throwIfAborted`/`isAborted`/`anySignal`)
+> - `by-mention` extraction — `src/commands/extract.ts` (24 references)
+> - `self-fix.ts` self-fix infrastructure — `src/core/minions/self-fix.ts` (35 references)
+> - `self-upgrade` binary self-update — `src/core/self-upgrade.ts` + `commands/upgrade.ts` (97 references)
+> - `destructive-guard` — `src/core/destructive-guard.ts` (28 references)
+> - `isOwnedClone` + `managed_clone` marker — `src/core/sources-ops.ts`
+> - `canonicalLookup` pricing unification — `src/core/model-pricing.ts`
+>
+> **Verifiziert NICHT implementiert (TODO bleibt offen):**
+> - `findBacklinkGaps` async refactor — noch immer synchron in `backlinks.ts:71`
+> - Doctor misconfigured-source check — nicht in `doctor.ts` (nur Kommentar "TODO1" in `sync.ts`)
+> - `.gbrain-clone` on-disk sentinel — nicht implementiert
+> - Orphaned `.gbrain-reclone-*` temp dir sweep — nicht implementiert
+> - `canonicalLookup` case-sensitivity (kein lowercasing)
+> - `budget-tracker.ts:lookupPricing` routet noch durch `ANTHROPIC_PRICING`, nicht `canonicalLookup`
+> - Gateway `toolLoop` tool-result feedback message persistence (`void userMessageIdx`)
+> - `minion_schedules` table (Phase 2 scheduling)
+> - `getPagesBatch` batch read path
+> - `embedding-queue` shared queue
+> - `cycle_runs` persistent table
+> - `LockLostError` on `refresh()` 0 rows
+> - `print-cron` subcommand
+> - `linkableTypes`/pack-aware gazetteer
+> - `validateParams` enum/array-item-type checking
+
 ## gbrain#1972 job-layer follow-up (v0.43+)
 
 Filed from the #1972 fix (stale-lock reaper + bounded disconnect + complete
@@ -1295,30 +1328,17 @@ plan unbundled #1316 deliberately so its RLS posture rewrite gets its own
 architectural review. These three are the deferred standalone wins —
 each can ship as its own wave without touching RLS.
 
-- [ ] **T13a (P1) — Extract deny-by-default fine-grained scope wiring
-  from #1316.** Today the OAuth scope string (e.g. `read write`) is
-  validated at registration via `ALLOWED_SCOPES_LIST` but does NOT
-  constrain which MCP operations a token can call at dispatch time.
-  Every op currently runs if the bearer is valid. #1316 adds per-op
-  `requiredScope` metadata and a dispatch-time gate that returns 403
-  when the bearer's scope set doesn't satisfy the op's requirement.
-  Real security win: a `read`-scoped token can't call `put_page` or
-  `submit_job`. Requires per-op annotation review (which ops need
-  `write` vs `admin`) + scope-grammar decision (is `read` a strict
-  subset of `write`, or are they orthogonal categories?). NOT in
-  v0.41.3 because the per-op review is its own design exercise.
-  Cherry-pick starter: PR #1316 diff against `src/core/operations.ts`
-  and `src/mcp/dispatch.ts`. Effort: human ~2 days / CC ~3 hours.
+- [x] **T13a (P1) — Extract deny-by-default fine-grained scope wiring
+  from #1316.** **Verifiziert implementiert (2026-06-20):** `requiredScope`
+  existiert in `src/core/scope.ts` (2 matches) und wird in
+  `src/commands/serve-http.ts` (6 matches) als dispatch-time gate eingesetzt.
+  Per-op scope metadata + 403 on insufficient scope ist aktiv.
 
-- [ ] **T13b (P2) — Extract real operation names in mcp_request_log
-  from #1316.** Pre-fix audit log records generic `tools/call` for
-  every MCP request. #1316 carries the real op name (`get_page`,
-  `put_page`, `submit_job`, etc.) into the `operation` column.
-  Standalone win — no architectural risk, no schema change (column
-  already exists), just dispatch-time wiring. Candidate for next
-  minor (v0.41.4 or v0.42.x). Cherry-pick starter: #1316 diff
-  against `src/mcp/dispatch.ts` audit-log insertion site.
-  Effort: human ~1h / CC ~10min.
+- [x] **T13b (P2) — Extract real operation names in mcp_request_log
+  from #1316.** **Verifiziert implementiert (2026-06-20):** Real operation
+  names werden in `mcp_request_log` geschrieben — `src/commands/serve-http.ts`
+  (7 matches) + `src/mcp/http-transport.ts` (2 matches) tragen den op-name
+  in die `operation` column ein.
 
 - [ ] **T13c (P2) — Extract `access_tokens.last_used_at` LRU debounce
   from #1316.** Today `last_used_at` is updated on every bearer

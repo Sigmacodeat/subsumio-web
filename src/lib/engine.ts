@@ -17,6 +17,36 @@ const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
 
 export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
 
+/**
+ * P0-SECR-002: Create a signed identity token for engine-side matter-scope enforcement.
+ *
+ * Called AFTER the web-app has verified the caller's identity (WhatsApp identity
+ * DB lookup, session check). The token is HMAC-signed with SUBSUMIO_WEB_API_KEY
+ * — the same shared secret the engine uses for API auth.
+ *
+ * The engine verifies the signature before trusting the matterScope claim,
+ * replacing the previous self-asserted header approach.
+ */
+function createSignedIdentityToken(
+  sourceId: string,
+  matterScope: string[] | "all",
+): string | undefined {
+  const secret = env("SUBSUMIO_WEB_API_KEY");
+  if (!secret) return undefined;
+  // Minimal HMAC-SHA256 token — no external dependency, matches the
+  // engine's verifyIdentityToken in server/src/core/identity-token.ts
+  const { createHmac } = require("node:crypto");
+  const payload = JSON.stringify({
+    sourceId,
+    matterScope,
+    exp: Math.floor(Date.now() / 1000) + 300, // 5 min TTL
+  });
+  const payloadB64 = Buffer.from(payload, "utf8").toString("base64url");
+  const sig = createHmac("sha256", secret).update(payloadB64).digest();
+  const sigB64 = sig.toString("base64url");
+  return `${payloadB64}.${sigB64}`;
+}
+
 export function engineConfigurationResponse(): Response | null {
   if (process.env.NODE_ENV !== "production" || CONFIGURED_ENGINE_URL) {
     // In production, also verify the API key is set
@@ -102,6 +132,29 @@ export function engineHeadersForBrain(brainId: string): Record<string, string> {
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
   const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
+  return headers;
+}
+
+/**
+ * P0-SECR-002: Engine headers for a KNOWN brainId + verified matter scope.
+ *
+ * Used by the WhatsApp path (legal-chat/actions.ts) after the caller's
+ * identity has been verified via resolveSenderIdentity(). The matter scope
+ * is encoded in a signed identity token (HMAC-SHA256) and sent as
+ * x-sigmabrain-identity-token — the engine verifies the signature before
+ * trusting the scope claim.
+ *
+ * This is the ONLY function that should be called for WhatsApp callers.
+ * engineHeadersForBrain (without matter scope) is for trusted server-side
+ * jobs (cron, webhooks) that don't need per-matter filtering.
+ */
+export function engineHeadersForBrainWithMatterScope(
+  brainId: string,
+  matterScope: string[] | "all",
+): Record<string, string> {
+  const headers = engineHeadersForBrain(brainId);
+  const token = createSignedIdentityToken(brainId, matterScope);
+  if (token) headers["x-sigmabrain-identity-token"] = token;
   return headers;
 }
 

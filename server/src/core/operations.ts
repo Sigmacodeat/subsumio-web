@@ -272,6 +272,19 @@ export interface AuthInfo {
    * case (back-compat).
    */
   allowedSources?: string[];
+  /**
+   * Subsumio P0-SECR-002: Verified matter scope for this caller.
+   * "all" = no per-matter restriction (trusted local CLI, admin).
+   * string[] = only pages whose slug starts with one of these prefixes
+   * are visible in search/think/get_page results.
+   *
+   * This field is ONLY set from a verified identity token (HMAC-signed
+   * with SUBSUMIO_WEB_API_KEY) — never from a self-asserted header.
+   * See server/src/core/identity-token.ts for the token format.
+   *
+   * Undefined = no matter-scope enforcement (legacy callers, CLI).
+   */
+  matterScope?: string[] | 'all';
 }
 
 export interface OperationContext {
@@ -391,6 +404,20 @@ export interface OperationContext {
    * satisfied even on single-source brains.
    */
   sourceId: string;
+  /**
+   * Subsumio P0-SECR-002: Verified matter scope for this caller.
+   * "all" = no per-matter restriction (trusted local CLI, admin).
+   * string[] = only pages whose slug starts with one of these prefixes
+   * are visible in search/think/get_page results.
+   *
+   * Set by buildOperationContext from opts.matterScope, which is populated
+   * by the web-api after verifying a signed identity token. MCP HTTP transport
+   * populates it from AuthInfo.matterScope (token permissions).
+   *
+   * Undefined = no matter-scope enforcement (legacy callers, CLI, tests).
+   * Operations MUST check this via the `matterScopeFilter` helper.
+   */
+  matterScope?: string[] | 'all';
 }
 
 /**
@@ -423,6 +450,57 @@ export function sourceScopeOpts(ctx: OperationContext): { sourceId?: string; sou
   if (allowed && allowed.length > 0) return { sourceIds: allowed };
   if (ctx.sourceId) return { sourceId: ctx.sourceId };
   return {};
+}
+
+/**
+ * Subsumio P0-SECR-002: Filter results by the caller's verified matter scope.
+ *
+ * This is the CANONICAL helper for every read-side op handler that returns
+ * pages or search results. It reads `ctx.matterScope` (populated from a
+ * verified identity token — never from a self-asserted header).
+ *
+ * - undefined → no filtering (legacy callers, local CLI, tests)
+ * - "all" → no filtering (trusted admin)
+ * - string[] → only results whose slug starts with one of the prefixes
+ * - [] → empty array → return [] (deny all — fail-closed)
+ *
+ * Operations MUST call this on their results BEFORE returning them to the
+ * caller. This is the engine-side enforcement that closes the gap between
+ * the web-app's resolveAuthorizedCase() and the engine's retrieval layer.
+ */
+export function matterScopeFilter<T extends { slug?: string }>(
+  results: T[],
+  ctx: OperationContext,
+): T[] {
+  const scope = ctx.matterScope;
+  if (!scope) return results;
+  if (scope === 'all') return results;
+  if (scope.length === 0) return [];
+  return results.filter(r => {
+    const slug = r.slug ?? '';
+    return scope.some(prefix => slug.startsWith(prefix) || slug === prefix);
+  });
+}
+
+/**
+ * Subsumio P0-SECR-002: Check if a single slug is within the caller's
+ * verified matter scope. Used by get_page to reject access before
+ * returning the page content.
+ *
+ * Returns true when:
+ * - scope is undefined (no enforcement — legacy/CLI)
+ * - scope is "all" (trusted admin)
+ * - slug starts with one of the allowed prefixes
+ */
+export function isSlugInMatterScope(
+  slug: string,
+  ctx: OperationContext,
+): boolean {
+  const scope = ctx.matterScope;
+  if (!scope) return true;
+  if (scope === 'all') return true;
+  if (scope.length === 0) return false;
+  return scope.some(prefix => slug.startsWith(prefix) || slug === prefix);
 }
 
 /**
@@ -609,6 +687,12 @@ const get_page: Operation = {
     const slug = p.slug as string;
     const fuzzy = (p.fuzzy as boolean) || false;
     const includeDeleted = (p.include_deleted as boolean) === true;
+    // Subsumio P0-SECR-002: Reject access to pages outside the caller's
+    // verified matter scope BEFORE any DB lookup. This is the engine-side
+    // enforcement that prevents cross-matter data leakage.
+    if (!isSlugInMatterScope(slug, ctx)) {
+      throw new OperationError('matter_scope_denied', `Access denied to slug: ${slug}`, 'The caller\'s matter scope does not include this resource.');
+    }
     // #1393: route BOTH the exact-match read and the fuzzy resolveSlugs through
     // the canonical precedence ladder (federated array > scalar > nothing). The
     // exact path previously used scalar `ctx.sourceId` only, so a remote client
@@ -1438,7 +1522,8 @@ const search: Operation = {
       await stampContentFlags(ctx.engine, results);
       bumpLastRetrievedAt(ctx.engine, results.map((r) => r.page_id));
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
-      return results;
+      // Subsumio P0-SECR-002: Filter by verified matter scope
+      return matterScopeFilter(results, ctx);
     }
 
     // Cheap-hybrid (D4/D15): full vector+keyword+RRF+pool+title+alias, but
@@ -1455,7 +1540,8 @@ const search: Operation = {
     const latency_ms = Date.now() - startedAt;
     bumpLastRetrievedAt(ctx.engine, results.map((r) => r.page_id));
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
-    return results;
+    // Subsumio P0-SECR-002: Filter by verified matter scope
+    return matterScopeFilter(results, ctx);
   },
   scope: 'read',
   cliHints: { name: 'search', positional: ['query'] },
@@ -1690,7 +1776,8 @@ const query: Operation = {
       );
     }
 
-    return results;
+    // Subsumio P0-SECR-002: Filter by verified matter scope
+    return matterScopeFilter(results, ctx);
   },
   scope: 'read',
   cliHints: { name: 'query', positional: ['query'] },

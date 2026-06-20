@@ -110,7 +110,7 @@ class RealtimeClient {
         this.scheduleReconnect();
       };
       // Listen for known event types
-      const knownEvents = ["connected", "case.updated", "deadline.changed", "note.added", "invoice.created", "comment.added", "notification.created"];
+      const knownEvents = ["connected", "case.updated", "deadline.changed", "note.added", "invoice.created", "comment.added", "notification.created", "workflow.started", "workflow.step_changed", "workflow.completed", "workflow.failed"];
       for (const evt of knownEvents) {
         this.es.addEventListener(evt, (ev: MessageEvent) => {
           try {

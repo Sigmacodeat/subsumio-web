@@ -63,8 +63,14 @@ describe("cron route coverage guard", () => {
 
     for (const file of routeFiles) {
       const src = readFileSync(file, "utf8");
-      expect(src, `${file} must import validateCronAuth`).toContain('from "@/lib/cron-auth"');
-      expect(src, `${file} must call validateCronAuth`).toContain("validateCronAuth(");
+      // Routes can either call validateCronAuth directly or use createCronHandler
+      // (which wraps validateCronAuth internally in api-handler.ts).
+      const usesDirectAuth = src.includes('from "@/lib/cron-auth"') && src.includes("validateCronAuth(");
+      const usesCronHandler = src.includes("createCronHandler");
+      expect(
+        usesDirectAuth || usesCronHandler,
+        `${file} must either import+call validateCronAuth or use createCronHandler`,
+      ).toBe(true);
     }
   });
 });

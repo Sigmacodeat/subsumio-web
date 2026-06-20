@@ -28,6 +28,8 @@ export interface StoredApiKey {
 export interface ApiKeyStore {
   getById(id: string): Promise<StoredApiKey | null>;
   listByOwner(ownerId: string): Promise<StoredApiKey[]>;
+  listAll(): Promise<StoredApiKey[]>;
+  findByHash(hash: string): Promise<StoredApiKey | null>;
   create(key: StoredApiKey): Promise<StoredApiKey>;
   update(id: string, patch: Partial<StoredApiKey>): Promise<StoredApiKey | null>;
   delete(id: string): Promise<void>;
@@ -97,6 +99,14 @@ class FileApiKeyStore implements ApiKeyStore {
       keys.splice(idx, 1);
       await this.persist();
     }
+  }
+
+  async listAll() {
+    return [...(await this.load())];
+  }
+
+  async findByHash(hash: string) {
+    return (await this.load()).find((k) => k.secretHash === hash && k.active) ?? null;
   }
 }
 
@@ -236,6 +246,23 @@ class PgApiKeyStore implements ApiKeyStore {
   async delete(id: string) {
     await this.ensureSchema();
     await this.pool().query(`DELETE FROM subsumio_api_keys WHERE id = $1`, [id]);
+  }
+
+  async listAll() {
+    await this.ensureSchema();
+    const { rows } = await this.pool().query(
+      `SELECT * FROM subsumio_api_keys ORDER BY created_at DESC`
+    );
+    return rows.map((r) => this.row(r));
+  }
+
+  async findByHash(hash: string) {
+    await this.ensureSchema();
+    const { rows } = await this.pool().query(
+      `SELECT * FROM subsumio_api_keys WHERE secret_hash = $1 AND active = true LIMIT 1`,
+      [hash]
+    );
+    return rows[0] ? this.row(rows[0]) : null;
   }
 }
 

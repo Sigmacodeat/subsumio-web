@@ -30,6 +30,11 @@ const BASE_URL =
     ? ""
     : env("SUBSUMIO_API_URL") || env("NEXT_PUBLIC_SUBSUMIO_API_URL") || "http://localhost:3001";
 
+// Auth endpoints are consumed by older UI code with shape-specific property access.
+// Keep this loose locally instead of forcing unsafe casts across every caller.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseAuthResponse = Record<string, any>;
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -595,25 +600,91 @@ export const api = {
     },
   },
 
+  intake: {
+    list(params?: { status?: string; limit?: number }): Promise<Record<string, unknown>> {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return request(`/api/intake${qs ? `?${qs}` : ""}`);
+    },
+
+    create(input: {
+      source?: "whatsapp" | "portal" | "web" | "email" | "manual";
+      summary: string;
+      client_name?: string;
+      phone_hash?: string;
+      email?: string;
+      legal_area?: string;
+      missing_documents?: string[];
+      source_event_slug?: string;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/intake", { method: "POST", body: JSON.stringify(input) });
+    },
+
+    update(input: {
+      slug: string;
+      status?: "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
+      conflict_check_status?: "pending" | "clear" | "conflict" | "needs_review";
+      converted_case_slug?: string;
+      missing_documents?: string[];
+      summary?: string;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/intake", { method: "PATCH", body: JSON.stringify(input) });
+    },
+  },
+
+  documentRequests: {
+    list(params?: { caseSlug?: string; status?: string; limit?: number }): Promise<Record<string, unknown>> {
+      const searchParams = new URLSearchParams();
+      if (params?.caseSlug) searchParams.set("caseSlug", params.caseSlug);
+      if (params?.status) searchParams.set("status", params.status);
+      if (params?.limit) searchParams.set("limit", String(params.limit));
+      const qs = searchParams.toString();
+      return request(`/api/document-requests${qs ? `?${qs}` : ""}`);
+    },
+
+    create(input: {
+      case_slug: string;
+      items?: Array<string | { key?: string; label?: string; required?: boolean; received_document_slug?: string }>;
+      text?: string;
+      channel?: "whatsapp" | "portal" | "email" | "manual";
+      recipient_role?: "client" | "lawyer" | "assistant" | "other";
+      status?: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+      source_event_slug?: string;
+      message_draft?: string;
+      include_portal_link?: boolean;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/document-requests", { method: "POST", body: JSON.stringify(input) });
+    },
+
+    update(input: {
+      slug: string;
+      status?: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
+      items?: Array<string | { key?: string; label?: string; required?: boolean; received_document_slug?: string }>;
+      message_draft?: string;
+      sent_at?: string;
+    }): Promise<Record<string, unknown>> {
+      return request("/api/document-requests", { method: "PATCH", body: JSON.stringify(input) });
+    },
+  },
+
   auth: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    login(input: { email: string; password: string }): Promise<any> {
+    login(input: { email: string; password: string }): Promise<LooseAuthResponse> {
       return request("/api/auth/login", { method: "POST", body: JSON.stringify(input) });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    verify2FA(input: { challengeToken: string; token: string }): Promise<any> {
+    verify2FA(input: { challengeToken: string; token: string }): Promise<LooseAuthResponse> {
       return request("/api/auth/2fa/login-verify", { method: "POST", body: JSON.stringify(input) });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     register(input: {
       email: string;
       password: string;
       name: string;
       referredBy?: string;
       industry?: string;
-    }): Promise<any> {
+    }): Promise<LooseAuthResponse> {
       return request("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
     },
 
@@ -621,8 +692,7 @@ export const api = {
       return request("/api/auth/logout", { method: "POST" });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async me(): Promise<any> {
+    async me(): Promise<LooseAuthResponse | null> {
       try {
         return await request("/api/auth/me");
       } catch {

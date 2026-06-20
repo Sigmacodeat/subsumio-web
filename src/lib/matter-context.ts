@@ -20,6 +20,8 @@ import {
   type DeadlineEntry,
   type DocumentEntry,
   type AuditLogEntry,
+  type CommunicationEntry,
+  type PermissionInfo,
 } from "@/lib/legal-types";
 import { inferInitialExtractionStatus } from "@/lib/extraction-status";
 import type { BrainPage } from "@/lib/types";
@@ -30,6 +32,8 @@ import type {
   MatterDocumentSummary,
   MatterActivityEntry,
   MatterFactEntry,
+  MatterCommunicationEntry,
+  MatterPermissionSummary,
   MatterCoverageStatus,
   SourceCoverageEntry,
   MatterGap,
@@ -39,6 +43,9 @@ import type {
   ExplainedSearchResult,
   BrainQualitySummary,
   QueryMode,
+  MatterUnderstandingPanel,
+  MatterRiskItem,
+  RecentlyChangedSource,
 } from "@/lib/matter-context-types";
 
 // ── Types for Engine Responses ────────────────────────────────────────
@@ -113,11 +120,17 @@ export async function buildMatterContext(
   // 6. Extract facts from frontmatter (strategy, evidence, claims)
   const facts = buildFacts(fm);
 
-  // 7. Check coverage
+  // 7. Build communication summaries
+  const communications = buildCommunications(fm.communications ?? []);
+
+  // 8. Build permission summary
+  const permissions = buildPermissionSummary(fm.permissions);
+
+  // 9. Check coverage
   const coverage = await checkCoverage(engineUrl, engineHeaders, fm);
 
-  // 8. Detect gaps
-  const gaps = detectGaps(fm, parties, deadlines, documents, coverage, engineReachable);
+  // 10. Detect gaps
+  const gaps = detectGaps(fm, parties, deadlines, documents, coverage, engineReachable, communications, permissions);
 
   return {
     case_slug: normalizedSlug,
@@ -130,6 +143,8 @@ export async function buildMatterContext(
     documents,
     recent_activity: recentActivity,
     facts,
+    communications,
+    permissions,
     coverage,
     gaps,
     generated_at: now,
@@ -236,6 +251,8 @@ export function detectGaps(
   documents: MatterDocumentSummary[],
   coverage: MatterCoverageStatus,
   engineReachable: boolean,
+  communications: MatterCommunicationEntry[] = [],
+  permissions: MatterPermissionSummary | null = null,
 ): MatterGap[] {
   const gaps: MatterGap[] = [];
   const now = new Date();
@@ -361,6 +378,46 @@ export function detectGaps(
       "Fristbestätigung des Gerichts hochladen, falls vorhanden.",
       now,
     ));
+  }
+
+  // Missing communication log for open cases
+  if (communications.length === 0 && fm.status && fm.status !== "closed" && fm.status !== "settled") {
+    gaps.push(makeGap(
+      "missing_communication_log",
+      "low",
+      "Keine Kommunikation dokumentiert",
+      "Für diese offene Akte sind keine Kommunikationsvorgänge (E-Mail, WhatsApp, Telefon) erfasst.",
+      "Kommunikation aus E-Mail/WhatsApp-Integration importieren oder manuell dokumentieren.",
+      now,
+    ));
+  }
+
+  // Unprivileged communication detected
+  const unprivileged = communications.filter((c) => !c.privileged && c.channel !== "phone");
+  if (unprivileged.length > 0 && permissions?.privileged) {
+    gaps.push(makeGap(
+      "unprivileged_communication",
+      "medium",
+      "Unprivilegierte Kommunikation in privilegierter Akte",
+      `${unprivileged.length} Kommunikation(n) in einer als privilegiert markierten Akte sind nicht als privilegiert gekennzeichnet.`,
+      "Privilegien-Status der Kommunikation prüfen und ggf. nachtragen.",
+      now,
+    ));
+  }
+
+  // Ethical wall violation — blocked users in allowed_users
+  if (permissions && permissions.blocked_users.length > 0) {
+    const overlap = permissions.allowed_users.filter((u) => permissions.blocked_users.includes(u));
+    if (overlap.length > 0) {
+      gaps.push(makeGap(
+        "ethical_wall_violation",
+        "critical",
+        "Ethical Wall Verletzung",
+        `${overlap.length} Benutzer sind gleichzeitig in allowed_users und blocked_users. Dies verletzt den Ethical Wall.`,
+        "Berechtigungen sofort korrigieren — betroffene Benutzer aus allowed_users entfernen.",
+        now,
+      ));
+    }
   }
 
   return gaps;
@@ -773,6 +830,36 @@ export function detectContradictions(fm: CaseFrontmatter): MatterGap[] {
   return gaps;
 }
 
+export function buildCommunications(entries: CommunicationEntry[]): MatterCommunicationEntry[] {
+  return entries
+    .filter((c) => c.id && c.timestamp)
+    .map((c) => ({
+      id: c.id,
+      channel: c.channel,
+      direction: c.direction,
+      subject: c.subject ?? c.summary ?? "(kein Betreff)",
+      timestamp: c.timestamp,
+      counterpart: c.counterpart,
+      lawyer: c.lawyer,
+      privileged: c.privileged ?? false,
+      has_attachments: (c.attachment_slugs?.length ?? 0) > 0,
+    }))
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+export function buildPermissionSummary(permissions: PermissionInfo | undefined): MatterPermissionSummary {
+  const allowed = permissions?.allowed_users ?? [];
+  const blocked = permissions?.blocked_users ?? [];
+  return {
+    visibility: permissions?.visibility ?? "full",
+    privileged: permissions?.privileged ?? false,
+    legal_hold: permissions?.legal_hold ?? false,
+    allowed_users: allowed,
+    blocked_users: blocked,
+    ethical_wall_active: blocked.length > 0,
+  };
+}
+
 function areContradictory(a: string, b: string): boolean {
   const aLower = a.toLowerCase();
   const bLower = b.toLowerCase();
@@ -934,6 +1021,8 @@ function emptyContext(
     documents: [],
     recent_activity: [],
     facts: [],
+    communications: [],
+    permissions: buildPermissionSummary(undefined),
     coverage: {
       sources: [],
       total_sources: 0,
@@ -973,4 +1062,171 @@ export function mapQueryModeToEngineMode(mode: QueryMode): "conservative" | "bal
     default:
       return "balanced";
   }
+}
+
+// ── Matter Understanding Panel ("Akte verstanden?") ───────────────────
+
+export function buildUnderstandingPanel(bundle: MatterContextBundle): MatterUnderstandingPanel {
+  const risks = deriveRisks(bundle);
+  const freshness = assessFreshness(bundle);
+  const recentlyChanged = deriveRecentlyChangedSources(bundle);
+  const understandingScore = calculateUnderstandingScore(bundle, risks, freshness);
+  const summary = buildSummary(bundle, understandingScore);
+
+  return {
+    case_slug: bundle.case_slug,
+    case_title: bundle.case_title,
+    understanding_score: understandingScore,
+    summary,
+    facts: bundle.facts,
+    gaps: bundle.gaps,
+    risks,
+    freshness,
+    recently_changed_sources: recentlyChanged,
+    engine_reachable: bundle.engine_reachable,
+    generated_at: bundle.generated_at,
+  };
+}
+
+function deriveRisks(bundle: MatterContextBundle): MatterRiskItem[] {
+  const risks: MatterRiskItem[] = [];
+
+  for (const gap of bundle.gaps) {
+    if (gap.severity === "critical" || gap.severity === "high") {
+      risks.push({
+        id: `gap-${gap.type}`,
+        title: gap.title,
+        severity: gap.severity as "critical" | "high" | "medium" | "low",
+        source: "gap_detection",
+        recommendation: gap.recommendation,
+      });
+    }
+  }
+
+  const overdueDeadlines = bundle.deadlines.filter((d) => d.urgency === "overdue");
+  for (const d of overdueDeadlines) {
+    risks.push({
+      id: `deadline-overdue-${d.id}`,
+      title: `Überfällige Frist: ${d.title}`,
+      severity: "critical",
+      source: "deadline_monitor",
+      recommendation: "Frist sofort klären oder Wiedereinsetzung prüfen.",
+    });
+  }
+
+  const unreviewedDocs = bundle.documents.filter((d) => d.ocr_status === "unknown" || d.ocr_status === "ocr_needed");
+  if (unreviewedDocs.length > 3) {
+    risks.push({
+      id: "many-unreviewed-docs",
+      title: `${unreviewedDocs.length} unreviewed Dokumente`,
+      severity: "medium",
+      source: "document_review",
+      recommendation: "Dokumente prüfen und OCR-Status aktualisieren.",
+    });
+  }
+
+  return risks;
+}
+
+function assessFreshness(bundle: MatterContextBundle): MatterUnderstandingPanel["freshness"] {
+  const sources = bundle.coverage.sources;
+  const freshCount = sources.filter((s) => s.index_fresh).length;
+  const staleCount = sources.filter((s) => !s.index_fresh).length;
+  const lastActivity = bundle.recent_activity.length > 0
+    ? bundle.recent_activity[0].at
+    : null;
+
+  let overall: "fresh" | "stale" | "unknown" = "unknown";
+  if (sources.length > 0) {
+    const freshRatio = freshCount / sources.length;
+    if (freshRatio >= 0.7) overall = "fresh";
+    else if (freshRatio < 0.3) overall = "stale";
+    else overall = "fresh";
+  }
+
+  return {
+    overall,
+    completeness_score: bundle.coverage.completeness_score,
+    stale_sources: staleCount,
+    fresh_sources: freshCount,
+    total_sources: sources.length,
+    last_activity: lastActivity,
+  };
+}
+
+function deriveRecentlyChangedSources(bundle: MatterContextBundle): RecentlyChangedSource[] {
+  return bundle.coverage.sources
+    .filter((s) => s.last_sync_at)
+    .sort((a, b) => {
+      const aTime = new Date(a.last_sync_at ?? 0).getTime();
+      const bTime = new Date(b.last_sync_at ?? 0).getTime();
+      return bTime - aTime;
+    })
+    .slice(0, 10)
+    .map((s) => ({
+      source_id: s.source_id,
+      source_type: s.source_type,
+      last_sync_at: s.last_sync_at,
+      change_type: "synced" as const,
+      document_count: s.document_count,
+      fresh: s.index_fresh,
+    }));
+}
+
+function calculateUnderstandingScore(
+  bundle: MatterContextBundle,
+  risks: MatterRiskItem[],
+  freshness: MatterUnderstandingPanel["freshness"],
+): number {
+  let score = 0;
+
+  const hasParties = bundle.parties.length > 0 ? 0.15 : 0;
+  const hasDeadlines = bundle.deadlines.length > 0 ? 0.1 : 0;
+  const hasDocuments = bundle.documents.length > 0 ? 0.1 : 0;
+  const hasFacts = bundle.facts.length > 0 ? 0.15 : 0;
+  const hasCommunications = bundle.communications.length > 0 ? 0.05 : 0;
+  const coverageScore = bundle.coverage.completeness_score * 0.2;
+  const engineOk = bundle.engine_reachable ? 0.1 : 0;
+  const freshnessScore = !bundle.engine_reachable
+    ? 0
+    : freshness.overall === "fresh" ? 0.1 : freshness.overall === "stale" ? 0.02 : 0.05;
+
+  score = hasParties + hasDeadlines + hasDocuments + hasFacts + hasCommunications + coverageScore + engineOk + freshnessScore;
+
+  const criticalRisks = risks.filter((r) => r.severity === "critical").length;
+  const highRisks = risks.filter((r) => r.severity === "high").length;
+  score -= criticalRisks * 0.1;
+  score -= highRisks * 0.05;
+
+  const gapPenalty = Math.min(bundle.gaps.length * 0.02, 0.15);
+  score -= gapPenalty;
+
+  return Math.max(0, Math.min(1, score));
+}
+
+function buildSummary(bundle: MatterContextBundle, score: number): string {
+  const parts: string[] = [];
+
+  if (!bundle.engine_reachable) {
+    return "Engine nicht erreichbar — Aktenkontext konnte nicht vollständig geladen werden.";
+  }
+
+  parts.push(`${bundle.parties.length} Parteien`);
+  parts.push(`${bundle.deadlines.length} Fristen`);
+  parts.push(`${bundle.documents.length} Dokumente`);
+  parts.push(`${bundle.facts.length} Fakten`);
+
+  if (bundle.communications.length > 0) {
+    parts.push(`${bundle.communications.length} Kommunikationen`);
+  }
+
+  const criticalGaps = bundle.gaps.filter((g) => g.severity === "critical").length;
+  if (criticalGaps > 0) {
+    parts.push(`${criticalGaps} kritische Lücke(n)`);
+  }
+
+  const pct = Math.round(score * 100);
+  const level = pct >= 80 ? "gut verstanden" : pct >= 50 ? "teilweise verstanden" : "lückenhaft";
+
+  return `Akte ${level} (${pct}%). ${parts.join(", ")}.`;
 }

@@ -66,31 +66,31 @@ describe("isConfigured", () => {
     process.env = { ...origEnv };
   });
 
-  test("returns false when no env vars are set", () => {
+  test("returns false when no env vars are set", async () => {
     delete process.env.DOCUSIGN_INTEGRATION_KEY;
     delete process.env.DOCUSIGN_SECRET_KEY;
     delete process.env.DOCUSIGN_ACCOUNT_ID;
     // Re-import to get fresh module-level values
     vi.resetModules();
-    const { isConfigured: fresh } = require("./docusign");
+    const { isConfigured: fresh } = await import("./docusign");
     expect(fresh()).toBe(false);
   });
 
-  test("returns true when all env vars are set", () => {
+  test("returns true when all env vars are set", async () => {
     process.env.DOCUSIGN_INTEGRATION_KEY = "test-ik";
     process.env.DOCUSIGN_SECRET_KEY = "test-secret";
     process.env.DOCUSIGN_ACCOUNT_ID = "test-account";
     vi.resetModules();
-    const { isConfigured: fresh } = require("./docusign");
+    const { isConfigured: fresh } = await import("./docusign");
     expect(fresh()).toBe(true);
   });
 
-  test("returns false when only some env vars are set", () => {
+  test("returns false when only some env vars are set", async () => {
     process.env.DOCUSIGN_INTEGRATION_KEY = "test-ik";
     delete process.env.DOCUSIGN_SECRET_KEY;
     delete process.env.DOCUSIGN_ACCOUNT_ID;
     vi.resetModules();
-    const { isConfigured: fresh } = require("./docusign");
+    const { isConfigured: fresh } = await import("./docusign");
     expect(fresh()).toBe(false);
   });
 });
@@ -107,53 +107,53 @@ describe("getAuthUrl", () => {
     vi.resetModules();
   });
 
-  test("returns a valid URL string", () => {
+  test("returns a valid URL string", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = fresh("https://app.example.com/callback");
     expect(typeof url).toBe("string");
     expect(url.startsWith("https://")).toBe(true);
   });
 
-  test("includes response_type=code", () => {
+  test("includes response_type=code", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = new URL(fresh("https://app.example.com/callback"));
     expect(url.searchParams.get("response_type")).toBe("code");
   });
 
-  test("includes client_id from env", () => {
+  test("includes client_id from env", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = new URL(fresh("https://app.example.com/callback"));
     expect(url.searchParams.get("client_id")).toBe("test-integration-key");
   });
 
-  test("includes redirect_uri", () => {
+  test("includes redirect_uri", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const redirect = "https://app.example.com/docusign/callback";
     const url = new URL(fresh(redirect));
     expect(url.searchParams.get("redirect_uri")).toBe(redirect);
   });
 
-  test("includes scope", () => {
+  test("includes scope", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = new URL(fresh("https://app.example.com/callback"));
     expect(url.searchParams.get("scope")).toContain("signature");
   });
 
-  test("includes state when provided", () => {
+  test("includes state when provided", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = new URL(fresh("https://app.example.com/callback", "random-state-123"));
     expect(url.searchParams.get("state")).toBe("random-state-123");
   });
 
-  test("omits state when not provided", () => {
+  test("omits state when not provided", async () => {
     vi.resetModules();
-    const { getAuthUrl: fresh } = require("./docusign");
+    const { getAuthUrl: fresh } = await import("./docusign");
     const url = new URL(fresh("https://app.example.com/callback"));
     expect(url.searchParams.has("state")).toBe(false);
   });

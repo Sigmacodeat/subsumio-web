@@ -259,6 +259,51 @@ function requestSourceId(req: Request): string {
 }
 
 /**
+ * P0-SECR-002: Parse verified matter scope from a signed identity token.
+ *
+ * The web-app creates a short-lived HMAC-signed token (server/src/core/identity-token.ts)
+ * after verifying the caller's identity (WhatsApp identity DB lookup, session check).
+ * The engine verifies the HMAC signature using the shared SUBSUMIO_WEB_API_KEY.
+ *
+ * This replaces the previous self-asserted header approach — anyone with the
+ * API key could set x-sigmabrain-matter-scope: "all" and bypass all filtering.
+ *
+ * Returns "all" (no filtering) when no token is present (legacy callers, CLI,
+ * browser-session callers who don't need matter-scope enforcement).
+ */
+function verifiedMatterScope(
+  req: Request,
+  apiKey: string | undefined,
+): string[] | 'all' {
+  if (!apiKey) return 'all';
+  const h = req.headers['x-sigmabrain-identity-token'];
+  const token = Array.isArray(h) ? h[0] : h;
+  if (!token || typeof token !== 'string') return 'all';
+  // Dynamic import to avoid circular dependency at module load time
+  // The identity-token module is pure (no engine deps), safe to import eagerly
+  const { verifyIdentityToken } = require('../core/identity-token.ts');
+  const payload = verifyIdentityToken(token, apiKey);
+  if (!payload) return 'all'; // Invalid/expired token → no filtering (fail-safe for legacy)
+  return payload.matterScope;
+}
+
+/**
+ * P0-SECR-002: Filter search/think results to only include pages whose slug
+ * starts with one of the allowed matter prefixes. When scope is "all" or empty,
+ * no filtering is applied (preserves existing behavior for non-WhatsApp callers).
+ */
+function filterByMatterScope<T extends { slug?: string }>(
+  results: T[],
+  scope: string[] | 'all',
+): T[] {
+  if (scope === 'all' || scope.length === 0) return results;
+  return results.filter(r => {
+    const slug = r.slug ?? '';
+    return scope.some(prefix => slug.startsWith(prefix) || slug === prefix);
+  });
+}
+
+/**
  * Shared, public, READ-ONLY reference sources every tenant may query alongside
  * their own (e.g. the statute corpus imported into `law-at`/`law-de`). Set via
  * `GBRAIN_SHARED_READ_SOURCES=law-at,law-de`. Empty by default → behaviour is
@@ -287,11 +332,13 @@ async function invokeOp(
   params: Record<string, unknown>,
   sourceId: string = 'default',
   allowedSources?: string[],
+  matterScope?: string[] | 'all',
 ): Promise<unknown> {
   const result = await dispatchToolCall(engine, name, params, {
     remote: false,
     sourceId,
     ...(allowedSources ? { allowedSources } : {}),
+    ...(matterScope ? { matterScope } : {}),
   });
   if (result.isError) {
     let msg = 'operation_failed';
@@ -344,9 +391,8 @@ async function enrichCitations(
 }
 
 export function mountWebApi(app: Application, engine: BrainEngine, options: WebApiOptions = {}) {
-  const guard = requireWebApiKey(
-    options.apiKey ?? process.env.GBRAIN_WEB_API_KEY ?? process.env.SIGMABRAIN_WEB_API_KEY,
-  );
+  const apiKey = options.apiKey ?? process.env.GBRAIN_WEB_API_KEY ?? process.env.SIGMABRAIN_WEB_API_KEY;
+  const guard = requireWebApiKey(apiKey);
   const requireTenant = options.requireTenant
     ?? (process.env.GBRAIN_REQUIRE_TENANT === 'true' || process.env.SIGMABRAIN_REQUIRE_TENANT === 'true');
   const config = loadConfig() || { engine: 'pglite' as const };
@@ -439,8 +485,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.json([]);
         return;
       }
-      const raw = await invokeOp(engine, 'search', { query: q, limit }, requestSourceId(req), readSourcesFor(req));
-      res.json(mapSearchResults(Array.isArray(raw) ? raw as Array<Record<string, unknown>> : []));
+      // P0-SECR-002: Filter results by verified matter scope from signed identity token
+      const scope = verifiedMatterScope(req, apiKey);
+      const raw = await invokeOp(engine, 'search', { query: q, limit }, requestSourceId(req), readSourcesFor(req), scope);
+      const filtered = filterByMatterScope(
+        Array.isArray(raw) ? raw as Array<Record<string, unknown>> : [],
+        scope,
+      );
+      res.json(mapSearchResults(filtered));
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown';
       res.status(500).json({ error: 'search_failed', message: msg });
@@ -449,11 +501,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   app.post('/api/think', express.json({ limit: '1mb' }), async (req: Request, res: Response) => {
     const body = req.body as Record<string, unknown>;
-    const query = String(body?.query ?? body?.question ?? '');
-    if (!query.trim()) {
+    const rawQuery = String(body?.query ?? body?.question ?? '');
+    if (!rawQuery.trim()) {
       res.status(400).json({ error: 'missing_query' });
       return;
     }
+
+    // P0-SEC-001: Engine-side prompt sanitization — strip injection patterns
+    // before the query enters the think pipeline. Direct callers (CLI, MCP)
+    // bypass the web-app's sanitizeObjectStrings layer.
+    const { sanitizeTakeForPrompt } = await import('../core/think/sanitize.ts');
+    const { text: query } = sanitizeTakeForPrompt(rawQuery);
 
     const rawMode = String(body?.mode ?? 'balanced');
     const searchMode = (['conservative', 'balanced', 'tokenmax'] as const).includes(
@@ -475,6 +533,11 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const { runThink } = await import('../core/think/index.ts');
 
+      // P0-SECR-002: Parse verified matter scope from signed identity token.
+      // WhatsApp callers receive this token after identity verification;
+      // the engine verifies the HMAC signature before trusting the scope.
+      const matterScope = verifiedMatterScope(req, apiKey);
+
       const result = await runThink(engine, {
         question: query,
         remote: false,
@@ -489,8 +552,19 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         },
       });
 
-      const citations = await enrichCitations(engine, result.citations ?? [], sourceId, readSourcesFor(req));
-      res.write(`data: ${JSON.stringify({ citations, gaps: result.gaps ?? [] })}\n\n`);
+      // P0-SECR-002: Filter citations by matter_scope — only include
+      // citations whose slug falls within the caller's allowed matters.
+      const allCitations = await enrichCitations(engine, result.citations ?? [], sourceId, readSourcesFor(req));
+      const citations = filterByMatterScope(allCitations, matterScope);
+      const gaps = matterScope !== 'all'
+        ? (result.gaps ?? []).filter(g => {
+            const gSlug = typeof g === 'object' && g !== null
+              ? (g as Record<string, unknown>)?.slug as string | undefined
+              : undefined;
+            return !gSlug || matterScope.some(p => gSlug.startsWith(p) || gSlug === p);
+          })
+        : (result.gaps ?? []);
+      res.write(`data: ${JSON.stringify({ citations, gaps })}\n\n`);
       res.write('data: [DONE]\n\n');
       res.end();
     } catch (e) {
@@ -755,6 +829,82 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }, requestSourceId(req));
       res.json(result);
     } catch (e) { legalErr(res, 'precedent_search', e); }
+  });
+
+  // ── P31-SB-001: Temporal Memory, Connector Coverage, Entity Resolution ──
+  // These endpoints expose the engine-side Matter Context extensions that
+  // complete the Kanzlei Superbrain / Legal Context Graph.
+
+  // Temporal: mark a page as superseded by a newer version
+  app.post('/api/temporal/supersede', express.json({ limit: '64kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const oldSlug = typeof b.old_slug === 'string' ? b.old_slug : '';
+      const newSlug = typeof b.new_slug === 'string' ? b.new_slug : '';
+      if (!oldSlug || !newSlug) { res.status(400).json({ error: 'old_slug_and_new_slug_required' }); return; }
+      const { markSuperseded } = await import('../core/matter-scope.ts');
+      await markSuperseded(engine, oldSlug, newSlug, requestSourceId(req));
+      res.json({ success: true });
+    } catch (e) { legalErr(res, 'temporal_supersede', e); }
+  });
+
+  // Temporal: mark a contradiction between two pages
+  app.post('/api/temporal/contradict', express.json({ limit: '64kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const slugA = typeof b.slug_a === 'string' ? b.slug_a : '';
+      const slugB = typeof b.slug_b === 'string' ? b.slug_b : '';
+      if (!slugA || !slugB) { res.status(400).json({ error: 'slug_a_and_slug_b_required' }); return; }
+      const { markContradiction } = await import('../core/matter-scope.ts');
+      await markContradiction(engine, slugA, slugB, requestSourceId(req));
+      res.json({ success: true });
+    } catch (e) { legalErr(res, 'temporal_contradict', e); }
+  });
+
+  // Temporal: query temporal relations for a page
+  app.get('/api/temporal/relations/:slug', async (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug ?? '');
+      if (!slug) { res.status(400).json({ error: 'slug_required' }); return; }
+      const { getTemporalRelations } = await import('../core/matter-scope.ts');
+      const result = await getTemporalRelations(engine, slug, requestSourceId(req));
+      res.json(result);
+    } catch (e) { legalErr(res, 'temporal_relations', e); }
+  });
+
+  // Connector Coverage: query which connectors have contributed pages for a case
+  app.get('/api/connector-coverage/:caseSlug', async (req: Request, res: Response) => {
+    try {
+      const caseSlug = String(req.params.caseSlug ?? '');
+      if (!caseSlug) { res.status(400).json({ error: 'case_slug_required' }); return; }
+      const { getConnectorCoverage } = await import('../core/matter-scope.ts');
+      const result = await getConnectorCoverage(engine, caseSlug, requestSourceId(req));
+      res.json(result);
+    } catch (e) { legalErr(res, 'connector_coverage', e); }
+  });
+
+  // Entity Resolution: resolve an entity mention to a canonical slug
+  app.post('/api/entity/resolve', express.json({ limit: '64kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const mention = typeof b.mention === 'string' ? b.mention.trim() : '';
+      if (!mention) { res.status(400).json({ error: 'mention_required' }); return; }
+      const { resolveEntity } = await import('../core/matter-scope.ts');
+      const result = await resolveEntity(engine, mention, requestSourceId(req));
+      res.json(result);
+    } catch (e) { legalErr(res, 'entity_resolve', e); }
+  });
+
+  // Entity Resolution: batch resolve multiple mentions
+  app.post('/api/entity/resolve-batch', express.json({ limit: '256kb' }), async (req: Request, res: Response) => {
+    try {
+      const b = req.body as Record<string, unknown>;
+      const mentions = Array.isArray(b.mentions) ? b.mentions.filter((s): s is string => typeof s === 'string') : [];
+      if (mentions.length === 0) { res.status(400).json({ error: 'mentions_required' }); return; }
+      const { resolveEntities } = await import('../core/matter-scope.ts');
+      const result = await resolveEntities(engine, mentions, requestSourceId(req));
+      res.json(result);
+    } catch (e) { legalErr(res, 'entity_resolve_batch', e); }
   });
 
   app.get('/api/pages', async (req: Request, res: Response) => {
@@ -1402,18 +1552,26 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   app.post('/api/agents/supervisor', express.json({ limit: '1mb' }), async (req: Request, res: Response) => {
     try {
       const body = req.body as Record<string, unknown>;
-      const prompt = String(body.prompt ?? '');
-      if (!prompt.trim()) {
+      const rawPrompt = String(body.prompt ?? '');
+      if (!rawPrompt.trim()) {
         res.status(400).json({ error: 'missing_prompt' });
         return;
       }
+
+      // P0-SEC-001: Engine-side prompt sanitization — strip injection patterns
+      // before the prompt enters the agent pipeline. The web-app layer already
+      // sanitizes via sanitizeObjectStrings in createEngineProxy, but direct
+      // callers (CLI, MCP) bypass that path. This is the engine's last line
+      // of defense against prompt injection.
+      const { sanitizeTakeForPrompt } = await import('../core/think/sanitize.ts');
+      const { text: sanitizedPrompt } = sanitizeTakeForPrompt(rawPrompt);
 
       const queue = new MinionQueue(engine);
       const sourceId = requestSourceId(req);
       // Tenant agents write into their source via brain tools — make sure
       // the source row exists before the first child put_page fires.
       await ensureSource(sourceId);
-      const data: Record<string, unknown> = { prompt, _source_id: sourceId };
+      const data: Record<string, unknown> = { prompt: sanitizedPrompt, _source_id: sourceId };
       if (body.supervisor_model) data.supervisor_model = String(body.supervisor_model);
       if (body.skip_critic) data.skip_critic = true;
       if (Array.isArray(body.force_specialists)) data.force_specialists = body.force_specialists;

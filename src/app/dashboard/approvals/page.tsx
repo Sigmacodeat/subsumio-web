@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ACTION_LABELS, type AgentActionFrontmatter } from "@/lib/approval";
-import { usePages, useUpdatePage } from "@/lib/queries/brain";
-import { useMe } from "@/lib/queries/auth";
+import { usePages } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { csrfFetch } from "@/lib/csrf";
 
 interface ActionItem extends AgentActionFrontmatter {
   slug: string;
@@ -27,14 +27,11 @@ function fmOf(page: { frontmatter?: Record<string, unknown> }): Partial<AgentAct
 
 export default function ApprovalsPage() {
   const pagesQuery = usePages({ type: "agent_action", limit: 200 });
-  const meQuery = useMe();
-  const updateMutation = useUpdatePage();
   const [busy, setBusy] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const decider = meQuery.data?.user?.email ?? meQuery.data?.user?.name ?? "";
   const loading = pagesQuery.isLoading;
 
   const items = useMemo<ActionItem[]>(() => {
@@ -55,6 +52,11 @@ export default function ApprovalsPage() {
         decided_at: fm.decided_at,
         decided_by: fm.decided_by,
         reject_reason: fm.reject_reason,
+        execution_status: fm.execution_status,
+        execution_result: fm.execution_result,
+        executed_at: fm.executed_at,
+        executed_by: fm.executed_by,
+        execution_error: fm.execution_error,
       };
     });
     mapped.sort((a, b) => (b.proposed_at || "").localeCompare(a.proposed_at || ""));
@@ -65,22 +67,21 @@ export default function ApprovalsPage() {
     setBusy(item.slug);
     setError(null);
     try {
-      const now = new Date().toISOString();
-      await updateMutation.mutateAsync({
-        slug: item.slug,
-        frontmatter: {
-          status,
-          decided_at: now,
-          decided_by: decider || "unbekannt",
-          ...(rejectReason ? { reject_reason: rejectReason } : {}),
-        },
+      const res = await csrfFetch("/api/approvals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.slug,
+          decision: status,
+          reject_reason: rejectReason,
+          execute: status === "approved",
+        }),
       });
-      if (item.target_slug && item.action_type === "document_finalize") {
-        await updateMutation.mutateAsync({
-          slug: item.target_slug,
-          frontmatter: { status: status === "approved" ? "approved" : "rejected" },
-        });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Freigabe fehlgeschlagen");
       }
+      await pagesQuery.refetch();
       setRejecting(null);
       setReason("");
     } catch (e) {
@@ -189,7 +190,7 @@ export default function ApprovalsPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium disabled:opacity-60"
                       >
                         {busy === item.slug ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-                        Freigeben
+                        Freigeben & ausführen
                       </button>
                       <button
                         onClick={() => { setRejecting(item.slug); setReason(""); }}
@@ -226,7 +227,11 @@ export default function ApprovalsPage() {
                   <p className="text-xs text-[color:var(--ds-text-muted)] mt-1">
                     {item.decided_by ? `${item.decided_by} · ` : ""}
                     {item.decided_at ? new Date(item.decided_at).toLocaleString("de-DE") : ""}
+                    {item.execution_status ? ` · Ausführung: ${item.execution_status}` : ""}
                   </p>
+                  {item.execution_error && (
+                    <p className="text-xs text-red-600/80 mt-1">Ausführungsfehler: {item.execution_error}</p>
+                  )}
                   {item.reject_reason && (
                     <p className="text-xs text-red-600/80 mt-1">Grund: {item.reject_reason}</p>
                   )}
