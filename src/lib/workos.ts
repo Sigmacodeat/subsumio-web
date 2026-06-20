@@ -1,5 +1,5 @@
 /**
- * WorkOS API Wrapper für SigmaBrain SSO/SAML.
+ * WorkOS API Wrapper für Subsumio SSO/SAML.
  * Nutzt die WorkOS User Management API direkt über HTTP.
  *
  * Umgebungsvariablen:
@@ -55,7 +55,10 @@ export function getAuthorizationUrl(opts: {
   return url.toString();
 }
 
-export async function authenticateWithCode(code: string, redirectUri: string): Promise<WorkOSAuthResponse> {
+export async function authenticateWithCode(
+  code: string,
+  redirectUri: string
+): Promise<WorkOSAuthResponse> {
   if (!API_KEY) throw new Error("WorkOS not configured: WORKOS_API_KEY missing");
 
   const res = await fetch(`${API_BASE}/user_management/authenticate`, {

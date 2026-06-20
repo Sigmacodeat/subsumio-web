@@ -71,7 +71,7 @@ function CitationPill({ slug, title }: { slug: string; title: string }) {
     <a
       href={`/dashboard/brain/${encodeURIComponent(slug)}`}
       title={title}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-xs text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] transition-all font-mono"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2.5 py-1 font-mono text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--brand-primary)]"
     >
       <FileText size={11} className="shrink-0" />
       {slug}
@@ -90,29 +90,29 @@ function AssistantMessage({ msg }: { msg: Message }) {
   };
 
   return (
-    <div className="flex items-start gap-3 group msg-in">
-      <div className="w-9 h-9 rounded-xl brand-bg flex items-center justify-center shrink-0 mt-0.5 relative shadow-sm">
+    <div className="group msg-in flex items-start gap-3">
+      <div className="brand-bg relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm">
         <Brain size={15} className="text-white" />
         {msg.isStreaming && (
-          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[color:var(--ds-bg)] animate-pulse" />
+          <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-[color:var(--ds-bg)] bg-emerald-400" />
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold brand-text">Subsumio</span>
+      <div className="min-w-0 flex-1">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="brand-text text-xs font-semibold">Subsumio</span>
           {msg.isStreaming ? (
-            <span className="text-xs text-[color:var(--ds-text-muted)] flex items-center gap-1">
+            <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
               antwortet
               <span className="flex gap-0.5">
-                <span className="typing-dot w-1 h-1 rounded-full bg-[color:var(--ds-text-muted)]" />
-                <span className="typing-dot w-1 h-1 rounded-full bg-[color:var(--ds-text-muted)]" />
-                <span className="typing-dot w-1 h-1 rounded-full bg-[color:var(--ds-text-muted)]" />
+                <span className="typing-dot h-1 w-1 rounded-full bg-[color:var(--ds-text-muted)]" />
+                <span className="typing-dot h-1 w-1 rounded-full bg-[color:var(--ds-text-muted)]" />
+                <span className="typing-dot h-1 w-1 rounded-full bg-[color:var(--ds-text-muted)]" />
               </span>
             </span>
           ) : (
             // EU AI Act Art. 50: KI-synthetisierte Antwort sichtbar kennzeichnen.
             <>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-700 text-[10px] font-medium">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                 {AI_BADGE_LABEL}
               </span>
               {/* Quellendeckung: Hallucinations-Vorsicht-Signal, keine Korrektheits-Garantie. */}
@@ -120,7 +120,7 @@ function AssistantMessage({ msg }: { msg: Message }) {
                 title={ground.hint}
                 aria-label={`Quellendeckung: ${ground.label}. ${ground.hint}`}
                 className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium cursor-help",
+                  "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
                   ground.cls
                 )}
               >
@@ -134,21 +134,23 @@ function AssistantMessage({ msg }: { msg: Message }) {
           )}
         </div>
 
-        <div className="text-sm text-[color:var(--ds-text)] leading-relaxed whitespace-pre-wrap bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-2xl rounded-tl-md p-4 card-shadow">
+        <div className="card-shadow rounded-2xl rounded-tl-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
           {msg.content}
           {msg.isStreaming && (
-            <span className="inline-block w-0.5 h-4 brand-bg animate-pulse ml-0.5 align-text-bottom" />
+            <span className="brand-bg ml-0.5 inline-block h-4 w-0.5 animate-pulse align-text-bottom" />
           )}
         </div>
 
         {/* Citations */}
         {msg.citations && msg.citations.length > 0 && (
-          <div className="mt-3 p-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <div className="flex items-center gap-1.5 mb-2">
+          <div className="mt-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+            <div className="mb-2 flex items-center gap-1.5">
               <FileText size={12} className="text-[color:var(--ds-text-muted)]" />
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Quellen ({msg.citations.length})</span>
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                Quellen ({msg.citations.length})
+              </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {msg.citations.map((c) => (
                 <CitationPill key={c.slug} slug={c.slug} title={c.title} />
               ))}
@@ -158,38 +160,110 @@ function AssistantMessage({ msg }: { msg: Message }) {
 
         {/* Gaps — legal-specific categorization */}
         {msg.gaps && msg.gaps.length > 0 && (
-          <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-            <div className="flex items-center gap-1.5 mb-2">
+          <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+            <div className="mb-2 flex items-center gap-1.5">
               <AlertCircle size={13} className="text-amber-600" />
               <span className="text-xs font-medium text-amber-600">Lücken im Brain</span>
             </div>
             <div className="space-y-2">
               {msg.gaps.map((gap, i) => {
                 const lower = gap.toLowerCase();
-                const cat = lower.includes("frist") || lower.includes("termin") || lower.includes("deadline")
-                  ? { label: "Frist", icon: CalendarClock, color: "text-red-600", bg: "bg-red-500/5", border: "border-red-500/20" }
-                  : lower.includes("gesetz") || lower.includes("norm") || lower.includes("§") || lower.includes("paragraph") || lower.includes("bgb") || lower.includes("zpo") || lower.includes("abgb") || lower.includes("avg")
-                  ? { label: "Norm", icon: BookOpen, color: "text-blue-600", bg: "bg-blue-500/5", border: "border-blue-500/20" }
-                  : lower.includes("urteil") || lower.includes("entscheidung") || lower.includes("rspr") || lower.includes("rechtsprechung")
-                  ? { label: "Rechtsprechung", icon: Landmark, color: "brand-text", bg: "brand-soft/5", border: "brand-border" }
-                  : lower.includes("beweis") || lower.includes("zeug") || lower.includes("gutachten")
-                  ? { label: "Beweis", icon: FileWarning, color: "text-orange-600", bg: "bg-orange-500/5", border: "border-orange-500/20" }
-                  : lower.includes("dokument") || lower.includes("schriftst") || lower.includes("vertrag")
-                  ? { label: "Dokument", icon: FileText, color: "text-gray-400", bg: "bg-gray-500/5", border: "border-gray-500/20" }
-                  : lower.includes("risiko") || lower.includes("haftung") || lower.includes("strafe") || lower.includes("versto")
-                  ? { label: "Risiko", icon: ShieldAlert, color: "text-rose-600", bg: "bg-rose-500/5", border: "border-rose-500/20" }
-                  : { label: "Allgemein", icon: Scale, color: "text-amber-600", bg: "bg-amber-500/5", border: "border-amber-500/20" };
+                const cat =
+                  lower.includes("frist") || lower.includes("termin") || lower.includes("deadline")
+                    ? {
+                        label: "Frist",
+                        icon: CalendarClock,
+                        color: "text-red-600",
+                        bg: "bg-red-500/5",
+                        border: "border-red-500/20",
+                      }
+                    : lower.includes("gesetz") ||
+                        lower.includes("norm") ||
+                        lower.includes("§") ||
+                        lower.includes("paragraph") ||
+                        lower.includes("bgb") ||
+                        lower.includes("zpo") ||
+                        lower.includes("abgb") ||
+                        lower.includes("avg")
+                      ? {
+                          label: "Norm",
+                          icon: BookOpen,
+                          color: "text-blue-600",
+                          bg: "bg-blue-500/5",
+                          border: "border-blue-500/20",
+                        }
+                      : lower.includes("urteil") ||
+                          lower.includes("entscheidung") ||
+                          lower.includes("rspr") ||
+                          lower.includes("rechtsprechung")
+                        ? {
+                            label: "Rechtsprechung",
+                            icon: Landmark,
+                            color: "brand-text",
+                            bg: "brand-soft/5",
+                            border: "brand-border",
+                          }
+                        : lower.includes("beweis") ||
+                            lower.includes("zeug") ||
+                            lower.includes("gutachten")
+                          ? {
+                              label: "Beweis",
+                              icon: FileWarning,
+                              color: "text-orange-600",
+                              bg: "bg-orange-500/5",
+                              border: "border-orange-500/20",
+                            }
+                          : lower.includes("dokument") ||
+                              lower.includes("schriftst") ||
+                              lower.includes("vertrag")
+                            ? {
+                                label: "Dokument",
+                                icon: FileText,
+                                color: "text-gray-400",
+                                bg: "bg-gray-500/5",
+                                border: "border-gray-500/20",
+                              }
+                            : lower.includes("risiko") ||
+                                lower.includes("haftung") ||
+                                lower.includes("strafe") ||
+                                lower.includes("versto")
+                              ? {
+                                  label: "Risiko",
+                                  icon: ShieldAlert,
+                                  color: "text-rose-600",
+                                  bg: "bg-rose-500/5",
+                                  border: "border-rose-500/20",
+                                }
+                              : {
+                                  label: "Allgemein",
+                                  icon: Scale,
+                                  color: "text-amber-600",
+                                  bg: "bg-amber-500/5",
+                                  border: "border-amber-500/20",
+                                };
                 const Icon = cat.icon;
                 return (
-                  <div key={i} className={cn("flex items-start gap-2 rounded-lg border px-2.5 py-2", cat.bg, cat.border)}>
-                    <Icon size={12} className={cn("shrink-0 mt-0.5", cat.color)} />
-                    <div className="flex-1 min-w-0">
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-start gap-2 rounded-lg border px-2.5 py-2",
+                      cat.bg,
+                      cat.border
+                    )}
+                  >
+                    <Icon size={12} className={cn("mt-0.5 shrink-0", cat.color)} />
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <Badge variant="default" className={cn("text-[10px] border", cat.bg, cat.color, cat.border)}>
+                        <Badge
+                          variant="default"
+                          className={cn("border text-[10px]", cat.bg, cat.color, cat.border)}
+                        >
                           {cat.label}
                         </Badge>
                       </div>
-                      <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5 leading-relaxed">{gap}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                        {gap}
+                      </p>
                     </div>
                   </div>
                 );
@@ -200,10 +274,10 @@ function AssistantMessage({ msg }: { msg: Message }) {
 
         {/* Actions */}
         {!msg.isStreaming && (
-          <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               onClick={copy}
-              className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)] transition-colors"
+              className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
             >
               {copied ? <Check size={11} /> : <Copy size={11} />}
               {copied ? "Kopiert" : "Kopieren"}
@@ -234,7 +308,9 @@ export default function QueryPage() {
     try {
       const q = new URLSearchParams(window.location.search).get("q");
       if (q) setInput(q);
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }, []);
 
   const [queryMode, setQueryMode] = useState<"conservative" | "balanced" | "tokenmax">("balanced");
@@ -274,7 +350,11 @@ export default function QueryPage() {
       const res = await csrfFetch("/api/think", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userMsg.content, mode: queryMode, ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}) }),
+        body: JSON.stringify({
+          query: userMsg.content,
+          mode: queryMode,
+          ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
+        }),
       });
 
       if (!res.ok || !res.body) {
@@ -304,7 +384,7 @@ export default function QueryPage() {
               if (parsed.chunk) {
                 fullContent += parsed.chunk;
                 setMessages((prev) =>
-                  prev.map((m) => m.id === assistantId ? { ...m, content: fullContent } : m)
+                  prev.map((m) => (m.id === assistantId ? { ...m, content: fullContent } : m))
                 );
               }
               if (parsed.citations || parsed.gaps) {
@@ -322,7 +402,7 @@ export default function QueryPage() {
       }
 
       setMessages((prev) =>
-        prev.map((m) => m.id === assistantId ? { ...m, isStreaming: false } : m)
+        prev.map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m))
       );
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : "Unbekannter Fehler";
@@ -331,7 +411,7 @@ export default function QueryPage() {
           m.id === assistantId
             ? {
                 ...m,
-                content: `❌ Fehler: ${errMsg}\n\nStarte die Subsumio Engine mit: \`gbrain init && gbrain serve\``,
+                content: `❌ Fehler: ${errMsg}\n\nStarte die Subsumio Engine mit: \`subsumio init && subsumio serve\``,
                 isStreaming: false,
                 gaps: ["Subsumio Engine nicht erreichbar (localhost:3001)"],
               }
@@ -353,14 +433,18 @@ export default function QueryPage() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-4 border-b border-[color:var(--ds-border)] shrink-0">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[color:var(--ds-border)] px-4 py-4 md:px-6">
         <div className="min-w-0">
-          <h1 className="text-lg font-bold text-[color:var(--ds-text)] tracking-tight">Brain Query</h1>
-          <p className="text-xs text-[color:var(--ds-text-muted)] mt-1 leading-relaxed hidden sm:block">KI-Synthese mit Wissensgraph</p>
+          <h1 className="text-lg font-bold tracking-tight text-[color:var(--ds-text)]">
+            Brain Query
+          </h1>
+          <p className="mt-1 hidden text-xs leading-relaxed text-[color:var(--ds-text-muted)] sm:block">
+            KI-Synthese mit Wissensgraph
+          </p>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-2.5">
           {/* Model selector (per-query override) */}
           <ModelSelector selectedModelId={modelOverride} onSelect={setModelOverride} />
 
@@ -368,30 +452,45 @@ export default function QueryPage() {
           <div className="relative">
             <button
               onClick={() => setShowModeMenu(!showModeMenu)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] transition-all"
+              className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
             >
               <Settings2 size={12} />
               {MODE_LABELS[queryMode].label}
               <ChevronDown size={11} />
             </button>
             {showModeMenu && (
-              <div className="absolute right-0 top-full mt-1 w-52 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-xl card-shadow-elevated z-50 overflow-hidden">
-                {(Object.entries(MODE_LABELS) as [typeof queryMode, typeof MODE_LABELS[typeof queryMode]][]).map(([key, val]) => (
+              <div className="card-shadow-elevated absolute top-full right-0 z-50 mt-1 w-52 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                {(
+                  Object.entries(MODE_LABELS) as [
+                    typeof queryMode,
+                    (typeof MODE_LABELS)[typeof queryMode],
+                  ][]
+                ).map(([key, val]) => (
                   <button
                     key={key}
-                    onClick={() => { setQueryMode(key); setShowModeMenu(false); }}
+                    onClick={() => {
+                      setQueryMode(key);
+                      setShowModeMenu(false);
+                    }}
                     className={cn(
-                      "w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-[color:var(--ds-hover)] transition-colors",
+                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
                       queryMode === key && "brand-soft"
                     )}
                   >
                     <div className="flex-1">
-                      <p className={cn("text-sm font-medium", queryMode === key ? "brand-text" : "text-[color:var(--ds-text)]")}>
+                      <p
+                        className={cn(
+                          "text-sm font-medium",
+                          queryMode === key ? "brand-text" : "text-[color:var(--ds-text)]"
+                        )}
+                      >
                         {val.label}
                       </p>
-                      <p className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">{val.desc}</p>
+                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{val.desc}</p>
                     </div>
-                    {queryMode === key && <Check size={14} className="brand-text shrink-0 mt-0.5" />}
+                    {queryMode === key && (
+                      <Check size={14} className="brand-text mt-0.5 shrink-0" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -399,12 +498,7 @@ export default function QueryPage() {
           </div>
 
           {messages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMessages([])}
-              title="Chat leeren"
-            >
+            <Button variant="ghost" size="icon" onClick={() => setMessages([])} title="Chat leeren">
               <Trash2 size={14} className="text-[color:var(--ds-text-muted)]" />
             </Button>
           )}
@@ -412,27 +506,35 @@ export default function QueryPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 md:py-8 space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-6 md:px-6 md:py-8">
         {isEmpty ? (
-          <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto">
-            <div className="w-16 h-16 rounded-2xl brand-soft border brand-border flex items-center justify-center mb-6">
+          <div className="mx-auto flex h-full max-w-lg flex-col items-center justify-center text-center">
+            <div className="brand-soft brand-border mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border">
               <Brain size={28} className="brand-text" />
             </div>
-            <h2 className="text-xl font-bold text-[color:var(--ds-text)] mb-2 tracking-tight">Was möchtest du wissen?</h2>
-            <p className="text-sm text-[color:var(--ds-text-muted)] mb-8 leading-relaxed">
-              Stelle natürlichsprachliche Fragen. Subsumio synthesiert Antworten aus deinem Brain mit Quellen-Zitaten und zeigt dir, was es noch nicht weiß.
+            <h2 className="mb-2 text-xl font-bold tracking-tight text-[color:var(--ds-text)]">
+              Was möchtest du wissen?
+            </h2>
+            <p className="mb-8 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+              Stelle natürlichsprachliche Fragen. Subsumio synthesiert Antworten aus deinem Brain
+              mit Quellen-Zitaten und zeigt dir, was es noch nicht weiß.
             </p>
 
             <div className="w-full space-y-2">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="mb-3 flex items-center gap-2">
                 <Lightbulb size={13} className="text-amber-600" />
-                <span className="text-[10px] text-[color:var(--ds-text-subtle)] font-semibold uppercase tracking-[0.08em]">Beispiel-Queries</span>
+                <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                  Beispiel-Queries
+                </span>
               </div>
               {examples.map((q) => (
                 <button
                   key={q}
-                  onClick={() => { setInput(q); inputRef.current?.focus(); }}
-                  className="w-full text-left px-4 py-3.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-sm text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] transition-all"
+                  onClick={() => {
+                    setInput(q);
+                    inputRef.current?.focus();
+                  }}
+                  className="w-full rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3.5 text-left text-sm text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 >
                   {q}
                 </button>
@@ -443,11 +545,11 @@ export default function QueryPage() {
           messages.map((msg) => (
             <div key={msg.id} className="msg-in">
               {msg.role === "user" ? (
-                <div className="flex items-start gap-3 justify-end">
-                  <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-tr-md brand-soft border brand-border text-sm text-[color:var(--ds-text)]">
+                <div className="flex items-start justify-end gap-3">
+                  <div className="brand-soft brand-border max-w-[80%] rounded-2xl rounded-tr-md border px-4 py-3 text-sm text-[color:var(--ds-text)]">
                     {msg.content}
                   </div>
-                  <div className="w-9 h-9 rounded-xl bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] flex items-center justify-center shrink-0 mt-0.5 text-xs text-[color:var(--ds-text-muted)] font-semibold">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] text-xs font-semibold text-[color:var(--ds-text-muted)]">
                     Du
                   </div>
                 </div>
@@ -461,8 +563,8 @@ export default function QueryPage() {
       </div>
 
       {/* Input */}
-      <div className="shrink-0 px-4 md:px-6 pb-4 md:pb-6 pt-4 border-t border-[color:var(--ds-border)]">
-        <div className="relative flex items-end gap-3 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-2xl p-3 focus-within:border-[color:var(--brand-primary)] transition-colors card-shadow">
+      <div className="shrink-0 border-t border-[color:var(--ds-border)] px-4 pt-4 pb-4 md:px-6 md:pb-6">
+        <div className="card-shadow relative flex items-end gap-3 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 transition-colors focus-within:border-[color:var(--brand-primary)]">
           <textarea
             ref={inputRef}
             value={input}
@@ -470,7 +572,7 @@ export default function QueryPage() {
             onKeyDown={handleKeyDown}
             placeholder="Frage dein Brain…"
             rows={1}
-            className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] resize-none focus:outline-none leading-relaxed min-h-[24px] max-h-36"
+            className="max-h-36 min-h-[24px] flex-1 resize-none bg-transparent text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
             style={{ height: "auto" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -478,7 +580,7 @@ export default function QueryPage() {
               t.style.height = Math.min(t.scrollHeight, 144) + "px";
             }}
           />
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
               <Badge variant="default" className="text-xs">
                 {MODE_LABELS[queryMode].label}
@@ -493,14 +595,14 @@ export default function QueryPage() {
               aria-label="Senden"
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <Send size={14} />
               )}
             </Button>
           </div>
         </div>
-        <p className="text-xs text-[color:var(--ds-text-subtle)] mt-2.5 text-center">
+        <p className="mt-2.5 text-center text-xs text-[color:var(--ds-text-subtle)]">
           Enter zum Senden · Shift+Enter für Zeilenumbruch
         </p>
       </div>

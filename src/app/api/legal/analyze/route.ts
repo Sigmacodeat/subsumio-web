@@ -2,55 +2,57 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import {
-  ENGINE_URL,
-  engineConfigurationResponse,
-  requireEngineContext,
-} from "@/lib/engine";
+import { ENGINE_URL, engineConfigurationResponse, requireEngineContext } from "@/lib/engine";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { timingSafeCompare } from "@/lib/crypto-utils";
+import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
 export const maxDuration = 120;
 
 // ── Internal service auth ─────────────────────────────────────────────
-const INTERNAL_SECRET = env("SIGMABRAIN_INTERNAL_SECRET");
+const INTERNAL_SECRET = env("SUBSUMIO_INTERNAL_SECRET");
 
 // ── Zod validation ────────────────────────────────────────────────────
-const analyzeSchema = z.object({
-  document_slug: z.string().optional(),
-  text: z.string().optional(),
-  jurisdiction: z.string().optional(),
-  brain_id: z.string().optional(),
-}).passthrough();
+const analyzeSchema = z
+  .object({
+    document_slug: z.string().optional(),
+    text: z.string().optional(),
+    jurisdiction: z.string().optional(),
+    brain_id: z.string().optional(),
+  })
+  .passthrough();
 
 // ── Corpus knowledge base ─────────────────────────────────────────────
-const CORPUS_META: Record<string, { jurisdiction: "at" | "de" | "ch"; label: string; file: string }> = {
-  abgb:    { jurisdiction: "at", label: "ABGB", file: "at/abgb.md" },
-  ahg:     { jurisdiction: "at", label: "AHG", file: "at/ahg.md" },
-  bao:     { jurisdiction: "at", label: "BAO", file: "at/bao.md" },
-  eo:      { jurisdiction: "at", label: "EO", file: "at/eo.md" },
+const CORPUS_META: Record<
+  string,
+  { jurisdiction: "at" | "de" | "ch"; label: string; file: string }
+> = {
+  abgb: { jurisdiction: "at", label: "ABGB", file: "at/abgb.md" },
+  ahg: { jurisdiction: "at", label: "AHG", file: "at/ahg.md" },
+  bao: { jurisdiction: "at", label: "BAO", file: "at/bao.md" },
+  eo: { jurisdiction: "at", label: "EO", file: "at/eo.md" },
   stgb_at: { jurisdiction: "at", label: "StGB (AT)", file: "at/stgb-at.md" },
   stpo_at: { jurisdiction: "at", label: "StPO (AT)", file: "at/stpo-at.md" },
-  ugb:     { jurisdiction: "at", label: "UGB", file: "at/ugb.md" },
-  zpo_at:  { jurisdiction: "at", label: "ZPO (AT)", file: "at/zpo-at.md" },
-  ao:      { jurisdiction: "de", label: "AO", file: "de/ao.md" },
-  bgb:     { jurisdiction: "de", label: "BGB", file: "de/bgb.md" },
-  estg:    { jurisdiction: "de", label: "EStG", file: "de/estg.md" },
-  famfg:   { jurisdiction: "de", label: "FamFG", file: "de/famfg.md" },
-  gg:      { jurisdiction: "de", label: "GG", file: "de/gg.md" },
-  gmbhg:   { jurisdiction: "de", label: "GmbHG", file: "de/gmbhg.md" },
-  hgb:     { jurisdiction: "de", label: "HGB", file: "de/hgb.md" },
-  inso:    { jurisdiction: "de", label: "InsO", file: "de/inso.md" },
-  stgb:    { jurisdiction: "de", label: "StGB", file: "de/stgb.md" },
-  stpo:    { jurisdiction: "de", label: "StPO", file: "de/stpo.md" },
-  ustg:    { jurisdiction: "de", label: "UStG", file: "de/ustg.md" },
-  uwg:     { jurisdiction: "de", label: "UWG", file: "de/uwg.md" },
-  zpo:     { jurisdiction: "de", label: "ZPO", file: "de/zpo.md" },
-  or:      { jurisdiction: "ch", label: "OR", file: "ch/or.md" },
+  ugb: { jurisdiction: "at", label: "UGB", file: "at/ugb.md" },
+  zpo_at: { jurisdiction: "at", label: "ZPO (AT)", file: "at/zpo-at.md" },
+  ao: { jurisdiction: "de", label: "AO", file: "de/ao.md" },
+  bgb: { jurisdiction: "de", label: "BGB", file: "de/bgb.md" },
+  estg: { jurisdiction: "de", label: "EStG", file: "de/estg.md" },
+  famfg: { jurisdiction: "de", label: "FamFG", file: "de/famfg.md" },
+  gg: { jurisdiction: "de", label: "GG", file: "de/gg.md" },
+  gmbhg: { jurisdiction: "de", label: "GmbHG", file: "de/gmbhg.md" },
+  hgb: { jurisdiction: "de", label: "HGB", file: "de/hgb.md" },
+  inso: { jurisdiction: "de", label: "InsO", file: "de/inso.md" },
+  stgb: { jurisdiction: "de", label: "StGB", file: "de/stgb.md" },
+  stpo: { jurisdiction: "de", label: "StPO", file: "de/stpo.md" },
+  ustg: { jurisdiction: "de", label: "UStG", file: "de/ustg.md" },
+  uwg: { jurisdiction: "de", label: "UWG", file: "de/uwg.md" },
+  zpo: { jurisdiction: "de", label: "ZPO", file: "de/zpo.md" },
+  or: { jurisdiction: "ch", label: "OR", file: "ch/or.md" },
   stgb_ch: { jurisdiction: "ch", label: "StGB (CH)", file: "ch/stgb.md" },
-  zgb:     { jurisdiction: "ch", label: "ZGB", file: "ch/zgb.md" },
+  zgb: { jurisdiction: "ch", label: "ZGB", file: "ch/zgb.md" },
 };
 
 const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
@@ -76,23 +78,24 @@ interface GroundedCitation {
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function normalizeStatuteCode(code: string): string {
-  return code.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_");
+  return code
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_");
 }
 
-async function lookupSplitParagraph(
-  code: string,
-  paragraph: string,
-): Promise<string | null> {
+async function lookupSplitParagraph(code: string, paragraph: string): Promise<string | null> {
   const normalized = normalizeStatuteCode(code);
   const canonicalKey = Object.keys(CORPUS_META).find(
     (k) =>
       k === normalized ||
       k === normalized.replace(/_at$/, "_at") ||
-      CORPUS_META[k].label.toLowerCase().includes(code.toLowerCase()),
+      CORPUS_META[k].label.toLowerCase().includes(code.toLowerCase())
   );
 
   const abbr = canonicalKey
-    ? CORPUS_META[canonicalKey].label.match(/^([A-Z][A-Za-z\u00c4\u00d6\u00dc]+)/)?.[1] || code.toUpperCase()
+    ? CORPUS_META[canonicalKey].label.match(/^([A-Z][A-Za-z\u00c4\u00d6\u00dc]+)/)?.[1] ||
+      code.toUpperCase()
     : code.toUpperCase();
 
   const jur = canonicalKey ? CORPUS_META[canonicalKey].jurisdiction : "de";
@@ -112,10 +115,7 @@ async function lookupSplitParagraph(
   }
 }
 
-async function lookupCorpusParagraph(
-  codeKey: string,
-  paragraph: string,
-): Promise<string | null> {
+async function lookupCorpusParagraph(codeKey: string, paragraph: string): Promise<string | null> {
   const meta = CORPUS_META[codeKey];
   if (!meta) return null;
 
@@ -124,7 +124,7 @@ async function lookupCorpusParagraph(
     const paraNum = paragraph.replace(/^\u00a7\s*/, "").trim();
 
     const deMatch = text.match(
-      new RegExp(`## \u00a7 ${paraNum}[^\\n]*\\n([\\s\\S]{0,1500}?)(?=\\n## \u00a7|$)`),
+      new RegExp(`## \u00a7 ${paraNum}[^\\n]*\\n([\\s\\S]{0,1500}?)(?=\\n## \u00a7|$)`)
     );
     if (deMatch) return deMatch[1].trim();
 
@@ -141,9 +141,7 @@ async function lookupCorpusParagraph(
   }
 }
 
-async function groundCitations(
-  rawCitations: RawCitation[],
-): Promise<GroundedCitation[]> {
+async function groundCitations(rawCitations: RawCitation[]): Promise<GroundedCitation[]> {
   const results: GroundedCitation[] = [];
 
   for (const cite of rawCitations.slice(0, 20)) {
@@ -158,9 +156,7 @@ async function groundCitations(
     if (!sourceText) {
       const normalized = normalizeStatuteCode(code);
       const codeKey = Object.keys(CORPUS_META).find(
-        (k) =>
-          k === normalized ||
-          CORPUS_META[k].label.toUpperCase().startsWith(code.toUpperCase()),
+        (k) => k === normalized || CORPUS_META[k].label.toUpperCase().startsWith(code.toUpperCase())
       );
       if (codeKey) {
         sourceText = await lookupCorpusParagraph(codeKey, paragraph);
@@ -191,7 +187,9 @@ function safeParseJson(text: string): Record<string, unknown> {
     if (match) {
       try {
         return JSON.parse(match[0]) as Record<string, unknown>;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     return {};
   }
@@ -217,6 +215,11 @@ function buildAnalysisPrompt(text: string, jurisdiction: string): string {
       ? "AT (\u00d6sterreich), DE (Deutschland) oder CH (Schweiz)"
       : jurisdiction.toUpperCase();
 
+  // P0-SEC-001: the document text is user-controlled and is interpolated into
+  // the LLM prompt below. Strip prompt-injection patterns and control chars
+  // before embedding it between the document delimiters.
+  const safeText = sanitizeUserInput(text);
+
   return `Du bist ein \u00f6sterreichischer/deutscher Rechtsexperte. Analysiere das folgende Rechtsdokument.
 
 KRITISCHE REGEL: Du darfst KEINE Gesetzesnormen erfinden oder raten. Nenne AUSSCHLIESSLICH \u00a7-Paragraphen, die EXPLIZIT im Dokument genannt werden oder sich zwingend logisch aus dem Dokumenttyp ergeben (Kaufvertrag \u2192 \u00a7 433 BGB, Gew\u00e4hrleistung \u2192 \u00a7 922 ABGB, etc.).
@@ -225,7 +228,7 @@ Antworte AUSSCHLIESSLICH als g\u00fcltiges JSON ohne Markdown-Codeblock, keine a
 
 Dokument:
 ---
-${text}
+${safeText}
 ---
 
 Rechtsordnung: ${jurHint}
@@ -281,8 +284,7 @@ export async function POST(req: NextRequest) {
     engineHeaders = ctx.headers;
   } else {
     // Internal: build engine headers from environment
-    const apiKey =
-      env("SIGMABRAIN_WEB_API_KEY") || "";
+    const apiKey = env("SUBSUMIO_WEB_API_KEY") || "";
     engineHeaders = apiKey ? { "x-subsumio-api-key": apiKey } : {};
   }
 
@@ -305,8 +307,7 @@ export async function POST(req: NextRequest) {
   }
   const body = result.data;
 
-  const documentSlug =
-    typeof body.document_slug === "string" ? body.document_slug.trim() : "";
+  const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
   const jurisdiction =
     typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "all";
 
@@ -324,15 +325,16 @@ export async function POST(req: NextRequest) {
   let text = "";
   if (documentSlug) {
     try {
-      const pageRes = await fetch(
-        `${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`,
-        { headers: engineHeaders },
-      );
+      const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+        headers: engineHeaders,
+      });
       if (pageRes.ok) {
         const page = (await pageRes.json()) as { content?: string; title?: string };
         text = [page.title, page.content].filter(Boolean).join("\n\n");
       }
-    } catch { /* best-effort */ }
+    } catch {
+      /* best-effort */
+    }
   }
 
   if (!text && typeof body.text === "string") {
@@ -370,7 +372,9 @@ export async function POST(req: NextRequest) {
     parsed = safeParseJson(thinkData.answer || "{}");
   } catch (err) {
     console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
-    return Response.json(buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar."));
+    return Response.json(
+      buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.")
+    );
   }
 
   // 4. Ground cited_statutes against actual corpus (anti-hallucination)
@@ -394,20 +398,19 @@ export async function POST(req: NextRequest) {
   if (documentSlug) {
     void (async () => {
       try {
-        await fetch(
-          `${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...engineHeaders },
-            body: JSON.stringify({
-              meta: {
-                auto_analysis: parsed,
-                analyzed_at: new Date().toISOString(),
-              },
-            }),
-          },
-        );
-      } catch { /* best-effort */ }
+        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...engineHeaders },
+          body: JSON.stringify({
+            meta: {
+              auto_analysis: parsed,
+              analyzed_at: new Date().toISOString(),
+            },
+          }),
+        });
+      } catch {
+        /* best-effort */
+      }
     })();
   }
 

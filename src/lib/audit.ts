@@ -1,5 +1,5 @@
 /**
- * Audit-Trail Logger für SigmaBrain.
+ * Audit-Trail Logger für Subsumio.
  * In production: stores audit entries in a dedicated Postgres table (subsumio_audit_log).
  * In dev (no Postgres): falls back to brain pages of type "audit_log".
  * Each tenant's audit trail is isolated by brain_id.
@@ -37,7 +37,9 @@ const ensureAuditSchema = createSchemaInit([
 
 /** Compute a hash chain for tamper-evidence. */
 function computeHash(prevHash: string | null, data: string): string {
-  return createHash("sha256").update(`${prevHash ?? ""}${data}`).digest("hex");
+  return createHash("sha256")
+    .update(`${prevHash ?? ""}${data}`)
+    .digest("hex");
 }
 
 export async function logAudit(
@@ -63,18 +65,34 @@ export async function logAudit(
       // Get previous hash for chain
       const { rows } = await pool.query<{ hash: string }>(
         "SELECT hash FROM subsumio_audit_log WHERE brain_id = $1 ORDER BY id DESC LIMIT 1",
-        [brainId],
+        [brainId]
       );
       const prevHash = rows[0]?.hash ?? null;
-      const hash = computeHash(prevHash, `${action}:${entityType}:${opts?.entityId ?? ""}:${opts?.userId ?? ""}:${opts?.userEmail ?? ""}:${detailsStr}:${opts?.ip ?? ""}:${now}`);
+      const hash = computeHash(
+        prevHash,
+        `${action}:${entityType}:${opts?.entityId ?? ""}:${opts?.userId ?? ""}:${opts?.userEmail ?? ""}:${detailsStr}:${opts?.ip ?? ""}:${now}`
+      );
       await pool.query(
         `INSERT INTO subsumio_audit_log (brain_id, action, entity_type, entity_id, user_id, user_email, details, ip, hash, prev_hash)
          VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10)`,
-        [brainId, action, entityType, opts?.entityId, opts?.userId, opts?.userEmail, detailsStr, opts?.ip, hash, prevHash],
+        [
+          brainId,
+          action,
+          entityType,
+          opts?.entityId,
+          opts?.userId,
+          opts?.userEmail,
+          detailsStr,
+          opts?.ip,
+          hash,
+          prevHash,
+        ]
       );
       return;
     } catch (err) {
-      console.error(`[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[audit] postgres log failed: ${err instanceof Error ? err.message : String(err)}`
+      );
       // Fall through to brain-page fallback
     }
   }
@@ -152,7 +170,7 @@ export async function listAuditLogs(opts: {
          ${where}
          ORDER BY created_at DESC
          LIMIT $${paramIdx}`,
-        params,
+        params
       );
 
       return rows.map((r) => ({
@@ -167,7 +185,9 @@ export async function listAuditLogs(opts: {
         timestamp: r.timestamp,
       }));
     } catch (err) {
-      console.error(`[audit] postgres list failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[audit] postgres list failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
 

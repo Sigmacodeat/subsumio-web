@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest) {
     { status: "ok" | "degraded" | "down"; latencyMs?: number; detail?: string }
   > = {};
 
-  // 1. Engine (GBrain)
+  // 1. Engine (Subsumio)
   const engineStart = Date.now();
   try {
     const res = await fetch(`${ENGINE_URL}/api/stats`, {

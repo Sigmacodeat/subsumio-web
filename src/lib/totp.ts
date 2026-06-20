@@ -48,7 +48,10 @@ export function generateSecret(): string {
 }
 
 /** Erzeugt einen TOTP-Code aus einem Secret. */
-export async function generateTOTP(secret: string, opts?: { time?: number; step?: number; digits?: number }): Promise<string> {
+export async function generateTOTP(
+  secret: string,
+  opts?: { time?: number; step?: number; digits?: number }
+): Promise<string> {
   const step = opts?.step ?? 30;
   const time = Math.floor((opts?.time ?? Date.now() / 1000) / step);
   const digits = opts?.digits ?? 6;
@@ -73,9 +76,9 @@ export async function generateTOTP(secret: string, opts?: { time?: number; step?
   const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, counter));
   const offset = sig[sig.length - 1] & 0x0f;
   const code =
-    ((sig[offset] & 0x7f) << 24 |
-      (sig[offset + 1] & 0xff) << 16 |
-      (sig[offset + 2] & 0xff) << 8 |
+    (((sig[offset] & 0x7f) << 24) |
+      ((sig[offset + 1] & 0xff) << 16) |
+      ((sig[offset + 2] & 0xff) << 8) |
       (sig[offset + 3] & 0xff)) %
     Math.pow(10, digits);
   return code.toString().padStart(digits, "0");
@@ -92,7 +95,7 @@ export async function verifyTOTP(token: string, secret: string): Promise<boolean
 }
 
 /** OTP-Auth-URL für QR-Code (otpauth://). */
-export function otpAuthURL(secret: string, label: string, issuer = "SigmaBrain"): string {
+export function otpAuthURL(secret: string, label: string, issuer = "Subsumio"): string {
   const params = new URLSearchParams({ secret, issuer });
   return `otpauth://totp/${encodeURIComponent(label)}?${params.toString()}`;
 }

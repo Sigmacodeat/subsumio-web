@@ -15,7 +15,7 @@ import { useLang } from "@/lib/use-lang";
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("light");
   useEffect(() => {
-    const stored = localStorage.getItem("gbrain-theme") as Theme | null;
+    const stored = localStorage.getItem("subsumio-theme") as Theme | null;
     const next =
       stored ?? (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     setTheme(next);
@@ -24,7 +24,7 @@ function useTheme(): [Theme, () => void] {
     setTheme((prev) => {
       const next: Theme = prev === "light" ? "dark" : "light";
       try {
-        localStorage.setItem("gbrain-theme", next);
+        localStorage.setItem("subsumio-theme", next);
       } catch {}
       return next;
     });

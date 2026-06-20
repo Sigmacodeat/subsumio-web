@@ -1,6 +1,6 @@
 /**
  * Guards the legal industry → brain link. Subsumio is legal-only:
- * the signup industry must be valid and map to the gbrain-legal schema pack.
+ * the signup industry must be valid and map to the subsumio-legal schema pack.
  */
 import { describe, test, expect } from "bun:test";
 import {
@@ -14,9 +14,9 @@ import {
 } from "./industry-pack";
 
 describe("industry-pack", () => {
-  test("legal is accepted and maps to the gbrain-legal pack", () => {
+  test("legal is accepted and maps to the subsumio-legal pack", () => {
     expect(isValidIndustry("legal")).toBe(true);
-    expect(packForIndustry("legal")).toBe("gbrain-legal");
+    expect(packForIndustry("legal")).toBe("subsumio-legal");
   });
 
   test("'other' is valid but has no vertical pack", () => {
@@ -45,7 +45,7 @@ describe("industry-pack", () => {
     expect(profile?.brand).toBe("Subsumio");
     expect(profile?.dashboardHref).toBe("/dashboard");
     expect(profile?.marketingHref.startsWith("/")).toBe(true);
-    expect(profile?.pack).toBe("gbrain-legal");
+    expect(profile?.pack).toBe("subsumio-legal");
     const theme = themeForIndustry("legal");
     expect(theme.primary).toMatch(/^#[0-9a-f]{6}$/i);
     expect(theme.secondary).toMatch(/^#[0-9a-f]{6}$/i);

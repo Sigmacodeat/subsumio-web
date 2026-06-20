@@ -12,13 +12,33 @@ type EnvVarSpec = {
 
 const ENV_SPECS: EnvVarSpec[] = [
   { name: "AUTH_SECRET", required: true, description: "HMAC secret for session tokens" },
-  { name: "SIGMABRAIN_ENCRYPTION_KEY", required: true, description: "AES-256 key for at-rest encryption" },
-  { name: "SIGMABRAIN_API_URL", required: true, description: "Engine API URL" },
-  { name: "SIGMABRAIN_WEB_API_KEY", required: true, description: "Engine API key for server-to-server auth" },
-  { name: "SIGMABRAIN_INTERNAL_SECRET", required: true, description: "Internal secret for service-to-service calls" },
-  { name: "UPSTASH_REDIS_REST_URL", required: true, description: "Upstash Redis REST URL for rate limiting" },
+  {
+    name: "SUBSUMIO_ENCRYPTION_KEY",
+    required: true,
+    description: "AES-256 key for at-rest encryption",
+  },
+  { name: "SUBSUMIO_API_URL", required: true, description: "Engine API URL" },
+  {
+    name: "SUBSUMIO_WEB_API_KEY",
+    required: true,
+    description: "Engine API key for server-to-server auth",
+  },
+  {
+    name: "SUBSUMIO_INTERNAL_SECRET",
+    required: true,
+    description: "Internal secret for service-to-service calls",
+  },
+  {
+    name: "UPSTASH_REDIS_REST_URL",
+    required: true,
+    description: "Upstash Redis REST URL for rate limiting",
+  },
   { name: "UPSTASH_REDIS_REST_TOKEN", required: true, description: "Upstash Redis REST token" },
-  { name: "RESEND_API_KEY", required: false, description: "Resend API key for transactional email" },
+  {
+    name: "RESEND_API_KEY",
+    required: false,
+    description: "Resend API key for transactional email",
+  },
   { name: "SENTRY_DSN", required: false, description: "Sentry DSN for error tracking" },
 ];
 

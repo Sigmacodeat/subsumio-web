@@ -1,5 +1,5 @@
 /**
- * Capacitor Mobile Bridge für SigmaBrain.
+ * Capacitor Mobile Bridge für Subsumio.
  * Abstrahiert native Plugins (Push, Camera, Biometric) mit Graceful-Degradation
  * für Browser/PWA.
  */
@@ -24,22 +24,45 @@ async function getCapacitor() {
 
 // Explicit per-module imports — no new Function() / eval, CSP-safe.
 async function importPushNotifications() {
-  try { return await import(/* webpackIgnore: true */ "@capacitor/push-notifications"); } catch { return null; }
+  try {
+    return await import(/* webpackIgnore: true */ "@capacitor/push-notifications");
+  } catch {
+    return null;
+  }
 }
 async function importCamera() {
-  try { return await import(/* webpackIgnore: true */ "@capacitor/camera"); } catch { return null; }
+  try {
+    return await import(/* webpackIgnore: true */ "@capacitor/camera");
+  } catch {
+    return null;
+  }
 }
 async function importShare() {
-  try { return await import(/* webpackIgnore: true */ "@capacitor/share"); } catch { return null; }
+  try {
+    return await import(/* webpackIgnore: true */ "@capacitor/share");
+  } catch {
+    return null;
+  }
 }
 async function importBiometric() {
-  try { return await import(/* webpackIgnore: true */ "capacitor-native-biometric"); } catch { return null; }
+  try {
+    return await import(/* webpackIgnore: true */ "capacitor-native-biometric");
+  } catch {
+    return null;
+  }
 }
 
 export async function detectCapabilities(): Promise<MobileCapabilities> {
   const Cap = await getCapacitor();
   if (!Cap) {
-    return { push: false, camera: "mediaDevices" in navigator, biometric: false, share: "share" in navigator, isNative: false, platform: "web" };
+    return {
+      push: false,
+      camera: "mediaDevices" in navigator,
+      biometric: false,
+      share: "share" in navigator,
+      isNative: false,
+      platform: "web",
+    };
   }
   const platform = Cap.getPlatform() as "ios" | "android" | "web";
   const isNative = platform !== "web";
@@ -56,7 +79,9 @@ export async function detectCapabilities(): Promise<MobileCapabilities> {
 /** Request push notification permission and get token. */
 export async function registerPush(): Promise<{ token?: string; error?: string }> {
   try {
-    const mod = await importPushNotifications() as typeof import("@capacitor/push-notifications") | null;
+    const mod = (await importPushNotifications()) as
+      | typeof import("@capacitor/push-notifications")
+      | null;
     if (!mod) return { error: "Push-Plugin nicht verfügbar. Nur in nativer App." };
     const { PushNotifications } = mod;
     const result = await PushNotifications.requestPermissions();
@@ -74,7 +99,7 @@ export async function registerPush(): Promise<{ token?: string; error?: string }
 /** Capture photo or scan document. */
 export async function capturePhoto(): Promise<{ base64?: string; error?: string }> {
   try {
-    const mod = await importCamera() as typeof import("@capacitor/camera") | null;
+    const mod = (await importCamera()) as typeof import("@capacitor/camera") | null;
     if (!mod) return { error: "Kamera nicht verfügbar. Nutze Datei-Upload." };
     const { Camera } = mod;
     const photo = await Camera.getPhoto({
@@ -93,7 +118,7 @@ export async function capturePhoto(): Promise<{ base64?: string; error?: string 
 /** Check biometric availability and authenticate. */
 export async function biometricAuth(): Promise<{ success: boolean; error?: string }> {
   try {
-    const mod = await importBiometric() as typeof import("capacitor-native-biometric") | null;
+    const mod = (await importBiometric()) as typeof import("capacitor-native-biometric") | null;
     if (!mod) return { success: false, error: "Biometrie-Plugin nicht verfügbar" };
     const { NativeBiometric } = mod;
     const available = await NativeBiometric.isAvailable();
@@ -111,9 +136,13 @@ export async function biometricAuth(): Promise<{ success: boolean; error?: strin
 }
 
 /** Share content via native share sheet. */
-export async function nativeShare(opts: { title: string; text: string; url?: string }): Promise<void> {
+export async function nativeShare(opts: {
+  title: string;
+  text: string;
+  url?: string;
+}): Promise<void> {
   try {
-    const mod = await importShare() as typeof import("@capacitor/share") | null;
+    const mod = (await importShare()) as typeof import("@capacitor/share") | null;
     if (!mod) throw new Error("Share plugin unavailable");
     const { Share } = mod;
     await Share.share(opts);

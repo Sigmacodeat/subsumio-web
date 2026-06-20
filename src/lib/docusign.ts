@@ -1,5 +1,5 @@
 /**
- * Docusign API Wrapper für SigmaBrain.
+ * Docusign API Wrapper für Subsumio.
  * Unterstützt zwei Modi:
  *   1. OAuth 2.0 Authorization Code Flow (per-User, über /api/docusign/callback)
  *   2. JWT Grant Flow (Service-Account, globaler Zugriff)

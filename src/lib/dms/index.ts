@@ -1,5 +1,5 @@
 /**
- * DMS (Document Management System) Abstrakter Konnektor für SigmaBrain.
+ * DMS (Document Management System) Abstrakter Konnektor für Subsumio.
  * Unterstützt iManage und NetDocuments über ein einheitliches Interface.
  *
  * Konfiguration via Umgebungsvariablen:
@@ -34,7 +34,11 @@ export interface DMSConnector {
   search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult>;
   getDocument(docId: string): Promise<DMSDocument | null>;
   getFolderContents(folderId: string): Promise<DMSSearchResult>;
-  importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>): Promise<{ slug: string; success: boolean }>;
+  importToBrain(
+    doc: DMSDocument,
+    brainId: string,
+    headers: Record<string, string>
+  ): Promise<{ slug: string; success: boolean }>;
 }
 
 // --- Shared config helpers --------------------------------------------------
@@ -43,7 +47,9 @@ export const DMS_BASE = process.env.DMS_BASE_URL || "";
 export const DMS_API_KEY = process.env.DMS_API_KEY || "";
 
 export function dmsAuthHeaders(): Record<string, string> {
-  return DMS_API_KEY ? { Authorization: `Bearer ${DMS_API_KEY}`, "Content-Type": "application/json" } : {};
+  return DMS_API_KEY
+    ? { Authorization: `Bearer ${DMS_API_KEY}`, "Content-Type": "application/json" }
+    : {};
 }
 
 export function isDmsConfigured(): boolean {
@@ -61,7 +67,7 @@ export async function importToBrainCommon(
   brainId: string,
   headers: Record<string, string>,
   providerName: string,
-  contentUrl: string,
+  contentUrl: string
 ): Promise<{ slug: string; success: boolean }> {
   let content = doc.content;
   if (!content) {

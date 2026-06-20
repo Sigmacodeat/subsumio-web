@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { validateUpload, sanitizeFilename } from "@/lib/upload-validation";
 import { scanFile } from "@/lib/virus-scan";
@@ -23,12 +22,16 @@ export const POST = createHandler(
 
       const check = validateUpload(file);
       if (!check.ok) {
-        const status = check.error === "file_required" ? 400 : check.error === "file_too_large" ? 413 : 415;
+        const status =
+          check.error === "file_required" ? 400 : check.error === "file_too_large" ? 413 : 415;
         return Response.json(check, { status });
       }
 
       const cleanForm = new FormData();
-      cleanForm.append("file", new File([check.file], sanitizeFilename(check.file.name), { type: check.file.type }));
+      cleanForm.append(
+        "file",
+        new File([check.file], sanitizeFilename(check.file.name), { type: check.file.type })
+      );
       const title = formData.get("title");
       if (typeof title === "string") cleanForm.append("title", title);
       const source = formData.get("source");
@@ -54,14 +57,14 @@ export const POST = createHandler(
             message = `Virenscanner nicht erreichbar — bitte erneut versuchen.`;
             break;
         }
-        return Response.json(
-          { error: scanResult.reason, message },
-          { status: 422 },
-        );
+        return Response.json({ error: scanResult.reason, message }, { status: 422 });
       }
 
       cleanForm.delete("file");
-      cleanForm.append("file", new File([fileBuffer], sanitizeFilename(check.file.name), { type: check.file.type }));
+      cleanForm.append(
+        "file",
+        new File([fileBuffer], sanitizeFilename(check.file.name), { type: check.file.type })
+      );
 
       const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
         method: "POST",
@@ -72,7 +75,7 @@ export const POST = createHandler(
       const text = await upstream.text();
       if (upstream.ok) {
         void recordQuota(ctx, "uploads");
-        const internalSecret = env("SIGMABRAIN_INTERNAL_SECRET");
+        const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
         if (internalSecret) {
           try {
             const uploadResult = JSON.parse(text) as { slug?: string; title?: string };
@@ -87,7 +90,9 @@ export const POST = createHandler(
                   document_slug: uploadResult.slug,
                   brain_id: ctx.brainId,
                 }),
-              }).catch(() => {/* silent: analysis is best-effort */});
+              }).catch(() => {
+                /* silent: analysis is best-effort */
+              });
             }
           } catch {
             // JSON parse failed or no slug — skip auto-analysis
@@ -102,5 +107,5 @@ export const POST = createHandler(
       console.error("[upload] failed:", err instanceof Error ? err.message : String(err));
       return apiError("service_unavailable", "Upload fehlgeschlagen", 503);
     }
-  },
+  }
 );

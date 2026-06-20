@@ -34,11 +34,11 @@ describe("Encryption", () => {
   it("decrypt returns null for corrupted encrypted data", async () => {
     // ENCRYPTION_KEY is captured at module load time, so we need to reset modules
     vi.resetModules();
-    process.env.SIGMABRAIN_ENCRYPTION_KEY = "test-key-32-chars-long-enough!!";
+    process.env.SUBSUMIO_ENCRYPTION_KEY = "test-key-32-chars-long-enough!!";
     const { decrypt: decryptWithKey } = await import("./encryption");
     const result = await decryptWithKey("sbenc:invalidbase64data!!!");
     expect(result).toBeNull();
-    delete process.env.SIGMABRAIN_ENCRYPTION_KEY;
+    delete process.env.SUBSUMIO_ENCRYPTION_KEY;
     vi.resetModules();
   });
 });

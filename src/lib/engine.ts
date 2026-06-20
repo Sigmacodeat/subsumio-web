@@ -13,7 +13,7 @@ import { checkQuota, incQuota, quotaExceeded, type QuotaType } from "@/lib/plans
 import { requireApiRate, type RateTier } from "@/lib/rate-limit-api";
 import { env } from "@/lib/env";
 
-const CONFIGURED_ENGINE_URL = env("SIGMABRAIN_API_URL");
+const CONFIGURED_ENGINE_URL = env("SUBSUMIO_API_URL");
 
 export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
 
@@ -21,11 +21,11 @@ export function engineConfigurationResponse(): Response | null {
   if (process.env.NODE_ENV !== "production" || CONFIGURED_ENGINE_URL) {
     // In production, also verify the API key is set
     if (process.env.NODE_ENV === "production" && CONFIGURED_ENGINE_URL) {
-      const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+      const apiKey = env("SUBSUMIO_WEB_API_KEY");
       if (!apiKey) {
         return Response.json(
           { error: "engine_api_key_missing", message: "Server configuration error." },
-          { status: 503 },
+          { status: 503 }
         );
       }
     }
@@ -36,7 +36,7 @@ export function engineConfigurationResponse(): Response | null {
       error: "engine_not_configured",
       message: "Server configuration error.",
     },
-    { status: 503 },
+    { status: 503 }
   );
 }
 
@@ -74,7 +74,7 @@ export async function engineContext(): Promise<EngineContext | null> {
   }
 
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
-  const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   return { headers, brainId, plan, user };
 }
@@ -100,7 +100,7 @@ export function unauthorized(): Response {
  */
 export function engineHeadersForBrain(brainId: string): Record<string, string> {
   const headers: Record<string, string> = { "x-subsumio-source": brainId };
-  const apiKey = env("SIGMABRAIN_WEB_API_KEY");
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   return headers;
 }
@@ -121,7 +121,7 @@ export async function requireEngineContext(
   req: Request,
   action: RouteAction,
   rateTier: RateTier,
-  quotaField?: QuotaType,
+  quotaField?: QuotaType
 ): Promise<GuardedContext | Response> {
   const ctx = await engineContext();
   if (!ctx) return unauthorized();
@@ -150,19 +150,20 @@ export async function requireEngineContext(
  * Record a quota consumption after a successful operation.
  * Fire-and-forget; errors are logged but not thrown.
  */
-export async function recordQuota(ctx: GuardedContext, field: QuotaType, amount = 1): Promise<void> {
+export async function recordQuota(
+  ctx: GuardedContext,
+  field: QuotaType,
+  amount = 1
+): Promise<void> {
   await incQuota(ctx.brainId, field, amount);
 }
 
 /**
  * Lightweight wrapper: nur Auth + RBAC (für Endpunkte ohne Rate/Quota).
  */
-export async function requireAuthAction(
-  action: RouteAction,
-): Promise<GuardedContext | Response> {
+export async function requireAuthAction(action: RouteAction): Promise<GuardedContext | Response> {
   const ctx = await engineContext();
   if (!ctx) return unauthorized();
   if (!can(ctx.user, action)) return forbidden(action);
   return ctx;
 }
-

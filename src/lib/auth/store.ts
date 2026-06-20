@@ -1,5 +1,5 @@
 // User store with a swappable adapter. Dev/self-hosted defaults to JSON files.
-// Serverless production uses Postgres when SIGMABRAIN_AUTH_DATABASE_URL,
+// Serverless production uses Postgres when SUBSUMIO_AUTH_DATABASE_URL,
 // DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL is set.
 
 import { promises as fs } from "node:fs";
@@ -99,7 +99,7 @@ export interface UserStore {
 
 import { env } from "@/lib/env";
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
 class FileUserStore implements UserStore {
@@ -242,7 +242,7 @@ export function getOrgStore(): OrgStore {
 // --- Postgres adapter -------------------------------------------------------
 
 const AUTH_DB_URL =
-  env("SIGMABRAIN_AUTH_DATABASE_URL") ||
+  env("SUBSUMIO_AUTH_DATABASE_URL") ||
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL;
@@ -491,7 +491,7 @@ function createUserStore(): UserStore {
   if (AUTH_DB_URL) return new PostgresUserStore();
   if (process.env.NODE_ENV === "production") {
     throw new AuthError(
-      "Production auth requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
+      "Production auth requires SUBSUMIO_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
       { code: "AUTH_DB_URL_MISSING" }
     );
   }
@@ -502,7 +502,7 @@ function createOrgStore(): OrgStore {
   if (AUTH_DB_URL) return new PostgresOrgStore();
   if (process.env.NODE_ENV === "production") {
     throw new AuthError(
-      "Production org storage requires SIGMABRAIN_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
+      "Production org storage requires SUBSUMIO_AUTH_DATABASE_URL, DATABASE_URL, POSTGRES_URL, or POSTGRES_PRISMA_URL.",
       { code: "AUTH_DB_URL_MISSING" }
     );
   }

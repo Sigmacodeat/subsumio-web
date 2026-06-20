@@ -40,7 +40,7 @@ import { env } from "@/lib/env";
 import { currentMonth } from "@/lib/datetime";
 import { createSchemaInit } from "@/lib/schema-init";
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const QUOTA_FILE = path.join(DATA_DIR, "quota.json");
 
 /** { [brainId]: { [yyyy-mm]: { queries: number, pages: number, uploads: number } } } */
@@ -84,13 +84,16 @@ const ensureQuotaSchema = createSchemaInit(`
 
 export type QuotaType = "queries" | "pages" | "uploads";
 
-async function pgGet(brainId: string, month: string): Promise<{ queries: number; pages: number; uploads: number }> {
+async function pgGet(
+  brainId: string,
+  month: string
+): Promise<{ queries: number; pages: number; uploads: number }> {
   const pool = getSharedPgPool();
   if (!pool) return { queries: 0, pages: 0, uploads: 0 };
   await ensureQuotaSchema();
   const { rows } = await pool.query<{ queries: number; pages: number; uploads: number }>(
     "SELECT queries, pages, uploads FROM subsumio_quota WHERE brain_id = $1 AND month = $2",
-    [brainId, month],
+    [brainId, month]
   );
   return rows[0] ?? { queries: 0, pages: 0, uploads: 0 };
 }
@@ -104,16 +107,24 @@ async function pgInc(brainId: string, month: string, field: QuotaType, amount = 
      VALUES ($1, $2, $3)
      ON CONFLICT (brain_id, month)
      DO UPDATE SET ${field} = subsumio_quota.${field} + $3, updated_at = now()`,
-    [brainId, month, amount],
+    [brainId, month, amount]
   );
 }
 
-async function fileGet(brainId: string, month: string): Promise<{ queries: number; pages: number; uploads: number }> {
+async function fileGet(
+  brainId: string,
+  month: string
+): Promise<{ queries: number; pages: number; uploads: number }> {
   const db = await loadQuotaFile();
   return db[brainId]?.[month] ?? { queries: 0, pages: 0, uploads: 0 };
 }
 
-async function fileInc(brainId: string, month: string, field: QuotaType, amount = 1): Promise<void> {
+async function fileInc(
+  brainId: string,
+  month: string,
+  field: QuotaType,
+  amount = 1
+): Promise<void> {
   const db = await loadQuotaFile();
   const brain = (db[brainId] ??= {});
   const slot = (brain[month] ??= { queries: 0, pages: 0, uploads: 0 });
@@ -122,7 +133,9 @@ async function fileInc(brainId: string, month: string, field: QuotaType, amount 
 }
 
 /** Aktueller Verbrauch für ein Brain im laufenden Monat. */
-export async function getQuota(brainId: string): Promise<{ queries: number; pages: number; uploads: number }> {
+export async function getQuota(
+  brainId: string
+): Promise<{ queries: number; pages: number; uploads: number }> {
   const month = currentMonth();
   try {
     if (getSharedPgPool()) return await pgGet(brainId, month);
@@ -157,7 +170,7 @@ const QUOTA_TO_LIMIT_KEY: Record<QuotaType, keyof PlanLimits | null> = {
 export async function checkQuota(
   brainId: string,
   plan: Plan,
-  field: QuotaType,
+  field: QuotaType
 ): Promise<{ ok: boolean; limit: number; used: number }> {
   const limits = limitsFor(plan);
   const limitKey = QUOTA_TO_LIMIT_KEY[field];
@@ -181,11 +194,11 @@ export async function checkQuota(
            ON CONFLICT (brain_id, month)
            DO UPDATE SET ${field} = subsumio_quota.${field} + 1, updated_at = now()
            RETURNING ${field} as new_val`,
-          [brainId, month],
+          [brainId, month]
         );
         const { rows } = await client.query<{ queries: number; pages: number; uploads: number }>(
           "SELECT queries, pages, uploads FROM subsumio_quota WHERE brain_id = $1 AND month = $2 FOR UPDATE",
-          [brainId, month],
+          [brainId, month]
         );
         const used = rows[0]?.[field] ?? 0;
         const ok = used <= limit;
@@ -203,7 +216,9 @@ export async function checkQuota(
         client.release();
       }
     } catch (err) {
-      console.error(`[quota] atomic check failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[quota] atomic check failed: ${err instanceof Error ? err.message : String(err)}`
+      );
       return { ok: true, limit, used: 0 };
     }
   }
@@ -216,7 +231,13 @@ export async function checkQuota(
 /** HTTP-Response wenn Quota überschritten. */
 export function quotaExceeded(field: QuotaType, used: number, limit: number): Response {
   return Response.json(
-    { error: "quota_exceeded", field, used, limit, message: `Monthly ${field} limit reached (${used}/${limit})` },
-    { status: 429 },
+    {
+      error: "quota_exceeded",
+      field,
+      used,
+      limit,
+      message: `Monthly ${field} limit reached (${used}/${limit})`,
+    },
+    { status: 429 }
   );
 }

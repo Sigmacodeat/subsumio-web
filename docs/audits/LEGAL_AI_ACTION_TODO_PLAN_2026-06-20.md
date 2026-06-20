@@ -80,11 +80,14 @@ Diese Tabelle ist die verbindliche Zuordnung von Paket zu Priorität, Auslieferu
 
 Diese Sektion wird laufend aktualisiert, sobald Arbeitspakete umgesetzt werden.
 
-| Ticket      | Status | Nachweis                                                                                                                                                                                                                                                                                                                                    |
-| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0-PROD-001 | fertig | `src/middleware.ts` exemptet Provider-Webhooks fuer Billing, WhatsApp, Resend, DocuSign und generische `/api/webhook/*`-Routen von Browser-CSRF. Verifiziert mit `bunx vitest run src/middleware.test.ts` und `bun run typecheck`.                                                                                                          |
-| P0-PROD-002 | fertig | `src/app/api/webhooks-auth.test.ts` prueft Stripe, WhatsApp, Resend und DocuSign route-nah: unsignierte/ungueltige Provider-Webhooks scheitern, gueltige Provider-Signaturen kommen ohne Browser-CSRF bis in die Route. Verifiziert mit `bunx vitest run src/middleware.test.ts src/app/api/webhooks-auth.test.ts` und `bun run typecheck`. |
-| P0-PROD-003 | fertig | `server`-Verify laeuft aus dem Monorepo heraus korrekt: Pfad-/Shebang-Gates fuer Source-ID, Test-Isolation, Admin-Scope, Batch-Audit und Worker-Lock sind repariert; Skill-Brain-First und Resolver sind bereinigt. Verifiziert mit `cd server && bun run verify` (30/30 Checks gruen).                                                     |
+| Ticket       | Status               | Nachweis                                                                                                                                                                                                                                                                                                                                    |
+| ------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0-PROD-001  | fertig               | `src/middleware.ts` exemptet Provider-Webhooks fuer Billing, WhatsApp, Resend, DocuSign und generische `/api/webhook/*`-Routen von Browser-CSRF. Verifiziert mit `bunx vitest run src/middleware.test.ts` und `bun run typecheck`.                                                                                                          |
+| P0-PROD-002  | fertig               | `src/app/api/webhooks-auth.test.ts` prueft Stripe, WhatsApp, Resend und DocuSign route-nah: unsignierte/ungueltige Provider-Webhooks scheitern, gueltige Provider-Signaturen kommen ohne Browser-CSRF bis in die Route. Verifiziert mit `bunx vitest run src/middleware.test.ts src/app/api/webhooks-auth.test.ts` und `bun run typecheck`. |
+| P0-PROD-003  | fertig               | `server`-Verify laeuft aus dem Monorepo heraus korrekt: Pfad-/Shebang-Gates fuer Source-ID, Test-Isolation, Admin-Scope, Batch-Audit und Worker-Lock sind repariert; Skill-Brain-First und Resolver sind bereinigt. Verifiziert mit `cd server && bun run verify` (30/30 Checks gruen).                                                     |
+| P0-INFRA-001 | fertig               | `validateEnv()` wird jetzt im Node.js-Startup-Hook `src/instrumentation.ts` aufgerufen: Produktion bricht bei fehlenden Pflicht-Env-Vars per `throw` ab (Fail-Fast), Dev warnt nur. Tests: `src/lib/env-validate.test.ts` (3). Verifiziert mit `bunx vitest run` und `bun run typecheck`.                                                   |
+| P0-INFRA-002 | fertig               | Alle 6 `/api/cron/*`-Routen rufen `validateCronAuth(req)` als erste Zeile auf. Abgesichert mit Unit-Tests + Coverage-Guard in `src/lib/cron-auth.test.ts` (6), der jede Cron-Route auf Import+Aufruf prueft.                                                                                                                                |
+| P0-INFRA-003 | Infrastruktur fertig | `src/lib/errors.ts` (AppError + 9 Domaenen-Subklassen, `isAppError`, `errorResponse`) und alle drei zentralen Handler in `api-handler.ts` mappen `isAppError` → korrekter Statuscode. Tests: `src/lib/errors.test.ts` (12). Flaechendeckende `createHandler`-Adoption laeuft unter P0-AUTH-003.                                             |
 
 ## Vollständigkeits- und Redundanzcheck vom 2026-06-20
 
@@ -1929,8 +1932,8 @@ Danach folgen:
 - `P0-CITE-003`: `/api/think` mit Citation Gate ausstatten.
 - `P0-CITE-004`: `/api/legal/contract-redline` mit Citation/Grounding-Metadaten erweitern.
 - `P0-CITE-005`: Citation Badge UI-Komponente bauen (bestehendes `CitationLink.tsx` erweitern).
-- `P0-SEC-001`: Prompt-Sanitizer für alle AI-Endpunkte aktivieren (`src/lib/prompt-sanitizer.ts`).
-- `P0-SEC-002`: Virus-Scan für alle Upload-Pfade aktivieren (`src/lib/virus-scan.ts`).
+- `P0-SEC-001`: Prompt-Sanitizer für alle AI-Endpunkte aktivieren (`src/lib/prompt-sanitizer.ts`). **Status: Web-App-Prompt-Oberflächen fertig** — `sanitizeUserInput()` greift jetzt in `/api/legal/analyze` (Dokumenttext) und `/api/agent-templates/[slug]/run` (User-Input), den einzigen beiden Routen, die im Web-App-Layer selbst Prompts bauen. Restliche Legal-Routen proxien zur Engine; deren Prompt-Sanitization gehört in die Engine-Schicht (offen).
+- `P0-SEC-002`: Virus-Scan für alle Upload-Pfade aktivieren (`src/lib/virus-scan.ts`). **Status: fertig** — `scanFile()` greift jetzt auf beiden untrusted Byte-Eingängen: `/api/upload` (bereits vorhanden) und neu in `src/lib/whatsapp/media.ts` (`downloadAndStoreWhatsAppMedia` scannt vor dem Speichern, lehnt Malware/MIME-Mismatch ab). E-Mail-Anlagen werden derzeit nur als Metadaten geparst (keine Byte-Speicherung im Web-App-Layer). Tests: `src/lib/virus-scan.test.ts` (6).
 - `P0-SEC-003`: Idempotency für alle Webhooks und Workflow-Steps durchsetzen (`src/lib/idempotency.ts`).
 - `P0-SRC-001`: `legal_source_registry` Modell + API-Skeleton.
 - `P0-EVAL-001`: `src/lib/rag-eval.ts` bereinigen, Fixture-Versionierung einführen und als Release-Gate definieren.
@@ -1951,9 +1954,9 @@ Danach folgen:
 - `P0-PORTAL-001`: Portal-Token-Infrastruktur härten und Regressionstests (`src/lib/portal-token.ts`).
 - `P0-PM-001`: AI Deadline Detection Regressionstests (`src/lib/ai-deadline-detect.ts`).
 - `P0-PM-002`: Time-Tracking-API mit Billing verbinden (`src/app/api/time/route.ts`).
-- `P0-INFRA-001`: Env-Validation beim Start pflicht (`src/lib/env-validate.ts`).
-- `P0-INFRA-002`: Cron-Auth für alle Cron-Endpunkte prüfen (`src/lib/cron-auth.ts`).
-- `P0-INFRA-003`: Error-Handling-Infrastruktur (`src/lib/errors.ts`) in allen API-Routen nutzen.
+- `P0-INFRA-001`: Env-Validation beim Start pflicht (`src/lib/env-validate.ts`). **Status: fertig.**
+- `P0-INFRA-002`: Cron-Auth für alle Cron-Endpunkte prüfen (`src/lib/cron-auth.ts`). **Status: fertig.**
+- `P0-INFRA-003`: Error-Handling-Infrastruktur (`src/lib/errors.ts`) in allen API-Routen nutzen. **Status: Infrastruktur fertig (errors.ts + zentrale Handler mappen `isAppError`); flächendeckende `createHandler`-Adoption läuft unter P0-AUTH-003.**
 - `P0-DATA-001`: Datenklassifikationsvertrag für Brain Page, relationale Tabelle, Dateiobjekt, Event/Audit und transienten AI-Run definieren.
 - `P0-DATA-002`: Modellkatalog für Source Registry, Workflows, Review Sets, Filing Packages, Ethics/AML, Analytics, Collaboration und Migration erstellen.
 - `P0-DATA-003`: Tenant-Boundary-Tests für Brain/Org/Source-Isolation in Suche, Export, Portal, DMS und Analytics spezifizieren.

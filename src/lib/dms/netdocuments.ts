@@ -1,9 +1,17 @@
 /**
- * NetDocuments API Konnektor für SigmaBrain.
+ * NetDocuments API Konnektor für Subsumio.
  * Referenz: https://developers.netdocuments.com/
  */
 
-import { type DMSConnector, type DMSDocument, type DMSSearchResult, DMS_BASE, dmsAuthHeaders, isDmsConfigured, importToBrainCommon } from "./index";
+import {
+  type DMSConnector,
+  type DMSDocument,
+  type DMSSearchResult,
+  DMS_BASE,
+  dmsAuthHeaders,
+  isDmsConfigured,
+  importToBrainCommon,
+} from "./index";
 
 export const netDocumentsConnector: DMSConnector = {
   name: "NetDocuments",
@@ -12,7 +20,10 @@ export const netDocumentsConnector: DMSConnector = {
     return isDmsConfigured();
   },
 
-  async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+  async search(
+    query: string,
+    opts?: { limit?: number; folderId?: string }
+  ): Promise<DMSSearchResult> {
     const url = new URL(`${DMS_BASE}/v1/Repository`);
     url.searchParams.set("search", query);
     if (opts?.limit) url.searchParams.set("count", String(opts.limit));
@@ -20,8 +31,14 @@ export const netDocumentsConnector: DMSConnector = {
     const res = await fetch(url.toString(), { headers: dmsAuthHeaders() });
     const data = (await res.json()) as {
       results?: Array<{
-        id: string; name: string; extension?: string; author?: { name?: string };
-        lastModified?: string; size?: number; version?: string; checkedOut?: boolean;
+        id: string;
+        name: string;
+        extension?: string;
+        author?: { name?: string };
+        lastModified?: string;
+        size?: number;
+        version?: string;
+        checkedOut?: boolean;
       }>;
       totalCount?: number;
     };
@@ -46,8 +63,14 @@ export const netDocumentsConnector: DMSConnector = {
     const res = await fetch(`${DMS_BASE}/v1/Documents/${docId}`, { headers: dmsAuthHeaders() });
     if (!res.ok) return null;
     const d = (await res.json()) as {
-      id: string; name: string; extension?: string; author?: { name?: string };
-      lastModified?: string; size?: number; version?: string; checkedOut?: boolean;
+      id: string;
+      name: string;
+      extension?: string;
+      author?: { name?: string };
+      lastModified?: string;
+      size?: number;
+      version?: string;
+      checkedOut?: boolean;
     };
     return {
       id: d.id,
@@ -62,11 +85,19 @@ export const netDocumentsConnector: DMSConnector = {
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {
-    const res = await fetch(`${DMS_BASE}/v1/Cabinets/${folderId}/documents`, { headers: dmsAuthHeaders() });
+    const res = await fetch(`${DMS_BASE}/v1/Cabinets/${folderId}/documents`, {
+      headers: dmsAuthHeaders(),
+    });
     const data = (await res.json()) as {
       results?: Array<{
-        id: string; name: string; extension?: string; author?: { name?: string };
-        lastModified?: string; size?: number; version?: string; checkedOut?: boolean;
+        id: string;
+        name: string;
+        extension?: string;
+        author?: { name?: string };
+        lastModified?: string;
+        size?: number;
+        version?: string;
+        checkedOut?: boolean;
       }>;
     };
     return {
@@ -85,7 +116,17 @@ export const netDocumentsConnector: DMSConnector = {
     };
   },
 
-  async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>): Promise<{ slug: string; success: boolean }> {
-    return importToBrainCommon(doc, brainId, headers, "NetDocuments", `${DMS_BASE}/v1/Documents/${doc.id}/content`);
+  async importToBrain(
+    doc: DMSDocument,
+    brainId: string,
+    headers: Record<string, string>
+  ): Promise<{ slug: string; success: boolean }> {
+    return importToBrainCommon(
+      doc,
+      brainId,
+      headers,
+      "NetDocuments",
+      `${DMS_BASE}/v1/Documents/${doc.id}/content`
+    );
   },
 };

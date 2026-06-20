@@ -1,7 +1,6 @@
-
 // industry-pack — Subsumio legal only.
 //
-// Maps the legal industry to the gbrain schema pack that configures the
+// Maps the legal industry to the subsumio schema pack that configures the
 // tenant brain for the legal vertical (page types, link verbs, calibration).
 
 export interface IndustryTheme {
@@ -48,10 +47,16 @@ export const INDUSTRY_PROFILES = {
     brand: "Subsumio",
     dashboardHref: "/dashboard",
     marketingHref: "/",
-    pack: "gbrain-legal",
+    pack: "subsumio-legal",
     signature: {
-      title: { en: "Matter memory with procedural discipline", de: "Aktegedaechtnis mit Verfahrensdisziplin" },
-      proof: { en: "Cases, deadlines, actors and documents stay connected as a legal graph.", de: "Akten, Fristen, Beteiligte und Dokumente bleiben als juristischer Graph verbunden." },
+      title: {
+        en: "Matter memory with procedural discipline",
+        de: "Aktegedaechtnis mit Verfahrensdisziplin",
+      },
+      proof: {
+        en: "Cases, deadlines, actors and documents stay connected as a legal graph.",
+        de: "Akten, Fristen, Beteiligte und Dokumente bleiben als juristischer Graph verbunden.",
+      },
       items: [
         { en: "Case contradictions", de: "Widersprueche in Akten" },
         { en: "Deadline-aware answers", de: "Fristenbewusste Antworten" },
@@ -63,7 +68,7 @@ export const INDUSTRY_PROFILES = {
 } as const satisfies Record<string, IndustryProfile>;
 
 export const INDUSTRY_PACK = Object.fromEntries(
-  Object.entries(INDUSTRY_PROFILES).map(([key, profile]) => [key, profile.pack]),
+  Object.entries(INDUSTRY_PROFILES).map(([key, profile]) => [key, profile.pack])
 ) as { [K in keyof typeof INDUSTRY_PROFILES]: NonNullable<(typeof INDUSTRY_PROFILES)[K]["pack"]> };
 
 export type Industry = keyof typeof INDUSTRY_PACK;

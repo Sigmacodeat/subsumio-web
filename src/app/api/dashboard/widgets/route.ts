@@ -8,7 +8,14 @@ import { createSchemaInit } from "@/lib/schema-init";
 
 const widgetSchema = z.object({
   id: z.string(),
-  type: z.enum(["stats", "recent-activity", "deadlines", "quick-actions", "dream-cycle", "getting-started"]),
+  type: z.enum([
+    "stats",
+    "recent-activity",
+    "deadlines",
+    "quick-actions",
+    "dream-cycle",
+    "getting-started",
+  ]),
   visible: z.boolean(),
   order: z.number(),
 });
@@ -17,7 +24,7 @@ const widgetsPostSchema = z.object({
   widgets: z.array(widgetSchema).max(20, "too_many_widgets"),
 });
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const WIDGET_PREFS_FILE = path.join(DATA_DIR, "widget-prefs.json");
 
 const ensureSchema = createSchemaInit(`
@@ -42,7 +49,7 @@ export const GET = createHandler(
         await ensureSchema();
         const result = await pool.query(
           "SELECT widgets FROM subsumio_widget_prefs WHERE user_id = $1 AND brain_id = $2",
-          [ctx.user.id, ctx.brainId],
+          [ctx.user.id, ctx.brainId]
         );
         if (result.rows.length > 0) {
           return Response.json({ widgets: result.rows[0].widgets });
@@ -61,7 +68,7 @@ export const GET = createHandler(
       }
     } catch {}
     return Response.json({ widgets: null });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -79,11 +86,14 @@ export const POST = createHandler(
           `INSERT INTO subsumio_widget_prefs (user_id, brain_id, widgets, updated_at)
            VALUES ($1, $2, $3, now())
            ON CONFLICT (user_id, brain_id) DO UPDATE SET widgets = EXCLUDED.widgets, updated_at = now()`,
-          [ctx.user.id, ctx.brainId, JSON.stringify(body.widgets)],
+          [ctx.user.id, ctx.brainId, JSON.stringify(body.widgets)]
         );
         return Response.json({ ok: true });
       } catch (err) {
-        console.error("[widget-prefs] postgres save failed:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[widget-prefs] postgres save failed:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
     }
     // File fallback
@@ -101,8 +111,11 @@ export const POST = createHandler(
       await fs.rename(tmp, WIDGET_PREFS_FILE);
       return Response.json({ ok: true });
     } catch (err) {
-      console.error("[widget-prefs] file save failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[widget-prefs] file save failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return Response.json({ ok: false, error: "persist_failed" }, { status: 500 });
     }
-  },
+  }
 );

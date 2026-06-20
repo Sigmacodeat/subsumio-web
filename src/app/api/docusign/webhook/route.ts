@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Map Docusign → SigmaBrain status
+  // Map Docusign → Subsumio status
   const statusMap: Record<string, string> = {
     completed: "signed",
     declined: "declined",

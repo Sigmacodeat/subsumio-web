@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Save,
-  FileText,
-  Info,
-  Loader2,
-  Inbox,
-} from "lucide-react";
+import { Save, FileText, Info, Loader2, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -53,33 +47,40 @@ export default function BeaPage() {
           api.brain.listPages({ type: "bea_message", limit: 50 }),
         ]);
         if (cancelled) return;
-        setDrafts(draftPages.map((p) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            slug: p.slug,
-            subject: String(fm.subject ?? p.title),
-            recipient: String(fm.recipient ?? "—"),
-            caseNumber: fm.case_reference ? String(fm.case_reference) : undefined,
-            createdAt: p.updated_at?.split("T")[0] ?? "",
-            aiGenerated: fm.ai_generated === true,
-          };
-        }));
-        setImported(importedPages.map((p) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-          return {
-            slug: p.slug,
-            subject: String(fm.subject ?? p.title),
-            sender: String(fm.sender ?? "—"),
-            sentDate: String(fm.sent_date ?? "").split("T")[0],
-          };
-        }));
+        setDrafts(
+          draftPages.map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              slug: p.slug,
+              subject: String(fm.subject ?? p.title),
+              recipient: String(fm.recipient ?? "—"),
+              caseNumber: fm.case_reference ? String(fm.case_reference) : undefined,
+              createdAt: p.updated_at?.split("T")[0] ?? "",
+              aiGenerated: fm.ai_generated === true,
+            };
+          })
+        );
+        setImported(
+          importedPages.map((p) => {
+            const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+            return {
+              slug: p.slug,
+              subject: String(fm.subject ?? p.title),
+              sender: String(fm.sender ?? "—"),
+              sentDate: String(fm.sent_date ?? "").split("T")[0],
+            };
+          })
+        );
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : "beA-Daten konnten nicht geladen werden.");
+        if (!cancelled)
+          setLoadError(e instanceof Error ? e.message : "beA-Daten konnten nicht geladen werden.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function saveDraft() {
@@ -90,7 +91,10 @@ export default function BeaPage() {
     setSaving(true);
     setStatusMessage(null);
     const now = new Date();
-    const slug = `legal/bea-drafts/${now.toISOString().split("T")[0]}-${subject.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-").slice(0, 60)}`;
+    const slug = `legal/bea-drafts/${now.toISOString().split("T")[0]}-${subject
+      .toLowerCase()
+      .replace(/[^a-z0-9äöüß]+/g, "-")
+      .slice(0, 60)}`;
     try {
       await api.brain.createPage({
         slug,
@@ -105,14 +109,17 @@ export default function BeaPage() {
           ...(aiGenerated ? AI_FRONTMATTER : {}),
         },
       });
-      setDrafts((prev) => [{
-        slug,
-        subject: subject.trim(),
-        recipient: recipient.trim(),
-        caseNumber: caseNumber.trim() || undefined,
-        createdAt: now.toISOString().split("T")[0],
-        aiGenerated,
-      }, ...prev]);
+      setDrafts((prev) => [
+        {
+          slug,
+          subject: subject.trim(),
+          recipient: recipient.trim(),
+          caseNumber: caseNumber.trim() || undefined,
+          createdAt: now.toISOString().split("T")[0],
+          aiGenerated,
+        },
+        ...prev,
+      ]);
       setShowCompose(false);
       setSubject("");
       setRecipient("");
@@ -121,14 +128,16 @@ export default function BeaPage() {
       setAiGenerated(false);
       setStatusMessage("Entwurf im Brain gespeichert.");
     } catch (e) {
-      setStatusMessage(e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen.");
+      setStatusMessage(
+        e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen."
+      );
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="beA — elektronischer Rechtsverkehr"
         description="Nachrichten-Import und Entwurfsvorbereitung"
@@ -136,7 +145,7 @@ export default function BeaPage() {
         actions={
           <Button
             variant="primary"
-            className="bg-blue-600 hover:bg-blue-500 text-white gap-2 text-sm"
+            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
             onClick={() => setShowCompose(!showCompose)}
             aria-expanded={showCompose}
           >
@@ -147,15 +156,19 @@ export default function BeaPage() {
       />
 
       {/* Honest framing: Subsumio does NOT send via beA */}
-      <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5" role="note">
-        <Info size={16} className="text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+      <div
+        className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3"
+        role="note"
+      >
+        <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
         <div className="text-sm text-amber-600">
-          <p className="font-medium mb-1">Kein Versand über Subsumio</p>
+          <p className="mb-1 font-medium">Kein Versand über Subsumio</p>
           <p className="text-xs leading-relaxed">
             Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte.
             Subsumio <strong>versendet keine Nachrichten</strong> — es importiert beA-Nachrichten
             via XML-Export (Konnektor <code className="font-mono">bea-import</code>) und speichert
-            Entwürfe im Brain, die Sie in Ihrer beA-Software (z. B. beA-Webclient, RA-MICRO) versenden.
+            Entwürfe im Brain, die Sie in Ihrer beA-Software (z. B. beA-Webclient, RA-MICRO)
+            versenden.
           </p>
         </div>
       </div>
@@ -167,63 +180,88 @@ export default function BeaPage() {
       )}
 
       {/* Status feedback for save actions */}
-      <div aria-live="polite" className="min-h-5 text-xs text-[color:var(--ds-text-muted)]">{statusMessage}</div>
+      <div aria-live="polite" className="min-h-5 text-xs text-[color:var(--ds-text-muted)]">
+        {statusMessage}
+      </div>
 
       {/* Compose */}
       {showCompose && (
         <form
-          className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 space-y-4"
-          onSubmit={(e) => { e.preventDefault(); void saveDraft(); }}
+          className="space-y-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveDraft();
+          }}
         >
           <h2 className="text-sm font-semibold text-blue-600">Neuer beA-Entwurf</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="bea-recipient" className="text-xs text-[color:var(--ds-text-muted)] block mb-1">Empfänger (Gericht/Behörde) *</label>
+              <label
+                htmlFor="bea-recipient"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Empfänger (Gericht/Behörde) *
+              </label>
               <input
                 id="bea-recipient"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
                 placeholder="z. B. Amtsgericht München"
                 required
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-blue-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
               />
             </div>
             <div>
-              <label htmlFor="bea-case" className="text-xs text-[color:var(--ds-text-muted)] block mb-1">Aktenzeichen</label>
+              <label
+                htmlFor="bea-case"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Aktenzeichen
+              </label>
               <input
                 id="bea-case"
                 value={caseNumber}
                 onChange={(e) => setCaseNumber(e.target.value)}
                 placeholder="2026-001"
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-blue-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
               />
             </div>
           </div>
           <div>
-            <label htmlFor="bea-subject" className="text-xs text-[color:var(--ds-text-muted)] block mb-1">Betreff *</label>
+            <label
+              htmlFor="bea-subject"
+              className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+            >
+              Betreff *
+            </label>
             <input
               id="bea-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="z. B. Klageerwiderung"
               required
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-blue-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             />
           </div>
           <div>
-            <label htmlFor="bea-body" className="text-xs text-[color:var(--ds-text-muted)] block mb-1">Nachrichtentext</label>
+            <label
+              htmlFor="bea-body"
+              className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+            >
+              Nachrichtentext
+            </label>
             <textarea
               id="bea-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder="Nachrichtentext…"
-              className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-blue-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 resize-y"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             />
           </div>
           {/* EU AI Act Art. 50: Nutzer markiert KI-generierten Inhalt, damit der
               Entwurf sichtbar + maschinenlesbar als KI-Output gekennzeichnet wird. */}
-          <label htmlFor="bea-ai" className="flex items-start gap-2 cursor-pointer">
+          <label htmlFor="bea-ai" className="flex cursor-pointer items-start gap-2">
             <input
               id="bea-ai"
               type="checkbox"
@@ -231,7 +269,7 @@ export default function BeaPage() {
               onChange={(e) => setAiGenerated(e.target.checked)}
               className="mt-0.5 accent-amber-500"
             />
-            <span className="text-xs text-[color:var(--ds-text-muted)] leading-relaxed">
+            <span className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
               Inhalt KI-generiert — als „{AI_BADGE_LABEL}&quot; kennzeichnen (EU AI Act Art. 50)
             </span>
           </label>
@@ -239,51 +277,76 @@ export default function BeaPage() {
             type="submit"
             variant="primary"
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-500 text-white gap-2 text-sm"
+            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
           >
-            {saving ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
+            {saving ? (
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Save size={14} aria-hidden="true" />
+            )}
             Als Entwurf im Brain speichern
           </Button>
         </form>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="beA-Nachrichten werden geladen">
-          <Loader2 size={24} className="text-blue-600 animate-spin" aria-hidden="true" />
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label="beA-Nachrichten werden geladen"
+        >
+          <Loader2 size={24} className="animate-spin text-blue-600" aria-hidden="true" />
         </div>
       ) : (
         <>
           {/* Drafts */}
           <section aria-labelledby="bea-drafts-heading">
-            <h2 id="bea-drafts-heading" className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">
+            <h2
+              id="bea-drafts-heading"
+              className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+            >
               Entwürfe ({drafts.length})
             </h2>
             <div className="space-y-2">
               {drafts.length === 0 ? (
-                <p className="text-sm text-[color:var(--ds-text-muted)] py-4">Keine Entwürfe vorhanden.</p>
+                <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">
+                  Keine Entwürfe vorhanden.
+                </p>
               ) : (
                 drafts.map((msg) => (
                   <div
                     key={msg.slug}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0" aria-hidden="true">
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10"
+                      aria-hidden="true"
+                    >
                       <FileText size={14} className="text-amber-600" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[color:var(--ds-text)]">{msg.subject}</span>
-                        <Badge variant="default" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20">
+                        <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                          {msg.subject}
+                        </span>
+                        <Badge
+                          variant="default"
+                          className="border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-600"
+                        >
                           Entwurf
                         </Badge>
                         {msg.aiGenerated && (
-                          <Badge variant="default" className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-500/30">
+                          <Badge
+                            variant="default"
+                            className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700"
+                          >
                             {AI_BADGE_LABEL}
                           </Badge>
                         )}
                       </div>
-                      <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                        An: {msg.recipient} {msg.caseNumber && `· Akte ${msg.caseNumber}`} · {msg.createdAt}
+                      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                        An: {msg.recipient} {msg.caseNumber && `· Akte ${msg.caseNumber}`} ·{" "}
+                        {msg.createdAt}
                       </div>
                     </div>
                   </div>
@@ -294,29 +357,40 @@ export default function BeaPage() {
 
           {/* Imported messages from the bea-import connector */}
           <section aria-labelledby="bea-imported-heading">
-            <h2 id="bea-imported-heading" className="text-sm font-semibold text-[color:var(--ds-text)] mb-2">
+            <h2
+              id="bea-imported-heading"
+              className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
+            >
               Importierte Nachrichten ({imported.length})
             </h2>
             <div className="space-y-2">
               {imported.length === 0 ? (
-                <div className="text-sm text-[color:var(--ds-text-muted)] py-4 space-y-1">
+                <div className="space-y-1 py-4 text-sm text-[color:var(--ds-text-muted)]">
                   <p>Keine importierten beA-Nachrichten.</p>
                   <p className="text-xs">
-                    Import einrichten: <code className="font-mono text-blue-600">gbrain connector add bea-import --watch-dir ~/Downloads/bea</code>
+                    Import einrichten:{" "}
+                    <code className="font-mono text-blue-600">
+                      subsumio connector add bea-import --watch-dir ~/Downloads/bea
+                    </code>
                   </p>
                 </div>
               ) : (
                 imported.map((msg) => (
                   <div
                     key={msg.slug}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0" aria-hidden="true">
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10"
+                      aria-hidden="true"
+                    >
                       <Inbox size={14} className="text-blue-600" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-[color:var(--ds-text)]">{msg.subject}</span>
-                      <div className="text-xs text-[color:var(--ds-text-muted)] mt-0.5">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-medium text-[color:var(--ds-text)]">
+                        {msg.subject}
+                      </span>
+                      <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         Von: {msg.sender} · {msg.sentDate}
                       </div>
                     </div>

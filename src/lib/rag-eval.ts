@@ -1,5 +1,5 @@
 /**
- * RAG-Eval Engine für SigmaBrain.
+ * RAG-Eval Engine für Subsumio.
  * Benchmarket die Retrieval-Qualität des Brains anhand von
  * bekannten Frage-Antwort-Paaren (Fixtures).
  *
@@ -57,8 +57,8 @@ export interface EvalQuery {
 }
 
 /**
- * Brain-agnostische Fixtures: die Slugs folgen dem GBrain-Legal-Pack-Schema
- * (`legal/norms/<norm-id>`, `legal/deadlines/<key>`) das beim `gbrain-legal`-
+ * Brain-agnostische Fixtures: die Slugs folgen dem Subsumio-Legal-Pack-Schema
+ * (`legal/norms/<norm-id>`, `legal/deadlines/<key>`) das beim `subsumio-legal`-
  * Pack-Init angelegt wird. Jede Kanzlei die den Pack verwendet hat diese Slugs.
  *
  * Für kanzlei-spezifische Fixtures (eigene Akten, Urteile) kann eine lokale
@@ -175,7 +175,7 @@ export interface EvalOptions {
 export async function runEval(
   retriever: (query: string) => Promise<string[]>,
   fixtures = EVAL_FIXTURES,
-  opts: EvalOptions = {},
+  opts: EvalOptions = {}
 ): Promise<EvalSummary> {
   const K = opts.k ?? 10;
   const results: EvalResult[] = [];
@@ -186,7 +186,10 @@ export async function runEval(
       retrieved = await retriever(q.query);
     } catch (err) {
       if (!opts.tolerateErrors) throw err;
-      console.warn(`[rag-eval] retriever error for "${q.id}":`, err instanceof Error ? err.message : String(err));
+      console.warn(
+        `[rag-eval] retriever error for "${q.id}":`,
+        err instanceof Error ? err.message : String(err)
+      );
     }
 
     const relevantSet = new Set(q.expectedSlugs);
@@ -262,7 +265,11 @@ function avg(arr: number[]): number {
 }
 
 /** Bewertungsskala */
-export function scoreGrade(precision: number, recall: number, mrr: number): { label: string; color: string } {
+export function scoreGrade(
+  precision: number,
+  recall: number,
+  mrr: number
+): { label: string; color: string } {
   const score = (precision + recall + mrr) / 3;
   if (score >= 0.8) return { label: "Exzellent", color: "emerald" };
   if (score >= 0.6) return { label: "Gut", color: "blue" };

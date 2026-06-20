@@ -81,7 +81,8 @@ export default function UploadPage() {
         file: f,
         status: "error" as const,
         progress: 0,
-        error: "Offline — Datei-Upload erfordert Internetverbindung. Datei wurde nicht gespeichert.",
+        error:
+          "Offline — Datei-Upload erfordert Internetverbindung. Datei wurde nicht gespeichert.",
       }));
       setFiles((prev) => [...prev, ...offlineFiles]);
       return;
@@ -112,9 +113,11 @@ export default function UploadPage() {
       getFile?: () => Promise<File>;
       values?: () => AsyncIterable<FsHandle>;
     }
-    const picker = (window as unknown as {
-      showDirectoryPicker?: () => Promise<FsHandle>;
-    }).showDirectoryPicker;
+    const picker = (
+      window as unknown as {
+        showDirectoryPicker?: () => Promise<FsHandle>;
+      }
+    ).showDirectoryPicker;
     if (!picker) return;
     try {
       setScanning(true);
@@ -156,7 +159,7 @@ export default function UploadPage() {
 
     for (const uploadFile of pending) {
       setFiles((prev) =>
-        prev.map((f) => f.id === uploadFile.id ? { ...f, status: "uploading", progress: 0 } : f)
+        prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "uploading", progress: 0 } : f))
       );
 
       try {
@@ -165,9 +168,7 @@ export default function UploadPage() {
           uploadFile.file,
           { title, source, tags: tagList.length > 0 ? tagList : undefined },
           (progress) => {
-            setFiles((prev) =>
-              prev.map((f) => f.id === uploadFile.id ? { ...f, progress } : f)
-            );
+            setFiles((prev) => prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)));
           }
         );
 
@@ -187,7 +188,10 @@ export default function UploadPage() {
           } catch (stampErr) {
             // Upload ist erfolgt; nur der Stempel fehlt — sichtbar machen, nicht
             // den ganzen Upload als Fehler werten.
-            console.error("[upload] GoBD-Stempel fehlgeschlagen:", stampErr instanceof Error ? stampErr.message : String(stampErr));
+            console.error(
+              "[upload] GoBD-Stempel fehlgeschlagen:",
+              stampErr instanceof Error ? stampErr.message : String(stampErr)
+            );
           }
         }
 
@@ -201,11 +205,7 @@ export default function UploadPage() {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Upload fehlgeschlagen";
         setFiles((prev) =>
-          prev.map((f) =>
-            f.id === uploadFile.id
-              ? { ...f, status: "error", error: msg }
-              : f
-          )
+          prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "error", error: msg } : f))
         );
       }
     }
@@ -215,7 +215,7 @@ export default function UploadPage() {
   const doneCount = files.filter((f) => f.status === "done").length;
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Dokument hochladen"
         description="Markdown, PDF oder Text — Subsumio chunked, embeddet und indiziert automatisch."
@@ -225,14 +225,17 @@ export default function UploadPage() {
       {/* Options */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="upload-source" className="block text-[0.6875rem] text-[color:var(--ds-text-muted)] uppercase tracking-wider font-semibold mb-2">
+          <label
+            htmlFor="upload-source"
+            className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+          >
             Brain Source
           </label>
           <select
             id="upload-source"
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           >
             <option value="wiki">wiki</option>
             <option value="meetings">meetings</option>
@@ -243,7 +246,10 @@ export default function UploadPage() {
           </select>
         </div>
         <div>
-          <label htmlFor="upload-tags" className="block text-[0.6875rem] text-[color:var(--ds-text-muted)] uppercase tracking-wider font-semibold mb-2">
+          <label
+            htmlFor="upload-tags"
+            className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+          >
             Tags (kommasepariert)
           </label>
           <input
@@ -252,13 +258,13 @@ export default function UploadPage() {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="z.B. fintech, q2-2026, alice"
-            className="w-full bg-[color:var(--ds-surface-2)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:border-[color:var(--brand-primary)] transition-all"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
         </div>
       </div>
 
       {/* GoBD-Belegstempel (opt-in) */}
-      <label className="flex items-start gap-3 p-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] cursor-pointer hover:border-[color:var(--ds-border-strong)] transition-colors">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]">
         <input
           type="checkbox"
           checked={gobdReceipt}
@@ -266,15 +272,17 @@ export default function UploadPage() {
           className="mt-0.5 accent-[var(--brand-primary)]"
         />
         <span className="flex items-start gap-2.5 text-sm">
-          <Archive size={15} className="brand-text shrink-0 mt-0.5" />
-          <span className="text-[color:var(--ds-text-muted)] leading-relaxed">
-            <strong className="text-[color:var(--ds-text)]">Steuerlich relevanter Beleg (GoBD-Bausteine)</strong> — Rechnungen,
-            Kontoauszüge, Quittungen. Beim Hochladen werden eine 10-Jahre-Aufbewahrungsfrist
-            (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§ 146 Abs. 4 AO) ins
-            Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.
-            <span className="block text-[11px] text-[color:var(--ds-text-muted)] mt-1">
-              Technischer Baustein — volle GoBD-Konformität verlangt zusätzlich Verfahrensdokumentation
-              und Prüfer-Abnahme.
+          <Archive size={15} className="brand-text mt-0.5 shrink-0" />
+          <span className="leading-relaxed text-[color:var(--ds-text-muted)]">
+            <strong className="text-[color:var(--ds-text)]">
+              Steuerlich relevanter Beleg (GoBD-Bausteine)
+            </strong>{" "}
+            — Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden eine
+            10-Jahre-Aufbewahrungsfrist (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§
+            146 Abs. 4 AO) ins Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.
+            <span className="mt-1 block text-[11px] text-[color:var(--ds-text-muted)]">
+              Technischer Baustein — volle GoBD-Konformität verlangt zusätzlich
+              Verfahrensdokumentation und Prüfer-Abnahme.
             </span>
           </span>
         </span>
@@ -282,7 +290,7 @@ export default function UploadPage() {
 
       {/* Offline warning */}
       {!isOnline() && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-600 text-sm">
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
           <CloudUpload size={16} />
           <span>Offline-Modus aktiv — Datei-Upload erfordert Internetverbindung.</span>
         </div>
@@ -292,32 +300,39 @@ export default function UploadPage() {
       <div
         {...getRootProps()}
         className={cn(
-          "relative border border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300",
+          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-all duration-300",
           isDragActive
             ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
-            : "border-[color:var(--ds-border-strong)] hover:brand-border hover:brand-soft",
-          !isOnline() && "opacity-50 cursor-not-allowed"
+            : "hover:brand-border hover:brand-soft border-[color:var(--ds-border-strong)]",
+          !isOnline() && "cursor-not-allowed opacity-50"
         )}
       >
         <input {...getInputProps()} aria-label="Datei hochladen" />
         <div className="flex flex-col items-center gap-4">
-          <div className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center transition-all",
-            isDragActive ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
-          )}>
-            <CloudUpload size={28} className={isDragActive ? "brand-text" : "text-[color:var(--ds-text-subtle)]"} />
+          <div
+            className={cn(
+              "flex h-16 w-16 items-center justify-center rounded-2xl transition-all",
+              isDragActive ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
+            )}
+          >
+            <CloudUpload
+              size={28}
+              className={isDragActive ? "brand-text" : "text-[color:var(--ds-text-subtle)]"}
+            />
           </div>
           <div>
-            <p className="text-base font-semibold text-[color:var(--ds-text)] mb-1">
+            <p className="mb-1 text-base font-semibold text-[color:var(--ds-text)]">
               {isDragActive ? "Loslassen zum Hochladen" : "Dateien hierher ziehen"}
             </p>
             <p className="text-sm text-[color:var(--ds-text-muted)]">
               oder <span className="brand-text hover:underline">Dateien auswählen</span>
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-center">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {[".md", ".txt", ".pdf", ".json"].map((ext) => (
-              <Badge key={ext} variant="default" className="font-mono text-xs">{ext}</Badge>
+              <Badge key={ext} variant="default" className="font-mono text-xs">
+                {ext}
+              </Badge>
             ))}
             <span className="text-xs text-[color:var(--ds-text-muted)]">· max 50 MB</span>
           </div>
@@ -326,7 +341,7 @@ export default function UploadPage() {
 
       {/* IDE-style folder import (Chromium only) */}
       {folderApi && (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-1">
+        <div className="-mt-1 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             variant="secondary"
             onClick={pickFolder}
@@ -337,21 +352,23 @@ export default function UploadPage() {
             {scanning ? "Ordner wird gelesen…" : "Ganzen Ordner einlesen"}
           </Button>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien
-            (auch in Unterordnern) ins Brain ein — nichts wird hochgeladen, bis du auf „Upload“ klickst.
+            Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien (auch in
+            Unterordnern) ins Brain ein — nichts wird hochgeladen, bis du auf „Upload“ klickst.
           </p>
         </div>
       )}
 
       {/* Info box */}
-      <div className="flex items-start gap-3 p-4 rounded-xl border border-blue-500/20 bg-blue-500/5">
-        <Info size={15} className="text-blue-600 shrink-0 mt-0.5" />
-        <div className="text-sm text-[color:var(--ds-text-muted)] leading-relaxed">
-          <strong className="text-[color:var(--ds-text)]">Wie funktioniert es?</strong> Subsumio chunked das Dokument automatisch,
-          erstellt Embeddings und indiziert es im Wissensgraph. Entitäten (Personen, Firmen, Konzepte)
-          werden extrahiert und verknüpft. Danach kannst du das Dokument über die Query-Seite abfragen.
+      <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+        <Info size={15} className="mt-0.5 shrink-0 text-blue-600" />
+        <div className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+          <strong className="text-[color:var(--ds-text)]">Wie funktioniert es?</strong> Subsumio
+          chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph.
+          Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du
+          das Dokument über die Query-Seite abfragen.
           <br />
-          <strong className="text-blue-600 mt-1 block">Hinweis:</strong> Die Subsumio Engine muss laufen ({`gbrain serve`}).
+          <strong className="mt-1 block text-blue-600">Hinweis:</strong> Die Subsumio Engine muss
+          laufen ({`subsumio serve`}).
         </div>
       </div>
 
@@ -361,7 +378,7 @@ export default function UploadPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
               {files.length} Datei{files.length !== 1 ? "en" : ""}
-              {doneCount > 0 && <span className="text-emerald-600 ml-2">· {doneCount} fertig</span>}
+              {doneCount > 0 && <span className="ml-2 text-emerald-600">· {doneCount} fertig</span>}
             </h3>
             <div className="flex items-center gap-2">
               {pendingCount > 0 && (
@@ -380,54 +397,60 @@ export default function UploadPage() {
             {files.map((f) => (
               <div
                 key={f.id}
-                className="flex items-center gap-3 p-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)] transition-colors"
+                className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
               >
                 <FileIcon name={f.file.name} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-[color:var(--ds-text)] truncate">{f.file.name}</span>
-                    <span className="text-xs text-[color:var(--ds-text-muted)] shrink-0">{formatBytes(f.file.size)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {f.file.name}
+                    </span>
+                    <span className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">
+                      {formatBytes(f.file.size)}
+                    </span>
                   </div>
                   {f.status === "uploading" && (
-                    <div className="h-1 bg-[color:var(--ds-border)] rounded-full overflow-hidden">
+                    <div className="h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                       <div
-                        className="h-full brand-bg rounded-full transition-all duration-200"
+                        className="brand-bg h-full rounded-full transition-all duration-200"
                         style={{ width: `${f.progress}%` }}
                       />
                     </div>
                   )}
                   {f.status === "done" && f.slug && (
-                    <span className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-mono text-emerald-600">→ {f.slug}</span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs text-emerald-600">→ {f.slug}</span>
                       {f.gobdStamped && (
-                        <Badge variant="default" className="text-[10px] brand-soft brand-text brand-border gap-1">
+                        <Badge
+                          variant="default"
+                          className="brand-soft brand-text brand-border gap-1 text-[10px]"
+                        >
                           <Archive size={10} /> GoBD gestempelt
                         </Badge>
                       )}
                     </span>
                   )}
-                  {f.status === "error" && (
-                    <span className="text-xs text-red-600">{f.error}</span>
-                  )}
+                  {f.status === "error" && <span className="text-xs text-red-600">{f.error}</span>}
                   {f.status === "pending" && (
-                    <span className="text-xs text-[color:var(--ds-text-muted)]">Bereit zum Hochladen</span>
+                    <span className="text-xs text-[color:var(--ds-text-muted)]">
+                      Bereit zum Hochladen
+                    </span>
                   )}
                 </div>
                 <div className="shrink-0">
                   {f.status === "pending" && (
-                    <button onClick={() => removeFile(f.id)} className="text-[color:var(--ds-text-muted)] hover:text-red-600 transition-colors">
+                    <button
+                      onClick={() => removeFile(f.id)}
+                      className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                    >
                       <X size={14} />
                     </button>
                   )}
                   {f.status === "uploading" && (
                     <Loader size={14} className="brand-text animate-spin" />
                   )}
-                  {f.status === "done" && (
-                    <CheckCircle size={14} className="text-emerald-600" />
-                  )}
-                  {f.status === "error" && (
-                    <XCircle size={14} className="text-red-600" />
-                  )}
+                  {f.status === "done" && <CheckCircle size={14} className="text-emerald-600" />}
+                  {f.status === "error" && <XCircle size={14} className="text-red-600" />}
                 </div>
               </div>
             ))}
@@ -437,19 +460,30 @@ export default function UploadPage() {
 
       {/* Next steps after upload */}
       {doneCount > 0 && (
-        <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+          <div className="mb-3 flex items-center gap-2">
             <CheckCircle size={16} className="text-emerald-600" />
-            <span className="text-sm font-semibold text-emerald-600">{doneCount} Datei{doneCount !== 1 ? "en" : ""} hochgeladen</span>
+            <span className="text-sm font-semibold text-emerald-600">
+              {doneCount} Datei{doneCount !== 1 ? "en" : ""} hochgeladen
+            </span>
           </div>
-          <p className="text-sm text-[color:var(--ds-text-muted)] mb-4">
-            Dein Brain wird indexiert. Sobald Subsumio die Embeddings erstellt hat, kannst du die Dokumente abfragen.
+          <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
+            Dein Brain wird indexiert. Sobald Subsumio die Embeddings erstellt hat, kannst du die
+            Dokumente abfragen.
           </p>
           <div className="flex gap-3">
-            <Button size="sm" variant="success" onClick={() => window.location.href = "/dashboard/query"}>
+            <Button
+              size="sm"
+              variant="success"
+              onClick={() => (window.location.href = "/dashboard/query")}
+            >
               Brain jetzt fragen
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => window.location.href = "/dashboard/brain"}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => (window.location.href = "/dashboard/brain")}
+            >
               Brain erkunden
             </Button>
           </div>

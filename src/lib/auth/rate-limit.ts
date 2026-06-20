@@ -23,7 +23,7 @@ interface Window {
 const windows = new Map<string, Window>();
 import { env } from "@/lib/env";
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const RATE_LIMIT_FILE = path.join(DATA_DIR, "rate-limits.json");
 
 let fileCache: Record<string, { count: number; resetAt: number }> | null = null;
@@ -138,7 +138,9 @@ export async function hit(key: string, max: number, windowMs: number): Promise<R
     try {
       return await hitUpstash(key, max, windowMs);
     } catch (err) {
-      console.error(`[rate-limit] upstash unreachable, per-instance fallback: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[rate-limit] upstash unreachable, per-instance fallback: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   }
   // Production without Upstash: load persisted state from file on first call,

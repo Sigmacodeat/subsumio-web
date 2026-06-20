@@ -1,5 +1,5 @@
 /**
- * Offline-Store für SigmaBrain Dashboard.
+ * Offline-Store für Subsumio Dashboard.
  * Cacht Brain-Daten (Akten, Fristen, Kontakte, Rechnungen) in IndexedDB.
  * Bei fehlender Internet-Verbindung → Fallback auf gecachte Daten.
  */
@@ -137,7 +137,9 @@ export const OFFLINE_KEYS = {
 
 // --- Mutation Queue ---
 
-export async function enqueueMutation(mutation: Omit<QueuedMutation, "id" | "createdAt">): Promise<void> {
+export async function enqueueMutation(
+  mutation: Omit<QueuedMutation, "id" | "createdAt">
+): Promise<void> {
   try {
     const db = await openDb();
     const tx = db.transaction(MUTATION_STORE, "readwrite");
@@ -162,7 +164,9 @@ export async function getPendingMutations(): Promise<QueuedMutation[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return entries.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return entries.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
   } catch (e) {
     report(e, "getPendingMutations");
     return [];
@@ -232,7 +236,9 @@ export async function loadChatHistory(): Promise<ChatHistoryEntry[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    return entries.sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
   } catch (e) {
     report(e, "loadChatHistory");
     return [];

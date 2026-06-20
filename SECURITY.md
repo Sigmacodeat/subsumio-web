@@ -2,8 +2,8 @@
 
 ## Reporting Vulnerabilities
 
-If you discover a security issue in GBrain, please report it privately by opening
-a [private security advisory](https://github.com/garrytan/gbrain/security/advisories/new)
+If you discover a security issue in Subsumio, please report it privately by opening
+a [private security advisory](https://github.com/Sigmacodeat/subsumio-web/security/advisories/new)
 on GitHub.
 
 Do not open a public issue for security vulnerabilities.
@@ -12,7 +12,7 @@ Do not open a public issue for security vulnerabilities.
 
 ### ⚠️ Do NOT use open OAuth client registration for remote MCP
 
-If you deploy GBrain's MCP server behind an HTTP wrapper with OAuth 2.1
+If you deploy Subsumio's MCP server behind an HTTP wrapper with OAuth 2.1
 support, **never allow unauthenticated client registration**. An attacker
 who discovers your server URL can:
 
@@ -20,25 +20,25 @@ who discovers your server URL can:
 2. Use `client_credentials` grant to obtain a bearer token
 3. Access all brain data via the MCP tools
 
-### Recommended: `gbrain serve --http`
+### Recommended: `subsumio serve --http`
 
-As of v0.22.7, GBrain ships a built-in HTTP transport that uses the
+As of v0.22.7, Subsumio ships a built-in HTTP transport that uses the
 existing `access_tokens` table for authentication:
 
 ```bash
 # Create a token
-gbrain auth create "my-client"
+subsumio auth create "my-client"
 
 # Start the HTTP server
-gbrain serve --http --port 8787
+subsumio serve --http --port 8787
 
 # Connect via ngrok, Tailscale, or any tunnel
 ngrok http 8787 --url your-brain.ngrok.app
 ```
 
-This is the recommended way to expose GBrain remotely. No OAuth, no
+This is the recommended way to expose Subsumio remotely. No OAuth, no
 registration endpoint, no self-service tokens. Tokens are managed
-exclusively via `gbrain auth create/list/revoke`.
+exclusively via `subsumio auth create/list/revoke`.
 
 ### If you must use a custom HTTP wrapper
 
@@ -52,14 +52,14 @@ exclusively via `gbrain auth create/list/revoke`.
 
 ### Pre-registering claude.ai / ChatGPT clients without DCR (v0.41.3+)
 
-The recommended hardening posture above is: ship `gbrain serve --http`
+The recommended hardening posture above is: ship `subsumio serve --http`
 **without** `--enable-dcr` and pre-register every client manually. As of
-v0.41.3, `gbrain auth register-client` accepts the OAuth fields
+v0.41.3, `subsumio auth register-client` accepts the OAuth fields
 browser-based clients need:
 
 ```bash
 # Pre-register claude.ai (confidential client; two redirect URIs)
-gbrain auth register-client claude-ai \
+subsumio auth register-client claude-ai \
   --scopes "read write" \
   --redirect-uri https://claude.ai/api/mcp/auth_callback \
   --redirect-uri https://claude.com/api/mcp/auth_callback
@@ -67,7 +67,7 @@ gbrain auth register-client claude-ai \
 # --redirect-uri is passed; pass --grant-types explicitly to override.
 
 # Pre-register ChatGPT (public PKCE client; no client_secret minted)
-gbrain auth register-client chatgpt \
+subsumio auth register-client chatgpt \
   --scopes "read write" \
   --redirect-uri https://chatgpt.com/connector/oauth/<HASH> \
   --token-endpoint-auth-method none
@@ -90,16 +90,16 @@ without `--enable-dcr`. That footgun is gone.
 ### Token Management
 
 ```bash
-gbrain auth create "claude-desktop"   # Create a new token
-gbrain auth list                       # List all tokens
-gbrain auth revoke "claude-desktop"    # Revoke a token
-gbrain auth test <url> --token <tok>   # Smoke-test a remote server
+subsumio auth create "claude-desktop"   # Create a new token
+subsumio auth list                       # List all tokens
+subsumio auth revoke "claude-desktop"    # Revoke a token
+subsumio auth test <url> --token <tok>   # Smoke-test a remote server
 ```
 
 Tokens are stored as SHA-256 hashes in the `access_tokens` table. The
 plaintext token is shown once at creation and never stored.
 
-## `gbrain serve --http` hardening (v0.22.7+)
+## `subsumio serve --http` hardening (v0.22.7+)
 
 The built-in HTTP transport ships with several layers of hardening on by
 default. All env vars below are optional; the defaults are intentionally
@@ -107,7 +107,7 @@ conservative.
 
 ### Bind address (v0.34: loopback by default)
 
-`gbrain serve --http` listens on `127.0.0.1` by default. Personal-laptop
+`subsumio serve --http` listens on `127.0.0.1` by default. Personal-laptop
 installs cannot accidentally publish the brain to the LAN. Self-hosted
 deployments that need remote access pass `--bind 0.0.0.0` (all
 interfaces) or `--bind <interface-ip>` (specific NIC). A stderr WARN
@@ -117,9 +117,9 @@ to me but the agent can't reach the upstream" misconfigurations.
 
 ### Postgres-only
 
-`gbrain serve --http` requires a Postgres engine. PGLite is local-only by
+`subsumio serve --http` requires a Postgres engine. PGLite is local-only by
 design and the `access_tokens` / `mcp_request_log` tables don't exist in
-the PGLite schema. Local agents continue to use stdio (`gbrain serve`).
+the PGLite schema. Local agents continue to use stdio (`subsumio serve`).
 Running `--http` against a PGLite-backed install fails fast with a clear
 error message at startup.
 
@@ -129,9 +129,9 @@ Default-deny: no `Access-Control-Allow-Origin` header is sent unless an
 allowlist is configured. To allow browser-based MCP clients:
 
 ```bash
-GBRAIN_HTTP_CORS_ORIGIN=https://claude.ai gbrain serve --http --port 8787
+SUBSUMIO_HTTP_CORS_ORIGIN=https://claude.ai subsumio serve --http --port 8787
 # Multiple origins: comma-separated
-GBRAIN_HTTP_CORS_ORIGIN=https://claude.ai,https://your.app gbrain serve --http
+SUBSUMIO_HTTP_CORS_ORIGIN=https://claude.ai,https://your.app subsumio serve --http
 ```
 
 When the request `Origin` matches the allowlist, the server echoes it
@@ -148,7 +148,7 @@ preflight handler in the legacy bearer transport was also asymmetric
 `Access-Control-Allow-Methods` + `Access-Control-Allow-Headers` to every
 Origin); both are now consolidated through a single allowlist-gated path.
 A startup stderr WARN fires when `--bind 0.0.0.0` is set without
-`GBRAIN_HTTP_CORS_ORIGIN`, surfacing the default-deny posture before the
+`SUBSUMIO_HTTP_CORS_ORIGIN`, surfacing the default-deny posture before the
 first request.
 
 ### Rate limiting
@@ -157,11 +157,11 @@ Two buckets, both stored in a bounded LRU map (default 10K keys, evicts
 least-recently-used on overflow, prunes entries older than 2× the
 window):
 
-| Bucket | When it fires | Default | Env var |
-|---|---|---|---|
-| Pre-auth IP | Before the DB lookup, on every `/mcp` request | 30 req / 60s | `GBRAIN_HTTP_RATE_LIMIT_IP` |
-| Post-auth token | After a valid token is resolved | 60 req / 60s | `GBRAIN_HTTP_RATE_LIMIT_TOKEN` |
-| LRU cap | Maximum distinct keys across both buckets | 10000 | `GBRAIN_HTTP_RATE_LIMIT_LRU` |
+| Bucket          | When it fires                                 | Default      | Env var                          |
+| --------------- | --------------------------------------------- | ------------ | -------------------------------- |
+| Pre-auth IP     | Before the DB lookup, on every `/mcp` request | 30 req / 60s | `SUBSUMIO_HTTP_RATE_LIMIT_IP`    |
+| Post-auth token | After a valid token is resolved               | 60 req / 60s | `SUBSUMIO_HTTP_RATE_LIMIT_TOKEN` |
+| LRU cap         | Maximum distinct keys across both buckets     | 10000        | `SUBSUMIO_HTTP_RATE_LIMIT_LRU`   |
 
 On exhaustion the server returns `429 Too Many Requests` with a
 `Retry-After` header.
@@ -183,17 +183,17 @@ narrow trust:
 
 ```bash
 # Trust exactly one hop — Fly.io, Render, Vercel, single-layer nginx
-GBRAIN_HTTP_TRUST_PROXY=1 gbrain serve --http --port 8787
+SUBSUMIO_HTTP_TRUST_PROXY=1 subsumio serve --http --port 8787
 
-# Trust N hops — Cloudflare → nginx → gbrain
-GBRAIN_HTTP_TRUST_PROXY=2 gbrain serve --http --port 8787
+# Trust N hops — Cloudflare → nginx → subsumio
+SUBSUMIO_HTTP_TRUST_PROXY=2 subsumio serve --http --port 8787
 
 # Disable entirely — direct-exposure deployment with no proxy
-GBRAIN_HTTP_TRUST_PROXY=0 gbrain serve --http --port 8787
+SUBSUMIO_HTTP_TRUST_PROXY=0 subsumio serve --http --port 8787
 
 # Named Express modes (uniquelocal, linklocal) or CIDR lists pass through
-GBRAIN_HTTP_TRUST_PROXY=uniquelocal gbrain serve --http --port 8787
-GBRAIN_HTTP_TRUST_PROXY="10.0.0.0/8,192.168.1.0/24" gbrain serve --http --port 8787
+SUBSUMIO_HTTP_TRUST_PROXY=uniquelocal subsumio serve --http --port 8787
+SUBSUMIO_HTTP_TRUST_PROXY="10.0.0.0/8,192.168.1.0/24" subsumio serve --http --port 8787
 ```
 
 Both transports (Express OAuth server in `src/commands/serve-http.ts` and
@@ -203,18 +203,18 @@ env var, so single source of truth.
 **Critical safety contract:** only widen past `'loopback'` when **both**
 of these are true:
 
-1. gbrain is reachable only via a trusted reverse proxy (not directly
+1. subsumio is reachable only via a trusted reverse proxy (not directly
    exposed to the internet on the configured port). As of v0.34
-   `gbrain serve --http` binds `127.0.0.1` by default, so the
+   `subsumio serve --http` binds `127.0.0.1` by default, so the
    reverse-proxy-only posture is the out-of-the-box shape; only
    override with `--bind 0.0.0.0` (or a specific interface IP) when
-   gbrain itself needs to accept remote connections directly.
+   subsumio itself needs to accept remote connections directly.
 2. The proxy strips any client-supplied `X-Forwarded-For` and `X-Real-IP`
    headers, then sets them itself. (nginx with `proxy_set_header
-   X-Forwarded-For $remote_addr` does this; Cloudflare and most cloud
+X-Forwarded-For $remote_addr` does this; Cloudflare and most cloud
    load balancers handle it automatically.)
 
-If gbrain is reachable directly AND `GBRAIN_HTTP_TRUST_PROXY=1` (or any
+If subsumio is reachable directly AND `SUBSUMIO_HTTP_TRUST_PROXY=1` (or any
 non-loopback value) is set, clients can spoof their IP by sending
 arbitrary `X-Forwarded-For` headers, defeating the pre-auth IP rate
 limit. The `'loopback'` default protects against this by ignoring all
@@ -226,7 +226,7 @@ Default 1 MiB, stream-counted (chunked transfers without
 `Content-Length` are still capped). Override:
 
 ```bash
-GBRAIN_HTTP_MAX_BODY_BYTES=2097152 gbrain serve --http   # 2 MiB
+SUBSUMIO_HTTP_MAX_BODY_BYTES=2097152 subsumio serve --http   # 2 MiB
 ```
 
 Over-cap requests get `413 Payload Too Large` immediately, before any
@@ -255,6 +255,6 @@ spec) preserve for debug visibility; unknown keys are counted but never
 named so attackers can't probe key existence; byte sizes bucket to 1KB so
 content sizes can't be binary-searched. The same shape is broadcast on the
 admin SSE feed at `/admin/events`. Operators on a personal laptop who want
-raw payloads back can pass `gbrain serve --http --log-full-params` (loud
+raw payloads back can pass `subsumio serve --http --log-full-params` (loud
 stderr warning at startup). Multi-tenant deployments should leave it
 on the redacted default.

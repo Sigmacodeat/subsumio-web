@@ -87,7 +87,11 @@ export interface HandlerOptions<
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
   /** Audit spec — logged after successful handler execution. */
-  audit?: (ctx: HandlerContext, body: ValidatedBody<B>, query: ValidatedQuery<Q>) => AuditSpec | AuditSpec[];
+  audit?: (
+    ctx: HandlerContext,
+    body: ValidatedBody<B>,
+    query: ValidatedQuery<Q>
+  ) => AuditSpec | AuditSpec[];
 }
 
 export type ValidatedBody<B> = B extends z.ZodTypeAny ? z.infer<B> : undefined;
@@ -140,7 +144,7 @@ function checkCsrf(req: NextRequest, skip: boolean): Response | null {
 
 async function parseAndValidateBody<B extends z.ZodTypeAny>(
   schema: B,
-  req: NextRequest,
+  req: NextRequest
 ): Promise<{ data: z.infer<B> } | { error: Response }> {
   let raw: unknown;
   try {
@@ -165,7 +169,7 @@ async function parseAndValidateBody<B extends z.ZodTypeAny>(
 
 async function parseAndValidateQuery<Q extends z.ZodTypeAny>(
   schema: Q,
-  req: NextRequest,
+  req: NextRequest
 ): Promise<{ data: z.infer<Q> } | { error: Response }> {
   const params: Record<string, string> = {};
   req.nextUrl.searchParams.forEach((value, key) => {
@@ -200,8 +204,8 @@ export function createHandler<
     ctx: HandlerContext,
     body: ValidatedBody<B>,
     query: ValidatedQuery<Q>,
-    req: NextRequest,
-  ) => Promise<Response>,
+    req: NextRequest
+  ) => Promise<Response>
 ): (req: NextRequest) => Promise<Response> {
   return async (req: NextRequest) => {
     // 0. CORS preflight
@@ -217,7 +221,7 @@ export function createHandler<
       req,
       options.action,
       options.rateTier ?? "standard",
-      options.quota,
+      options.quota
     );
     if (ctx instanceof Response) return withCorsHeaders(ctx, options.cors ?? false);
 
@@ -251,7 +255,7 @@ export function createHandler<
       } else {
         console.error(
           `[api-handler] uncaught error for action '${options.action}':`,
-          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.message : String(err)
         );
         response = apiError("internal_error", "An unexpected error occurred", 500);
       }
@@ -275,10 +279,7 @@ export function createHandler<
 
     // 7. Caching headers for GET
     if (req.method === "GET" && options.cacheMaxAge && response.ok) {
-      response.headers.set(
-        "Cache-Control",
-        `private, max-age=${options.cacheMaxAge}`,
-      );
+      response.headers.set("Cache-Control", `private, max-age=${options.cacheMaxAge}`);
     }
 
     return withCorsHeaders(response, options.cors ?? false);
@@ -298,7 +299,7 @@ export function createPublicHandler<
     rateLimitMax?: number;
     rateLimitWindowMs?: number;
   },
-  handler: (req: NextRequest, body: ValidatedBody<B>, query: ValidatedQuery<Q>) => Promise<Response>,
+  handler: (req: NextRequest, body: ValidatedBody<B>, query: ValidatedQuery<Q>) => Promise<Response>
 ): (req: NextRequest) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
@@ -345,7 +346,7 @@ export function createPublicHandler<
       } else {
         console.error(
           "[api-handler] uncaught error in public handler:",
-          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.message : String(err)
         );
         response = apiError("internal_error", "An unexpected error occurred", 500);
       }
@@ -360,15 +361,13 @@ export function createPublicHandler<
  * Skips auth/CSRF (webhooks use signature verification instead).
  * Still applies CORS, validation, and audit.
  */
-export function createWebhookHandler<
-  B extends z.ZodTypeAny | undefined = undefined,
->(
+export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefined>(
   options: {
     body?: B;
     cors?: boolean;
     audit?: (body: ValidatedBody<B>) => AuditSpec | AuditSpec[];
   },
-  handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>,
+  handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>
 ): (req: NextRequest) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
@@ -393,7 +392,7 @@ export function createWebhookHandler<
       } else {
         console.error(
           "[api-handler] uncaught error in webhook handler:",
-          err instanceof Error ? err.message : String(err),
+          err instanceof Error ? err.message : String(err)
         );
         response = apiError("internal_error", "Webhook processing failed", 500);
       }
@@ -422,7 +421,7 @@ export function createWebhookHandler<
 // ── Engine proxy helper ───────────────────────────────────────────────
 
 /**
- * Create a POST handler that proxies to the GBrain Engine.
+ * Create a POST handler that proxies to the Subsumio Engine.
  *
  * Eliminates the repeated fetch + error-handling + quota + stream pattern
  * across 10+ legal proxy routes. Wraps `createHandler` with a standard
@@ -440,26 +439,22 @@ export function createWebhookHandler<
  * });
  * ```
  */
-export function createEngineProxy<
-  B extends z.ZodTypeAny,
->(
-  options: {
-    action: RouteAction;
-    enginePath: string;
-    body: B;
-    rateTier?: RateTier;
-    quota?: QuotaType;
-    /** Custom quota amount (default: 1). */
-    quotaAmount?: (body: z.infer<B>) => number;
-    /** Whether to stream the engine response (SSE). Default: false (JSON). */
-    stream?: boolean;
-    /** Label for error logging. Default: enginePath. */
-    label?: string;
-    /** Transform the validated body before sending to the engine. */
-    transformBody?: (body: z.infer<B>) => Record<string, unknown>;
-    audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
-  },
-): (req: NextRequest) => Promise<Response> {
+export function createEngineProxy<B extends z.ZodTypeAny>(options: {
+  action: RouteAction;
+  enginePath: string;
+  body: B;
+  rateTier?: RateTier;
+  quota?: QuotaType;
+  /** Custom quota amount (default: 1). */
+  quotaAmount?: (body: z.infer<B>) => number;
+  /** Whether to stream the engine response (SSE). Default: false (JSON). */
+  stream?: boolean;
+  /** Label for error logging. Default: enginePath. */
+  label?: string;
+  /** Transform the validated body before sending to the engine. */
+  transformBody?: (body: z.infer<B>) => Record<string, unknown>;
+  audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
+}): (req: NextRequest) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
     {
@@ -470,7 +465,9 @@ export function createEngineProxy<
       audit: options.audit,
     },
     async (ctx, body, _query, _req) => {
-      const payload = options.transformBody ? options.transformBody(body as z.infer<B>) : body as Record<string, unknown>;
+      const payload = options.transformBody
+        ? options.transformBody(body as z.infer<B>)
+        : (body as Record<string, unknown>);
       try {
         const upstream = await fetch(`${ENGINE_URL}${options.enginePath}`, {
           method: "POST",
@@ -482,7 +479,7 @@ export function createEngineProxy<
           const errPayload = await upstream.json().catch(() => ({}));
           return Response.json(
             errPayload.error ? errPayload : { error: `Engine returned ${upstream.status}` },
-            { status: upstream.status },
+            { status: upstream.status }
           );
         }
 
@@ -500,15 +497,32 @@ export function createEngineProxy<
 
         return Response.json(await upstream.json());
       } catch (err) {
-        console.error(`[${label}] engine unreachable:`, err instanceof Error ? err.message : String(err));
+        console.error(
+          `[${label}] engine unreachable:`,
+          err instanceof Error ? err.message : String(err)
+        );
         return apiError("service_unavailable", "Engine nicht erreichbar", 503);
       }
-    },
+    }
   );
 }
 
 // ── Re-exports for convenience ────────────────────────────────────────
 
-export { apiError, apiSuccess, apiPaginated, apiStream, apiCached, apiBadRequest, apiUnauthorized, apiForbidden, apiNotFound, apiConflict, apiUnprocessable, apiRateLimited, apiUnavailable } from "@/lib/api-response";
+export {
+  apiError,
+  apiSuccess,
+  apiPaginated,
+  apiStream,
+  apiCached,
+  apiBadRequest,
+  apiUnauthorized,
+  apiForbidden,
+  apiNotFound,
+  apiConflict,
+  apiUnprocessable,
+  apiRateLimited,
+  apiUnavailable,
+} from "@/lib/api-response";
 export { recordQuota } from "@/lib/engine";
 export type { ApiErrorBody, ApiSuccessBody } from "@/lib/api-response";

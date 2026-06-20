@@ -2,28 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { hit, clientIp } from "@/lib/auth/rate-limit";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
+import { createIdempotencyStore } from "@/lib/idempotency";
 
-// Idempotency: track processed event IDs to prevent duplicate processing.
-// In-memory (per-instance) with TTL eviction.
-const processedEventIds = new Map<string, number>();
-const EVENT_ID_TTL_MS = 60 * 60 * 1000; // 1h
-
-function isEventProcessed(id: string): boolean {
-  const now = Date.now();
-  const seen = processedEventIds.get(id);
-  if (seen && now - seen < EVENT_ID_TTL_MS) return true;
-  return false;
-}
-
-function markEventProcessed(id: string): void {
-  processedEventIds.set(id, Date.now());
-  if (processedEventIds.size > 2_000) {
-    const now = Date.now();
-    for (const [key, ts] of processedEventIds) {
-      if (now - ts > EVENT_ID_TTL_MS) processedEventIds.delete(key);
-    }
-  }
-}
+// Idempotency: Postgres-backed (durable across instances/restarts) with an
+// in-memory fallback for dev. Prevents duplicate processing on provider retries.
+const idempotency = createIdempotencyStore("subsumio_webhook_incoming_events", ["event_type text"]);
 
 /**
  * POST /api/webhook/incoming
@@ -34,7 +17,7 @@ function markEventProcessed(id: string): void {
  * Body: { event: string, data: Record<string, unknown> }
  */
 function verifyWebhookKey(provided: string): boolean {
-  const expected = env("SIGMABRAIN_WEBHOOK_API_KEY");
+  const expected = env("SUBSUMIO_WEBHOOK_API_KEY");
   if (!expected) return false;
   // Timing-safe comparison
   if (provided.length !== expected.length) return false;
@@ -82,17 +65,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Idempotency: check if this event was already processed
-  const eventId = typeof body.eventId === "string" ? body.eventId
-    : typeof body.id === "string" ? body.id
-    : typeof body.event_id === "string" ? body.event_id
-    : "";
-  if (eventId && isEventProcessed(eventId)) {
+  const eventId =
+    typeof body.eventId === "string"
+      ? body.eventId
+      : typeof body.id === "string"
+        ? body.id
+        : typeof body.event_id === "string"
+          ? body.event_id
+          : "";
+  if (eventId && (await idempotency.isProcessed(eventId))) {
     return NextResponse.json({ success: true, dedup: true, received: event });
   }
 
   // Log and return success (processing is async)
   console.log(`[webhook] received ${event} from ${ip}`);
-  if (eventId) markEventProcessed(eventId);
+  if (eventId) await idempotency.markProcessed(eventId, event);
   return NextResponse.json({
     success: true,
     received: event,

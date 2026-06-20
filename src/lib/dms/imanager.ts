@@ -1,9 +1,17 @@
 /**
- * iManage Work API Konnektor für SigmaBrain.
+ * iManage Work API Konnektor für Subsumio.
  * Referenz: https://developer.imanage.com/api/
  */
 
-import { type DMSConnector, type DMSDocument, type DMSSearchResult, DMS_BASE, dmsAuthHeaders, isDmsConfigured, importToBrainCommon } from "./index";
+import {
+  type DMSConnector,
+  type DMSDocument,
+  type DMSSearchResult,
+  DMS_BASE,
+  dmsAuthHeaders,
+  isDmsConfigured,
+  importToBrainCommon,
+} from "./index";
 
 export const iManageConnector: DMSConnector = {
   name: "iManage Work",
@@ -12,7 +20,10 @@ export const iManageConnector: DMSConnector = {
     return isDmsConfigured();
   },
 
-  async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+  async search(
+    query: string,
+    opts?: { limit?: number; folderId?: string }
+  ): Promise<DMSSearchResult> {
     const url = new URL(`${DMS_BASE}/api/v2/search`);
     url.searchParams.set("q", query);
     if (opts?.limit) url.searchParams.set("limit", String(opts.limit));
@@ -21,8 +32,14 @@ export const iManageConnector: DMSConnector = {
     const res = await fetch(url.toString(), { headers: dmsAuthHeaders() });
     const data = (await res.json()) as {
       documents?: Array<{
-        id: string; name: string; document_type?: string; author?: string; last_modified?: string;
-        size?: number; version?: string; checkout_status?: string;
+        id: string;
+        name: string;
+        document_type?: string;
+        author?: string;
+        last_modified?: string;
+        size?: number;
+        version?: string;
+        checkout_status?: string;
       }>;
       folders?: Array<{ id: string; name: string; path?: string; document_count?: number }>;
       total_count?: number;
@@ -53,8 +70,14 @@ export const iManageConnector: DMSConnector = {
     const res = await fetch(`${DMS_BASE}/api/v2/documents/${docId}`, { headers: dmsAuthHeaders() });
     if (!res.ok) return null;
     const d = (await res.json()) as {
-      id: string; name: string; document_type?: string; author?: string;
-      last_modified?: string; size?: number; version?: string; checkout_status?: string;
+      id: string;
+      name: string;
+      document_type?: string;
+      author?: string;
+      last_modified?: string;
+      size?: number;
+      version?: string;
+      checkout_status?: string;
     };
     return {
       id: d.id,
@@ -72,7 +95,17 @@ export const iManageConnector: DMSConnector = {
     return this.search("", { folderId, limit: 100 });
   },
 
-  async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>): Promise<{ slug: string; success: boolean }> {
-    return importToBrainCommon(doc, brainId, headers, "iManage Work", `${DMS_BASE}/api/v2/documents/${doc.id}/content`);
+  async importToBrain(
+    doc: DMSDocument,
+    brainId: string,
+    headers: Record<string, string>
+  ): Promise<{ slug: string; success: boolean }> {
+    return importToBrainCommon(
+      doc,
+      brainId,
+      headers,
+      "iManage Work",
+      `${DMS_BASE}/api/v2/documents/${doc.id}/content`
+    );
   },
 };

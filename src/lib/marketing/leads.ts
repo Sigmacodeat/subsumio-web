@@ -32,7 +32,7 @@ export interface MarketingLead extends MarketingLeadInput {
 
 import { env } from "@/lib/env";
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const LEADS_FILE = path.join(DATA_DIR, "marketing-leads.json");
 
 let cache: MarketingLead[] | null = null;
@@ -60,7 +60,7 @@ async function pgReady() {
 }
 
 function rowToLead(row: { data: MarketingLead | string }): MarketingLead {
-  return typeof row.data === "string" ? JSON.parse(row.data) as MarketingLead : row.data;
+  return typeof row.data === "string" ? (JSON.parse(row.data) as MarketingLead) : row.data;
 }
 
 async function load(): Promise<MarketingLead[]> {
@@ -88,7 +88,7 @@ export async function listMarketingLeads(): Promise<MarketingLead[]> {
   const pool = await pgReady();
   if (pool) {
     const { rows } = await pool.query<{ data: MarketingLead }>(
-      "SELECT data FROM subsumio_marketing_leads ORDER BY created_at DESC LIMIT 500",
+      "SELECT data FROM subsumio_marketing_leads ORDER BY created_at DESC LIMIT 500"
     );
     return rows.map(rowToLead);
   }
@@ -110,7 +110,15 @@ export async function createMarketingLead(input: MarketingLeadInput): Promise<Ma
     await pool.query(
       `INSERT INTO subsumio_marketing_leads (id, email, lead_score, product, plan, data, created_at)
        VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
-      [lead.id, lead.email, lead.leadScore, lead.product, lead.plan, JSON.stringify(lead), lead.createdAt],
+      [
+        lead.id,
+        lead.email,
+        lead.leadScore,
+        lead.product,
+        lead.plan,
+        JSON.stringify(lead),
+        lead.createdAt,
+      ]
     );
   } else {
     const leads = await load();
@@ -130,7 +138,9 @@ export function summarizeLead(input: Omit<MarketingLeadInput, "summary" | "conse
     `${input.product} · ${input.plan} · ${input.leadScore}`,
     fields ? `Qualification: ${fields}` : "Qualification: not complete",
     lastUser ? `Latest ask: ${lastUser.slice(0, 240)}` : "",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["notified"]> {
@@ -149,7 +159,10 @@ async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["
     `Fields: ${JSON.stringify(lead.fields, null, 2)}`,
   ].join("\n");
 
-  const to = process.env.SALES_NOTIFY_EMAIL || process.env.MAIL_FROM?.match(/<([^>]+)>/)?.[1] || "hello@subsum.eu";
+  const to =
+    process.env.SALES_NOTIFY_EMAIL ||
+    process.env.MAIL_FROM?.match(/<([^>]+)>/)?.[1] ||
+    "hello@subsum.eu";
   const mail = await sendMail({ to, subject: `New ${lead.leadScore} lead: ${lead.product}`, text });
 
   let slack = false;

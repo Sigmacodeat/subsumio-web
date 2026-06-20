@@ -78,9 +78,9 @@ interface ResendWebhookEvent {
 
 import { env } from "@/lib/env";
 
-const MAILBOX_DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const MAILBOX_DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const MAILBOX_FILE = path.join(MAILBOX_DATA_DIR, "mailbox.json");
-const allowFileMailbox = env("SIGMABRAIN_ALLOW_FILE_MAILBOX_IN_PRODUCTION") === "true";
+const allowFileMailbox = env("SUBSUMIO_ALLOW_FILE_MAILBOX_IN_PRODUCTION") === "true";
 
 let mailboxCache: MailMessage[] | null = null;
 let mailboxWriteQueue: Promise<void> = Promise.resolve();
@@ -180,7 +180,11 @@ function mailboxMatchesUser(message: MailMessage, user: MailboxUser) {
 function parseAddress(input: string | undefined): { email: string; name: string | null } {
   const raw = (input ?? "").trim();
   const angle = raw.match(/^(.*?)<([^>]+)>$/);
-  if (angle) return { name: angle[1].trim().replace(/^"|"$/g, "") || null, email: angle[2].trim().toLowerCase() };
+  if (angle)
+    return {
+      name: angle[1].trim().replace(/^"|"$/g, "") || null,
+      email: angle[2].trim().toLowerCase(),
+    };
   return { email: raw.toLowerCase(), name: null };
 }
 
@@ -214,19 +218,26 @@ export function buildMailDraft(body: unknown, replyToMessageId?: string): MailDr
     subject,
     text: text || undefined,
     html: html || undefined,
-    replyToMessageId: replyToMessageId ?? (typeof payload.replyToMessageId === "string" ? payload.replyToMessageId : undefined),
+    replyToMessageId:
+      replyToMessageId ??
+      (typeof payload.replyToMessageId === "string" ? payload.replyToMessageId : undefined),
   };
 }
 
 async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail | null> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;
-  const res = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
+  const res = await fetch(
+    `https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`,
+    {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    }
+  );
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    console.error(`[mailbox] failed to retrieve received email ${emailId}: ${res.status} ${detail.slice(0, 200)}`);
+    console.error(
+      `[mailbox] failed to retrieve received email ${emailId}: ${res.status} ${detail.slice(0, 200)}`
+    );
     return null;
   }
   return (await res.json()) as ResendReceivedEmail;
@@ -243,7 +254,9 @@ export function verifyResendWebhook(payload: string, headers: Headers): ResendWe
   }) as ResendWebhookEvent;
 }
 
-export async function storeInboundResendEmail(event: ResendWebhookEvent): Promise<MailMessage | null> {
+export async function storeInboundResendEmail(
+  event: ResendWebhookEvent
+): Promise<MailMessage | null> {
   if (event.type !== "email.received") return null;
   await ensureMailboxReady();
 
@@ -254,7 +267,8 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
   const cc = full?.cc ?? event.data?.cc ?? [];
   const bcc = full?.bcc ?? event.data?.bcc ?? [];
   const messageId = full?.message_id ?? event.data?.message_id ?? null;
-  const createdAt = full?.created_at ?? event.data?.created_at ?? event.created_at ?? new Date().toISOString();
+  const createdAt =
+    full?.created_at ?? event.data?.created_at ?? event.created_at ?? new Date().toISOString();
   const raw = { event, received: full };
   const brainId = mailboxBrainId(to);
 
@@ -286,7 +300,7 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
         brainId,
         JSON.stringify(raw),
         createdAt,
-      ],
+      ]
     );
     return rowToMessage(rows[0]);
   }
@@ -296,27 +310,29 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
   }
   const messages = await loadLocalMailbox();
   const existing = emailId ? messages.find((m) => m.providerId === emailId) : null;
-  const next: MailMessage = existing ? { ...existing } : {
-    id: randomUUID(),
-    providerId: emailId ?? messageId ?? null,
-    direction: "inbound",
-    status: "received",
-    fromEmail: from.email || "unknown",
-    fromName: from.name,
-    toEmails: to,
-    ccEmails: cc,
-    bccEmails: bcc,
-    subject: full?.subject ?? event.data?.subject ?? "",
-    text: full?.text ?? null,
-    html: full?.html ?? null,
-    messageId,
-    inReplyTo: null,
-    userId: null,
-    brainId,
-    raw: raw as Record<string, unknown>,
-    createdAt,
-    updatedAt: new Date().toISOString(),
-  };
+  const next: MailMessage = existing
+    ? { ...existing }
+    : {
+        id: randomUUID(),
+        providerId: emailId ?? messageId ?? null,
+        direction: "inbound",
+        status: "received",
+        fromEmail: from.email || "unknown",
+        fromName: from.name,
+        toEmails: to,
+        ccEmails: cc,
+        bccEmails: bcc,
+        subject: full?.subject ?? event.data?.subject ?? "",
+        text: full?.text ?? null,
+        html: full?.html ?? null,
+        messageId,
+        inReplyTo: null,
+        userId: null,
+        brainId,
+        raw: raw as Record<string, unknown>,
+        createdAt,
+        updatedAt: new Date().toISOString(),
+      };
   if (existing) {
     next.raw = raw as Record<string, unknown>;
     next.text = full?.text ?? existing.text;
@@ -331,12 +347,21 @@ export async function storeInboundResendEmail(event: ResendWebhookEvent): Promis
 
 type MailboxUser = Pick<PublicUser, "id" | "role" | "brainId">;
 
-export async function listMailMessages(user: MailboxUser, filters: MailListFilters = {}): Promise<MailMessage[]> {
+export async function listMailMessages(
+  user: MailboxUser,
+  filters: MailListFilters = {}
+): Promise<MailMessage[]> {
   await ensureMailboxReady();
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
-    return localSort(messages.filter((message) => mailboxMatchesUser(message, user) && (!filters.direction || message.direction === filters.direction))).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
+    return localSort(
+      messages.filter(
+        (message) =>
+          mailboxMatchesUser(message, user) &&
+          (!filters.direction || message.direction === filters.direction)
+      )
+    ).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
   }
   const capped = Math.max(1, Math.min(filters.limit ?? 50, 200));
   const isAdmin = user.role === "admin";
@@ -350,7 +375,7 @@ export async function listMailMessages(user: MailboxUser, filters: MailListFilte
            WHERE (user_id = $1 OR brain_id = $2)
              AND ($4::text IS NULL OR direction = $4)
            ORDER BY created_at DESC LIMIT $3`,
-    isAdmin ? [capped, direction ?? null] : [user.id, user.brainId, capped, direction ?? null],
+    isAdmin ? [capped, direction ?? null] : [user.id, user.brainId, capped, direction ?? null]
   );
   return rows.map(rowToMessage);
 }
@@ -360,19 +385,24 @@ export async function getMailMessage(user: MailboxUser, id: string): Promise<Mai
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
-    return messages.find((message) => message.id === id && mailboxMatchesUser(message, user)) ?? null;
+    return (
+      messages.find((message) => message.id === id && mailboxMatchesUser(message, user)) ?? null
+    );
   }
   const isAdmin = user.role === "admin";
   const { rows } = await pool.query(
     isAdmin
       ? "SELECT * FROM subsumio_mail_messages WHERE id = $1"
       : "SELECT * FROM subsumio_mail_messages WHERE id = $1 AND (user_id = $2 OR brain_id = $3)",
-    isAdmin ? [id] : [id, user.id, user.brainId],
+    isAdmin ? [id] : [id, user.id, user.brainId]
   );
   return rows[0] ? rowToMessage(rows[0]) : null;
 }
 
-export async function sendMailboxMessage(user: MailboxUser, input: MailDraftInput): Promise<MailMessage> {
+export async function sendMailboxMessage(
+  user: MailboxUser,
+  input: MailDraftInput
+): Promise<MailMessage> {
   await ensureMailboxReady();
   const parent = input.replyToMessageId ? await getMailMessage(user, input.replyToMessageId) : null;
   const headers: Record<string, string> = {};
@@ -444,7 +474,7 @@ export async function sendMailboxMessage(user: MailboxUser, input: MailDraftInpu
       user.id,
       user.brainId,
       JSON.stringify({ provider: "resend", result }),
-    ],
+    ]
   );
   return rowToMessage(rows[0]);
 }

@@ -8,7 +8,7 @@
  *
  * Lauf: `(cd /tmp && bun test /Users/…/src/lib/gobd.test.ts)`
  * Hinweis: NICHT aus dem Repo-Root `bun test` aufrufen — die Root-`bunfig.toml`
- * gehört zur gbrain-Engine (Preload relativ zum cwd → nur aus `server/` gültig)
+ * gehört zur subsumio-Engine (Preload relativ zum cwd → nur aus `server/` gültig)
  * und bricht Frontend-Läufe mit „preload not found". Das Frontend hat (noch)
  * keinen eigenen Test-Harness; daher der Lauf aus einem cwd ohne diese bunfig.
  */
@@ -37,9 +37,7 @@ const sampleInvoice: InvoiceHashFields = {
     { date: "2026-06-01", description: "Beratung", hours: 2, rate: 200, amount: 400 },
     { date: "2026-06-02", description: "Schriftsatz", hours: 3, rate: 200, amount: 600 },
   ],
-  expenses: [
-    { date: "2026-06-03", description: "Gerichtskosten-Auslage", amount: 50 },
-  ],
+  expenses: [{ date: "2026-06-03", description: "Gerichtskosten-Auslage", amount: 50 }],
 };
 
 describe("invoiceContentString — kanonischer String (Hash-Vertrag)", () => {
@@ -83,7 +81,7 @@ describe("Verifikations-Symmetrie (Soll/Ist)", () => {
       invoiceContentString({
         ...sampleInvoice,
         items: [{ ...sampleInvoice.items[0], amount: 1 }, sampleInvoice.items[1]],
-      }),
+      })
     );
     expect(tampered).not.toBe(issued);
   });
@@ -92,7 +90,7 @@ describe("Verifikations-Symmetrie (Soll/Ist)", () => {
 describe("sha256Hex / sha256HexBytes", () => {
   test("bekannter SHA-256-Vektor (leere Eingabe)", async () => {
     expect(await sha256Hex("")).toBe(
-      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     );
   });
 

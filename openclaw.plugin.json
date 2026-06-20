@@ -1,5 +1,5 @@
 {
-  "name": "gbrain",
+  "name": "subsumio",
   "version": "0.32.3.0",
   "description": "Personal knowledge brain with Postgres + pgvector hybrid search",
   "family": "bundle-plugin",
@@ -22,11 +22,9 @@
     }
   },
   "mcpServers": {
-    "gbrain": {
-      "command": "./bin/gbrain",
-      "args": [
-        "serve"
-      ]
+    "subsumio": {
+      "command": "./bin/subsumio",
+      "args": ["serve"]
     }
   },
   "skills": [
@@ -75,19 +73,13 @@
     "skills/_brain-filing-rules.json",
     "skills/_output-rules.md"
   ],
-  "excluded_from_install": [
-    "skills/setup",
-    "skills/migrate",
-    "skills/publish"
-  ],
+  "excluded_from_install": ["skills/setup", "skills/migrate", "skills/publish"],
   "openclaw": {
     "compat": {
       "pluginApi": ">=2026.4.0"
     }
   },
   "contracts": {
-    "contextEngines": [
-      "gbrain-context"
-    ]
+    "contextEngines": ["gbrain-context"]
   }
 }

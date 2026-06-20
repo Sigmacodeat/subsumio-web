@@ -20,16 +20,11 @@ import { provisionBrainAsync } from "@/lib/provision";
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
 
 export const SCIM_CONTENT_TYPE = "application/scim+json; charset=utf-8";
-export const SCIM_SCHEMA_USER =
-  "urn:ietf:params:scim:schemas:core:2.0:User";
-export const SCIM_SCHEMA_GROUP =
-  "urn:ietf:params:scim:schemas:core:2.0:Group";
-export const SCIM_SCHEMA_LIST =
-  "urn:ietf:params:scim:api:messages:2.0:ListResponse";
-export const SCIM_SCHEMA_ERROR =
-  "urn:ietf:params:scim:api:messages:2.0:Error";
-export const SCIM_SCHEMA_PATCH_OP =
-  "urn:ietf:params:scim:api:messages:2.0:PatchOp";
+export const SCIM_SCHEMA_USER = "urn:ietf:params:scim:schemas:core:2.0:User";
+export const SCIM_SCHEMA_GROUP = "urn:ietf:params:scim:schemas:core:2.0:Group";
+export const SCIM_SCHEMA_LIST = "urn:ietf:params:scim:api:messages:2.0:ListResponse";
+export const SCIM_SCHEMA_ERROR = "urn:ietf:params:scim:api:messages:2.0:Error";
+export const SCIM_SCHEMA_PATCH_OP = "urn:ietf:params:scim:api:messages:2.0:PatchOp";
 
 // ── SCIM 2.0 Type Definitions ─────────────────────────────────────────
 
@@ -131,7 +126,7 @@ export interface SCIMPatchRequest {
 export function scimError(
   status: number,
   detail: string,
-  scimType?: SCIMErrorResponse["scimType"],
+  scimType?: SCIMErrorResponse["scimType"]
 ): Response {
   const body: SCIMErrorResponse = {
     schemas: [SCIM_SCHEMA_ERROR],
@@ -158,7 +153,7 @@ export function scimListResponse<T>(
   resources: T[],
   startIndex: number,
   count: number,
-  total: number,
+  total: number
 ): Response {
   const body: SCIMListResponse<T> = {
     schemas: [SCIM_SCHEMA_LIST],
@@ -260,9 +255,7 @@ export function scimToUserData(scimUser: SCIMUser): {
     scimUser.displayName ||
     (scimUser.name?.formatted
       ? scimUser.name.formatted
-      : [scimUser.name?.givenName, scimUser.name?.familyName]
-          .filter(Boolean)
-          .join(" ")) ||
+      : [scimUser.name?.givenName, scimUser.name?.familyName].filter(Boolean).join(" ")) ||
     email;
 
   return {
@@ -282,7 +275,7 @@ export function scimToUserData(scimUser: SCIMUser): {
  * - If active=false, deactivate (deprovisioning)
  */
 export async function provisionOrUpdateUser(
-  scimUser: SCIMUser,
+  scimUser: SCIMUser
 ): Promise<{ user: User; created: boolean }> {
   const store = getStore();
   const { email, name, externalId, active } = scimToUserData(scimUser);
@@ -436,9 +429,7 @@ export interface WorkOSDirectoryGroup {
  * List directory users from WorkOS.
  * Paginates through all results.
  */
-export async function listWorkOSDirectoryUsers(): Promise<
-  WorkOSDirectoryUser[]
-> {
+export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]> {
   if (!isWorkosDirectorySyncConfigured()) {
     throw new Error("WorkOS Directory Sync not configured");
   }
@@ -448,9 +439,7 @@ export async function listWorkOSDirectoryUsers(): Promise<
   const perPage = 100;
 
   do {
-    const url = new URL(
-      `${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/users`,
-    );
+    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/users`);
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
@@ -460,9 +449,7 @@ export async function listWorkOSDirectoryUsers(): Promise<
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(
-        `WorkOS directory users fetch failed: ${res.status} ${text}`,
-      );
+      throw new Error(`WorkOS directory users fetch failed: ${res.status} ${text}`);
     }
 
     const data = (await res.json()) as {
@@ -481,9 +468,7 @@ export async function listWorkOSDirectoryUsers(): Promise<
 /**
  * List directory groups from WorkOS.
  */
-export async function listWorkOSDirectoryGroups(): Promise<
-  WorkOSDirectoryGroup[]
-> {
+export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[]> {
   if (!isWorkosDirectorySyncConfigured()) {
     throw new Error("WorkOS Directory Sync not configured");
   }
@@ -493,9 +478,7 @@ export async function listWorkOSDirectoryGroups(): Promise<
   const perPage = 100;
 
   do {
-    const url = new URL(
-      `${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/groups`,
-    );
+    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${WORKOS_DIRECTORY_ID}/groups`);
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
@@ -505,9 +488,7 @@ export async function listWorkOSDirectoryGroups(): Promise<
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(
-        `WorkOS directory groups fetch failed: ${res.status} ${text}`,
-      );
+      throw new Error(`WorkOS directory groups fetch failed: ${res.status} ${text}`);
     }
 
     const data = (await res.json()) as {
@@ -525,9 +506,7 @@ export async function listWorkOSDirectoryGroups(): Promise<
 /**
  * Convert a WorkOS directory user to SCIM user format.
  */
-export function workOSUserToScim(
-  dirUser: WorkOSDirectoryUser,
-): SCIMUser {
+export function workOSUserToScim(dirUser: WorkOSDirectoryUser): SCIMUser {
   const primaryEmail =
     dirUser.emails?.find((e) => e.primary)?.value ||
     dirUser.emails?.[0]?.value ||
@@ -536,9 +515,7 @@ export function workOSUserToScim(
 
   const formattedName =
     dirUser.name?.formatted ||
-    [dirUser.name?.givenName, dirUser.name?.familyName]
-      .filter(Boolean)
-      .join(" ") ||
+    [dirUser.name?.givenName, dirUser.name?.familyName].filter(Boolean).join(" ") ||
     dirUser.displayName ||
     primaryEmail;
 
@@ -600,9 +577,7 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
     // Get all existing SCIM users to detect deprovisioning
     const allUsers = await store.list();
     const scimUserExternalIds = new Set(
-      allUsers
-        .filter((u) => u.scimExternalId)
-        .map((u) => u.scimExternalId as string),
+      allUsers.filter((u) => u.scimExternalId).map((u) => u.scimExternalId as string)
     );
 
     // Process each directory user
@@ -618,9 +593,7 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
         // Track that this external ID was seen
         if (scimUser.externalId) scimUserExternalIds.delete(scimUser.externalId);
       } catch (err) {
-        errors.push(
-          `User ${dirUser.id}: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        errors.push(`User ${dirUser.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
@@ -641,14 +614,10 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
         details: { count: groupsProcessed },
       });
     } catch (err) {
-      errors.push(
-        `Groups sync: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      errors.push(`Groups sync: ${err instanceof Error ? err.message : String(err)}`);
     }
   } catch (err) {
-    errors.push(
-      `Sync failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    errors.push(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   const completedAt = new Date().toISOString();
@@ -678,8 +647,7 @@ import path from "node:path";
 
 import { env } from "@/lib/env";
 
-const DATA_DIR =
-  env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const SYNC_STATUS_FILE = path.join(DATA_DIR, "scim-sync-status.json");
 
 export interface SyncStatus {
@@ -725,17 +693,13 @@ export async function saveSyncStatus(result: SyncResult): Promise<void> {
     await fs.mkdir(DATA_DIR, { recursive: true });
     await fs.writeFile(
       SYNC_STATUS_FILE,
-      JSON.stringify(
-        { lastSyncAt: result.completedAt, lastSyncResult: result },
-        null,
-        2,
-      ),
-      "utf8",
+      JSON.stringify({ lastSyncAt: result.completedAt, lastSyncResult: result }, null, 2),
+      "utf8"
     );
   } catch (err) {
     console.error(
       "[scim] failed to save sync status:",
-      err instanceof Error ? err.message : String(err),
+      err instanceof Error ? err.message : String(err)
     );
   }
 }

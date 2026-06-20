@@ -319,7 +319,7 @@ const DE: DocsContent = {
         {
           icon: "Network",
           title: "Plugin-System",
-          desc: "Erweiterbarkeit durch eigene Plugins und Skills. gbrain.plugin.json Format, Subagenten, Skillpacks — die Plattform wächst mit deinen Workflows.",
+          desc: "Erweiterbarkeit durch eigene Plugins und Skills. subsumio.plugin.json Format, Subagenten, Skillpacks — die Plattform wächst mit deinen Workflows.",
         },
       ],
     },
@@ -805,7 +805,7 @@ const EN: DocsContent = {
         {
           icon: "Network",
           title: "Plugin System",
-          desc: "Extensibility through custom plugins and skills. gbrain.plugin.json format, subagents, skillpacks — the platform grows with your workflows.",
+          desc: "Extensibility through custom plugins and skills. subsumio.plugin.json format, subagents, skillpacks — the platform grows with your workflows.",
         },
       ],
     },

@@ -1,7 +1,7 @@
 {
-  "name": "sigmabrain-word-addin",
+  "name": "subsumio-word-addin",
   "version": "1.0.0",
-  "description": "Microsoft Word Add-in for SigmaBrain Legal AI",
+  "description": "Microsoft Word Add-in for Subsumio Legal AI",
   "scripts": {
     "build": "tsc && vite build",
     "dev": "vite",

@@ -35,13 +35,17 @@ async function persist(email: Record<string, unknown>): Promise<void> {
 function parseAddress(input: string | undefined): { email: string; name: string | null } {
   const raw = (input ?? "").trim();
   const angle = raw.match(/^(.*?)<([^>]+)>$/);
-  if (angle) return { name: angle[1].trim().replace(/^"|"$/g, "") || null, email: angle[2].trim().toLowerCase() };
+  if (angle)
+    return {
+      name: angle[1].trim().replace(/^"|"$/g, "") || null,
+      email: angle[2].trim().toLowerCase(),
+    };
   return { email: raw.toLowerCase(), name: null };
 }
 
 export async function POST(req: NextRequest) {
   // Dev-only: reject in production unless explicitly allowed
-  if (process.env.NODE_ENV === "production" && env("SIGMABRAIN_ALLOW_DEV_CATCH") !== "true") {
+  if (process.env.NODE_ENV === "production" && env("SUBSUMIO_ALLOW_DEV_CATCH") !== "true") {
     return NextResponse.json({ ok: false, error: "dev_only" }, { status: 403 });
   }
 

@@ -1,5 +1,5 @@
 /**
- * E-Mail-Import Parser für SigmaBrain.
+ * E-Mail-Import Parser für Subsumio.
  * Parst .eml-Dateien und ordnet sie automatisch Akten zu.
  *
  * Zuordnungs-Logik (Reihenfolge = Priorität):
@@ -40,7 +40,10 @@ export function parseEml(emlText: string): ParsedEmail {
     const lower = line.toLowerCase();
     if (lower.startsWith("from:")) {
       const m = line.match(/From:\s*(.+)/i);
-      if (m) { from = extractEmail(m[1]); fromName = extractName(m[1]); }
+      if (m) {
+        from = extractEmail(m[1]);
+        fromName = extractName(m[1]);
+      }
     } else if (lower.startsWith("to:")) {
       const m = line.match(/To:\s*(.+)/i);
       if (m) to = extractEmail(m[1]);
@@ -58,7 +61,8 @@ export function parseEml(emlText: string): ParsedEmail {
       }
     } else if (lower.startsWith("content-disposition:") && line.includes("attachment")) {
       const fnMatch = line.match(/filename="?([^"]+)"?/);
-      if (fnMatch) attachments.push({ filename: fnMatch[1], contentType: "application/octet-stream" });
+      if (fnMatch)
+        attachments.push({ filename: fnMatch[1], contentType: "application/octet-stream" });
     } else if (line.trim() === "") {
       headerEnd = i + 1;
       break;
@@ -106,12 +110,18 @@ export function parseEml(emlText: string): ParsedEmail {
       const partCt = part.headers["content-type"] || "";
       const partDisp = part.headers["content-disposition"] || "";
       const isAttachment = partDisp.includes("attachment");
-      const isTextPlain = partCt.startsWith("text/plain") || (!isAttachment && partCt.startsWith("text/") && bodyLines.length === 0);
+      const isTextPlain =
+        partCt.startsWith("text/plain") ||
+        (!isAttachment && partCt.startsWith("text/") && bodyLines.length === 0);
       const fnMatch = partDisp.match(/filename="?([^"]+)"?/);
       const ctMatch = partCt.match(/^([^;]+)/);
 
       if (isAttachment) {
-        if (fnMatch) attachments.push({ filename: fnMatch[1], contentType: ctMatch?.[1]?.trim() || "application/octet-stream" });
+        if (fnMatch)
+          attachments.push({
+            filename: fnMatch[1],
+            contentType: ctMatch?.[1]?.trim() || "application/octet-stream",
+          });
       } else if (isTextPlain) {
         bodyLines.push(...part.body);
       }
@@ -178,7 +188,9 @@ function decodeHeader(header: string): string {
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       } else {
         // Quoted-Printable
-        const qp = text.replace(/_/g, " ").replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        const qp = text
+          .replace(/_/g, " ")
+          .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
         bytes = new Uint8Array(qp.length);
         for (let i = 0; i < qp.length; i++) bytes[i] = qp.charCodeAt(i);
       }

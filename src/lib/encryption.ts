@@ -2,20 +2,23 @@
  * Symmetric encryption for sensitive fields at rest (API keys, tokens).
  * Uses AES-256-GCM via Web Crypto API (Edge + Node compatible).
  *
- * Encryption key MUST be set via SIGMABRAIN_ENCRYPTION_KEY in production.
+ * Encryption key MUST be set via SUBSUMIO_ENCRYPTION_KEY in production.
  * Without it, values are stored as-is (dev convenience, not for prod).
  */
 
 import { EncryptionError } from "@/lib/errors";
 import { env } from "@/lib/env";
 
-const ENCRYPTION_KEY = env("SIGMABRAIN_ENCRYPTION_KEY");
+const ENCRYPTION_KEY = env("SUBSUMIO_ENCRYPTION_KEY");
 
 export function isEncryptionEnabled(): boolean {
   if (process.env.NODE_ENV === "production" && !ENCRYPTION_KEY) {
-    throw new EncryptionError("SIGMABRAIN_ENCRYPTION_KEY must be set in production for at-rest encryption.", {
-      code: "ENCRYPTION_KEY_MISSING",
-    });
+    throw new EncryptionError(
+      "SUBSUMIO_ENCRYPTION_KEY must be set in production for at-rest encryption.",
+      {
+        code: "ENCRYPTION_KEY_MISSING",
+      }
+    );
   }
   return !!ENCRYPTION_KEY;
 }
@@ -42,13 +45,10 @@ function getKeyArrayBuffer(): ArrayBuffer {
 }
 
 async function importKey(): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    "raw",
-    getKeyArrayBuffer(),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"],
-  );
+  return crypto.subtle.importKey("raw", getKeyArrayBuffer(), { name: "AES-GCM" }, false, [
+    "encrypt",
+    "decrypt",
+  ]);
 }
 
 const encoder = new TextEncoder();
@@ -66,7 +66,7 @@ export async function encrypt(plaintext: string | null | undefined): Promise<str
   const ciphertext = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
-    encoder.encode(plaintext),
+    encoder.encode(plaintext)
   );
   const combined = new Uint8Array(iv.length + (ciphertext as ArrayBuffer).byteLength);
   combined.set(iv);
@@ -91,7 +91,8 @@ export async function decrypt(ciphertext: string | null | undefined): Promise<st
   const payload = ciphertext.slice(6);
   try {
     // base64url decode
-    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
+    const b64 =
+      payload.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (payload.length % 4)) % 4);
     const bin = atob(b64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -110,7 +111,7 @@ export async function decrypt(ciphertext: string | null | undefined): Promise<st
 /** Encrypt an object's sensitive fields in-place. */
 export async function encryptFields<T extends Record<string, unknown>>(
   obj: T,
-  fields: (keyof T)[],
+  fields: (keyof T)[]
 ): Promise<T> {
   const result = { ...obj };
   for (const field of fields) {
@@ -125,7 +126,7 @@ export async function encryptFields<T extends Record<string, unknown>>(
 /** Decrypt an object's sensitive fields in-place. */
 export async function decryptFields<T extends Record<string, unknown>>(
   obj: T,
-  fields: (keyof T)[],
+  fields: (keyof T)[]
 ): Promise<T> {
   const result = { ...obj };
   for (const field of fields) {

@@ -5,7 +5,7 @@ import path from "node:path";
 
 import { env } from "@/lib/env";
 
-const DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const LOCKOUT_FILE = path.join(DATA_DIR, "lockouts.json");
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -29,7 +29,9 @@ const ensureLockoutSchema = createSchemaInit(`
   );
 `);
 
-export async function recordFailedLogin(email: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+export async function recordFailedLogin(
+  email: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const key = `login:${email.toLowerCase()}`;
   const now = Date.now();
 
@@ -53,7 +55,9 @@ export async function recordFailedLogin(email: string): Promise<{ locked: boolea
   };
 }
 
-export async function isAccountLocked(email: string): Promise<{ locked: boolean; retryAfterSeconds: number }> {
+export async function isAccountLocked(
+  email: string
+): Promise<{ locked: boolean; retryAfterSeconds: number }> {
   const key = `login:${email.toLowerCase()}`;
   const now = Date.now();
   const entry = cache.get(key);
@@ -90,10 +94,12 @@ async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {
            first_failed_at = EXCLUDED.first_failed_at,
            locked_until = EXCLUDED.locked_until,
            updated_at = now()`,
-        [key, entry.failedAttempts, entry.firstFailedAt, entry.lockedUntil],
+        [key, entry.failedAttempts, entry.firstFailedAt, entry.lockedUntil]
       );
     } catch (err) {
-      console.error(`[lockout] persist failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[lockout] persist failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
     return;
   }
@@ -111,7 +117,9 @@ async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {
     await fs.writeFile(tmp, JSON.stringify(allLockouts, null, 2));
     await fs.rename(tmp, LOCKOUT_FILE);
   } catch (err) {
-    console.error(`[lockout] file persist failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[lockout] file persist failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 

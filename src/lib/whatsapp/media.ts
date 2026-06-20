@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { put } from "@vercel/blob";
 import { withRetry } from "@/lib/retry";
+import { scanFile } from "@/lib/virus-scan";
 import type { WhatsAppMediaMessage } from "./types";
 
 export interface StoredWhatsAppMedia {
@@ -41,7 +42,9 @@ function maxBytes(): number {
 }
 
 function storageDir(): string {
-  return process.env.WHATSAPP_MEDIA_STORAGE_DIR || path.join(process.cwd(), ".data", "whatsapp-media");
+  return (
+    process.env.WHATSAPP_MEDIA_STORAGE_DIR || path.join(process.cwd(), ".data", "whatsapp-media")
+  );
 }
 
 function storageProvider(): "local" | "vercel-blob" {
@@ -64,12 +67,14 @@ function extensionFromMime(mimeType: string, fallback = "bin"): string {
 }
 
 function safeFilename(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120) || "whatsapp-media";
+  return (
+    input
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 120) || "whatsapp-media"
+  );
 }
 
 async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
@@ -79,9 +84,14 @@ async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
   const params = new URLSearchParams();
   if (phoneNumberId) params.set("phone_number_id", phoneNumberId);
   const qs = params.toString();
-  const res = await withRetry(() => fetch(`https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(mediaId)}${qs ? `?${qs}` : ""}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  }));
+  const res = await withRetry(() =>
+    fetch(
+      `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(mediaId)}${qs ? `?${qs}` : ""}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+  );
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp Media URL failed: HTTP ${res.status}`);
@@ -89,7 +99,9 @@ async function getMediaUrl(mediaId: string): Promise<MediaUrlResponse> {
   return res.json() as Promise<MediaUrlResponse>;
 }
 
-export async function downloadAndStoreWhatsAppMedia(message: WhatsAppMediaMessage): Promise<StoredWhatsAppMedia> {
+export async function downloadAndStoreWhatsAppMedia(
+  message: WhatsAppMediaMessage
+): Promise<StoredWhatsAppMedia> {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   if (!token) throw new Error("WHATSAPP_ACCESS_TOKEN fehlt.");
 
@@ -97,27 +109,57 @@ export async function downloadAndStoreWhatsAppMedia(message: WhatsAppMediaMessag
   if (!meta.url) throw new Error("WhatsApp Media API lieferte keine Download-URL.");
   const downloadUrl = meta.url;
   const expectedSize = Number(meta.file_size || 0);
-  if (expectedSize > maxBytes()) throw new Error(`WhatsApp-Medium ist zu groß (${expectedSize} Bytes). Limit: ${maxBytes()} Bytes.`);
+  if (expectedSize > maxBytes())
+    throw new Error(
+      `WhatsApp-Medium ist zu groß (${expectedSize} Bytes). Limit: ${maxBytes()} Bytes.`
+    );
 
-  const res = await withRetry(() => fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } }));
+  const res = await withRetry(() =>
+    fetch(downloadUrl, { headers: { Authorization: `Bearer ${token}` } })
+  );
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp media download failed: HTTP ${res.status}`);
   }
 
-  const bytes = Buffer.from(await res.arrayBuffer());
-  if (bytes.length > maxBytes()) throw new Error(`WhatsApp-Medium ist zu groß (${bytes.length} Bytes). Limit: ${maxBytes()} Bytes.`);
+  const arrayBuf = await res.arrayBuffer();
+  const bytes = Buffer.from(arrayBuf);
+  if (bytes.length > maxBytes())
+    throw new Error(
+      `WhatsApp-Medium ist zu groß (${bytes.length} Bytes). Limit: ${maxBytes()} Bytes.`
+    );
 
-  const mimeType = meta.mime_type || message.mimeType || res.headers.get("content-type") || "application/octet-stream";
+  const mimeType =
+    meta.mime_type ||
+    message.mimeType ||
+    res.headers.get("content-type") ||
+    "application/octet-stream";
+
+  // P0-SEC-002: WhatsApp media is untrusted inbound bytes — scan before storing.
+  const scan = await scanFile(arrayBuf, mimeType);
+  if (!scan.ok) {
+    const detail =
+      scan.reason === "executable_detected"
+        ? `ausführbare Datei (${scan.label})`
+        : scan.reason === "mime_mismatch"
+          ? `Dateiinhalt passt nicht zum Typ (${scan.expected})`
+          : scan.reason === "clamav_infected"
+            ? `Malware erkannt (${scan.signature})`
+            : "Virenscanner nicht erreichbar";
+    throw new Error(`WhatsApp-Medium abgelehnt: ${detail}.`);
+  }
   const hash = createHash("sha256").update(bytes).digest("hex");
   const ext = extensionFromMime(mimeType);
-  const filename = safeFilename(message.filename || `whatsapp-${message.type}-${message.mediaId}.${ext}`);
+  const filename = safeFilename(
+    message.filename || `whatsapp-${message.type}-${message.mediaId}.${ext}`
+  );
   const date = new Date().toISOString().slice(0, 10);
   const relativePath = path.posix.join(date, `${hash.slice(0, 16)}-${filename}`);
   const provider = storageProvider();
 
   if (provider === "vercel-blob") {
-    if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("BLOB_READ_WRITE_TOKEN fehlt für WhatsApp Cloud Storage.");
+    if (!process.env.BLOB_READ_WRITE_TOKEN)
+      throw new Error("BLOB_READ_WRITE_TOKEN fehlt für WhatsApp Cloud Storage.");
     const access = blobAccess();
     const pathname = `whatsapp-media/${relativePath}`;
     const blob = await put(pathname, bytes, {

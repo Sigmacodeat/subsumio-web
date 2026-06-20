@@ -11,7 +11,7 @@ const SSO_STATE_COOKIE = "sb_sso_state";
 /**
  * GET /api/auth/sso/callback?code=...&state=...
  * Empfängt den WorkOS-Callback, validiert den State (CSRF-Schutz),
- * authentifiziert den Nutzer und erstellt eine SigmaBrain-Session.
+ * authentifiziert den Nutzer und erstellt eine Subsumio-Session.
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -64,16 +64,21 @@ export async function GET(req: NextRequest) {
       await store.update(user.id, {
         workosUserId: workosUser.id,
         ssoProvider: "workos",
-        emailVerifiedAt: workosUser.email_verified ? new Date().toISOString() : user.emailVerifiedAt,
+        emailVerifiedAt: workosUser.email_verified
+          ? new Date().toISOString()
+          : user.emailVerifiedAt,
       });
     }
 
-    // Create SigmaBrain session
+    // Create Subsumio session
     const session = await createSession(user.id, user.email, user.role);
     (await cookies()).set(SESSION_COOKIE, session.token, session.cookieOptions);
 
     // Redirect to dashboard
-    return Response.redirect(`${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/dashboard`, 302);
+    return Response.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/dashboard`,
+      302
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[sso callback] error:", msg);

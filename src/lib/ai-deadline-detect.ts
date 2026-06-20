@@ -1,5 +1,5 @@
 /**
- * KI-gestützte Fristen-Erkennung für SigmaBrain.
+ * KI-gestützte Fristen-Erkennung für Subsumio.
  *
  * Hybrid-Ansatz:
  *   1. Regex-basierte Erkennung (schnell, offline, für 80% der Fälle)
@@ -37,7 +37,8 @@ const RULES: Array<{
   // Absolute DE-Datum: "bis 30.06.2024", "Frist: 15. März 2024"
   {
     name: "absolute_date_de",
-    regex: /(?:bis|frist|fristen|termin|beweisaufnahme)[\s:]*(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
+    regex:
+      /(?:bis|frist|fristen|termin|beweisaufnahme)[\s:]*(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
     type: "absolute_deadline",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);
@@ -45,7 +46,20 @@ const RULES: Array<{
       const m2 = m[2];
       if (/^\d+$/.test(m2)) month = parseInt(m2, 10);
       else {
-        const months: Record<string, number> = { jan: 1, feb: 2, mär: 3, apr: 4, mai: 5, jun: 6, jul: 7, aug: 8, sep: 9, okt: 10, nov: 11, dez: 12 };
+        const months: Record<string, number> = {
+          jan: 1,
+          feb: 2,
+          mär: 3,
+          apr: 4,
+          mai: 5,
+          jun: 6,
+          jul: 7,
+          aug: 8,
+          sep: 9,
+          okt: 10,
+          nov: 11,
+          dez: 12,
+        };
         month = months[m2.toLowerCase()] || 1;
       }
       const year = parseInt(m[3], 10);
@@ -67,7 +81,8 @@ const RULES: Array<{
   // Relative: "innerhalb von 14 Tagen"
   {
     name: "relative_days",
-    regex: /(?:innerhalb|binnen|innerhalb von|spätestens in)[\s]+(\d+)[\s]+(?:Tagen|Wochen|Woche|Tag)/i,
+    regex:
+      /(?:innerhalb|binnen|innerhalb von|spätestens in)[\s]+(\d+)[\s]+(?:Tagen|Wochen|Woche|Tag)/i,
     type: "relative_deadline",
     extractDate: (m) => {
       const num = parseInt(m[1], 10);
@@ -108,7 +123,8 @@ const RULES: Array<{
   // Gerichtstermine
   {
     name: "court_date",
-    regex: /(?:Verhandlung|Hauptverhandlung|Beweisaufnahme|Gerichtstag)[\s\S]{0,50}?(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
+    regex:
+      /(?:Verhandlung|Hauptverhandlung|Beweisaufnahme|Gerichtstag)[\s\S]{0,50}?(\d{1,2})[.\s]\s*(\d{1,2}|Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)[.\s]\s*(\d{4})/i,
     type: "court_hearing",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);
@@ -116,7 +132,20 @@ const RULES: Array<{
       const m2 = m[2];
       if (/^\d+$/.test(m2)) month = parseInt(m2, 10);
       else {
-        const months: Record<string, number> = { jan: 1, feb: 2, mär: 3, apr: 4, mai: 5, jun: 6, jul: 7, aug: 8, sep: 9, okt: 10, nov: 11, dez: 12 };
+        const months: Record<string, number> = {
+          jan: 1,
+          feb: 2,
+          mär: 3,
+          apr: 4,
+          mai: 5,
+          jun: 6,
+          jul: 7,
+          aug: 8,
+          sep: 9,
+          okt: 10,
+          nov: 11,
+          dez: 12,
+        };
         month = months[m2.toLowerCase()] || 1;
       }
       const year = parseInt(m[3], 10);
@@ -126,7 +155,8 @@ const RULES: Array<{
   // "Mahnfrist" / "Zahlungsfrist"
   {
     name: "payment_deadline",
-    regex: /(?:Zahlungsfrist|Mahnfrist|fristgerecht)[\s\S]{0,30}?(\d{1,2})[.\s]\s*(\d{1,2})[.\s]\s*(\d{4})/i,
+    regex:
+      /(?:Zahlungsfrist|Mahnfrist|fristgerecht)[\s\S]{0,30}?(\d{1,2})[.\s]\s*(\d{1,2})[.\s]\s*(\d{4})/i,
     type: "payment_deadline",
     extractDate: (m) => {
       const day = parseInt(m[1], 10);
@@ -142,7 +172,9 @@ export function detectDeadlines(text: string): DetectedDeadline[] {
   const seen = new Set<string>();
 
   for (const rule of RULES) {
-    const matches = text.matchAll(rule.regex.global ? rule.regex : new RegExp(rule.regex.source, "gi"));
+    const matches = text.matchAll(
+      rule.regex.global ? rule.regex : new RegExp(rule.regex.source, "gi")
+    );
     for (const match of matches) {
       const snippet = match[0].slice(0, 120);
       const key = `${rule.name}:${snippet}`;
@@ -179,7 +211,7 @@ export function detectDeadlines(text: string): DetectedDeadline[] {
 }
 
 function describeDeadline(
-  rule: typeof RULES[0],
+  rule: (typeof RULES)[0],
   match: RegExpMatchArray,
   date?: string,
   daysFromNow?: number

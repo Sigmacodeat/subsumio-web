@@ -55,7 +55,7 @@ export async function addComment(opts: {
 }): Promise<Comment> {
   const now = Date.now();
   const slug = `comment/${opts.parentSlug.replace(/\//g, "-")}/${now}`;
-  const threadId = opts.threadId || (opts.parentCommentId || slug);
+  const threadId = opts.threadId || opts.parentCommentId || slug;
   const mentions = extractMentions(opts.content);
   await api.brain.createPage({
     slug,
@@ -113,7 +113,7 @@ export async function listComments(parentSlug: string): Promise<Comment[]> {
           parentType: String(fm.parent_type ?? ""),
           authorId: String(fm.author_id ?? ""),
           authorName: String(fm.author_name ?? "Unbekannt"),
-          content: fm.deleted_at ? "[gelöscht]" : (p.content || ""),
+          content: fm.deleted_at ? "[gelöscht]" : p.content || "",
           createdAt: String(fm.created_at ?? p.created_at),
           threadId: String(fm.thread_id ?? p.slug),
           parentCommentId: fm.parent_comment_id ? String(fm.parent_comment_id) : undefined,
@@ -194,7 +194,7 @@ const ensureNotifSchema = createSchemaInit(`
     ON subsumio_notifications (user_id, brain_id, read_at);
 `);
 
-const NOTIF_DATA_DIR = env("SIGMABRAIN_DATA_DIR") || path.join(process.cwd(), ".data");
+const NOTIF_DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const NOTIF_FILE = path.join(NOTIF_DATA_DIR, "notifications.json");
 
 async function createMentionNotifications(opts: {
@@ -230,10 +230,20 @@ async function persistNotification(notif: Notification): Promise<void> {
       await pool.query(
         `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [notif.id, notif.userId, notif.brainId, notif.type, JSON.stringify(notif.data), notif.readAt, notif.createdAt],
+        [
+          notif.id,
+          notif.userId,
+          notif.brainId,
+          notif.type,
+          JSON.stringify(notif.data),
+          notif.readAt,
+          notif.createdAt,
+        ]
       );
     } catch (err) {
-      console.error(`[notifications] persist failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[notifications] persist failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
     return;
   }
@@ -251,7 +261,9 @@ async function persistNotification(notif: Notification): Promise<void> {
     await fs.writeFile(tmp, JSON.stringify(all, null, 2));
     await fs.rename(tmp, NOTIF_FILE);
   } catch (err) {
-    console.error(`[notifications] file persist failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[notifications] file persist failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 
@@ -273,7 +285,7 @@ export async function listNotifications(opts: {
       const limit = opts.limit ?? 50;
       const result = await pool.query(
         `SELECT * FROM subsumio_notifications WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT ${limit}`,
-        params,
+        params
       );
       return result.rows as Notification[];
     } catch {
@@ -296,10 +308,7 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (pool) {
     try {
       await ensureNotifSchema();
-      await pool.query(
-        "UPDATE subsumio_notifications SET read_at = now() WHERE id = $1",
-        [id],
-      );
+      await pool.query("UPDATE subsumio_notifications SET read_at = now() WHERE id = $1", [id]);
     } catch {}
     return;
   }
@@ -326,7 +335,7 @@ export async function markAllNotificationsRead(opts: {
       await ensureNotifSchema();
       await pool.query(
         "UPDATE subsumio_notifications SET read_at = now() WHERE user_id = $1 AND brain_id = $2 AND read_at IS NULL",
-        [opts.userId, opts.brainId],
+        [opts.userId, opts.brainId]
       );
     } catch {}
     return;

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!ipLimit.ok) {
     return NextResponse.json(
       { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } },
+      { status: 429, headers: { "Retry-After": String(ipLimit.retryAfterSeconds) } }
     );
   }
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Industry powers dashboard personalization AND the schema pack the tenant's
-  // brain gets provisioned with (packForIndustry → gbrain-<vertical>). Allowlist
+  // brain gets provisioned with (packForIndustry → subsumio-<vertical>). Allowlist
   // is the single source in lib/industry-pack (covers all 8 branded verticals);
   // optional, silently dropped when unknown.
   const industry = isValidIndustry(rawIndustry) ? rawIndustry : null;
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       locale: locale === "de" ? "de" : "en",
       referredBy,
       industry,
-    }),
+    })
   );
 
   // Brain provisioning — fire-and-forget; pre-warms the Engine source so
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     try {
       const verifyToken = await signActionToken(
         { uid: user.id, purpose: "verify", bind: await bindFragment(user.email) },
-        VERIFY_TOKEN_TTL_SECONDS,
+        VERIFY_TOKEN_TTL_SECONDS
       );
       const verifyUrl = `${siteUrl()}/api/auth/verify?token=${encodeURIComponent(verifyToken)}`;
       const de = user.locale === "de";
@@ -84,7 +84,9 @@ export async function POST(req: NextRequest) {
           : `Hi ${user.name},\n\nwelcome to Subsumio! Please confirm your email address (link valid for 48 hours):\n${verifyUrl}\n\n— Subsumio`,
       });
     } catch (err) {
-      console.error(`[signup] verification mail failed: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(
+        `[signup] verification mail failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     }
   })();
 

@@ -27,9 +27,7 @@ import { env } from "@/lib/env";
 const BASE_URL =
   typeof window !== "undefined"
     ? ""
-    : env("SIGMABRAIN_API_URL") ||
-      env("NEXT_PUBLIC_SIGMABRAIN_API_URL") ||
-      "http://localhost:3001";
+    : env("SUBSUMIO_API_URL") || env("NEXT_PUBLIC_SUBSUMIO_API_URL") || "http://localhost:3001";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
@@ -65,7 +63,15 @@ export const api = {
       return request(`/api/pages/${path}`);
     },
 
-    listPages(options?: { limit?: number; offset?: number; source?: string; type?: string; tag?: string; q?: string; cursor?: string }): Promise<BrainPage[]> {
+    listPages(options?: {
+      limit?: number;
+      offset?: number;
+      source?: string;
+      type?: string;
+      tag?: string;
+      q?: string;
+      cursor?: string;
+    }): Promise<BrainPage[]> {
       const params = new URLSearchParams();
       if (options?.limit) params.set("limit", String(options.limit));
       if (options?.offset) params.set("offset", String(options.offset));
@@ -77,7 +83,13 @@ export const api = {
       return request(`/api/pages?${params.toString()}`);
     },
 
-    createPage(page: { slug: string; title: string; content?: string; type?: string; frontmatter?: Record<string, unknown> }): Promise<{ slug: string }> {
+    createPage(page: {
+      slug: string;
+      title: string;
+      content?: string;
+      type?: string;
+      frontmatter?: Record<string, unknown>;
+    }): Promise<{ slug: string }> {
       return request("/api/pages", { method: "POST", body: JSON.stringify(page) });
     },
 
@@ -86,8 +98,17 @@ export const api = {
      * existing page and keeps the body when `content` is omitted. Without
      * merge semantics a metadata-only update would wipe the page body.
      */
-    updatePage(page: { slug: string; title?: string; content?: string; type?: string; frontmatter?: Record<string, unknown> }): Promise<{ slug: string; success: boolean }> {
-      return request("/api/pages", { method: "POST", body: JSON.stringify({ ...page, merge: true }) });
+    updatePage(page: {
+      slug: string;
+      title?: string;
+      content?: string;
+      type?: string;
+      frontmatter?: Record<string, unknown>;
+    }): Promise<{ slug: string; success: boolean }> {
+      return request("/api/pages", {
+        method: "POST",
+        body: JSON.stringify({ ...page, merge: true }),
+      });
     },
 
     deletePage(slug: string): Promise<{ success: boolean }> {
@@ -176,49 +197,80 @@ export const api = {
       });
     },
 
-    analyzeDocument(input: { document_slug?: string; text?: string; jurisdiction?: string }): Promise<DocumentAnalysisResult> {
+    analyzeDocument(input: {
+      document_slug?: string;
+      text?: string;
+      jurisdiction?: string;
+    }): Promise<DocumentAnalysisResult> {
       return request("/api/legal/analyze", {
         method: "POST",
         body: JSON.stringify(input),
       });
     },
 
-    precedentSearch(input: { query: string; jurisdiction?: "at" | "de" | "ch"; legal_area?: string; limit?: number }): Promise<PrecedentSearchResponse> {
+    precedentSearch(input: {
+      query: string;
+      jurisdiction?: "at" | "de" | "ch";
+      legal_area?: string;
+      limit?: number;
+    }): Promise<PrecedentSearchResponse> {
       return request("/api/legal/precedent-search", {
         method: "POST",
         body: JSON.stringify(input),
       });
     },
 
-    caseScan(input: { look_ahead_days?: number; evidence_threshold?: number; max_cases?: number }): Promise<CaseScannerResponse> {
+    caseScan(input: {
+      look_ahead_days?: number;
+      evidence_threshold?: number;
+      max_cases?: number;
+    }): Promise<CaseScannerResponse> {
       return request("/api/legal/case-scanner", {
         method: "POST",
         body: JSON.stringify(input),
       });
     },
 
-    translate(input: { document_slug?: string; text?: string; source_language?: string; target_language: string; legal_terminology?: boolean; preserve_formatting?: boolean }): Promise<DocumentTranslation> {
+    translate(input: {
+      document_slug?: string;
+      text?: string;
+      source_language?: string;
+      target_language: string;
+      legal_terminology?: boolean;
+      preserve_formatting?: boolean;
+    }): Promise<DocumentTranslation> {
       return request("/api/legal/translate", {
         method: "POST",
         body: JSON.stringify(input),
       });
     },
 
-    extractObligations(input: { document_slug?: string; text?: string; jurisdiction?: "at" | "de" | "ch" | "all" }): Promise<ObligationExtractionResult> {
+    extractObligations(input: {
+      document_slug?: string;
+      text?: string;
+      jurisdiction?: "at" | "de" | "ch" | "all";
+    }): Promise<ObligationExtractionResult> {
       return request("/api/legal/obligation-extract", {
         method: "POST",
         body: JSON.stringify(input),
       });
     },
 
-    judgementsSync(options?: { jurisdiction?: "at" | "de" | "all"; query?: string }): Promise<JudgementsSyncResponse> {
+    judgementsSync(options?: {
+      jurisdiction?: "at" | "de" | "all";
+      query?: string;
+    }): Promise<JudgementsSyncResponse> {
       return request("/api/legal/judgements-sync", {
         method: "POST",
         body: JSON.stringify(options ?? {}),
       });
     },
 
-    judgementsSearch(options: { q: string; jurisdiction?: "at" | "de" | "all"; limit?: number }): Promise<{ results?: Array<Record<string, string>> }> {
+    judgementsSearch(options: {
+      q: string;
+      jurisdiction?: "at" | "de" | "all";
+      limit?: number;
+    }): Promise<{ results?: Array<Record<string, string>> }> {
       const params = new URLSearchParams();
       params.set("q", options.q);
       if (options.jurisdiction) params.set("jurisdiction", options.jurisdiction);
@@ -234,7 +286,12 @@ export const api = {
     },
 
     /** Tabellarische Massenprüfung: jede Frage gegen jedes Dokument, zitiert. */
-    tabularReview(input: { type?: string; slugs?: string[]; questions: string[]; limit?: number }): Promise<TabularReviewResponse> {
+    tabularReview(input: {
+      type?: string;
+      slugs?: string[];
+      questions: string[];
+      limit?: number;
+    }): Promise<TabularReviewResponse> {
       return request("/api/legal/tabular-review", {
         method: "POST",
         body: JSON.stringify(input),
@@ -318,7 +375,11 @@ export const api = {
     },
 
     playbooks: {
-      list(options?: { limit?: number; jurisdiction?: string; contract_type?: string }): Promise<BrainPage[]> {
+      list(options?: {
+        limit?: number;
+        jurisdiction?: string;
+        contract_type?: string;
+      }): Promise<BrainPage[]> {
         const params = new URLSearchParams();
         if (options?.limit) params.set("limit", String(options.limit));
         if (options?.jurisdiction) params.set("jurisdiction", options.jurisdiction);
@@ -345,13 +406,16 @@ export const api = {
         });
       },
 
-      update(slug: string, input: Partial<{
-        title: string;
-        jurisdiction: string;
-        contract_types: string[];
-        rules: PlaybookRule[];
-        description: string;
-      }>): Promise<{ slug: string; success: boolean }> {
+      update(
+        slug: string,
+        input: Partial<{
+          title: string;
+          jurisdiction: string;
+          contract_types: string[];
+          rules: PlaybookRule[];
+          description: string;
+        }>
+      ): Promise<{ slug: string; success: boolean }> {
         const path = slug.split("/").map(encodeURIComponent).join("/");
         return request(`/api/legal/playbooks/${path}`, {
           method: "PATCH",
@@ -377,7 +441,13 @@ export const api = {
       mediaStorageDir: string;
       mediaMaxBytes: number;
       blobConfigured: boolean;
-      allowedSenders: Array<{ brainId: string; userId?: string; name?: string; role?: string; phoneLast4: string }>;
+      allowedSenders: Array<{
+        brainId: string;
+        userId?: string;
+        name?: string;
+        role?: string;
+        phoneLast4: string;
+      }>;
       webhookUrl: string;
     }> {
       return request("/api/whatsapp/status");
@@ -392,7 +462,7 @@ export const api = {
 
     sendTemplate(
       to: string,
-      template: { name: string; language: { code: string }; components?: unknown[] },
+      template: { name: string; language: { code: string }; components?: unknown[] }
     ): Promise<{ ok: boolean; type: string; messageId: string; sentTo: string }> {
       return request("/api/whatsapp/send", {
         method: "POST",
@@ -402,7 +472,13 @@ export const api = {
 
     sendInteractive(
       to: string,
-      interactive: { type: "button" | "list"; body: { text: string }; action: Record<string, unknown>; header?: unknown; footer?: unknown },
+      interactive: {
+        type: "button" | "list";
+        body: { text: string };
+        action: Record<string, unknown>;
+        header?: unknown;
+        footer?: unknown;
+      }
     ): Promise<{ ok: boolean; type: string; messageId: string; sentTo: string }> {
       return request("/api/whatsapp/send", {
         method: "POST",
@@ -412,7 +488,13 @@ export const api = {
 
     sendMedia(
       to: string,
-      media: { type: "image" | "document" | "audio" | "video" | "sticker"; mediaId?: string; link?: string; caption?: string; filename?: string },
+      media: {
+        type: "image" | "document" | "audio" | "video" | "sticker";
+        mediaId?: string;
+        link?: string;
+        caption?: string;
+        filename?: string;
+      }
     ): Promise<{ ok: boolean; type: string; messageId: string; sentTo: string }> {
       return request("/api/whatsapp/send", {
         method: "POST",
@@ -432,7 +514,7 @@ export const api = {
         footerText?: string;
         initialScreen?: string;
         initialData?: Record<string, unknown>;
-      },
+      }
     ): Promise<{ ok: boolean; type: string; messageId: string; sentTo: string }> {
       return request("/api/whatsapp/send", {
         method: "POST",
@@ -446,17 +528,26 @@ export const api = {
       return request("/api/connectors");
     },
 
-    sync(service: string): Promise<{ success: boolean; status: string; service: string; message?: string }> {
+    sync(
+      service: string
+    ): Promise<{ success: boolean; status: string; service: string; message?: string }> {
       return request(`/api/connectors/${encodeURIComponent(service)}/sync`, { method: "POST" });
     },
 
-    toggle(service: string): Promise<{ success: boolean; service: string; enabled: boolean; message?: string }> {
+    toggle(
+      service: string
+    ): Promise<{ success: boolean; service: string; enabled: boolean; message?: string }> {
       return request(`/api/connectors/${encodeURIComponent(service)}/toggle`, { method: "POST" });
     },
   },
 
   email: {
-    import(email: { subject: string; from: string; body: string; date?: string }): Promise<Record<string, unknown>> {
+    import(email: {
+      subject: string;
+      from: string;
+      body: string;
+      date?: string;
+    }): Promise<Record<string, unknown>> {
       return request("/api/email-import", {
         method: "POST",
         body: JSON.stringify(email),
@@ -482,7 +573,13 @@ export const api = {
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    register(input: { email: string; password: string; name: string; referredBy?: string; industry?: string }): Promise<any> {
+    register(input: {
+      email: string;
+      password: string;
+      name: string;
+      referredBy?: string;
+      industry?: string;
+    }): Promise<any> {
       return request("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
     },
 
@@ -547,4 +644,14 @@ export const api = {
   },
 };
 
-export type { QueryResponse, BrainStats, SearchResult, BrainPage, GraphNode, GraphLink, ConnectorStatus, Playbook, PlaybookRule };
+export type {
+  QueryResponse,
+  BrainStats,
+  SearchResult,
+  BrainPage,
+  GraphNode,
+  GraphLink,
+  ConnectorStatus,
+  Playbook,
+  PlaybookRule,
+};
