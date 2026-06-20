@@ -58,6 +58,7 @@ import {
   Library,
   CheckSquare,
   History,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -128,6 +129,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
       { href: "/dashboard/version-history", icon: History, labelKey: "nav.version_history" },
       { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
     ],
   },
   {

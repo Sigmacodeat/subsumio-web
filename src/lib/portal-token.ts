@@ -4,7 +4,7 @@
  * Kein Session-Cookie, kein Login-Formular. Der Link IST die Berechtigung.
  */
 
-import { b64url, b64urlDecode, hmacKey } from "./auth/session";
+import { b64url, b64urlDecode, b64urlDecodeUtf8, hmacKey } from "./auth/session";
 import { getSharedPgPool } from "./auth/store";
 import { createHash } from "node:crypto";
 import { AuthError } from "@/lib/errors";
@@ -60,6 +60,7 @@ export async function verifyPortalToken(
   token: string | undefined | null,
 ): Promise<PortalTokenPayload | null> {
   if (!token) return null;
+  if (token !== token.trim()) return null;
 
   // Check revocation (Postgres in prod, in-memory in dev)
   const hash = tokenHash(token);
@@ -93,7 +94,7 @@ export async function verifyPortalToken(
     for (let i = 0; i < sigBin.length; i++) sigBytes[i] = sigBin.charCodeAt(i);
     const ok = await crypto.subtle.verify("HMAC", key, sigBytes, encoder.encode(body));
     if (!ok) return null;
-    const payload = JSON.parse(b64urlDecode(body)) as PortalTokenPayload;
+    const payload = JSON.parse(b64urlDecodeUtf8(body)) as PortalTokenPayload;
     if (!payload.case_slug || !payload.exp) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;

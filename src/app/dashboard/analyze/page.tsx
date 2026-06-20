@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import type { DocumentAnalysisResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CitationPanel } from "@/components/legal/CitationPanel";
 
 const SEVERITY_STYLES: Record<string, string> = {
   low: "bg-blue-500/10 text-blue-600 border-blue-500/20",
@@ -262,6 +263,22 @@ export default function AnalyzePage() {
               )}
             </div>
           ) : null}
+
+          {/* Citation Panel — unified grounding + AI Act badge */}
+          {result._grounding && (
+            <CitationPanel
+              data={{
+                grounding: {
+                  citations_verified: result._grounding.citations_verified,
+                  citations_unverified: result._grounding.citations_unverified,
+                  corpus_checked: result._grounding.corpus_checked,
+                  grounded_citations: [],
+                  analyzed_at: result._grounding.analyzed_at,
+                },
+                isStreaming: false,
+              }}
+            />
+          )}
 
           {/* Actions */}
           {(result.action_items ?? result.recommended_actions ?? []).length > 0 && (

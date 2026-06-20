@@ -20,6 +20,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/risk-analysis",
   body: riskAnalysisSchema,
   quota: "queries",
+  citationGate: true,
   label: "risk-analysis",
   transformBody: (b) => ({
     document_slug: b.document_slug || undefined,

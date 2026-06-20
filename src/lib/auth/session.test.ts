@@ -144,3 +144,97 @@ describe("session revocation", () => {
     expect(await isSessionVersionValid("u8", 2)).toBe(true);
   });
 });
+
+describe("Session Revocation Edge-Cases", () => {
+  test("double revocation increments version further", async () => {
+    const userId = `u-double-${Date.now()}`;
+
+    await revokeAllSessions(userId);
+    const min1 = await revokeAllSessions(userId); // second revoke
+
+    // Session with version = min1 should be invalid; need version > min1
+    const token1 = await signSession(
+      { uid: userId, email: "a@b.com", role: "lawyer" },
+      getAuthSecret(),
+      SESSION_TTL_SECONDS,
+      1,
+    );
+    expect(await verifySession(token1)).toBeNull(); // v=1, min >= 2
+
+    // Session with version 3 should be valid
+    const token3 = await signSession(
+      { uid: userId, email: "a@b.com", role: "lawyer" },
+      getAuthSecret(),
+      SESSION_TTL_SECONDS,
+      3,
+    );
+    expect(await verifySession(token3)).not.toBeNull();
+  });
+
+  test("revocation for one user does not affect another", async () => {
+    const userA = `u-independent-a-${Date.now()}`;
+    const userB = `u-independent-b-${Date.now()}`;
+
+    const tokenA = await signSession({ uid: userA, email: "a@b.com", role: "lawyer" });
+    const tokenB = await signSession({ uid: userB, email: "b@c.com", role: "lawyer" });
+
+    await revokeAllSessions(userA);
+
+    expect(await verifySession(tokenA)).toBeNull();
+    expect(await verifySession(tokenB)).not.toBeNull();
+  });
+
+  test("session with version 0 is valid when no revocation exists", async () => {
+    const userId = `u-v0-${Date.now()}`;
+    expect(await isSessionVersionValid(userId, 0)).toBe(true);
+    expect(await isSessionVersionValid(userId, undefined)).toBe(true);
+  });
+
+  test("session with undefined version is rejected after revocation", async () => {
+    const userId = `u-undef-${Date.now()}`;
+    await revokeAllSessions(userId);
+    expect(await isSessionVersionValid(userId, undefined)).toBe(false);
+  });
+
+  test("new session after revocation has version > min", async () => {
+    const userId = `u-new-${Date.now()}`;
+
+    // Create initial session
+    const token1 = await signSession({ uid: userId, email: "a@b.com", role: "lawyer" });
+    expect(await verifySession(token1)).not.toBeNull();
+
+    // Revoke all
+    await revokeAllSessions(userId);
+    expect(await verifySession(token1)).toBeNull();
+
+    // Create new session — should have version > min
+    const token2 = await signSession(
+      { uid: userId, email: "a@b.com", role: "lawyer" },
+      getAuthSecret(),
+      SESSION_TTL_SECONDS,
+      2,
+    );
+    expect(await verifySession(token2)).not.toBeNull();
+  });
+
+  test("expired token is rejected even without revocation", async () => {
+    const userId = `u-exp-${Date.now()}`;
+    const token = await signSession(
+      { uid: userId, email: "a@b.com", role: "lawyer" },
+      getAuthSecret(),
+      -10, // already expired
+    );
+    expect(await verifySession(token)).toBeNull();
+  });
+
+  test("tampered token is rejected (payload modification)", async () => {
+    const token = await signSession({ uid: "u-tamper", email: "a@b.com", role: "lawyer" });
+    // Flip a character in the payload portion
+    const dotIdx = token.indexOf(".");
+    const payload = token.slice(0, dotIdx);
+    const sig = token.slice(dotIdx + 1);
+    const tamperedPayload = payload.slice(0, -2) + (payload.slice(-2) === "AA" ? "BB" : "AA");
+    const tampered = `${tamperedPayload}.${sig}`;
+    expect(await verifySession(tampered)).toBeNull();
+  });
+});

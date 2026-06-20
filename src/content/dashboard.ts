@@ -55,6 +55,7 @@ export const D = {
   "nav.review_queue": { de: "Review-Queue", en: "Review Queue" },
   "nav.version_history": { de: "Versionshistorie", en: "Version History" },
   "nav.monitoring": { de: "Monitoring", en: "Monitoring" },
+  "nav.sources": { de: "Rechtsquellen", en: "Legal Sources" },
 
   // ── Sidebar: nav items (drafts & billing) ──
   "nav.drafting": { de: "Schriftsatz", en: "Drafting" },

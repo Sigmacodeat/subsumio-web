@@ -98,6 +98,28 @@ export interface UserStore {
 // --- File adapter -----------------------------------------------------------
 
 import { env } from "@/lib/env";
+import { encryptFields, decryptFields } from "@/lib/encryption";
+
+/** Fields that must be encrypted at rest in production. */
+const SENSITIVE_USER_FIELDS = [
+  "twoFactorSecret",
+  "pendingTwoFactorSecret",
+  "docusignAccessToken",
+  "docusignRefreshToken",
+  "openaiKey",
+  "anthropicKey",
+  "zeroEntropyKey",
+] as const;
+
+/** Encrypt sensitive fields before persisting to storage. */
+async function encryptUser(user: User): Promise<User> {
+  return (await encryptFields(user as unknown as Record<string, unknown>, [...SENSITIVE_USER_FIELDS])) as unknown as User;
+}
+
+/** Decrypt sensitive fields after loading from storage. */
+async function decryptUser(user: User): Promise<User> {
+  return (await decryptFields(user as unknown as Record<string, unknown>, [...SENSITIVE_USER_FIELDS])) as unknown as User;
+}
 
 const DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
@@ -110,7 +132,9 @@ class FileUserStore implements UserStore {
     if (this.cache) return this.cache;
     try {
       const raw = await fs.readFile(USERS_FILE, "utf8");
-      this.cache = JSON.parse(raw) as User[];
+      const users = JSON.parse(raw) as User[];
+      // Decrypt sensitive fields on load
+      this.cache = await Promise.all(users.map(decryptUser));
     } catch (err) {
       console.error(
         "[auth] failed to load users file:",
@@ -123,11 +147,13 @@ class FileUserStore implements UserStore {
 
   private async persist(): Promise<void> {
     const users = this.cache ?? [];
+    // Encrypt sensitive fields before writing to disk
+    const encrypted = await Promise.all(users.map(encryptUser));
     // serialize writes to avoid interleaving
     this.writeQueue = this.writeQueue.then(async () => {
       await fs.mkdir(DATA_DIR, { recursive: true });
       const tmp = `${USERS_FILE}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(users, null, 2), "utf8");
+      await fs.writeFile(tmp, JSON.stringify(encrypted, null, 2), "utf8");
       await fs.rename(tmp, USERS_FILE);
     });
     return this.writeQueue;
@@ -318,6 +344,11 @@ function rowToUser(row: { data: User | string }): User {
   return typeof row.data === "string" ? (JSON.parse(row.data) as User) : row.data;
 }
 
+/** Decrypt sensitive fields after loading from a DB row. */
+async function rowToUserDecrypted(row: { data: User | string }): Promise<User> {
+  return decryptUser(rowToUser(row));
+}
+
 function rowToOrg(row: { data: Org | string }): Org {
   return typeof row.data === "string" ? (JSON.parse(row.data) as Org) : row.data;
 }
@@ -334,7 +365,7 @@ class PostgresUserStore implements UserStore {
       "SELECT data FROM subsumio_users WHERE id = $1",
       [id]
     );
-    return rows[0] ? rowToUser(rows[0]) : null;
+    return rows[0] ? await rowToUserDecrypted(rows[0]) : null;
   }
 
   async getByEmail(email: string) {
@@ -344,7 +375,7 @@ class PostgresUserStore implements UserStore {
       "SELECT data FROM subsumio_users WHERE email = $1",
       [norm]
     );
-    return rows[0] ? rowToUser(rows[0]) : null;
+    return rows[0] ? await rowToUserDecrypted(rows[0]) : null;
   }
 
   async getByReferralCode(code: string) {
@@ -353,7 +384,7 @@ class PostgresUserStore implements UserStore {
       "SELECT data FROM subsumio_users WHERE referral_code = $1",
       [code]
     );
-    return rows[0] ? rowToUser(rows[0]) : null;
+    return rows[0] ? await rowToUserDecrypted(rows[0]) : null;
   }
 
   async getByScimExternalId(externalId: string) {
@@ -362,22 +393,23 @@ class PostgresUserStore implements UserStore {
       "SELECT data FROM subsumio_users WHERE data->>'scimExternalId' = $1",
       [externalId]
     );
-    return rows[0] ? rowToUser(rows[0]) : null;
+    return rows[0] ? await rowToUserDecrypted(rows[0]) : null;
   }
 
   async create(user: User) {
     const pool = await this.ready();
     const normalized: User = { ...user, email: user.email.trim().toLowerCase() };
+    const encrypted = await encryptUser(normalized);
     await pool.query(
       `INSERT INTO subsumio_users (id, email, referral_code, password_hash, data, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5::jsonb, $6, now())`,
       [
-        normalized.id,
-        normalized.email,
-        normalized.referralCode,
-        normalized.passwordHash,
-        JSON.stringify(normalized),
-        normalized.createdAt,
+        encrypted.id,
+        encrypted.email,
+        encrypted.referralCode,
+        encrypted.passwordHash,
+        JSON.stringify(encrypted),
+        encrypted.createdAt,
       ]
     );
     return normalized;
@@ -392,6 +424,7 @@ class PostgresUserStore implements UserStore {
       id: current.id,
       email: (patch.email ?? current.email).trim().toLowerCase(),
     };
+    const encrypted = await encryptUser(next);
     const pool = await this.ready();
     await pool.query(
       `UPDATE subsumio_users
@@ -401,7 +434,7 @@ class PostgresUserStore implements UserStore {
               data = $5::jsonb,
               updated_at = now()
         WHERE id = $1`,
-      [id, next.email, next.referralCode, next.passwordHash, JSON.stringify(next)]
+      [id, encrypted.email, encrypted.referralCode, encrypted.passwordHash, JSON.stringify(encrypted)]
     );
     return next;
   }
@@ -411,7 +444,7 @@ class PostgresUserStore implements UserStore {
     const { rows } = await pool.query<{ data: User }>(
       "SELECT data FROM subsumio_users ORDER BY created_at ASC"
     );
-    return rows.map(rowToUser);
+    return Promise.all(rows.map(rowToUserDecrypted));
   }
   async countReferrals(code: string) {
     const pool = await this.ready();

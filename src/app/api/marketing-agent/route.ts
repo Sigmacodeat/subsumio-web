@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { clientIp } from "@/lib/auth/rate-limit";
+import { createPublicHandler } from "@/lib/api-handler";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { PRICING, type Lang } from "@/content/site";
 import { createMarketingLead, summarizeLead } from "@/lib/marketing/leads";
@@ -152,71 +153,57 @@ function answerProductQuestion(lang: Lang, text: string, industry: string | null
   return null;
 }
 
-export async function POST(req: NextRequest) {
-  const limit = await hit(`marketing-agent:${clientIp(req.headers)}`, 30, 60 * 60_000);
-  if (!limit.ok) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
-    );
-  }
+export const POST = createPublicHandler(
+  {
+    cors: true,
+    skipCsrf: true,
+    rateLimitKey: (req: NextRequest) => `marketing-agent:${clientIp(req.headers)}`,
+    rateLimitMax: 30,
+    rateLimitWindowMs: 60 * 60_000,
+  },
+  async (req) => {
+    let body: AdvisorContext;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    }
 
-  let body: AdvisorContext;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
+    const lang = langOf(body);
+    const text = latestUserText(body.messages).slice(0, 600);
+    const industry = inferIndustry(body, text);
+    const fields = extractFields({ ...(body.fields ?? {}), ...(industry ? { industry } : {}) }, text);
+    const profile = industry ? profileForIndustry(industry) : null;
+    const productAnswer = answerProductQuestion(lang, text, industry);
+    const plan = planFor(fields);
+    const leadScore = scoreLead(fields, plan);
+    const question = missingQuestion(lang, fields, industry);
+    const planLabel = plan === "enterprise" ? "Enterprise" : plan === "team" ? "Team" : plan === "pro" ? "Pro" : "Open Source";
+    const signupIndustry = industry ? `?industry=${encodeURIComponent(industry)}${plan === "team" ? "&plan=team" : ""}` : "";
+    const ctaHref = plan === "enterprise"
+      ? "mailto:hello@subsum.eu?subject=Subsumio%20Enterprise"
+      : localizedPath(lang, `/signup${signupIndustry}`);
 
-  const lang = langOf(body);
-  const text = latestUserText(body.messages).slice(0, 600);
-  const industry = inferIndustry(body, text);
-  const fields = extractFields({ ...(body.fields ?? {}), ...(industry ? { industry } : {}) }, text);
-  const profile = industry ? profileForIndustry(industry) : null;
-  const productAnswer = answerProductQuestion(lang, text, industry);
-  const plan = planFor(fields);
-  const leadScore = scoreLead(fields, plan);
-  const question = missingQuestion(lang, fields, industry);
-  const planLabel = plan === "enterprise" ? "Enterprise" : plan === "team" ? "Team" : plan === "pro" ? "Pro" : "Open Source";
-  const signupIndustry = industry ? `?industry=${encodeURIComponent(industry)}${plan === "team" ? "&plan=team" : ""}` : "";
-  const ctaHref = plan === "enterprise"
-    ? "mailto:hello@subsum.eu?subject=Subsumio%20Enterprise"
-    : localizedPath(lang, `/signup${signupIndustry}`);
+    const intro = productAnswer ?? (lang === "de"
+      ? profile
+        ? `${profile.brand} passt grundsätzlich gut für ${profile.label.de}. Ich qualifiziere kurz, damit du nicht im falschen Plan landest.`
+        : "Ich kann dich zu Subsumio beraten: KI-Legal-Software für Kanzleien in AT, DE und CH."
+      : profile
+        ? `${profile.brand} looks like a good fit for ${profile.label.en}. I'll qualify the setup so you don't land in the wrong plan.`
+        : "I can advise you on Subsumio: AI legal software for law firms in AT, DE and CH.");
 
-  const intro = productAnswer ?? (lang === "de"
-    ? profile
-      ? `${profile.brand} passt grundsätzlich gut für ${profile.label.de}. Ich qualifiziere kurz, damit du nicht im falschen Plan landest.`
-      : "Ich kann dich zu Subsumio beraten: KI-Legal-Software für Kanzleien in AT, DE und CH."
-    : profile
-      ? `${profile.brand} looks like a good fit for ${profile.label.en}. I’ll qualify the setup so you don’t land in the wrong plan.`
-      : "I can advise you on Subsumio: AI legal software for law firms in AT, DE and CH.");
+    const recommendation = lang === "de"
+      ? `Empfehlung bisher: ${planLabel}${profile ? ` · ${profile.brand}` : ""}. Lead-Fit: ${leadScore}.`
+      : `Current recommendation: ${planLabel}${profile ? ` · ${profile.brand}` : ""}. Lead fit: ${leadScore}.`;
 
-  const recommendation = lang === "de"
-    ? `Empfehlung bisher: ${planLabel}${profile ? ` · ${profile.brand}` : ""}. Lead-Fit: ${leadScore}.`
-    : `Current recommendation: ${planLabel}${profile ? ` · ${profile.brand}` : ""}. Lead fit: ${leadScore}.`;
+    const privacy = lang === "de"
+      ? "Bitte keine vertraulichen Mandanten- oder Patientendaten in diesen öffentlichen Chat schreiben."
+      : "Please don't enter confidential client or patient data in this public chat.";
 
-  const privacy = lang === "de"
-    ? "Bitte keine vertraulichen Mandanten- oder Patientendaten in diesen öffentlichen Chat schreiben."
-    : "Please don’t enter confidential client or patient data in this public chat.";
-
-  const reply = [intro, recommendation, question ? question : (lang === "de" ? "Du kannst mit dieser Konfiguration starten oder Enterprise direkt anschreiben." : "You can start with this setup or talk to Enterprise directly."), privacy].join("\n\n");
-  const transcript = [...(body.messages ?? []), { role: "assistant" as const, content: reply }].slice(-12);
-  const summary = summarizeLead({
-    email: fields.email ?? "",
-    lang,
-    path: body.path ?? "/",
-    industry,
-    product: profile?.brand ?? "Subsumio",
-    plan: planLabel,
-    leadScore,
-    fields: Object.fromEntries(Object.entries(fields).filter((entry): entry is [string, string] => Boolean(entry[1]))),
-    transcript,
-  });
-
-  let savedLead: { id: string; notified: { email: boolean; slack: boolean } } | null = null;
-  if (body.consent === true && fields.email) {
-    const lead = await createMarketingLead({
-      email: fields.email,
+    const reply = [intro, recommendation, question ? question : (lang === "de" ? "Du kannst mit dieser Konfiguration starten oder Enterprise direkt anschreiben." : "You can start with this setup or talk to Enterprise directly."), privacy].join("\n\n");
+    const transcript = [...(body.messages ?? []), { role: "assistant" as const, content: reply }].slice(-12);
+    const summary = summarizeLead({
+      email: fields.email ?? "",
       lang,
       path: body.path ?? "/",
       industry,
@@ -225,36 +212,51 @@ export async function POST(req: NextRequest) {
       leadScore,
       fields: Object.fromEntries(Object.entries(fields).filter((entry): entry is [string, string] => Boolean(entry[1]))),
       transcript,
-      summary,
-      consent: true,
     });
-    savedLead = { id: lead.id, notified: lead.notified };
-  }
 
-  return NextResponse.json({
-    reply,
-    fields,
-    industry,
-    leadScore,
-    recommendation: {
-      plan,
-      label: planLabel,
-      product: profile?.brand ?? "Subsumio",
-      cta: lang === "de" ? (plan === "enterprise" ? "Enterprise anfragen" : "Mit Setup starten") : (plan === "enterprise" ? "Talk enterprise" : "Start with setup"),
-      href: ctaHref,
-      compareHref: localizedPath(lang, "/compare"),
-    },
-    chips: chipsFor(lang, fields, industry),
-    capture: {
-      eligible: Boolean(fields.email),
-      saved: Boolean(savedLead),
-      leadId: savedLead?.id ?? null,
-      summary,
-      message: savedLead
-        ? (lang === "de" ? "Gespeichert. Wir melden uns mit Kontext." : "Saved. We’ll follow up with context.")
-        : fields.email
-          ? (lang === "de" ? "E-Mail erkannt. Mit Zustimmung kann ich diesen Verlauf ans Team geben." : "Email detected. With consent, I can pass this conversation to the team.")
-          : (lang === "de" ? "Wenn du möchtest, gib eine E-Mail an und aktiviere die Übergabe." : "If you want follow-up, share an email and enable handoff."),
-    },
-  });
-}
+    let savedLead: { id: string; notified: { email: boolean; slack: boolean } } | null = null;
+    if (body.consent === true && fields.email) {
+      const lead = await createMarketingLead({
+        email: fields.email,
+        lang,
+        path: body.path ?? "/",
+        industry,
+        product: profile?.brand ?? "Subsumio",
+        plan: planLabel,
+        leadScore,
+        fields: Object.fromEntries(Object.entries(fields).filter((entry): entry is [string, string] => Boolean(entry[1]))),
+        transcript,
+        summary,
+        consent: true,
+      });
+      savedLead = { id: lead.id, notified: lead.notified };
+    }
+
+    return NextResponse.json({
+      reply,
+      fields,
+      industry,
+      leadScore,
+      recommendation: {
+        plan,
+        label: planLabel,
+        product: profile?.brand ?? "Subsumio",
+        cta: lang === "de" ? (plan === "enterprise" ? "Enterprise anfragen" : "Mit Setup starten") : (plan === "enterprise" ? "Talk enterprise" : "Start with setup"),
+        href: ctaHref,
+        compareHref: localizedPath(lang, "/compare"),
+      },
+      chips: chipsFor(lang, fields, industry),
+      capture: {
+        eligible: Boolean(fields.email),
+        saved: Boolean(savedLead),
+        leadId: savedLead?.id ?? null,
+        summary,
+        message: savedLead
+          ? (lang === "de" ? "Gespeichert. Wir melden uns mit Kontext." : "Saved. We'll follow up with context.")
+          : fields.email
+            ? (lang === "de" ? "E-Mail erkannt. Mit Zustimmung kann ich diesen Verlauf ans Team geben." : "Email detected. With consent, I can pass this conversation to the team.")
+            : (lang === "de" ? "Wenn du möchtest, gib eine E-Mail an und aktiviere die Übergabe." : "If you want follow-up, share an email and enable handoff."),
+      },
+    });
+  },
+);

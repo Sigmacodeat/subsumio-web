@@ -53,4 +53,62 @@ describe("CSRF", () => {
     expect(CSRF_COOKIE_NAME).toBe("sb_csrf");
     expect(CSRF_HEADER_NAME).toBe("x-csrf-token");
   });
+
+  it("allows HEAD without token", () => {
+    const req = new Request("https://example.com/api/test", { method: "HEAD" });
+    expect(validateCsrf(req, undefined)).toBe(true);
+  });
+
+  it("allows OPTIONS without token", () => {
+    const req = new Request("https://example.com/api/test", { method: "OPTIONS" });
+    expect(validateCsrf(req, undefined)).toBe(true);
+  });
+
+  it("accepts PUT with matching token", () => {
+    const token = generateCsrfToken();
+    const req = new Request("https://example.com/api/test", {
+      method: "PUT",
+      headers: { [CSRF_HEADER_NAME]: token },
+    });
+    expect(validateCsrf(req, token)).toBe(true);
+  });
+
+  it("accepts PATCH with matching token", () => {
+    const token = generateCsrfToken();
+    const req = new Request("https://example.com/api/test", {
+      method: "PATCH",
+      headers: { [CSRF_HEADER_NAME]: token },
+    });
+    expect(validateCsrf(req, token)).toBe(true);
+  });
+
+  it("accepts DELETE with matching token", () => {
+    const token = generateCsrfToken();
+    const req = new Request("https://example.com/api/test", {
+      method: "DELETE",
+      headers: { [CSRF_HEADER_NAME]: token },
+    });
+    expect(validateCsrf(req, token)).toBe(true);
+  });
+
+  it("rejects POST with empty header token", () => {
+    const req = new Request("https://example.com/api/test", {
+      method: "POST",
+      headers: { [CSRF_HEADER_NAME]: "" },
+    });
+    expect(validateCsrf(req, "cookie-value")).toBe(false);
+  });
+
+  it("rejects POST with empty cookie value", () => {
+    const req = new Request("https://example.com/api/test", {
+      method: "POST",
+      headers: { [CSRF_HEADER_NAME]: "some-token" },
+    });
+    expect(validateCsrf(req, "")).toBe(false);
+  });
+
+  it("generates 50 unique tokens", () => {
+    const tokens = new Set(Array.from({ length: 50 }, () => generateCsrfToken()));
+    expect(tokens.size).toBe(50);
+  });
 });

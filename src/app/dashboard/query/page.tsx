@@ -18,16 +18,15 @@ import {
   Landmark,
   FileWarning,
   ShieldAlert,
-  Gauge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
-import { AI_BADGE_LABEL } from "@/lib/ai-act";
-import { assessGroundedness } from "@/lib/groundedness";
 import { ModelSelector } from "@/components/dashboard/model-selector";
+import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
+import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 
 interface Message {
   id: string;
@@ -81,7 +80,6 @@ function CitationPill({ slug, title }: { slug: string; title: string }) {
 
 function AssistantMessage({ msg }: { msg: Message }) {
   const [copied, setCopied] = useState(false);
-  const ground = assessGroundedness(msg.citations, msg.gaps);
 
   const copy = async () => {
     await navigator.clipboard.writeText(msg.content);
@@ -110,26 +108,10 @@ function AssistantMessage({ msg }: { msg: Message }) {
               </span>
             </span>
           ) : (
-            // EU AI Act Art. 50: KI-synthetisierte Antwort sichtbar kennzeichnen.
+            // EU AI Act Art. 50 + Grounding status — unified badge components
             <>
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                {AI_BADGE_LABEL}
-              </span>
-              {/* Quellendeckung: Hallucinations-Vorsicht-Signal, keine Korrektheits-Garantie. */}
-              <span
-                title={ground.hint}
-                aria-label={`Quellendeckung: ${ground.label}. ${ground.hint}`}
-                className={cn(
-                  "inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                  ground.cls
-                )}
-              >
-                <Gauge size={10} aria-hidden="true" />
-                {ground.label}
-                {ground.citationCount > 0 && (
-                  <span className="opacity-70">· {ground.citationCount}</span>
-                )}
-              </span>
+              <AIBadge />
+              <GroundingStatus citations={msg.citations} gaps={msg.gaps} />
             </>
           )}
         </div>
@@ -314,7 +296,9 @@ export default function QueryPage() {
   }, []);
 
   const [queryMode, setQueryMode] = useState<"conservative" | "balanced" | "tokenmax">("balanced");
+  const [superbrainMode, setSuperbrainMode] = useState<QueryMode>("balanced");
   const [showModeMenu, setShowModeMenu] = useState(false);
+  const [showSuperbrainMenu, setShowSuperbrainMenu] = useState(false);
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -353,6 +337,7 @@ export default function QueryPage() {
         body: JSON.stringify({
           query: userMsg.content,
           mode: queryMode,
+          query_mode: superbrainMode,
           ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
         }),
       });
@@ -497,6 +482,50 @@ export default function QueryPage() {
             )}
           </div>
 
+          {/* Superbrain Mode selector */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSuperbrainMenu(!showSuperbrainMenu)}
+              className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+            >
+              <Brain size={12} />
+              {QUERY_MODE_LABELS[superbrainMode].label}
+              <ChevronDown size={11} />
+            </button>
+            {showSuperbrainMenu && (
+              <div className="card-shadow-elevated absolute top-full right-0 z-50 mt-1 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                {(Object.entries(QUERY_MODE_LABELS) as [QueryMode, (typeof QUERY_MODE_LABELS)[QueryMode]][]).map(([key, val]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSuperbrainMode(key);
+                      setShowSuperbrainMenu(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                      superbrainMode === key && "brand-soft"
+                    )}
+                  >
+                    <div className="flex-1">
+                      <p
+                        className={cn(
+                          "text-sm font-medium",
+                          superbrainMode === key ? "brand-text" : "text-[color:var(--ds-text)]"
+                        )}
+                      >
+                        {val.label}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{val.description}</p>
+                    </div>
+                    {superbrainMode === key && (
+                      <Check size={14} className="brand-text mt-0.5 shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" onClick={() => setMessages([])} title="Chat leeren">
               <Trash2 size={14} className="text-[color:var(--ds-text-muted)]" />
@@ -584,6 +613,9 @@ export default function QueryPage() {
             <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
               <Badge variant="default" className="text-xs">
                 {MODE_LABELS[queryMode].label}
+              </Badge>
+              <Badge variant="default" className="text-xs brand-soft brand-text brand-border">
+                {QUERY_MODE_LABELS[superbrainMode].label}
               </Badge>
             </div>
             <Button

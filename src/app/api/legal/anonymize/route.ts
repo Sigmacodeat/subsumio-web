@@ -13,6 +13,7 @@ export const POST = createEngineProxy({
   action: "legal.anonymize",
   enginePath: "/api/legal/anonymize",
   body: anonymizeSchema,
+  citationGate: true,
   label: "anonymize",
   audit: (_ctx, b) => ({
     action: "legal.anonymize" as const,

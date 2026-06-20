@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { BrainQualityPanel } from "@/components/legal/BrainQualityPanel";
 import type { BrainPage, Entity, SearchResult } from "@/lib/types";
 
 type FilterType = "all" | Entity["type"] | "document" | "legal_case" | "legal_actor" | "legal_deadline" | "court" | "statute" | "norm";
@@ -201,6 +202,10 @@ export default function BrainPage() {
               {s.label}
             </button>
           ))}
+        </div>
+
+        <div className="pt-2">
+          <BrainQualityPanel />
         </div>
       </div>
 

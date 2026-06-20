@@ -7,6 +7,8 @@ import {
   Loader2,
   Plus,
   AlertTriangle,
+  ShieldAlert,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +20,7 @@ import type { ContactFrontmatter } from "@/lib/legal-types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { caseFormSchema, type CaseFormData } from "@/lib/schemas/case";
+import { checkInternalConflict, type ContactRef, type ConflictCheckResult } from "@/lib/contact-conflict";
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Offen" },
@@ -58,6 +61,7 @@ function contactOptions(pages: BrainPage[]): ContactOption[] {
 export default function NewCasePage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
 
   const form = useDashboardForm({
     schema: caseFormSchema,
@@ -133,11 +137,21 @@ export default function NewCasePage() {
   const f = form.form;
   const { register, setValue, watch } = f;
   const priority = watch("priority");
+  const clientName = watch("clientName");
   const clientSlug = watch("clientSlug");
+  const opponentName = watch("opponentName");
   const opponentSlug = watch("opponentSlug");
   const courtSlug = watch("courtSlug");
   const lawyerSlug = watch("lawyerSlug");
   const portalEnabled = watch("portalEnabled");
+
+  useEffect(() => {
+    const refs: ContactRef[] = [];
+    if (clientName?.trim()) refs.push({ name: clientName.trim(), role: "client" });
+    if (opponentName?.trim()) refs.push({ name: opponentName.trim(), role: "opponent" });
+    if (refs.length < 2) { setConflictResult(null); return; }
+    setConflictResult(checkInternalConflict(refs));
+  }, [clientName, opponentName]);
 
   function applyContact(slug: string, role: ContactRole) {
     const contact = contacts.find((c) => c.slug === slug);
@@ -168,6 +182,28 @@ export default function NewCasePage() {
         <div role="alert" className="mb-4 flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-600 text-sm">
           <AlertTriangle size={16} />
           {form.error}
+        </div>
+      )}
+
+      {conflictResult?.hasConflict && (
+        <div
+          role="alert"
+          className={cn(
+            "mb-4 flex items-start gap-2.5 px-4 py-3 rounded-lg border text-sm",
+            conflictResult.severity === "critical"
+              ? "border-red-500/30 bg-red-500/5 text-red-600"
+              : "border-amber-500/30 bg-amber-500/5 text-amber-600",
+          )}
+        >
+          {conflictResult.severity === "critical"
+            ? <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+            : <Users size={16} className="mt-0.5 shrink-0" />}
+          <div className="space-y-1">
+            <p className="font-semibold">{conflictResult.warning}</p>
+            {conflictResult.hits.map((hit, i) => (
+              <p key={i} className="text-xs opacity-90">{hit.reason}</p>
+            ))}
+          </div>
         </div>
       )}
 

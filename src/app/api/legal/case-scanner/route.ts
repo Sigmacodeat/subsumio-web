@@ -15,6 +15,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/case-scanner",
   body: caseScannerSchema,
   rateTier: "heavy",
+  citationGate: true,
   label: "case-scanner",
   audit: (_ctx, b) => ({
     action: "legal.document_review" as const,

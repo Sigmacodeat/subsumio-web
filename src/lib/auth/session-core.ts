@@ -80,6 +80,14 @@ export function b64urlDecode(input: string): string {
   return atob(padded);
 }
 
+/** Like b64urlDecode but returns a proper UTF-8 string (for JSON payloads). */
+export function b64urlDecodeUtf8(input: string): string {
+  const bin = b64urlDecode(input);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
 export async function hmacKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
@@ -125,7 +133,7 @@ export async function verifySessionCore(
     for (let i = 0; i < sigBin.length; i++) sigBytes[i] = sigBin.charCodeAt(i);
     const ok = await crypto.subtle.verify("HMAC", key, sigBytes, encoder.encode(body));
     if (!ok) return null;
-    const payload = JSON.parse(b64urlDecode(body)) as SessionPayload;
+    const payload = JSON.parse(b64urlDecodeUtf8(body)) as SessionPayload;
     if (!payload.uid || !payload.exp) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     // Edge-safe revocation check (cached, best-effort)

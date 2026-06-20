@@ -291,6 +291,23 @@ export interface ObligationEntry {
   notes?: string;
 }
 
+// ── Legal Grounding Types ─────────────────────────────────────────────
+
+export interface RawCitation {
+  code?: string;
+  paragraph?: string;
+  context?: string;
+}
+
+export interface GroundedCitation {
+  code: string;
+  paragraph: string;
+  context: string;
+  verified: boolean;
+  source_text?: string;
+  source_file?: string;
+}
+
 export interface ObligationExtractionResult {
   obligations: ObligationEntry[];
   renewal_dates: Array<{ date: string; description: string; auto_renew: boolean }>;

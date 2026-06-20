@@ -22,6 +22,7 @@ export const POST = createEngineProxy({
   body: dueDiligenceSchema,
   quota: "queries",
   stream: true,
+  citationGate: true,
   label: "due-diligence",
   transformBody: (b) => ({
     case_slug: b.case_slug || undefined,

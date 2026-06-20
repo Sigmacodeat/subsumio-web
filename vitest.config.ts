@@ -10,7 +10,6 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     exclude: [
-      "src/lib/gobd.test.ts",
       "src/lib/industry-pack.test.ts",
       "**/node_modules/**",
     ],

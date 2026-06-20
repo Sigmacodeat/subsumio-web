@@ -15,6 +15,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/obligation-extract",
   body: obligationSchema,
   rateTier: "heavy",
+  citationGate: true,
   label: "obligation-extract",
   audit: (_ctx, b) => ({
     action: "legal.document_review" as const,

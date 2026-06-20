@@ -14,6 +14,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/precedent-search",
   body: precedentSearchSchema,
   rateTier: "search",
+  citationGate: true,
   label: "precedent-search",
   audit: (_ctx, b) => ({
     action: "legal.document_review" as const,

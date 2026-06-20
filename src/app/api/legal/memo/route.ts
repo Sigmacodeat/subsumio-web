@@ -20,6 +20,7 @@ export const POST = createEngineProxy({
   body: memoSchema,
   quota: "queries",
   stream: true,
+  citationGate: true,
   label: "memo",
   transformBody: (b) => ({
     question: b.question,

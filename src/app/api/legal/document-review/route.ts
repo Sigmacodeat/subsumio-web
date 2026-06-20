@@ -21,6 +21,7 @@ export const POST = createEngineProxy({
   body: documentReviewSchema,
   quota: "queries",
   stream: true,
+  citationGate: true,
   label: "document-review",
   transformBody: (b) => ({
     document_slug: b.document_slug || undefined,

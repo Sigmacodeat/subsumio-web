@@ -10,11 +10,33 @@
  *   - NDCG: Normalized Discounted Cumulative Gain
  */
 
+export type EvalCategory =
+  | "statute"
+  | "case_law"
+  | "procedure"
+  | "general"
+  | "contract_clause"
+  | "memo"
+  | "bulk_review";
+
 export interface EvalQuery {
   id: string;
   query: string;
-  expectedSlugs: string[]; // Slugs der Brain-Pages, die relevant sind
-  category: "statute" | "case_law" | "procedure" | "general";
+  /**
+   * Erwartete Slugs aus dem Brain. Zwei Formen werden unterstützt:
+   * - Feste Slugs: direkte Slug-Strings (für brain-spezifische Fixtures)
+   * - Norm-Slugs: Präfix "norm:" + gesetzliche Norm-ID (für portierbare Fixtures
+   *   die in jedem Brain mit importierten DE/AT-Gesetzen funktionieren)
+   *
+   * Hinweis: Beim Eval werden "norm:"-Präfixe gegen tatsächliche Brain-Slugs
+   * aufgelöst (lookupNormSlug). Damit sind Fixtures brain-agnostisch portierbar.
+   */
+  expectedSlugs: string[];
+  category: EvalCategory;
+  /** Optionaler Hinweis welche Rechtsordnung adressiert wird (DE, AT, CH). */
+  jurisdiction?: "DE" | "AT" | "CH";
+  /** Fixture-Version für Tracking von Fixture-Änderungen. */
+  fixtureVersion?: string;
 }
 
 export interface EvalResult {
@@ -36,25 +58,15 @@ export interface EvalSummary {
   byCategory: Record<string, { precision: number; recall: number; mrr: number; count: number }>;
   results: EvalResult[];
   timestamp: string;
+  fixtureVersion: string;
+  totalQueries: number;
 }
 
-export interface EvalQuery {
-  id: string;
-  query: string;
-  /**
-   * Erwartete Slugs aus dem Brain. Zwei Formen werden unterstützt:
-   * - Feste Slugs: direkte Slug-Strings (für brain-spezifische Fixtures)
-   * - Norm-Slugs: Präfix "norm:" + gesetzliche Norm-ID (für portierbare Fixtures
-   *   die in jedem Brain mit importierten DE/AT-Gesetzen funktionieren)
-   *
-   * Hinweis: Beim Eval werden "norm:"-Präfixe gegen tatsächliche Brain-Slugs
-   * aufgelöst (lookupNormSlug). Damit sind Fixtures brain-agnostisch portierbar.
-   */
-  expectedSlugs: string[];
-  category: "statute" | "case_law" | "procedure" | "general";
-  /** Optionaler Hinweis welche Rechtsordnung adressiert wird (DE, AT, CH). */
-  jurisdiction?: "DE" | "AT" | "CH";
-}
+/**
+ * Aktuelle Fixture-Version. Wird inkrementiert, wenn Fixtures geändert werden.
+ * Erlaubt Vergleich von Eval-Runs über verschiedene Fixture-Versionen hinweg.
+ */
+export const FIXTURE_VERSION = "2.0.0";
 
 /**
  * Brain-agnostische Fixtures: die Slugs folgen dem Subsumio-Legal-Pack-Schema
@@ -160,6 +172,101 @@ export const EVAL_FIXTURES: EvalQuery[] = [
     category: "general",
     jurisdiction: "DE",
   },
+  // ── Schweizerisches Recht ────────────────────────────────────────────────
+  {
+    id: "stat-or-kauf-verjaehrung",
+    query: "Verjährungsfrist Kaufvertrag nach Schweizer Obligationenrecht",
+    expectedSlugs: ["legal/norms/or-127"],
+    category: "statute",
+    jurisdiction: "CH",
+  },
+  {
+    id: "stat-zgb-familienrecht",
+    query: "Ehevorschriften Schweizer Zivilgesetzbuch Ehegüterstand",
+    expectedSlugs: ["legal/norms/zgb-167"],
+    category: "statute",
+    jurisdiction: "CH",
+  },
+  {
+    id: "proc-bundesgericht-beschwerde",
+    query: "Beschwerdefrist Bundesgericht Schweiz",
+    expectedSlugs: ["legal/deadlines/bgg-100"],
+    category: "procedure",
+    jurisdiction: "CH",
+  },
+  // ── Vertragsklauseln ─────────────────────────────────────────────────────
+  {
+    id: "contract-haftungsklausel",
+    query: "Haftungsbeschränkung in AGB Klausel Wirksamkeit",
+    expectedSlugs: ["legal/norms/bgb-309", "legal/norms/bgb-276"],
+    category: "contract_clause",
+    jurisdiction: "DE",
+  },
+  {
+    id: "contract-ruecktrittsklausel",
+    query: "Rücktrittsrecht Vertrag Klausel Voraussetzungen",
+    expectedSlugs: ["legal/norms/bgb-323", "legal/norms/bgb-346"],
+    category: "contract_clause",
+    jurisdiction: "DE",
+  },
+  {
+    id: "contract-nichterfuellung",
+    query: "Schadensersatz bei Nichterfüllung Vertrag",
+    expectedSlugs: ["legal/norms/bgb-280", "legal/norms/bgb-281"],
+    category: "contract_clause",
+    jurisdiction: "DE",
+  },
+  {
+    id: "contract-vertragsstrafe",
+    query: "Vertragsstrafe Klausel Herabsetzung Angemessenheit",
+    expectedSlugs: ["legal/norms/bgb-339", "legal/norms/bgb-343"],
+    category: "contract_clause",
+    jurisdiction: "DE",
+  },
+  // ── Schriftsatz / Memo ───────────────────────────────────────────────────
+  {
+    id: "memo-klagebegruendung",
+    query: "Aufbau Klagebegründung ZPO Anspruchsbegründung",
+    expectedSlugs: ["legal/norms/zpo-253"],
+    category: "memo",
+    jurisdiction: "DE",
+  },
+  {
+    id: "memo-berufungsbegruendung",
+    query: "Berufungsbegründung Frist und Inhalt ZPO",
+    expectedSlugs: ["legal/norms/zpo-520", "legal/norms/zpo-521"],
+    category: "memo",
+    jurisdiction: "DE",
+  },
+  {
+    id: "memo-revisionsbegruendung",
+    query: "Revisionsbegründung ZPO Inhalt und Frist",
+    expectedSlugs: ["legal/norms/zpo-551", "legal/norms/zpo-552"],
+    category: "memo",
+    jurisdiction: "DE",
+  },
+  // ── Bulk Review / Due Diligence ─────────────────────────────────────────
+  {
+    id: "bulk-vertragsrisiko",
+    query: "Vertragsrisiko Haftungsbeschränkung识别 Due Diligence",
+    expectedSlugs: ["legal/norms/bgb-309", "legal/norms/bgb-276"],
+    category: "bulk_review",
+    jurisdiction: "DE",
+  },
+  {
+    id: "bulk-versicherungsvertrag",
+    query: "Versicherungsvertrag Obliegenheiten Pflichten",
+    expectedSlugs: ["legal/norms/vvg-19", "legal/norms/vvg-28"],
+    category: "bulk_review",
+    jurisdiction: "DE",
+  },
+  {
+    id: "bulk-arbeitsvertrag-kuendigung",
+    query: "Arbeitsvertrag Kündigungsschutz Kündigung Frist",
+    expectedSlugs: ["legal/norms/kschg-1", "legal/norms/bgb-622"],
+    category: "bulk_review",
+    jurisdiction: "DE",
+  },
 ];
 
 export interface EvalOptions {
@@ -236,7 +343,7 @@ export async function runEval(
   const overallNdcg = avg(results.map((r) => r.ndcg ?? 0));
 
   const byCategory: EvalSummary["byCategory"] = {};
-  for (const cat of ["statute", "case_law", "procedure", "general"]) {
+  for (const cat of ["statute", "case_law", "procedure", "general", "contract_clause", "memo", "bulk_review"]) {
     const catResults = results.filter((r) => r.category === cat);
     if (catResults.length > 0) {
       byCategory[cat] = {
@@ -256,6 +363,8 @@ export async function runEval(
     byCategory,
     results,
     timestamp: new Date().toISOString(),
+    fixtureVersion: FIXTURE_VERSION,
+    totalQueries: fixtures.length,
   };
 }
 

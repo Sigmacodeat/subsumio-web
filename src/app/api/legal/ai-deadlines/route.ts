@@ -3,6 +3,8 @@ import { z } from "zod";
 import { ENGINE_URL, recordQuota } from "@/lib/engine";
 import { detectDeadlines, resolveRelativeDeadline } from "@/lib/ai-deadline-detect";
 import { createHandler } from "@/lib/api-handler";
+import { groundAnswerCitations, emptyGroundingMetadata } from "@/lib/citation-gate";
+import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,7 @@ const aiDeadlinesSchema = z.object({
 export const POST = createHandler(
   {
     action: "brain.write",
-    rateTier: "standard",
+    rateTier: "heavy",
     body: aiDeadlinesSchema,
     audit: (_ctx, body) => ({
       action: "legal.ai_deadlines" as const,
@@ -23,7 +25,8 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const detected = detectDeadlines(body.text);
+    const safeText = sanitizeUserInput(body.text);
+    const detected = detectDeadlines(safeText);
 
     const createdSlugs: string[] = [];
     if (body.caseSlug) {
@@ -62,9 +65,22 @@ export const POST = createHandler(
       void recordQuota(ctx, "pages", createdSlugs.length);
     }
 
-    return Response.json({
+    const response: Record<string, unknown> = {
       detected,
       created: createdSlugs.length > 0 ? createdSlugs : undefined,
-    });
+    };
+
+    try {
+      const textParts = detected.map((d) => `${d.description} ${d.sourceSnippet}`).join(" ");
+      response._grounding = await groundAnswerCitations(textParts);
+    } catch (err) {
+      console.error(
+        "[ai-deadlines] grounding failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      response._grounding = emptyGroundingMetadata();
+    }
+
+    return Response.json(response);
   },
 );

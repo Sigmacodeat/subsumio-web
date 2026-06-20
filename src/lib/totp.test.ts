@@ -88,4 +88,37 @@ describe("TOTP", () => {
     expect(url).toContain(`secret=${secret}`);
     expect(url).toContain("issuer=Subsumio");
   });
+
+  it("verifyTOTP() rejects empty token", async () => {
+    const secret = generateSecret();
+    expect(await verifyTOTP("", secret)).toBe(false);
+  });
+
+  it("verifyTOTP() rejects code from a different secret", async () => {
+    const secret1 = generateSecret();
+    const secret2 = generateSecret();
+    const code = await generateTOTP(secret1);
+    // Extremely unlikely that codes match for different secrets
+    const result = await verifyTOTP(code, secret2);
+    expect(result).toBe(false);
+  });
+
+  it("generateTOTP() is deterministic for same time and secret", async () => {
+    const secret = generateSecret();
+    const fixedTime = 1700000000;
+    const code1 = await generateTOTP(secret, { time: fixedTime });
+    const code2 = await generateTOTP(secret, { time: fixedTime });
+    expect(code1).toBe(code2);
+  });
+
+  it("generateSecret() produces unique secrets", () => {
+    const secrets = new Set(Array.from({ length: 20 }, () => generateSecret()));
+    expect(secrets.size).toBe(20);
+  });
+
+  it("otpAuthURL() supports custom issuer", () => {
+    const secret = generateSecret();
+    const url = otpAuthURL(secret, "user", "CustomApp");
+    expect(url).toContain("issuer=CustomApp");
+  });
 });

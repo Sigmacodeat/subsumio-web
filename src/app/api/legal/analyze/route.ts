@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import path from "node:path";
-import { promises as fs } from "node:fs";
 import { ENGINE_URL, engineConfigurationResponse, requireEngineContext } from "@/lib/engine";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { apiError } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { timingSafeCompare } from "@/lib/crypto-utils";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
+import { groundCitations } from "@/lib/legal-grounding";
+import type { RawCitation } from "@/lib/types";
 
 export const maxDuration = 120;
 
@@ -23,157 +23,6 @@ const analyzeSchema = z
     brain_id: z.string().optional(),
   })
   .passthrough();
-
-// ── Corpus knowledge base ─────────────────────────────────────────────
-const CORPUS_META: Record<
-  string,
-  { jurisdiction: "at" | "de" | "ch"; label: string; file: string }
-> = {
-  abgb: { jurisdiction: "at", label: "ABGB", file: "at/abgb.md" },
-  ahg: { jurisdiction: "at", label: "AHG", file: "at/ahg.md" },
-  bao: { jurisdiction: "at", label: "BAO", file: "at/bao.md" },
-  eo: { jurisdiction: "at", label: "EO", file: "at/eo.md" },
-  stgb_at: { jurisdiction: "at", label: "StGB (AT)", file: "at/stgb-at.md" },
-  stpo_at: { jurisdiction: "at", label: "StPO (AT)", file: "at/stpo-at.md" },
-  ugb: { jurisdiction: "at", label: "UGB", file: "at/ugb.md" },
-  zpo_at: { jurisdiction: "at", label: "ZPO (AT)", file: "at/zpo-at.md" },
-  ao: { jurisdiction: "de", label: "AO", file: "de/ao.md" },
-  bgb: { jurisdiction: "de", label: "BGB", file: "de/bgb.md" },
-  estg: { jurisdiction: "de", label: "EStG", file: "de/estg.md" },
-  famfg: { jurisdiction: "de", label: "FamFG", file: "de/famfg.md" },
-  gg: { jurisdiction: "de", label: "GG", file: "de/gg.md" },
-  gmbhg: { jurisdiction: "de", label: "GmbHG", file: "de/gmbhg.md" },
-  hgb: { jurisdiction: "de", label: "HGB", file: "de/hgb.md" },
-  inso: { jurisdiction: "de", label: "InsO", file: "de/inso.md" },
-  stgb: { jurisdiction: "de", label: "StGB", file: "de/stgb.md" },
-  stpo: { jurisdiction: "de", label: "StPO", file: "de/stpo.md" },
-  ustg: { jurisdiction: "de", label: "UStG", file: "de/ustg.md" },
-  uwg: { jurisdiction: "de", label: "UWG", file: "de/uwg.md" },
-  zpo: { jurisdiction: "de", label: "ZPO", file: "de/zpo.md" },
-  or: { jurisdiction: "ch", label: "OR", file: "ch/or.md" },
-  stgb_ch: { jurisdiction: "ch", label: "StGB (CH)", file: "ch/stgb.md" },
-  zgb: { jurisdiction: "ch", label: "ZGB", file: "ch/zgb.md" },
-};
-
-const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
-const CORPUS_SPLIT_DIR = path.join(process.cwd(), "law-corpus-split");
-
-// ── Citation types ────────────────────────────────────────────────────
-
-interface RawCitation {
-  code?: string;
-  paragraph?: string;
-  context?: string;
-}
-
-interface GroundedCitation {
-  code: string;
-  paragraph: string;
-  context: string;
-  verified: boolean;
-  source_text?: string;
-  source_file?: string;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────
-
-function normalizeStatuteCode(code: string): string {
-  return code
-    .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "_")
-    .replace(/_+/g, "_");
-}
-
-async function lookupSplitParagraph(code: string, paragraph: string): Promise<string | null> {
-  const normalized = normalizeStatuteCode(code);
-  const canonicalKey = Object.keys(CORPUS_META).find(
-    (k) =>
-      k === normalized ||
-      k === normalized.replace(/_at$/, "_at") ||
-      CORPUS_META[k].label.toLowerCase().includes(code.toLowerCase())
-  );
-
-  const abbr = canonicalKey
-    ? CORPUS_META[canonicalKey].label.match(/^([A-Z][A-Za-z\u00c4\u00d6\u00dc]+)/)?.[1] ||
-      code.toUpperCase()
-    : code.toUpperCase();
-
-  const jur = canonicalKey ? CORPUS_META[canonicalKey].jurisdiction : "de";
-  const paraClean = paragraph.replace(/^\u00a7\s*/, "").trim();
-  const slug = `${abbr.toLowerCase()}-par-${paraClean.toLowerCase()}`;
-  const splitPath = path.join(CORPUS_SPLIT_DIR, jur, `${slug}.md`);
-
-  try {
-    const content = await fs.readFile(splitPath, "utf8");
-    if (content.startsWith("---")) {
-      const end = content.indexOf("---", 3);
-      return end !== -1 ? content.slice(end + 3).trimStart() : content;
-    }
-    return content;
-  } catch {
-    return null;
-  }
-}
-
-async function lookupCorpusParagraph(codeKey: string, paragraph: string): Promise<string | null> {
-  const meta = CORPUS_META[codeKey];
-  if (!meta) return null;
-
-  try {
-    const text = await fs.readFile(path.join(CORPUS_DIR, meta.file), "utf8");
-    const paraNum = paragraph.replace(/^\u00a7\s*/, "").trim();
-
-    const deMatch = text.match(
-      new RegExp(`## \u00a7 ${paraNum}[^\\n]*\\n([\\s\\S]{0,1500}?)(?=\\n## \u00a7|$)`)
-    );
-    if (deMatch) return deMatch[1].trim();
-
-    const atIdx = text.search(new RegExp(`\u00a7\\s*${paraNum}\\.`));
-    if (atIdx !== -1) {
-      const nextAt = text.search(new RegExp(`\u00a7\\s*${String(Number(paraNum) + 1)}\\.`));
-      const end = nextAt !== -1 ? nextAt : atIdx + 1000;
-      return text.slice(atIdx, end).slice(0, 800).trim();
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-async function groundCitations(rawCitations: RawCitation[]): Promise<GroundedCitation[]> {
-  const results: GroundedCitation[] = [];
-
-  for (const cite of rawCitations.slice(0, 20)) {
-    if (!cite.code || !cite.paragraph) continue;
-
-    const code = String(cite.code).trim();
-    const paragraph = String(cite.paragraph).trim();
-    const context = String(cite.context || "").trim();
-
-    let sourceText = await lookupSplitParagraph(code, paragraph);
-
-    if (!sourceText) {
-      const normalized = normalizeStatuteCode(code);
-      const codeKey = Object.keys(CORPUS_META).find(
-        (k) => k === normalized || CORPUS_META[k].label.toUpperCase().startsWith(code.toUpperCase())
-      );
-      if (codeKey) {
-        sourceText = await lookupCorpusParagraph(codeKey, paragraph);
-      }
-    }
-
-    results.push({
-      code,
-      paragraph,
-      context,
-      verified: sourceText !== null,
-      ...(sourceText ? { source_text: sourceText.slice(0, 600) } : {}),
-    });
-  }
-
-  return results;
-}
 
 function safeParseJson(text: string): Record<string, unknown> {
   try {

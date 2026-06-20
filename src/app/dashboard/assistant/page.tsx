@@ -20,6 +20,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
 import { loadChatHistory, saveChatMessage, clearChatHistory, type ChatHistoryEntry } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { CitationBadgesInline } from "@/components/legal/CitationPanel";
 
 interface ChatMessage {
   id: string;
@@ -111,7 +112,9 @@ export default function AssistantPage() {
       setMessages((m) => {
         const last = m[m.length - 1];
         if (last.role !== "assistant") return m;
-        const updated = { ...last, content: result.answer, citations: result.citations };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const g = (result as any)._grounding || (result as any).grounding;
+        const updated = { ...last, content: result.answer, citations: result.citations, grounding: g ?? undefined };
         saveChatMessage(updated as ChatHistoryEntry);
         return [...m.slice(0, -1), updated];
       });
@@ -244,6 +247,14 @@ export default function AssistantPage() {
                   </div>
                 )}
               </div>
+              {msg.role === "assistant" && msg.content && (
+                <CitationBadgesInline
+                  data={{
+                    citations: msg.citations,
+                    isStreaming: false,
+                  }}
+                />
+              )}
               {msg.citations && msg.citations.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {msg.citations.map((c) => (

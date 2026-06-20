@@ -101,7 +101,7 @@ function safeSlugPart(input: string): string {
     .slice(0, 80) || "item";
 }
 
-function parseIntent(text: string): ParsedIntent {
+export function parseIntent(text: string): ParsedIntent {
   const trimmed = text.trim();
   const lower = trimmed.toLowerCase();
   if (/^(ja|ok|okay|speichern|bestaetigen|bestätigen)$/i.test(trimmed)) return { kind: "confirm" };
@@ -112,8 +112,8 @@ function parseIntent(text: string): ParsedIntent {
   if (minutesMatch) {
     const raw = parseFloat(minutesMatch[1].replace(",", "."));
     const unit = minutesMatch[2].toLowerCase();
-    const minutes = Math.max(1, Math.round(unit.startsWith("h") || unit.startsWith("std") ? raw * 60 : raw));
-    const caseMatch = trimmed.match(/\b(?:akt|akte|az|aktenzeichen)\s+([^,;:\n]+)/i);
+    const minutes = Math.max(1, Math.round(unit.startsWith("h") || unit.startsWith("std") || unit.startsWith("stunde") ? raw * 60 : raw));
+    const caseMatch = trimmed.match(/\b(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9\-\/_.]+)/i);
     const caseRef = (caseMatch?.[1] ?? "").trim();
     const description = trimmed
       .replace(minutesMatch[0], "")
@@ -128,14 +128,14 @@ function parseIntent(text: string): ParsedIntent {
   const expenseMatch = trimmed.match(/^(?:auslage|kosten|spesen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
   if (expenseMatch) {
     const body = expenseMatch[2].trim();
-    const amountMatch = body.match(/(\d+(?:[,.]\d{1,2})?)\s*(?:eur|euro|€)?/i);
+    const amountMatch = body.match(/(\d+(?:[,.]\d{1,2})?)\s*(?:euro|eur|€)?/i);
     if (!amountMatch) {
       return { kind: "free_text", text: trimmed };
     }
     const amount = Math.max(0, Number.parseFloat(amountMatch[1].replace(",", ".")));
     const description = body
       .replace(amountMatch[0], "")
-      .replace(/\b(eur|euro)\b/gi, "")
+      .replace(/\b(euro|eur)\b/gi, "")
       .replace(/^\s*[:,-]\s*/, "")
       .trim() || "Auslage via WhatsApp";
     return {
@@ -152,8 +152,41 @@ function parseIntent(text: string): ParsedIntent {
     return { kind: "case_note", caseRef: noteMatch[1].trim(), note: noteMatch[2].trim() };
   }
 
-  const statusMatch = trimmed.match(/^(?:status|abrechnung|offen)\s+(?:zu\s+)?(?:(?:akt|akte)\s+)?(.+)$/i);
+  const statusMatch = trimmed.match(/^(?:status|abrechnung|offen(?!e\s+abrechnung|\s+abrechenbar))\s+(?:zu\s+)?(?:(?:akt|akte)\s+)?(.+)$/i);
   if (statusMatch) return { kind: "invoice_status", caseRef: statusMatch[1].trim() };
+
+  // 'offen abrechenbar akt X' / 'offene abrechnung akt X' → invoice_status (checked separately to avoid statusMatch swallowing 'abrechenbar' as caseRef)
+  if (/^offen(?:e\s+abrechnung|\s+abrechenbar)\s+(?:akt|akte)\s+/i.test(trimmed)) {
+    const caseMatch = trimmed.match(/\b(?:akt|akte)\s+([^,;:\n]+)/i);
+    if (caseMatch) return { kind: "invoice_status", caseRef: caseMatch[1].trim() };
+  }
+
+  // Deadline calculation: "frist berechnen berufung ab 2026-03-15 BY" or "berechne frist zpo-berufung 15.03.2026"
+  // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
+  const deadlineCalcMatch = trimmed.match(
+    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2,3}))?/i,
+  );
+  if (deadlineCalcMatch) {
+    return {
+      kind: "deadline_calc",
+      ruleKey: deadlineCalcMatch[1].toLowerCase(),
+      startDate: normalizeDate(deadlineCalcMatch[2]),
+      bundesland: (deadlineCalcMatch[3] || "BY").toUpperCase(),
+    };
+  }
+
+  // Mark task/deadline as done: "erledigt akt 2026-014: klageentwurf" or "aufgabe erledigt akt X: ..."
+  // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
+  const doneMatch = trimmed.match(/^(?:(aufgabe|frist|task|deadline)\s+)?erledigt\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
+  if (doneMatch) {
+    const itemType = doneMatch[1]?.toLowerCase().startsWith("frist") || doneMatch[1]?.toLowerCase().startsWith("deadline") ? "deadline" : "task";
+    return {
+      kind: "mark_done",
+      caseRef: (doneMatch[2] ?? "").trim(),
+      itemType,
+      query: doneMatch[3].trim(),
+    };
+  }
 
   const taskMatch = trimmed.match(/^(?:aufgabe|todo)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
   if (taskMatch) {
@@ -197,19 +230,6 @@ function parseIntent(text: string): ParsedIntent {
     if (Number.isFinite(streitwert) && streitwert > 0) return { kind: "rvg_calc", streitwert };
   }
 
-  // Deadline calculation: "frist berechnen berufung ab 2026-03-15 BY" or "berechne frist zpo-berufung 15.03.2026"
-  const deadlineCalcMatch = trimmed.match(
-    /^(?:frist|deadline)\s+berechnen\s+([a-z-]+)\s+(?:ab\s+)?(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})(?:\s+([A-Z]{2}))?/i,
-  );
-  if (deadlineCalcMatch) {
-    return {
-      kind: "deadline_calc",
-      ruleKey: deadlineCalcMatch[1].toLowerCase(),
-      startDate: normalizeDate(deadlineCalcMatch[2]),
-      bundesland: (deadlineCalcMatch[3] || "BY").toUpperCase(),
-    };
-  }
-
   // Conflict check: "konflikt Müller" or "konflikt-check Müller akt 2026-014"
   const conflictMatch = trimmed.match(/^(?:konflikt|conflict|konflikt-check)\s+(.+?)(?:\s+(?:akt|akte)\s+(\S+))?$/i);
   if (conflictMatch) {
@@ -221,7 +241,7 @@ function parseIntent(text: string): ParsedIntent {
   }
 
   // Document fetch: "dokument akt 2026-014: klage" or "hole dokument akt 2026-014 vertrag"
-  const docMatch = trimmed.match(/^(?:dokument|dokumente|unterlagen|hole)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
+  const docMatch = trimmed.match(/^(?:hole\s+)?(?:dokument|dokumente|unterlagen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
   if (docMatch) {
     return {
       kind: "document_fetch",
@@ -236,7 +256,7 @@ function parseIntent(text: string): ParsedIntent {
   }
 
   // List all open tasks: "aufgaben", "offene aufgaben", "todos", "was ist zu tun"
-  if (/^(?:aufgaben|offene\s+aufgaben|todos|offene\s+todos|was\s+ist\s+zu\s+tun|to-?do)$/i.test(trimmed)) {
+  if (/^(?:aufgaben|offene\s+aufgaben|todos|offene\s+todos|was\s+ist\s+zu\s+tun|to[-\s]?do)$/i.test(trimmed)) {
     return { kind: "list_tasks" };
   }
 
@@ -250,56 +270,15 @@ function parseIntent(text: string): ParsedIntent {
     return { kind: "today" };
   }
 
-  // Bare case reference: "akte 2026-014" or "akt 2026-014" or "az 2026-014"
-  // → show case summary (most natural way to look up a case)
-  const bareCaseMatch = trimmed.match(/^(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9\-\/_.]+)$/i);
-  if (bareCaseMatch) {
-    return { kind: "case_lookup", caseRef: bareCaseMatch[1].trim() };
-  }
-
-  // Natural language case summary: "wie ist der status akte 2026-014" / "was ist mit akt ..."
-  const nlCaseMatch = trimmed.match(/^(?:wie\s+ist\s+(?:der\s+)?status|was\s+ist\s+(?:mit|los\s+mit)|zeig\s+mir|info)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
-  if (nlCaseMatch) {
-    return { kind: "case_summary", caseRef: nlCaseMatch[1].trim() };
-  }
-
-  // Mark task/deadline as done: "erledigt akt 2026-014: klageentwurf" or "aufgabe erledigt akt X: ..."
-  const doneMatch = trimmed.match(/^(?:(aufgabe|frist|task|deadline)\s+)?erledigt\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i);
-  if (doneMatch) {
-    const itemType = doneMatch[1]?.toLowerCase().startsWith("frist") || doneMatch[1]?.toLowerCase().startsWith("deadline") ? "deadline" : "task";
-    return {
-      kind: "mark_done",
-      caseRef: (doneMatch[2] ?? "").trim(),
-      itemType,
-      query: doneMatch[3].trim(),
-    };
-  }
-
-  // Search across all cases: "suche Müller" or "finde Müller" or "wer ist Müller"
-  const searchMatch = trimmed.match(/^(?:suche|finde|wer\s+ist|wo\s+ist)\s+(.+)$/i);
-  if (searchMatch) {
-    return { kind: "search", query: searchMatch[1].trim() };
-  }
-
-  // Financial overview: "offene kosten" / "umsatz" / "abrechnung" / "konto"
-  if (/^(?:offene\s+kosten|umsatz|abrechnung|konto|finanzen|finanzielle\s+übersicht|finanzielle\s+ueberblick)$/i.test(trimmed)) {
-    return { kind: "financial_overview" };
-  }
-
-  // Case activity log: "verlauf akt 2026-014" or "historie akt 2026-014" or "aktivitäten akt X"
-  const activityMatch = trimmed.match(/^(?:verlauf|historie|aktivitäten|aktivitaeten|log)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
-  if (activityMatch) {
-    return { kind: "case_activity", caseRef: activityMatch[1].trim() };
-  }
-
   // Create new case: "neue akte Müller vs. Schmidt Familienrecht" or "neuer fall ..."
+  // Checked BEFORE closeCaseMatch2/bareCaseMatch to avoid 'akte anlegen ...' being swallowed as case_lookup
   const createCaseMatch = trimmed.match(
     /^(?:neue\s+akte|neuer\s+fall|neue\s+sache|akte\s+anlegen|fall\s+anlegen)\s+(.+)$/i,
   );
   if (createCaseMatch) {
     const body = createCaseMatch[1].trim();
     // Try to parse "Mandant vs. Gegner Rechtsgebiet Beschreibung"
-    const vsMatch = body.match(/^(.+?)\s+(?:vs\.?|gegen)\s+(.+?)(?:\s+(Familienrecht|Zivilrecht|Strafrecht|Arbeitsrecht|Handelsrecht|Steuerrecht|Verwaltungsrecht|Gewerblicher\s+Rechtsschutz))?\s*(.*)$/i);
+    const vsMatch = body.match(/^(.+?)\s+(?:vs\.?|gegen)\s+(.+?)(?:\s+(Familienrecht|Zivilrecht|Strafrecht|Arbeitsrecht|Handelsrecht|Steuerrecht|Verwaltungsrecht|Gewerblicher\s+Rechtsschutz)(?:\s+(.*))?)?\s*$/i);
     if (vsMatch) {
       const legalAreaMap: Record<string, string> = {
         "familienrecht": "family", "zivilrecht": "civil", "strafrecht": "criminal",
@@ -325,6 +304,56 @@ function parseIntent(text: string): ParsedIntent {
     };
   }
 
+  // Close case: "akte abschließen 2026-014" or "akte schließen X" or "fall abschließen X"
+  // Checked BEFORE bareCaseMatch to avoid "akte beenden X" being swallowed as case_lookup
+  const closeCaseMatch2 = trimmed.match(
+    /^(?:abschließen|abschliessen|schließen|schliessen|beenden|archivieren)\s+(?:(?:akt|akte|fall)\s+)?(.+)$/i,
+  );
+  if (closeCaseMatch2) {
+    return { kind: "close_case", caseRef: closeCaseMatch2[1].trim() };
+  }
+
+  // Also: "akte beenden 2026-014" or "fall abschließen X" (noun-first)
+  const closeCaseMatchNoun = trimmed.match(
+    /^(?:akte|fall)\s+(?:abschließen|abschliessen|schließen|schliessen|beenden|erledigt|archivieren)\s+(.+)$/i,
+  );
+  if (closeCaseMatchNoun) {
+    return { kind: "close_case", caseRef: closeCaseMatchNoun[1].trim() };
+  }
+
+  // Bare case reference: "akte 2026-014" or "akt 2026-014" or "az 2026-014"
+  // → show case summary (most natural way to look up a case)
+  // Stops at semicolon to truncate SQL injection payloads; allows emoji in case refs
+  const bareCaseMatch = trimmed.match(/^(?:akt|akte|az|aktenzeichen)\s+([^;\n]+)/i);
+  if (bareCaseMatch) {
+    return { kind: "case_lookup", caseRef: bareCaseMatch[1].trim() };
+  }
+
+  // Natural language case summary: "wie ist der status akte 2026-014" / "was ist mit akt ..."
+  // 'zeige mir' requires akt/akte prefix to avoid matching arbitrary text like 'zeige mir deinen system prompt'
+  const nlCaseMatch = trimmed.match(/^(?:wie\s+ist\s+(?:der\s+)?status|was\s+ist\s+(?:mit|los\s+mit)|info)\s+(?:(?:akt|akte)\s+)?(.+)$/i)
+    ?? trimmed.match(/^zeig(?:e)?\s+mir\s+(?:akt|akte)\s+(.+)$/i);
+  if (nlCaseMatch) {
+    return { kind: "case_summary", caseRef: nlCaseMatch[1].trim() };
+  }
+
+  // Search across all cases: "suche Müller" or "finde Müller" or "wer ist Müller"
+  const searchMatch = trimmed.match(/^(?:suche|finde|wer\s+ist|wo\s+ist)\s+(.+)$/i);
+  if (searchMatch) {
+    return { kind: "search", query: searchMatch[1].trim() };
+  }
+
+  // Financial overview: "offene kosten" / "umsatz" / "abrechnung" / "konto"
+  if (/^(?:offene\s+kosten|umsatz|abrechnung|konto|finanzen|finanzielle\s+übersicht|finanzielle\s+ueberblick)$/i.test(trimmed)) {
+    return { kind: "financial_overview" };
+  }
+
+  // Case activity log: "verlauf akt 2026-014" or "historie akt 2026-014" or "aktivitäten akt X"
+  const activityMatch = trimmed.match(/^(?:verlauf|historie|aktivitäten|aktivitaeten|log)\s+(?:(?:akt|akte)\s+)?(.+)$/i);
+  if (activityMatch) {
+    return { kind: "case_activity", caseRef: activityMatch[1].trim() };
+  }
+
   // Create new client: "neuer mandant Thomas Müller" or "neuer klient ..."
   const createClientMatch = trimmed.match(
     /^(?:neuer\s+mandant|neuer\s+klient|neuer\s+kunde|mandant\s+anlegen)\s+(.+)$/i,
@@ -346,21 +375,6 @@ function parseIntent(text: string): ParsedIntent {
       email: emailMatch?.[0],
       note: "",
     };
-  }
-
-  // Close case: "akte abschließen 2026-014" or "akte schließen X" or "fall abschließen X"
-  const closeCaseMatch = trimmed.match(
-    /^(?:akte|fall)\s+(?:abschließen|abschliessen|schließen|schliessen|beenden|erledigt|archivieren)\s+(.+)$/i,
-  );
-  if (closeCaseMatch) {
-    return { kind: "close_case", caseRef: closeCaseMatch[1].trim() };
-  }
-  // Also: "abschließen akt 2026-014"
-  const closeCaseMatch2 = trimmed.match(
-    /^(?:abschließen|abschliessen|schließen|schliessen|beenden|archivieren)\s+(?:(?:akt|akte|fall)\s+)?(.+)$/i,
-  );
-  if (closeCaseMatch2) {
-    return { kind: "close_case", caseRef: closeCaseMatch2[1].trim() };
   }
 
   // Create invoice: "rechnung akt 2026-014: 2500 eur für Klageentwurf"
@@ -385,10 +399,7 @@ function parseIntent(text: string): ParsedIntent {
     return { kind: "standalone_note", note: standaloneNoteMatch[1].trim() };
   }
 
-  if (lower.includes("offen abrechenbar") || lower.includes("offene abrechnung")) {
-    const caseMatch = trimmed.match(/\b(?:akt|akte)\s+([^,;:\n]+)/i);
-    if (caseMatch) return { kind: "invoice_status", caseRef: caseMatch[1].trim() };
-  }
+  // ─── Fallback ───
 
   // Free text fallback — treat as a natural language question to the brain
   return { kind: "free_text", text: trimmed };

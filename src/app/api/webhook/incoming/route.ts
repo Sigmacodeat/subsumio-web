@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hit, clientIp } from "@/lib/auth/rate-limit";
+import { z } from "zod";
+import { clientIp } from "@/lib/auth/rate-limit";
+import { createPublicHandler } from "@/lib/api-handler";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
 import { createIdempotencyStore } from "@/lib/idempotency";
@@ -8,18 +10,25 @@ import { createIdempotencyStore } from "@/lib/idempotency";
 // in-memory fallback for dev. Prevents duplicate processing on provider retries.
 const idempotency = createIdempotencyStore("subsumio_webhook_incoming_events", ["event_type text"]);
 
+const webhookSchema = z.object({
+  event: z.string().min(1),
+  eventId: z.string().optional(),
+  id: z.string().optional(),
+  event_id: z.string().optional(),
+  data: z.record(z.unknown()).optional(),
+});
+
+const ACCEPTED_EVENTS = ["case.created", "deadline.due", "invoice.paid", "email.received"];
+
 /**
  * POST /api/webhook/incoming
  *
  * Empfängt Webhooks von Drittanbietern (Zapier, beA, etc.)
  * Authentifizierung via X-API-Key Header.
- *
- * Body: { event: string, data: Record<string, unknown> }
  */
 function verifyWebhookKey(provided: string): boolean {
   const expected = env("SUBSUMIO_WEBHOOK_API_KEY");
   if (!expected) return false;
-  // Timing-safe comparison
   if (provided.length !== expected.length) return false;
   try {
     const a = Buffer.from(provided, "utf8");
@@ -30,60 +39,40 @@ function verifyWebhookKey(provided: string): boolean {
   }
 }
 
-export async function POST(req: NextRequest) {
-  // Rate-limit webhooks by IP
-  const ip = clientIp(req.headers);
-  const rate = await hit(`webhook:ip:${ip}`, 60, 60_000); // 60/min
-  if (!rate.ok) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } }
-    );
-  }
+export const POST = createPublicHandler(
+  {
+    cors: true,
+    skipCsrf: true,
+    body: webhookSchema,
+    rateLimitKey: (req: NextRequest) => `webhook:ip:${clientIp(req.headers)}`,
+    rateLimitMax: 60,
+    rateLimitWindowMs: 60_000,
+  },
+  async (req, body) => {
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey || !verifyWebhookKey(apiKey)) {
+      return NextResponse.json({ error: "invalid_api_key" }, { status: 401 });
+    }
 
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || !verifyWebhookKey(apiKey)) {
-    return NextResponse.json({ error: "invalid_api_key" }, { status: 401 });
-  }
+    const event = body.event;
+    if (!ACCEPTED_EVENTS.includes(event)) {
+      return NextResponse.json({ error: "unsupported_event" }, { status: 400 });
+    }
 
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
+    // Idempotency: check if this event was already processed
+    const eventId = body.eventId ?? body.id ?? body.event_id ?? "";
+    if (eventId && (await idempotency.isProcessed(eventId))) {
+      return NextResponse.json({ success: true, dedup: true, received: event });
+    }
 
-  const event = typeof body.event === "string" ? body.event : "";
-  if (!event) {
-    return NextResponse.json({ error: "event_required" }, { status: 400 });
-  }
-
-  // Process webhook event
-  const acceptedEvents = ["case.created", "deadline.due", "invoice.paid", "email.received"];
-  if (!acceptedEvents.includes(event)) {
-    return NextResponse.json({ error: "unsupported_event" }, { status: 400 });
-  }
-
-  // Idempotency: check if this event was already processed
-  const eventId =
-    typeof body.eventId === "string"
-      ? body.eventId
-      : typeof body.id === "string"
-        ? body.id
-        : typeof body.event_id === "string"
-          ? body.event_id
-          : "";
-  if (eventId && (await idempotency.isProcessed(eventId))) {
-    return NextResponse.json({ success: true, dedup: true, received: event });
-  }
-
-  // Log and return success (processing is async)
-  console.log(`[webhook] received ${event} from ${ip}`);
-  if (eventId) await idempotency.markProcessed(eventId, event);
-  return NextResponse.json({
-    success: true,
-    received: event,
-    timestamp: new Date().toISOString(),
-    message: "Webhook received and queued for processing",
-  });
-}
+    // Log and return success (processing is async)
+    console.log(`[webhook] received ${event}`);
+    if (eventId) await idempotency.markProcessed(eventId, event);
+    return NextResponse.json({
+      success: true,
+      received: event,
+      timestamp: new Date().toISOString(),
+      message: "Webhook received and queued for processing",
+    });
+  },
+);

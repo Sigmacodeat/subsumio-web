@@ -16,6 +16,7 @@ export const POST = createEngineProxy({
   body: tabularReviewSchema,
   quota: "queries",
   quotaAmount: (b) => b.questions.length,
+  citationGate: true,
   label: "tabular-review",
   audit: (_ctx, b) => ({
     action: "legal.tabular" as const,

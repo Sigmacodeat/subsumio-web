@@ -19,6 +19,7 @@ import type {
   SearchResult,
   TabularReviewResponse,
 } from "./types";
+import type { SourceRegistryResponse } from "./source-registry";
 import { csrfFetch, getCsrfToken } from "./csrf";
 
 // Browser: same-origin Next.js proxy (/api/*). Server: direct engine URL.
@@ -551,6 +552,39 @@ export const api = {
       return request("/api/email-import", {
         method: "POST",
         body: JSON.stringify(email),
+      });
+    },
+  },
+
+  sources: {
+    list(params?: {
+      jurisdiction?: string;
+      type?: string;
+      status?: string;
+    }): Promise<SourceRegistryResponse> {
+      const searchParams = new URLSearchParams();
+      if (params?.jurisdiction) searchParams.set("jurisdiction", params.jurisdiction);
+      if (params?.type) searchParams.set("type", params.type);
+      if (params?.status) searchParams.set("status", params.status);
+      const qs = searchParams.toString();
+      return request(`/api/legal/sources${qs ? `?${qs}` : ""}`);
+    },
+
+    refresh(sourceId: string): Promise<{
+      success: boolean;
+      source_id: string;
+      label: string;
+      sync_summary?: {
+        fetched: number;
+        imported: number;
+        errors: string[];
+        duration_ms: number;
+        timestamp: string;
+      };
+    }> {
+      return request("/api/legal/sources", {
+        method: "POST",
+        body: JSON.stringify({ source_id: sourceId }),
       });
     },
   },

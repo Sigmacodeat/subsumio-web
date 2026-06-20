@@ -18,6 +18,7 @@ export const POST = createEngineProxy({
   enginePath: "/api/legal/translate",
   body: translateSchema,
   rateTier: "heavy",
+  citationGate: true,
   label: "translate",
   audit: (_ctx, b) => ({
     action: "legal.document_review" as const,

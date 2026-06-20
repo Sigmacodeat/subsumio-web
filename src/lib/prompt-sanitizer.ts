@@ -63,3 +63,28 @@ export function buildSafePrompt(
     suffix ?? "",
   ].join("\n");
 }
+
+/**
+ * Recursively sanitize all string values in an object.
+ * Used by createEngineProxy to auto-sanitize body payloads before
+ * forwarding to the engine. Non-string values are passed through.
+ *
+ * Slug/identifier fields are safe to sanitize — sanitizeUserInput only
+ * strips injection patterns and control chars, which won't appear in slugs.
+ */
+export function sanitizeObjectStrings<T>(obj: T): T {
+  if (typeof obj === "string") {
+    return sanitizeUserInput(obj) as unknown as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeObjectStrings(item)) as unknown as T;
+  }
+  if (obj && typeof obj === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      result[key] = sanitizeObjectStrings(value);
+    }
+    return result as unknown as T;
+  }
+  return obj;
+}

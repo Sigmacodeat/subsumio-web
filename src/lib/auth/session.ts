@@ -11,6 +11,7 @@ export {
   getAuthSecret,
   b64url,
   b64urlDecode,
+  b64urlDecodeUtf8,
   hmacKey,
   signSession,
   verifySessionCore,

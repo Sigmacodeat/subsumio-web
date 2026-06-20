@@ -22,6 +22,7 @@ export const POST = createEngineProxy({
   body: summarizeSchema,
   quota: "queries",
   stream: true,
+  citationGate: true,
   label: "summarize",
   transformBody: (b) => ({
     document_slug: b.document_slug || undefined,

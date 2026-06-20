@@ -50,6 +50,8 @@ import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiRateLimited, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
+import { createCitationGateStream, groundJsonResponse, emptyGroundingMetadata } from "@/lib/citation-gate";
+import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -449,6 +451,10 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   quotaAmount?: (body: z.infer<B>) => number;
   /** Whether to stream the engine response (SSE). Default: false (JSON). */
   stream?: boolean;
+  /** When true, wrap SSE streams with createCitationGateStream and inject _grounding into JSON responses. */
+  citationGate?: boolean;
+  /** When true, sanitize all string fields in the payload before forwarding to the engine (prompt injection defense). Default: true. */
+  sanitizeBody?: boolean;
   /** Label for error logging. Default: enginePath. */
   label?: string;
   /** Transform the validated body before sending to the engine. */
@@ -465,9 +471,12 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
       audit: options.audit,
     },
     async (ctx, body, _query, _req) => {
-      const payload = options.transformBody
+      const rawPayload = options.transformBody
         ? options.transformBody(body as z.infer<B>)
         : (body as Record<string, unknown>);
+      const payload = (options.sanitizeBody ?? true)
+        ? sanitizeObjectStrings(rawPayload)
+        : rawPayload;
       try {
         const upstream = await fetch(`${ENGINE_URL}${options.enginePath}`, {
           method: "POST",
@@ -489,13 +498,31 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
         }
 
         if (options.stream) {
-          return apiStream(upstream.body!, {
+          const body = options.citationGate
+            ? createCitationGateStream(upstream.body!)
+            : upstream.body!;
+          return apiStream(body, {
             contentType: upstream.headers.get("Content-Type") || "text/event-stream",
             aiGenerated: true,
           });
         }
 
-        return Response.json(await upstream.json());
+        const result = (await upstream.json()) as Record<string, unknown>;
+
+        if (options.citationGate) {
+          try {
+            const grounding = await groundJsonResponse(result);
+            result._grounding = grounding;
+          } catch (err) {
+            console.error(
+              `[${label}] citation gate grounding failed:`,
+              err instanceof Error ? err.message : String(err)
+            );
+            result._grounding = emptyGroundingMetadata();
+          }
+        }
+
+        return Response.json(result);
       } catch (err) {
         console.error(
           `[${label}] engine unreachable:`,

@@ -45,10 +45,13 @@ function getKeyArrayBuffer(): ArrayBuffer {
 }
 
 async function importKey(): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", getKeyArrayBuffer(), { name: "AES-GCM" }, false, [
-    "encrypt",
-    "decrypt",
-  ]);
+  return crypto.subtle.importKey(
+    "raw",
+    getKeyArrayBuffer(),
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"],
+  );
 }
 
 const encoder = new TextEncoder();

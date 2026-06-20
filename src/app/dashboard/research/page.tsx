@@ -23,6 +23,7 @@ import type { BrainPage } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 
 interface ResearchSession {
   id: string;
@@ -43,6 +44,7 @@ export default function ResearchPage() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [currentCitations, setCurrentCitations] = useState<Array<{ slug: string; title: string }>>([]);
   const [currentGaps, setCurrentGaps] = useState<string[]>([]);
+  const [currentGrounding, setCurrentGrounding] = useState<CitationPanelData["grounding"]>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedPages, setSavedPages] = useState<BrainPage[]>([]);
   const [savedLoading, setSavedLoading] = useState(true);
@@ -75,6 +77,7 @@ export default function ResearchPage() {
     setCurrentAnswer("");
     setCurrentCitations([]);
     setCurrentGaps([]);
+    setCurrentGrounding(null);
 
     try {
       const prompt = `Recherchiere präzise zur folgenden Rechtsfrage unter Berücksichtigung des ${jurisdiction.toUpperCase()}-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nRECHTSFRAGE: ${query}`;
@@ -84,6 +87,9 @@ export default function ResearchPage() {
       setCurrentAnswer(result.answer);
       setCurrentCitations(result.citations || []);
       setCurrentGaps(result.gaps || []);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const g = (result as any)._grounding || (result as any).grounding;
+      if (g) setCurrentGrounding(g);
 
       const session: ResearchSession = {
         id: crypto.randomUUID(),
@@ -222,30 +228,16 @@ export default function ResearchPage() {
           <div className="prose prose-invert prose-sm max-w-none text-[color:var(--ds-text-muted)] leading-relaxed"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
           />
-          {currentCitations.length > 0 && (
-            <div className="pt-3 border-t border-[color:var(--ds-border)]">
-              <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Zitierte Quellen</h4>
-              <div className="flex flex-wrap gap-2">
-                {currentCitations.map((c) => (
-                  <span key={c.slug} className="text-[10px] px-2 py-1 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] brand-text">
-                    {c.title}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {currentGaps.length > 0 && (
-            <div className="pt-3 border-t border-[color:var(--ds-border)]">
-              <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Erkannte Lücken</h4>
-              <ul className="space-y-1">
-                {currentGaps.map((gap, i) => (
-                  <li key={i} className="text-xs text-amber-600 flex items-start gap-2">
-                    <span className="mt-0.5">⚠️</span> {gap}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <CitationPanel
+            data={{
+              citations: currentCitations,
+              gaps: currentGaps,
+              grounding: currentGrounding,
+              isStreaming: loading,
+              jurisdiction,
+            }}
+            className="mt-3"
+          />
         </div>
       )}
 
@@ -291,38 +283,17 @@ export default function ResearchPage() {
               <div className="prose prose-invert prose-sm max-w-none text-[color:var(--ds-text-muted)] leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(currentAnswer) }}
               />
-              {currentCitations.length > 0 && (
-                <div className="pt-3 border-t border-[color:var(--ds-border)]">
-                  <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Zitierte Quellen</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {currentCitations.map((c) => (
-                      <a
-                        key={c.slug}
-                        href={`/dashboard/brain/${c.slug.split("/").map(encodeURIComponent).join("/")}`}
-                        className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] brand-text hover:brand-text hover:brand-border transition-all"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {c.title}
-                        <ExternalLink size={8} />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {currentGaps.length > 0 && (
-                <div className="pt-3 border-t border-[color:var(--ds-border)]">
-                  <h4 className="text-xs font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider mb-2">Erkannte Lücken</h4>
-                  <ul className="space-y-1">
-                    {currentGaps.map((gap, i) => (
-                      <li key={i} className="text-xs text-amber-600 flex items-start gap-2">
-                        <span className="mt-0.5">⚠️</span> {gap}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+          <CitationPanel
+            data={{
+              citations: currentCitations,
+              gaps: currentGaps,
+              grounding: currentGrounding,
+              isStreaming: loading,
+              jurisdiction,
+            }}
+            className="mt-3"
+          />
+        </div>
           )}
 
           {/* Recent Sessions */}

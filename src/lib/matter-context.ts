@@ -1,0 +1,976 @@
+/**
+ * Matter Context Engine — Kanzlei Superbrain Kern-Logik.
+ *
+ * Baut strukturierte Matter Context Bundles aus Engine-Pages,
+ * Source Registry und CaseFrontmatter. Detektiert Lücken,
+ * prüft Coverage und erklärt Retrieval-Ergebnisse.
+ *
+ * Architektur: Web-App ist thin client — diese Lib orchestriert
+ * Engine-Calls und Source-Registry, ohne Engine-Interna zu kennen.
+ */
+
+import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import {
+  buildSourceRegistry,
+  type SourceRegistryEntry,
+} from "@/lib/source-registry";
+import {
+  caseFrontmatter,
+  type CaseFrontmatter,
+  type DeadlineEntry,
+  type DocumentEntry,
+  type AuditLogEntry,
+} from "@/lib/legal-types";
+import { inferInitialExtractionStatus } from "@/lib/extraction-status";
+import type { BrainPage } from "@/lib/types";
+import type {
+  MatterContextBundle,
+  MatterParty,
+  MatterDeadlineSummary,
+  MatterDocumentSummary,
+  MatterActivityEntry,
+  MatterFactEntry,
+  MatterCoverageStatus,
+  SourceCoverageEntry,
+  MatterGap,
+  GapType,
+  GapSeverity,
+  RetrievalExplanation,
+  ExplainedSearchResult,
+  BrainQualitySummary,
+  QueryMode,
+} from "@/lib/matter-context-types";
+
+// ── Types for Engine Responses ────────────────────────────────────────
+
+interface EnginePageResponse {
+  slug: string;
+  title: string;
+  content: string;
+  frontmatter?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  source?: string;
+  type?: string;
+  word_count?: number;
+}
+
+interface EngineSearchResponse {
+  results?: Array<{
+    slug: string;
+    title: string;
+    snippet: string;
+    score: number;
+    source?: string;
+    created_at?: string;
+  }>;
+}
+
+interface EngineStatsResponse {
+  total_pages: number;
+  total_entities: number;
+  total_edges: number;
+  total_queries?: number;
+  last_synced?: string;
+  storage_used_mb?: number;
+}
+
+// ── Matter Context Bundle Builder ─────────────────────────────────────
+
+/**
+ * Hauptfunktion: Baut ein vollständiges Matter Context Bundle.
+ * orchestriert Page-Fetch, Contact-Lookup, Coverage-Check und Gap-Detection.
+ */
+export async function buildMatterContext(
+  caseSlug: string,
+  engineUrl: string,
+  engineHeaders: Record<string, string>,
+): Promise<MatterContextBundle> {
+  const now = new Date().toISOString();
+  const normalizedSlug = normalizeCaseSlug(caseSlug);
+
+  // 1. Fetch case page from engine
+  const casePage = await fetchEnginePage(engineUrl, engineHeaders, normalizedSlug);
+  if (!casePage) {
+    return emptyContext(normalizedSlug, caseSlug, now, false);
+  }
+
+  const fm = caseFrontmatter(casePage);
+  const engineReachable = true;
+
+  // 2. Build parties from frontmatter + contact lookups
+  const parties = await buildParties(engineUrl, engineHeaders, fm);
+
+  // 3. Build deadline summaries
+  const deadlines = buildDeadlineSummaries(fm.deadlines ?? []);
+
+  // 4. Build document summaries
+  const documents = buildDocumentSummaries(fm.documents ?? []);
+
+  // 5. Build recent activity from audit log + timeline
+  const recentActivity = buildRecentActivity(fm.audit_log ?? [], fm.timeline ?? []);
+
+  // 6. Extract facts from frontmatter (strategy, evidence, claims)
+  const facts = buildFacts(fm);
+
+  // 7. Check coverage
+  const coverage = await checkCoverage(engineUrl, engineHeaders, fm);
+
+  // 8. Detect gaps
+  const gaps = detectGaps(fm, parties, deadlines, documents, coverage, engineReachable);
+
+  return {
+    case_slug: normalizedSlug,
+    case_title: casePage.title,
+    case_number: fm.case_number,
+    legal_area: fm.legal_area,
+    status: fm.status,
+    parties,
+    deadlines,
+    documents,
+    recent_activity: recentActivity,
+    facts,
+    coverage,
+    gaps,
+    generated_at: now,
+    engine_reachable: engineReachable,
+  };
+}
+
+// ── Coverage Check ────────────────────────────────────────────────────
+
+export async function checkCoverage(
+  engineUrl: string,
+  engineHeaders: Record<string, string>,
+  caseFrontmatter?: CaseFrontmatter,
+): Promise<MatterCoverageStatus> {
+  const warnings: string[] = [];
+  const sources: SourceCoverageEntry[] = [];
+
+  // 1. Source Registry entries
+  let registryEntries: SourceRegistryEntry[] = [];
+  try {
+    const registry = await buildSourceRegistry(undefined);
+    registryEntries = registry.sources;
+  } catch {
+    warnings.push("Source Registry nicht ladbar");
+  }
+
+  for (const entry of registryEntries) {
+    sources.push({
+      source_id: entry.id,
+      source_label: entry.label,
+      source_type: entry.type === "statute_corpus" ? "statute_corpus" : entry.type === "judgement_api" ? "judgement_api" : "regulatory_feed",
+      connected: entry.enabled,
+      last_sync_at: entry.last_sync_at,
+      document_count: entry.document_count,
+      index_fresh: entry.status === "fresh",
+      ocr_complete: entry.type === "statute_corpus", // statutes don't need OCR
+      error: entry.last_error,
+    });
+  }
+
+  // 2. DMS sources (check connectors)
+  const dmsSources = await checkDmsSources(engineUrl, engineHeaders);
+  sources.push(...dmsSources);
+
+  // 3. Email/WhatsApp/Portal (check from case frontmatter)
+  const communicationSources = checkCommunicationSources(caseFrontmatter);
+  sources.push(...communicationSources);
+
+  // 4. Upload source (always connected if engine is reachable)
+  sources.push({
+    source_id: "upload",
+    source_label: "Datei-Upload",
+    source_type: "upload",
+    connected: true,
+    last_sync_at: null,
+    document_count: caseFrontmatter?.documents?.length ?? 0,
+    index_fresh: true,
+    ocr_complete: true,
+  });
+
+  // Calculate aggregates
+  const total = sources.length;
+  const connected = sources.filter((s) => s.connected).length;
+  const fresh = sources.filter((s) => s.index_fresh).length;
+  const stale = sources.filter((s) => !s.index_fresh && s.connected).length;
+  const errors = sources.filter((s) => s.error).length;
+  const ocrPending = sources.filter((s) => s.connected && !s.ocr_complete).length;
+
+  const completenessScore = calculateCompletenessScore(sources);
+
+  if (ocrPending > 0) {
+    warnings.push(`${ocrPending} Quelle(n) mit ausstehender OCR/Indexierung`);
+  }
+  if (stale > 0) {
+    warnings.push(`${stale} Quelle(n) mit veraltetem Index`);
+  }
+  if (connected < total) {
+    warnings.push(`${total - connected} Quelle(n) nicht verbunden`);
+  }
+
+  const overallFreshness: MatterCoverageStatus["overall_freshness"] =
+    fresh >= connected * 0.8 ? "fresh" : stale > 0 ? "stale" : "unknown";
+
+  return {
+    sources,
+    total_sources: total,
+    connected_sources: connected,
+    fresh_sources: fresh,
+    stale_sources: stale,
+    error_sources: errors,
+    ocr_pending: ocrPending,
+    overall_freshness: overallFreshness,
+    completeness_score: completenessScore,
+    warnings,
+  };
+}
+
+// ── Gap Detection ─────────────────────────────────────────────────────
+
+export function detectGaps(
+  fm: CaseFrontmatter,
+  parties: MatterParty[],
+  deadlines: MatterDeadlineSummary[],
+  documents: MatterDocumentSummary[],
+  coverage: MatterCoverageStatus,
+  engineReachable: boolean,
+): MatterGap[] {
+  const gaps: MatterGap[] = [];
+  const now = new Date();
+
+  if (!engineReachable) {
+    gaps.push(makeGap(
+      "engine_unreachable",
+      "critical",
+      "Engine nicht erreichbar",
+      "Die Subsumio Engine ist nicht erreichbar. Matter Context kann unvollständig sein.",
+      "Engine-Verbindung prüfen und neu starten.",
+      now,
+    ));
+  }
+
+  // Missing client
+  const hasClient = parties.some((p) => p.role === "client");
+  if (!hasClient) {
+    gaps.push(makeGap(
+      "missing_client_info",
+      "high",
+      "Kein Mandant zugeordnet",
+      "Diese Akte hat keinen zugeordneten Mandanten. Eine Mandantenzuordnung ist für weitere Bearbeitung erforderlich.",
+      "Mandant aus Kontakten zuordnen oder neuen Kontakt anlegen.",
+      now,
+    ));
+  }
+
+  // Missing opponent
+  const hasOpponent = parties.some((p) => p.role === "opponent");
+  if (!hasOpponent && fm.status && fm.status !== "closed" && fm.status !== "settled") {
+    gaps.push(makeGap(
+      "unclear_opponent",
+      "medium",
+      "Gegenseite unklar",
+      "Keine Gegenseite in dieser Akte erfasst. Bei streitigen Verfahren sollte die Gegenseite dokumentiert sein.",
+      "Gegner aus Kontakten zuordnen oder als 'unbekannt' markieren.",
+      now,
+    ));
+  }
+
+  // Missing power of attorney
+  const hasVollmacht = documents.some(
+    (d) => d.name.toLowerCase().includes("vollmacht") || d.name.toLowerCase().includes("power of attorney"),
+  );
+  if (!hasVollmacht && hasClient) {
+    gaps.push(makeGap(
+      "missing_power_of_attorney",
+      "high",
+      "Vollmacht fehlt",
+      "Keine Vollmacht in den Aktendokumenten gefunden. Für gerichtliches Handeln ist eine Vollmacht erforderlich.",
+      "Vollmacht hochladen oder deren Vorliegen bestätigen.",
+      now,
+    ));
+  }
+
+  // Overdue deadlines
+  for (const deadline of deadlines) {
+    if (deadline.urgency === "overdue") {
+      gaps.push(makeGap(
+        "missing_deadline",
+        "critical",
+        `Frist überschritten: ${deadline.title}`,
+        `Die Frist "${deadline.title}" (Datum: ${deadline.date}) ist überschritten.`,
+        "Frist sofort prüfen und Maßnahmen einleiten.",
+        now,
+        deadline.title,
+      ));
+    }
+  }
+
+  // Unreviewed documents — check both legacy ocr_status and new extraction_status
+  const unreviewed = documents.filter(
+    (d) =>
+      d.ocr_status === "ocr_needed" ||
+      d.ocr_status === "unknown" ||
+      d.extraction_status === "ocr_needed" ||
+      d.extraction_status === "ocr_failed" ||
+      d.extraction_status === "uploaded" ||
+      d.extraction_status === "processing" ||
+      d.extraction_status === "ocr_processing",
+  );
+  if (unreviewed.length > 0) {
+    gaps.push(makeGap(
+      "unreviewed_document",
+      "medium",
+      `${unreviewed.length} ungeprüfte(s) Dokument(e)`,
+      `${unreviewed.length} Dokument(e) ohne bestätigten Text-Layer oder OCR-Status. Diese könnten unvollständig indexiert sein.`,
+      "OCR-Status prüfen und ggf. Re-OCR anstoßen.",
+      now,
+    ));
+  }
+
+  // Contradictory facts
+  const contradictions = detectContradictions(fm);
+  for (const contradiction of contradictions) {
+    gaps.push(contradiction);
+  }
+
+  // Incomplete coverage
+  if (coverage.completeness_score < 0.5) {
+    gaps.push(makeGap(
+      "incomplete_coverage",
+      "medium",
+      "Unvollständige Quellenabdeckung",
+      `Nur ${Math.round(coverage.completeness_score * 100)}% der Quellen sind verbunden und aktuell. Der Matter Context kann unvollständig sein.`,
+      "Fehlende Quellen anbinden und Sync-Status prüfen.",
+      now,
+    ));
+  }
+
+  // Missing deadline confirmation
+  const hasCourtDeadline = deadlines.some((d) => d.court);
+  const hasConfirmation = documents.some(
+    (d) => d.name.toLowerCase().includes("bestätigung") || d.name.toLowerCase().includes("confirmation"),
+  );
+  if (hasCourtDeadline && !hasConfirmation) {
+    gaps.push(makeGap(
+      "missing_deadline_confirmation",
+      "low",
+      "Fristbestätigung fehlt",
+      "Gerichtliche Fristen sind erfasst, aber keine Fristbestätigung als Dokument hinterlegt.",
+      "Fristbestätigung des Gerichts hochladen, falls vorhanden.",
+      now,
+    ));
+  }
+
+  return gaps;
+}
+
+// ── Retrieval Explainability ──────────────────────────────────────────
+
+export async function explainRetrieval(
+  query: string,
+  engineUrl: string,
+  engineHeaders: Record<string, string>,
+  mode: QueryMode = "balanced",
+): Promise<ExplainedSearchResult[]> {
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      limit: "10",
+    });
+    if (mode === "external_law") {
+      params.set("type", "statute");
+    }
+
+    const res = await fetch(`${engineUrl}/api/search?${params.toString()}`, {
+      headers: engineHeaders,
+    });
+    if (!res.ok) return [];
+
+    const data = (await res.json()) as EngineSearchResponse;
+    const results = data.results ?? [];
+
+    return results.map((r) => {
+      const explanation: RetrievalExplanation = {
+        slug: r.slug,
+        title: r.title,
+        score: r.score,
+        search_mode: inferSearchMode(r.score, r.snippet),
+        source: r.source ?? "internal",
+        source_type: inferSourceType(r.slug),
+        recency_hours: r.created_at ? calculateRecencyHours(r.created_at) : undefined,
+        permission_filtered: false,
+        chunk_info: {
+          snippet: r.snippet,
+        },
+      };
+
+      return {
+        slug: r.slug,
+        title: r.title,
+        snippet: r.snippet,
+        score: r.score,
+        explanation,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+// ── Brain Quality Summary ─────────────────────────────────────────────
+
+export async function buildBrainQualitySummary(
+  engineUrl: string,
+  engineHeaders: Record<string, string>,
+): Promise<BrainQualitySummary> {
+  let stats: EngineStatsResponse = {
+    total_pages: 0,
+    total_entities: 0,
+    total_edges: 0,
+  };
+
+  try {
+    const res = await fetch(`${engineUrl}/api/stats`, { headers: engineHeaders });
+    if (res.ok) {
+      stats = (await res.json()) as EngineStatsResponse;
+    }
+  } catch {
+    // Engine unreachable
+  }
+
+  // Source registry for coverage
+  let registryEntries: SourceRegistryEntry[] = [];
+  let coverageScore = 0;
+  let staleSources = 0;
+  const sourceBreakdown: BrainQualitySummary["source_breakdown"] = [];
+
+  try {
+    const registry = await buildSourceRegistry(undefined);
+    registryEntries = registry.sources;
+    staleSources = registry.stale + registry.error;
+    coverageScore = registry.total > 0 ? registry.fresh / registry.total : 0;
+
+    const byType = new Map<string, { count: number; fresh: boolean }>();
+    for (const entry of registryEntries) {
+      const existing = byType.get(entry.type) ?? { count: 0, fresh: false };
+      existing.count += 1;
+      if (entry.status === "fresh") existing.fresh = true;
+      byType.set(entry.type, existing);
+    }
+    for (const [type, info] of byType) {
+      sourceBreakdown.push({ source_type: type, count: info.count, fresh: info.fresh });
+    }
+  } catch {
+    // Registry not available
+  }
+
+  const qualityIssues: string[] = [];
+  if (staleSources > 0) qualityIssues.push(`${staleSources} veraltete Quellen`);
+  if (coverageScore < 0.5) qualityIssues.push("Niedrige Quellenabdeckung");
+  if (stats.total_pages === 0) qualityIssues.push("Brain ist leer");
+
+  return {
+    total_pages: stats.total_pages,
+    total_entities: stats.total_entities,
+    total_edges: stats.total_edges,
+    indexed_pages: stats.total_pages,
+    ocr_pending: 0,
+    stale_sources: staleSources,
+    coverage_score: coverageScore,
+    last_synced: stats.last_synced ?? null,
+    source_breakdown: sourceBreakdown,
+    quality_issues: qualityIssues,
+  };
+}
+
+// ── Helper Functions ──────────────────────────────────────────────────
+
+export function normalizeCaseSlug(slug: string): string {
+  return slug.replace(/^\/+|\/+$/g, "").replace(/%2F/gi, "/");
+}
+
+async function fetchEnginePage(
+  engineUrl: string,
+  headers: Record<string, string>,
+  slug: string,
+): Promise<EnginePageResponse | null> {
+  try {
+    const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
+    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers });
+    if (!res.ok) return null;
+    return (await res.json()) as EnginePageResponse;
+  } catch {
+    return null;
+  }
+}
+
+async function buildParties(
+  engineUrl: string,
+  headers: Record<string, string>,
+  fm: CaseFrontmatter,
+): Promise<MatterParty[]> {
+  const parties: MatterParty[] = [];
+
+  // Client
+  if (fm.client_slug || fm.client_name) {
+    const contact = fm.client_slug ? await fetchContact(engineUrl, headers, fm.client_slug) : null;
+    parties.push({
+      slug: fm.client_slug ?? `client-${fm.client_name ?? "unknown"}`,
+      name: contact?.name ?? fm.client_name ?? "Unbekannt",
+      role: "client",
+      contact_info: contact ? {
+        email: contact.email,
+        phone: contact.phone,
+        company: contact.company,
+        address: contact.address,
+      } : undefined,
+    });
+  }
+
+  // Opponents
+  const opponentSlugs = fm.opponent_slugs ?? [];
+  const opponentNames = fm.opponent_name ? [fm.opponent_name] : [];
+  for (let i = 0; i < Math.max(opponentSlugs.length, opponentNames.length); i++) {
+    const slug = opponentSlugs[i];
+    const contact = slug ? await fetchContact(engineUrl, headers, slug) : null;
+    parties.push({
+      slug: slug ?? `opponent-${i}`,
+      name: contact?.name ?? opponentNames[i] ?? "Unbekannt",
+      role: "opponent",
+      contact_info: contact ? {
+        email: contact.email,
+        phone: contact.phone,
+        company: contact.company,
+        address: contact.address,
+      } : undefined,
+    });
+  }
+
+  // Own lawyer
+  if (fm.own_lawyer_slug || fm.own_lawyer_name) {
+    const contact = fm.own_lawyer_slug ? await fetchContact(engineUrl, headers, fm.own_lawyer_slug) : null;
+    parties.push({
+      slug: fm.own_lawyer_slug ?? `lawyer-${fm.own_lawyer_name ?? "unknown"}`,
+      name: contact?.name ?? fm.own_lawyer_name ?? "Unbekannt",
+      role: "lawyer",
+      contact_info: contact ? {
+        email: contact.email,
+        phone: contact.phone,
+        company: contact.company,
+        address: contact.address,
+      } : undefined,
+    });
+  }
+
+  // Court
+  if (fm.court_slug || fm.court_name) {
+    const contact = fm.court_slug ? await fetchContact(engineUrl, headers, fm.court_slug) : null;
+    parties.push({
+      slug: fm.court_slug ?? `court-${fm.court_name ?? "unknown"}`,
+      name: contact?.name ?? fm.court_name ?? "Unbekannt",
+      role: "court",
+      contact_info: contact ? {
+        email: contact.email,
+        phone: contact.phone,
+        company: contact.company,
+        address: contact.address,
+      } : undefined,
+    });
+  }
+
+  return parties;
+}
+
+async function fetchContact(
+  engineUrl: string,
+  headers: Record<string, string>,
+  slug: string,
+): Promise<{ name?: string; email?: string; phone?: string; company?: string; address?: string } | null> {
+  try {
+    const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
+    const res = await fetch(`${engineUrl}/api/pages/${encodedSlug}`, { headers });
+    if (!res.ok) return null;
+    const page = (await res.json()) as EnginePageResponse;
+    const fm = (page.frontmatter ?? {}) as Record<string, string | undefined>;
+    return {
+      name: fm.name ?? page.title,
+      email: fm.email,
+      phone: fm.phone,
+      company: fm.company,
+      address: fm.address,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function buildDeadlineSummaries(deadlines: DeadlineEntry[]): MatterDeadlineSummary[] {
+  const now = new Date();
+  return deadlines
+    .filter((d) => d.date || d.due_date)
+    .map((d) => {
+      const dateStr = d.due_date ?? d.date ?? "";
+      const date = new Date(dateStr);
+      const diffMs = date.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      let urgency: MatterDeadlineSummary["urgency"] = "normal";
+      if (d.status === "done" || d.status === "completed") {
+        urgency = "done";
+      } else if (diffDays < 0) {
+        urgency = "overdue";
+      } else if (diffDays <= 3) {
+        urgency = "critical";
+      } else if (diffDays <= 14) {
+        urgency = "upcoming";
+      }
+
+      return {
+        id: d.id,
+        title: d.title ?? d.description ?? "Unbenannte Frist",
+        date: dateStr,
+        status: d.status ?? "open",
+        urgency,
+        source: d.source ?? "manual",
+        court: d.court,
+      };
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+export function buildDocumentSummaries(documents: DocumentEntry[]): MatterDocumentSummary[] {
+  return documents.map((d) => ({
+    slug: d.slug ?? d.id,
+    name: d.name,
+    kind: d.kind,
+    uploaded_at: d.uploadedAt,
+    size: d.size,
+    source: d.source,
+    ocr_status: inferOcrStatus(d),
+    extraction_status: inferInitialExtractionStatus(d.name, d.kind ?? ""),
+  }));
+}
+
+export function inferOcrStatus(doc: DocumentEntry): MatterDocumentSummary["ocr_status"] {
+  const name = doc.name.toLowerCase();
+  if (name.endsWith(".pdf") || name.endsWith(".tif") || name.endsWith(".tiff") || name.endsWith(".jpg") || name.endsWith(".png")) {
+    return "unknown";
+  }
+  if (name.endsWith(".docx") || name.endsWith(".doc") || name.endsWith(".txt") || name.endsWith(".md")) {
+    return "text_layer";
+  }
+  return "not_applicable";
+}
+
+export function buildRecentActivity(
+  auditLog: AuditLogEntry[],
+  timeline: Array<{ id?: string; date?: string; title?: string; description?: string; type?: string; status?: string }>,
+): MatterActivityEntry[] {
+  const activities: MatterActivityEntry[] = [];
+
+  for (const entry of auditLog.slice(-20).reverse()) {
+    activities.push({
+      at: entry.at,
+      action: entry.action,
+      actor: entry.actor ?? entry.actorId,
+      description: entry.note ?? `${entry.action} ${entry.field ?? ""}`.trim(),
+      entity_type: "case",
+    });
+  }
+
+  for (const entry of timeline.slice(-10).reverse()) {
+    if (entry.date) {
+      activities.push({
+        at: entry.date,
+        action: entry.type ?? "timeline",
+        description: entry.title ?? entry.description ?? "",
+        entity_type: "timeline",
+      });
+    }
+  }
+
+  // Sort by date descending
+  activities.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+  return activities.slice(0, 30);
+}
+
+export function buildFacts(fm: CaseFrontmatter): MatterFactEntry[] {
+  const facts: MatterFactEntry[] = [];
+  const now = new Date().toISOString();
+
+  if (fm.strategy?.summary) {
+    facts.push({
+      id: "strategy-summary",
+      statement: fm.strategy.summary,
+      source: "case_frontmatter",
+      confidence: "medium",
+      date: fm.strategy.generatedAt,
+    });
+  }
+
+  if (fm.strategy?.recommended || fm.strategy?.recommendedApproach) {
+    facts.push({
+      id: "strategy-recommended",
+      statement: fm.strategy.recommended ?? fm.strategy.recommendedApproach ?? "",
+      source: "case_frontmatter",
+      confidence: "medium",
+      date: fm.strategy.generatedAt,
+    });
+  }
+
+  for (const claim of fm.claims ?? []) {
+    facts.push({
+      id: `claim-${facts.length}`,
+      statement: claim,
+      source: "case_frontmatter.claims",
+      confidence: "medium",
+      date: now,
+    });
+  }
+
+  for (const evidence of fm.evidence ?? []) {
+    if (evidence.description) {
+      facts.push({
+        id: `evidence-${facts.length}`,
+        statement: evidence.description,
+        source: evidence.source ?? "case_frontmatter.evidence",
+        confidence: evidence.weight !== undefined ? (evidence.weight > 0.7 ? "high" : evidence.weight > 0.3 ? "medium" : "low") : "medium",
+        date: now,
+      });
+    }
+  }
+
+  return facts;
+}
+
+export function detectContradictions(fm: CaseFrontmatter): MatterGap[] {
+  const gaps: MatterGap[] = [];
+  const now = new Date();
+
+  // Check for contradictory claims vs defenses
+  const claims = fm.claims ?? [];
+  const defenses = fm.defenses ?? [];
+
+  for (const claim of claims) {
+    for (const defense of defenses) {
+      if (areContradictory(claim, defense)) {
+        gaps.push(makeGap(
+          "contradictory_facts",
+          "medium",
+          "Widersprüchliche Aussagen",
+          `Claim "${claim}" widerspricht Verteidigung "${defense}".`,
+          "Widerspruch juristisch prüfen und dokumentieren.",
+          now,
+        ));
+        break;
+      }
+    }
+  }
+
+  return gaps;
+}
+
+function areContradictory(a: string, b: string): boolean {
+  const aLower = a.toLowerCase();
+  const bLower = b.toLowerCase();
+  const negationPairs = [
+    ["nicht", ""],
+    ["bestreitet", "zugestanden"],
+    ["leugnet", "eingestanden"],
+    ["abweisung", "antrag"],
+  ];
+  for (const [neg, pos] of negationPairs) {
+    if (aLower.includes(neg) && bLower.includes(pos)) return true;
+    if (bLower.includes(neg) && aLower.includes(pos)) return true;
+  }
+  return false;
+}
+
+async function checkDmsSources(
+  engineUrl: string,
+  headers: Record<string, string>,
+): Promise<SourceCoverageEntry[]> {
+  const sources: SourceCoverageEntry[] = [];
+
+  try {
+    const res = await fetch(`${engineUrl}/api/connectors`, { headers });
+    if (res.ok) {
+      const data = (await res.json()) as { connectors?: Array<{ service: string; configured: boolean; connected: boolean; last_sync_at?: number }> };
+      for (const conn of data.connectors ?? []) {
+        if (conn.service === "imanage" || conn.service === "netdocuments") {
+          sources.push({
+            source_id: `dms-${conn.service}`,
+            source_label: conn.service === "imanage" ? "iManage DMS" : "NetDocuments DMS",
+            source_type: "dms",
+            connected: conn.connected,
+            last_sync_at: conn.last_sync_at ? new Date(conn.last_sync_at).toISOString() : null,
+            document_count: 0,
+            index_fresh: conn.connected,
+            ocr_complete: true,
+            error: conn.configured && !conn.connected ? "Konfiguriert aber nicht verbunden" : undefined,
+          });
+        }
+      }
+    }
+  } catch {
+    // Connectors API not available
+  }
+
+  return sources;
+}
+
+function checkCommunicationSources(fm?: CaseFrontmatter): SourceCoverageEntry[] {
+  const sources: SourceCoverageEntry[] = [];
+
+  // Email
+  sources.push({
+    source_id: "email",
+    source_label: "E-Mail / Outlook",
+    source_type: "email",
+    connected: false, // Would need connector check
+    last_sync_at: null,
+    document_count: 0,
+    index_fresh: false,
+    ocr_complete: true,
+  });
+
+  // WhatsApp
+  sources.push({
+    source_id: "whatsapp",
+    source_label: "WhatsApp",
+    source_type: "whatsapp",
+    connected: false,
+    last_sync_at: null,
+    document_count: 0,
+    index_fresh: false,
+    ocr_complete: true,
+  });
+
+  // Portal
+  sources.push({
+    source_id: "portal",
+    source_label: "Mandantenportal",
+    source_type: "portal",
+    connected: fm?.portal_enabled ?? false,
+    last_sync_at: null,
+    document_count: 0,
+    index_fresh: fm?.portal_enabled ?? false,
+    ocr_complete: true,
+  });
+
+  return sources;
+}
+
+export function calculateCompletenessScore(sources: SourceCoverageEntry[]): number {
+  if (sources.length === 0) return 0;
+  let score = 0;
+  for (const s of sources) {
+    let sourceScore = 0;
+    if (s.connected) sourceScore += 0.4;
+    if (s.index_fresh) sourceScore += 0.3;
+    if (s.ocr_complete) sourceScore += 0.2;
+    if (!s.error) sourceScore += 0.1;
+    score += sourceScore;
+  }
+  return Math.min(score / sources.length, 1);
+}
+
+export function inferSearchMode(score: number, snippet: string): RetrievalExplanation["search_mode"] {
+  if (score > 0.8) return "hybrid";
+  if (snippet.length > 100) return "semantic";
+  return "keyword";
+}
+
+export function inferSourceType(slug: string): string | undefined {
+  if (slug.startsWith("legal/norms/")) return "statute";
+  if (slug.startsWith("legal/deadlines/")) return "deadline";
+  if (slug.startsWith("cases/")) return "case";
+  if (slug.startsWith("contacts/")) return "contact";
+  if (slug.startsWith("documents/")) return "document";
+  if (slug.startsWith("invoices/")) return "invoice";
+  return undefined;
+}
+
+export function calculateRecencyHours(isoDate: string): number {
+  const date = new Date(isoDate);
+  const now = new Date();
+  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+}
+
+function makeGap(
+  type: GapType,
+  severity: GapSeverity,
+  title: string,
+  description: string,
+  recommendation: string,
+  now: Date,
+  relatedEntity?: string,
+): MatterGap {
+  return {
+    type,
+    severity,
+    title,
+    description,
+    recommendation,
+    detected_at: now.toISOString(),
+    related_entity: relatedEntity,
+  };
+}
+
+function emptyContext(
+  normalizedSlug: string,
+  originalSlug: string,
+  now: string,
+  engineReachable: boolean,
+): MatterContextBundle {
+  return {
+    case_slug: normalizedSlug,
+    case_title: originalSlug,
+    parties: [],
+    deadlines: [],
+    documents: [],
+    recent_activity: [],
+    facts: [],
+    coverage: {
+      sources: [],
+      total_sources: 0,
+      connected_sources: 0,
+      fresh_sources: 0,
+      stale_sources: 0,
+      error_sources: 0,
+      ocr_pending: 0,
+      overall_freshness: "unknown",
+      completeness_score: 0,
+      warnings: ["Akte nicht gefunden oder Engine nicht erreichbar"],
+    },
+    gaps: [makeGap(
+      "engine_unreachable",
+      "critical",
+      "Akte nicht gefunden",
+      `Die Akte "${originalSlug}" konnte nicht geladen werden. Entweder existiert sie nicht oder die Engine ist nicht erreichbar.`,
+      "Slug prüfen oder Engine-Verbindung sicherstellen.",
+      new Date(now),
+    )],
+    generated_at: now,
+    engine_reachable: engineReachable,
+  };
+}
+
+// ── Query Mode → Engine Mode Mapping ──────────────────────────────────
+
+export function mapQueryModeToEngineMode(mode: QueryMode): "conservative" | "balanced" | "tokenmax" {
+  switch (mode) {
+    case "conservative":
+      return "conservative";
+    case "deep_matter":
+    case "admin_audit":
+      return "tokenmax";
+    case "external_law":
+    case "balanced":
+    default:
+      return "balanced";
+  }
+}

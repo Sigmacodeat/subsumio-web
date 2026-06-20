@@ -48,10 +48,12 @@ import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
+import { MatterContextPanel } from "@/components/legal/MatterContextPanel";
 import { cn } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter, type EvidenceEntry, type StrategyInfo, type TaskEntry, type TimeEntry, type TimelineEntry, type DocumentEntry, type DeadlineEntry, type ExpenseEntry, type AuditLogEntry } from "@/lib/legal-types";
 import { DEADLINE_RULES, calculateDeadline, computeDeadlineStatus, timelineToDeadline, withDeadlineAudit } from "@/lib/legal-deadlines";
+import { canTransition, validateTransition, getAllowedTransitions, transitionDescription, STATUS_LABELS_DE, type CaseStatus } from "@/lib/case-status";
 import {
   deadlineFormSchema,
   evidenceFormSchema,
@@ -125,6 +127,7 @@ const TABS = [
   { key: "time", label: "Zeit", icon: Timer },
   { key: "expenses", label: "Auslagen", icon: Receipt },
   { key: "graph", label: "Graph", icon: Network },
+  { key: "superbrain", label: "Superbrain", icon: Sparkles },
   { key: "audit", label: "Audit", icon: ShieldCheck },
   { key: "query", label: "Query", icon: MessageSquare },
 ];
@@ -192,6 +195,9 @@ export default function CaseDetailPage() {
   const [currentUserName, setCurrentUserName] = useState<string>("System");
   const [currentUserId, setCurrentUserId] = useState<string>("system");
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<CaseStatus | null>(null);
 
   // Tasks state
   const [tasks, setTasks] = useState<Array<{ id: string; text: string; done: boolean; createdAt: string }>>([]);
@@ -666,6 +672,14 @@ export default function CaseDetailPage() {
               >
                 <Lightbulb size={14} />
                 Strategie generieren
+              </Button>
+              <Button
+                variant="secondary"
+                className="bg-[color:var(--ds-hover)] border border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] gap-2 text-sm"
+                onClick={() => setShowStatusDialog(true)}
+              >
+                <ChevronRight size={14} />
+                Status ändern
               </Button>
 	              <Button
 	                variant="secondary"
@@ -2081,6 +2095,12 @@ export default function CaseDetailPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === "superbrain" && (
+          <div className="max-w-3xl space-y-4">
+            <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
           </div>
         )}
 
