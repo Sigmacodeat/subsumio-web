@@ -3,31 +3,39 @@
  * Each operation defines its schema, handler, and optional CLI hints.
  */
 
-import { lstatSync, realpathSync } from 'fs';
-import { resolve, relative, sep } from 'path';
-import type { BrainEngine } from './engine.ts';
-import { clampSearchLimit } from './engine.ts';
-import type { GBrainConfig } from './config.ts';
-import type { PageType } from './types.ts';
-import { importFromContent } from './import-file.ts';
-import { writePageThrough } from './write-through.ts';
-import { hybridSearch, hybridSearchCached, stampContentFlags } from './search/hybrid.ts';
-import { expandQuery } from './search/expansion.ts';
-import { dedupResults } from './search/dedup.ts';
-import { captureEvalCandidate, isEvalCaptureEnabled, isEvalScrubEnabled } from './eval-capture.ts';
-import type { HybridSearchMeta } from './types.ts';
-import { extractPageLinks, isAutoLinkEnabled, isAutoTimelineEnabled, isGlobalBasenameEnabled, parseTimelineEntries, makeResolver, type UnresolvedFrontmatterRef } from './link-extraction.ts';
-import { isFactsBackstopEligible } from './facts/eligibility.ts';
-import { stripTakesFence } from './takes-fence.ts';
-import { stripFactsFence } from './facts-fence.ts';
-import { getContentFlag } from './quarantine.ts';
-import { bumpLastRetrievedAt } from './last-retrieved.ts';
-import { isSearchMode } from './search/mode.ts';
-import { stampEvidence } from './search/evidence.ts';
-import type { SearchResult } from './types.ts';
-import { CJK_SLUG_CHARS } from './cjk.ts';
-import * as db from './db.ts';
-import { VERSION } from '../version.ts';
+import { lstatSync, realpathSync } from "fs";
+import { resolve, relative, sep } from "path";
+import type { BrainEngine } from "./engine.ts";
+import { clampSearchLimit } from "./engine.ts";
+import type { GBrainConfig } from "./config.ts";
+import type { PageType } from "./types.ts";
+import { importFromContent } from "./import-file.ts";
+import { writePageThrough } from "./write-through.ts";
+import { hybridSearch, hybridSearchCached, stampContentFlags } from "./search/hybrid.ts";
+import { expandQuery } from "./search/expansion.ts";
+import { dedupResults } from "./search/dedup.ts";
+import { captureEvalCandidate, isEvalCaptureEnabled, isEvalScrubEnabled } from "./eval-capture.ts";
+import type { HybridSearchMeta } from "./types.ts";
+import {
+  extractPageLinks,
+  isAutoLinkEnabled,
+  isAutoTimelineEnabled,
+  isGlobalBasenameEnabled,
+  parseTimelineEntries,
+  makeResolver,
+  type UnresolvedFrontmatterRef,
+} from "./link-extraction.ts";
+import { isFactsBackstopEligible } from "./facts/eligibility.ts";
+import { stripTakesFence } from "./takes-fence.ts";
+import { stripFactsFence } from "./facts-fence.ts";
+import { getContentFlag } from "./quarantine.ts";
+import { bumpLastRetrievedAt } from "./last-retrieved.ts";
+import { isSearchMode } from "./search/mode.ts";
+import { stampEvidence } from "./search/evidence.ts";
+import type { SearchResult } from "./types.ts";
+import { CJK_SLUG_CHARS } from "./cjk.ts";
+import * as db from "./db.ts";
+import { VERSION } from "../version.ts";
 import {
   GET_RECENT_SALIENCE_DESCRIPTION,
   FIND_ANOMALIES_DESCRIPTION,
@@ -44,7 +52,7 @@ import {
   CODE_REFS_DESCRIPTION,
   LIST_SKILLS_DESCRIPTION,
   GET_SKILL_DESCRIPTION,
-} from './operations-descriptions.ts';
+} from "./operations-descriptions.ts";
 
 // --- Types ---
 
@@ -58,29 +66,29 @@ import {
  * v0.31 added: 'rate_limited', 'extraction_failed', 'fact_not_found'.
  */
 export type ErrorCode =
-  | 'page_not_found'
-  | 'invalid_params'
-  | 'embedding_failed'
-  | 'storage_error'
-  | 'bucket_not_found'
-  | 'database_error'
-  | 'permission_denied'
-  | 'unknown_transport' // v0.28.1: whoami fail-closed for ambiguous transport
-  | 'rate_limited'      // v0.31: gateway rate-limit upstream
-  | 'extraction_failed' // v0.31: facts extractor failed (refusal, parse, abort)
-  | 'fact_not_found'    // v0.31: forget_fact / recall on unknown id
+  | "page_not_found"
+  | "invalid_params"
+  | "embedding_failed"
+  | "storage_error"
+  | "bucket_not_found"
+  | "database_error"
+  | "permission_denied"
+  | "unknown_transport" // v0.28.1: whoami fail-closed for ambiguous transport
+  | "rate_limited" // v0.31: gateway rate-limit upstream
+  | "extraction_failed" // v0.31: facts extractor failed (refusal, parse, abort)
+  | "fact_not_found" // v0.31: forget_fact / recall on unknown id
   // eslint-disable-next-line @typescript-eslint/ban-types
-  | (string & {});      // OPEN union for forward-compat (eE7 / D13)
+  | (string & {}); // OPEN union for forward-compat (eE7 / D13)
 
 export class OperationError extends Error {
   constructor(
     public code: ErrorCode,
     message: string,
     public suggestion?: string,
-    public docs?: string,
+    public docs?: string
   ) {
     super(message);
-    this.name = 'OperationError';
+    this.name = "OperationError";
   }
 
   toJSON() {
@@ -117,15 +125,18 @@ export function validateUploadPath(filePath: string, root: string, strict = true
     real = realpathSync(resolve(filePath));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes('ENOENT')) {
-      throw new OperationError('invalid_params', `File not found: ${filePath}`);
+    if (msg.includes("ENOENT")) {
+      throw new OperationError("invalid_params", `File not found: ${filePath}`);
     }
-    throw new OperationError('invalid_params', `Cannot resolve path: ${filePath}`);
+    throw new OperationError("invalid_params", `Cannot resolve path: ${filePath}`);
   }
   // Always reject final-component symlinks (basic safety for both modes).
   try {
     if (lstatSync(resolve(filePath)).isSymbolicLink()) {
-      throw new OperationError('invalid_params', `Symlinks are not allowed for upload: ${filePath}`);
+      throw new OperationError(
+        "invalid_params",
+        `Symlinks are not allowed for upload: ${filePath}`
+      );
     }
   } catch (e) {
     if (e instanceof OperationError) throw e;
@@ -139,11 +150,19 @@ export function validateUploadPath(filePath: string, root: string, strict = true
   try {
     realRoot = realpathSync(root);
   } catch {
-    throw new OperationError('invalid_params', `Confinement root not accessible: ${root}`);
+    throw new OperationError("invalid_params", `Confinement root not accessible: ${root}`);
   }
   const rel = relative(realRoot, real);
-  if (rel === '' || rel.startsWith('..') || rel.startsWith(`..${sep}`) || resolve(realRoot, rel) !== real) {
-    throw new OperationError('invalid_params', `Upload path must be within the working directory: ${filePath}`);
+  if (
+    rel === "" ||
+    rel.startsWith("..") ||
+    rel.startsWith(`..${sep}`) ||
+    resolve(realRoot, rel) !== real
+  ) {
+    throw new OperationError(
+      "invalid_params",
+      `Upload path must be within the working directory: ${filePath}`
+    );
   }
   return real;
 }
@@ -154,17 +173,20 @@ export function validateUploadPath(filePath: string, root: string, strict = true
  * Format: lowercase alphanumeric + hyphen segments separated by single forward slashes.
  */
 export function validatePageSlug(slug: string): void {
-  if (typeof slug !== 'string' || slug.length === 0) {
-    throw new OperationError('invalid_params', 'page_slug must be a non-empty string');
+  if (typeof slug !== "string" || slug.length === 0) {
+    throw new OperationError("invalid_params", "page_slug must be a non-empty string");
   }
   if (slug.length > 255) {
-    throw new OperationError('invalid_params', 'page_slug exceeds 255 characters');
+    throw new OperationError("invalid_params", "page_slug exceeds 255 characters");
   }
   // v0.32.7: CJK ranges (Han / Hiragana / Katakana / Hangul Syllables) allowed
   // in segments. ASCII shape rules (lead char, hyphen continuation) preserved.
   const PAGE_SLUG_SEG = `[a-z0-9${CJK_SLUG_CHARS}][a-z0-9${CJK_SLUG_CHARS}\\-]*`;
-  if (!new RegExp(`^${PAGE_SLUG_SEG}(\\/${PAGE_SLUG_SEG})*$`, 'i').test(slug)) {
-    throw new OperationError('invalid_params', `Invalid page_slug: ${slug} (allowed: alphanumeric, CJK, hyphens, forward-slash separated segments)`);
+  if (!new RegExp(`^${PAGE_SLUG_SEG}(\\/${PAGE_SLUG_SEG})*$`, "i").test(slug)) {
+    throw new OperationError(
+      "invalid_params",
+      `Invalid page_slug: ${slug} (allowed: alphanumeric, CJK, hyphens, forward-slash separated segments)`
+    );
   }
 }
 
@@ -182,10 +204,10 @@ export function validatePageSlug(slug: string): void {
  */
 export function matchesSlugAllowList(slug: string, prefixes: readonly string[]): boolean {
   for (const p of prefixes) {
-    if (p.endsWith('/*')) {
+    if (p.endsWith("/*")) {
       const base = p.slice(0, -2);
       if (slug === base) continue;
-      if (slug.startsWith(base + '/')) return true;
+      if (slug.startsWith(base + "/")) return true;
     } else if (p === slug) {
       return true;
     }
@@ -199,22 +221,27 @@ export function matchesSlugAllowList(slug: string, prefixes: readonly string[]):
  * Allows extension dots and underscores. Max 255 chars.
  */
 export function validateFilename(name: string): void {
-  if (typeof name !== 'string' || name.length === 0) {
-    throw new OperationError('invalid_params', 'Filename must be a non-empty string');
+  if (typeof name !== "string" || name.length === 0) {
+    throw new OperationError("invalid_params", "Filename must be a non-empty string");
   }
   if (name.length > 255) {
-    throw new OperationError('invalid_params', 'Filename exceeds 255 characters');
+    throw new OperationError("invalid_params", "Filename exceeds 255 characters");
   }
   // v0.32.7: CJK ranges (Han / Hiragana / Katakana / Hangul) allowed in filenames.
   // Leading-dot / leading-dash rejection preserved.
-  const FILENAME_RE = new RegExp(`^[a-zA-Z0-9${CJK_SLUG_CHARS}][a-zA-Z0-9${CJK_SLUG_CHARS}._\\-]*$`);
+  const FILENAME_RE = new RegExp(
+    `^[a-zA-Z0-9${CJK_SLUG_CHARS}][a-zA-Z0-9${CJK_SLUG_CHARS}._\\-]*$`
+  );
   if (!FILENAME_RE.test(name)) {
-    throw new OperationError('invalid_params', `Invalid filename: ${name} (allowed: alphanumeric, CJK, dot, underscore, hyphen — no leading dot/dash, no control chars or backslash)`);
+    throw new OperationError(
+      "invalid_params",
+      `Invalid filename: ${name} (allowed: alphanumeric, CJK, dot, underscore, hyphen — no leading dot/dash, no control chars or backslash)`
+    );
   }
 }
 
 export interface ParamDef {
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  type: "string" | "number" | "boolean" | "object" | "array";
   required?: boolean;
   description?: string;
   default?: unknown;
@@ -278,13 +305,18 @@ export interface AuthInfo {
    * string[] = only pages whose slug starts with one of these prefixes
    * are visible in search/think/get_page results.
    *
-   * This field is ONLY set from a verified identity token (HMAC-signed
-   * with SUBSUMIO_WEB_API_KEY) — never from a self-asserted header.
-   * See server/src/core/identity-token.ts for the token format.
+   * Populated from two trusted, server-controlled sources — NEVER from a
+   * self-asserted client header:
+   *  - the web-api path: a verified identity token (HMAC-signed with
+   *    SUBSUMIO_WEB_API_KEY, see server/src/core/identity-token.ts);
+   *  - the MCP/legacy-bearer-token path: the `matter_scope` field stored
+   *    on the token's `access_tokens.permissions` DB row (set by an
+   *    operator, read server-side in http-transport.ts — not client input).
    *
-   * Undefined = no matter-scope enforcement (legacy callers, CLI).
+   * Undefined = no matter-scope enforcement (legacy callers, CLI, tokens
+   * with no matter_scope set).
    */
-  matterScope?: string[] | 'all';
+  matterScope?: string[] | "all";
 }
 
 export interface OperationContext {
@@ -417,7 +449,7 @@ export interface OperationContext {
    * Undefined = no matter-scope enforcement (legacy callers, CLI, tests).
    * Operations MUST check this via the `matterScopeFilter` helper.
    */
-  matterScope?: string[] | 'all';
+  matterScope?: string[] | "all";
 }
 
 /**
@@ -441,7 +473,10 @@ export interface OperationContext {
  * Helper rather than inline so every read-side handler routes through the
  * same precedence ladder — drift between sites is the bug class.
  */
-export function sourceScopeOpts(ctx: OperationContext): { sourceId?: string; sourceIds?: string[] } {
+export function sourceScopeOpts(ctx: OperationContext): {
+  sourceId?: string;
+  sourceIds?: string[];
+} {
   const allowed = ctx.auth?.allowedSources;
   // Treat an empty `allowedSources: []` as "no federated read scope" — the
   // op-handler defers to scalar `ctx.sourceId` below. An attacker-controlled
@@ -470,15 +505,15 @@ export function sourceScopeOpts(ctx: OperationContext): { sourceId?: string; sou
  */
 export function matterScopeFilter<T extends { slug?: string }>(
   results: T[],
-  ctx: OperationContext,
+  ctx: OperationContext
 ): T[] {
   const scope = ctx.matterScope;
   if (!scope) return results;
-  if (scope === 'all') return results;
+  if (scope === "all") return results;
   if (scope.length === 0) return [];
-  return results.filter(r => {
-    const slug = r.slug ?? '';
-    return scope.some(prefix => slug.startsWith(prefix) || slug === prefix);
+  return results.filter((r) => {
+    const slug = r.slug ?? "";
+    return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
   });
 }
 
@@ -492,15 +527,12 @@ export function matterScopeFilter<T extends { slug?: string }>(
  * - scope is "all" (trusted admin)
  * - slug starts with one of the allowed prefixes
  */
-export function isSlugInMatterScope(
-  slug: string,
-  ctx: OperationContext,
-): boolean {
+export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolean {
   const scope = ctx.matterScope;
   if (!scope) return true;
-  if (scope === 'all') return true;
+  if (scope === "all") return true;
   if (scope.length === 0) return false;
-  return scope.some(prefix => slug.startsWith(prefix) || slug === prefix);
+  return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
 }
 
 /**
@@ -528,9 +560,9 @@ export function isSlugInMatterScope(
 export function resolveRequestedScope(
   ctx: OperationContext,
   sourceIdParam: string | undefined,
-  allSourcesParam = false,
+  allSourcesParam = false
 ): { sourceId?: string; sourceIds?: string[] } {
-  const wantsAll = allSourcesParam || sourceIdParam === '__all__';
+  const wantsAll = allSourcesParam || sourceIdParam === "__all__";
   if (wantsAll) {
     return ctx.remote === false ? {} : sourceScopeOpts(ctx);
   }
@@ -538,9 +570,9 @@ export function resolveRequestedScope(
     const allowed = ctx.auth?.allowedSources;
     if (ctx.remote !== false && allowed && allowed.length > 0 && !allowed.includes(sourceIdParam)) {
       throw new OperationError(
-        'permission_denied',
+        "permission_denied",
         `source '${sourceIdParam}' is outside your granted sources`,
-        'Request access to this source, or omit source_id to search within your grant.',
+        "Request access to this source, or omit source_id to search within your grant."
       );
     }
     return { sourceId: sourceIdParam };
@@ -564,7 +596,7 @@ export function resolveRequestedScope(
 export function resolveCodeIntelScope(
   ctx: OperationContext,
   sourceIdParam: string | undefined,
-  allSourcesParam = false,
+  allSourcesParam = false
 ): { allSources: boolean; sourceId?: string } {
   const scope = resolveRequestedScope(ctx, sourceIdParam, allSourcesParam);
   if (scope.sourceId) return { allSources: false, sourceId: scope.sourceId };
@@ -573,18 +605,18 @@ export function resolveCodeIntelScope(
   }
   if (scope.sourceIds && scope.sourceIds.length > 1) {
     throw new OperationError(
-      'invalid_params',
-      'Code traversal runs against a single source. Specify source_id (one of your granted sources).',
-      'Pass source_id=<one of your sources>.',
+      "invalid_params",
+      "Code traversal runs against a single source. Specify source_id (one of your granted sources).",
+      "Pass source_id=<one of your sources>."
     );
   }
   // Empty scope: span everything only for trusted local callers; a remote caller
   // that reached here has no source in scope and must NOT get cross-source results.
   if (ctx.remote === false) return { allSources: true, sourceId: undefined };
   throw new OperationError(
-    'permission_denied',
-    'No source in scope for this request.',
-    'Specify source_id, or check your granted sources.',
+    "permission_denied",
+    "No source in scope for this request.",
+    "Specify source_id, or check your granted sources."
   );
 }
 
@@ -596,13 +628,13 @@ export function resolveCodeIntelScope(
  * mean "use the configured mode".
  */
 export function resolvePerCallMode(ctx: OperationContext, raw: unknown): string | undefined {
-  if (typeof raw !== 'string' || raw.length === 0) return undefined;
+  if (typeof raw !== "string" || raw.length === 0) return undefined;
   if (ctx.remote !== false) return undefined; // remote can't select mode
   if (!isSearchMode(raw)) {
     throw new OperationError(
-      'invalid_params',
+      "invalid_params",
       `Unknown search mode '${raw}'. Valid: conservative, balanced, tokenmax.`,
-      `gbrain search "<query>" --mode balanced`,
+      `gbrain search "<query>" --mode balanced`
     );
   }
   return raw;
@@ -610,7 +642,11 @@ export function resolvePerCallMode(ctx: OperationContext, raw: unknown): string 
 
 /** T4 — stamp evidence/create_safety on a result set, fail-soft. */
 function stampEvidenceSafe(results: SearchResult[]): void {
-  try { stampEvidence(results); } catch { /* non-fatal */ }
+  try {
+    stampEvidence(results);
+  } catch {
+    /* non-fatal */
+  }
 }
 
 /** T4 — shared eval-capture for the `search` op (keyword-only + cheap-hybrid paths). */
@@ -620,16 +656,20 @@ function maybeCaptureSearch(
   results: SearchResult[],
   latency_ms: number,
   vectorEnabled: boolean,
-  meta?: HybridSearchMeta | null,
+  meta?: HybridSearchMeta | null
 ): void {
   if (!isEvalCaptureEnabled(ctx.config)) return;
   void captureEvalCandidate(
     ctx.engine,
     {
-      tool_name: 'search',
+      tool_name: "search",
       query: queryText,
       results,
-      meta: meta ?? { vector_enabled: vectorEnabled, detail_resolved: null, expansion_applied: false },
+      meta: meta ?? {
+        vector_enabled: vectorEnabled,
+        detail_resolved: null,
+        expansion_applied: false,
+      },
       latency_ms,
       remote: ctx.remote ?? false,
       expand_enabled: false,
@@ -637,7 +677,7 @@ function maybeCaptureSearch(
       job_id: ctx.jobId ?? null,
       subagent_id: ctx.subagentId ?? null,
     },
-    { scrub_pii: isEvalScrubEnabled(ctx.config) },
+    { scrub_pii: isEvalScrubEnabled(ctx.config) }
   );
 }
 
@@ -657,7 +697,7 @@ export interface Operation {
    * Local CLI callers (ctx.remote === false) bypass scope enforcement
    * because the trust boundary there is the OS, not OAuth scopes.
    */
-  scope?: 'read' | 'write' | 'admin' | 'sources_admin' | 'users_admin';
+  scope?: "read" | "write" | "admin" | "sources_admin" | "users_admin";
   localOnly?: boolean;
   cliHints?: {
     name?: string;
@@ -676,12 +716,17 @@ export interface Operation {
 // --- Page CRUD ---
 
 const get_page: Operation = {
-  name: 'get_page',
-  description: 'Read a page by slug (supports optional fuzzy matching). Soft-deleted pages are hidden by default; pass include_deleted: true to surface them with deleted_at populated (see v0.26.5 recovery window).',
+  name: "get_page",
+  description:
+    "Read a page by slug (supports optional fuzzy matching). Soft-deleted pages are hidden by default; pass include_deleted: true to surface them with deleted_at populated (see v0.26.5 recovery window).",
   params: {
-    slug: { type: 'string', required: true, description: 'Page slug' },
-    fuzzy: { type: 'boolean', description: 'Enable fuzzy slug resolution (default: false)' },
-    include_deleted: { type: 'boolean', description: 'v0.26.5: surface soft-deleted pages with deleted_at populated (default: false). Used by restore workflows.' },
+    slug: { type: "string", required: true, description: "Page slug" },
+    fuzzy: { type: "boolean", description: "Enable fuzzy slug resolution (default: false)" },
+    include_deleted: {
+      type: "boolean",
+      description:
+        "v0.26.5: surface soft-deleted pages with deleted_at populated (default: false). Used by restore workflows.",
+    },
   },
   handler: async (ctx, p) => {
     const slug = p.slug as string;
@@ -690,8 +735,21 @@ const get_page: Operation = {
     // Subsumio P0-SECR-002: Reject access to pages outside the caller's
     // verified matter scope BEFORE any DB lookup. This is the engine-side
     // enforcement that prevents cross-matter data leakage.
+    //
+    // Deliberately thrown as the SAME error code/shape as the genuine
+    // "page not found" case below (not a distinct `matter_scope_denied`
+    // code) — a denied caller must not be able to distinguish "this slug
+    // doesn't exist" from "this slug exists but is outside your scope".
+    // Matches the leak-guard contract already established at the app layer
+    // (src/lib/legal-chat/actions.ts's resolveAuthorizedCase / caseLookupHelp).
     if (!isSlugInMatterScope(slug, ctx)) {
-      throw new OperationError('matter_scope_denied', `Access denied to slug: ${slug}`, 'The caller\'s matter scope does not include this resource.');
+      throw new OperationError(
+        "page_not_found",
+        `Page not found: ${slug}`,
+        includeDeleted
+          ? "Check the slug or use fuzzy: true"
+          : "Page may be soft-deleted; pass include_deleted: true to verify"
+      );
     }
     // #1393: route BOTH the exact-match read and the fuzzy resolveSlugs through
     // the canonical precedence ladder (federated array > scalar > nothing). The
@@ -711,12 +769,18 @@ const get_page: Operation = {
         page = await ctx.engine.getPage(candidates[0], { includeDeleted, ...sourceOpts });
         resolved_slug = candidates[0];
       } else if (candidates.length > 1) {
-        return { error: 'ambiguous_slug', candidates };
+        return { error: "ambiguous_slug", candidates };
       }
     }
 
     if (!page) {
-      throw new OperationError('page_not_found', `Page not found: ${slug}`, includeDeleted ? 'Check the slug or use fuzzy: true' : 'Page may be soft-deleted; pass include_deleted: true to verify');
+      throw new OperationError(
+        "page_not_found",
+        `Page not found: ${slug}`,
+        includeDeleted
+          ? "Check the slug or use fuzzy: true"
+          : "Page may be soft-deleted; pass include_deleted: true to verify"
+      );
     }
 
     // v0.37.0 (D11): op-layer write-back for the `last_retrieved_at` stale
@@ -754,10 +818,9 @@ const get_page: Operation = {
     const visibleBody = isUntrustedReader
       ? {
           ...page,
-          compiled_truth: stripFactsFence(
-            stripTakesFence(page.compiled_truth),
-            { keepVisibility: ['world'] },
-          ),
+          compiled_truth: stripFactsFence(stripTakesFence(page.compiled_truth), {
+            keepVisibility: ["world"],
+          }),
         }
       : page;
     // v0.42 (#1699) agent-warning channel: surface the page's content_flag
@@ -773,28 +836,47 @@ const get_page: Operation = {
       ...(content_flag ? { content_flag } : {}),
     };
   },
-  scope: 'read',
-  cliHints: { name: 'get', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "get", positional: ["slug"] },
 };
 
 const put_page: Operation = {
-  name: 'put_page',
-  description: 'Write/update a page (markdown with frontmatter). Chunks, embeds, reconciles tags, and (when auto_link/auto_timeline are enabled) extracts + reconciles graph links and timeline entries. For large content on Windows (pipe-buffer limit ~45KB) or any file-as-input workflow, use `gbrain capture --file PATH --slug SLUG` — capture reads the file as a Buffer with a binary-NUL guard and adds provenance write-through (v0.39.3.0).',
+  name: "put_page",
+  description:
+    "Write/update a page (markdown with frontmatter). Chunks, embeds, reconciles tags, and (when auto_link/auto_timeline are enabled) extracts + reconciles graph links and timeline entries. For large content on Windows (pipe-buffer limit ~45KB) or any file-as-input workflow, use `gbrain capture --file PATH --slug SLUG` — capture reads the file as a Buffer with a binary-NUL guard and adds provenance write-through (v0.39.3.0).",
   params: {
-    slug: { type: 'string', required: true, description: 'Page slug' },
-    content: { type: 'string', required: true, description: 'Full markdown content with YAML frontmatter' },
+    slug: { type: "string", required: true, description: "Page slug" },
+    content: {
+      type: "string",
+      required: true,
+      description: "Full markdown content with YAML frontmatter",
+    },
     // v0.39.3.0 provenance write-through (WARN-8 + A1 + CV6). Optional fields
     // for trusted local callers (capture CLI, autopilot, dream cycle). Remote
     // MCP callers (ctx.remote !== false) have their values OVERRIDDEN with
     // server stamps below; the params are accepted on the wire only so the
     // op schema stays uniform across transports. Audit-trail spoofing is
     // closed structurally — clients cannot poison source_kind labels.
-    source_kind: { type: 'string', required: false, description: 'Ingestion channel taxonomy (capture-cli | put_page | webhook | …). Remote callers: SERVER-STAMPED, client value ignored.' },
-    source_uri: { type: 'string', required: false, description: 'Original URI/path/message-id the event carried. Remote callers: SERVER-STAMPED null.' },
-    ingested_via: { type: 'string', required: false, description: 'Richer label paired with source_kind. Remote callers: SERVER-STAMPED.' },
+    source_kind: {
+      type: "string",
+      required: false,
+      description:
+        "Ingestion channel taxonomy (capture-cli | put_page | webhook | …). Remote callers: SERVER-STAMPED, client value ignored.",
+    },
+    source_uri: {
+      type: "string",
+      required: false,
+      description:
+        "Original URI/path/message-id the event carried. Remote callers: SERVER-STAMPED null.",
+    },
+    ingested_via: {
+      type: "string",
+      required: false,
+      description: "Richer label paired with source_kind. Remote callers: SERVER-STAMPED.",
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
     const slug = p.slug as string;
 
@@ -821,9 +903,9 @@ const put_page: Operation = {
     } else {
       // Remote caller or unset trust: server stamps. Mirrors the existing
       // write-through stamping at the file-side (~:637).
-      provenanceKind = 'mcp:put_page';
+      provenanceKind = "mcp:put_page";
       provenanceUri = null;
-      provenanceVia = 'mcp:put_page';
+      provenanceVia = "mcp:put_page";
     }
 
     // Subagent namespace enforcement (v0.15+). Runs BEFORE the dry-run
@@ -836,8 +918,11 @@ const put_page: Operation = {
     // dispatcher forgot to populate `subagentId`. Agent-originated writes
     // without an owning subagent id are rejected outright.
     if (ctx.viaSubagent === true) {
-      if (typeof ctx.subagentId !== 'number' || Number.isNaN(ctx.subagentId)) {
-        throw new OperationError('permission_denied', 'put_page via subagent requires ctx.subagentId');
+      if (typeof ctx.subagentId !== "number" || Number.isNaN(ctx.subagentId)) {
+        throw new OperationError(
+          "permission_denied",
+          "put_page via subagent requires ctx.subagentId"
+        );
       }
       const allowList = ctx.allowedSlugPrefixes;
       if (allowList && allowList.length > 0) {
@@ -846,32 +931,42 @@ const put_page: Operation = {
         // jobs under PROTECTED_JOB_NAMES — MCP cannot reach this branch.
         if (!matchesSlugAllowList(slug, allowList)) {
           throw new OperationError(
-            'permission_denied',
-            `put_page slug '${slug}' is not within the trusted-workspace allow-list (${allowList.join(', ')})`
+            "permission_denied",
+            `put_page slug '${slug}' is not within the trusted-workspace allow-list (${allowList.join(", ")})`
           );
         }
       } else {
         // Legacy default: agent-namespace confinement.
         const prefix = `wiki/agents/${ctx.subagentId}/`;
         if (!slug.startsWith(prefix) || slug.length === prefix.length) {
-          throw new OperationError('permission_denied', `put_page via subagent must write under '${prefix}...'`);
+          throw new OperationError(
+            "permission_denied",
+            `put_page via subagent must write under '${prefix}...'`
+          );
         }
       }
     }
 
-    if (ctx.dryRun) return { dry_run: true, action: 'put_page', slug: p.slug };
+    if (ctx.dryRun) return { dry_run: true, action: "put_page", slug: p.slug };
 
     // v0.43.0: duplicate entity prevention (pbrain feature port). When
     // creating a new page (not updating), check for existing pages with
     // similar titles and warn the caller. Runs AFTER the namespace/allow-list
     // gate — a rejected caller must not trigger engine reads.
-    const existingPage = await ctx.engine.getPage(slug, ctx.sourceId ? { sourceId: ctx.sourceId } : undefined);
+    const existingPage = await ctx.engine.getPage(
+      slug,
+      ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
+    );
     if (!existingPage) {
-      const parsed = await import('./markdown.ts').then(m => m.parseMarkdown(p.content as string, slug + '.md'));
+      const parsed = await import("./markdown.ts").then((m) =>
+        m.parseMarkdown(p.content as string, slug + ".md")
+      );
       if (parsed.title) {
         const similar = await ctx.engine.findByTitleFuzzy(parsed.title, undefined, 0.7);
         if (similar && similar.slug !== slug) {
-          console.warn(`[put_page] Possible duplicate detected: "${parsed.title}" already exists as "${similar.slug}" (similarity: ${similar.similarity.toFixed(2)}). Use that slug or confirm this is intentional.`);
+          console.warn(
+            `[put_page] Possible duplicate detected: "${parsed.title}" already exists as "${similar.slug}" (similarity: ${similar.similarity.toFixed(2)}). Use that slug or confirm this is intentional.`
+          );
         }
       }
     }
@@ -879,8 +974,8 @@ const put_page: Operation = {
     // Skip embedding when the AI gateway has no embedding provider configured.
     // Checks all auth env vars for the resolved provider, not just OPENAI_API_KEY,
     // so Gemini / Ollama / Voyage brains don't silently drop embeddings (Codex C2).
-    const { isAvailable } = await import('./ai/gateway.ts');
-    const noEmbed = !isAvailable('embedding');
+    const { isAvailable } = await import("./ai/gateway.ts");
+    const noEmbed = !isAvailable("embedding");
     // v0.31.8 (D7 / codex OV-1): thread ctx.sourceId so put_page on a
     // multi-source brain lands in the intended source instead of the
     // default-source clobber path. importFromContent already accepts
@@ -890,10 +985,12 @@ const put_page: Operation = {
     // parseMarkdown via importFromContent so type inference honors user-defined
     // page_types. Best-effort: pack load failure falls back to legacy inferType
     // (parity gate preserved). Federated-read closure correction is T19's scope.
-    let activePack: { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> } | undefined;
+    let activePack:
+      | { page_types: ReadonlyArray<{ name: string; path_prefixes: ReadonlyArray<string> }> }
+      | undefined;
     try {
-      const { loadActivePack } = await import('./schema-pack/load-active.ts');
-      const { loadConfig } = await import('./config.ts');
+      const { loadActivePack } = await import("./schema-pack/load-active.ts");
+      const { loadConfig } = await import("./config.ts");
       const resolved = await loadActivePack({
         cfg: loadConfig(),
         remote: ctx.remote === false ? false : true,
@@ -937,21 +1034,21 @@ const put_page: Operation = {
     //     non-TTY contract preserves their semantics.
     //   - Pack-load failures (activePack undefined) skip the gate entirely
     //     since "unknown" has no meaning without a pack reference.
-    if (activePack && result.status === 'imported') {
+    if (activePack && result.status === "imported") {
       try {
         const pageType = (result as { page?: { type?: string } }).page?.type ?? null;
         const knownTypes = new Set(activePack.page_types.map((t) => t.name));
         if (pageType && !knownTypes.has(pageType)) {
-          const { logSchemaEvent } = await import('./schema-events.ts');
+          const { logSchemaEvent } = await import("./schema-events.ts");
           logSchemaEvent({
-            verb: 'put_page:unknown_type',
-            outcome: 'success',
+            verb: "put_page:unknown_type",
+            outcome: "success",
             flags: [`type=${pageType.slice(0, 32)}`, `slug=${slug.slice(0, 64)}`],
           });
           if (process.stderr.isTTY && ctx.remote === false) {
             console.error(
-              `[schema] put_page wrote type=\`${pageType}\` which isn't in active pack \`${activePack.page_types.length ? '<configured>' : 'gbrain-base'}\`. ` +
-              `Run \`gbrain schema review-candidates\` to promote or ignore.`,
+              `[schema] put_page wrote type=\`${pageType}\` which isn't in active pack \`${activePack.page_types.length ? "<configured>" : "gbrain-base"}\`. ` +
+                `Run \`gbrain schema review-candidates\` to promote or ignore.`
             );
           }
         }
@@ -967,16 +1064,17 @@ const put_page: Operation = {
     // and immediately re-queries sees stale results from the pre-write cache.
     // Best-effort: failures are non-fatal (the cache will eventually expire
     // via TTL). Uses the existing invalidateQueryCache infrastructure.
-    if (result.status === 'imported') {
+    if (result.status === "imported") {
       try {
         const pageType = (result as { page?: { type?: string } }).page?.type ?? null;
-        if (pageType && (
-          pageType.startsWith('legal_') ||
-          pageType === 'law' ||
-          pageType === 'evidence' ||
-          pageType === 'legal_deadline'
-        )) {
-          const { invalidateQueryCache } = await import('./schema-pack/query-cache-invalidator.ts');
+        if (
+          pageType &&
+          (pageType.startsWith("legal_") ||
+            pageType === "law" ||
+            pageType === "evidence" ||
+            pageType === "legal_deadline")
+        ) {
+          const { invalidateQueryCache } = await import("./schema-pack/query-cache-invalidator.ts");
           await invalidateQueryCache(ctx.engine, ctx.sourceId ?? undefined);
         }
       } catch {
@@ -993,12 +1091,15 @@ const put_page: Operation = {
     // Trust gating:
     //   - Subagent sandbox (viaSubagent without allowedSlugPrefixes) → DB-only.
     //   - All other writes → write-through.
-    let writeThrough: { written: boolean; path?: string; skipped?: string; error?: string } | undefined;
-    const isSandboxSubagent = ctx.viaSubagent === true
-      && !(Array.isArray(ctx.allowedSlugPrefixes) && ctx.allowedSlugPrefixes.length > 0);
-    if (!ctx.dryRun && result.status !== 'error' && !isSandboxSubagent) {
-      const sourceId = ctx.sourceId ?? 'default';
-      const provenanceVia = ctx.remote === false ? 'put_page' : 'mcp:put_page';
+    let writeThrough:
+      | { written: boolean; path?: string; skipped?: string; error?: string }
+      | undefined;
+    const isSandboxSubagent =
+      ctx.viaSubagent === true &&
+      !(Array.isArray(ctx.allowedSlugPrefixes) && ctx.allowedSlugPrefixes.length > 0);
+    if (!ctx.dryRun && result.status !== "error" && !isSandboxSubagent) {
+      const sourceId = ctx.sourceId ?? "default";
+      const provenanceVia = ctx.remote === false ? "put_page" : "mcp:put_page";
       // Shared canonical write-through (also used by `gbrain brainstorm/lsd
       // --save`). Renders the file from the saved DB row and writes it
       // atomically; never throws (failures land in skipped/error).
@@ -1012,9 +1113,9 @@ const put_page: Operation = {
         logger: ctx.logger,
       });
     } else if (isSandboxSubagent) {
-      writeThrough = { written: false, skipped: 'subagent_sandbox' };
+      writeThrough = { written: false, skipped: "subagent_sandbox" };
     } else if (ctx.dryRun) {
-      writeThrough = { written: false, skipped: 'dry_run' };
+      writeThrough = { written: false, skipped: "dry_run" };
     }
 
     // Auto-link post-hook: runs AFTER importFromContent (which is its own
@@ -1031,26 +1132,32 @@ const put_page: Operation = {
     let autoLinks:
       | { created: number; removed: number; errors: number; unresolved: UnresolvedFrontmatterRef[] }
       | { error: string }
-      | { skipped: 'remote' }
+      | { skipped: "remote" }
       | undefined;
-    let autoTimeline: { created: number } | { error: string } | { skipped: 'remote' } | undefined;
+    let autoTimeline: { created: number } | { error: string } | { skipped: "remote" } | undefined;
     // Trusted-workspace path (v0.23 dream cycle) re-enables auto-link/timeline
     // even though ctx.remote=true, because the allow-list bounds the slug and
     // the synthesis prompt is itself the trusted dispatcher. Without this,
     // the cycle's `extract` phase would have to recompute every edge, and
     // patterns (which runs after extract) would still see the right graph
     // but auto_timeline would never fire on synth output.
-    const trustedWorkspace = ctx.viaSubagent === true
-      && Array.isArray(ctx.allowedSlugPrefixes)
-      && ctx.allowedSlugPrefixes.length > 0;
+    const trustedWorkspace =
+      ctx.viaSubagent === true &&
+      Array.isArray(ctx.allowedSlugPrefixes) &&
+      ctx.allowedSlugPrefixes.length > 0;
     if (ctx.remote !== false && !trustedWorkspace) {
-      autoLinks = { skipped: 'remote' };
-      autoTimeline = { skipped: 'remote' };
+      autoLinks = { skipped: "remote" };
+      autoTimeline = { skipped: "remote" };
     } else if (result.parsedPage) {
       try {
         const enabled = await isAutoLinkEnabled(ctx.engine);
         if (enabled) {
-          autoLinks = await runAutoLink(ctx.engine, slug, result.parsedPage, ctx.sourceId ? { sourceId: ctx.sourceId } : undefined);
+          autoLinks = await runAutoLink(
+            ctx.engine,
+            slug,
+            result.parsedPage,
+            ctx.sourceId ? { sourceId: ctx.sourceId } : undefined
+          );
         }
       } catch (e) {
         autoLinks = { error: e instanceof Error ? e.message : String(e) };
@@ -1062,19 +1169,21 @@ const put_page: Operation = {
       try {
         const enabled = await isAutoTimelineEnabled(ctx.engine);
         if (enabled) {
-          const fullContent = result.parsedPage.compiled_truth + '\n' + result.parsedPage.timeline;
+          const fullContent = result.parsedPage.compiled_truth + "\n" + result.parsedPage.timeline;
           const entries = parseTimelineEntries(fullContent);
           if (entries.length > 0) {
-            const batch = entries.map(e => ({
+            const batch = entries.map((e) => ({
               slug,
               date: e.date,
               summary: e.summary,
-              detail: e.detail || '',
+              detail: e.detail || "",
             }));
             // v0.41.18.0: engine self-retries on Supavisor circuit-breaker
             // recovery. auditSite label routes the audit JSONL emission so
             // operators can attribute losses to the agent-write path.
-            const created = await ctx.engine.addTimelineEntriesBatch(batch, { auditSite: 'mcp.put_page.autolink' });
+            const created = await ctx.engine.addTimelineEntriesBatch(batch, {
+              auditSite: "mcp.put_page.autolink",
+            });
             autoTimeline = { created };
           } else {
             autoTimeline = { created: 0 };
@@ -1098,7 +1207,7 @@ const put_page: Operation = {
     // matching the pre-fix behavior on this surface).
     let factsQueued: { queued: boolean } | { skipped: string } | undefined;
     try {
-      const { runFactsBackstop } = await import('./facts/backstop.ts');
+      const { runFactsBackstop } = await import("./facts/backstop.ts");
       const r = await runFactsBackstop(
         {
           slug,
@@ -1108,26 +1217,26 @@ const put_page: Operation = {
         },
         {
           engine: ctx.engine,
-          sourceId: ctx.sourceId ?? 'default',
+          sourceId: ctx.sourceId ?? "default",
           sessionId: (ctx as { source_session?: string }).source_session ?? null,
-          source: 'mcp:put_page',
-          mode: 'queue',
-        },
+          source: "mcp:put_page",
+          mode: "queue",
+        }
       );
-      if (r.mode === 'queue' && r.enqueued) {
+      if (r.mode === "queue" && r.enqueued) {
         factsQueued = { queued: true };
-      } else if (r.mode === 'queue' && r.skipped) {
+      } else if (r.mode === "queue" && r.skipped) {
         // Preserve the pre-v0.31.2 response shape for MCP clients:
         // 'kind:guide' / 'too_short' / 'subagent_namespace' / 'dream_generated'
         // (bare reasons), not the helper's namespaced 'eligibility_failed:...'
         // discriminator. Map back here.
-        const bare = r.skipped.startsWith('eligibility_failed:')
-          ? r.skipped.slice('eligibility_failed:'.length)
+        const bare = r.skipped.startsWith("eligibility_failed:")
+          ? r.skipped.slice("eligibility_failed:".length)
           : r.skipped;
         factsQueued = { skipped: bare };
       }
     } catch {
-      factsQueued = { skipped: 'backstop_error' };
+      factsQueued = { skipped: "backstop_error" };
     }
 
     // Post-write validator lint (PR 2.5): feature-flag-gated, non-blocking.
@@ -1135,14 +1244,17 @@ const put_page: Operation = {
     // validators on the freshly-written page and logs findings to
     // ingest_log + ~/.gbrain/validator-lint.jsonl. Does NOT reject the
     // write — that's the deferred strict-mode flip after the 7-day soak.
-    let writerLint: { error_count: number; warning_count: number } | { skipped: string } | undefined;
+    let writerLint:
+      | { error_count: number; warning_count: number }
+      | { skipped: string }
+      | undefined;
     try {
-      const { runPostWriteLint } = await import('./output/post-write.ts');
+      const { runPostWriteLint } = await import("./output/post-write.ts");
       const lint = await runPostWriteLint(ctx.engine, result.slug);
       if (lint.ran) {
         writerLint = {
-          error_count: lint.findings.filter(f => f.severity === 'error').length,
-          warning_count: lint.findings.filter(f => f.severity === 'warning').length,
+          error_count: lint.findings.filter((f) => f.severity === "error").length,
+          warning_count: lint.findings.filter((f) => f.severity === "warning").length,
         };
       } else if (lint.skippedReason) {
         writerLint = { skipped: lint.skippedReason };
@@ -1153,7 +1265,7 @@ const put_page: Operation = {
 
     return {
       slug: result.slug,
-      status: result.status === 'imported' ? 'created_or_updated' : result.status,
+      status: result.status === "imported" ? "created_or_updated" : result.status,
       chunks: result.chunks,
       ...(autoLinks ? { auto_links: autoLinks } : {}),
       ...(autoTimeline ? { auto_timeline: autoTimeline } : {}),
@@ -1162,7 +1274,7 @@ const put_page: Operation = {
       ...(writeThrough ? { write_through: writeThrough } : {}),
     };
   },
-  cliHints: { name: 'put', positional: ['slug'], stdin: 'content' },
+  cliHints: { name: "put", positional: ["slug"], stdin: "content" },
 };
 
 // v0.31.2: isFactsBackstopEligible moved to src/core/facts/eligibility.ts
@@ -1182,10 +1294,20 @@ const put_page: Operation = {
 async function runAutoLink(
   engine: BrainEngine,
   slug: string,
-  parsed: { type: PageType; compiled_truth: string; timeline: string; frontmatter: Record<string, unknown> },
-  opts?: { sourceId?: string },
-): Promise<{ created: number; removed: number; errors: number; unresolved: UnresolvedFrontmatterRef[] }> {
-  const fullContent = parsed.compiled_truth + '\n' + parsed.timeline;
+  parsed: {
+    type: PageType;
+    compiled_truth: string;
+    timeline: string;
+    frontmatter: Record<string, unknown>;
+  },
+  opts?: { sourceId?: string }
+): Promise<{
+  created: number;
+  removed: number;
+  errors: number;
+  unresolved: UnresolvedFrontmatterRef[];
+}> {
+  const fullContent = parsed.compiled_truth + "\n" + parsed.timeline;
   // v0.31.8 (codex OV-2): thread sourceId through every read + write inside
   // reconcileLinks. Without this the FS walker reads cross-source links/slugs
   // but writes scoped to one source — phantom stale-deletions and duplicate
@@ -1203,12 +1325,16 @@ async function runAutoLink(
   // Live-mode resolver: per-put throwaway cache, pg_trgm + optional search.
   // Issue #972 (codex [P1]): pass sourceId so basename resolution stays
   // within this page's source — no cross-source basename edges.
-  const resolver = makeResolver(engine, { mode: 'live', sourceId: opts?.sourceId });
+  const resolver = makeResolver(engine, { mode: "live", sourceId: opts?.sourceId });
   // Issue #972: opt-in bare-wikilink basename resolution. Off by default.
   const globalBasename = await isGlobalBasenameEnabled(engine);
   const { candidates, unresolved } = await extractPageLinks(
-    slug, fullContent, parsed.frontmatter, parsed.type, resolver,
-    { globalBasename },
+    slug,
+    fullContent,
+    parsed.frontmatter,
+    parsed.type,
+    resolver,
+    { globalBasename }
   );
 
   // Resolve which targets exist (skip refs to non-existent pages to avoid FK
@@ -1216,8 +1342,8 @@ async function runAutoLink(
   // v0.31.8 (D12): scoped to the source when opts.sourceId is set so wikilink
   // resolution doesn't span unrelated sources.
   const allSlugs = await engine.getAllSlugs(sourceOpts);
-  const valid = candidates.filter(c =>
-    allSlugs.has(c.targetSlug) && (!c.fromSlug || allSlugs.has(c.fromSlug))
+  const valid = candidates.filter(
+    (c) => allSlugs.has(c.targetSlug) && (!c.fromSlug || allSlugs.has(c.fromSlug))
   );
 
   // Split candidates by direction. Outgoing (fromSlug === slug or unset) are
@@ -1227,8 +1353,8 @@ async function runAutoLink(
   // but SCOPED to the frontmatter edges this page authored via
   // (link_source='frontmatter' AND origin_slug = slug). We never touch
   // frontmatter edges authored by OTHER pages.
-  const out = valid.filter(c => !c.fromSlug || c.fromSlug === slug);
-  const inc = valid.filter(c => c.fromSlug && c.fromSlug !== slug);
+  const out = valid.filter((c) => !c.fromSlug || c.fromSlug === slug);
+  const inc = valid.filter((c) => c.fromSlug && c.fromSlug !== slug);
 
   // Run getLinks + addLink/removeLink loops inside a single transaction so that
   // concurrent put_page calls on the same slug can't race the reconciliation:
@@ -1243,7 +1369,9 @@ async function runAutoLink(
   // single-process so there's no cross-process concern there anyway).
   const result = await engine.transaction(async (tx) => {
     try {
-      await tx.executeRaw(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [`auto_link:${slug}`]);
+      await tx.executeRaw(`SELECT pg_advisory_xact_lock(hashtext($1)::bigint)`, [
+        `auto_link:${slug}`,
+      ]);
     } catch {
       // engine doesn't support advisory locks — fall through
     }
@@ -1252,7 +1380,7 @@ async function runAutoLink(
     // Non-frontmatter and other-page frontmatter edges survive untouched.
     const existingInRaw = await tx.getBacklinks(slug, sourceOpts);
     const existingIn = existingInRaw.filter(
-      l => l.link_source === 'frontmatter' && l.origin_slug === slug,
+      (l) => l.link_source === "frontmatter" && l.origin_slug === slug
     );
 
     // Reconcilable outgoing edges: markdown + our own frontmatter edges +
@@ -1264,31 +1392,38 @@ async function runAutoLink(
     // link_resolution.global_basename flag is turned off (out no longer
     // includes it, so the stale-removal loop below must be allowed to drop it).
     const reconcilableOut = existingOut.filter(
-      l => l.link_source === 'markdown' || l.link_source == null ||
-           l.link_source === 'wikilink-resolved' ||
-           (l.link_source === 'frontmatter' && l.origin_slug === slug),
+      (l) =>
+        l.link_source === "markdown" ||
+        l.link_source == null ||
+        l.link_source === "wikilink-resolved" ||
+        (l.link_source === "frontmatter" && l.origin_slug === slug)
     );
 
-    const outKeys = new Set(out.map(c =>
-      `${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? 'markdown'}`
-    ));
-    const incKeys = new Set(inc.map(c =>
-      `${c.fromSlug}\u0000${c.linkType}`
-    ));
+    const outKeys = new Set(
+      out.map((c) => `${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? "markdown"}`)
+    );
+    const incKeys = new Set(inc.map((c) => `${c.fromSlug}\u0000${c.linkType}`));
 
-    let created = 0, removed = 0, errors = 0;
+    let created = 0,
+      removed = 0,
+      errors = 0;
 
     // Add outgoing edges.
     for (const c of out) {
       try {
         await tx.addLink(
-          slug, c.targetSlug, c.context, c.linkType,
-          c.linkSource, c.originSlug, c.originField,
-          linkSourceOpts,
+          slug,
+          c.targetSlug,
+          c.context,
+          c.linkType,
+          c.linkSource,
+          c.originSlug,
+          c.originField,
+          linkSourceOpts
         );
-        const existKey = `${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? 'markdown'}`;
-        const exists = reconcilableOut.some(l =>
-          `${l.to_slug}\u0000${l.link_type}\u0000${l.link_source ?? 'markdown'}` === existKey
+        const existKey = `${c.targetSlug}\u0000${c.linkType}\u0000${c.linkSource ?? "markdown"}`;
+        const exists = reconcilableOut.some(
+          (l) => `${l.to_slug}\u0000${l.link_type}\u0000${l.link_source ?? "markdown"}` === existKey
         );
         if (!exists) created++;
       } catch {
@@ -1300,14 +1435,17 @@ async function runAutoLink(
     for (const c of inc) {
       try {
         await tx.addLink(
-          c.fromSlug!, c.targetSlug, c.context, c.linkType,
-          'frontmatter', c.originSlug, c.originField,
-          linkSourceOpts,
+          c.fromSlug!,
+          c.targetSlug,
+          c.context,
+          c.linkType,
+          "frontmatter",
+          c.originSlug,
+          c.originField,
+          linkSourceOpts
         );
         const existKey = `${c.fromSlug}\u0000${c.linkType}`;
-        const exists = existingIn.some(l =>
-          `${l.from_slug}\u0000${l.link_type}` === existKey
-        );
+        const exists = existingIn.some((l) => `${l.from_slug}\u0000${l.link_type}` === existKey);
         if (!exists) created++;
       } catch {
         errors++;
@@ -1316,10 +1454,16 @@ async function runAutoLink(
 
     // Remove stale outgoing (markdown or our-frontmatter, not in desired set).
     for (const l of reconcilableOut) {
-      const key = `${l.to_slug}\u0000${l.link_type}\u0000${l.link_source ?? 'markdown'}`;
+      const key = `${l.to_slug}\u0000${l.link_type}\u0000${l.link_source ?? "markdown"}`;
       if (!outKeys.has(key)) {
         try {
-          await tx.removeLink(slug, l.to_slug, l.link_type, l.link_source ?? undefined, removeSourceOpts);
+          await tx.removeLink(
+            slug,
+            l.to_slug,
+            l.link_type,
+            l.link_source ?? undefined,
+            removeSourceOpts
+          );
           removed++;
         } catch {
           errors++;
@@ -1332,7 +1476,7 @@ async function runAutoLink(
       const key = `${l.from_slug}\u0000${l.link_type}`;
       if (!incKeys.has(key)) {
         try {
-          await tx.removeLink(l.from_slug, slug, l.link_type, 'frontmatter', removeSourceOpts);
+          await tx.removeLink(l.from_slug, slug, l.link_type, "frontmatter", removeSourceOpts);
           removed++;
         } catch {
           errors++;
@@ -1347,16 +1491,17 @@ async function runAutoLink(
 }
 
 const delete_page: Operation = {
-  name: 'delete_page',
-  description: 'Soft-delete a page. The row is hidden from search and from get_page/list_pages, but is recoverable via restore_page within 72h. The autopilot purge phase hard-deletes after the recovery window. Pass include_deleted: true to get_page to verify the soft-delete landed.',
+  name: "delete_page",
+  description:
+    "Soft-delete a page. The row is hidden from search and from get_page/list_pages, but is recoverable via restore_page within 72h. The autopilot purge phase hard-deletes after the recovery window. Pass include_deleted: true to get_page to verify the soft-delete landed.",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
     const slug = p.slug as string;
-    if (ctx.dryRun) return { dry_run: true, action: 'soft_delete_page', slug };
+    if (ctx.dryRun) return { dry_run: true, action: "soft_delete_page", slug };
     // v0.31.8 (D7): thread ctx.sourceId so multi-source brains soft-delete the
     // intended row instead of always targeting (default, slug).
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
@@ -1370,26 +1515,27 @@ const delete_page: Operation = {
       // clear signal. Probe once with include_deleted to disambiguate.
       const existing = await ctx.engine.getPage(slug, { includeDeleted: true, ...sourceOpts });
       if (!existing) {
-        throw new OperationError('page_not_found', `Page not found: ${slug}`, 'Check the slug.');
+        throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug.");
       }
-      return { status: 'already_soft_deleted', slug, deleted_at: existing.deleted_at };
+      return { status: "already_soft_deleted", slug, deleted_at: existing.deleted_at };
     }
-    return { status: 'soft_deleted', slug, recoverable_until: 'now + 72h via restore_page' };
+    return { status: "soft_deleted", slug, recoverable_until: "now + 72h via restore_page" };
   },
-  cliHints: { name: 'delete', positional: ['slug'] },
+  cliHints: { name: "delete", positional: ["slug"] },
 };
 
 const restore_page: Operation = {
-  name: 'restore_page',
-  description: 'v0.26.5 — restore a soft-deleted page (clear deleted_at). Returns success only if the page was actually soft-deleted. After this op, the page reappears in search and in get_page/list_pages without the include_deleted flag.',
+  name: "restore_page",
+  description:
+    "v0.26.5 — restore a soft-deleted page (clear deleted_at). Returns success only if the page was actually soft-deleted. After this op, the page reappears in search and in get_page/list_pages without the include_deleted flag.",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
     const slug = p.slug as string;
-    if (ctx.dryRun) return { dry_run: true, action: 'restore_page', slug };
+    if (ctx.dryRun) return { dry_run: true, action: "restore_page", slug };
     // v0.31.8 (D7): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     const ok = await ctx.engine.restorePage(slug, sourceOpts);
@@ -1397,64 +1543,77 @@ const restore_page: Operation = {
       // Distinguish "not found" from "already active" (idempotent-as-false).
       const existing = await ctx.engine.getPage(slug, { includeDeleted: true, ...sourceOpts });
       if (!existing) {
-        throw new OperationError('page_not_found', `Page not found: ${slug}`, 'Check the slug.');
+        throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug.");
       }
-      return { status: 'already_active', slug };
+      return { status: "already_active", slug };
     }
-    return { status: 'restored', slug };
+    return { status: "restored", slug };
   },
-  cliHints: { name: 'restore', positional: ['slug'] },
+  cliHints: { name: "restore", positional: ["slug"] },
 };
 
 const purge_deleted_pages: Operation = {
-  name: 'purge_deleted_pages',
-  description: 'v0.26.5 — admin-only. Hard-deletes pages whose deleted_at is older than older_than_hours (default 72). Cascades through content_chunks, page_links, chunk_relations. Local CLI only (not exposed over HTTP MCP). Manual escape hatch alongside the autopilot purge phase.',
+  name: "purge_deleted_pages",
+  description:
+    "v0.26.5 — admin-only. Hard-deletes pages whose deleted_at is older than older_than_hours (default 72). Cascades through content_chunks, page_links, chunk_relations. Local CLI only (not exposed over HTTP MCP). Manual escape hatch alongside the autopilot purge phase.",
   params: {
-    older_than_hours: { type: 'number', description: 'Age cutoff in hours. Default 72.' },
+    older_than_hours: { type: "number", description: "Age cutoff in hours. Default 72." },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
     const olderThanHours = (p.older_than_hours as number | undefined) ?? 72;
-    if (ctx.dryRun) return { dry_run: true, action: 'purge_deleted_pages', older_than_hours: olderThanHours };
+    if (ctx.dryRun)
+      return { dry_run: true, action: "purge_deleted_pages", older_than_hours: olderThanHours };
     const result = await ctx.engine.purgeDeletedPages(olderThanHours);
-    return { status: 'purged', count: result.count, slugs: result.slugs };
+    return { status: "purged", count: result.count, slugs: result.slugs };
   },
-  cliHints: { name: 'purge-deleted' },
+  cliHints: { name: "purge-deleted" },
 };
 
-const LIST_PAGES_SORT_VALUES = ['updated_desc', 'updated_asc', 'created_desc', 'slug'] as const;
-type ListPagesSort = typeof LIST_PAGES_SORT_VALUES[number];
+const LIST_PAGES_SORT_VALUES = ["updated_desc", "updated_asc", "created_desc", "slug"] as const;
+type ListPagesSort = (typeof LIST_PAGES_SORT_VALUES)[number];
 
 const list_pages: Operation = {
-  name: 'list_pages',
+  name: "list_pages",
   description: LIST_PAGES_DESCRIPTION,
   params: {
-    type: { type: 'string', description: 'Filter by page type' },
-    tag: { type: 'string', description: 'Filter by tag' },
-    limit: { type: 'number', description: 'Max results (default 50)' },
+    type: { type: "string", description: "Filter by page type" },
+    tag: { type: "string", description: "Filter by tag" },
+    limit: { type: "number", description: "Max results (default 50)" },
     // v0.29 — surface filter that already exists on PageFilters.
     updated_after: {
-      type: 'string',
-      description: 'ISO date (YYYY-MM-DD) or full timestamp. Returns pages with updated_at > value.',
+      type: "string",
+      description:
+        "ISO date (YYYY-MM-DD) or full timestamp. Returns pages with updated_at > value.",
     },
     sort: {
-      type: 'string',
+      type: "string",
       enum: [...LIST_PAGES_SORT_VALUES],
-      description: 'Sort order. Default updated_desc (matches pre-v0.29). Options: updated_desc, updated_asc, created_desc, slug.',
+      description:
+        "Sort order. Default updated_desc (matches pre-v0.29). Options: updated_desc, updated_asc, created_desc, slug.",
     },
-    include_deleted: { type: 'boolean', description: 'v0.26.5: include soft-deleted pages (default: false). Used by restore workflows and operator diagnostics.' },
-    include_frontmatter: { type: 'boolean', description: 'v0.43: include each page\'s frontmatter object in the result (default: false). Lets list views render frontmatter fields (case metadata, deadlines) without N follow-up get_page calls.' },
+    include_deleted: {
+      type: "boolean",
+      description:
+        "v0.26.5: include soft-deleted pages (default: false). Used by restore workflows and operator diagnostics.",
+    },
+    include_frontmatter: {
+      type: "boolean",
+      description:
+        "v0.43: include each page's frontmatter object in the result (default: false). Lets list views render frontmatter fields (case metadata, deadlines) without N follow-up get_page calls.",
+    },
   },
   handler: async (ctx, p) => {
     // Whitelist the sort enum at the handler before passing to the engine.
     // Engines also whitelist via PAGE_SORT_SQL but defending here keeps
     // unsupported strings from reaching the SQL layer.
     const rawSort = p.sort as string | undefined;
-    const sort = rawSort && (LIST_PAGES_SORT_VALUES as readonly string[]).includes(rawSort)
-      ? (rawSort as ListPagesSort)
-      : undefined;
+    const sort =
+      rawSort && (LIST_PAGES_SORT_VALUES as readonly string[]).includes(rawSort)
+        ? (rawSort as ListPagesSort)
+        : undefined;
     // v0.34.1 (#861 — P0 leak seal): thread the auth'd client's source scope
     // into the listPages filter so an OAuth client scoped to src-A cannot
     // enumerate src-B pages. Pre-fix, ctx.sourceId / ctx.auth?.allowedSources
@@ -1466,12 +1625,12 @@ const list_pages: Operation = {
       tag: p.tag as string,
       limit: clampSearchLimit(p.limit as number | undefined, 50, 100),
       includeDeleted: (p.include_deleted as boolean) === true,
-      updated_after: typeof p.updated_after === 'string' ? p.updated_after : undefined,
+      updated_after: typeof p.updated_after === "string" ? p.updated_after : undefined,
       sort,
       ...scope,
     });
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
-    return pages.map(pg => ({
+    return pages.map((pg) => ({
       slug: pg.slug,
       type: pg.type,
       title: pg.title,
@@ -1480,20 +1639,23 @@ const list_pages: Operation = {
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
   },
-  scope: 'read',
-  cliHints: { name: 'list' },
+  scope: "read",
+  cliHints: { name: "list" },
 };
 
 // --- Search ---
 
 const search: Operation = {
-  name: 'search',
+  name: "search",
   description: SEARCH_DESCRIPTION,
   params: {
-    query: { type: 'string', required: true },
-    limit: { type: 'number', description: 'Max results (default 20)' },
-    offset: { type: 'number', description: 'Skip first N results (for pagination)' },
-    mode: { type: 'string', description: 'Search mode (conservative|balanced|tokenmax). Local callers only.' },
+    query: { type: "string", required: true },
+    limit: { type: "number", description: "Max results (default 20)" },
+    offset: { type: "number", description: "Skip first N results (for pagination)" },
+    mode: {
+      type: "string",
+      description: "Search mode (conservative|balanced|tokenmax). Local callers only.",
+    },
   },
   handler: async (ctx, p) => {
     const startedAt = Date.now();
@@ -1510,7 +1672,7 @@ const search: Operation = {
     // T4/D17 — escape hatch: keyword-only when the operator opts out of the
     // hybrid `search` contract (privacy/cost: no query text to an embedding
     // provider). Defaults to cheap-hybrid (D4/D15).
-    const keywordOnly = (await ctx.engine.getConfig('search.mcp_keyword_only')) === 'true';
+    const keywordOnly = (await ctx.engine.getConfig("search.mcp_keyword_only")) === "true";
 
     if (keywordOnly) {
       const raw = await ctx.engine.searchKeyword(queryText, { limit, offset, ...scope });
@@ -1520,7 +1682,10 @@ const search: Operation = {
       // agent-warning channel (hybridSearch stamps it; this branch bypasses
       // hybridSearch, so stamp explicitly). Fail-open inside the helper.
       await stampContentFlags(ctx.engine, results);
-      bumpLastRetrievedAt(ctx.engine, results.map((r) => r.page_id));
+      bumpLastRetrievedAt(
+        ctx.engine,
+        results.map((r) => r.page_id)
+      );
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
       // Subsumio P0-SECR-002: Filter by verified matter scope
       return matterScopeFilter(results, ctx);
@@ -1535,20 +1700,25 @@ const search: Operation = {
       expansion: false,
       ...scope,
       ...(perCallMode ? { mode: perCallMode } : {}),
-      onMeta: (m) => { capturedMeta = m; },
+      onMeta: (m) => {
+        capturedMeta = m;
+      },
     });
     const latency_ms = Date.now() - startedAt;
-    bumpLastRetrievedAt(ctx.engine, results.map((r) => r.page_id));
+    bumpLastRetrievedAt(
+      ctx.engine,
+      results.map((r) => r.page_id)
+    );
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
     // Subsumio P0-SECR-002: Filter by verified matter scope
     return matterScopeFilter(results, ctx);
   },
-  scope: 'read',
-  cliHints: { name: 'search', positional: ['query'] },
+  scope: "read",
+  cliHints: { name: "search", positional: ["query"] },
 };
 
 const query: Operation = {
-  name: 'query',
+  name: "query",
   description: QUERY_DESCRIPTION,
   params: {
     // v0.27.1: `query` is no longer strictly required — `--image <path>`
@@ -1556,27 +1726,58 @@ const query: Operation = {
     // validator at src/cli.ts honors `cliHints.altRequired` and admits the
     // image-only invocation. MCP / programmatic callers must still pass
     // `query` OR `image` (handler refuses if both are absent).
-    query: { type: 'string', required: false },
+    query: { type: "string", required: false },
     /** v0.27.1: image-similarity search. Path resolved on the CLI side
      *  before the op fires (the op receives raw bytes neither side; the
      *  CLI loads the file, base64-encodes, and passes through `image`). */
-    image: { type: 'string', description: 'Base64-encoded image bytes for image-similarity search (CLI: --image <path>).' },
-    image_mime: { type: 'string', description: 'MIME type for the image bytes (auto-derived from path on CLI; required when calling op directly).' },
-    limit: { type: 'number', description: 'Max results (default 20)' },
-    offset: { type: 'number', description: 'Skip first N results (for pagination)' },
-    expand: { type: 'boolean', description: 'Enable multi-query expansion (default: true)' },
-    detail: { type: 'string', description: 'Result detail level: low (compiled truth only), medium (default, all with dedup), high (all chunks)' },
-    mode: { type: 'string', description: 'Search mode (conservative|balanced|tokenmax). Local callers only; remote uses configured mode.' },
+    image: {
+      type: "string",
+      description: "Base64-encoded image bytes for image-similarity search (CLI: --image <path>).",
+    },
+    image_mime: {
+      type: "string",
+      description:
+        "MIME type for the image bytes (auto-derived from path on CLI; required when calling op directly).",
+    },
+    limit: { type: "number", description: "Max results (default 20)" },
+    offset: { type: "number", description: "Skip first N results (for pagination)" },
+    expand: { type: "boolean", description: "Enable multi-query expansion (default: true)" },
+    detail: {
+      type: "string",
+      description:
+        "Result detail level: low (compiled truth only), medium (default, all with dedup), high (all chunks)",
+    },
+    mode: {
+      type: "string",
+      description:
+        "Search mode (conservative|balanced|tokenmax). Local callers only; remote uses configured mode.",
+    },
     // v0.20.0 Cathedral II Layer 10 C1/C2: language + symbol-kind filters.
-    lang: { type: 'string', description: 'Filter to chunks where content_chunks.language matches (e.g., typescript, python, ruby)' },
-    symbol_kind: { type: 'string', description: 'Filter to chunks where content_chunks.symbol_type matches (e.g., function, class, method, type, interface)' },
+    lang: {
+      type: "string",
+      description:
+        "Filter to chunks where content_chunks.language matches (e.g., typescript, python, ruby)",
+    },
+    symbol_kind: {
+      type: "string",
+      description:
+        "Filter to chunks where content_chunks.symbol_type matches (e.g., function, class, method, type, interface)",
+    },
     // v0.20.0 Cathedral II Layer 7 (A2) / Layer 10 C3: two-pass structural expansion.
-    near_symbol: { type: 'string', description: 'Anchor retrieval at this qualified symbol name (e.g., BrainEngine.searchKeyword). Enables A2 two-pass.' },
-    walk_depth: { type: 'number', description: 'Structural walk depth 1-2. Default 0 (off). Expands anchors through code_edges with 1/(1+hop) decay.' },
+    near_symbol: {
+      type: "string",
+      description:
+        "Anchor retrieval at this qualified symbol name (e.g., BrainEngine.searchKeyword). Enables A2 two-pass.",
+    },
+    walk_depth: {
+      type: "number",
+      description:
+        "Structural walk depth 1-2. Default 0 (off). Expands anchors through code_edges with 1/(1+hop) decay.",
+    },
     // v0.29.1 — orthogonal recency + salience axes. YOU (the agent) decide.
     salience: {
-      type: 'string',
-      enum: ['off', 'on', 'strong'],
+      type: "string",
+      enum: ["off", "on", "strong"],
       description:
         "v0.29.1 salience boost — emotional_weight + take_count, NO time component.\n" +
         "  'off' — default for entity / canonical / definitional queries\n" +
@@ -1585,8 +1786,8 @@ const query: Operation = {
         "Omit and gbrain auto-detects from query text. Independent of `recency`.",
     },
     recency: {
-      type: 'string',
-      enum: ['off', 'on', 'strong'],
+      type: "string",
+      enum: ["off", "on", "strong"],
       description:
         "v0.29.1 recency boost — per-prefix age decay, NO mattering signal.\n" +
         "  'off' — default for canonical truth\n" +
@@ -1595,23 +1796,23 @@ const query: Operation = {
         "Omit and gbrain auto-detects. Independent of `salience` (orthogonal axes).",
     },
     since: {
-      type: 'string',
+      type: "string",
       description:
         "v0.29.1 — filter to pages whose effective_date is >= this. ISO-8601 (YYYY-MM-DD or full timestamp) OR relative ('7d', '2w', '1y'). Replaces deprecated `afterDate`.",
     },
     until: {
-      type: 'string',
+      type: "string",
       description:
         "v0.29.1 — filter to effective_date <= this. Same format as `since`. Replaces deprecated `beforeDate`. YYYY-MM-DD lands at end-of-day.",
     },
     source_id: {
-      type: 'string',
+      type: "string",
       description:
         "v0.34: scope search to a single source. Defaults to OperationContext.sourceId (set from CLI --source / GBRAIN_SOURCE / .gbrain-source dotfile). Pass '__all__' to span every source for trusted local callers; for remote callers '__all__' spans only your granted sources.",
     },
     cross_modal: {
-      type: 'string',
-      enum: ['text', 'image', 'both', 'auto'],
+      type: "string",
+      enum: ["text", "image", "both", "auto"],
       description:
         "v0.36 cross-modal search routing.\n" +
         "  'text' (default for non-image-intent queries) — text-only path, no behavior change vs v0.35.\n" +
@@ -1620,12 +1821,12 @@ const query: Operation = {
         "  'auto' — same effect as omitting the field; intent classifier decides based on query phrasing.",
     },
     embedding_column: {
-      type: 'string',
+      type: "string",
       description:
         "v0.36: route vector search through a non-default embedding column. Defaults to 'embedding' (OpenAI 1536d) unless `search_embedding_column` config sets a different default. Per-call override for A/B benchmarking across providers (e.g. 'embedding_voyage', 'embedding_zeroentropy'). Column MUST be declared in the `embedding_columns` config registry — unknown names throw with a paste-ready hint listing valid columns.",
     },
     adaptive_return: {
-      type: 'boolean',
+      type: "boolean",
       description:
         "v0.41.33 — return a TIGHT, intent-sized result set instead of the full top-K. YOU (the agent) set this per query to serve the user well:\n" +
         "  TRUE when the user's question has a small, specific answer — a lookup ('what is X', 'who is Y', 'what's my <thing>', 'what did Z decide'), a single-fact recall, or when you'll route the result into a precise downstream step (a classifier, a decision, an exact citation). The user gets the answer, not a wall of loosely-related pages, and you spend fewer tokens reading noise.\n" +
@@ -1633,7 +1834,7 @@ const query: Operation = {
         "Safe by construction: it NEVER returns empty when there are matches (you always get at least the top hit), and it only applies to the first page (omit when paginating). Caps come from config (search.adaptive_return_entity_max / _other_max; default 2 / 6) — pass `limit` 1 alongside this for a hard single-answer cap.",
     },
     autocut: {
-      type: 'boolean',
+      type: "boolean",
       description:
         "v0.42.3.0 — autocut is the SMART DEFAULT (already ON when the reranker runs, which it does in the default search mode). It returns only the confident cluster by cutting where the relevance score drops off a cliff, so an obvious single answer comes back as 1 result and a genuine handful comes back as that handful — not a fixed wall of 20+.\n" +
         "  You almost never set this. Pass FALSE only to FORCE the full top-K when you deliberately want breadth — broad exploration, 'show me everything about X', enumeration where you'd rather over-collect and judge for yourself, or when you suspect the top hit is wrong and want to see the alternatives.\n" +
@@ -1641,7 +1842,7 @@ const query: Operation = {
         "Safe by construction: never returns empty when there are matches, only applies to the first page (omit when paginating), and is a no-op when no reranker scored the results (so it can't cut on an untrustworthy signal). Distinct from `adaptive_return`: autocut cuts on the score cliff; adaptive_return caps by question intent. Leave both unset for the smart default.",
     },
     relational: {
-      type: 'boolean',
+      type: "boolean",
       description:
         "v0.43 — relational recall arm. SMART DEFAULT (on in balanced/tokenmax). When the question is about a RELATIONSHIP ('who invested in widget-co', 'who introduced me to alice', 'what connects fund-a and fund-b'), the brain resolves the named entity and walks its typed-edge graph (invested_in, works_at, founded, …), surfacing the answer even when no passage mentions both sides. Pure no-op for non-relational questions. Pass FALSE to force lexical/vector-only retrieval (e.g. debugging why a graph answer appeared). You almost never set this.",
     },
@@ -1649,12 +1850,12 @@ const query: Operation = {
   handler: async (ctx, p) => {
     const startedAt = Date.now();
     const expand = p.expand !== false;
-    const detail = (p.detail as 'low' | 'medium' | 'high') || undefined;
+    const detail = (p.detail as "low" | "medium" | "high") || undefined;
     const queryText = p.query as string | undefined;
     const imageData = p.image as string | undefined;
-    const imageMime = (p.image_mime as string) || 'image/jpeg';
+    const imageMime = (p.image_mime as string) || "image/jpeg";
     const embeddingColumnParam =
-      typeof p.embedding_column === 'string' && p.embedding_column.length > 0
+      typeof p.embedding_column === "string" && p.embedding_column.length > 0
         ? (p.embedding_column as string)
         : undefined;
     // Explicit per-call source_id must win over ctx.sourceId. `__all__` spans
@@ -1663,16 +1864,16 @@ const query: Operation = {
     // trust+grant resolver shared by every source-scoped read op). This scope
     // is spread into BOTH the image-similarity searchVector path and the text
     // hybridSearch path below, so both honor the same grant.
-    const sourceIdParam = typeof p.source_id === 'string' ? p.source_id : undefined;
+    const sourceIdParam = typeof p.source_id === "string" ? p.source_id : undefined;
     const querySourceScope = resolveRequestedScope(ctx, sourceIdParam);
 
     // v0.27.1: image-similarity branch. Bypasses hybridSearch (which is
     // text-only); embeds the image via embedMultimodal and runs a direct
     // vector search against the embedding_image column.
     if (imageData) {
-      const { embedMultimodal } = await import('./ai/gateway.ts');
+      const { embedMultimodal } = await import("./ai/gateway.ts");
       const [vec] = await embedMultimodal([
-        { kind: 'image_base64', data: imageData, mime: imageMime },
+        { kind: "image_base64", data: imageData, mime: imageMime },
       ]);
       // v0.34.1 (#861 F2 — 6th leak surface): the image path bypasses
       // hybridSearch and calls searchVector directly, so it needs its
@@ -1681,14 +1882,14 @@ const query: Operation = {
       const results = await ctx.engine.searchVector(vec, {
         limit: (p.limit as number) || 20,
         offset: (p.offset as number) || 0,
-        embeddingColumn: 'embedding_image',
+        embeddingColumn: "embedding_image",
         ...querySourceScope,
       });
       return results;
     }
 
     if (!queryText) {
-      throw new Error('query requires either `query` (text) or `image` (base64 bytes).');
+      throw new Error("query requires either `query` (text) or `image` (base64 bytes).");
     }
 
     // v0.25.0 — capture meta side-channel. hybridSearch's return contract
@@ -1710,25 +1911,31 @@ const query: Operation = {
       expansion: expand,
       expandFn: expand ? expandQuery : undefined,
       // T4/D5 — per-call mode (local/trusted only; remote ignored).
-      ...((): { mode?: string } => { const m = resolvePerCallMode(ctx, p.mode); return m ? { mode: m } : {}; })(),
+      ...((): { mode?: string } => {
+        const m = resolvePerCallMode(ctx, p.mode);
+        return m ? { mode: m } : {};
+      })(),
       detail,
       language: (p.lang as string) || undefined,
       symbolKind: (p.symbol_kind as string) || undefined,
       nearSymbol: (p.near_symbol as string) || undefined,
-      walkDepth: typeof p.walk_depth === 'number' ? (p.walk_depth as number) : undefined,
+      walkDepth: typeof p.walk_depth === "number" ? (p.walk_depth as number) : undefined,
       ...querySourceScope,
       // v0.29.1 — agent-explicit recency + salience. Omitted = heuristic defaults.
-      salience: p.salience as 'off' | 'on' | 'strong' | undefined,
-      recency: p.recency as 'off' | 'on' | 'strong' | undefined,
-      since: typeof p.since === 'string' ? p.since : undefined,
-      until: typeof p.until === 'string' ? p.until : undefined,
+      salience: p.salience as "off" | "on" | "strong" | undefined,
+      recency: p.recency as "off" | "on" | "strong" | undefined,
+      since: typeof p.since === "string" ? p.since : undefined,
+      until: typeof p.until === "string" ? p.until : undefined,
       // v0.32.x search-lite: token budget + cache opt-outs.
-      tokenBudget: typeof p.token_budget === 'number' ? (p.token_budget as number) : undefined,
-      useCache: typeof p.use_cache === 'boolean' ? (p.use_cache as boolean) : undefined,
-      intentWeighting: typeof p.intent_weighting === 'boolean' ? (p.intent_weighting as boolean) : undefined,
+      tokenBudget: typeof p.token_budget === "number" ? (p.token_budget as number) : undefined,
+      useCache: typeof p.use_cache === "boolean" ? (p.use_cache as boolean) : undefined,
+      intentWeighting:
+        typeof p.intent_weighting === "boolean" ? (p.intent_weighting as boolean) : undefined,
       // v0.36 cross-modal routing param.
-      crossModal: p.cross_modal as 'text' | 'image' | 'both' | 'auto' | undefined,
-      onMeta: (m) => { capturedMeta = m; },
+      crossModal: p.cross_modal as "text" | "image" | "both" | "auto" | undefined,
+      onMeta: (m) => {
+        capturedMeta = m;
+      },
       // v0.36 (D15): per-call embedding column override. Resolver rejects
       // unknown names at hybrid entry with EmbeddingColumnNotRegisteredError;
       // the error surfaces back to the agent as the op error envelope.
@@ -1737,18 +1944,23 @@ const query: Operation = {
       embeddingColumn: embeddingColumnParam,
       // v0.41.33 — agent-explicit adaptive return-sizing. Omitted = off
       // (config default applies). hybridSearchCached skips the cache when on.
-      adaptiveReturn: typeof p.adaptive_return === 'boolean' ? (p.adaptive_return as boolean) : undefined,
+      adaptiveReturn:
+        typeof p.adaptive_return === "boolean" ? (p.adaptive_return as boolean) : undefined,
       // v0.42.3.0 — autocut ceiling override. Omitted = smart default (ON in
       // reranked modes). `false` forces the full top-K.
-      autocut: typeof p.autocut === 'boolean' ? (p.autocut as boolean) : undefined,
+      autocut: typeof p.autocut === "boolean" ? (p.autocut as boolean) : undefined,
       // v0.43 — relational recall override. Omitted = smart default (mode bundle).
-      relationalRetrieval: typeof p.relational === 'boolean' ? (p.relational as boolean) : undefined,
+      relationalRetrieval:
+        typeof p.relational === "boolean" ? (p.relational as boolean) : undefined,
     });
     const latency_ms = Date.now() - startedAt;
 
     // v0.37.0 (D11): op-layer last_retrieved_at write-back. Same shape as the
     // search handler — fire-and-forget, internal callers bypass this path.
-    bumpLastRetrievedAt(ctx.engine, results.map((r) => r.page_id));
+    bumpLastRetrievedAt(
+      ctx.engine,
+      results.map((r) => r.page_id)
+    );
 
     // Op-layer capture (v0.25.0). Fire-and-forget. meta tells gbrain-evals
     // what hybridSearch *actually* did so replay can distinguish "with API
@@ -1756,12 +1968,14 @@ const query: Operation = {
     // "expansion requested + silently fell back."
     if (isEvalCaptureEnabled(ctx.config)) {
       const meta: HybridSearchMeta = capturedMeta ?? {
-        vector_enabled: false, detail_resolved: detail ?? null, expansion_applied: false,
+        vector_enabled: false,
+        detail_resolved: detail ?? null,
+        expansion_applied: false,
       };
       void captureEvalCandidate(
         ctx.engine,
         {
-          tool_name: 'query',
+          tool_name: "query",
           query: queryText,
           results,
           meta,
@@ -1772,32 +1986,38 @@ const query: Operation = {
           job_id: ctx.jobId ?? null,
           subagent_id: ctx.subagentId ?? null,
         },
-        { scrub_pii: isEvalScrubEnabled(ctx.config) },
+        { scrub_pii: isEvalScrubEnabled(ctx.config) }
       );
     }
 
     // Subsumio P0-SECR-002: Filter by verified matter scope
     return matterScopeFilter(results, ctx);
   },
-  scope: 'read',
-  cliHints: { name: 'query', positional: ['query'] },
+  scope: "read",
+  cliHints: { name: "query", positional: ["query"] },
 };
 
 // --- v0.28: Takes ---
 
 const takes_list: Operation = {
-  name: 'takes_list',
-  description: 'List takes (typed/weighted/attributed claims) filtered by holder/kind/active/etc.',
-  scope: 'read',
+  name: "takes_list",
+  description: "List takes (typed/weighted/attributed claims) filtered by holder/kind/active/etc.",
+  scope: "read",
   params: {
-    page_slug: { type: 'string', description: 'Filter to this page' },
-    holder: { type: 'string', description: 'Filter to this holder (world|garry|brain|<slug>)' },
-    kind: { type: 'string', description: 'Filter to this kind (fact|take|bet|hunch)' },
-    active: { type: 'boolean', description: 'Active rows only (default true)' },
-    resolved: { type: 'boolean', description: 'true → only resolved bets; false → only unresolved' },
-    sort_by: { type: 'string', description: 'weight | since_date | created_at (default created_at)' },
-    limit: { type: 'number', description: 'Max rows (default 100, cap 500)' },
-    offset: { type: 'number', description: 'Skip first N rows' },
+    page_slug: { type: "string", description: "Filter to this page" },
+    holder: { type: "string", description: "Filter to this holder (world|garry|brain|<slug>)" },
+    kind: { type: "string", description: "Filter to this kind (fact|take|bet|hunch)" },
+    active: { type: "boolean", description: "Active rows only (default true)" },
+    resolved: {
+      type: "boolean",
+      description: "true → only resolved bets; false → only unresolved",
+    },
+    sort_by: {
+      type: "string",
+      description: "weight | since_date | created_at (default created_at)",
+    },
+    limit: { type: "number", description: "Max rows (default 100, cap 500)" },
+    offset: { type: "number", description: "Skip first N rows" },
   },
   handler: async (ctx, p) => {
     return ctx.engine.listTakes({
@@ -1814,16 +2034,16 @@ const takes_list: Operation = {
       takesHoldersAllowList: ctx.takesHoldersAllowList,
     });
   },
-  cliHints: { name: 'takes-list' },
+  cliHints: { name: "takes-list" },
 };
 
 const takes_search: Operation = {
-  name: 'takes_search',
-  description: 'Keyword search across takes (pg_trgm similarity over claim text)',
-  scope: 'read',
+  name: "takes_search",
+  description: "Keyword search across takes (pg_trgm similarity over claim text)",
+  scope: "read",
   params: {
-    query: { type: 'string', required: true },
-    limit: { type: 'number', description: 'Max results (default 30, cap 100)' },
+    query: { type: "string", required: true },
+    limit: { type: "number", description: "Max results (default 30, cap 100)" },
   },
   handler: async (ctx, p) => {
     return ctx.engine.searchTakes(p.query as string, {
@@ -1831,7 +2051,7 @@ const takes_search: Operation = {
       takesHoldersAllowList: ctx.takesHoldersAllowList,
     });
   },
-  cliHints: { name: 'takes-search', positional: ['query'] },
+  cliHints: { name: "takes-search", positional: ["query"] },
 };
 
 /**
@@ -1843,14 +2063,18 @@ const takes_search: Operation = {
  * (ctx.takesHoldersAllowList=undefined) get the full scorecard.
  */
 const takes_scorecard: Operation = {
-  name: 'takes_scorecard',
-  description: 'Calibration scorecard for resolved bets: counts, accuracy, Brier (correct ∨ incorrect only), partial_rate.',
-  scope: 'read',
+  name: "takes_scorecard",
+  description:
+    "Calibration scorecard for resolved bets: counts, accuracy, Brier (correct ∨ incorrect only), partial_rate.",
+  scope: "read",
   params: {
-    holder: { type: 'string', description: 'Filter to this holder (world|garry|brain|<slug>)' },
-    domain_prefix: { type: 'string', description: 'Slug prefix (e.g. companies/) to scope the scorecard' },
-    since: { type: 'string', description: 'Window start (YYYY-MM-DD)' },
-    until: { type: 'string', description: 'Window end (YYYY-MM-DD)' },
+    holder: { type: "string", description: "Filter to this holder (world|garry|brain|<slug>)" },
+    domain_prefix: {
+      type: "string",
+      description: "Slug prefix (e.g. companies/) to scope the scorecard",
+    },
+    since: { type: "string", description: "Window start (YYYY-MM-DD)" },
+    until: { type: "string", description: "Window end (YYYY-MM-DD)" },
   },
   handler: async (ctx, p) => {
     return ctx.engine.getScorecard(
@@ -1860,10 +2084,10 @@ const takes_scorecard: Operation = {
         since: p.since as string | undefined,
         until: p.until as string | undefined,
       },
-      ctx.takesHoldersAllowList,
+      ctx.takesHoldersAllowList
     );
   },
-  cliHints: { name: 'takes-scorecard' },
+  cliHints: { name: "takes-scorecard" },
 };
 
 /**
@@ -1871,12 +2095,13 @@ const takes_scorecard: Operation = {
  * Same allow-list contract as takes_scorecard.
  */
 const takes_calibration: Operation = {
-  name: 'takes_calibration',
-  description: 'Calibration curve: resolved correct/incorrect bets binned by stated weight; observed vs predicted per bucket.',
-  scope: 'read',
+  name: "takes_calibration",
+  description:
+    "Calibration curve: resolved correct/incorrect bets binned by stated weight; observed vs predicted per bucket.",
+  scope: "read",
   params: {
-    holder: { type: 'string', description: 'Filter to this holder' },
-    bucket_size: { type: 'number', description: 'Bucket width in (0,1]; default 0.1' },
+    holder: { type: "string", description: "Filter to this holder" },
+    bucket_size: { type: "number", description: "Bucket width in (0,1]; default 0.1" },
   },
   handler: async (ctx, p) => {
     return ctx.engine.getCalibrationCurve(
@@ -1884,26 +2109,45 @@ const takes_calibration: Operation = {
         holder: p.holder as string | undefined,
         bucketSize: p.bucket_size as number | undefined,
       },
-      ctx.takesHoldersAllowList,
+      ctx.takesHoldersAllowList
     );
   },
-  cliHints: { name: 'takes-calibration' },
+  cliHints: { name: "takes-calibration" },
 };
 
 const think: Operation = {
-  name: 'think',
-  description: 'Multi-hop synthesis across pages + takes + graph. Pulls relevant evidence and produces a cited answer with conflict + gap analysis.',
-  scope: 'write',
+  name: "think",
+  description:
+    "Multi-hop synthesis across pages + takes + graph. Pulls relevant evidence and produces a cited answer with conflict + gap analysis.",
+  scope: "write",
   params: {
-    question: { type: 'string', required: true, description: 'The question to think about' },
-    anchor: { type: 'string', description: 'Pull the entity subgraph around this slug' },
-    rounds: { type: 'number', description: 'Multi-pass: 1 (default). Round-loop scaffolding is in place; gap-driven retrieval ships in v0.29.' },
-    save: { type: 'boolean', description: 'Persist a synthesis page (local-CLI only; ignored for MCP)' },
-    take: { type: 'boolean', description: 'Append a take row to the anchor page (requires anchor)' },
-    model: { type: 'string', description: 'Model override (alias or full id). Falls through models.think → models.default → GBRAIN_MODEL → opus.' },
-    since: { type: 'string', description: 'Start of temporal window (YYYY-MM-DD or YYYY-MM)' },
-    until: { type: 'string', description: 'End of temporal window' },
-    legal_mode: { type: 'boolean', description: 'Activate legal-aware synthesis prompt (statute citations with version dates, jurisdiction awareness, attorney review disclaimers). Auto-detected when gathered pages contain legal page types.' },
+    question: { type: "string", required: true, description: "The question to think about" },
+    anchor: { type: "string", description: "Pull the entity subgraph around this slug" },
+    rounds: {
+      type: "number",
+      description:
+        "Multi-pass: 1 (default). Round-loop scaffolding is in place; gap-driven retrieval ships in v0.29.",
+    },
+    save: {
+      type: "boolean",
+      description: "Persist a synthesis page (local-CLI only; ignored for MCP)",
+    },
+    take: {
+      type: "boolean",
+      description: "Append a take row to the anchor page (requires anchor)",
+    },
+    model: {
+      type: "string",
+      description:
+        "Model override (alias or full id). Falls through models.think → models.default → GBRAIN_MODEL → opus.",
+    },
+    since: { type: "string", description: "Start of temporal window (YYYY-MM-DD or YYYY-MM)" },
+    until: { type: "string", description: "End of temporal window" },
+    legal_mode: {
+      type: "boolean",
+      description:
+        "Activate legal-aware synthesis prompt (statute citations with version dates, jurisdiction awareness, attorney review disclaimers). Auto-detected when gathered pages contain legal page types.",
+    },
   },
   mutating: true,
   handler: async (ctx, p) => {
@@ -1917,11 +2161,11 @@ const think: Operation = {
     // forwards to findTrajectory. CLI callers don't go through this op
     // and get default scope + remote=false from runThink's CLI path.
     const scope = sourceScopeOpts(ctx);
-    const { runThink, persistSynthesis } = await import('./think/index.ts');
+    const { runThink, persistSynthesis } = await import("./think/index.ts");
     const result = await runThink(ctx.engine, {
       question: String(p.question),
       anchor: p.anchor ? String(p.anchor) : undefined,
-      rounds: typeof p.rounds === 'number' ? (p.rounds as number) : undefined,
+      rounds: typeof p.rounds === "number" ? (p.rounds as number) : undefined,
       save: safeSave,
       take: safeTake,
       model: p.model ? String(p.model) : undefined,
@@ -1958,61 +2202,61 @@ const think: Operation = {
       remote_persisted_blocked: remote && (Boolean(p.save) || Boolean(p.take)),
     };
   },
-  cliHints: { name: 'think', positional: ['question'] },
+  cliHints: { name: "think", positional: ["question"] },
 };
 
 // --- Tags ---
 
 const add_tag: Operation = {
-  name: 'add_tag',
-  description: 'Add tag to page',
+  name: "add_tag",
+  description: "Add tag to page",
   params: {
-    slug: { type: 'string', required: true },
-    tag: { type: 'string', required: true },
+    slug: { type: "string", required: true },
+    tag: { type: "string", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'add_tag', slug: p.slug, tag: p.tag };
+    if (ctx.dryRun) return { dry_run: true, action: "add_tag", slug: p.slug, tag: p.tag };
     // v0.31.8 (D7): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     await ctx.engine.addTag(p.slug as string, p.tag as string, sourceOpts);
-    return { status: 'ok' };
+    return { status: "ok" };
   },
-  cliHints: { name: 'tag', positional: ['slug', 'tag'] },
+  cliHints: { name: "tag", positional: ["slug", "tag"] },
 };
 
 const remove_tag: Operation = {
-  name: 'remove_tag',
-  description: 'Remove tag from page',
+  name: "remove_tag",
+  description: "Remove tag from page",
   params: {
-    slug: { type: 'string', required: true },
-    tag: { type: 'string', required: true },
+    slug: { type: "string", required: true },
+    tag: { type: "string", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'remove_tag', slug: p.slug, tag: p.tag };
+    if (ctx.dryRun) return { dry_run: true, action: "remove_tag", slug: p.slug, tag: p.tag };
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     await ctx.engine.removeTag(p.slug as string, p.tag as string, sourceOpts);
-    return { status: 'ok' };
+    return { status: "ok" };
   },
-  cliHints: { name: 'untag', positional: ['slug', 'tag'] },
+  cliHints: { name: "untag", positional: ["slug", "tag"] },
 };
 
 const get_tags: Operation = {
-  name: 'get_tags',
-  description: 'List tags for a page',
+  name: "get_tags",
+  description: "List tags for a page",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D20): thread ctx.sourceId for read-side ops on multi-source brains.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     return ctx.engine.getTags(p.slug as string, sourceOpts);
   },
-  scope: 'read',
-  cliHints: { name: 'tags', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "tags", positional: ["slug"] },
 };
 
 // --- Links ---
@@ -2027,30 +2271,34 @@ const get_tags: Operation = {
  * never cleans (see src/schema.sql). `manual` is intentionally absent — it IS
  * the user-facing provenance and the default for omitted link_source.
  */
-export const MANAGED_LINK_SOURCES = ['markdown', 'frontmatter', 'mentions', 'wikilink-resolved'];
+export const MANAGED_LINK_SOURCES = ["markdown", "frontmatter", "mentions", "wikilink-resolved"];
 
 const add_link: Operation = {
-  name: 'add_link',
-  description: 'Create link between pages',
+  name: "add_link",
+  description: "Create link between pages",
   params: {
-    from: { type: 'string', required: true },
-    to: { type: 'string', required: true },
-    link_type: { type: 'string', description: 'Link type (e.g., invested_in, works_at)' },
-    context: { type: 'string', description: 'Context for the link' },
-    link_source: { type: 'string', description: "Provenance tag (kebab-case, e.g. 'citation-graph'). Defaults to 'manual'. Reconciliation-managed built-ins (markdown/frontmatter/mentions/wikilink-resolved) are rejected." },
+    from: { type: "string", required: true },
+    to: { type: "string", required: true },
+    link_type: { type: "string", description: "Link type (e.g., invested_in, works_at)" },
+    context: { type: "string", description: "Context for the link" },
+    link_source: {
+      type: "string",
+      description:
+        "Provenance tag (kebab-case, e.g. 'citation-graph'). Defaults to 'manual'. Reconciliation-managed built-ins (markdown/frontmatter/mentions/wikilink-resolved) are rejected.",
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'add_link', from: p.from, to: p.to };
+    if (ctx.dryRun) return { dry_run: true, action: "add_link", from: p.from, to: p.to };
     // v114 (#1941): default omitted provenance to 'manual' (NOT the engine's
     // 'markdown' default) so hand/tool-created CLI edges are honestly manual,
     // and forbid forging the reconciliation-managed built-ins.
-    const linkSource = ((p.link_source as string) || 'manual').trim();
+    const linkSource = ((p.link_source as string) || "manual").trim();
     if (MANAGED_LINK_SOURCES.includes(linkSource)) {
       throw new Error(
         `link_source '${linkSource}' is reconciliation-managed and cannot be set manually; ` +
-        `use 'manual' (the default) or a custom kebab tag like 'citation-graph'`,
+          `use 'manual' (the default) or a custom kebab tag like 'citation-graph'`
       );
     }
     // v0.31.8 (D7): single ctx.sourceId scopes both endpoints + origin. Cross-
@@ -2059,58 +2307,83 @@ const add_link: Operation = {
     const linkOpts = ctx.sourceId
       ? { fromSourceId: ctx.sourceId, toSourceId: ctx.sourceId, originSourceId: ctx.sourceId }
       : undefined;
-    await ctx.engine.addLink( // gbrain-allow-direct-insert: add_link MCP op is the explicit canonical surface for manual link creation; auto-link reconciliation runs separately via auto_link post-hook
-      p.from as string, p.to as string,
-      (p.context as string) || '', (p.link_type as string) || '',
-      linkSource, undefined, undefined,
-      linkOpts,
+    await ctx.engine.addLink(
+      // gbrain-allow-direct-insert: add_link MCP op is the explicit canonical surface for manual link creation; auto-link reconciliation runs separately via auto_link post-hook
+      p.from as string,
+      p.to as string,
+      (p.context as string) || "",
+      (p.link_type as string) || "",
+      linkSource,
+      undefined,
+      undefined,
+      linkOpts
     );
-    return { status: 'ok' };
+    return { status: "ok" };
   },
-  cliHints: { name: 'link', aliases: ['link-add'], positional: ['from', 'to'] },
+  cliHints: { name: "link", aliases: ["link-add"], positional: ["from", "to"] },
 };
 
 const remove_link: Operation = {
-  name: 'remove_link',
-  description: 'Remove link between pages',
+  name: "remove_link",
+  description: "Remove link between pages",
   params: {
-    from: { type: 'string', required: true },
-    to: { type: 'string', required: true },
-    link_type: { type: 'string', description: 'Only remove edges of this link type (omit = all types)' },
-    link_source: { type: 'string', description: 'Only remove edges of this provenance (e.g. citation-graph); omit = any provenance' },
+    from: { type: "string", required: true },
+    to: { type: "string", required: true },
+    link_type: {
+      type: "string",
+      description: "Only remove edges of this link type (omit = all types)",
+    },
+    link_source: {
+      type: "string",
+      description:
+        "Only remove edges of this provenance (e.g. citation-graph); omit = any provenance",
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'remove_link', from: p.from, to: p.to };
+    if (ctx.dryRun) return { dry_run: true, action: "remove_link", from: p.from, to: p.to };
     const linkOpts = ctx.sourceId
       ? { fromSourceId: ctx.sourceId, toSourceId: ctx.sourceId }
       : undefined;
     await ctx.engine.removeLink(
-      p.from as string, p.to as string,
+      p.from as string,
+      p.to as string,
       (p.link_type as string) || undefined,
       (p.link_source as string) || undefined,
-      linkOpts,
+      linkOpts
     );
-    return { status: 'ok' };
+    return { status: "ok" };
   },
-  cliHints: { name: 'unlink', aliases: ['link-rm'], positional: ['from', 'to'] },
+  cliHints: { name: "unlink", aliases: ["link-rm"], positional: ["from", "to"] },
 };
 
 const supersede_link: Operation = {
-  name: 'supersede_link',
-  description: 'v0.43.0: Create a new version of a bi-temporal link, marking the old one as superseded. Preserves link history.',
+  name: "supersede_link",
+  description:
+    "v0.43.0: Create a new version of a bi-temporal link, marking the old one as superseded. Preserves link history.",
   params: {
-    from: { type: 'string', required: true },
-    to: { type: 'string', required: true },
-    link_type: { type: 'string', required: true, description: 'Link type to supersede (e.g. works_at, invested_in)' },
-    context: { type: 'string', required: true, description: 'New context/reason for the updated link' },
-    link_source: { type: 'string', description: "Provenance tag (kebab-case). Defaults to 'manual'." },
+    from: { type: "string", required: true },
+    to: { type: "string", required: true },
+    link_type: {
+      type: "string",
+      required: true,
+      description: "Link type to supersede (e.g. works_at, invested_in)",
+    },
+    context: {
+      type: "string",
+      required: true,
+      description: "New context/reason for the updated link",
+    },
+    link_source: {
+      type: "string",
+      description: "Provenance tag (kebab-case). Defaults to 'manual'.",
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'supersede_link', from: p.from, to: p.to };
+    if (ctx.dryRun) return { dry_run: true, action: "supersede_link", from: p.from, to: p.to };
     const linkOpts = ctx.sourceId
       ? { fromSourceId: ctx.sourceId, toSourceId: ctx.sourceId }
       : undefined;
@@ -2118,24 +2391,25 @@ const supersede_link: Operation = {
       p.from as string,
       p.to as string,
       p.link_type as string,
-      (p.context as string) || '',
-      (p.link_source as string) || 'manual',
-      linkOpts,
+      (p.context as string) || "",
+      (p.link_source as string) || "manual",
+      linkOpts
     );
     return result
-      ? { status: 'ok', old_link_id: result.oldLinkId, new_link_id: result.newLinkId }
-      : { status: 'not_found', detail: 'No current link found to supersede' };
+      ? { status: "ok", old_link_id: result.oldLinkId, new_link_id: result.newLinkId }
+      : { status: "not_found", detail: "No current link found to supersede" };
   },
-  cliHints: { name: 'link-supersede', positional: ['from', 'to'] },
+  cliHints: { name: "link-supersede", positional: ["from", "to"] },
 };
 
 const get_link_history: Operation = {
-  name: 'get_link_history',
-  description: 'v0.43.0: Retrieve the full bi-temporal history of a link between two pages. Returns all versions ordered newest first.',
+  name: "get_link_history",
+  description:
+    "v0.43.0: Retrieve the full bi-temporal history of a link between two pages. Returns all versions ordered newest first.",
   params: {
-    from: { type: 'string', required: true },
-    to: { type: 'string', required: true },
-    link_type: { type: 'string', required: true },
+    from: { type: "string", required: true },
+    to: { type: "string", required: true },
+    link_type: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     const linkOpts = ctx.sourceId
@@ -2145,18 +2419,18 @@ const get_link_history: Operation = {
       p.from as string,
       p.to as string,
       p.link_type as string,
-      linkOpts,
+      linkOpts
     );
   },
-  scope: 'read',
-  cliHints: { name: 'link-history', positional: ['from', 'to'] },
+  scope: "read",
+  cliHints: { name: "link-history", positional: ["from", "to"] },
 };
 
 const get_links: Operation = {
-  name: 'get_links',
-  description: 'List outgoing links from a page',
+  name: "get_links",
+  description: "List outgoing links from a page",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D16): thread ctx.sourceId. When unset, engine falls through
@@ -2164,37 +2438,38 @@ const get_links: Operation = {
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     return ctx.engine.getLinks(p.slug as string, sourceOpts);
   },
-  scope: 'read',
+  scope: "read",
 };
 
 const get_backlinks: Operation = {
-  name: 'get_backlinks',
-  description: 'List incoming links to a page',
+  name: "get_backlinks",
+  description: "List incoming links to a page",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     return ctx.engine.getBacklinks(p.slug as string, sourceOpts);
   },
-  scope: 'read',
-  cliHints: { name: 'backlinks', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "backlinks", positional: ["slug"] },
 };
 
 const list_link_sources: Operation = {
-  name: 'list_link_sources',
+  name: "list_link_sources",
   // v114 (#1941): the read-side counterpart to link-add/link-rm. Since
   // link_source is now an open kebab provenance (no allowlist), this is how an
   // agent discovers which provenances a brain actually carries.
-  description: 'List distinct link_source provenances in the brain with edge counts (e.g. citation-graph, manual, markdown)',
+  description:
+    "List distinct link_source provenances in the brain with edge counts (e.g. citation-graph, manual, markdown)",
   params: {},
   handler: async (ctx) => {
     // Route through sourceScopeOpts so the read honors both scalar ctx.sourceId
     // and federated ctx.auth.allowedSources (no cross-source provenance leak).
     return ctx.engine.listLinkSources(sourceScopeOpts(ctx));
   },
-  scope: 'read',
-  cliHints: { name: 'link-sources' },
+  scope: "read",
+  cliHints: { name: "link-sources" },
 };
 
 /**
@@ -2208,23 +2483,37 @@ const list_link_sources: Operation = {
 const TRAVERSE_DEPTH_CAP = 10;
 
 const traverse_graph: Operation = {
-  name: 'traverse_graph',
-  description: 'Traverse link graph from a page. With link_type/direction, returns edges (GraphPath[]) instead of nodes.',
+  name: "traverse_graph",
+  description:
+    "Traverse link graph from a page. With link_type/direction, returns edges (GraphPath[]) instead of nodes.",
   params: {
-    slug: { type: 'string', required: true },
-    depth: { type: 'number', description: `Max traversal depth (default 5, capped at ${TRAVERSE_DEPTH_CAP})` },
-    link_type: { type: 'string', description: 'Filter to one link type (per-edge filter, traversal only follows matching edges)' },
-    direction: { type: 'string', enum: ['in', 'out', 'both'], description: 'Traversal direction (default out)' },
+    slug: { type: "string", required: true },
+    depth: {
+      type: "number",
+      description: `Max traversal depth (default 5, capped at ${TRAVERSE_DEPTH_CAP})`,
+    },
+    link_type: {
+      type: "string",
+      description:
+        "Filter to one link type (per-edge filter, traversal only follows matching edges)",
+    },
+    direction: {
+      type: "string",
+      enum: ["in", "out", "both"],
+      description: "Traversal direction (default out)",
+    },
   },
   handler: async (ctx, p) => {
     const slug = p.slug as string;
     const requestedDepth = (p.depth as number) || 5;
     if (requestedDepth > TRAVERSE_DEPTH_CAP) {
-      ctx.logger.warn(`[gbrain] traverse_graph depth clamped from ${requestedDepth} to ${TRAVERSE_DEPTH_CAP}`);
+      ctx.logger.warn(
+        `[gbrain] traverse_graph depth clamped from ${requestedDepth} to ${TRAVERSE_DEPTH_CAP}`
+      );
     }
     const depth = Math.max(1, Math.min(requestedDepth, TRAVERSE_DEPTH_CAP));
     const linkType = p.link_type as string | undefined;
-    const direction = p.direction as 'in' | 'out' | 'both' | undefined;
+    const direction = p.direction as "in" | "out" | "both" | undefined;
     // v0.34.1 (#861 — P0 leak seal): thread caller's source scope so graph
     // walks stay within the auth'd client's accessible sources. Pre-fix,
     // traverseGraph / traversePaths happily followed edges into pages from
@@ -2237,26 +2526,26 @@ const traverse_graph: Operation = {
     }
     return ctx.engine.traversePaths(slug, { depth, linkType, direction, ...scope });
   },
-  scope: 'read',
-  cliHints: { name: 'graph', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "graph", positional: ["slug"] },
 };
 
 // --- Timeline ---
 
 const add_timeline_entry: Operation = {
-  name: 'add_timeline_entry',
-  description: 'Add timeline entry to a page',
+  name: "add_timeline_entry",
+  description: "Add timeline entry to a page",
   params: {
-    slug: { type: 'string', required: true },
-    date: { type: 'string', required: true },
-    summary: { type: 'string', required: true },
-    detail: { type: 'string' },
-    source: { type: 'string' },
+    slug: { type: "string", required: true },
+    date: { type: "string", required: true },
+    summary: { type: "string", required: true },
+    detail: { type: "string" },
+    source: { type: "string" },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'add_timeline_entry', slug: p.slug };
+    if (ctx.dryRun) return { dry_run: true, action: "add_timeline_entry", slug: p.slug };
     const date = p.date as string;
     // Reject anything that isn't a strict YYYY-MM-DD with year 1900-2199 and
     // a real calendar day. PG DATE accepts year 5874897 silently — that's a
@@ -2264,7 +2553,7 @@ const add_timeline_entry: Operation = {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       throw new Error(`Invalid date format "${date}" (expected YYYY-MM-DD)`);
     }
-    const [y, m, d] = date.split('-').map(Number);
+    const [y, m, d] = date.split("-").map(Number);
     if (y < 1900 || y > 2199 || m < 1 || m > 12 || d < 1 || d > 31) {
       throw new Error(`Invalid date "${date}" (year 1900-2199, month 1-12, day 1-31)`);
     }
@@ -2275,54 +2564,59 @@ const add_timeline_entry: Operation = {
     }
     // v0.31.8 (D7): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
-    await ctx.engine.addTimelineEntry(p.slug as string, { // gbrain-allow-direct-insert: add_timeline_entry MCP op is the explicit canonical surface for manual timeline entries
-      date,
-      source: (p.source as string) || '',
-      summary: p.summary as string,
-      detail: (p.detail as string) || '',
-    }, sourceOpts);
-    return { status: 'ok' };
+    await ctx.engine.addTimelineEntry(
+      p.slug as string,
+      {
+        // gbrain-allow-direct-insert: add_timeline_entry MCP op is the explicit canonical surface for manual timeline entries
+        date,
+        source: (p.source as string) || "",
+        summary: p.summary as string,
+        detail: (p.detail as string) || "",
+      },
+      sourceOpts
+    );
+    return { status: "ok" };
   },
-  cliHints: { name: 'timeline-add', positional: ['slug', 'date', 'summary'] },
+  cliHints: { name: "timeline-add", positional: ["slug", "date", "summary"] },
 };
 
 const get_timeline: Operation = {
-  name: 'get_timeline',
-  description: 'Get timeline entries for a page',
+  name: "get_timeline",
+  description: "Get timeline entries for a page",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D20): thread ctx.sourceId.
     const sourceId = ctx.sourceId;
     return ctx.engine.getTimeline(p.slug as string, sourceId ? { sourceId } : undefined);
   },
-  scope: 'read',
-  cliHints: { name: 'timeline', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "timeline", positional: ["slug"] },
 };
 
 // --- Admin ---
 
 const get_stats: Operation = {
-  name: 'get_stats',
-  description: 'Brain statistics (page count, chunk count, etc.)',
+  name: "get_stats",
+  description: "Brain statistics (page count, chunk count, etc.)",
   params: {},
   handler: async (ctx) => {
     return ctx.engine.getStats();
   },
-  scope: 'admin',
-  cliHints: { name: 'stats' },
+  scope: "admin",
+  cliHints: { name: "stats" },
 };
 
 const get_health: Operation = {
-  name: 'get_health',
-  description: 'Brain health dashboard (embed coverage, stale pages, orphans)',
+  name: "get_health",
+  description: "Brain health dashboard (embed coverage, stale pages, orphans)",
   params: {},
   handler: async (ctx) => {
     return ctx.engine.getHealth();
   },
-  scope: 'admin',
-  cliHints: { name: 'health' },
+  scope: "admin",
+  cliHints: { name: "health" },
 };
 
 /**
@@ -2339,8 +2633,9 @@ const get_health: Operation = {
  * need autopilot cycle to write a config key — TODO in v0.31.x).
  */
 const get_brain_identity: Operation = {
-  name: 'get_brain_identity',
-  description: 'Brain identity + counters for thin-client banner. Returns version, engine kind, and page/chunk counts. Read-scope.',
+  name: "get_brain_identity",
+  description:
+    "Brain identity + counters for thin-client banner. Returns version, engine kind, and page/chunk counts. Read-scope.",
   params: {},
   handler: async (ctx) => {
     const stats = await ctx.engine.getStats();
@@ -2350,9 +2645,13 @@ const get_brain_identity: Operation = {
     let update_available = false;
     let latest_version: string | null = null;
     try {
-      const su = await import('./self-upgrade.ts');
+      const su = await import("./self-upgrade.ts");
       const entry = su.readUpdateCache();
-      if (entry && su.isCacheFresh(entry, Date.now()) && entry.marker.kind === 'upgrade_available') {
+      if (
+        entry &&
+        su.isCacheFresh(entry, Date.now()) &&
+        entry.marker.kind === "upgrade_available"
+      ) {
         update_available = true;
         latest_version = entry.marker.latest ?? null;
       }
@@ -2369,7 +2668,7 @@ const get_brain_identity: Operation = {
       latest_version,
     };
   },
-  scope: 'read',
+  scope: "read",
   // intentionally no cliHints — banner-only op
 };
 
@@ -2381,48 +2680,48 @@ const get_brain_identity: Operation = {
 // path confinement — see the trust-boundary memo in skill-catalog.ts.
 
 const list_skills: Operation = {
-  name: 'list_skills',
+  name: "list_skills",
   description: LIST_SKILLS_DESCRIPTION,
   params: {
     section: {
-      type: 'string',
-      description: 'Optional: only skills whose routing section matches this exactly.',
+      type: "string",
+      description: "Optional: only skills whose routing section matches this exactly.",
     },
   },
   handler: async (ctx, p) => {
-    const sc = await import('./skill-catalog.ts');
+    const sc = await import("./skill-catalog.ts");
     const publish = await sc.readMcpPublishSkills(ctx);
     sc.assertPublishEnabled(ctx, publish);
     const override = await sc.readMcpSkillsDir(ctx);
     const { dir, source } = sc.resolveSkillsDir(ctx, override);
-    const section = typeof p.section === 'string' ? p.section : undefined;
+    const section = typeof p.section === "string" ? p.section : undefined;
     return sc.buildSkillCatalog(ctx, dir, source, { section });
   },
-  scope: 'read',
-  cliHints: { name: 'skills', positional: [] },
+  scope: "read",
+  cliHints: { name: "skills", positional: [] },
 };
 
 const get_skill: Operation = {
-  name: 'get_skill',
+  name: "get_skill",
   description: GET_SKILL_DESCRIPTION,
   params: {
     name: {
-      type: 'string',
+      type: "string",
       required: true,
-      description: 'Skill name exactly as returned by list_skills.',
+      description: "Skill name exactly as returned by list_skills.",
     },
   },
   handler: async (ctx, p) => {
-    const sc = await import('./skill-catalog.ts');
+    const sc = await import("./skill-catalog.ts");
     const publish = await sc.readMcpPublishSkills(ctx);
     sc.assertPublishEnabled(ctx, publish);
     const override = await sc.readMcpSkillsDir(ctx);
     const { dir } = sc.resolveSkillsDir(ctx, override);
-    const name = typeof p.name === 'string' ? p.name : '';
+    const name = typeof p.name === "string" ? p.name : "";
     return sc.getSkillDetail(ctx, dir, name);
   },
-  scope: 'read',
-  cliHints: { name: 'skill', positional: ['name'] },
+  scope: "read",
+  cliHints: { name: "skill", positional: ["name"] },
 };
 
 /**
@@ -2447,14 +2746,20 @@ const get_skill: Operation = {
  *     directly (no MCP round-trip when running against ~/.gbrain).
  */
 const get_status_snapshot: Operation = {
-  name: 'get_status_snapshot',
-  description: 'Snapshot for `gbrain status` thin-client mode: sync freshness + last cycle. Admin-scope.',
+  name: "get_status_snapshot",
+  description:
+    "Snapshot for `gbrain status` thin-client mode: sync freshness + last cycle. Admin-scope.",
   params: {},
   handler: async (ctx) => {
-    const { buildSyncStatusReport } = await import('../commands/sync.ts');
-    const { buildCycleSnapshot } = await import('../commands/status.ts');
+    const { buildSyncStatusReport } = await import("../commands/sync.ts");
+    const { buildCycleSnapshot } = await import("../commands/status.ts");
     // Pull sources first (handles brains with zero declared sources too).
-    let sources: Array<{ id: string; name: string; local_path: string | null; config: Record<string, unknown> }> = [];
+    let sources: Array<{
+      id: string;
+      name: string;
+      local_path: string | null;
+      config: Record<string, unknown>;
+    }> = [];
     try {
       const rows = await ctx.engine.executeRaw<{
         id: string;
@@ -2462,7 +2767,7 @@ const get_status_snapshot: Operation = {
         local_path: string | null;
         config: Record<string, unknown> | null;
       }>(
-        `SELECT id, name, local_path, config FROM sources WHERE COALESCE(archived, FALSE) = FALSE ORDER BY id`,
+        `SELECT id, name, local_path, config FROM sources WHERE COALESCE(archived, FALSE) = FALSE ORDER BY id`
       );
       sources = rows.map((r) => ({
         id: r.id,
@@ -2489,7 +2794,7 @@ const get_status_snapshot: Operation = {
     const cycle = await buildCycleSnapshot(ctx.engine);
     return { schema_version: 1 as const, sync, cycle };
   },
-  scope: 'admin',
+  scope: "admin",
   localOnly: false,
 };
 
@@ -2511,22 +2816,23 @@ const get_status_snapshot: Operation = {
  * follow-up work pending demand.
  */
 const run_doctor: Operation = {
-  name: 'run_doctor',
-  description: 'Run brain health checks and return a structured DoctorReport (thin-client doctor surface).',
+  name: "run_doctor",
+  description:
+    "Run brain health checks and return a structured DoctorReport (thin-client doctor surface).",
   params: {},
   handler: async (ctx) => {
-    const { doctorReportRemote } = await import('../commands/doctor.ts');
+    const { doctorReportRemote } = await import("../commands/doctor.ts");
     return doctorReportRemote(ctx.engine);
   },
-  scope: 'admin',
+  scope: "admin",
   localOnly: false,
 };
 
 const get_versions: Operation = {
-  name: 'get_versions',
-  description: 'Page version history',
+  name: "get_versions",
+  description: "Page version history",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D20): thread ctx.sourceId.
@@ -2537,51 +2843,52 @@ const get_versions: Operation = {
     // a remote token bypassing get_page via /history would re-introduce
     // the same leak across every prior version.
     if (!ctx.takesHoldersAllowList) return versions;
-    return versions.map(v => ({ ...v, compiled_truth: stripTakesFence(v.compiled_truth) }));
+    return versions.map((v) => ({ ...v, compiled_truth: stripTakesFence(v.compiled_truth) }));
   },
-  scope: 'read',
-  cliHints: { name: 'history', positional: ['slug'] },
+  scope: "read",
+  cliHints: { name: "history", positional: ["slug"] },
 };
 
 const revert_version: Operation = {
-  name: 'revert_version',
-  description: 'Revert page to a previous version',
+  name: "revert_version",
+  description: "Revert page to a previous version",
   params: {
-    slug: { type: 'string', required: true },
-    version_id: { type: 'number', required: true },
+    slug: { type: "string", required: true },
+    version_id: { type: "number", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'revert_version', slug: p.slug, version_id: p.version_id };
+    if (ctx.dryRun)
+      return { dry_run: true, action: "revert_version", slug: p.slug, version_id: p.version_id };
     // v0.31.8 (D7): thread ctx.sourceId so multi-source brains revert the
     // intended page row instead of whichever same-slug row Postgres returns
     // first.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     await ctx.engine.createVersion(p.slug as string, sourceOpts);
     await ctx.engine.revertToVersion(p.slug as string, p.version_id as number, sourceOpts);
-    return { status: 'reverted' };
+    return { status: "reverted" };
   },
-  cliHints: { name: 'revert', positional: ['slug', 'version_id'] },
+  cliHints: { name: "revert", positional: ["slug", "version_id"] },
 };
 
 // --- Sync ---
 
 const sync_brain: Operation = {
-  name: 'sync_brain',
-  description: 'Sync git repo to brain (incremental)',
+  name: "sync_brain",
+  description: "Sync git repo to brain (incremental)",
   params: {
-    repo: { type: 'string', description: 'Path to git repo (optional if configured)' },
-    dry_run: { type: 'boolean', description: 'Preview changes without applying' },
-    full: { type: 'boolean', description: 'Full re-sync (ignore checkpoint)' },
-    no_pull: { type: 'boolean', description: 'Skip git pull' },
-    no_embed: { type: 'boolean', description: 'Skip embedding generation' },
+    repo: { type: "string", description: "Path to git repo (optional if configured)" },
+    dry_run: { type: "boolean", description: "Preview changes without applying" },
+    full: { type: "boolean", description: "Full re-sync (ignore checkpoint)" },
+    no_pull: { type: "boolean", description: "Skip git pull" },
+    no_embed: { type: "boolean", description: "Skip embedding generation" },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
-    const { performSync } = await import('../commands/sync.ts');
+    const { performSync } = await import("../commands/sync.ts");
     return performSync(ctx.engine, {
       repoPath: p.repo as string | undefined,
       dryRun: ctx.dryRun || (p.dry_run as boolean) || false,
@@ -2590,108 +2897,115 @@ const sync_brain: Operation = {
       full: (p.full as boolean) || false,
     });
   },
-  cliHints: { name: 'sync', hidden: true },
+  cliHints: { name: "sync", hidden: true },
 };
 
 // --- Raw Data ---
 
 const put_raw_data: Operation = {
-  name: 'put_raw_data',
-  description: 'Store raw API response data for a page',
+  name: "put_raw_data",
+  description: "Store raw API response data for a page",
   params: {
-    slug: { type: 'string', required: true },
-    source: { type: 'string', required: true, description: 'Data source (e.g., crustdata, happenstance)' },
-    data: { type: 'object', required: true, description: 'Raw data object' },
+    slug: { type: "string", required: true },
+    source: {
+      type: "string",
+      required: true,
+      description: "Data source (e.g., crustdata, happenstance)",
+    },
+    data: { type: "object", required: true, description: "Raw data object" },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'put_raw_data', slug: p.slug, source: p.source };
+    if (ctx.dryRun)
+      return { dry_run: true, action: "put_raw_data", slug: p.slug, source: p.source };
     // v0.31.8 (D7 + D21): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     await ctx.engine.putRawData(p.slug as string, p.source as string, p.data as object, sourceOpts);
-    return { status: 'ok' };
+    return { status: "ok" };
   },
 };
 
 const get_raw_data: Operation = {
-  name: 'get_raw_data',
-  description: 'Retrieve raw data for a page',
+  name: "get_raw_data",
+  description: "Retrieve raw data for a page",
   params: {
-    slug: { type: 'string', required: true },
-    source: { type: 'string', description: 'Filter by source' },
+    slug: { type: "string", required: true },
+    source: { type: "string", description: "Filter by source" },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D20 + D21): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     return ctx.engine.getRawData(p.slug as string, p.source as string | undefined, sourceOpts);
   },
-  scope: 'read',
+  scope: "read",
 };
 
 // --- Resolution & Chunks ---
 
 const resolve_slugs: Operation = {
-  name: 'resolve_slugs',
-  description: 'Fuzzy-resolve a partial slug to matching page slugs',
+  name: "resolve_slugs",
+  description: "Fuzzy-resolve a partial slug to matching page slugs",
   params: {
-    partial: { type: 'string', required: true },
+    partial: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     return ctx.engine.resolveSlugs(p.partial as string);
   },
-  scope: 'read',
+  scope: "read",
 };
 
 const get_chunks: Operation = {
-  name: 'get_chunks',
-  description: 'Get content chunks for a page',
+  name: "get_chunks",
+  description: "Get content chunks for a page",
   params: {
-    slug: { type: 'string', required: true },
+    slug: { type: "string", required: true },
   },
   handler: async (ctx, p) => {
     // v0.31.8 (D20): thread ctx.sourceId.
     const sourceOpts = ctx.sourceId ? { sourceId: ctx.sourceId } : {};
     return ctx.engine.getChunks(p.slug as string, sourceOpts);
   },
-  scope: 'read',
+  scope: "read",
 };
 
 // --- Ingest Log ---
 
 const log_ingest: Operation = {
-  name: 'log_ingest',
-  description: 'Log an ingestion event',
+  name: "log_ingest",
+  description: "Log an ingestion event",
   params: {
-    source_type: { type: 'string', required: true },
-    source_ref: { type: 'string', required: true },
-    pages_updated: { type: 'array', required: true, items: { type: 'string' } },
-    summary: { type: 'string', required: true },
+    source_type: { type: "string", required: true },
+    source_ref: { type: "string", required: true },
+    pages_updated: { type: "array", required: true, items: { type: "string" } },
+    summary: { type: "string", required: true },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'log_ingest' };
+    if (ctx.dryRun) return { dry_run: true, action: "log_ingest" };
     await ctx.engine.logIngest({
       source_type: p.source_type as string,
       source_ref: p.source_ref as string,
       pages_updated: p.pages_updated as string[],
       summary: p.summary as string,
     });
-    return { status: 'ok' };
+    return { status: "ok" };
   },
 };
 
 const get_ingest_log: Operation = {
-  name: 'get_ingest_log',
-  description: 'Get recent ingestion log entries',
+  name: "get_ingest_log",
+  description: "Get recent ingestion log entries",
   params: {
-    limit: { type: 'number', description: 'Max entries (default 20)' },
+    limit: { type: "number", description: "Max entries (default 20)" },
   },
   handler: async (ctx, p) => {
-    return ctx.engine.getIngestLog({ limit: clampSearchLimit(p.limit as number | undefined, 20, 50) });
+    return ctx.engine.getIngestLog({
+      limit: clampSearchLimit(p.limit as number | undefined, 20, 50),
+    });
   },
-  scope: 'read',
+  scope: "read",
 };
 
 // --- File Operations ---
@@ -2702,12 +3016,12 @@ const get_ingest_log: Operation = {
 const FILE_LIST_LIMIT = 100;
 
 const file_list: Operation = {
-  name: 'file_list',
-  description: 'List stored files',
+  name: "file_list",
+  description: "List stored files",
   params: {
-    slug: { type: 'string', description: 'Filter by page slug' },
+    slug: { type: "string", description: "Filter by page slug" },
   },
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (_ctx, p) => {
     const sql = db.getConnection();
@@ -2720,21 +3034,21 @@ const file_list: Operation = {
 };
 
 const file_upload: Operation = {
-  name: 'file_upload',
-  description: 'Upload a file to storage',
+  name: "file_upload",
+  description: "Upload a file to storage",
   params: {
-    path: { type: 'string', required: true, description: 'Local file path' },
-    page_slug: { type: 'string', description: 'Associate with page' },
+    path: { type: "string", required: true, description: "Local file path" },
+    page_slug: { type: "string", description: "Associate with page" },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'file_upload', path: p.path };
+    if (ctx.dryRun) return { dry_run: true, action: "file_upload", path: p.path };
 
-    const { readFileSync, statSync } = await import('fs');
-    const { basename, extname } = await import('path');
-    const { createHash } = await import('crypto');
+    const { readFileSync, statSync } = await import("fs");
+    const { basename, extname } = await import("path");
+    const { createHash } = await import("crypto");
 
     const filePath = p.path as string;
     const pageSlug = (p.page_slug as string) || null;
@@ -2751,40 +3065,54 @@ const file_upload: Operation = {
 
     const stat = statSync(filePath);
     const content = readFileSync(filePath);
-    const hash = createHash('sha256').update(content).digest('hex');
-    const storagePath = pageSlug ? `${pageSlug}/${filename}` : `unsorted/${hash.slice(0, 8)}-${filename}`;
+    const hash = createHash("sha256").update(content).digest("hex");
+    const storagePath = pageSlug
+      ? `${pageSlug}/${filename}`
+      : `unsorted/${hash.slice(0, 8)}-${filename}`;
 
     const MIME_TYPES: Record<string, string> = {
-      '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-      '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
-      '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.mp3': 'audio/mpeg',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.eml': 'message/rfc822', '.csv': 'text/csv', '.tsv': 'text/tab-separated-values',
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".svg": "image/svg+xml",
+      ".pdf": "application/pdf",
+      ".mp4": "video/mp4",
+      ".mp3": "audio/mpeg",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".eml": "message/rfc822",
+      ".csv": "text/csv",
+      ".tsv": "text/tab-separated-values",
     };
     const mimeType = MIME_TYPES[extname(filePath).toLowerCase()] || null;
 
     const sql = db.getConnection();
-    const existing = await sql`SELECT id FROM files WHERE content_hash = ${hash} AND storage_path = ${storagePath}`;
+    const existing =
+      await sql`SELECT id FROM files WHERE content_hash = ${hash} AND storage_path = ${storagePath}`;
     if (existing.length > 0) {
-      return { status: 'already_exists', storage_path: storagePath };
+      return { status: "already_exists", storage_path: storagePath };
     }
 
     // Upload to storage backend if configured
     if (ctx.config.storage) {
-      const { createStorage } = await import('./storage.ts');
+      const { createStorage } = await import("./storage.ts");
       const storage = await createStorage(ctx.config.storage as any);
       try {
         await storage.upload(storagePath, content, mimeType || undefined);
       } catch (uploadErr) {
-        throw new OperationError('storage_error', `Upload failed: ${uploadErr instanceof Error ? uploadErr.message : String(uploadErr)}`);
+        throw new OperationError(
+          "storage_error",
+          `Upload failed: ${uploadErr instanceof Error ? uploadErr.message : String(uploadErr)}`
+        );
       }
     }
 
     try {
       await sql`
         INSERT INTO files (page_slug, filename, storage_path, mime_type, size_bytes, content_hash, metadata)
-        VALUES (${pageSlug}, ${filename}, ${storagePath}, ${mimeType}, ${stat.size}, ${hash}, ${'{}'}::jsonb)
+        VALUES (${pageSlug}, ${filename}, ${storagePath}, ${mimeType}, ${stat.size}, ${hash}, ${"{}"}::jsonb)
         ON CONFLICT (storage_path) DO UPDATE SET
           content_hash = EXCLUDED.content_hash,
           size_bytes = EXCLUDED.size_bytes,
@@ -2794,31 +3122,34 @@ const file_upload: Operation = {
       // Rollback: clean up storage if DB write failed
       if (ctx.config.storage) {
         try {
-          const { createStorage } = await import('./storage.ts');
+          const { createStorage } = await import("./storage.ts");
           const storage = await createStorage(ctx.config.storage as any);
           await storage.delete(storagePath);
-        } catch { /* best effort cleanup */ }
+        } catch {
+          /* best effort cleanup */
+        }
       }
       throw dbErr;
     }
 
-    return { status: 'uploaded', storage_path: storagePath, size_bytes: stat.size };
+    return { status: "uploaded", storage_path: storagePath, size_bytes: stat.size };
   },
 };
 
 const file_url: Operation = {
-  name: 'file_url',
-  description: 'Get a URL for a stored file',
+  name: "file_url",
+  description: "Get a URL for a stored file",
   params: {
-    storage_path: { type: 'string', required: true },
+    storage_path: { type: "string", required: true },
   },
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
     const sql = db.getConnection();
-    const rows = await sql`SELECT storage_path, mime_type, size_bytes FROM files WHERE storage_path = ${p.storage_path as string}`;
+    const rows =
+      await sql`SELECT storage_path, mime_type, size_bytes FROM files WHERE storage_path = ${p.storage_path as string}`;
     if (rows.length === 0) {
-      throw new OperationError('storage_error', `File not found: ${p.storage_path}`);
+      throw new OperationError("storage_error", `File not found: ${p.storage_path}`);
     }
     const storagePath = rows[0].storage_path as string;
 
@@ -2826,12 +3157,15 @@ const file_url: Operation = {
     // Falls back to a local pseudo-URL when no cloud storage is configured.
     if (ctx.config.storage) {
       try {
-        const { createStorage } = await import('./storage.ts');
+        const { createStorage } = await import("./storage.ts");
         const storage = await createStorage(ctx.config.storage as any);
         const url = await storage.getUrl(storagePath);
         return { storage_path: storagePath, url };
       } catch (err) {
-        throw new OperationError('storage_error', `Failed to generate URL: ${err instanceof Error ? err.message : String(err)}`);
+        throw new OperationError(
+          "storage_error",
+          `Failed to generate URL: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
 
@@ -2842,42 +3176,55 @@ const file_url: Operation = {
 // --- Jobs (Minions) ---
 
 const submit_job: Operation = {
-  name: 'submit_job',
-  description: 'Submit a background job to the Minions queue. Built-in types: sync, embed, lint, import, extract, backlinks, autopilot-cycle. The `shell` type is CLI-only and rejected over MCP.',
+  name: "submit_job",
+  description:
+    "Submit a background job to the Minions queue. Built-in types: sync, embed, lint, import, extract, backlinks, autopilot-cycle. The `shell` type is CLI-only and rejected over MCP.",
   params: {
-    name: { type: 'string', required: true, description: 'Job type (sync, embed, lint, import, extract, backlinks, autopilot-cycle; shell is CLI-only)' },
-    data: { type: 'object', description: 'Job payload (JSON)' },
-    queue: { type: 'string', description: 'Queue name (default: "default")' },
-    priority: { type: 'number', description: 'Priority (0 = highest, default: 0)' },
-    max_attempts: { type: 'number', description: 'Max retry attempts (default: 3)' },
-    delay: { type: 'number', description: 'Delay in ms before eligible' },
-    timeout_ms: { type: 'number', description: 'Per-job wall-clock timeout in ms; aborted job goes to dead' },
+    name: {
+      type: "string",
+      required: true,
+      description:
+        "Job type (sync, embed, lint, import, extract, backlinks, autopilot-cycle; shell is CLI-only)",
+    },
+    data: { type: "object", description: "Job payload (JSON)" },
+    queue: { type: "string", description: 'Queue name (default: "default")' },
+    priority: { type: "number", description: "Priority (0 = highest, default: 0)" },
+    max_attempts: { type: "number", description: "Max retry attempts (default: 3)" },
+    delay: { type: "number", description: "Delay in ms before eligible" },
+    timeout_ms: {
+      type: "number",
+      description: "Per-job wall-clock timeout in ms; aborted job goes to dead",
+    },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const name = typeof p.name === 'string' ? p.name.trim() : '';
-    if (ctx.dryRun) return { dry_run: true, action: 'submit_job', name };
+    const name = typeof p.name === "string" ? p.name.trim() : "";
+    if (ctx.dryRun) return { dry_run: true, action: "submit_job", name };
 
     // Submit-side MCP guard: reject protected job names from untrusted callers
     // BEFORE we touch the DB. This is the first of the two security layers
     // (the second is MinionQueue.add's check). Independent of the worker-side
     // GBRAIN_ALLOW_SHELL_JOBS env flag — even if that flag is on, MCP callers
     // cannot submit protected-type jobs.
-    const { isProtectedJobName } = await import('./minions/protected-names.ts');
+    const { isProtectedJobName } = await import("./minions/protected-names.ts");
     // F7b fail-closed: anything that is not strictly false (i.e., remote=true OR
     // the field somehow leaks in undefined despite the required type) rejects
     // protected job submissions. Closes the HTTP MCP shell-job RCE that surfaced
     // when the HTTP transport's OperationContext literal forgot to set remote.
     if (ctx.remote !== false && isProtectedJobName(name)) {
-      throw new OperationError('permission_denied', `'${name}' jobs cannot be submitted over MCP (CLI-only for security)`);
+      throw new OperationError(
+        "permission_denied",
+        `'${name}' jobs cannot be submitted over MCP (CLI-only for security)`
+      );
     }
 
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     // Trusted flag fires ONLY for an explicit local CLI submission of a protected
     // name. Strict `=== false` so an untyped/cast context can't escalate.
-    const trusted = ctx.remote === false && isProtectedJobName(name) ? { allowProtectedSubmit: true } : undefined;
+    const trusted =
+      ctx.remote === false && isProtectedJobName(name) ? { allowProtectedSubmit: true } : undefined;
 
     const jobData = (p.data as Record<string, unknown>) || {};
 
@@ -2888,44 +3235,54 @@ const submit_job: Operation = {
     // protected-name allowlist), so remote MCP callers never reach it — but
     // it stays here as defense-in-depth in case a future code path widens
     // the trust gate above.
-    if (name === 'shell' && trusted) {
-      const { validateShellJobParams } = await import('./minions/handlers/shell-validate.ts');
+    if (name === "shell" && trusted) {
+      const { validateShellJobParams } = await import("./minions/handlers/shell-validate.ts");
       validateShellJobParams(jobData);
     }
 
-    const job = await queue.add(name, jobData, {
-      queue: (p.queue as string) || 'default',
-      priority: (p.priority as number) || 0,
-      max_attempts: (p.max_attempts as number) || 3,
-      delay: (p.delay as number) || undefined,
-      timeout_ms: (p.timeout_ms as number) || undefined,
-    }, trusted);
+    const job = await queue.add(
+      name,
+      jobData,
+      {
+        queue: (p.queue as string) || "default",
+        priority: (p.priority as number) || 0,
+        max_attempts: (p.max_attempts as number) || 3,
+        delay: (p.delay as number) || undefined,
+        timeout_ms: (p.timeout_ms as number) || undefined,
+      },
+      trusted
+    );
 
     // v0.35.8.0: submit_job audit-log parity with the CLI path (codex F-CDX-4).
     // Pre-v0.35.8.0 the op handler bypassed the shell-audit JSONL writer
     // entirely. Lift the call here so both submit surfaces produce one
     // operational-trace line per shell submission. Best-effort; audit
     // failures never block submission.
-    if (name === 'shell' && trusted) {
+    if (name === "shell" && trusted) {
       try {
-        const { logShellSubmission } = await import('./minions/handlers/shell-audit.ts');
+        const { logShellSubmission } = await import("./minions/handlers/shell-audit.ts");
         const inheritNames = Array.isArray(jobData.inherit)
-          ? (jobData.inherit as unknown[]).filter((s): s is string => typeof s === 'string')
+          ? (jobData.inherit as unknown[]).filter((s): s is string => typeof s === "string")
           : undefined;
         logShellSubmission({
-          caller: 'mcp',
+          caller: "mcp",
           // Gated on `trusted` (which requires ctx.remote === false), so
           // we know this path is a local trusted submitter — log it that way.
           remote: false,
           job_id: job.id,
-          cwd: typeof jobData.cwd === 'string' ? jobData.cwd : '',
-          cmd_display: typeof jobData.cmd === 'string' ? (jobData.cmd as string).slice(0, 80) : undefined,
+          cwd: typeof jobData.cwd === "string" ? jobData.cwd : "",
+          cmd_display:
+            typeof jobData.cmd === "string" ? (jobData.cmd as string).slice(0, 80) : undefined,
           argv_display: Array.isArray(jobData.argv)
-            ? (jobData.argv as unknown[]).filter((a): a is string => typeof a === 'string').map((a) => a.slice(0, 80))
+            ? (jobData.argv as unknown[])
+                .filter((a): a is string => typeof a === "string")
+                .map((a) => a.slice(0, 80))
             : undefined,
           inherit: inheritNames && inheritNames.length > 0 ? inheritNames : undefined,
         });
-      } catch { /* audit failures never block submission */ }
+      } catch {
+        /* audit failures never block submission */
+      }
     }
 
     return job;
@@ -2941,34 +3298,52 @@ const submit_job: Operation = {
 //   3. The dispatcher is the subagent handler with the gateway-native loop
 //      (agent.use_gateway_loop is auto-on for submit_agent jobs).
 const submit_agent: Operation = {
-  name: 'submit_agent',
-  description: 'Submit an LLM agent job that the worker dispatches via the gateway-native tool loop. Requires the `agent` OAuth scope. Tools, source, slug prefixes, max concurrency, and daily budget are bound at OAuth client registration time.',
+  name: "submit_agent",
+  description:
+    "Submit an LLM agent job that the worker dispatches via the gateway-native tool loop. Requires the `agent` OAuth scope. Tools, source, slug prefixes, max concurrency, and daily budget are bound at OAuth client registration time.",
   params: {
-    prompt: { type: 'string', required: true, description: 'User prompt for the agent' },
-    model: { type: 'string', description: 'provider:model string (defaults to models.tier.subagent)' },
-    allowed_tools: { type: 'array', description: 'Subset of bound_tools the agent may invoke', items: { type: 'string' } },
-    allowed_slug_prefixes: { type: 'array', description: 'Subset of bound_slug_prefixes for put_page writes', items: { type: 'string' } },
-    max_turns: { type: 'number', description: 'Max LLM turns (default 20, hard cap 100)' },
-    queue: { type: 'string', description: 'Queue name (default "default")' },
+    prompt: { type: "string", required: true, description: "User prompt for the agent" },
+    model: {
+      type: "string",
+      description: "provider:model string (defaults to models.tier.subagent)",
+    },
+    allowed_tools: {
+      type: "array",
+      description: "Subset of bound_tools the agent may invoke",
+      items: { type: "string" },
+    },
+    allowed_slug_prefixes: {
+      type: "array",
+      description: "Subset of bound_slug_prefixes for put_page writes",
+      items: { type: "string" },
+    },
+    max_turns: { type: "number", description: "Max LLM turns (default 20, hard cap 100)" },
+    queue: { type: "string", description: 'Queue name (default "default")' },
   },
   mutating: true,
-  scope: 'agent' as any,
+  scope: "agent" as any,
   handler: async (ctx, p) => {
     // Remote-callable but only when the OAuth client has scope=agent AND
     // a binding row. Local CLI callers (ctx.remote === false) skip the
     // binding check — `gbrain agent run` already runs through subagent.ts
     // directly without going through this op.
     if (ctx.remote === false) {
-      throw new OperationError('invalid_request', 'submit_agent over the local CLI: use `gbrain agent run` instead.');
+      throw new OperationError(
+        "invalid_request",
+        "submit_agent over the local CLI: use `gbrain agent run` instead."
+      );
     }
 
     const clientId = (ctx as { auth?: { clientId?: string } }).auth?.clientId;
-    if (!clientId || typeof clientId !== 'string') {
-      throw new OperationError('permission_denied', 'submit_agent requires an OAuth client with the `agent` scope.');
+    if (!clientId || typeof clientId !== "string") {
+      throw new OperationError(
+        "permission_denied",
+        "submit_agent requires an OAuth client with the `agent` scope."
+      );
     }
 
     // Load the binding row.
-    const { sqlQueryForEngine } = await import('./sql-query.ts');
+    const { sqlQueryForEngine } = await import("./sql-query.ts");
     const sql = sqlQueryForEngine(ctx.engine);
     let bindingRows: Array<Record<string, unknown>>;
     try {
@@ -2980,12 +3355,15 @@ const submit_agent: Operation = {
       `;
     } catch (err) {
       throw new OperationError(
-        'internal',
-        `submit_agent: could not load OAuth client binding: ${err instanceof Error ? err.message : String(err)}`,
+        "internal",
+        `submit_agent: could not load OAuth client binding: ${err instanceof Error ? err.message : String(err)}`
       );
     }
     if (bindingRows.length === 0) {
-      throw new OperationError('permission_denied', `submit_agent: client_id ${clientId} not found.`);
+      throw new OperationError(
+        "permission_denied",
+        `submit_agent: client_id ${clientId} not found.`
+      );
     }
     const binding = bindingRows[0];
     const boundTools = (binding.bound_tools as string[] | null) ?? null;
@@ -2996,8 +3374,8 @@ const submit_agent: Operation = {
 
     if (boundTools === null) {
       throw new OperationError(
-        'permission_denied',
-        `submit_agent: client ${clientId} has the agent scope but no bindings. Re-register with --bound-tools, --bound-source, --bound-slug-prefixes, --bound-max-concurrent, --budget-usd-per-day.`,
+        "permission_denied",
+        `submit_agent: client ${clientId} has the agent scope but no bindings. Re-register with --bound-tools, --bound-source, --bound-slug-prefixes, --bound-max-concurrent, --budget-usd-per-day.`
       );
     }
 
@@ -3006,18 +3384,19 @@ const submit_agent: Operation = {
     for (const t of requestedTools) {
       if (!boundTools.includes(t)) {
         throw new OperationError(
-          'permission_denied',
-          `submit_agent: tool "${t}" is not in client ${clientId}'s bound_tools (${boundTools.join(', ')}).`,
+          "permission_denied",
+          `submit_agent: tool "${t}" is not in client ${clientId}'s bound_tools (${boundTools.join(", ")}).`
         );
       }
     }
-    const requestedSlugPrefixes = (p.allowed_slug_prefixes as string[] | undefined) ?? boundSlugPrefixes ?? [];
+    const requestedSlugPrefixes =
+      (p.allowed_slug_prefixes as string[] | undefined) ?? boundSlugPrefixes ?? [];
     if (boundSlugPrefixes !== null) {
       for (const sp of requestedSlugPrefixes) {
-        if (!boundSlugPrefixes.some(bp => sp.startsWith(bp) || bp === sp)) {
+        if (!boundSlugPrefixes.some((bp) => sp.startsWith(bp) || bp === sp)) {
           throw new OperationError(
-            'permission_denied',
-            `submit_agent: slug_prefix "${sp}" is not under any of client ${clientId}'s bound_slug_prefixes.`,
+            "permission_denied",
+            `submit_agent: slug_prefix "${sp}" is not under any of client ${clientId}'s bound_slug_prefixes.`
           );
         }
       }
@@ -3034,8 +3413,8 @@ const submit_agent: Operation = {
     const inflightCount = Number((inflight[0]?.n as number | string | undefined) ?? 0);
     if (inflightCount >= boundMaxConcurrent) {
       throw new OperationError(
-        'rate_limited',
-        `submit_agent: client ${clientId} at concurrency cap (${inflightCount}/${boundMaxConcurrent}).`,
+        "rate_limited",
+        `submit_agent: client ${clientId} at concurrency cap (${inflightCount}/${boundMaxConcurrent}).`
       );
     }
 
@@ -3043,7 +3422,7 @@ const submit_agent: Operation = {
     if (ctx.dryRun) {
       return {
         dry_run: true,
-        action: 'submit_agent',
+        action: "submit_agent",
         client_id: clientId,
         bound_tools: boundTools,
         bound_source: boundSource,
@@ -3054,7 +3433,7 @@ const submit_agent: Operation = {
     // Submit via MinionQueue with allowProtectedSubmit (the agent op is
     // remote-callable but the underlying job name 'subagent' is protected;
     // the OAuth scope check above stands in for the protected-name guard).
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
 
     const jobData: Record<string, unknown> = {
@@ -3064,66 +3443,72 @@ const submit_agent: Operation = {
       allowed_slug_prefixes: requestedSlugPrefixes,
       __owner_client_id: clientId,
     };
-    if (typeof p.model === 'string') jobData.model = p.model;
+    if (typeof p.model === "string") jobData.model = p.model;
     if (boundSource) jobData.source_id = boundSource;
     const job = await queue.add(
-      'subagent',
+      "subagent",
       jobData,
-      { queue: (p.queue as string) || 'default' },
-      { allowProtectedSubmit: true },
+      { queue: (p.queue as string) || "default" },
+      { allowProtectedSubmit: true }
     );
 
     // Audit trail (D4) — best-effort JSONL.
     try {
-      const { logAgentSubmission } = await import('./minions/agent-audit.ts');
+      const { logAgentSubmission } = await import("./minions/agent-audit.ts");
       const budgetCapCents = budgetCapText ? Math.round(parseFloat(budgetCapText) * 100) : null;
-      const promptText = typeof p.prompt === 'string' ? p.prompt : '';
+      const promptText = typeof p.prompt === "string" ? p.prompt : "";
       logAgentSubmission({
         client_id: clientId,
         job_id: job.id,
-        model: typeof p.model === 'string' ? p.model : '<default>',
+        model: typeof p.model === "string" ? p.model : "<default>",
         bound_tools: requestedTools,
         bound_source: boundSource,
         slug_prefixes: requestedSlugPrefixes,
         max_concurrent: boundMaxConcurrent,
         budget_remaining_cents: budgetCapCents,
-        prompt_byte_count: Buffer.byteLength(promptText, 'utf8'),
-        outcome: 'submitted',
+        prompt_byte_count: Buffer.byteLength(promptText, "utf8"),
+        outcome: "submitted",
       });
-    } catch { /* never block submission */ }
+    } catch {
+      /* never block submission */
+    }
 
-    return { id: job.id, name: 'subagent', client_id: clientId };
+    return { id: job.id, name: "subagent", client_id: clientId };
   },
 };
 
 const get_job: Operation = {
-  name: 'get_job',
-  description: 'Get job status and details by ID',
+  name: "get_job",
+  description: "Get job status and details by ID",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const job = await queue.getJob(p.id as number);
-    if (!job) throw new OperationError('invalid_params', `Job not found: ${p.id}`);
+    if (!job) throw new OperationError("invalid_params", `Job not found: ${p.id}`);
     return job;
   },
 };
 
 const list_jobs: Operation = {
-  name: 'list_jobs',
-  description: 'List jobs with optional filters',
+  name: "list_jobs",
+  description: "List jobs with optional filters",
   params: {
-    status: { type: 'string', description: 'Filter by status (waiting, active, completed, failed, delayed, dead, cancelled)' },
-    queue: { type: 'string', description: 'Filter by queue name' },
-    name: { type: 'string', description: 'Filter by job type' },
-    limit: { type: 'number', description: 'Max results (default: 50)' },
+    status: {
+      type: "string",
+      description:
+        "Filter by status (waiting, active, completed, failed, delayed, dead, cancelled)",
+    },
+    queue: { type: "string", description: "Filter by queue name" },
+    name: { type: "string", description: "Filter by job type" },
+    limit: { type: "number", description: "Max results (default: 50)" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     return queue.getJobs({
       status: p.status as string | undefined,
@@ -3135,122 +3520,142 @@ const list_jobs: Operation = {
 };
 
 const cancel_job: Operation = {
-  name: 'cancel_job',
-  description: 'Cancel a waiting, active, or delayed job',
+  name: "cancel_job",
+  description: "Cancel a waiting, active, or delayed job",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'cancel_job', id: p.id };
-    const { MinionQueue } = await import('./minions/queue.ts');
+    if (ctx.dryRun) return { dry_run: true, action: "cancel_job", id: p.id };
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const cancelled = await queue.cancelJob(p.id as number);
-    if (!cancelled) throw new OperationError('invalid_params', `Cannot cancel job ${p.id} (may already be in terminal status)`);
+    if (!cancelled)
+      throw new OperationError(
+        "invalid_params",
+        `Cannot cancel job ${p.id} (may already be in terminal status)`
+      );
     return cancelled;
   },
 };
 
 const retry_job: Operation = {
-  name: 'retry_job',
-  description: 'Re-queue a failed or dead job for retry',
+  name: "retry_job",
+  description: "Re-queue a failed or dead job for retry",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'retry_job', id: p.id };
-    const { MinionQueue } = await import('./minions/queue.ts');
+    if (ctx.dryRun) return { dry_run: true, action: "retry_job", id: p.id };
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const retried = await queue.retryJob(p.id as number);
-    if (!retried) throw new OperationError('invalid_params', `Cannot retry job ${p.id} (must be failed or dead)`);
+    if (!retried)
+      throw new OperationError(
+        "invalid_params",
+        `Cannot retry job ${p.id} (must be failed or dead)`
+      );
     return retried;
   },
 };
 
 const get_job_progress: Operation = {
-  name: 'get_job_progress',
-  description: 'Get structured progress for a running job',
+  name: "get_job_progress",
+  description: "Get structured progress for a running job",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const job = await queue.getJob(p.id as number);
-    if (!job) throw new OperationError('invalid_params', `Job not found: ${p.id}`);
+    if (!job) throw new OperationError("invalid_params", `Job not found: ${p.id}`);
     return { id: job.id, name: job.name, status: job.status, progress: job.progress };
   },
 };
 
 const pause_job: Operation = {
-  name: 'pause_job',
-  description: 'Pause a waiting, active, or delayed job',
+  name: "pause_job",
+  description: "Pause a waiting, active, or delayed job",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const job = await queue.pauseJob(p.id as number);
-    if (!job) throw new OperationError('invalid_params', `Job not found or not pausable: ${p.id}`);
+    if (!job) throw new OperationError("invalid_params", `Job not found or not pausable: ${p.id}`);
     return { id: job.id, status: job.status };
   },
 };
 
 const resume_job: Operation = {
-  name: 'resume_job',
-  description: 'Resume a paused job back to waiting',
+  name: "resume_job",
+  description: "Resume a paused job back to waiting",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID' },
+    id: { type: "number", required: true, description: "Job ID" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const { MinionQueue } = await import('./minions/queue.ts');
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
     const job = await queue.resumeJob(p.id as number);
-    if (!job) throw new OperationError('invalid_params', `Job not found or not paused: ${p.id}`);
+    if (!job) throw new OperationError("invalid_params", `Job not found or not paused: ${p.id}`);
     return { id: job.id, status: job.status };
   },
 };
 
 const replay_job: Operation = {
-  name: 'replay_job',
-  description: 'Replay a completed/failed/dead job, optionally with modified data',
+  name: "replay_job",
+  description: "Replay a completed/failed/dead job, optionally with modified data",
   params: {
-    id: { type: 'number', required: true, description: 'Source job ID to replay' },
-    data_overrides: { type: 'object', required: false, description: 'Data fields to override (merged with original)' },
+    id: { type: "number", required: true, description: "Source job ID to replay" },
+    data_overrides: {
+      type: "object",
+      required: false,
+      description: "Data fields to override (merged with original)",
+    },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'replay_job', id: p.id };
-    const { MinionQueue } = await import('./minions/queue.ts');
+    if (ctx.dryRun) return { dry_run: true, action: "replay_job", id: p.id };
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
-    const job = await queue.replayJob(p.id as number, p.data_overrides as Record<string, unknown> | undefined);
-    if (!job) throw new OperationError('invalid_params', `Job not found or not in terminal state: ${p.id}`);
+    const job = await queue.replayJob(
+      p.id as number,
+      p.data_overrides as Record<string, unknown> | undefined
+    );
+    if (!job)
+      throw new OperationError("invalid_params", `Job not found or not in terminal state: ${p.id}`);
     return { id: job.id, name: job.name, status: job.status, source_id: p.id };
   },
 };
 
 const send_job_message: Operation = {
-  name: 'send_job_message',
-  description: 'Send a sidechannel message to a running job\'s inbox',
+  name: "send_job_message",
+  description: "Send a sidechannel message to a running job's inbox",
   params: {
-    id: { type: 'number', required: true, description: 'Job ID to message' },
-    payload: { type: 'object', required: true, description: 'Message payload (arbitrary JSON)' },
-    sender: { type: 'string', required: false, description: 'Sender identity (default: admin)' },
+    id: { type: "number", required: true, description: "Job ID to message" },
+    payload: { type: "object", required: true, description: "Message payload (arbitrary JSON)" },
+    sender: { type: "string", required: false, description: "Sender identity (default: admin)" },
   },
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'send_job_message', id: p.id };
-    const { MinionQueue } = await import('./minions/queue.ts');
+    if (ctx.dryRun) return { dry_run: true, action: "send_job_message", id: p.id };
+    const { MinionQueue } = await import("./minions/queue.ts");
     const queue = new MinionQueue(ctx.engine);
-    const msg = await queue.sendMessage(p.id as number, p.payload, (p.sender as string) ?? 'admin');
-    if (!msg) throw new OperationError('invalid_params', `Job not found, not messageable, or sender unauthorized: ${p.id}`);
+    const msg = await queue.sendMessage(p.id as number, p.payload, (p.sender as string) ?? "admin");
+    if (!msg)
+      throw new OperationError(
+        "invalid_params",
+        `Job not found, not messageable, or sender unauthorized: ${p.id}`
+      );
     return { sent: true, message_id: msg.id, job_id: p.id };
   },
 };
@@ -3258,17 +3663,17 @@ const send_job_message: Operation = {
 // --- Orphans ---
 
 const find_orphans: Operation = {
-  name: 'find_orphans',
-  description: 'Find pages with no inbound wikilinks. Essential for content enrichment cycles.',
+  name: "find_orphans",
+  description: "Find pages with no inbound wikilinks. Essential for content enrichment cycles.",
   params: {
     include_pseudo: {
-      type: 'boolean',
-      description: 'Include auto-generated and pseudo pages (default: false)',
+      type: "boolean",
+      description: "Include auto-generated and pseudo pages (default: false)",
     },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { findOrphans } = await import('../commands/orphans.ts');
+    const { findOrphans } = await import("../commands/orphans.ts");
     // v0.41.29.0 (Codex F8): scope by the caller's source (ctx.sourceId /
     // ctx.auth.allowedSources) via the canonical sourceScopeOpts ladder.
     // Pre-fix, find_orphans returned brain-wide orphans regardless of a
@@ -3280,31 +3685,31 @@ const find_orphans: Operation = {
       ...sourceScopeOpts(ctx),
     });
   },
-  cliHints: { name: 'orphans', hidden: true },
+  cliHints: { name: "orphans", hidden: true },
 };
 
 // --- v0.36.1.0 (T7): calibration profile read op ---
 
 const get_calibration_profile: Operation = {
-  name: 'get_calibration_profile',
+  name: "get_calibration_profile",
   description:
-    'Read the active calibration profile for a holder. Returns the latest row from calibration_profiles ' +
-    '(per-source, per-holder) including Brier score, accuracy, pattern statements, and active bias tags. ' +
-    'Source-scoped via sourceScopeOpts — federated_read scopes see the union of allowed sources, ' +
-    'scalar source-bound clients see only their source. Returns null when no profile exists yet ' +
-    '(cold-brain branch: builds after 5+ resolved takes + a calibration_profile phase run).',
-  scope: 'read',
+    "Read the active calibration profile for a holder. Returns the latest row from calibration_profiles " +
+    "(per-source, per-holder) including Brier score, accuracy, pattern statements, and active bias tags. " +
+    "Source-scoped via sourceScopeOpts — federated_read scopes see the union of allowed sources, " +
+    "scalar source-bound clients see only their source. Returns null when no profile exists yet " +
+    "(cold-brain branch: builds after 5+ resolved takes + a calibration_profile phase run).",
+  scope: "read",
   params: {
     holder: {
-      type: 'string',
+      type: "string",
       description:
         "Holder slug, e.g. 'garry' or 'people/charlie-example'. Defaults to 'garry' when omitted.",
     },
   },
   handler: async (ctx, p) => {
-    const { getCalibrationProfileOp } = await import('../commands/calibration.ts');
+    const { getCalibrationProfileOp } = await import("../commands/calibration.ts");
     return getCalibrationProfileOp(ctx, {
-      ...(typeof p.holder === 'string' ? { holder: p.holder } : {}),
+      ...(typeof p.holder === "string" ? { holder: p.holder } : {}),
     });
   },
 };
@@ -3312,19 +3717,19 @@ const get_calibration_profile: Operation = {
 // --- v0.29: Salience + Anomaly Detection ---
 
 const get_recent_salience: Operation = {
-  name: 'get_recent_salience',
+  name: "get_recent_salience",
   description: GET_RECENT_SALIENCE_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   params: {
-    days: { type: 'number', description: 'Window in days. Default 14.' },
-    limit: { type: 'number', description: 'Max results (default 20, capped at 100).' },
+    days: { type: "number", description: "Window in days. Default 14." },
+    limit: { type: "number", description: "Max results (default 20, capped at 100)." },
     slugPrefix: {
-      type: 'string',
+      type: "string",
       description: "Optional slug-prefix filter, e.g. 'personal' or 'wiki/people'.",
     },
     recency_bias: {
-      type: 'string',
-      enum: ['flat', 'on'],
+      type: "string",
+      enum: ["flat", "on"],
       description:
         "v0.29.1: how to weight recency in the salience score.\n" +
         "  'flat' (DEFAULT) — v0.29.0 behavior. Every page gets 1/(1+days_old).\n" +
@@ -3338,69 +3743,72 @@ const get_recent_salience: Operation = {
     },
   },
   handler: async (ctx, p) => {
-    const recencyBias = p.recency_bias === 'on' ? 'on' : 'flat';
+    const recencyBias = p.recency_bias === "on" ? "on" : "flat";
     return ctx.engine.getRecentSalience({
-      days: typeof p.days === 'number' ? p.days : undefined,
-      limit: typeof p.limit === 'number' ? p.limit : undefined,
-      slugPrefix: typeof p.slugPrefix === 'string' ? p.slugPrefix : undefined,
+      days: typeof p.days === "number" ? p.days : undefined,
+      limit: typeof p.limit === "number" ? p.limit : undefined,
+      slugPrefix: typeof p.slugPrefix === "string" ? p.slugPrefix : undefined,
       recency_bias: recencyBias,
     });
   },
-  cliHints: { name: 'salience' },
+  cliHints: { name: "salience" },
 };
 
 const find_anomalies: Operation = {
-  name: 'find_anomalies',
+  name: "find_anomalies",
   description: FIND_ANOMALIES_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   params: {
     since: {
-      type: 'string',
-      description: 'ISO date YYYY-MM-DD. Default = today (UTC).',
+      type: "string",
+      description: "ISO date YYYY-MM-DD. Default = today (UTC).",
     },
     lookback_days: {
-      type: 'number',
-      description: 'Days of history for the baseline. Default 30.',
+      type: "number",
+      description: "Days of history for the baseline. Default 30.",
     },
     sigma: {
-      type: 'number',
-      description: 'Sigma threshold. Default 3.0.',
+      type: "number",
+      description: "Sigma threshold. Default 3.0.",
     },
   },
   handler: async (ctx, p) => {
     return ctx.engine.findAnomalies({
-      since: typeof p.since === 'string' ? p.since : undefined,
-      lookback_days: typeof p.lookback_days === 'number' ? p.lookback_days : undefined,
-      sigma: typeof p.sigma === 'number' ? p.sigma : undefined,
+      since: typeof p.since === "string" ? p.since : undefined,
+      lookback_days: typeof p.lookback_days === "number" ? p.lookback_days : undefined,
+      sigma: typeof p.sigma === "number" ? p.sigma : undefined,
     });
   },
-  cliHints: { name: 'anomalies' },
+  cliHints: { name: "anomalies" },
 };
 
 // v0.33: expertise + relationship-proximity routing. CLI: gbrain whoknows.
 const find_experts: Operation = {
-  name: 'find_experts',
+  name: "find_experts",
   description: FIND_EXPERTS_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   params: {
     topic: {
-      type: 'string',
-      description: 'The topic to route. Free-form natural language.',
+      type: "string",
+      description: "The topic to route. Free-form natural language.",
     },
     limit: {
-      type: 'number',
-      description: 'Max results (default 5).',
+      type: "number",
+      description: "Max results (default 5).",
     },
     explain: {
-      type: 'boolean',
-      description: 'Include factor breakdown per result (expertise, recency, salience).',
+      type: "boolean",
+      description: "Include factor breakdown per result (expertise, recency, salience).",
     },
   },
   handler: async (ctx, p) => {
-    const { findExperts } = await import('../commands/whoknows.ts');
-    const topic = typeof p.topic === 'string' ? p.topic : '';
+    const { findExperts } = await import("../commands/whoknows.ts");
+    const topic = typeof p.topic === "string" ? p.topic : "";
     if (!topic.trim()) {
-      throw new OperationError('invalid_params', '`topic` is required and must be a non-empty string.');
+      throw new OperationError(
+        "invalid_params",
+        "`topic` is required and must be a non-empty string."
+      );
     }
     // v0.34.1 (#861, D3 — 5th leak surface): find_experts (whoknows) was
     // authored against v0.33 after PR #861 was drafted, so the source-scope
@@ -3410,67 +3818,73 @@ const find_experts: Operation = {
     // v0.40.6.0 T1.5 wiring (D4): consult the active pack for expert
     // types; pack-load failure → empty filter (NOT hardcoded defaults
     // per the silent-violation bug class Finding 1.3 closed).
-    const { loadActivePackBestEffort, expertTypesFromPack } = await import('./schema-pack/index.ts');
+    const { loadActivePackBestEffort, expertTypesFromPack } =
+      await import("./schema-pack/index.ts");
     const pack = await loadActivePackBestEffort(ctx);
     const types = pack ? expertTypesFromPack(pack.manifest) : [];
     return findExperts(ctx.engine, {
       topic,
-      limit: typeof p.limit === 'number' ? p.limit : undefined,
+      limit: typeof p.limit === "number" ? p.limit : undefined,
       explain: p.explain === true,
       types: types as never,
       ...sourceScopeOpts(ctx),
     });
   },
-  cliHints: { name: 'whoknows', positional: ['topic'] },
+  cliHints: { name: "whoknows", positional: ["topic"] },
 };
 
 // v0.32.6: contradiction probe MCP surface (M3)
 const find_contradictions: Operation = {
-  name: 'find_contradictions',
+  name: "find_contradictions",
   description: FIND_CONTRADICTIONS_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   // Reads eval_contradictions_runs.report_json for the latest run, then
   // filters in-memory by slug and severity. No new probe is triggered;
   // the agent surfaces what's already on disk.
   params: {
     slug: {
-      type: 'string',
-      description: 'Optional slug filter; matches either side of a pair (substring match on slug).',
+      type: "string",
+      description: "Optional slug filter; matches either side of a pair (substring match on slug).",
     },
     severity: {
-      type: 'string',
-      enum: ['low', 'medium', 'high'],
-      description: 'Optional severity filter.',
+      type: "string",
+      enum: ["low", "medium", "high"],
+      description: "Optional severity filter.",
     },
     limit: {
-      type: 'number',
-      description: 'Max findings to return. Default 20.',
+      type: "number",
+      description: "Max findings to return. Default 20.",
     },
   },
   handler: async (ctx, p) => {
-    const limit = typeof p.limit === 'number' && p.limit > 0 ? Math.min(p.limit, 100) : 20;
-    const slugFilter = typeof p.slug === 'string' ? p.slug.toLowerCase() : null;
-    const sevFilter = (p.severity === 'low' || p.severity === 'medium' || p.severity === 'high')
-      ? p.severity
-      : null;
+    const limit = typeof p.limit === "number" && p.limit > 0 ? Math.min(p.limit, 100) : 20;
+    const slugFilter = typeof p.slug === "string" ? p.slug.toLowerCase() : null;
+    const sevFilter =
+      p.severity === "low" || p.severity === "medium" || p.severity === "high" ? p.severity : null;
     const rows = await ctx.engine.loadContradictionsTrend(30);
     if (rows.length === 0) {
-      return { contradictions: [], note: 'No probe runs in the last 30 days; run `gbrain eval suspected-contradictions` first.' };
+      return {
+        contradictions: [],
+        note: "No probe runs in the last 30 days; run `gbrain eval suspected-contradictions` first.",
+      };
     }
     const latest = rows[0];
     const report = latest.report_json as Record<string, unknown> | null;
-    const perQuery = (report?.per_query as Array<{
-      contradictions: Array<{
-        kind: string;
-        severity: 'low' | 'medium' | 'high';
-        axis: string;
-        confidence: number;
-        a: { slug: string; chunk_id: number | null; take_id: number | null };
-        b: { slug: string; chunk_id: number | null; take_id: number | null };
-        resolution_kind: string;
-        resolution_command: string;
-      }>;
-    }> | undefined) ?? [];
+    const perQuery =
+      (report?.per_query as
+        | Array<{
+            contradictions: Array<{
+              kind: string;
+              severity: "low" | "medium" | "high";
+              axis: string;
+              confidence: number;
+              a: { slug: string; chunk_id: number | null; take_id: number | null };
+              b: { slug: string; chunk_id: number | null; take_id: number | null };
+              resolution_kind: string;
+              resolution_command: string;
+            }>;
+          }>
+        | undefined) ?? [];
     const findings = perQuery.flatMap((q) => q.contradictions);
     const filtered = findings.filter((f) => {
       if (sevFilter && f.severity !== sevFilter) return false;
@@ -3488,55 +3902,59 @@ const find_contradictions: Operation = {
       total_in_run: findings.length,
     };
   },
-  cliHints: { name: 'find-contradictions' },
+  cliHints: { name: "find-contradictions" },
 };
 
 const find_trajectory: Operation = {
-  name: 'find_trajectory',
+  name: "find_trajectory",
   description: FIND_TRAJECTORY_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   // localOnly intentionally NOT set — federated OAuth clients should be
   // able to query trajectories for entities in their scope. Visibility
   // filtering (D-CDX-1) inside the engine restricts remote callers to
   // visibility='world' facts.
   params: {
     entity_slug: {
-      type: 'string',
-      description: 'Required. Entity slug to chart (e.g. "companies/acme-example", "people/alice-example").',
+      type: "string",
+      description:
+        'Required. Entity slug to chart (e.g. "companies/acme-example", "people/alice-example").',
     },
     metric: {
-      type: 'string',
-      description: 'Optional. Filter to a single canonical metric (e.g. "mrr", "arr", "team_size"). When omitted, all metrics return.',
+      type: "string",
+      description:
+        'Optional. Filter to a single canonical metric (e.g. "mrr", "arr", "team_size"). When omitted, all metrics return.',
     },
     kind: {
-      type: 'string',
-      enum: ['metric', 'event', 'all'],
-      description: 'Optional. Filter by row shape: "metric" (typed-claim rows only), "event" (event_type rows only), or "all" (default). v0.40.2.0+.',
+      type: "string",
+      enum: ["metric", "event", "all"],
+      description:
+        'Optional. Filter by row shape: "metric" (typed-claim rows only), "event" (event_type rows only), or "all" (default). v0.40.2.0+.',
     },
     since: {
-      type: 'string',
-      description: 'Optional lower bound on valid_from (YYYY-MM-DD or ISO).',
+      type: "string",
+      description: "Optional lower bound on valid_from (YYYY-MM-DD or ISO).",
     },
     until: {
-      type: 'string',
-      description: 'Optional upper bound on valid_from (YYYY-MM-DD or ISO).',
+      type: "string",
+      description: "Optional upper bound on valid_from (YYYY-MM-DD or ISO).",
     },
     limit: {
-      type: 'number',
-      description: 'Max points returned. Default 100, max 500.',
+      type: "number",
+      description: "Max points returned. Default 100, max 500.",
     },
   },
   handler: async (ctx, p) => {
-    if (typeof p.entity_slug !== 'string' || !p.entity_slug.trim()) {
-      throw new Error('find_trajectory requires entity_slug (string)');
+    if (typeof p.entity_slug !== "string" || !p.entity_slug.trim()) {
+      throw new Error("find_trajectory requires entity_slug (string)");
     }
-    const metric = typeof p.metric === 'string' ? p.metric : undefined;
-    const kind = (p.kind === 'metric' || p.kind === 'event' || p.kind === 'all')
-      ? (p.kind as 'metric' | 'event' | 'all')
-      : undefined;
-    const since  = typeof p.since  === 'string' ? p.since  : undefined;
-    const until  = typeof p.until  === 'string' ? p.until  : undefined;
-    const limit  = typeof p.limit  === 'number' ? p.limit  : undefined;
+    const metric = typeof p.metric === "string" ? p.metric : undefined;
+    const kind =
+      p.kind === "metric" || p.kind === "event" || p.kind === "all"
+        ? (p.kind as "metric" | "event" | "all")
+        : undefined;
+    const since = typeof p.since === "string" ? p.since : undefined;
+    const until = typeof p.until === "string" ? p.until : undefined;
+    const limit = typeof p.limit === "number" ? p.limit : undefined;
     const scope = sourceScopeOpts(ctx);
 
     // D-CDX-1: thread ctx.remote into the engine so visibility filtering
@@ -3552,7 +3970,7 @@ const find_trajectory: Operation = {
       limit,
     });
 
-    const { computeTrajectoryStats, TRAJECTORY_SCHEMA_VERSION } = await import('./trajectory.ts');
+    const { computeTrajectoryStats, TRAJECTORY_SCHEMA_VERSION } = await import("./trajectory.ts");
     const { regressions, drift_score } = computeTrajectoryStats(points);
 
     // Engine result includes raw embeddings (Float32Array); strip those
@@ -3560,7 +3978,7 @@ const find_trajectory: Operation = {
     // never need at this layer.
     // v0.40.2.0: event_type surfaces on the wire so remote callers (thin-
     // client think, founder-scorecard) see the event-shaped rows.
-    const wirePoints = points.map(pt => ({
+    const wirePoints = points.map((pt) => ({
       fact_id: pt.fact_id,
       valid_from: pt.valid_from.toISOString().slice(0, 10),
       metric: pt.metric,
@@ -3580,24 +3998,25 @@ const find_trajectory: Operation = {
       schema_version: TRAJECTORY_SCHEMA_VERSION,
     };
   },
-  cliHints: { name: 'find-trajectory' },
+  cliHints: { name: "find-trajectory" },
 };
 
 const get_recent_transcripts: Operation = {
-  name: 'get_recent_transcripts',
+  name: "get_recent_transcripts",
   description: GET_RECENT_TRANSCRIPTS_DESCRIPTION,
-  scope: 'read',
+  scope: "read",
   // Local-only: rejects HTTP-borne MCP traffic at tool-list time
   // (serve-http.ts filters on `localOnly`) AND at runtime via the in-handler
   // ctx.remote check. Defense in depth: hidden + rejected.
   localOnly: true,
   params: {
-    days: { type: 'number', description: 'Window in days. Default 7.' },
+    days: { type: "number", description: "Window in days. Default 7." },
     summary: {
-      type: 'boolean',
-      description: 'When true (default), return first ~300 chars per transcript. When false, full content (capped at 100 KB per file).',
+      type: "boolean",
+      description:
+        "When true (default), return first ~300 chars per transcript. When false, full content (capped at 100 KB per file).",
     },
-    limit: { type: 'number', description: 'Max transcripts (default 50).' },
+    limit: { type: "number", description: "Max transcripts (default 50)." },
   },
   handler: async (ctx, p) => {
     // Trust gate (eng review D2 + codex C3): MCP / HTTP callers (`remote=true`)
@@ -3607,33 +4026,33 @@ const get_recent_transcripts: Operation = {
     // rejected, which is a footgun if the op is visible).
     if (ctx.remote === true) {
       throw new OperationError(
-        'permission_denied',
-        'get_recent_transcripts is local-only — call via the gbrain CLI.',
+        "permission_denied",
+        "get_recent_transcripts is local-only — call via the gbrain CLI."
       );
     }
-    const { listRecentTranscripts } = await import('./transcripts.ts');
+    const { listRecentTranscripts } = await import("./transcripts.ts");
     return listRecentTranscripts(ctx.engine, {
-      days: typeof p.days === 'number' ? p.days : undefined,
-      summary: typeof p.summary === 'boolean' ? p.summary : undefined,
-      limit: typeof p.limit === 'number' ? p.limit : undefined,
+      days: typeof p.days === "number" ? p.days : undefined,
+      summary: typeof p.summary === "boolean" ? p.summary : undefined,
+      limit: typeof p.limit === "number" ? p.limit : undefined,
     });
   },
-  cliHints: { name: 'transcripts', hidden: true },
+  cliHints: { name: "transcripts", hidden: true },
 };
 
 // --- v0.28: whoami + sources management ---
 
 const whoami: Operation = {
-  name: 'whoami',
+  name: "whoami",
   description:
-    'Introspect the calling identity. Returns one of three transport shapes: ' +
+    "Introspect the calling identity. Returns one of three transport shapes: " +
     '{transport: "oauth", client_id, client_name, scopes, expires_at}, ' +
     '{transport: "legacy", token_name, scopes, expires_at: null}, or ' +
     '{transport: "local", scopes: []}. Throws unknown_transport when the ' +
-    'context is ambiguous (remote=true without auth) — fail-closed posture ' +
-    'mirroring the v0.26.9 trust-boundary contract.',
+    "context is ambiguous (remote=true without auth) — fail-closed posture " +
+    "mirroring the v0.26.9 trust-boundary contract.",
   params: {},
-  scope: 'read',
+  scope: "read",
   handler: async (ctx) => {
     // Trust boundary: ctx.remote === false is the trusted local CLI surface.
     // Returning OAuth-shaped scopes here would resurrect the v0.26.9 footgun
@@ -3641,23 +4060,23 @@ const whoami: Operation = {
     // of `ctx.remote === false`. Empty scopes array forces clients to
     // special-case `transport: 'local'` explicitly.
     if (ctx.remote === false) {
-      return { transport: 'local', scopes: [] };
+      return { transport: "local", scopes: [] };
     }
     if (!ctx.auth) {
       throw new OperationError(
-        'unknown_transport',
-        'whoami called over a remote transport that did not thread ctx.auth. ' +
-          'This is a transport bug — every remote call site must populate ctx.auth ' +
-          'or set ctx.remote === false.',
+        "unknown_transport",
+        "whoami called over a remote transport that did not thread ctx.auth. " +
+          "This is a transport bug — every remote call site must populate ctx.auth " +
+          "or set ctx.remote === false."
       );
     }
     // OAuth tokens have client_id starting with 'gbrain_cl_'; legacy
     // access_tokens reuse `name` as both clientId and clientName (verifyAccessToken
     // at oauth-provider.ts:417-430). Detect by inspecting the prefix.
-    const isOauth = ctx.auth.clientId.startsWith('gbrain_cl_');
+    const isOauth = ctx.auth.clientId.startsWith("gbrain_cl_");
     if (isOauth) {
       return {
-        transport: 'oauth',
+        transport: "oauth",
         client_id: ctx.auth.clientId,
         client_name: ctx.auth.clientName ?? ctx.auth.clientId,
         scopes: ctx.auth.scopes,
@@ -3665,50 +4084,49 @@ const whoami: Operation = {
       };
     }
     return {
-      transport: 'legacy',
+      transport: "legacy",
       token_name: ctx.auth.clientName ?? ctx.auth.clientId,
       scopes: ctx.auth.scopes,
       expires_at: null,
     };
   },
-  cliHints: { name: 'whoami' },
+  cliHints: { name: "whoami" },
 };
 
 const sources_add: Operation = {
-  name: 'sources_add',
+  name: "sources_add",
   description:
-    'Register a new source. Supports either --path (existing v0.17 behavior) ' +
-    'or --url (v0.28 federated remote-clone path: parses the URL through the ' +
-    'SSRF gate, clones into $GBRAIN_HOME/clones/<id>/ via temp-dir + rename ' +
-    'atomicity, and stores remote_url in sources.config). Pre-flight collision ' +
-    'check on id; rollback on either-side failure.',
+    "Register a new source. Supports either --path (existing v0.17 behavior) " +
+    "or --url (v0.28 federated remote-clone path: parses the URL through the " +
+    "SSRF gate, clones into $GBRAIN_HOME/clones/<id>/ via temp-dir + rename " +
+    "atomicity, and stores remote_url in sources.config). Pre-flight collision " +
+    "check on id; rollback on either-side failure.",
   params: {
     id: {
-      type: 'string',
+      type: "string",
       required: true,
-      description: 'Source id ([a-z0-9-]{1,32}). Immutable citation key.',
+      description: "Source id ([a-z0-9-]{1,32}). Immutable citation key.",
     },
-    name: { type: 'string', description: 'Display name (defaults to id).' },
-    path: { type: 'string', description: 'Local path. Mutually optional with url.' },
+    name: { type: "string", description: "Display name (defaults to id)." },
+    path: { type: "string", description: "Local path. Mutually optional with url." },
     url: {
-      type: 'string',
-      description:
-        'HTTPS git URL. Cloned into $GBRAIN_HOME/clones/<id>/. SSRF-guarded.',
+      type: "string",
+      description: "HTTPS git URL. Cloned into $GBRAIN_HOME/clones/<id>/. SSRF-guarded.",
     },
     federated: {
-      type: 'boolean',
-      description: 'true → cross-source default search. false → isolated.',
+      type: "boolean",
+      description: "true → cross-source default search. false → isolated.",
     },
     clone_dir: {
-      type: 'string',
+      type: "string",
       description:
-        'Override clone destination (only valid with url). Default: $GBRAIN_HOME/clones/<id>/.',
+        "Override clone destination (only valid with url). Default: $GBRAIN_HOME/clones/<id>/.",
     },
   },
   mutating: true,
-  scope: 'sources_admin',
+  scope: "sources_admin",
   handler: async (ctx, p) => {
-    const { addSource } = await import('./sources-ops.ts');
+    const { addSource } = await import("./sources-ops.ts");
 
     // v0.28.1 codex finding (CRITICAL + HIGH): a `sources_admin` token over
     // HTTP MCP must not be able to plant content at arbitrary host paths.
@@ -3727,13 +4145,13 @@ const sources_add: Operation = {
     // to $GBRAIN_HOME/clones/<id>/ and path is rejected. Local CLI callers
     // (ctx.remote === false, per F7b fail-closed contract) keep the override.
     const isLocal = ctx.remote === false;
-    const remotePath = isLocal ? (p.path as string | undefined) ?? null : null;
+    const remotePath = isLocal ? ((p.path as string | undefined) ?? null) : null;
     const remoteCloneDir = isLocal ? (p.clone_dir as string | undefined) : undefined;
     if (!isLocal && (p.path !== undefined || p.clone_dir !== undefined)) {
       ctx.logger.warn(
-        '[sources_add] ignoring path/clone_dir overrides on HTTP MCP transport ' +
-          '(remote callers can only register a remote --url; the clone path is ' +
-          'fixed under $GBRAIN_HOME/clones/).',
+        "[sources_add] ignoring path/clone_dir overrides on HTTP MCP transport " +
+          "(remote callers can only register a remote --url; the clone path is " +
+          "fixed under $GBRAIN_HOME/clones/)."
       );
     }
 
@@ -3742,60 +4160,58 @@ const sources_add: Operation = {
       name: p.name as string | undefined,
       localPath: remotePath,
       remoteUrl: p.url as string | undefined,
-      federated:
-        p.federated === undefined ? null : (p.federated as boolean),
+      federated: p.federated === undefined ? null : (p.federated as boolean),
       cloneDir: remoteCloneDir,
     });
     return row;
   },
-  cliHints: { name: 'sources_add', hidden: true },
+  cliHints: { name: "sources_add", hidden: true },
 };
 
 const sources_list: Operation = {
-  name: 'sources_list',
+  name: "sources_list",
   description:
-    'List registered sources with page counts and remote_url. v0.28 surfaces ' +
-    'the new remote_url field so a remote MCP caller can confirm a source is ' +
-    'managed by clone+pull rather than user-supplied path.',
+    "List registered sources with page counts and remote_url. v0.28 surfaces " +
+    "the new remote_url field so a remote MCP caller can confirm a source is " +
+    "managed by clone+pull rather than user-supplied path.",
   params: {
-    include_archived: { type: 'boolean', description: 'Include soft-deleted sources.' },
+    include_archived: { type: "boolean", description: "Include soft-deleted sources." },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { listSources } = await import('./sources-ops.ts');
+    const { listSources } = await import("./sources-ops.ts");
     return {
       sources: await listSources(ctx.engine, {
         includeArchived: (p.include_archived as boolean) === true,
       }),
     };
   },
-  cliHints: { name: 'sources_list', hidden: true },
+  cliHints: { name: "sources_list", hidden: true },
 };
 
 const sources_remove: Operation = {
-  name: 'sources_remove',
+  name: "sources_remove",
   description:
-    'Hard-remove a source (cascades pages/chunks/embeddings). Refuses to ' +
-    'delete the auto-managed clone dir unless its resolved path is confined ' +
-    'under $GBRAIN_HOME/clones/ (realpath+lstat — symlink-safe). For most ' +
-    'workflows prefer sources_archive for the soft-delete path.',
+    "Hard-remove a source (cascades pages/chunks/embeddings). Refuses to " +
+    "delete the auto-managed clone dir unless its resolved path is confined " +
+    "under $GBRAIN_HOME/clones/ (realpath+lstat — symlink-safe). For most " +
+    "workflows prefer sources_archive for the soft-delete path.",
   params: {
-    id: { type: 'string', required: true },
+    id: { type: "string", required: true },
     confirm_destructive: {
-      type: 'boolean',
-      description:
-        'Required when the source has data (pages, chunks). Without it the op refuses.',
+      type: "boolean",
+      description: "Required when the source has data (pages, chunks). Without it the op refuses.",
     },
-    dry_run: { type: 'boolean', description: 'Preview impact without side effects.' },
+    dry_run: { type: "boolean", description: "Preview impact without side effects." },
     keep_storage: {
-      type: 'boolean',
-      description: 'Skip clone-dir cleanup even when the source is auto-managed.',
+      type: "boolean",
+      description: "Skip clone-dir cleanup even when the source is auto-managed.",
     },
   },
   mutating: true,
-  scope: 'sources_admin',
+  scope: "sources_admin",
   handler: async (ctx, p) => {
-    const { removeSource } = await import('./sources-ops.ts');
+    const { removeSource } = await import("./sources-ops.ts");
     return removeSource(ctx.engine, {
       id: p.id as string,
       confirmDestructive: (p.confirm_destructive as boolean) === true,
@@ -3803,25 +4219,25 @@ const sources_remove: Operation = {
       keepStorage: (p.keep_storage as boolean) === true,
     });
   },
-  cliHints: { name: 'sources_remove', hidden: true },
+  cliHints: { name: "sources_remove", hidden: true },
 };
 
 const sources_status: Operation = {
-  name: 'sources_status',
+  name: "sources_status",
   description:
     'Per-source diagnostic. Returns clone_state ("healthy" | "missing" | ' +
     '"not-a-dir" | "no-git" | "url-drift" | "corrupted" | "not-applicable") ' +
-    'so a remote MCP caller can diagnose whether the on-disk clone is ' +
-    'syncable without SSH access to the brain host.',
+    "so a remote MCP caller can diagnose whether the on-disk clone is " +
+    "syncable without SSH access to the brain host.",
   params: {
-    id: { type: 'string', required: true },
+    id: { type: "string", required: true },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { getSourceStatus } = await import('./sources-ops.ts');
+    const { getSourceStatus } = await import("./sources-ops.ts");
     return getSourceStatus(ctx.engine, p.id as string);
   },
-  cliHints: { name: 'sources_status', hidden: true },
+  cliHints: { name: "sources_status", hidden: true },
 };
 
 // ============================================================
@@ -3829,29 +4245,56 @@ const sources_status: Operation = {
 // ============================================================
 
 const extract_facts: Operation = {
-  name: 'extract_facts',
+  name: "extract_facts",
   description:
-    'v0.31: extract personal-knowledge facts (events, preferences, commitments, beliefs) from a conversation turn into the per-source hot memory. Sanitizes turn_text via INJECTION_PATTERNS, calls Haiku to extract structured claims, runs the cosine fast-path + classifier dedup pipeline, INSERTs into facts. Returns counts by status. Skips extraction when the turn is dream-generated content (anti-loop).',
+    "v0.31: extract personal-knowledge facts (events, preferences, commitments, beliefs) from a conversation turn into the per-source hot memory. Sanitizes turn_text via INJECTION_PATTERNS, calls Haiku to extract structured claims, runs the cosine fast-path + classifier dedup pipeline, INSERTs into facts. Returns counts by status. Skips extraction when the turn is dream-generated content (anti-loop).",
   params: {
-    turn_text: { type: 'string', required: true, description: 'The user message or page body to extract facts from. Sanitized via INJECTION_PATTERNS before the LLM call.' },
-    session_id: { type: 'string', description: 'Opaque session id (e.g. topic-id from MCP _meta.session_id, or CLI --session). Stored on each fact for the recall --session filter. Not an auth surface.' },
-    entity_hints: { type: 'array', items: { type: 'string' }, description: 'Existing canonical entity slugs the agent has already resolved. Helps the extractor pick the right slug.' },
-    is_dream_generated: { type: 'boolean', description: 'When true, extraction is skipped (anti-loop). Caller flips this on for pages with dream_generated:true frontmatter.' },
-    visibility: { type: 'string', description: 'Default visibility for extracted facts. private (default) | world.' },
+    turn_text: {
+      type: "string",
+      required: true,
+      description:
+        "The user message or page body to extract facts from. Sanitized via INJECTION_PATTERNS before the LLM call.",
+    },
+    session_id: {
+      type: "string",
+      description:
+        "Opaque session id (e.g. topic-id from MCP _meta.session_id, or CLI --session). Stored on each fact for the recall --session filter. Not an auth surface.",
+    },
+    entity_hints: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Existing canonical entity slugs the agent has already resolved. Helps the extractor pick the right slug.",
+    },
+    is_dream_generated: {
+      type: "boolean",
+      description:
+        "When true, extraction is skipped (anti-loop). Caller flips this on for pages with dream_generated:true frontmatter.",
+    },
+    visibility: {
+      type: "string",
+      description: "Default visibility for extracted facts. private (default) | world.",
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'extract_facts' };
-    const { isFactsExtractionEnabled } = await import('./facts/extract.ts');
-    const { runFactsPipeline } = await import('./facts/backstop.ts');
+    if (ctx.dryRun) return { dry_run: true, action: "extract_facts" };
+    const { isFactsExtractionEnabled } = await import("./facts/extract.ts");
+    const { runFactsPipeline } = await import("./facts/backstop.ts");
 
     // D15: kill switch. Operator can disable facts extraction across the
     // brain without binary downgrade by setting `facts.extraction_enabled`
     // to false. Returns zero-counts envelope so callers see a clean
     // success rather than a 'permission_denied' false alarm.
     if (!(await isFactsExtractionEnabled(ctx.engine))) {
-      return { inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped: 'extraction_disabled' };
+      return {
+        inserted: 0,
+        duplicate: 0,
+        superseded: 0,
+        fact_ids: [],
+        skipped: "extraction_disabled",
+      };
     }
 
     // v0.31.2: routed through the shared pipeline (PR1 commit 9). Anti-loop
@@ -3859,20 +4302,20 @@ const extract_facts: Operation = {
     // an explicit user op without a parsedPage — the eligibility predicate
     // doesn't apply, but the dream-generated guard still does.
     if (p.is_dream_generated === true) {
-      return { inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped: 'dream_generated' };
+      return { inserted: 0, duplicate: 0, superseded: 0, fact_ids: [], skipped: "dream_generated" };
     }
 
-    const sourceId = ctx.sourceId ?? 'default';
-    const visibility: 'private' | 'world' = p.visibility === 'world' ? 'world' : 'private';
+    const sourceId = ctx.sourceId ?? "default";
+    const visibility: "private" | "world" = p.visibility === "world" ? "world" : "private";
 
     const r = await runFactsPipeline(p.turn_text as string, {
       engine: ctx.engine,
       sourceId,
-      sessionId: typeof p.session_id === 'string' ? p.session_id : null,
+      sessionId: typeof p.session_id === "string" ? p.session_id : null,
       entityHints: Array.isArray(p.entity_hints) ? (p.entity_hints as string[]) : undefined,
-      source: 'mcp:extract_facts',
+      source: "mcp:extract_facts",
       visibility,
-      mode: 'inline',  // declarative; runFactsPipeline always inline
+      mode: "inline", // declarative; runFactsPipeline always inline
     });
 
     return {
@@ -3885,48 +4328,70 @@ const extract_facts: Operation = {
 };
 
 const recall: Operation = {
-  name: 'recall',
+  name: "recall",
   description:
-    'v0.31: query per-source hot memory (facts table). Filters by entity / since / session. Remote callers see only visibility=world facts. Returns most-recent first. v0.32 adds optional include_pending to return pending_consolidation_count alongside facts in one round trip.',
+    "v0.31: query per-source hot memory (facts table). Filters by entity / since / session. Remote callers see only visibility=world facts. Returns most-recent first. v0.32 adds optional include_pending to return pending_consolidation_count alongside facts in one round trip.",
   params: {
-    entity: { type: 'string', description: 'Entity slug (canonical). Returns facts about this entity newest first.' },
-    since: { type: 'string', description: 'ISO datetime or duration shorthand (e.g. "8 hours ago"). Returns facts created since.' },
-    session_id: { type: 'string', description: 'Source session id (e.g. topic-A). Returns facts captured in that session.' },
-    include_expired: { type: 'boolean', description: 'When true, include expired_at IS NOT NULL rows. Default false.' },
-    supersessions: { type: 'boolean', description: 'When true, return only the supersession audit log (expired_at + superseded_by both set).' },
-    limit: { type: 'number', description: 'Max rows to return. Default 50, cap 100.' },
-    grep: { type: 'string', description: 'Substring filter on fact text (case-insensitive). Applied client-side after recall.' },
-    include_pending: { type: 'boolean', description: 'v0.32: when true, response includes pending_consolidation_count (facts not yet promoted to takes by the dream-cycle consolidate phase). One round trip; backward-compatible (field omitted when false).' },
+    entity: {
+      type: "string",
+      description: "Entity slug (canonical). Returns facts about this entity newest first.",
+    },
+    since: {
+      type: "string",
+      description:
+        'ISO datetime or duration shorthand (e.g. "8 hours ago"). Returns facts created since.',
+    },
+    session_id: {
+      type: "string",
+      description: "Source session id (e.g. topic-A). Returns facts captured in that session.",
+    },
+    include_expired: {
+      type: "boolean",
+      description: "When true, include expired_at IS NOT NULL rows. Default false.",
+    },
+    supersessions: {
+      type: "boolean",
+      description:
+        "When true, return only the supersession audit log (expired_at + superseded_by both set).",
+    },
+    limit: { type: "number", description: "Max rows to return. Default 50, cap 100." },
+    grep: {
+      type: "string",
+      description:
+        "Substring filter on fact text (case-insensitive). Applied client-side after recall.",
+    },
+    include_pending: {
+      type: "boolean",
+      description:
+        "v0.32: when true, response includes pending_consolidation_count (facts not yet promoted to takes by the dream-cycle consolidate phase). One round trip; backward-compatible (field omitted when false).",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const sourceId = ctx.sourceId ?? 'default';
-    const limit = typeof p.limit === 'number' ? p.limit : 50;
+    const sourceId = ctx.sourceId ?? "default";
+    const limit = typeof p.limit === "number" ? p.limit : 50;
     const includeExpired = p.include_expired === true;
-    const grep = typeof p.grep === 'string' ? p.grep.toLowerCase() : null;
+    const grep = typeof p.grep === "string" ? p.grep.toLowerCase() : null;
 
     // Visibility filter: remote callers see world-only unless their token
     // grants elevated visibility (future-proofing; v0.31 ships world-only
     // for remote, all for local CLI).
-    const visibility =
-      ctx.remote === false
-        ? undefined
-        : ['world'] as ('private' | 'world')[];
+    const visibility = ctx.remote === false ? undefined : (["world"] as ("private" | "world")[]);
 
     let rows: Awaited<ReturnType<typeof ctx.engine.listFactsByEntity>> = [];
 
     if (p.supersessions === true) {
       const since = parseSinceParam(p.since);
       rows = await ctx.engine.listSupersessions(sourceId, { since: since ?? undefined, limit });
-    } else if (typeof p.entity === 'string' && p.entity.length > 0) {
-      const { resolveEntitySlug } = await import('./entities/resolve.ts');
+    } else if (typeof p.entity === "string" && p.entity.length > 0) {
+      const { resolveEntitySlug } = await import("./entities/resolve.ts");
       const slug = (await resolveEntitySlug(ctx.engine, sourceId, p.entity)) ?? p.entity;
       rows = await ctx.engine.listFactsByEntity(sourceId, slug, {
         activeOnly: !includeExpired,
         limit,
         visibility,
       });
-    } else if (typeof p.session_id === 'string' && p.session_id.length > 0) {
+    } else if (typeof p.session_id === "string" && p.session_id.length > 0) {
       rows = await ctx.engine.listFactsBySession(sourceId, p.session_id, {
         activeOnly: !includeExpired,
         limit,
@@ -3950,7 +4415,7 @@ const recall: Operation = {
       });
     }
 
-    if (grep) rows = rows.filter(r => r.fact.toLowerCase().includes(grep));
+    if (grep) rows = rows.filter((r) => r.fact.toLowerCase().includes(grep));
 
     // v0.32: optional pending-consolidation count piggy-backed on the recall
     // response. Single round trip on thin-client; omitted when not requested
@@ -3963,14 +4428,12 @@ const recall: Operation = {
         // Best-effort: if the count query fails we still return facts. Field
         // stays undefined so callers can tell the difference between "0
         // pending" and "we couldn't ask."
-        process.stderr.write(
-          `[recall] countUnconsolidatedFacts failed: ${(e as Error).message}\n`,
-        );
+        process.stderr.write(`[recall] countUnconsolidatedFacts failed: ${(e as Error).message}\n`);
       }
     }
 
     return {
-      facts: rows.map(r => ({
+      facts: rows.map((r) => ({
         id: r.id,
         fact: r.fact,
         kind: r.kind,
@@ -3998,25 +4461,31 @@ const recall: Operation = {
 };
 
 const forget_fact: Operation = {
-  name: 'forget_fact',
-  description: 'v0.32.2: forget a fact. Rewrites the page\'s `## Facts` fence to strike through the row and set valid_until=today (the DB\'s expired_at derives via valid_until + now() on the next reconcile so the forget survives `gbrain rebuild`). Falls back to legacy DB-only expire for pre-v51 / thin-client rows. Idempotent on already-expired or unknown ids.',
+  name: "forget_fact",
+  description:
+    "v0.32.2: forget a fact. Rewrites the page's `## Facts` fence to strike through the row and set valid_until=today (the DB's expired_at derives via valid_until + now() on the next reconcile so the forget survives `gbrain rebuild`). Falls back to legacy DB-only expire for pre-v51 / thin-client rows. Idempotent on already-expired or unknown ids.",
   params: {
-    id: { type: 'number', required: true, description: 'Fact id to forget.' },
-    reason: { type: 'string', required: false, description: 'Optional reason; written to the fence row\'s context cell as "forgotten: <reason>". Default: "forgotten".' },
+    id: { type: "number", required: true, description: "Fact id to forget." },
+    reason: {
+      type: "string",
+      required: false,
+      description:
+        'Optional reason; written to the fence row\'s context cell as "forgotten: <reason>". Default: "forgotten".',
+    },
   },
   mutating: true,
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
-    if (ctx.dryRun) return { dry_run: true, action: 'forget_fact', id: p.id };
+    if (ctx.dryRun) return { dry_run: true, action: "forget_fact", id: p.id };
     const id = p.id as number;
-    const reason = typeof p.reason === 'string' ? p.reason : undefined;
-    const { forgetFactInFence } = await import('./facts/forget.ts');
+    const reason = typeof p.reason === "string" ? p.reason : undefined;
+    const { forgetFactInFence } = await import("./facts/forget.ts");
     const result = await forgetFactInFence(ctx.engine, id, { reason });
-    if (!result.ok && result.path === 'not_found') {
-      throw new OperationError('fact_not_found', `Fact id ${id} not found.`);
+    if (!result.ok && result.path === "not_found") {
+      throw new OperationError("fact_not_found", `Fact id ${id} not found.`);
     }
-    if (!result.ok && result.path === 'already_expired') {
-      throw new OperationError('fact_already_expired', `Fact id ${id} already expired.`);
+    if (!result.ok && result.path === "already_expired") {
+      throw new OperationError("fact_already_expired", `Fact id ${id} already expired.`);
     }
     return { id, expired: true, path: result.path, reason: result.reason };
   },
@@ -4029,8 +4498,8 @@ const forget_fact: Operation = {
  */
 function parseSinceParam(raw: unknown): Date | null {
   if (raw == null) return null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return new Date(raw);
-  if (typeof raw !== 'string') return null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return new Date(raw);
+  if (typeof raw !== "string") return null;
   const s = raw.trim();
   if (!s) return null;
 
@@ -4043,11 +4512,13 @@ function parseSinceParam(raw: unknown): Date | null {
   if (ago) {
     const n = parseInt(ago[1], 10);
     const unit = ago[2].toLowerCase();
-    const ms =
-      unit.startsWith('s') ? n * 1000 :
-      unit.startsWith('m') ? n * 60 * 1000 :
-      unit.startsWith('h') ? n * 60 * 60 * 1000 :
-      n * 24 * 60 * 60 * 1000;
+    const ms = unit.startsWith("s")
+      ? n * 1000
+      : unit.startsWith("m")
+        ? n * 60 * 1000
+        : unit.startsWith("h")
+          ? n * 60 * 60 * 1000
+          : n * 24 * 60 * 60 * 1000;
     return new Date(Date.now() - ms);
   }
   return null;
@@ -4068,128 +4539,214 @@ function parseSinceParam(raw: unknown): Date | null {
 // ──────────────────────────────────────────────────────────────────────────────
 
 const code_callers: Operation = {
-  name: 'code_callers',
+  name: "code_callers",
   description: CODE_CALLERS_DESCRIPTION,
   params: {
-    symbol: { type: 'string', required: true, description: 'Symbol to find callers of (bare or qualified name).' },
-    limit: { type: 'number', description: 'Max edges returned. Default 100.' },
-    source_id: { type: 'string', description: "Scope to a single source. Defaults to ctx.sourceId; '__all__' spans every source for trusted local callers, your granted sources for remote callers." },
-    all_sources: { type: 'boolean', description: 'Span sources (equivalent to source_id=__all__): every source locally, your grant remotely.' },
+    symbol: {
+      type: "string",
+      required: true,
+      description: "Symbol to find callers of (bare or qualified name).",
+    },
+    limit: { type: "number", description: "Max edges returned. Default 100." },
+    source_id: {
+      type: "string",
+      description:
+        "Scope to a single source. Defaults to ctx.sourceId; '__all__' spans every source for trusted local callers, your granted sources for remote callers.",
+    },
+    all_sources: {
+      type: "boolean",
+      description:
+        "Span sources (equivalent to source_id=__all__): every source locally, your grant remotely.",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const symbol = p.symbol as string;
     const limit = (p.limit as number) ?? 100;
-    const sourceIdParam = typeof p.source_id === 'string' ? p.source_id : undefined;
+    const sourceIdParam = typeof p.source_id === "string" ? p.source_id : undefined;
     // Single trust+grant resolver: remote callers can't span sources outside
     // their grant, and `__all__` collapses to their grant (not the whole brain).
-    const { allSources, sourceId } = resolveCodeIntelScope(ctx, sourceIdParam, p.all_sources === true);
+    const { allSources, sourceId } = resolveCodeIntelScope(
+      ctx,
+      sourceIdParam,
+      p.all_sources === true
+    );
     const edges = await ctx.engine.getCallersOf(symbol, {
       limit,
       allSources,
       sourceId,
     });
-    const { resolveCodeReadiness } = await import('./code-graph-readiness.ts');
+    const { resolveCodeReadiness } = await import("./code-graph-readiness.ts");
     const readiness = await resolveCodeReadiness(ctx.engine, {
-      kind: 'edge', count: edges.length, sourceId, allSources,
+      kind: "edge",
+      count: edges.length,
+      sourceId,
+      allSources,
     });
-    return { symbol, count: edges.length, status: readiness.status, ready: readiness.ready, callers: edges };
+    return {
+      symbol,
+      count: edges.length,
+      status: readiness.status,
+      ready: readiness.ready,
+      callers: edges,
+    };
   },
-  cliHints: { name: 'code_callers', hidden: true },
+  cliHints: { name: "code_callers", hidden: true },
 };
 
 const code_callees: Operation = {
-  name: 'code_callees',
+  name: "code_callees",
   description: CODE_CALLEES_DESCRIPTION,
   params: {
-    symbol: { type: 'string', required: true, description: 'Symbol to find callees of (bare or qualified name).' },
-    limit: { type: 'number', description: 'Max edges returned. Default 100.' },
-    source_id: { type: 'string', description: "Scope to a single source. Defaults to ctx.sourceId; '__all__' spans every source for trusted local callers, your granted sources for remote callers." },
-    all_sources: { type: 'boolean', description: 'Span sources: every source locally, your grant remotely.' },
+    symbol: {
+      type: "string",
+      required: true,
+      description: "Symbol to find callees of (bare or qualified name).",
+    },
+    limit: { type: "number", description: "Max edges returned. Default 100." },
+    source_id: {
+      type: "string",
+      description:
+        "Scope to a single source. Defaults to ctx.sourceId; '__all__' spans every source for trusted local callers, your granted sources for remote callers.",
+    },
+    all_sources: {
+      type: "boolean",
+      description: "Span sources: every source locally, your grant remotely.",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const symbol = p.symbol as string;
     const limit = (p.limit as number) ?? 100;
-    const sourceIdParam = typeof p.source_id === 'string' ? p.source_id : undefined;
+    const sourceIdParam = typeof p.source_id === "string" ? p.source_id : undefined;
     // Single trust+grant resolver (see code_callers).
-    const { allSources, sourceId } = resolveCodeIntelScope(ctx, sourceIdParam, p.all_sources === true);
+    const { allSources, sourceId } = resolveCodeIntelScope(
+      ctx,
+      sourceIdParam,
+      p.all_sources === true
+    );
     const edges = await ctx.engine.getCalleesOf(symbol, {
       limit,
       allSources,
       sourceId,
     });
-    const { resolveCodeReadiness } = await import('./code-graph-readiness.ts');
+    const { resolveCodeReadiness } = await import("./code-graph-readiness.ts");
     const readiness = await resolveCodeReadiness(ctx.engine, {
-      kind: 'edge', count: edges.length, sourceId, allSources,
+      kind: "edge",
+      count: edges.length,
+      sourceId,
+      allSources,
     });
-    return { symbol, count: edges.length, status: readiness.status, ready: readiness.ready, callees: edges };
+    return {
+      symbol,
+      count: edges.length,
+      status: readiness.status,
+      ready: readiness.ready,
+      callees: edges,
+    };
   },
-  cliHints: { name: 'code_callees', hidden: true },
+  cliHints: { name: "code_callees", hidden: true },
 };
 
 const code_def: Operation = {
-  name: 'code_def',
+  name: "code_def",
   description: CODE_DEF_DESCRIPTION,
   params: {
-    symbol: { type: 'string', required: true, description: 'Symbol name (bare token; e.g., parseMarkdown, BrainEngine).' },
-    limit: { type: 'number', description: 'Max definition sites returned. Default 20.' },
-    lang: { type: 'string', description: "Filter by content_chunks.language (e.g. 'typescript', 'python')." },
+    symbol: {
+      type: "string",
+      required: true,
+      description: "Symbol name (bare token; e.g., parseMarkdown, BrainEngine).",
+    },
+    limit: { type: "number", description: "Max definition sites returned. Default 20." },
+    lang: {
+      type: "string",
+      description: "Filter by content_chunks.language (e.g. 'typescript', 'python').",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { findCodeDef } = await import('../commands/code-def.ts');
+    const { findCodeDef } = await import("../commands/code-def.ts");
     const defs = await findCodeDef(ctx.engine, p.symbol as string, {
       limit: (p.limit as number) ?? 20,
       language: (p.lang as string) || undefined,
     });
     // code_def is brain-wide (not source-scoped); readiness is 'symbol' grain.
-    const { resolveCodeReadiness } = await import('./code-graph-readiness.ts');
-    const readiness = await resolveCodeReadiness(ctx.engine, { kind: 'symbol', count: defs.length });
-    return { symbol: p.symbol as string, count: defs.length, status: readiness.status, ready: readiness.ready, defs };
+    const { resolveCodeReadiness } = await import("./code-graph-readiness.ts");
+    const readiness = await resolveCodeReadiness(ctx.engine, {
+      kind: "symbol",
+      count: defs.length,
+    });
+    return {
+      symbol: p.symbol as string,
+      count: defs.length,
+      status: readiness.status,
+      ready: readiness.ready,
+      defs,
+    };
   },
-  cliHints: { name: 'code_def', hidden: true },
+  cliHints: { name: "code_def", hidden: true },
 };
 
 const code_refs: Operation = {
-  name: 'code_refs',
+  name: "code_refs",
   description: CODE_REFS_DESCRIPTION,
   params: {
-    symbol: { type: 'string', required: true, description: 'Symbol to find references to.' },
-    limit: { type: 'number', description: 'Max references returned. Default 50.' },
-    lang: { type: 'string', description: "Filter by content_chunks.language." },
+    symbol: { type: "string", required: true, description: "Symbol to find references to." },
+    limit: { type: "number", description: "Max references returned. Default 50." },
+    lang: { type: "string", description: "Filter by content_chunks.language." },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { findCodeRefs } = await import('../commands/code-refs.ts');
+    const { findCodeRefs } = await import("../commands/code-refs.ts");
     const refs = await findCodeRefs(ctx.engine, p.symbol as string, {
       limit: (p.limit as number) ?? 50,
       language: (p.lang as string) || undefined,
     });
     // code_refs is brain-wide (not source-scoped); readiness is 'symbol' grain.
-    const { resolveCodeReadiness } = await import('./code-graph-readiness.ts');
-    const readiness = await resolveCodeReadiness(ctx.engine, { kind: 'symbol', count: refs.length });
-    return { symbol: p.symbol as string, count: refs.length, status: readiness.status, ready: readiness.ready, refs };
+    const { resolveCodeReadiness } = await import("./code-graph-readiness.ts");
+    const readiness = await resolveCodeReadiness(ctx.engine, {
+      kind: "symbol",
+      count: refs.length,
+    });
+    return {
+      symbol: p.symbol as string,
+      count: refs.length,
+      status: readiness.status,
+      ready: readiness.ready,
+      refs,
+    };
   },
-  cliHints: { name: 'code_refs', hidden: true },
+  cliHints: { name: "code_refs", hidden: true },
 };
 
 // --- v0.34 W3: recursive code_blast + code_flow ---
 
 const code_blast: Operation = {
-  name: 'code_blast',
-  description: 'BEFORE editing any function, run code_blast with the symbol name to surface every transitive caller grouped by depth (direct → 2-hop → 3-hop). Use this during plan-mode to size the change. Returns up to 200 nodes. Returns: {result, depth_groups?, truncation?, cycles_detected?, did_you_mean?, candidates?}. Example ok: {result:"ok", depth_groups:[{depth:1, nodes:[{symbol,chunk_id}], confidence:0.77}], truncation:"none"}.',
+  name: "code_blast",
+  description:
+    'BEFORE editing any function, run code_blast with the symbol name to surface every transitive caller grouped by depth (direct → 2-hop → 3-hop). Use this during plan-mode to size the change. Returns up to 200 nodes. Returns: {result, depth_groups?, truncation?, cycles_detected?, did_you_mean?, candidates?}. Example ok: {result:"ok", depth_groups:[{depth:1, nodes:[{symbol,chunk_id}], confidence:0.77}], truncation:"none"}.',
   params: {
-    symbol: { type: 'string', required: true, description: 'Bare or qualified symbol name (e.g. "performSync" or "src/foo::performSync")' },
-    depth: { type: 'number', description: 'Hop cap (default 5, max 8)' },
-    max_nodes: { type: 'number', description: 'Result-set cap (default 200)' },
-    exact: { type: 'boolean', description: 'Skip bare-name disambiguation; treat symbol as exact qualified name' },
-    source_id: { type: 'string', description: 'Source to traverse. Defaults to ctx.sourceId; federated clients with multiple granted sources must specify one.' },
+    symbol: {
+      type: "string",
+      required: true,
+      description: 'Bare or qualified symbol name (e.g. "performSync" or "src/foo::performSync")',
+    },
+    depth: { type: "number", description: "Hop cap (default 5, max 8)" },
+    max_nodes: { type: "number", description: "Result-set cap (default 200)" },
+    exact: {
+      type: "boolean",
+      description: "Skip bare-name disambiguation; treat symbol as exact qualified name",
+    },
+    source_id: {
+      type: "string",
+      description:
+        "Source to traverse. Defaults to ctx.sourceId; federated clients with multiple granted sources must specify one.",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { runRecursiveWalk } = await import('./code-intel/recursive-walk.ts');
-    const { getCachedOrCompute } = await import('./code-intel/traversal-cache.ts');
+    const { runRecursiveWalk } = await import("./code-intel/recursive-walk.ts");
+    const { getCachedOrCompute } = await import("./code-intel/traversal-cache.ts");
     const symbol = p.symbol as string;
     const depth = Math.min((p.depth as number) ?? 5, 8);
     const max_nodes = Math.min((p.max_nodes as number) ?? 200, 200);
@@ -4198,80 +4755,109 @@ const code_blast: Operation = {
     // source outside its grant (pre-fix this scoped by bare ctx.sourceId only).
     // Falls back to ctx.sourceId (a required string) for the trusted-local case,
     // exactly preserving pre-fix local behavior.
-    const { sourceId: scopedSourceId } = resolveCodeIntelScope(ctx, typeof p.source_id === 'string' ? p.source_id : undefined);
+    const { sourceId: scopedSourceId } = resolveCodeIntelScope(
+      ctx,
+      typeof p.source_id === "string" ? p.source_id : undefined
+    );
     const sourceId = scopedSourceId ?? ctx.sourceId;
     return getCachedOrCompute(
       ctx.engine,
       { symbol_qualified: symbol, depth, source_id: sourceId },
-      () => runRecursiveWalk(ctx.engine, symbol, {
-        direction: 'callers',
-        depth,
-        maxNodes: max_nodes,
-        sourceId,
-        exact,
-      }),
+      () =>
+        runRecursiveWalk(ctx.engine, symbol, {
+          direction: "callers",
+          depth,
+          maxNodes: max_nodes,
+          sourceId,
+          exact,
+        })
     );
   },
-  cliHints: { name: 'code_blast', hidden: true },
+  cliHints: { name: "code_blast", hidden: true },
 };
 
 const code_flow: Operation = {
-  name: 'code_flow',
-  description: 'When tracing how a request flows through the codebase from entry point to side effect (DB write, HTTP call, file I/O), run code_flow from the entry point. Returns ordered execution chain with terminal-node tags. Returns: same envelope as code_blast plus terminal_nodes: [{symbol, sink_kind}] where sink_kind ∈ "db_call"|"http_call"|"file_io"|"process_exec"|"unknown".',
+  name: "code_flow",
+  description:
+    'When tracing how a request flows through the codebase from entry point to side effect (DB write, HTTP call, file I/O), run code_flow from the entry point. Returns ordered execution chain with terminal-node tags. Returns: same envelope as code_blast plus terminal_nodes: [{symbol, sink_kind}] where sink_kind ∈ "db_call"|"http_call"|"file_io"|"process_exec"|"unknown".',
   params: {
-    entry_point: { type: 'string', required: true, description: 'Entry-point symbol name (bare or qualified)' },
-    depth: { type: 'number', description: 'Hop cap (default 8, max 12)' },
-    max_nodes: { type: 'number', description: 'Result-set cap (default 200)' },
-    exact: { type: 'boolean', description: 'Skip bare-name disambiguation' },
-    source_id: { type: 'string', description: 'Source to traverse. Defaults to ctx.sourceId; federated clients with multiple granted sources must specify one.' },
+    entry_point: {
+      type: "string",
+      required: true,
+      description: "Entry-point symbol name (bare or qualified)",
+    },
+    depth: { type: "number", description: "Hop cap (default 8, max 12)" },
+    max_nodes: { type: "number", description: "Result-set cap (default 200)" },
+    exact: { type: "boolean", description: "Skip bare-name disambiguation" },
+    source_id: {
+      type: "string",
+      description:
+        "Source to traverse. Defaults to ctx.sourceId; federated clients with multiple granted sources must specify one.",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { runRecursiveWalk } = await import('./code-intel/recursive-walk.ts');
-    const { getCachedOrCompute } = await import('./code-intel/traversal-cache.ts');
+    const { runRecursiveWalk } = await import("./code-intel/recursive-walk.ts");
+    const { getCachedOrCompute } = await import("./code-intel/traversal-cache.ts");
     const symbol = p.entry_point as string;
     const depth = Math.min((p.depth as number) ?? 8, 12);
     const max_nodes = Math.min((p.max_nodes as number) ?? 200, 200);
     const exact = (p.exact as boolean) ?? false;
     // Single trust+grant resolver (see code_blast).
-    const { sourceId: scopedSourceId } = resolveCodeIntelScope(ctx, typeof p.source_id === 'string' ? p.source_id : undefined);
+    const { sourceId: scopedSourceId } = resolveCodeIntelScope(
+      ctx,
+      typeof p.source_id === "string" ? p.source_id : undefined
+    );
     const sourceId = scopedSourceId ?? ctx.sourceId;
     return getCachedOrCompute(
       ctx.engine,
-      { symbol_qualified: symbol + ':flow', depth, source_id: sourceId },
-      () => runRecursiveWalk(ctx.engine, symbol, {
-        direction: 'callees',
-        depth,
-        maxNodes: max_nodes,
-        sourceId,
-        exact,
-      }),
+      { symbol_qualified: symbol + ":flow", depth, source_id: sourceId },
+      () =>
+        runRecursiveWalk(ctx.engine, symbol, {
+          direction: "callees",
+          depth,
+          maxNodes: max_nodes,
+          sourceId,
+          exact,
+        })
     );
   },
-  cliHints: { name: 'code_flow', hidden: true },
+  cliHints: { name: "code_flow", hidden: true },
 };
 
 // --- v0.34 W3b: code_traversal_cache admin op ---
 
 const code_traversal_cache_clear: Operation = {
-  name: 'code_traversal_cache_clear',
-  description: 'Clear cached code_blast / code_flow traversal results. Source-scoped by default; pass all_sources=true to wipe everything (D8 destructive-guard).',
+  name: "code_traversal_cache_clear",
+  description:
+    "Clear cached code_blast / code_flow traversal results. Source-scoped by default; pass all_sources=true to wipe everything (D8 destructive-guard).",
   params: {
-    source_id: { type: 'string', description: 'Source to clear. Required unless all_sources=true.' },
-    all_sources: { type: 'boolean', description: 'Wipe cache across every source. Explicit opt-out of source-scoping.' },
+    source_id: {
+      type: "string",
+      description: "Source to clear. Required unless all_sources=true.",
+    },
+    all_sources: {
+      type: "boolean",
+      description: "Wipe cache across every source. Explicit opt-out of source-scoping.",
+    },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
     // INTENTIONAL exemption from resolveRequestedScope: this is a localOnly
     // admin/destructive op with its own D8 all_sources guard. The read-side
     // trust+grant resolver does not apply here (no remote caller reaches it).
-    const { clearTraversalCache } = await import('./code-intel/traversal-cache.ts');
+    const { clearTraversalCache } = await import("./code-intel/traversal-cache.ts");
     const sourceId = (p.source_id as string | undefined) ?? ctx.sourceId;
     const allSources = (p.all_sources as boolean) ?? false;
     if (ctx.dryRun) {
-      return { dry_run: true, action: 'code_traversal_cache_clear', source_id: sourceId, all_sources: allSources };
+      return {
+        dry_run: true,
+        action: "code_traversal_cache_clear",
+        source_id: sourceId,
+        all_sources: allSources,
+      };
     }
     const deleted = await clearTraversalCache(ctx.engine, {
       sourceId: allSources ? undefined : sourceId,
@@ -4279,29 +4865,50 @@ const code_traversal_cache_clear: Operation = {
     });
     return { deleted, source_id: allSources ? null : sourceId, all_sources: allSources };
   },
-  cliHints: { name: 'code_traversal_cache_clear', hidden: true },
+  cliHints: { name: "code_traversal_cache_clear", hidden: true },
 };
 
 // --- v0.36 Phase 2: search_by_image (image-as-query) ---
 
 const search_by_image: Operation = {
-  name: 'search_by_image',
+  name: "search_by_image",
   description:
-    'v0.36 cross-modal Phase 2: image-as-query retrieval. Accepts a local path (CLI), data: URI, or http(s):// URL ' +
-    '(SSRF-defended). Returns visually-similar image chunks plus any OCR text they carry. Optional `query` text ' +
-    'refinement merges via weighted RRF (D13 hybrid intersect). True image→full-text-knowledge requires Phase 3 ' +
-    '(`gbrain reindex --multimodal` + `search.unified_multimodal: true`).',
+    "v0.36 cross-modal Phase 2: image-as-query retrieval. Accepts a local path (CLI), data: URI, or http(s):// URL " +
+    "(SSRF-defended). Returns visually-similar image chunks plus any OCR text they carry. Optional `query` text " +
+    "refinement merges via weighted RRF (D13 hybrid intersect). True image→full-text-knowledge requires Phase 3 " +
+    "(`gbrain reindex --multimodal` + `search.unified_multimodal: true`).",
   params: {
-    image_path: { type: 'string', description: 'Absolute path to image (local CLI callers only — rejected for remote MCP per D18).' },
-    image_url: { type: 'string', description: 'http(s):// URL to image. SSRF-defended; max 3 redirect hops; 10MB cap.' },
-    image_data: { type: 'string', description: 'Base64-encoded image bytes (preferred for remote MCP callers). PNG/JPEG/WebP only.' },
-    image_mime: { type: 'string', description: 'Optional MIME hint when ambiguous. Magic-byte sniff is authoritative.' },
-    query: { type: 'string', description: 'Optional text refinement; runs hybrid intersect via D13 weighted RRF.' },
-    limit: { type: 'number', description: 'Max results (default 20)' },
-    offset: { type: 'number', description: 'Skip first N results (for pagination)' },
-    source_id: { type: 'string', description: "Scope to a single source. Defaults to ctx.sourceId. '__all__' spans every source for trusted local callers, your granted sources for remote callers." },
+    image_path: {
+      type: "string",
+      description:
+        "Absolute path to image (local CLI callers only — rejected for remote MCP per D18).",
+    },
+    image_url: {
+      type: "string",
+      description: "http(s):// URL to image. SSRF-defended; max 3 redirect hops; 10MB cap.",
+    },
+    image_data: {
+      type: "string",
+      description:
+        "Base64-encoded image bytes (preferred for remote MCP callers). PNG/JPEG/WebP only.",
+    },
+    image_mime: {
+      type: "string",
+      description: "Optional MIME hint when ambiguous. Magic-byte sniff is authoritative.",
+    },
+    query: {
+      type: "string",
+      description: "Optional text refinement; runs hybrid intersect via D13 weighted RRF.",
+    },
+    limit: { type: "number", description: "Max results (default 20)" },
+    offset: { type: "number", description: "Skip first N results (for pagination)" },
+    source_id: {
+      type: "string",
+      description:
+        "Scope to a single source. Defaults to ctx.sourceId. '__all__' spans every source for trusted local callers, your granted sources for remote callers.",
+    },
   },
-  scope: 'read',
+  scope: "read",
   // NOT localOnly: remote MCP callers can pass image_url or image_data
   // (subject to D18 image_path ban + D12 size cap + D23-#6 spend cap).
   handler: async (ctx, p) => {
@@ -4310,31 +4917,31 @@ const search_by_image: Operation = {
     const imageData = p.image_data as string | undefined;
     const imageMime = (p.image_mime as string) || undefined;
     const queryRefinement = p.query as string | undefined;
-    const sourceIdParam = typeof p.source_id === 'string' ? p.source_id : undefined;
+    const sourceIdParam = typeof p.source_id === "string" ? p.source_id : undefined;
 
     // D18 P0 — remote callers cannot pass image_path. Rejecting at handler
     // entry, before any file I/O fires. validateParams catches it too at the
     // dispatch layer; this is defense-in-depth.
     if (ctx.remote === true && imagePath) {
       throw new Error(
-        'permission_denied: image_path is not permitted for remote callers (D18). ' +
-        'Use image_url or image_data instead.',
+        "permission_denied: image_path is not permitted for remote callers (D18). " +
+          "Use image_url or image_data instead."
       );
     }
 
     if (!imagePath && !imageUrl && !imageData) {
-      throw new Error('search_by_image requires one of: image_path, image_url, image_data');
+      throw new Error("search_by_image requires one of: image_path, image_url, image_data");
     }
     if ([imagePath, imageUrl, imageData].filter(Boolean).length > 1) {
-      throw new Error('search_by_image accepts only one of: image_path, image_url, image_data');
+      throw new Error("search_by_image accepts only one of: image_path, image_url, image_data");
     }
 
     // D23-#6 — pre-flight daily-budget check for remote OAuth clients.
     // Local CLI callers (ctx.remote=false) bypass the cap (clientId="").
-    const clientId = (ctx.remote === true ? (ctx.auth?.clientId ?? '') : '');
+    const clientId = ctx.remote === true ? (ctx.auth?.clientId ?? "") : "";
     if (clientId) {
       const budgetUsd = await getDailyImageBudgetUsd(ctx.engine);
-      const { checkBudget } = await import('./spend-log.ts');
+      const { checkBudget } = await import("./spend-log.ts");
       await checkBudget(ctx.engine, clientId, Math.round(budgetUsd * 100));
     }
 
@@ -4343,10 +4950,10 @@ const search_by_image: Operation = {
     const remoteCap = await getRemoteMaxBytes(ctx.engine);
     const localCap = await getLocalMaxBytes(ctx.engine);
     const cap = ctx.remote === true ? remoteCap : localCap;
-    const { loadImageInput } = await import('./search/image-loader.ts');
+    const { loadImageInput } = await import("./search/image-loader.ts");
     const loaded = await loadImageInput(
-      (imagePath ?? imageUrl ?? `data:${imageMime ?? 'image/png'};base64,${imageData}`)!,
-      { maxBytes: cap },
+      (imagePath ?? imageUrl ?? `data:${imageMime ?? "image/png"};base64,${imageData}`)!,
+      { maxBytes: cap }
     );
 
     // Resolve source-scope through the single trust+grant resolver. Pre-fix
@@ -4356,7 +4963,7 @@ const search_by_image: Operation = {
     // one spread — `__all__` spans the brain only for trusted local callers.
     const imageSourceScope = resolveRequestedScope(ctx, sourceIdParam);
 
-    const { searchByImage } = await import('./search/by-image.ts');
+    const { searchByImage } = await import("./search/by-image.ts");
     const results = await searchByImage(
       ctx.engine,
       { base64: loaded.base64, mime: loaded.contentType },
@@ -4365,34 +4972,34 @@ const search_by_image: Operation = {
         offset: (p.offset as number) || 0,
         query: queryRefinement,
         ...imageSourceScope,
-      },
+      }
     );
 
     // D23-#6 — record successful Voyage call. Best-effort; failures don't
     // block the response.
     if (clientId) {
-      const { recordSpend, VOYAGE_MULTIMODAL_3_PER_IMAGE_CENTS } = await import('./spend-log.ts');
+      const { recordSpend, VOYAGE_MULTIMODAL_3_PER_IMAGE_CENTS } = await import("./spend-log.ts");
       // Approximate: 1 image embed + (query ? 1 text embed : 0). Both are
       // billed at the same per-call rate by Voyage.
       const calls = 1 + (queryRefinement ? 1 : 0);
       void recordSpend(ctx.engine, {
         clientId,
         tokenName: ctx.auth?.clientName ?? null,
-        operation: 'search_by_image',
+        operation: "search_by_image",
         spendCents: VOYAGE_MULTIMODAL_3_PER_IMAGE_CENTS * calls,
-        provider: 'voyage',
-        model: 'voyage-multimodal-3',
+        provider: "voyage",
+        model: "voyage-multimodal-3",
       });
     }
 
     return results;
   },
-  cliHints: { name: 'search-by-image' },
+  cliHints: { name: "search-by-image" },
 };
 
 async function getDailyImageBudgetUsd(engine: BrainEngine): Promise<number> {
   try {
-    const v = await engine.getConfig('search.image_query.daily_budget_usd_per_client');
+    const v = await engine.getConfig("search.image_query.daily_budget_usd_per_client");
     if (v == null) return 5; // default $5
     const n = parseFloat(v);
     return Number.isFinite(n) && n > 0 ? n : 5;
@@ -4403,7 +5010,7 @@ async function getDailyImageBudgetUsd(engine: BrainEngine): Promise<number> {
 
 async function getLocalMaxBytes(engine: BrainEngine): Promise<number> {
   try {
-    const v = await engine.getConfig('search.image_query.max_bytes');
+    const v = await engine.getConfig("search.image_query.max_bytes");
     if (v == null) return 10 * 1024 * 1024;
     const n = parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : 10 * 1024 * 1024;
@@ -4414,7 +5021,7 @@ async function getLocalMaxBytes(engine: BrainEngine): Promise<number> {
 
 async function getRemoteMaxBytes(engine: BrainEngine): Promise<number> {
   try {
-    const v = await engine.getConfig('search.image_query.remote_max_bytes');
+    const v = await engine.getConfig("search.image_query.remote_max_bytes");
     if (v == null) return 2 * 1024 * 1024;
     const n = parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : 2 * 1024 * 1024;
@@ -4440,17 +5047,23 @@ async function getRemoteMaxBytes(engine: BrainEngine): Promise<number> {
 // ──────────────────────────────────────────────────────────────────────
 
 const get_active_schema_pack: Operation = {
-  name: 'get_active_schema_pack',
-  description: 'v0.40.6.0: cheap identity packet for the active schema pack. Returns {pack_name, version, sha8, page_types_count, link_types_count, primitive_summary, source_tier}. Useful for agents to know which pack they are operating against without paying full manifest load cost.',
+  name: "get_active_schema_pack",
+  description:
+    "v0.40.6.0: cheap identity packet for the active schema pack. Returns {pack_name, version, sha8, page_types_count, link_types_count, primitive_summary, source_tier}. Useful for agents to know which pack they are operating against without paying full manifest load cost.",
   params: {},
-  scope: 'read',
+  scope: "read",
   handler: async (ctx) => {
-    const { loadActivePack, resolveActivePackNameOnly } = await import('./schema-pack/load-active.ts');
-    const { loadConfig } = await import('./config.ts');
+    const { loadActivePack, resolveActivePackNameOnly } =
+      await import("./schema-pack/load-active.ts");
+    const { loadConfig } = await import("./config.ts");
     const cfg = loadConfig();
     const sourceOpts: Record<string, unknown> = {};
     if (ctx.sourceId) sourceOpts.sourceId = ctx.sourceId;
-    const resolution = resolveActivePackNameOnly({ cfg, remote: ctx.remote ?? true, ...sourceOpts });
+    const resolution = resolveActivePackNameOnly({
+      cfg,
+      remote: ctx.remote ?? true,
+      ...sourceOpts,
+    });
     const pack = await loadActivePack({ cfg, remote: ctx.remote ?? true, ...sourceOpts });
     const primitiveSummary: Record<string, number> = {};
     for (const t of pack.manifest.page_types) {
@@ -4470,22 +5083,26 @@ const get_active_schema_pack: Operation = {
 };
 
 const list_schema_packs: Operation = {
-  name: 'list_schema_packs',
-  description: 'v0.40.6.0: list installed schema packs (bundled + user-installed). Returns {bundled: string[], installed: string[]}. Read-only directory listing.',
+  name: "list_schema_packs",
+  description:
+    "v0.40.6.0: list installed schema packs (bundled + user-installed). Returns {bundled: string[], installed: string[]}. Read-only directory listing.",
   params: {},
-  scope: 'read',
+  scope: "read",
   handler: async (_ctx) => {
-    const { existsSync, readdirSync } = await import('node:fs');
-    const { join } = await import('node:path');
-    const { gbrainPath } = await import('./config.ts');
-    const bundled = ['gbrain-base', 'gbrain-recommended'];
-    const installedDir = gbrainPath('schema-packs');
+    const { existsSync, readdirSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { gbrainPath } = await import("./config.ts");
+    const bundled = ["gbrain-base", "gbrain-recommended"];
+    const installedDir = gbrainPath("schema-packs");
     const installed: string[] = [];
     if (existsSync(installedDir)) {
       for (const entry of readdirSync(installedDir)) {
-        const candidates = ['pack.yaml', 'pack.yml', 'pack.json'];
+        const candidates = ["pack.yaml", "pack.yml", "pack.json"];
         for (const c of candidates) {
-          if (existsSync(join(installedDir, entry, c))) { installed.push(entry); break; }
+          if (existsSync(join(installedDir, entry, c))) {
+            installed.push(entry);
+            break;
+          }
         }
       }
     }
@@ -4494,12 +5111,13 @@ const list_schema_packs: Operation = {
 };
 
 const schema_stats: Operation = {
-  name: 'schema_stats',
-  description: 'v0.40.6.0: per-type page counts + typed-coverage from the DB. Returns {schema_version:1, pack_identity, aggregate, per_source, dead_prefixes}. Multi-source aware via ctx.sourceId/allowedSources.',
+  name: "schema_stats",
+  description:
+    "v0.40.6.0: per-type page counts + typed-coverage from the DB. Returns {schema_version:1, pack_identity, aggregate, per_source, dead_prefixes}. Multi-source aware via ctx.sourceId/allowedSources.",
   params: {},
-  scope: 'read',
+  scope: "read",
   handler: async (ctx) => {
-    const { runStatsCore } = await import('./schema-pack/stats.ts');
+    const { runStatsCore } = await import("./schema-pack/stats.ts");
     const scope = sourceScopeOpts(ctx);
     const opts: { sourceId?: string; sourceIds?: string[] } = {};
     if (scope.sourceIds && scope.sourceIds.length > 0) opts.sourceIds = scope.sourceIds;
@@ -4509,35 +5127,43 @@ const schema_stats: Operation = {
 };
 
 const schema_lint: Operation = {
-  name: 'schema_lint',
-  description: 'v0.40.6.0: lint the active (or named) schema pack. File-plane rules only over MCP — the with_db option is rejected for remote callers (DB-aware rules require local CLI). Returns {ok, errors, warnings} structured report.',
+  name: "schema_lint",
+  description:
+    "v0.40.6.0: lint the active (or named) schema pack. File-plane rules only over MCP — the with_db option is rejected for remote callers (DB-aware rules require local CLI). Returns {ok, errors, warnings} structured report.",
   params: {
-    pack: { type: 'string', description: 'Pack name (default: active pack)' },
+    pack: { type: "string", description: "Pack name (default: active pack)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { runAllLintRules } = await import('./schema-pack/lint-rules.ts');
-    const { loadActivePack } = await import('./schema-pack/load-active.ts');
-    const { loadConfig, gbrainPath } = await import('./config.ts');
-    const { existsSync } = await import('node:fs');
-    const { join } = await import('node:path');
+    const { runAllLintRules } = await import("./schema-pack/lint-rules.ts");
+    const { loadActivePack } = await import("./schema-pack/load-active.ts");
+    const { loadConfig, gbrainPath } = await import("./config.ts");
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
     const cfg = loadConfig();
     let manifest;
     if (p.pack) {
       // Locate by name without trust-gating per-call schema_pack opt
       // (that's a separate axis — this is just file lookup).
       const packName = p.pack as string;
-      const candidates = ['pack.yaml', 'pack.yml', 'pack.json'];
+      const candidates = ["pack.yaml", "pack.yml", "pack.json"];
       let path: string | null = null;
       for (const c of candidates) {
-        const candidate = join(gbrainPath('schema-packs', packName), c);
-        if (existsSync(candidate)) { path = candidate; break; }
+        const candidate = join(gbrainPath("schema-packs", packName), c);
+        if (existsSync(candidate)) {
+          path = candidate;
+          break;
+        }
       }
-      if (!path) return { error: 'pack_not_found', pack: packName };
-      const { loadPackFromFile: loader } = await import('./schema-pack/loader.ts');
+      if (!path) return { error: "pack_not_found", pack: packName };
+      const { loadPackFromFile: loader } = await import("./schema-pack/loader.ts");
       manifest = loader(path);
     } else {
-      const resolved = await loadActivePack({ cfg, remote: ctx.remote ?? true, sourceId: ctx.sourceId });
+      const resolved = await loadActivePack({
+        cfg,
+        remote: ctx.remote ?? true,
+        sourceId: ctx.sourceId,
+      });
       manifest = resolved.manifest;
     }
     // File-plane only over MCP; the engine-aware --with-db opt-in is
@@ -4547,13 +5173,14 @@ const schema_lint: Operation = {
 };
 
 const schema_graph: Operation = {
-  name: 'schema_graph',
-  description: 'v0.40.6.0: schema pack graph as JSON edges. Returns {nodes: [{name, primitive}], edges: [{from, verb, to}]} derived from link_types inference + frontmatter_links.',
+  name: "schema_graph",
+  description:
+    "v0.40.6.0: schema pack graph as JSON edges. Returns {nodes: [{name, primitive}], edges: [{from, verb, to}]} derived from link_types inference + frontmatter_links.",
   params: {},
-  scope: 'read',
+  scope: "read",
   handler: async (ctx) => {
-    const { loadActivePack } = await import('./schema-pack/load-active.ts');
-    const { loadConfig } = await import('./config.ts');
+    const { loadActivePack } = await import("./schema-pack/load-active.ts");
+    const { loadConfig } = await import("./config.ts");
     const cfg = loadConfig();
     const pack = await loadActivePack({ cfg, remote: ctx.remote ?? true, sourceId: ctx.sourceId });
     const nodes = pack.manifest.page_types.map((t) => ({ name: t.name, primitive: t.primitive }));
@@ -4563,42 +5190,45 @@ const schema_graph: Operation = {
         edges.push({
           from: lt.inference.page_type,
           verb: lt.name,
-          to: lt.inference.target_type ?? '*',
+          to: lt.inference.target_type ?? "*",
         });
       }
     }
     for (const fl of pack.manifest.frontmatter_links) {
-      edges.push({ from: fl.page_type, verb: fl.link_type, to: '*' });
+      edges.push({ from: fl.page_type, verb: fl.link_type, to: "*" });
     }
     return { schema_version: 1, pack: pack.manifest.name, nodes, edges };
   },
 };
 
 const schema_explain_type: Operation = {
-  name: 'schema_explain_type',
-  description: 'v0.40.6.0: resolved settings for a single page_type in the active pack. Returns {pack, type, primitive, path_prefixes, aliases, extractable, expert_routing}.',
+  name: "schema_explain_type",
+  description:
+    "v0.40.6.0: resolved settings for a single page_type in the active pack. Returns {pack, type, primitive, path_prefixes, aliases, extractable, expert_routing}.",
   params: {
-    type: { type: 'string', required: true, description: 'Page type name to explain' },
+    type: { type: "string", required: true, description: "Page type name to explain" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
-    const { loadActivePack } = await import('./schema-pack/load-active.ts');
-    const { loadConfig } = await import('./config.ts');
+    const { loadActivePack } = await import("./schema-pack/load-active.ts");
+    const { loadConfig } = await import("./config.ts");
     const cfg = loadConfig();
     const pack = await loadActivePack({ cfg, remote: ctx.remote ?? true, sourceId: ctx.sourceId });
     const found = pack.manifest.page_types.find((t) => t.name === p.type);
-    if (!found) return { error: 'type_not_found', type: p.type as string, pack: pack.manifest.name };
+    if (!found)
+      return { error: "type_not_found", type: p.type as string, pack: pack.manifest.name };
     return { schema_version: 1, pack: pack.manifest.name, type: found };
   },
 };
 
 const schema_review_orphans: Operation = {
-  name: 'schema_review_orphans',
-  description: 'v0.40.6.0: list pages with no active-pack type match. Returns {orphan_count, orphans: [{slug, source_id}]}.',
+  name: "schema_review_orphans",
+  description:
+    "v0.40.6.0: list pages with no active-pack type match. Returns {orphan_count, orphans: [{slug, source_id}]}.",
   params: {
-    limit: { type: 'number', description: 'Max orphans to return (default 100)' },
+    limit: { type: "number", description: "Max orphans to return (default 100)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const limit = Math.max(1, Math.min(10000, (p.limit as number) ?? 100));
     const scope = sourceScopeOpts(ctx);
@@ -4614,7 +5244,7 @@ const schema_review_orphans: Operation = {
     try {
       const rows = await ctx.engine.executeRaw<{ slug: string; source_id: string }>(
         `SELECT slug, COALESCE(source_id, 'default') AS source_id FROM pages ${where} ORDER BY source_id, slug LIMIT ${limit}`,
-        params,
+        params
       );
       return {
         schema_version: 1,
@@ -4628,43 +5258,51 @@ const schema_review_orphans: Operation = {
 };
 
 const schema_apply_mutations: Operation = {
-  name: 'schema_apply_mutations',
-  description: 'v0.40.7.0: batched schema pack mutation. ATOMIC: all mutations succeed or all roll back. Audit log records one batch_id. Admin scope; NOT localOnly so remote agents (your OpenClaw, etc.) can author packs over normal MCP. Mutation shape per ApplyMutationsRequest type — supports add_type / remove_type / update_type / add_alias / remove_alias / add_prefix / remove_prefix / add_link_type / remove_link_type / set_extractable / set_expert_routing.',
+  name: "schema_apply_mutations",
+  description:
+    "v0.40.7.0: batched schema pack mutation. ATOMIC: all mutations succeed or all roll back. Audit log records one batch_id. Admin scope; NOT localOnly so remote agents (your OpenClaw, etc.) can author packs over normal MCP. Mutation shape per ApplyMutationsRequest type — supports add_type / remove_type / update_type / add_alias / remove_alias / add_prefix / remove_prefix / add_link_type / remove_link_type / set_extractable / set_expert_routing.",
   params: {
-    pack: { type: 'string', required: true, description: 'Pack to mutate (must not be bundled)' },
+    pack: { type: "string", required: true, description: "Pack to mutate (must not be bundled)" },
     mutations: {
-      type: 'array',
+      type: "array",
       required: true,
-      description: 'Array of {op, ...args} mutation records to apply atomically',
-      items: { type: 'object' },
+      description: "Array of {op, ...args} mutation records to apply atomically",
+      items: { type: "object" },
     },
-    force: { type: 'boolean', description: 'Steal stale per-pack lock' },
+    force: { type: "boolean", description: "Steal stale per-pack lock" },
   },
-  scope: 'admin',
+  scope: "admin",
   mutating: true,
   handler: async (ctx, p) => {
     const pack = p.pack as string;
     const mutations = p.mutations as Array<{ op: string; [k: string]: unknown }>;
     const force = p.force === true;
     if (!Array.isArray(mutations) || mutations.length === 0) {
-      return { error: 'invalid_request', message: 'mutations must be a non-empty array' };
+      return { error: "invalid_request", message: "mutations must be a non-empty array" };
     }
     const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const actor = ctx.auth?.clientId ? `mcp:${ctx.auth.clientId.slice(0, 8)}` : 'cli';
-    const sourceId = ctx.sourceId;  // codex C5: write-side scoping
+    const actor = ctx.auth?.clientId ? `mcp:${ctx.auth.clientId.slice(0, 8)}` : "cli";
+    const sourceId = ctx.sourceId; // codex C5: write-side scoping
     // Compose every mutation inside ONE withPackLock so the batch is
     // truly atomic. The withMutation skeleton handles audit / cache
     // invalidation per operation; we orchestrate the lock + iteration.
-    const { withPackLock } = await import('./schema-pack/pack-lock.ts');
+    const { withPackLock } = await import("./schema-pack/pack-lock.ts");
     const {
-      addTypeToPack, removeTypeFromPack, updateTypeOnPack,
-      addAliasToType, removeAliasFromType, addPrefixToType, removePrefixFromType,
-      addLinkTypeToPack, removeLinkTypeFromPack,
-      setExtractableOnType, setExpertRoutingOnType,
+      addTypeToPack,
+      removeTypeFromPack,
+      updateTypeOnPack,
+      addAliasToType,
+      removeAliasFromType,
+      addPrefixToType,
+      removePrefixFromType,
+      addLinkTypeToPack,
+      removeLinkTypeFromPack,
+      setExtractableOnType,
+      setExpertRoutingOnType,
       SchemaPackMutationError,
-    } = await import('./schema-pack/mutate.ts');
+    } = await import("./schema-pack/mutate.ts");
     const baseMutateOpts = {
-      actor: actor as 'cli' | `mcp:${string}`,
+      actor: actor as "cli" | `mcp:${string}`,
       batchId,
       engine: ctx.engine,
       ...(sourceId ? { sourceId } : {}),
@@ -4685,55 +5323,74 @@ const schema_apply_mutations: Operation = {
           const innerOpts = { ...baseMutateOpts, force: true };
           let r: unknown;
           switch (m.op) {
-            case 'add_type':
-              r = await addTypeToPack(pack, {
-                name: m.name as string,
-                primitive: m.primitive as never,
-                prefix: m.prefix as string,
-                extractable: m.extractable as boolean | undefined,
-                expertRouting: m.expert_routing as boolean | undefined,
-                aliases: m.aliases as string[] | undefined,
-              }, innerOpts);
+            case "add_type":
+              r = await addTypeToPack(
+                pack,
+                {
+                  name: m.name as string,
+                  primitive: m.primitive as never,
+                  prefix: m.prefix as string,
+                  extractable: m.extractable as boolean | undefined,
+                  expertRouting: m.expert_routing as boolean | undefined,
+                  aliases: m.aliases as string[] | undefined,
+                },
+                innerOpts
+              );
               break;
-            case 'remove_type':
+            case "remove_type":
               r = await removeTypeFromPack(pack, m.name as string, innerOpts);
               break;
-            case 'update_type':
-              r = await updateTypeOnPack(pack, { name: m.name as string, patch: (m.patch as object) ?? {} }, innerOpts);
+            case "update_type":
+              r = await updateTypeOnPack(
+                pack,
+                { name: m.name as string, patch: (m.patch as object) ?? {} },
+                innerOpts
+              );
               break;
-            case 'add_alias':
+            case "add_alias":
               r = await addAliasToType(pack, m.type as string, m.alias as string, innerOpts);
               break;
-            case 'remove_alias':
+            case "remove_alias":
               r = await removeAliasFromType(pack, m.type as string, m.alias as string, innerOpts);
               break;
-            case 'add_prefix':
+            case "add_prefix":
               r = await addPrefixToType(pack, m.type as string, m.prefix as string, innerOpts);
               break;
-            case 'remove_prefix':
+            case "remove_prefix":
               r = await removePrefixFromType(pack, m.type as string, m.prefix as string, innerOpts);
               break;
-            case 'add_link_type':
-              r = await addLinkTypeToPack(pack, {
-                name: m.name as string,
-                inverse: m.inverse as string | undefined,
-                inference: m.inference as { regex?: string; page_type?: string; target_type?: string } | undefined,
-              }, innerOpts);
+            case "add_link_type":
+              r = await addLinkTypeToPack(
+                pack,
+                {
+                  name: m.name as string,
+                  inverse: m.inverse as string | undefined,
+                  inference: m.inference as
+                    | { regex?: string; page_type?: string; target_type?: string }
+                    | undefined,
+                },
+                innerOpts
+              );
               break;
-            case 'remove_link_type':
+            case "remove_link_type":
               r = await removeLinkTypeFromPack(pack, m.name as string, innerOpts);
               break;
-            case 'set_extractable':
+            case "set_extractable":
               r = await setExtractableOnType(pack, m.type as string, m.value as boolean, innerOpts);
               break;
-            case 'set_expert_routing':
-              r = await setExpertRoutingOnType(pack, m.type as string, m.value as boolean, innerOpts);
+            case "set_expert_routing":
+              r = await setExpertRoutingOnType(
+                pack,
+                m.type as string,
+                m.value as boolean,
+                innerOpts
+              );
               break;
             default:
               throw new SchemaPackMutationError(
-                'INVALID_RESULT',
+                "INVALID_RESULT",
                 `unknown mutation op: '${m.op}' at index ${i}`,
-                { index: i, op: m.op },
+                { index: i, op: m.op }
               );
           }
           results.push({ index: i, op: m.op, ...(r as object) });
@@ -4747,9 +5404,9 @@ const schema_apply_mutations: Operation = {
         results,
       };
     } catch (e) {
-      const code = (e as { code?: string }).code ?? 'UNKNOWN';
+      const code = (e as { code?: string }).code ?? "UNKNOWN";
       return {
-        error: 'mutation_failed',
+        error: "mutation_failed",
         code,
         message: (e as Error).message,
         batch_id: batchId,
@@ -4765,15 +5422,16 @@ const schema_apply_mutations: Operation = {
 };
 
 const reload_schema_pack: Operation = {
-  name: 'reload_schema_pack',
-  description: 'v0.40.6.0: flush the in-process schema pack cache so the next loadActivePack re-reads from disk. Cascades through extends-chain (codex C6). Admin scope; NOT localOnly. Returns {invalidated: string[]}.',
+  name: "reload_schema_pack",
+  description:
+    "v0.40.6.0: flush the in-process schema pack cache so the next loadActivePack re-reads from disk. Cascades through extends-chain (codex C6). Admin scope; NOT localOnly. Returns {invalidated: string[]}.",
   params: {
-    pack: { type: 'string', description: 'Pack name to invalidate (omit to flush all)' },
+    pack: { type: "string", description: "Pack name to invalidate (omit to flush all)" },
   },
-  scope: 'admin',
-  mutating: false,  // no DB writes
+  scope: "admin",
+  mutating: false, // no DB writes
   handler: async (_ctx, p) => {
-    const { invalidatePackCache } = await import('./schema-pack/registry.ts');
+    const { invalidatePackCache } = await import("./schema-pack/registry.ts");
     return invalidatePackCache(p.pack as string | undefined);
   },
 };
@@ -4804,29 +5462,36 @@ const reload_schema_pack: Operation = {
 // the response with status='skipped_missing_scope' so the caller knows
 // what they would have gotten with the right grants.
 const run_onboard: Operation = {
-  name: 'run_onboard',
-  description: 'Probe brain health + optionally submit onboard remediations. Admin scope required. Protected handlers (LLM-bearing) require run_protected_onboard scope ADDITIONALLY.',
+  name: "run_onboard",
+  description:
+    "Probe brain health + optionally submit onboard remediations. Admin scope required. Protected handlers (LLM-bearing) require run_protected_onboard scope ADDITIONALLY.",
   params: {
-    mode: { type: 'string', description: "'check' (default), 'auto', or 'auto-with-prompt'" },
-    target_score: { type: 'number', description: 'Target brain_score (default 90)' },
-    max_usd: { type: 'number', description: 'USD cap for autopilot path (required for auto modes)' },
+    mode: { type: "string", description: "'check' (default), 'auto', or 'auto-with-prompt'" },
+    target_score: { type: "number", description: "Target brain_score (default 90)" },
+    max_usd: {
+      type: "number",
+      description: "USD cap for autopilot path (required for auto modes)",
+    },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   handler: async (ctx, p) => {
-    const mode = (typeof p.mode === 'string' ? p.mode : 'check') as 'check' | 'auto' | 'auto-with-prompt';
-    const targetScore = typeof p.target_score === 'number' ? p.target_score : 90;
-    const maxUsd = typeof p.max_usd === 'number' ? p.max_usd : undefined;
+    const mode = (typeof p.mode === "string" ? p.mode : "check") as
+      | "check"
+      | "auto"
+      | "auto-with-prompt";
+    const targetScore = typeof p.target_score === "number" ? p.target_score : 90;
+    const maxUsd = typeof p.max_usd === "number" ? p.max_usd : undefined;
 
-    const { computeRemediationPlan, runRemediation } = await import('./remediation/index.ts');
-    const { runAllOnboardChecks } = await import('./onboard/checks.ts');
-    const { buildOnboardReport } = await import('./onboard/render.ts');
+    const { computeRemediationPlan, runRemediation } = await import("./remediation/index.ts");
+    const { runAllOnboardChecks } = await import("./onboard/checks.ts");
+    const { buildOnboardReport } = await import("./onboard/render.ts");
 
     // Per A26: source-scope via sourceScopeOpts(ctx). The recommendation
     // planner is brain-wide today; future extension can scope by reading
     // ctx.sourceId / ctx.auth.allowedSources for per-source plans.
 
-    let extraRemediations: import('./remediation-step.ts').RemediationStep[] = [];
+    let extraRemediations: import("./remediation-step.ts").RemediationStep[] = [];
     try {
       const checkResults = await runAllOnboardChecks(ctx.engine);
       extraRemediations = checkResults.flatMap((r) => r.remediations);
@@ -4835,7 +5500,7 @@ const run_onboard: Operation = {
     }
 
     // 'check' mode: just return the plan + JSON envelope. No submission.
-    if (mode === 'check') {
+    if (mode === "check") {
       const plan = await computeRemediationPlan(ctx.engine, { targetScore, extraRemediations });
       const report = buildOnboardReport(plan);
       return report;
@@ -4844,21 +5509,28 @@ const run_onboard: Operation = {
     // 'auto' and 'auto-with-prompt' modes: require --max-usd per A12 + A20
     // safety posture (cron-safety; refuses surprise spend).
     if (maxUsd === undefined) {
-      throw new OperationError('invalid_params', `mode='${mode}' requires max_usd (cron-safety cap)`);
+      throw new OperationError(
+        "invalid_params",
+        `mode='${mode}' requires max_usd (cron-safety cap)`
+      );
     }
 
     // Critical T16 + codex #5 security gate: filter out PROTECTED_JOB_NAMES
     // unless the caller has the run_protected_onboard scope IN ADDITION
     // to admin. Admin alone is insufficient.
     const grantedScopes = ctx.auth?.scopes ?? [];
-    const canRunProtected = grantedScopes.includes('run_protected_onboard');
-    const { isProtectedJobName } = await import('./minions/protected-names.ts');
+    const canRunProtected = grantedScopes.includes("run_protected_onboard");
+    const { isProtectedJobName } = await import("./minions/protected-names.ts");
 
     const skippedMissingScope: Array<{ id: string; job: string; reason: string }> = [];
     const allowedExtras = extraRemediations.filter((r) => {
       if (canRunProtected) return true;
       if (isProtectedJobName(r.job)) {
-        skippedMissingScope.push({ id: r.id, job: r.job, reason: 'requires run_protected_onboard scope' });
+        skippedMissingScope.push({
+          id: r.id,
+          job: r.job,
+          reason: "requires run_protected_onboard scope",
+        });
         return false;
       }
       return true;
@@ -4871,11 +5543,7 @@ const run_onboard: Operation = {
     // upstream submit-side gating in submit_job filters protected names
     // for ctx.remote !== false callers, so even if MCP run_onboard had a
     // typo, the underlying queue.add would reject. Defense-in-depth.
-    const result = await runRemediation(
-      ctx.engine,
-      { targetScore, maxUsd },
-      {},
-    );
+    const result = await runRemediation(ctx.engine, { targetScore, maxUsd }, {});
 
     return {
       ...result,
@@ -4890,22 +5558,35 @@ const run_onboard: Operation = {
 // CLI fire (working tree, install path, lock acquisition, bundled-skill
 // guard). NOT localOnly so admin HTTP MCP clients can invoke.
 const run_skillopt: Operation = {
-  name: 'run_skillopt',
-  description: 'Run SkillOpt against a single skill. Admin scope; mutating; rate-limited per-skill via DB lock. See gbrain skillopt CLI for the full flag surface.',
+  name: "run_skillopt",
+  description:
+    "Run SkillOpt against a single skill. Admin scope; mutating; rate-limited per-skill via DB lock. See gbrain skillopt CLI for the full flag surface.",
   params: {
-    skill_name: { type: 'string', required: true, description: 'Kebab-case skill name (resolves to skills/<name>/SKILL.md)' },
-    benchmark_path: { type: 'string', description: 'Absolute path to benchmark JSONL; defaults to skills/<name>/skillopt-benchmark.jsonl' },
-    epochs: { type: 'number', description: 'Default 4' },
-    batch_size: { type: 'number', description: 'Default 8' },
-    lr: { type: 'number', description: 'Default 4' },
-    max_cost_usd: { type: 'number', description: 'Default 5.00' },
-    no_mutate: { type: 'boolean', description: 'Write proposed.md without replacing SKILL.md' },
-    allow_mutate_bundled: { type: 'boolean', description: 'Required to mutate bundled skills' },
-    held_out_path: { type: 'string', description: 'Path to a held-out test set (JSONL). REQUIRED (>=5 rows) to mutate a bundled skill in place — otherwise the run hard-refuses. Remote callers: must resolve within the skills directory.' },
-    dry_run: { type: 'boolean', description: 'Cost preview, no LLM calls' },
+    skill_name: {
+      type: "string",
+      required: true,
+      description: "Kebab-case skill name (resolves to skills/<name>/SKILL.md)",
+    },
+    benchmark_path: {
+      type: "string",
+      description:
+        "Absolute path to benchmark JSONL; defaults to skills/<name>/skillopt-benchmark.jsonl",
+    },
+    epochs: { type: "number", description: "Default 4" },
+    batch_size: { type: "number", description: "Default 8" },
+    lr: { type: "number", description: "Default 4" },
+    max_cost_usd: { type: "number", description: "Default 5.00" },
+    no_mutate: { type: "boolean", description: "Write proposed.md without replacing SKILL.md" },
+    allow_mutate_bundled: { type: "boolean", description: "Required to mutate bundled skills" },
+    held_out_path: {
+      type: "string",
+      description:
+        "Path to a held-out test set (JSONL). REQUIRED (>=5 rows) to mutate a bundled skill in place — otherwise the run hard-refuses. Remote callers: must resolve within the skills directory.",
+    },
+    dry_run: { type: "boolean", description: "Cost preview, no LLM calls" },
   },
   mutating: true,
-  scope: 'admin',
+  scope: "admin",
   localOnly: false,
   handler: async (ctx, p) => {
     // SECURITY: skill_name is joined into filesystem paths (SKILL.md, default
@@ -4913,49 +5594,70 @@ const run_skillopt: Operation = {
     // name (`../`, absolute) would escape the skills dir even WITH the
     // caller-supplied-path confinement below. Validate kebab-only up front so
     // every derived path is contained by construction. Applies to all callers.
-    const skillNameRaw = (p.skill_name as string) ?? '';
+    const skillNameRaw = (p.skill_name as string) ?? "";
     if (!/^[a-z0-9][a-z0-9-]*$/.test(skillNameRaw)) {
-      throw new OperationError(`run_skillopt: skill_name must be kebab-case (matching ^[a-z0-9][a-z0-9-]*$); got '${skillNameRaw}'`, 'invalid_params');
+      throw new OperationError(
+        `run_skillopt: skill_name must be kebab-case (matching ^[a-z0-9][a-z0-9-]*$); got '${skillNameRaw}'`,
+        "invalid_params"
+      );
     }
     if (ctx.remote !== false) {
       // Remote: enforce per-skill allowlist read from config.
       // `skillopt.allowed_skills` is a JSON-array config of skill names
       // an admin-scoped OAuth client may target. Default DENY-ALL: when
       // unset, MCP cannot drive skillopt on any skill.
-      const allowedRaw = await ctx.engine.getConfig('skillopt.allowed_skills');
+      const allowedRaw = await ctx.engine.getConfig("skillopt.allowed_skills");
       let allowed: string[] = [];
       try {
         if (allowedRaw) allowed = JSON.parse(allowedRaw) as string[];
-      } catch { /* fall through to deny */ }
-      const skillName = (p.skill_name as string) ?? '';
+      } catch {
+        /* fall through to deny */
+      }
+      const skillName = (p.skill_name as string) ?? "";
       if (!allowed.includes(skillName)) {
-        throw new OperationError(`run_skillopt: skill '${skillName}' is not in skillopt.allowed_skills allowlist (default deny-all for remote callers)`, 'permission_denied');
+        throw new OperationError(
+          `run_skillopt: skill '${skillName}' is not in skillopt.allowed_skills allowlist (default deny-all for remote callers)`,
+          "permission_denied"
+        );
       }
     }
-    const { runSkillOpt } = await import('./skillopt/orchestrator.ts');
-    const { autoDetectSkillsDirReadOnly } = await import('./repo-root.ts');
-    const { resolveModel } = await import('./model-config.ts');
+    const { runSkillOpt } = await import("./skillopt/orchestrator.ts");
+    const { autoDetectSkillsDirReadOnly } = await import("./repo-root.ts");
+    const { resolveModel } = await import("./model-config.ts");
     const detected = autoDetectSkillsDirReadOnly(process.cwd());
     const skillsDir = detected.dir;
     if (!skillsDir) {
-      throw new OperationError('run_skillopt: skills directory not found', 'config_error');
+      throw new OperationError("run_skillopt: skills directory not found", "config_error");
     }
-    const optimizerModel = await resolveModel(ctx.engine, { tier: 'deep', fallback: 'anthropic:claude-opus-4-7' });
-    const targetModel = await resolveModel(ctx.engine, { tier: 'subagent', fallback: 'anthropic:claude-sonnet-4-6' });
-    const judgeModel = await resolveModel(ctx.engine, { tier: 'reasoning', fallback: 'anthropic:claude-sonnet-4-6' });
+    const optimizerModel = await resolveModel(ctx.engine, {
+      tier: "deep",
+      fallback: "anthropic:claude-opus-4-7",
+    });
+    const targetModel = await resolveModel(ctx.engine, {
+      tier: "subagent",
+      fallback: "anthropic:claude-sonnet-4-6",
+    });
+    const judgeModel = await resolveModel(ctx.engine, {
+      tier: "reasoning",
+      fallback: "anthropic:claude-sonnet-4-6",
+    });
     const skillName = p.skill_name as string;
-    const benchmarkPath = (p.benchmark_path as string) ??
-      `${skillsDir}/${skillName}/skillopt-benchmark.jsonl`;
+    const benchmarkPath =
+      (p.benchmark_path as string) ?? `${skillsDir}/${skillName}/skillopt-benchmark.jsonl`;
     const heldOutPath = p.held_out_path as string | undefined;
     // SECURITY: remote callers must NOT be able to point benchmark/held-out at
     // arbitrary host files (loadBenchmark → fs.readFileSync would otherwise be an
     // arbitrary-read + existence oracle). Confine any caller-supplied path to the
     // skills directory. Local CLI callers (ctx.remote === false) are unconfined.
     if (ctx.remote !== false) {
-      const nodePath = await import('node:path');
-      const nodeFs = await import('node:fs');
+      const nodePath = await import("node:path");
+      const nodeFs = await import("node:fs");
       const rootReal = (() => {
-        try { return nodeFs.realpathSync(skillsDir); } catch { return nodePath.resolve(skillsDir); }
+        try {
+          return nodeFs.realpathSync(skillsDir);
+        } catch {
+          return nodePath.resolve(skillsDir);
+        }
       })();
       const confine = (label: string, candidate: string | undefined): void => {
         if (!candidate) return;
@@ -4967,15 +5669,24 @@ const run_skillopt: Operation = {
           // Not yet present: canonicalize the nearest existing ancestor so a
           // legit in-dir path under a symlinked skillsDir (e.g. macOS /tmp ->
           // /private/tmp, Conductor worktrees) isn't wrongly rejected.
-          try { real = nodePath.join(nodeFs.realpathSync(nodePath.dirname(resolved)), nodePath.basename(resolved)); }
-          catch { /* parent also missing; fall back to resolved form */ }
+          try {
+            real = nodePath.join(
+              nodeFs.realpathSync(nodePath.dirname(resolved)),
+              nodePath.basename(resolved)
+            );
+          } catch {
+            /* parent also missing; fall back to resolved form */
+          }
         }
         if (real !== rootReal && !real.startsWith(rootReal + nodePath.sep)) {
-          throw new OperationError(`run_skillopt: ${label} must resolve within the skills directory for remote callers`, 'permission_denied');
+          throw new OperationError(
+            `run_skillopt: ${label} must resolve within the skills directory for remote callers`,
+            "permission_denied"
+          );
         }
       };
-      confine('benchmark_path', p.benchmark_path as string | undefined);
-      confine('held_out_path', heldOutPath);
+      confine("benchmark_path", p.benchmark_path as string | undefined);
+      confine("held_out_path", heldOutPath);
     }
     const result = await runSkillOpt({
       engine: ctx.engine,
@@ -4985,12 +5696,12 @@ const run_skillopt: Operation = {
       epochs: (p.epochs as number) ?? 4,
       batchSize: (p.batch_size as number) ?? 8,
       lr: (p.lr as number) ?? 4,
-      lrSchedule: 'cosine',
+      lrSchedule: "cosine",
       split: [4, 1, 5],
       optimizerModel,
       targetModel,
       judgeModel,
-      mode: 'patch',
+      mode: "patch",
       dryRun: (p.dry_run as boolean) === true,
       noMutate: (p.no_mutate as boolean) === true,
       allowMutateBundled: (p.allow_mutate_bundled as boolean) === true,
@@ -5020,15 +5731,16 @@ const run_skillopt: Operation = {
 // attorney_review_required: true on every output.
 
 const legal_analyze_document: Operation = {
-  name: 'legal_analyze_document',
-  description: 'Analyze a legal document for issues, parties, key dates, and relevant statutes. Every issue is grounded with a verbatim quote from the document — ungrounded issues are dropped. Returns attorney_review_required: true.',
+  name: "legal_analyze_document",
+  description:
+    "Analyze a legal document for issues, parties, key dates, and relevant statutes. Every issue is grounded with a verbatim quote from the document — ungrounded issues are dropped. Returns attorney_review_required: true.",
   params: {
-    slug: { type: 'string', required: true, description: 'Page slug of the document to analyze' },
+    slug: { type: "string", required: true, description: "Page slug of the document to analyze" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { analyzeDocument } = await import('./legal/analyze-document.ts');
+    const { analyzeDocument } = await import("./legal/analyze-document.ts");
     return analyzeDocument(ctx.engine, {
       slug: String(p.slug),
       ...(scope.sourceId !== undefined ? { sourceId: scope.sourceId } : {}),
@@ -5038,219 +5750,323 @@ const legal_analyze_document: Operation = {
 };
 
 const legal_document_review: Operation = {
-  name: 'legal_document_review',
-  description: 'Q&A-style review of a legal document. Generates findings with grounded citations (every citation must appear verbatim in the source). Supports focus areas: clauses, risks, compliance, general. Returns attorney_review_required: true.',
+  name: "legal_document_review",
+  description:
+    "Q&A-style review of a legal document. Generates findings with grounded citations (every citation must appear verbatim in the source). Supports focus areas: clauses, risks, compliance, general. Returns attorney_review_required: true.",
   params: {
-    document_slug: { type: 'string', description: 'Page slug of the document to review' },
-    text: { type: 'string', description: 'Raw document text (alternative to document_slug)' },
-    questions: { type: 'array', items: { type: 'string' }, description: 'Custom review questions' },
-    focus: { type: 'string', enum: ['clauses', 'risks', 'compliance', 'general'], description: 'Review focus area (default: general)' },
-    jurisdiction: { type: 'string', description: 'Jurisdiction code (de, at, ch, or all)' },
+    document_slug: { type: "string", description: "Page slug of the document to review" },
+    text: { type: "string", description: "Raw document text (alternative to document_slug)" },
+    questions: { type: "array", items: { type: "string" }, description: "Custom review questions" },
+    focus: {
+      type: "string",
+      enum: ["clauses", "risks", "compliance", "general"],
+      description: "Review focus area (default: general)",
+    },
+    jurisdiction: { type: "string", description: "Jurisdiction code (de, at, ch, or all)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { reviewDocument } = await import('./legal/document-review.ts');
+    const { reviewDocument } = await import("./legal/document-review.ts");
     return reviewDocument(ctx.engine, {
       ...scope,
       ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
       ...(p.text ? { text: String(p.text) } : {}),
-      questions: Array.isArray(p.questions) ? (p.questions as unknown[]).filter((q): q is string => typeof q === 'string') : [],
-      focus: (['clauses', 'risks', 'compliance', 'general'].includes(String(p.focus)) ? p.focus : 'general') as 'clauses' | 'risks' | 'compliance' | 'general',
-      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
+      questions: Array.isArray(p.questions)
+        ? (p.questions as unknown[]).filter((q): q is string => typeof q === "string")
+        : [],
+      focus: (["clauses", "risks", "compliance", "general"].includes(String(p.focus))
+        ? p.focus
+        : "general") as "clauses" | "risks" | "compliance" | "general",
+      jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "all",
     });
   },
 };
 
 const legal_summarize: Operation = {
-  name: 'legal_summarize',
-  description: 'Generate an executive summary with structured key points for a legal document, case file, or judgement. Reports word_count and reading_time. Paraphrasing by nature (not quote-grounded). Returns attorney_review_required: true.',
+  name: "legal_summarize",
+  description:
+    "Generate an executive summary with structured key points for a legal document, case file, or judgement. Reports word_count and reading_time. Paraphrasing by nature (not quote-grounded). Returns attorney_review_required: true.",
   params: {
-    document_slug: { type: 'string', description: 'Page slug of the document to summarize' },
-    text: { type: 'string', description: 'Raw document text (alternative to document_slug)' },
-    type: { type: 'string', enum: ['document', 'case', 'judgement', 'contract', 'general'], description: 'Document type (default: general)' },
-    depth: { type: 'string', enum: ['brief', 'standard', 'detailed'], description: 'Summary depth (default: standard)' },
-    focus: { type: 'string', description: 'Optional focus area' },
-    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+    document_slug: { type: "string", description: "Page slug of the document to summarize" },
+    text: { type: "string", description: "Raw document text (alternative to document_slug)" },
+    type: {
+      type: "string",
+      enum: ["document", "case", "judgement", "contract", "general"],
+      description: "Document type (default: general)",
+    },
+    depth: {
+      type: "string",
+      enum: ["brief", "standard", "detailed"],
+      description: "Summary depth (default: standard)",
+    },
+    focus: { type: "string", description: "Optional focus area" },
+    language: { type: "string", enum: ["de", "en"], description: "Output language (default: de)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { summarizeDocument } = await import('./legal/summarize.ts');
+    const { summarizeDocument } = await import("./legal/summarize.ts");
     return summarizeDocument(ctx.engine, {
       ...scope,
       ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
       ...(p.text ? { text: String(p.text) } : {}),
-      type: (['document', 'case', 'judgement', 'contract', 'general'].includes(String(p.type)) ? p.type : 'general') as 'document' | 'case' | 'judgement' | 'contract' | 'general',
-      depth: (['brief', 'standard', 'detailed'].includes(String(p.depth)) ? p.depth : 'standard') as 'brief' | 'standard' | 'detailed',
-      ...(typeof p.focus === 'string' ? { focus: p.focus } : {}),
-      language: p.language === 'en' ? 'en' : 'de',
+      type: (["document", "case", "judgement", "contract", "general"].includes(String(p.type))
+        ? p.type
+        : "general") as "document" | "case" | "judgement" | "contract" | "general",
+      depth: (["brief", "standard", "detailed"].includes(String(p.depth))
+        ? p.depth
+        : "standard") as "brief" | "standard" | "detailed",
+      ...(typeof p.focus === "string" ? { focus: p.focus } : {}),
+      language: p.language === "en" ? "en" : "de",
     });
   },
 };
 
 const legal_memo: Operation = {
-  name: 'legal_memo',
-  description: 'Generate a structured legal memorandum (Sachverhalt → Rechtsfragen → rechtliche Würdigung → Ergebnis). Can incorporate case context from the brain. Requires question and facts. Returns attorney_review_required: true.',
+  name: "legal_memo",
+  description:
+    "Generate a structured legal memorandum (Sachverhalt → Rechtsfragen → rechtliche Würdigung → Ergebnis). Can incorporate case context from the brain. Requires question and facts. Returns attorney_review_required: true.",
   params: {
-    question: { type: 'string', required: true, description: 'Legal question to address' },
-    facts: { type: 'string', required: true, description: 'Case facts / Sachverhalt' },
-    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code' },
-    legal_area: { type: 'string', description: 'Legal area (e.g. Mietrecht, Arbeitsrecht)' },
-    case_slug: { type: 'string', description: 'Optional case slug to pull context from' },
-    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
-    depth: { type: 'string', enum: ['brief', 'standard', 'comprehensive'], description: 'Memo depth (default: standard)' },
+    question: { type: "string", required: true, description: "Legal question to address" },
+    facts: { type: "string", required: true, description: "Case facts / Sachverhalt" },
+    jurisdiction: {
+      type: "string",
+      required: true,
+      enum: ["at", "de", "ch"],
+      description: "Jurisdiction code",
+    },
+    legal_area: { type: "string", description: "Legal area (e.g. Mietrecht, Arbeitsrecht)" },
+    case_slug: { type: "string", description: "Optional case slug to pull context from" },
+    language: { type: "string", enum: ["de", "en"], description: "Output language (default: de)" },
+    depth: {
+      type: "string",
+      enum: ["brief", "standard", "comprehensive"],
+      description: "Memo depth (default: standard)",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { generateMemo } = await import('./legal/memo.ts');
+    const { generateMemo } = await import("./legal/memo.ts");
     return generateMemo(ctx.engine, {
       ...scope,
       question: String(p.question),
       facts: String(p.facts),
-      jurisdiction: String(p.jurisdiction) as 'at' | 'de' | 'ch',
-      ...(typeof p.legal_area === 'string' ? { legal_area: p.legal_area } : {}),
-      ...(typeof p.case_slug === 'string' ? { case_slug: p.case_slug } : {}),
-      language: p.language === 'en' ? 'en' : 'de',
-      depth: (['brief', 'standard', 'comprehensive'].includes(String(p.depth)) ? p.depth : 'standard') as 'brief' | 'standard' | 'comprehensive',
+      jurisdiction: String(p.jurisdiction) as "at" | "de" | "ch",
+      ...(typeof p.legal_area === "string" ? { legal_area: p.legal_area } : {}),
+      ...(typeof p.case_slug === "string" ? { case_slug: p.case_slug } : {}),
+      language: p.language === "en" ? "en" : "de",
+      depth: (["brief", "standard", "comprehensive"].includes(String(p.depth))
+        ? p.depth
+        : "standard") as "brief" | "standard" | "comprehensive",
     });
   },
 };
 
 const legal_risk_analysis: Operation = {
-  name: 'legal_risk_analysis',
-  description: 'Clause-level risk scoring for contracts. Each identified risk includes a text_excerpt that must appear verbatim in the source document (anti-hallucination grounding). Identifies red flags and missing clauses. Returns attorney_review_required: true.',
+  name: "legal_risk_analysis",
+  description:
+    "Clause-level risk scoring for contracts. Each identified risk includes a text_excerpt that must appear verbatim in the source document (anti-hallucination grounding). Identifies red flags and missing clauses. Returns attorney_review_required: true.",
   params: {
-    document_slug: { type: 'string', description: 'Page slug of the contract to analyze' },
-    text: { type: 'string', description: 'Raw contract text (alternative to document_slug)' },
-    contract_type: { type: 'string', description: 'Contract type (e.g. NDA, Mietvertrag)' },
-    jurisdiction: { type: 'string', description: 'Jurisdiction code (de, at, ch, or all)' },
-    perspective: { type: 'string', enum: ['party_a', 'party_b', 'neutral'], description: 'Analysis perspective (default: neutral)' },
+    document_slug: { type: "string", description: "Page slug of the contract to analyze" },
+    text: { type: "string", description: "Raw contract text (alternative to document_slug)" },
+    contract_type: { type: "string", description: "Contract type (e.g. NDA, Mietvertrag)" },
+    jurisdiction: { type: "string", description: "Jurisdiction code (de, at, ch, or all)" },
+    perspective: {
+      type: "string",
+      enum: ["party_a", "party_b", "neutral"],
+      description: "Analysis perspective (default: neutral)",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { analyzeRisk } = await import('./legal/risk-analysis.ts');
+    const { analyzeRisk } = await import("./legal/risk-analysis.ts");
     return analyzeRisk(ctx.engine, {
       ...scope,
       ...(p.document_slug ? { slug: String(p.document_slug) } : {}),
       ...(p.text ? { text: String(p.text) } : {}),
-      ...(typeof p.contract_type === 'string' ? { contract_type: p.contract_type } : {}),
-      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
-      perspective: (['party_a', 'party_b', 'neutral'].includes(String(p.perspective)) ? p.perspective : 'neutral') as 'party_a' | 'party_b' | 'neutral',
+      ...(typeof p.contract_type === "string" ? { contract_type: p.contract_type } : {}),
+      jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "all",
+      perspective: (["party_a", "party_b", "neutral"].includes(String(p.perspective))
+        ? p.perspective
+        : "neutral") as "party_a" | "party_b" | "neutral",
     });
   },
 };
 
 const legal_contract_draft: Operation = {
-  name: 'legal_contract_draft',
-  description: 'Generate a first-draft contract using an LLM with optional template seeding from the brain. Output includes an AI banner and attorney_review_required: true flag. Requires contract type, jurisdiction, and both parties.',
+  name: "legal_contract_draft",
+  description:
+    "Generate a first-draft contract using an LLM with optional template seeding from the brain. Output includes an AI banner and attorney_review_required: true flag. Requires contract type, jurisdiction, and both parties.",
   params: {
-    type: { type: 'string', required: true, description: 'Contract type (e.g. NDA, Mietvertrag, Kaufvertrag)' },
-    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code' },
-    parties: { type: 'object', required: true, description: 'Object with "a" and "b" keys for party names' },
-    instructions: { type: 'string', description: 'Additional drafting instructions' },
-    template_slug: { type: 'string', description: 'Optional template page slug to seed from' },
-    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+    type: {
+      type: "string",
+      required: true,
+      description: "Contract type (e.g. NDA, Mietvertrag, Kaufvertrag)",
+    },
+    jurisdiction: {
+      type: "string",
+      required: true,
+      enum: ["at", "de", "ch"],
+      description: "Jurisdiction code",
+    },
+    parties: {
+      type: "object",
+      required: true,
+      description: 'Object with "a" and "b" keys for party names',
+    },
+    instructions: { type: "string", description: "Additional drafting instructions" },
+    template_slug: { type: "string", description: "Optional template page slug to seed from" },
+    language: { type: "string", enum: ["de", "en"], description: "Output language (default: de)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { draftContract } = await import('./legal/contract-draft.ts');
+    const { draftContract } = await import("./legal/contract-draft.ts");
     const parties = p.parties as Record<string, unknown> | undefined;
     return draftContract(ctx.engine, {
       ...scope,
       type: String(p.type),
-      jurisdiction: String(p.jurisdiction) as 'at' | 'de' | 'ch',
+      jurisdiction: String(p.jurisdiction) as "at" | "de" | "ch",
       parties: {
-        a: String(parties?.a ?? ''),
-        b: String(parties?.b ?? ''),
+        a: String(parties?.a ?? ""),
+        b: String(parties?.b ?? ""),
       },
-      ...(typeof p.instructions === 'string' ? { instructions: p.instructions } : {}),
-      ...(typeof p.template_slug === 'string' ? { template_slug: p.template_slug } : {}),
-      language: p.language === 'en' ? 'en' : 'de',
+      ...(typeof p.instructions === "string" ? { instructions: p.instructions } : {}),
+      ...(typeof p.template_slug === "string" ? { template_slug: p.template_slug } : {}),
+      language: p.language === "en" ? "en" : "de",
     });
   },
 };
 
 const legal_contract_redline: Operation = {
-  name: 'legal_contract_redline',
-  description: 'Suggest tracked-changes-style edits to a contract. Each redline\'s original_clause must appear verbatim in the source text (modify/remove) — fabricated clauses are dropped. Supports counterparty comparison and playbook alignment with deviation flagging. When a playbook_slug is provided, rules from the playbook page (type: legal_playbook) are parsed and the LLM flags deviations per rule. Returns attorney_review_required: true.',
+  name: "legal_contract_redline",
+  description:
+    "Suggest tracked-changes-style edits to a contract. Each redline's original_clause must appear verbatim in the source text (modify/remove) — fabricated clauses are dropped. Supports counterparty comparison and playbook alignment with deviation flagging. When a playbook_slug is provided, rules from the playbook page (type: legal_playbook) are parsed and the LLM flags deviations per rule. Returns attorney_review_required: true.",
   params: {
-    original_text: { type: 'string', required: true, description: 'The original contract text' },
-    counterparty_text: { type: 'string', description: 'Counterparty version for comparison' },
-    playbook_slug: { type: 'string', description: 'Optional clause playbook page slug' },
-    contract_type: { type: 'string', description: 'Contract type' },
-    jurisdiction: { type: 'string', description: 'Jurisdiction code' },
-    perspective: { type: 'string', enum: ['client', 'counterparty', 'neutral'], description: 'Redlining perspective (default: client)' },
-    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+    original_text: { type: "string", required: true, description: "The original contract text" },
+    counterparty_text: { type: "string", description: "Counterparty version for comparison" },
+    playbook_slug: { type: "string", description: "Optional clause playbook page slug" },
+    contract_type: { type: "string", description: "Contract type" },
+    jurisdiction: { type: "string", description: "Jurisdiction code" },
+    perspective: {
+      type: "string",
+      enum: ["client", "counterparty", "neutral"],
+      description: "Redlining perspective (default: client)",
+    },
+    language: { type: "string", enum: ["de", "en"], description: "Output language (default: de)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { redlineContract } = await import('./legal/contract-redline.ts');
+    const { redlineContract } = await import("./legal/contract-redline.ts");
     return redlineContract(ctx.engine, {
       ...scope,
       original_text: String(p.original_text),
-      ...(typeof p.counterparty_text === 'string' ? { counterparty_text: p.counterparty_text } : {}),
-      ...(typeof p.playbook_slug === 'string' ? { playbook_slug: p.playbook_slug } : {}),
-      ...(typeof p.contract_type === 'string' ? { contract_type: p.contract_type } : {}),
-      jurisdiction: typeof p.jurisdiction === 'string' ? p.jurisdiction : 'all',
-      perspective: (['client', 'counterparty', 'neutral'].includes(String(p.perspective)) ? p.perspective : 'client') as 'client' | 'counterparty' | 'neutral',
-      language: p.language === 'en' ? 'en' : 'de',
+      ...(typeof p.counterparty_text === "string"
+        ? { counterparty_text: p.counterparty_text }
+        : {}),
+      ...(typeof p.playbook_slug === "string" ? { playbook_slug: p.playbook_slug } : {}),
+      ...(typeof p.contract_type === "string" ? { contract_type: p.contract_type } : {}),
+      jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "all",
+      perspective: (["client", "counterparty", "neutral"].includes(String(p.perspective))
+        ? p.perspective
+        : "client") as "client" | "counterparty" | "neutral",
+      language: p.language === "en" ? "en" : "de",
     });
   },
 };
 
 const legal_due_diligence: Operation = {
-  name: 'legal_due_diligence',
-  description: 'Checklist-driven due diligence review across multiple documents. Supports M&A, real estate, financing, and general categories. Each finding includes page_refs for traceability. Returns attorney_review_required: true.',
+  name: "legal_due_diligence",
+  description:
+    "Checklist-driven due diligence review across multiple documents. Supports M&A, real estate, financing, and general categories. Each finding includes page_refs for traceability. Returns attorney_review_required: true.",
   params: {
-    case_slug: { type: 'string', description: 'Case slug to pull documents from' },
-    document_slugs: { type: 'array', items: { type: 'string' }, description: 'Document slugs to review' },
-    category: { type: 'string', enum: ['m_and_a', 'real_estate', 'financing', 'general'], description: 'DD category (default: general)' },
-    jurisdiction: { type: 'string', enum: ['at', 'de', 'ch'], description: 'Jurisdiction code (default: de)' },
-    checklist: { type: 'array', items: { type: 'string' }, description: 'Custom checklist items' },
-    language: { type: 'string', enum: ['de', 'en'], description: 'Output language (default: de)' },
+    case_slug: { type: "string", description: "Case slug to pull documents from" },
+    document_slugs: {
+      type: "array",
+      items: { type: "string" },
+      description: "Document slugs to review",
+    },
+    category: {
+      type: "string",
+      enum: ["m_and_a", "real_estate", "financing", "general"],
+      description: "DD category (default: general)",
+    },
+    jurisdiction: {
+      type: "string",
+      enum: ["at", "de", "ch"],
+      description: "Jurisdiction code (default: de)",
+    },
+    checklist: { type: "array", items: { type: "string" }, description: "Custom checklist items" },
+    language: { type: "string", enum: ["de", "en"], description: "Output language (default: de)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const { runDueDiligence } = await import('./legal/due-diligence.ts');
+    const { runDueDiligence } = await import("./legal/due-diligence.ts");
     return runDueDiligence(ctx.engine, {
       ...scope,
-      ...(typeof p.case_slug === 'string' ? { case_slug: p.case_slug } : {}),
-      ...(Array.isArray(p.document_slugs) ? { document_slugs: (p.document_slugs as unknown[]).filter((s): s is string => typeof s === 'string') } : {}),
-      category: (['m_and_a', 'real_estate', 'financing', 'general'].includes(String(p.category)) ? p.category : 'general') as 'm_and_a' | 'real_estate' | 'financing' | 'general',
-      jurisdiction: (['at', 'de', 'ch'].includes(String(p.jurisdiction)) ? p.jurisdiction : 'de') as 'at' | 'de' | 'ch',
-      ...(Array.isArray(p.checklist) ? { checklist: (p.checklist as unknown[]).filter((s): s is string => typeof s === 'string') } : {}),
-      language: p.language === 'en' ? 'en' : 'de',
+      ...(typeof p.case_slug === "string" ? { case_slug: p.case_slug } : {}),
+      ...(Array.isArray(p.document_slugs)
+        ? {
+            document_slugs: (p.document_slugs as unknown[]).filter(
+              (s): s is string => typeof s === "string"
+            ),
+          }
+        : {}),
+      category: (["m_and_a", "real_estate", "financing", "general"].includes(String(p.category))
+        ? p.category
+        : "general") as "m_and_a" | "real_estate" | "financing" | "general",
+      jurisdiction: (["at", "de", "ch"].includes(String(p.jurisdiction))
+        ? p.jurisdiction
+        : "de") as "at" | "de" | "ch",
+      ...(Array.isArray(p.checklist)
+        ? {
+            checklist: (p.checklist as unknown[]).filter((s): s is string => typeof s === "string"),
+          }
+        : {}),
+      language: p.language === "en" ? "en" : "de",
     });
   },
 };
 
 const legal_precedent_search: Operation = {
-  name: 'legal_precedent_search',
-  description: 'Search for legal precedents (case law) in the brain with relevance scoring. Queries legal_case pages using keyword + vector search, ranks by legal area match, keyword overlap, recency, and outcome similarity. Returns structured results with case details and relevance scores.',
+  name: "legal_precedent_search",
+  description:
+    "Search for legal precedents (case law) in the brain with relevance scoring. Queries legal_case pages using keyword + vector search, ranks by legal area match, keyword overlap, recency, and outcome similarity. Returns structured results with case details and relevance scores.",
   params: {
-    query: { type: 'string', required: true, description: 'Search query (legal issue, area, or fact pattern)' },
-    jurisdiction: { type: 'string', enum: ['at', 'de', 'ch'], description: 'Filter by jurisdiction' },
-    legal_area: { type: 'string', description: 'Filter by legal area (e.g. "Amtshaftungsrecht", "Vertragsrecht")' },
-    limit: { type: 'number', description: 'Max results (default: 10, max: 50)' },
+    query: {
+      type: "string",
+      required: true,
+      description: "Search query (legal issue, area, or fact pattern)",
+    },
+    jurisdiction: {
+      type: "string",
+      enum: ["at", "de", "ch"],
+      description: "Filter by jurisdiction",
+    },
+    legal_area: {
+      type: "string",
+      description: 'Filter by legal area (e.g. "Amtshaftungsrecht", "Vertragsrecht")',
+    },
+    limit: { type: "number", description: "Max results (default: 10, max: 50)" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
     const query = String(p.query);
-    const jurisdiction = typeof p.jurisdiction === 'string' ? p.jurisdiction as string : undefined;
-    const legalArea = typeof p.legal_area === 'string' ? p.legal_area : undefined;
-    const limit = Math.min(Math.max(typeof p.limit === 'number' ? (p.limit as number) : 10, 1), 50);
+    const jurisdiction =
+      typeof p.jurisdiction === "string" ? (p.jurisdiction as string) : undefined;
+    const legalArea = typeof p.legal_area === "string" ? p.legal_area : undefined;
+    const limit = Math.min(Math.max(typeof p.limit === "number" ? (p.limit as number) : 10, 1), 50);
 
     // 1. Keyword search on legal_case pages
     const searchOpts: Record<string, unknown> = {
       limit: limit * 3,
-      types: ['legal_case'],
+      types: ["legal_case"],
     };
     if (scope.sourceId !== undefined) searchOpts.sourceId = scope.sourceId;
     if (scope.sourceIds !== undefined) searchOpts.sourceIds = scope.sourceIds;
@@ -5260,7 +6076,7 @@ const legal_precedent_search: Operation = {
     // 2. Also try vector search if available
     let vectorResults: typeof keywordResults = [];
     try {
-      const { embedQuery } = await import('./embedding.ts');
+      const { embedQuery } = await import("./embedding.ts");
       const embedding = await embedQuery(query);
       vectorResults = await ctx.engine.searchVector(embedding, searchOpts as any);
     } catch {
@@ -5268,7 +6084,7 @@ const legal_precedent_search: Operation = {
     }
 
     // 3. Merge + dedup by slug
-    const seen = new Map<string, { row: typeof keywordResults[number]; score: number }>();
+    const seen = new Map<string, { row: (typeof keywordResults)[number]; score: number }>();
     for (const r of keywordResults) {
       seen.set(r.slug, { row: r, score: r.score ?? 0 });
     }
@@ -5287,9 +6103,9 @@ const legal_precedent_search: Operation = {
       return { query, total: 0, results: [] };
     }
 
-    const slugs = candidates.map(c => c.row.slug);
+    const slugs = candidates.map((c) => c.row.slug);
     const fmParams: unknown[] = [slugs];
-    let fmSourceClause = '';
+    let fmSourceClause = "";
     if (scope.sourceIds) {
       fmSourceClause = `AND source_id = ANY($2::text[])`;
       fmParams.push(scope.sourceIds);
@@ -5310,14 +6126,14 @@ const legal_precedent_search: Operation = {
        WHERE slug = ANY($1::text[])
          AND deleted_at IS NULL
          ${fmSourceClause}`,
-      fmParams,
+      fmParams
     );
 
-    const fmMap = new Map(fmRows.map(r => [r.slug, r]));
+    const fmMap = new Map(fmRows.map((r) => [r.slug, r]));
 
     // 5. Score each candidate
     const queryLower = query.toLowerCase();
-    const queryTokens = new Set(queryLower.split(/\s+/).filter(t => t.length > 2));
+    const queryTokens = new Set(queryLower.split(/\s+/).filter((t) => t.length > 2));
 
     const scored: Array<{
       slug: string;
@@ -5331,7 +6147,7 @@ const legal_precedent_search: Operation = {
       key_holding: string;
       outcome: string | null;
       updated_at: string;
-      source: 'brain';
+      source: "brain";
     }> = [];
 
     for (const candidate of candidates) {
@@ -5339,11 +6155,13 @@ const legal_precedent_search: Operation = {
       if (!fm) continue;
 
       const frontmatter = fm.frontmatter ?? {};
-      const caseLegalArea = typeof frontmatter.legal_area === 'string' ? frontmatter.legal_area : '';
-      const caseSubArea = typeof frontmatter.sub_area === 'string' ? frontmatter.sub_area : '';
-      const caseStatus = typeof frontmatter.status === 'string' ? frontmatter.status : 'unknown';
-      const caseNumber = typeof frontmatter.case_number === 'string' ? frontmatter.case_number : '';
-      const caseJurisdiction = typeof frontmatter.jurisdiction === 'string' ? frontmatter.jurisdiction : '';
+      const caseLegalArea =
+        typeof frontmatter.legal_area === "string" ? frontmatter.legal_area : "";
+      const caseSubArea = typeof frontmatter.sub_area === "string" ? frontmatter.sub_area : "";
+      const caseStatus = typeof frontmatter.status === "string" ? frontmatter.status : "unknown";
+      const caseNumber = typeof frontmatter.case_number === "string" ? frontmatter.case_number : "";
+      const caseJurisdiction =
+        typeof frontmatter.jurisdiction === "string" ? frontmatter.jurisdiction : "";
 
       // Apply filters
       if (jurisdiction && caseJurisdiction !== jurisdiction) continue;
@@ -5363,7 +6181,7 @@ const legal_precedent_search: Operation = {
       }
 
       // Keyword overlap in body text (0.15)
-      const bodyLower = (fm.body ?? '').toLowerCase();
+      const bodyLower = (fm.body ?? "").toLowerCase();
       let overlapCount = 0;
       for (const token of queryTokens) {
         if (bodyLower.includes(token)) overlapCount++;
@@ -5381,7 +6199,7 @@ const legal_precedent_search: Operation = {
 
       // Outcome availability boost — cases with outcomes are more useful as precedents (0.05)
       const outcome = frontmatter.outcome;
-      if (outcome && typeof outcome === 'object') {
+      if (outcome && typeof outcome === "object") {
         relevanceScore += 0.05;
       }
 
@@ -5389,9 +6207,9 @@ const legal_precedent_search: Operation = {
       relevanceScore = Math.min(relevanceScore, 1.0);
 
       // Extract a key holding from the body (first substantive paragraph)
-      const bodyText = fm.body ?? '';
-      const lines = bodyText.split('\n').filter(l => l.trim().length > 50);
-      const keyHolding = lines.length > 0 ? lines[0].trim().slice(0, 300) : '';
+      const bodyText = fm.body ?? "";
+      const lines = bodyText.split("\n").filter((l) => l.trim().length > 50);
+      const keyHolding = lines.length > 0 ? lines[0].trim().slice(0, 300) : "";
 
       scored.push({
         slug: fm.slug,
@@ -5405,7 +6223,7 @@ const legal_precedent_search: Operation = {
         key_holding: keyHolding,
         outcome: outcome ? JSON.stringify(outcome) : null,
         updated_at: updatedAt,
-        source: 'brain',
+        source: "brain",
       });
     }
 
@@ -5420,33 +6238,50 @@ const legal_precedent_search: Operation = {
       results: finalResults,
     };
   },
-  cliHints: { name: 'legal-precedent-search', positional: ['query'] },
+  cliHints: { name: "legal-precedent-search", positional: ["query"] },
 };
 
 const statute_currency_check: Operation = {
-  name: 'statute_currency_check',
-  description: 'Check the version currency of statute sections in the brain. Returns per-statute version_date and status (current/outdated/unknown). For local CLI callers, compares brain versions against the law-corpus reference directory and/or live external sources (RIS-OGD for AT, buzer.de for DE, OpenCaseLaw for CH) to detect outdated statutes.',
+  name: "statute_currency_check",
+  description:
+    "Check the version currency of statute sections in the brain. Returns per-statute version_date and status (current/outdated/unknown). For local CLI callers, compares brain versions against the law-corpus reference directory and/or live external sources (RIS-OGD for AT, buzer.de for DE, OpenCaseLaw for CH) to detect outdated statutes.",
   params: {
-    jurisdiction: { type: 'string', required: true, enum: ['at', 'de', 'ch'], description: 'Jurisdiction code to check' },
-    statute_id: { type: 'string', description: 'Optional statute abbreviation filter (e.g. "bgb", "estg")' },
-    compare_corpus: { type: 'boolean', description: 'Compare against law-corpus reference files (local CLI only, default: true for local callers)' },
-    compare_live: { type: 'boolean', description: 'Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI' },
+    jurisdiction: {
+      type: "string",
+      required: true,
+      enum: ["at", "de", "ch"],
+      description: "Jurisdiction code to check",
+    },
+    statute_id: {
+      type: "string",
+      description: 'Optional statute abbreviation filter (e.g. "bgb", "estg")',
+    },
+    compare_corpus: {
+      type: "boolean",
+      description:
+        "Compare against law-corpus reference files (local CLI only, default: true for local callers)",
+    },
+    compare_live: {
+      type: "boolean",
+      description:
+        "Compare against live external sources (RIS-OGD AT, buzer.de DE, OpenCaseLaw CH). Requires network access. Default: false for remote, true for local CLI",
+    },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (ctx, p) => {
     const scope = sourceScopeOpts(ctx);
-    const jurisdiction = String(p.jurisdiction) as 'at' | 'de' | 'ch';
-    const statuteFilter = typeof p.statute_id === 'string' ? p.statute_id.toLowerCase() : undefined;
+    const jurisdiction = String(p.jurisdiction) as "at" | "de" | "ch";
+    const statuteFilter = typeof p.statute_id === "string" ? p.statute_id.toLowerCase() : undefined;
     const isLocal = ctx.remote === false;
-    const compareCorpus = typeof p.compare_corpus === 'boolean' ? p.compare_corpus : isLocal;
-    const compareLive = typeof p.compare_live === 'boolean' ? p.compare_live : isLocal;
+    const compareCorpus = typeof p.compare_corpus === "boolean" ? p.compare_corpus : isLocal;
+    const compareLive = typeof p.compare_live === "boolean" ? p.compare_live : isLocal;
 
     // Query law pages from the brain. The slug pattern is:
     //   legal/statutes/<jur>/<abbr>/<section-id>
-    const slugPattern = `legal/statutes/${jurisdiction}/${statuteFilter ? statuteFilter + '/%' : '%'}`;
+    const slugPattern = `legal/statutes/${jurisdiction}/${statuteFilter ? statuteFilter + "/%" : "%"}`;
 
     const params: unknown[] = [slugPattern];
-    let sourceClause = '';
+    let sourceClause = "";
     if (scope.sourceIds) {
       sourceClause = `AND source_id = ANY($2::text[])`;
       params.push(scope.sourceIds);
@@ -5467,17 +6302,26 @@ const statute_currency_check: Operation = {
          ${sourceClause}
        ORDER BY slug
        LIMIT 5000`,
-      params,
+      params
     );
 
     // Group by statute abbreviation (4th slug segment).
-    const byStatute = new Map<string, { abbreviation: string; version_date: string | null; section_count: number; oldest_update: string; newest_update: string }>();
+    const byStatute = new Map<
+      string,
+      {
+        abbreviation: string;
+        version_date: string | null;
+        section_count: number;
+        oldest_update: string;
+        newest_update: string;
+      }
+    >();
 
     for (const row of rows) {
-      const parts = row.slug.split('/');
-      const abbr = parts[3] ?? 'unknown';
+      const parts = row.slug.split("/");
+      const abbr = parts[3] ?? "unknown";
       const fm = row.frontmatter ?? {};
-      const versionDate = typeof fm.version_date === 'string' ? fm.version_date : null;
+      const versionDate = typeof fm.version_date === "string" ? fm.version_date : null;
 
       const existing = byStatute.get(abbr);
       if (existing) {
@@ -5502,41 +6346,50 @@ const statute_currency_check: Operation = {
     // The law-corpus directory contains the canonical statute markdown files
     // with frontmatter version_date. If the brain's version_date is older
     // than the corpus version_date, the statute is outdated.
-    let corpusComparison: Array<{ statute_id: string; corpus_version_date: string | null; brain_version_date: string | null; status: 'current' | 'outdated' | 'unknown' }> | undefined;
+    let corpusComparison:
+      | Array<{
+          statute_id: string;
+          corpus_version_date: string | null;
+          brain_version_date: string | null;
+          status: "current" | "outdated" | "unknown";
+        }>
+      | undefined;
 
     if (compareCorpus && isLocal) {
       try {
-        const { existsSync } = await import('fs');
-        const { join } = await import('path');
-        const corpusBase = join(process.cwd(), 'law-corpus', jurisdiction);
+        const { existsSync } = await import("fs");
+        const { join } = await import("path");
+        const corpusBase = join(process.cwd(), "law-corpus", jurisdiction);
         if (existsSync(corpusBase)) {
-          const { readdirSync, readFileSync } = await import('fs');
-          const files = readdirSync(corpusBase).filter((f: string) => f.endsWith('.md'));
+          const { readdirSync, readFileSync } = await import("fs");
+          const files = readdirSync(corpusBase).filter((f: string) => f.endsWith(".md"));
           const corpusVersions = new Map<string, string | null>();
 
           for (const file of files) {
-            const content = readFileSync(join(corpusBase, file), 'utf-8');
+            const content = readFileSync(join(corpusBase, file), "utf-8");
             // Extract abbreviation from frontmatter
             const abbrMatch = content.match(/^abbreviation:\s*"?([^"\n]+)"?$/im);
             const versionMatch = content.match(/^version_date:\s*"?(\d{4}-\d{2}-\d{2})"?$/im);
-            const fileAbbr = abbrMatch ? abbrMatch[1].trim().toLowerCase() : file.replace('.md', '').toLowerCase();
+            const fileAbbr = abbrMatch
+              ? abbrMatch[1].trim().toLowerCase()
+              : file.replace(".md", "").toLowerCase();
             corpusVersions.set(fileAbbr, versionMatch ? versionMatch[1] : null);
           }
 
           corpusComparison = [];
           for (const [abbr, info] of byStatute) {
             const corpusVersion = corpusVersions.get(abbr) ?? null;
-            let status: 'current' | 'outdated' | 'unknown';
+            let status: "current" | "outdated" | "unknown";
             if (!info.version_date && !corpusVersion) {
-              status = 'unknown';
+              status = "unknown";
             } else if (!info.version_date) {
-              status = 'outdated'; // brain has no version, corpus does
+              status = "outdated"; // brain has no version, corpus does
             } else if (!corpusVersion) {
-              status = 'current'; // brain has version, corpus doesn't (can't compare)
+              status = "current"; // brain has version, corpus doesn't (can't compare)
             } else if (info.version_date < corpusVersion) {
-              status = 'outdated';
+              status = "outdated";
             } else {
-              status = 'current';
+              status = "current";
             }
             corpusComparison.push({
               statute_id: abbr,
@@ -5552,15 +6405,24 @@ const statute_currency_check: Operation = {
     }
 
     // Live external source comparison (RIS-OGD for AT, buzer.de for DE, OpenCaseLaw for CH)
-    let liveComparison: Array<{ statute_id: string; live_version_date: string | null; live_source: string; live_title: string | null; live_url: string | null; status: 'current' | 'outdated' | 'unknown' }> | undefined;
+    let liveComparison:
+      | Array<{
+          statute_id: string;
+          live_version_date: string | null;
+          live_source: string;
+          live_title: string | null;
+          live_url: string | null;
+          status: "current" | "outdated" | "unknown";
+        }>
+      | undefined;
 
     if (compareLive) {
       try {
-        const { fetchLiveStatuteVersions } = await import('../lib/statute-live-source.ts');
+        const { fetchLiveStatuteVersions } = await import("../lib/statute-live-source.ts");
         const abbrs = Array.from(byStatute.keys());
         // Limit to first 20 statutes to avoid hammering external APIs
         const liveResults = await fetchLiveStatuteVersions(jurisdiction, abbrs.slice(0, 20));
-        const liveMap = new Map(liveResults.map(r => [r.statute_id.toLowerCase(), r]));
+        const liveMap = new Map(liveResults.map((r) => [r.statute_id.toLowerCase(), r]));
 
         liveComparison = [];
         for (const [abbr, info] of byStatute) {
@@ -5569,25 +6431,25 @@ const statute_currency_check: Operation = {
             liveComparison.push({
               statute_id: abbr,
               live_version_date: null,
-              live_source: '',
+              live_source: "",
               live_title: null,
               live_url: null,
-              status: 'unknown',
+              status: "unknown",
             });
             continue;
           }
 
-          let status: 'current' | 'outdated' | 'unknown';
+          let status: "current" | "outdated" | "unknown";
           if (!info.version_date && !live.version_date) {
-            status = 'unknown';
+            status = "unknown";
           } else if (!info.version_date) {
-            status = 'outdated';
+            status = "outdated";
           } else if (!live.version_date) {
-            status = 'current';
+            status = "current";
           } else if (info.version_date < live.version_date) {
-            status = 'outdated';
+            status = "outdated";
           } else {
-            status = 'current';
+            status = "current";
           }
 
           liveComparison.push({
@@ -5614,17 +6476,17 @@ const statute_currency_check: Operation = {
       section_count: number;
       oldest_update: string;
       newest_update: string;
-      status: 'current' | 'outdated' | 'unknown';
+      status: "current" | "outdated" | "unknown";
     }> = [];
 
     for (const [abbr, info] of byStatute) {
-      let status: 'current' | 'outdated' | 'unknown' = info.version_date ? 'current' : 'unknown';
+      let status: "current" | "outdated" | "unknown" = info.version_date ? "current" : "unknown";
       let corpusVersion: string | null = null;
       let liveVersion: string | null = null;
       let liveSource: string | null = null;
 
       if (corpusComparison) {
-        const cmp = corpusComparison.find(c => c.statute_id === abbr);
+        const cmp = corpusComparison.find((c) => c.statute_id === abbr);
         if (cmp) {
           status = cmp.status;
           corpusVersion = cmp.corpus_version_date;
@@ -5633,15 +6495,15 @@ const statute_currency_check: Operation = {
 
       // Live comparison takes precedence over corpus comparison
       if (liveComparison) {
-        const live = liveComparison.find(c => c.statute_id === abbr);
+        const live = liveComparison.find((c) => c.statute_id === abbr);
         if (live && live.live_version_date !== null) {
           liveVersion = live.live_version_date;
           liveSource = live.live_source;
           // If live says outdated, override corpus status
-          if (live.status === 'outdated') {
-            status = 'outdated';
-          } else if (live.status === 'current' && status === 'unknown') {
-            status = 'current';
+          if (live.status === "outdated") {
+            status = "outdated";
+          } else if (live.status === "current" && status === "unknown") {
+            status = "current";
           }
         }
       }
@@ -5672,22 +6534,27 @@ const statute_currency_check: Operation = {
 };
 
 const rotate_pseudonymization_key: Operation = {
-  name: 'rotate_pseudonymization_key',
-  description: 'Rotate the HMAC pseudonymization key across all legal_entity and legal_case pages. Re-hashes every pseudonymized value from oldKey to newKey. Required for GDPR Art. 32 incident response. Local CLI only — remote callers cannot access this.',
+  name: "rotate_pseudonymization_key",
+  description:
+    "Rotate the HMAC pseudonymization key across all legal_entity and legal_case pages. Re-hashes every pseudonymized value from oldKey to newKey. Required for GDPR Art. 32 incident response. Local CLI only — remote callers cannot access this.",
   params: {
-    old_key: { type: 'string', required: true, description: 'The current HMAC owner key' },
-    new_key: { type: 'string', required: true, description: 'The new HMAC owner key (must differ from old_key)' },
+    old_key: { type: "string", required: true, description: "The current HMAC owner key" },
+    new_key: {
+      type: "string",
+      required: true,
+      description: "The new HMAC owner key (must differ from old_key)",
+    },
   },
-  scope: 'admin',
+  scope: "admin",
   localOnly: true,
   handler: async (ctx, p) => {
-    const { rotatePseudonymizationKey } = await import('./legal/anonymizer.ts');
+    const { rotatePseudonymizationKey } = await import("./legal/anonymizer.ts");
     const scope = sourceScopeOpts(ctx);
     return rotatePseudonymizationKey(ctx.engine, String(p.old_key), String(p.new_key), {
       ...(scope.sourceId !== undefined ? { sourceId: scope.sourceId } : {}),
     });
   },
-  cliHints: { name: 'legal-rotate-key', positional: ['old_key', 'new_key'] },
+  cliHints: { name: "legal-rotate-key", positional: ["old_key", "new_key"] },
 };
 
 // ============================================================
@@ -5722,13 +6589,17 @@ interface DMSConnector {
   isConfigured(): boolean;
   search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult>;
   getDocument(docId: string): Promise<DMSDocument | null>;
-  importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>): Promise<{ slug: string; success: boolean }>;
+  importToBrain(
+    doc: DMSDocument,
+    brainId: string,
+    headers: Record<string, string>
+  ): Promise<{ slug: string; success: boolean }>;
 }
 
 async function getDMSConnector(): Promise<DMSConnector | null> {
   const provider = process.env.DMS_PROVIDER;
-  const baseUrl = process.env.DMS_BASE_URL || '';
-  const apiKey = process.env.DMS_API_KEY || '';
+  const baseUrl = process.env.DMS_BASE_URL || "";
+  const apiKey = process.env.DMS_API_KEY || "";
 
   if (!provider || !baseUrl || !apiKey) return null;
 
@@ -5736,32 +6607,52 @@ async function getDMSConnector(): Promise<DMSConnector | null> {
   // We avoid importing the frontend module (which pulls in Next.js deps).
   const authHeaders = (): Record<string, string> => ({
     Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   });
 
-  if (provider === 'imanager') {
+  if (provider === "imanager") {
     return {
-      name: 'iManage Work',
+      name: "iManage Work",
       isConfigured: () => true,
-      async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+      async search(
+        query: string,
+        opts?: { limit?: number; folderId?: string }
+      ): Promise<DMSSearchResult> {
         const url = new URL(`${baseUrl}/api/v2/search`);
-        url.searchParams.set('q', query);
-        if (opts?.limit) url.searchParams.set('limit', String(opts.limit));
-        if (opts?.folderId) url.searchParams.set('folder_id', opts.folderId);
+        url.searchParams.set("q", query);
+        if (opts?.limit) url.searchParams.set("limit", String(opts.limit));
+        if (opts?.folderId) url.searchParams.set("folder_id", opts.folderId);
         const res = await fetch(url.toString(), { headers: authHeaders() });
-        const data = await res.json() as {
-          documents?: Array<{ id: string; name: string; document_type?: string; author?: string; last_modified?: string; size?: number; version?: string; checkout_status?: string }>;
+        const data = (await res.json()) as {
+          documents?: Array<{
+            id: string;
+            name: string;
+            document_type?: string;
+            author?: string;
+            last_modified?: string;
+            size?: number;
+            version?: string;
+            checkout_status?: string;
+          }>;
           folders?: Array<{ id: string; name: string; path?: string; document_count?: number }>;
           total_count?: number;
         };
         return {
           documents: (data.documents ?? []).map((d) => ({
-            id: d.id, name: d.name, type: d.document_type ?? 'document',
-            author: d.author ?? '—', modifiedDate: d.last_modified ?? new Date().toISOString(),
-            size: d.size, version: d.version, checkoutStatus: d.checkout_status,
+            id: d.id,
+            name: d.name,
+            type: d.document_type ?? "document",
+            author: d.author ?? "—",
+            modifiedDate: d.last_modified ?? new Date().toISOString(),
+            size: d.size,
+            version: d.version,
+            checkoutStatus: d.checkout_status,
           })),
           folders: (data.folders ?? []).map((f) => ({
-            id: f.id, name: f.name, path: f.path ?? f.name, documentCount: f.document_count,
+            id: f.id,
+            name: f.name,
+            path: f.path ?? f.name,
+            documentCount: f.document_count,
           })),
           totalCount: data.total_count ?? 0,
         };
@@ -5769,61 +6660,101 @@ async function getDMSConnector(): Promise<DMSConnector | null> {
       async getDocument(docId: string): Promise<DMSDocument | null> {
         const res = await fetch(`${baseUrl}/api/v2/documents/${docId}`, { headers: authHeaders() });
         if (!res.ok) return null;
-        const d = await res.json() as { id: string; name: string; document_type?: string; author?: string; last_modified?: string; size?: number; version?: string; checkout_status?: string };
+        const d = (await res.json()) as {
+          id: string;
+          name: string;
+          document_type?: string;
+          author?: string;
+          last_modified?: string;
+          size?: number;
+          version?: string;
+          checkout_status?: string;
+        };
         return {
-          id: d.id, name: d.name, type: d.document_type ?? 'document',
-          author: d.author ?? '—', modifiedDate: d.last_modified ?? new Date().toISOString(),
-          size: d.size, version: d.version, checkoutStatus: d.checkout_status,
+          id: d.id,
+          name: d.name,
+          type: d.document_type ?? "document",
+          author: d.author ?? "—",
+          modifiedDate: d.last_modified ?? new Date().toISOString(),
+          size: d.size,
+          version: d.version,
+          checkoutStatus: d.checkout_status,
         };
       },
       async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>) {
         let content = doc.content;
         if (!content) {
-          const contentRes = await fetch(`${baseUrl}/api/v2/documents/${doc.id}/content`, { headers: authHeaders() });
+          const contentRes = await fetch(`${baseUrl}/api/v2/documents/${doc.id}/content`, {
+            headers: authHeaders(),
+          });
           if (contentRes.ok) {
             const blob = await contentRes.arrayBuffer();
-            content = Buffer.from(blob).toString('base64');
+            content = Buffer.from(blob).toString("base64");
           }
         }
         const slug = `dms/import/${doc.id}`;
-        const pageRes = await fetch(`${process.env.ENGINE_URL || 'http://localhost:3000'}/api/pages`, {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug, title: doc.name, type: 'dms_document',
-            content: `Imported from iManage Work. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
-            frontmatter: {
-              dms_provider: 'imanager', dms_document_id: doc.id,
-              dms_version: doc.version ?? '1', dms_author: doc.author,
-              dms_modified: doc.modifiedDate, document_base64: content ?? null,
-              imported_at: new Date().toISOString(),
-            },
-          }),
-        });
+        const pageRes = await fetch(
+          `${process.env.ENGINE_URL || "http://localhost:3000"}/api/pages`,
+          {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              slug,
+              title: doc.name,
+              type: "dms_document",
+              content: `Imported from iManage Work. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
+              frontmatter: {
+                dms_provider: "imanager",
+                dms_document_id: doc.id,
+                dms_version: doc.version ?? "1",
+                dms_author: doc.author,
+                dms_modified: doc.modifiedDate,
+                document_base64: content ?? null,
+                imported_at: new Date().toISOString(),
+              },
+            }),
+          }
+        );
         return { slug, success: pageRes.ok };
       },
     };
   }
 
-  if (provider === 'netdocuments') {
+  if (provider === "netdocuments") {
     return {
-      name: 'NetDocuments',
+      name: "NetDocuments",
       isConfigured: () => true,
-      async search(query: string, opts?: { limit?: number; folderId?: string }): Promise<DMSSearchResult> {
+      async search(
+        query: string,
+        opts?: { limit?: number; folderId?: string }
+      ): Promise<DMSSearchResult> {
         const url = new URL(`${baseUrl}/v1/Repository`);
-        url.searchParams.set('search', query);
-        if (opts?.limit) url.searchParams.set('count', String(opts.limit));
+        url.searchParams.set("search", query);
+        if (opts?.limit) url.searchParams.set("count", String(opts.limit));
         const res = await fetch(url.toString(), { headers: authHeaders() });
-        const data = await res.json() as {
-          results?: Array<{ id: string; name: string; extension?: string; author?: { name?: string }; lastModified?: string; size?: number; version?: string; checkedOut?: boolean }>;
+        const data = (await res.json()) as {
+          results?: Array<{
+            id: string;
+            name: string;
+            extension?: string;
+            author?: { name?: string };
+            lastModified?: string;
+            size?: number;
+            version?: string;
+            checkedOut?: boolean;
+          }>;
           totalCount?: number;
         };
         return {
           documents: (data.results ?? []).map((d) => ({
-            id: d.id, name: d.name, type: d.extension ?? 'document',
-            author: d.author?.name ?? '—', modifiedDate: d.lastModified ?? new Date().toISOString(),
-            size: d.size, version: d.version,
-            checkoutStatus: d.checkedOut ? 'checked_out' : 'available',
+            id: d.id,
+            name: d.name,
+            type: d.extension ?? "document",
+            author: d.author?.name ?? "—",
+            modifiedDate: d.lastModified ?? new Date().toISOString(),
+            size: d.size,
+            version: d.version,
+            checkoutStatus: d.checkedOut ? "checked_out" : "available",
           })),
           folders: [],
           totalCount: data.totalCount ?? 0,
@@ -5832,38 +6763,61 @@ async function getDMSConnector(): Promise<DMSConnector | null> {
       async getDocument(docId: string): Promise<DMSDocument | null> {
         const res = await fetch(`${baseUrl}/v1/Documents/${docId}`, { headers: authHeaders() });
         if (!res.ok) return null;
-        const d = await res.json() as { id: string; name: string; extension?: string; author?: { name?: string }; lastModified?: string; size?: number; version?: string; checkedOut?: boolean };
+        const d = (await res.json()) as {
+          id: string;
+          name: string;
+          extension?: string;
+          author?: { name?: string };
+          lastModified?: string;
+          size?: number;
+          version?: string;
+          checkedOut?: boolean;
+        };
         return {
-          id: d.id, name: d.name, type: d.extension ?? 'document',
-          author: d.author?.name ?? '—', modifiedDate: d.lastModified ?? new Date().toISOString(),
-          size: d.size, version: d.version,
-          checkoutStatus: d.checkedOut ? 'checked_out' : 'available',
+          id: d.id,
+          name: d.name,
+          type: d.extension ?? "document",
+          author: d.author?.name ?? "—",
+          modifiedDate: d.lastModified ?? new Date().toISOString(),
+          size: d.size,
+          version: d.version,
+          checkoutStatus: d.checkedOut ? "checked_out" : "available",
         };
       },
       async importToBrain(doc: DMSDocument, brainId: string, headers: Record<string, string>) {
         let content = doc.content;
         if (!content) {
-          const contentRes = await fetch(`${baseUrl}/v1/Documents/${doc.id}/content`, { headers: authHeaders() });
+          const contentRes = await fetch(`${baseUrl}/v1/Documents/${doc.id}/content`, {
+            headers: authHeaders(),
+          });
           if (contentRes.ok) {
             const blob = await contentRes.arrayBuffer();
-            content = Buffer.from(blob).toString('base64');
+            content = Buffer.from(blob).toString("base64");
           }
         }
         const slug = `dms/import/${doc.id}`;
-        const pageRes = await fetch(`${process.env.ENGINE_URL || 'http://localhost:3000'}/api/pages`, {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug, title: doc.name, type: 'dms_document',
-            content: `Imported from NetDocuments. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
-            frontmatter: {
-              dms_provider: 'netdocuments', dms_document_id: doc.id,
-              dms_version: doc.version ?? '1', dms_author: doc.author,
-              dms_modified: doc.modifiedDate, document_base64: content ?? null,
-              imported_at: new Date().toISOString(),
-            },
-          }),
-        });
+        const pageRes = await fetch(
+          `${process.env.ENGINE_URL || "http://localhost:3000"}/api/pages`,
+          {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              slug,
+              title: doc.name,
+              type: "dms_document",
+              content: `Imported from NetDocuments. Author: ${doc.author}. Modified: ${doc.modifiedDate}.`,
+              frontmatter: {
+                dms_provider: "netdocuments",
+                dms_document_id: doc.id,
+                dms_version: doc.version ?? "1",
+                dms_author: doc.author,
+                dms_modified: doc.modifiedDate,
+                document_base64: content ?? null,
+                imported_at: new Date().toISOString(),
+              },
+            }),
+          }
+        );
         return { slug, success: pageRes.ok };
       },
     };
@@ -5873,102 +6827,149 @@ async function getDMSConnector(): Promise<DMSConnector | null> {
 }
 
 const dms_search: Operation = {
-  name: 'dms_search',
-  description: 'Search documents in an external DMS (iManage Work or NetDocuments). Returns matching documents and folders. Requires DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY to be configured.',
+  name: "dms_search",
+  description:
+    "Search documents in an external DMS (iManage Work or NetDocuments). Returns matching documents and folders. Requires DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY to be configured.",
   params: {
-    query: { type: 'string', required: true, description: 'Search query (full-text or metadata)' },
-    limit: { type: 'number', description: 'Max results (default: 20)' },
-    folder_id: { type: 'string', description: 'Restrict search to a specific folder/cabinet' },
+    query: { type: "string", required: true, description: "Search query (full-text or metadata)" },
+    limit: { type: "number", description: "Max results (default: 20)" },
+    folder_id: { type: "string", description: "Restrict search to a specific folder/cabinet" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (_ctx, p) => {
     const connector = await getDMSConnector();
     if (!connector) {
-      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+      return {
+        error: "dms_not_configured",
+        message: "DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set",
+      };
     }
-    const limit = typeof p.limit === 'number' ? p.limit : 20;
-    const folderId = typeof p.folder_id === 'string' ? p.folder_id : undefined;
+    const limit = typeof p.limit === "number" ? p.limit : 20;
+    const folderId = typeof p.folder_id === "string" ? p.folder_id : undefined;
     return connector.search(String(p.query), { limit, ...(folderId ? { folderId } : {}) });
   },
-  cliHints: { name: 'dms-search', positional: ['query'] },
+  cliHints: { name: "dms-search", positional: ["query"] },
 };
 
 const dms_get_document: Operation = {
-  name: 'dms_get_document',
-  description: 'Retrieve a single document from the external DMS by its ID. Returns metadata (name, author, version, checkout status) without the document content. Use dms_import_document to pull content into the brain.',
+  name: "dms_get_document",
+  description:
+    "Retrieve a single document from the external DMS by its ID. Returns metadata (name, author, version, checkout status) without the document content. Use dms_import_document to pull content into the brain.",
   params: {
-    document_id: { type: 'string', required: true, description: 'DMS document ID' },
+    document_id: { type: "string", required: true, description: "DMS document ID" },
   },
-  scope: 'read',
+  scope: "read",
   handler: async (_ctx, p) => {
     const connector = await getDMSConnector();
     if (!connector) {
-      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+      return {
+        error: "dms_not_configured",
+        message: "DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set",
+      };
     }
     const doc = await connector.getDocument(String(p.document_id));
-    if (!doc) return { error: 'document_not_found', message: `No document with ID ${p.document_id}` };
+    if (!doc)
+      return { error: "document_not_found", message: `No document with ID ${p.document_id}` };
     return doc;
   },
-  cliHints: { name: 'dms-get', positional: ['document_id'] },
+  cliHints: { name: "dms-get", positional: ["document_id"] },
 };
 
 const dms_import_document: Operation = {
-  name: 'dms_import_document',
-  description: 'Import a document from the external DMS into the brain as a dms_document page. Fetches document content (base64-encoded) and stores it in frontmatter. Returns the slug and success status.',
+  name: "dms_import_document",
+  description:
+    "Import a document from the external DMS into the brain as a dms_document page. Fetches document content (base64-encoded) and stores it in frontmatter. Returns the slug and success status.",
   params: {
-    document_id: { type: 'string', required: true, description: 'DMS document ID to import' },
+    document_id: { type: "string", required: true, description: "DMS document ID to import" },
   },
-  scope: 'write',
+  scope: "write",
   handler: async (ctx, p) => {
     const connector = await getDMSConnector();
     if (!connector) {
-      return { error: 'dms_not_configured', message: 'DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set' };
+      return {
+        error: "dms_not_configured",
+        message: "DMS_PROVIDER, DMS_BASE_URL, and DMS_API_KEY must be set",
+      };
     }
     const doc = await connector.getDocument(String(p.document_id));
-    if (!doc) return { error: 'document_not_found', message: `No document with ID ${p.document_id}` };
+    if (!doc)
+      return { error: "document_not_found", message: `No document with ID ${p.document_id}` };
     const headers: Record<string, string> = {};
-    if (ctx.sourceId !== undefined) headers['x-source-id'] = String(ctx.sourceId);
-    return connector.importToBrain(doc, String(ctx.sourceId ?? 'default'), headers);
+    if (ctx.sourceId !== undefined) headers["x-source-id"] = String(ctx.sourceId);
+    return connector.importToBrain(doc, String(ctx.sourceId ?? "default"), headers);
   },
-  cliHints: { name: 'dms-import', positional: ['document_id'] },
+  cliHints: { name: "dms-import", positional: ["document_id"] },
 };
 
 export const operations: Operation[] = [
   // Page CRUD
-  get_page, put_page, delete_page, list_pages,
+  get_page,
+  put_page,
+  delete_page,
+  list_pages,
   // v0.26.5 destructive-guard ops (page-level soft-delete + recovery + admin purge)
-  restore_page, purge_deleted_pages,
+  restore_page,
+  purge_deleted_pages,
   // Search
-  search, query,
+  search,
+  query,
   // v0.36 Phase 2: image-as-query
   search_by_image,
   // Tags
-  add_tag, remove_tag, get_tags,
+  add_tag,
+  remove_tag,
+  get_tags,
   // Links
-  add_link, remove_link, supersede_link, get_link_history, get_links, get_backlinks, list_link_sources, traverse_graph,
+  add_link,
+  remove_link,
+  supersede_link,
+  get_link_history,
+  get_links,
+  get_backlinks,
+  list_link_sources,
+  traverse_graph,
   // Timeline
-  add_timeline_entry, get_timeline,
+  add_timeline_entry,
+  get_timeline,
   // Admin
-  get_stats, get_health, run_doctor, get_versions, revert_version,
+  get_stats,
+  get_health,
+  run_doctor,
+  get_versions,
+  revert_version,
   // v0.31.1 (Issue #734): thin-client banner identity packet (read-scope, banner-only)
   get_brain_identity,
   // PR1: skill catalog over MCP — discover + fetch host-repo skills (read-scope)
-  list_skills, get_skill,
+  list_skills,
+  get_skill,
   // v0.41.19.0: thin-client `gbrain status` payload (admin-scope, sync + cycle only)
   get_status_snapshot,
   // Sync
   sync_brain,
   // Raw data
-  put_raw_data, get_raw_data,
+  put_raw_data,
+  get_raw_data,
   // Resolution & chunks
-  resolve_slugs, get_chunks,
+  resolve_slugs,
+  get_chunks,
   // Ingest log
-  log_ingest, get_ingest_log,
+  log_ingest,
+  get_ingest_log,
   // Files
-  file_list, file_upload, file_url,
+  file_list,
+  file_upload,
+  file_url,
   // Jobs (Minions)
-  submit_job, get_job, list_jobs, cancel_job, retry_job, get_job_progress,
-  pause_job, resume_job, replay_job, send_job_message,
+  submit_job,
+  get_job,
+  list_jobs,
+  cancel_job,
+  retry_job,
+  get_job_progress,
+  pause_job,
+  resume_job,
+  replay_job,
+  send_job_message,
   // v0.38 Slice 3: remote-callable agent dispatch with OAuth-bound trust boundary
   submit_agent,
   // Orphans
@@ -5976,15 +6977,26 @@ export const operations: Operation[] = [
   // v0.36.1.0 (T7) — Hindsight calibration wave: read profile via MCP
   get_calibration_profile,
   // v0.28: Takes + think
-  takes_list, takes_search, think,
+  takes_list,
+  takes_search,
+  think,
   // v0.30: calibration aggregates over takes
-  takes_scorecard, takes_calibration,
+  takes_scorecard,
+  takes_calibration,
   // v0.28: whoami + scoped sources management
-  whoami, sources_add, sources_list, sources_remove, sources_status,
+  whoami,
+  sources_add,
+  sources_list,
+  sources_remove,
+  sources_status,
   // v0.29: Salience + anomalies + recent transcripts
-  get_recent_salience, find_anomalies, get_recent_transcripts,
+  get_recent_salience,
+  find_anomalies,
+  get_recent_transcripts,
   // v0.31: hot memory (facts table)
-  extract_facts, recall, forget_fact,
+  extract_facts,
+  recall,
+  forget_fact,
   // v0.32.6: contradiction probe MCP surface (M3)
   find_contradictions,
   // v0.33: expertise + relationship-proximity routing
@@ -5992,19 +7004,28 @@ export const operations: Operation[] = [
   // v0.35.4: temporal trajectory (typed claims over time + regression detection)
   find_trajectory,
   // v0.33.3: Cathedral III code-intelligence (MCP-exposed; were CLI_ONLY pre-v0.33.3)
-  code_callers, code_callees, code_def, code_refs,
+  code_callers,
+  code_callees,
+  code_def,
+  code_refs,
   // v0.34 W3: recursive code_blast + code_flow
-  code_blast, code_flow,
+  code_blast,
+  code_flow,
   // v0.34 W3b: code_traversal_cache admin clear op
   code_traversal_cache_clear,
   // v0.40.6.0 Schema Cathedral v3: 9 new ops — 7 read + 2 admin (NOT
   // localOnly per D2 so remote agents (your OpenClaw, etc.) can author packs).
   // schema_apply_mutations is batched per D10 — one MCP tool, N
   // mutations applied atomically inside one withPackLock scope.
-  get_active_schema_pack, list_schema_packs,
-  schema_stats, schema_lint, schema_graph, schema_explain_type,
+  get_active_schema_pack,
+  list_schema_packs,
+  schema_stats,
+  schema_lint,
+  schema_graph,
+  schema_explain_type,
   schema_review_orphans,
-  schema_apply_mutations, reload_schema_pack,
+  schema_apply_mutations,
+  reload_schema_pack,
   // v0.41.18.0 (T16, A7, codex #5)
   run_onboard,
   // v0.41.20.0 SkillOpt — admin-scoped MCP op for remote optimization.
@@ -6036,6 +7057,7 @@ export const operations: Operation[] = [
   dms_import_document,
 ];
 
-export const operationsByName = Object.fromEntries(
-  operations.map(op => [op.name, op]),
-) as Record<string, Operation>;
+export const operationsByName = Object.fromEntries(operations.map((op) => [op.name, op])) as Record<
+  string,
+  Operation
+>;
