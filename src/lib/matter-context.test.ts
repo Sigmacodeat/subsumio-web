@@ -28,7 +28,13 @@ import type {
   QueryMode,
   MatterDocumentRequestSummary,
 } from "@/lib/matter-context-types";
-import type { CaseFrontmatter, DeadlineEntry, DocumentEntry, AuditLogEntry, CommunicationEntry } from "@/lib/legal-types";
+import type {
+  CaseFrontmatter,
+  DeadlineEntry,
+  DocumentEntry,
+  AuditLogEntry,
+  CommunicationEntry,
+} from "@/lib/legal-types";
 
 // ── detectGaps ────────────────────────────────────────────────────────
 
@@ -84,7 +90,13 @@ describe("detectGaps", () => {
 
   it("detects overdue deadlines as critical", () => {
     const deadlines: MatterDeadlineSummary[] = [
-      { title: "Klagefrist", date: "2020-01-01", status: "open", urgency: "overdue", source: "court" },
+      {
+        title: "Klagefrist",
+        date: "2020-01-01",
+        status: "open",
+        urgency: "overdue",
+        source: "court",
+      },
     ];
     const gaps = detectGaps({}, [], deadlines, [], emptyCoverage, true);
     const overdueGap = gaps.find((g) => g.type === "missing_deadline");
@@ -114,39 +126,56 @@ describe("detectGaps", () => {
 
   it("detects missing deadline confirmation for court deadlines", () => {
     const deadlines: MatterDeadlineSummary[] = [
-      { title: "Frist", date: "2025-12-01", status: "open", urgency: "normal", source: "court", court: "LG Wien" },
+      {
+        title: "Frist",
+        date: "2025-12-01",
+        status: "open",
+        urgency: "normal",
+        source: "court",
+        court: "LG Wien",
+      },
     ];
     const gaps = detectGaps({}, [], deadlines, [], emptyCoverage, true);
     expect(gaps.some((g) => g.type === "missing_deadline_confirmation")).toBe(true);
   });
 
   it("detects missing required document request items", () => {
-    const requests: MatterDocumentRequestSummary[] = [{
-      slug: "legal/document-requests/1",
-      status: "sent",
-      channel: "whatsapp",
-      created_at: "2026-06-20T10:00:00.000Z",
-      updated_at: "2026-06-20T10:00:00.000Z",
-      open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
-      fulfilled_items: [],
-    }];
+    const requests: MatterDocumentRequestSummary[] = [
+      {
+        slug: "legal/document-requests/1",
+        status: "sent",
+        channel: "whatsapp",
+        created_at: "2026-06-20T10:00:00.000Z",
+        updated_at: "2026-06-20T10:00:00.000Z",
+        open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
+        fulfilled_items: [],
+      },
+    ];
     const gaps = detectGaps({}, [], [], [], emptyCoverage, true, [], null, requests);
-    const gap = gaps.find((g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1");
+    const gap = gaps.find(
+      (g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1"
+    );
     expect(gap?.title).toContain("Vollmacht");
   });
 
   it("does not detect fulfilled document request items as missing", () => {
-    const requests: MatterDocumentRequestSummary[] = [{
-      slug: "legal/document-requests/1",
-      status: "fulfilled",
-      channel: "portal",
-      created_at: "2026-06-20T10:00:00.000Z",
-      updated_at: "2026-06-20T10:00:00.000Z",
-      open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
-      fulfilled_items: [],
-    }];
+    const requests: MatterDocumentRequestSummary[] = [
+      {
+        slug: "legal/document-requests/1",
+        status: "fulfilled",
+        channel: "portal",
+        created_at: "2026-06-20T10:00:00.000Z",
+        updated_at: "2026-06-20T10:00:00.000Z",
+        open_items: [{ key: "vollmacht", label: "Vollmacht", required: true }],
+        fulfilled_items: [],
+      },
+    ];
     const gaps = detectGaps({}, [], [], [], emptyCoverage, true, [], null, requests);
-    expect(gaps.some((g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1")).toBe(false);
+    expect(
+      gaps.some(
+        (g) => g.type === "missing_document" && g.related_entity === "legal/document-requests/1"
+      )
+    ).toBe(false);
   });
 
   it("detects unreviewed documents with extraction_status ocr_needed", () => {
@@ -204,14 +233,6 @@ describe("mapQueryModeToEngineMode", () => {
   it("maps deep_matter → tokenmax", () => {
     expect(mapQueryModeToEngineMode("deep_matter")).toBe("tokenmax");
   });
-
-  it("maps admin_audit → tokenmax", () => {
-    expect(mapQueryModeToEngineMode("admin_audit")).toBe("tokenmax");
-  });
-
-  it("maps external_law → balanced", () => {
-    expect(mapQueryModeToEngineMode("external_law")).toBe("balanced");
-  });
 });
 
 // ── buildDeadlineSummaries ────────────────────────────────────────────
@@ -222,9 +243,7 @@ describe("buildDeadlineSummaries", () => {
   });
 
   it("filters out deadlines without dates", () => {
-    const deadlines: DeadlineEntry[] = [
-      { title: "No date", description: "test" },
-    ];
+    const deadlines: DeadlineEntry[] = [{ title: "No date", description: "test" }];
     expect(buildDeadlineSummaries(deadlines)).toEqual([]);
   });
 
@@ -264,7 +283,13 @@ describe("buildDocumentSummaries", () => {
 
   it("maps document fields correctly", () => {
     const docs: DocumentEntry[] = [
-      { id: "d1", name: "contract.pdf", uploadedAt: "2024-06-01", size: 1024, slug: "docs/contract" },
+      {
+        id: "d1",
+        name: "contract.pdf",
+        uploadedAt: "2024-06-01",
+        size: 1024,
+        slug: "docs/contract",
+      },
     ];
     const result = buildDocumentSummaries(docs);
     expect(result[0].slug).toBe("docs/contract");
@@ -277,25 +302,38 @@ describe("buildDocumentSummaries", () => {
 
 describe("buildDocumentRequestSummaries", () => {
   it("maps open and fulfilled document request items for a case", async () => {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
-      pages: [{
-        slug: "legal/document-requests/1",
-        title: "Dokumentenanfrage",
-        content: "Bitte Vollmacht und Bescheid hochladen",
-        frontmatter: {
-          type: "document_request",
-          case_slug: "legal/cases/1",
-          status: "partially_fulfilled",
-          channel: "whatsapp",
-          created_at: "2026-06-20T10:00:00.000Z",
-          updated_at: "2026-06-20T11:00:00.000Z",
-          items: [
-            { key: "vollmacht", label: "Vollmacht", required: true },
-            { key: "bescheid", label: "Bescheid", required: true, received_document_slug: "uploads/bescheid" },
-          ],
-        },
-      }],
-    }), { status: 200 }));
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            pages: [
+              {
+                slug: "legal/document-requests/1",
+                title: "Dokumentenanfrage",
+                content: "Bitte Vollmacht und Bescheid hochladen",
+                frontmatter: {
+                  type: "document_request",
+                  case_slug: "legal/cases/1",
+                  status: "partially_fulfilled",
+                  channel: "whatsapp",
+                  created_at: "2026-06-20T10:00:00.000Z",
+                  updated_at: "2026-06-20T11:00:00.000Z",
+                  items: [
+                    { key: "vollmacht", label: "Vollmacht", required: true },
+                    {
+                      key: "bescheid",
+                      label: "Bescheid",
+                      required: true,
+                      received_document_slug: "uploads/bescheid",
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200 }
+        )
+    );
     const originalFetch = globalThis.fetch;
     vi.stubGlobal("fetch", fetchMock);
     try {
@@ -321,15 +359,21 @@ describe("inferOcrStatus", () => {
   });
 
   it("returns 'text_layer' for DOCX files", () => {
-    expect(inferOcrStatus({ id: "1", name: "doc.docx", uploadedAt: "2024-01-01" })).toBe("text_layer");
+    expect(inferOcrStatus({ id: "1", name: "doc.docx", uploadedAt: "2024-01-01" })).toBe(
+      "text_layer"
+    );
   });
 
   it("returns 'text_layer' for TXT files", () => {
-    expect(inferOcrStatus({ id: "1", name: "notes.txt", uploadedAt: "2024-01-01" })).toBe("text_layer");
+    expect(inferOcrStatus({ id: "1", name: "notes.txt", uploadedAt: "2024-01-01" })).toBe(
+      "text_layer"
+    );
   });
 
   it("returns 'not_applicable' for unknown extensions", () => {
-    expect(inferOcrStatus({ id: "1", name: "data.json", uploadedAt: "2024-01-01" })).toBe("not_applicable");
+    expect(inferOcrStatus({ id: "1", name: "data.json", uploadedAt: "2024-01-01" })).toBe(
+      "not_applicable"
+    );
   });
 });
 
@@ -344,9 +388,7 @@ describe("buildRecentActivity", () => {
     const auditLog: AuditLogEntry[] = [
       { id: "a1", at: "2024-06-01T10:00:00Z", action: "created", actor: "user1" },
     ];
-    const timeline = [
-      { id: "t1", date: "2024-06-02T10:00:00Z", title: "Hearing" },
-    ];
+    const timeline = [{ id: "t1", date: "2024-06-02T10:00:00Z", title: "Hearing" }];
     const result = buildRecentActivity(auditLog, timeline);
     expect(result.length).toBe(2);
     // Sorted by date descending — hearing (June 2) should be first
@@ -433,7 +475,16 @@ describe("calculateCompletenessScore", () => {
 
   it("returns high score for fully connected, fresh, OCR-complete sources", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "Source 1", source_type: "upload", connected: true, last_sync_at: null, document_count: 10, index_fresh: true, ocr_complete: true },
+      {
+        source_id: "s1",
+        source_label: "Source 1",
+        source_type: "upload",
+        connected: true,
+        last_sync_at: null,
+        document_count: 10,
+        index_fresh: true,
+        ocr_complete: true,
+      },
     ];
     const score = calculateCompletenessScore(sources);
     expect(score).toBeCloseTo(1, 5);
@@ -441,7 +492,16 @@ describe("calculateCompletenessScore", () => {
 
   it("returns lower score for disconnected sources", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "Source 1", source_type: "email", connected: false, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: true },
+      {
+        source_id: "s1",
+        source_label: "Source 1",
+        source_type: "email",
+        connected: false,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: false,
+        ocr_complete: true,
+      },
     ];
     const score = calculateCompletenessScore(sources);
     expect(score).toBeLessThan(0.5);
@@ -449,8 +509,26 @@ describe("calculateCompletenessScore", () => {
 
   it("averages across multiple sources", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "Good", source_type: "upload", connected: true, last_sync_at: null, document_count: 5, index_fresh: true, ocr_complete: true },
-      { source_id: "s2", source_label: "Bad", source_type: "email", connected: false, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: false },
+      {
+        source_id: "s1",
+        source_label: "Good",
+        source_type: "upload",
+        connected: true,
+        last_sync_at: null,
+        document_count: 5,
+        index_fresh: true,
+        ocr_complete: true,
+      },
+      {
+        source_id: "s2",
+        source_label: "Bad",
+        source_type: "email",
+        connected: false,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: false,
+        ocr_complete: false,
+      },
     ];
     const score = calculateCompletenessScore(sources);
     expect(score).toBeGreaterThan(0.4);
@@ -562,9 +640,7 @@ describe("inferSourceType — additional slugs", () => {
 
 describe("buildDeadlineSummaries — additional edge cases", () => {
   it("uses date field when due_date is not present", () => {
-    const deadlines: DeadlineEntry[] = [
-      { title: "Using date", date: "2025-06-01" },
-    ];
+    const deadlines: DeadlineEntry[] = [{ title: "Using date", date: "2025-06-01" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result).toHaveLength(1);
     expect(result[0].date).toBe("2025-06-01");
@@ -580,18 +656,14 @@ describe("buildDeadlineSummaries — additional edge cases", () => {
 
   it("marks critical urgency for deadlines within 3 days", () => {
     const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const deadlines: DeadlineEntry[] = [
-      { title: "Soon", due_date: soon, status: "open" },
-    ];
+    const deadlines: DeadlineEntry[] = [{ title: "Soon", due_date: soon, status: "open" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("critical");
   });
 
   it("marks upcoming urgency for deadlines within 14 days", () => {
     const upcoming = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const deadlines: DeadlineEntry[] = [
-      { title: "Upcoming", due_date: upcoming, status: "open" },
-    ];
+    const deadlines: DeadlineEntry[] = [{ title: "Upcoming", due_date: upcoming, status: "open" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].urgency).toBe("upcoming");
   });
@@ -613,9 +685,7 @@ describe("buildDeadlineSummaries — additional edge cases", () => {
   });
 
   it("uses 'Unbenannte Frist' when neither title nor description", () => {
-    const deadlines: DeadlineEntry[] = [
-      { due_date: "2025-12-01" },
-    ];
+    const deadlines: DeadlineEntry[] = [{ due_date: "2025-12-01" }];
     const result = buildDeadlineSummaries(deadlines);
     expect(result[0].title).toBe("Unbenannte Frist");
   });
@@ -740,25 +810,19 @@ describe("buildRecentActivity — additional edge cases", () => {
   });
 
   it("uses timeline type as action", () => {
-    const timeline = [
-      { date: "2024-06-01T10:00:00Z", type: "hearing", title: "Court hearing" },
-    ];
+    const timeline = [{ date: "2024-06-01T10:00:00Z", type: "hearing", title: "Court hearing" }];
     const result = buildRecentActivity([], timeline);
     expect(result[0].action).toBe("hearing");
   });
 
   it("uses 'timeline' as default action when type missing", () => {
-    const timeline = [
-      { date: "2024-06-01T10:00:00Z", title: "Some event" },
-    ];
+    const timeline = [{ date: "2024-06-01T10:00:00Z", title: "Some event" }];
     const result = buildRecentActivity([], timeline);
     expect(result[0].action).toBe("timeline");
   });
 
   it("uses description when title is missing in timeline", () => {
-    const timeline = [
-      { date: "2024-06-01T10:00:00Z", description: "Description only" },
-    ];
+    const timeline = [{ date: "2024-06-01T10:00:00Z", description: "Description only" }];
     const result = buildRecentActivity([], timeline);
     expect(result[0].description).toBe("Description only");
   });
@@ -777,22 +841,62 @@ describe("buildRecentActivity — additional edge cases", () => {
 describe("calculateCompletenessScore — edge cases", () => {
   it("returns 0.1 for source with only no-error", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "S1", source_type: "email", connected: false, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: false, error: undefined },
+      {
+        source_id: "s1",
+        source_label: "S1",
+        source_type: "email",
+        connected: false,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: false,
+        ocr_complete: false,
+        error: undefined,
+      },
     ];
     expect(calculateCompletenessScore(sources)).toBeCloseTo(0.1, 5);
   });
 
   it("caps at 1.0 even if all sources are perfect", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "S1", source_type: "upload", connected: true, last_sync_at: null, document_count: 0, index_fresh: true, ocr_complete: true, error: undefined },
-      { source_id: "s2", source_label: "S2", source_type: "upload", connected: true, last_sync_at: null, document_count: 0, index_fresh: true, ocr_complete: true, error: undefined },
+      {
+        source_id: "s1",
+        source_label: "S1",
+        source_type: "upload",
+        connected: true,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: true,
+        ocr_complete: true,
+        error: undefined,
+      },
+      {
+        source_id: "s2",
+        source_label: "S2",
+        source_type: "upload",
+        connected: true,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: true,
+        ocr_complete: true,
+        error: undefined,
+      },
     ];
     expect(calculateCompletenessScore(sources)).toBeCloseTo(1, 10);
   });
 
   it("returns 0 for source with error and nothing else", () => {
     const sources: SourceCoverageEntry[] = [
-      { source_id: "s1", source_label: "S1", source_type: "email", connected: false, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: false, error: "broken" },
+      {
+        source_id: "s1",
+        source_label: "S1",
+        source_type: "email",
+        connected: false,
+        last_sync_at: null,
+        document_count: 0,
+        index_fresh: false,
+        ocr_complete: false,
+        error: "broken",
+      },
     ];
     expect(calculateCompletenessScore(sources)).toBe(0);
   });
@@ -892,7 +996,12 @@ describe("buildCommunications", () => {
   it("filters out entries without timestamp", () => {
     const entries = [
       { id: "c1", channel: "email" as const, direction: "incoming" as const, timestamp: "" },
-      { id: "c2", channel: "email" as const, direction: "incoming" as const, timestamp: "2026-01-01T00:00:00Z" },
+      {
+        id: "c2",
+        channel: "email" as const,
+        direction: "incoming" as const,
+        timestamp: "2026-01-01T00:00:00Z",
+      },
     ];
     const result = buildCommunications(entries as CommunicationEntry[]);
     expect(result).toHaveLength(1);
@@ -900,7 +1009,15 @@ describe("buildCommunications", () => {
   });
 
   it("handles all channel types", () => {
-    const channels: CommunicationEntry["channel"][] = ["email", "whatsapp", "phone", "letter", "portal", "bea", "other"];
+    const channels: CommunicationEntry["channel"][] = [
+      "email",
+      "whatsapp",
+      "phone",
+      "letter",
+      "portal",
+      "bea",
+      "other",
+    ];
     const entries = channels.map((ch, i) => ({
       id: `c${i}`,
       channel: ch,
@@ -1001,53 +1118,42 @@ describe("detectGaps — communication & permission gaps", () => {
   };
 
   it("detects missing_communication_log for open cases", () => {
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      [],
-      null,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], null);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(true);
   });
 
   it("does not detect missing_communication_log for closed cases", () => {
-    const gaps = detectGaps(
-      { status: "closed" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      [],
-      null,
-    );
+    const gaps = detectGaps({ status: "closed" }, [], [], [], emptyCoverage, true, [], null);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(false);
   });
 
   it("does not detect missing_communication_log when communications exist", () => {
     const comms: MatterCommunicationEntry[] = [
-      { id: "c1", channel: "email", direction: "incoming", subject: "Test", timestamp: "2026-01-01T00:00:00Z", privileged: false, has_attachments: false },
+      {
+        id: "c1",
+        channel: "email",
+        direction: "incoming",
+        subject: "Test",
+        timestamp: "2026-01-01T00:00:00Z",
+        privileged: false,
+        has_attachments: false,
+      },
     ];
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      comms,
-      null,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, null);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(false);
   });
 
   it("detects unprivileged_communication in privileged case", () => {
     const comms: MatterCommunicationEntry[] = [
-      { id: "c1", channel: "email", direction: "incoming", subject: "Test", timestamp: "2026-01-01T00:00:00Z", privileged: false, has_attachments: false },
+      {
+        id: "c1",
+        channel: "email",
+        direction: "incoming",
+        subject: "Test",
+        timestamp: "2026-01-01T00:00:00Z",
+        privileged: false,
+        has_attachments: false,
+      },
     ];
     const perms: MatterPermissionSummary = {
       visibility: "restricted",
@@ -1057,22 +1163,21 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      comms,
-      perms,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, perms);
     expect(gaps.some((g) => g.type === "unprivileged_communication")).toBe(true);
   });
 
   it("does not detect unprivileged_communication for phone calls", () => {
     const comms: MatterCommunicationEntry[] = [
-      { id: "c1", channel: "phone", direction: "incoming", subject: "Call", timestamp: "2026-01-01T00:00:00Z", privileged: false, has_attachments: false },
+      {
+        id: "c1",
+        channel: "phone",
+        direction: "incoming",
+        subject: "Call",
+        timestamp: "2026-01-01T00:00:00Z",
+        privileged: false,
+        has_attachments: false,
+      },
     ];
     const perms: MatterPermissionSummary = {
       visibility: "restricted",
@@ -1082,16 +1187,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      comms,
-      perms,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, comms, perms);
     expect(gaps.some((g) => g.type === "unprivileged_communication")).toBe(false);
   });
 
@@ -1104,16 +1200,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: ["user2"],
       ethical_wall_active: true,
     };
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      [],
-      perms,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
     const violation = gaps.find((g) => g.type === "ethical_wall_violation");
     expect(violation).toBeDefined();
     expect(violation?.severity).toBe("critical");
@@ -1128,16 +1215,7 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: ["user2"],
       ethical_wall_active: true,
     };
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      [],
-      perms,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
     expect(gaps.some((g) => g.type === "ethical_wall_violation")).toBe(false);
   });
 
@@ -1150,28 +1228,12 @@ describe("detectGaps — communication & permission gaps", () => {
       blocked_users: [],
       ethical_wall_active: false,
     };
-    const gaps = detectGaps(
-      { status: "open" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-      [],
-      perms,
-    );
+    const gaps = detectGaps({ status: "open" }, [], [], [], emptyCoverage, true, [], perms);
     expect(gaps.some((g) => g.type === "ethical_wall_violation")).toBe(false);
   });
 
   it("works with default parameters (no communications/permissions)", () => {
-    const gaps = detectGaps(
-      { status: "closed" },
-      [],
-      [],
-      [],
-      emptyCoverage,
-      true,
-    );
+    const gaps = detectGaps({ status: "closed" }, [], [], [], emptyCoverage, true);
     expect(gaps.some((g) => g.type === "missing_communication_log")).toBe(false);
     expect(gaps.some((g) => g.type === "ethical_wall_violation")).toBe(false);
   });

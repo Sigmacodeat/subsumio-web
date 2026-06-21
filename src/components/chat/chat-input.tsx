@@ -248,6 +248,9 @@ export function ChatInput({
                       <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
                         {QUERY_MODE_LABELS[mode].description}
                       </span>
+                      <span className="text-[9px] text-[color:var(--ds-text-subtle)] opacity-70">
+                        {QUERY_MODE_LABELS[mode].hint}
+                      </span>
                     </button>
                   ))}
                 </div>

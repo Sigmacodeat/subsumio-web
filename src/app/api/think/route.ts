@@ -11,9 +11,7 @@ export const maxDuration = 300;
 const thinkSchema = z.object({
   query: z.string().min(1, "query_required"),
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
-  query_mode: z
-    .enum(["conservative", "balanced", "deep_matter", "external_law", "admin_audit"])
-    .default("balanced"),
+  query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),
   model: z.string().optional(),
 });

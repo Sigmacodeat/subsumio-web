@@ -19,6 +19,7 @@ import { buildSafePrompt } from "@/lib/prompt-sanitizer";
 import { buildPromptContext, processStreamingChunk } from "@/components/chat/system-prompt";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
+import { caseFrontmatter } from "@/lib/legal-types";
 import {
   DEFAULT_FEATURES,
   DEFAULT_EXAMPLE_QUERIES,
@@ -68,7 +69,11 @@ interface ChatPanelProps {
 }
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
-  return mode === "deep_matter" || mode === "admin_audit" ? "tokenmax" : "balanced";
+  return mode === "deep_matter"
+    ? "tokenmax"
+    : mode === "conservative"
+      ? "conservative"
+      : "balanced";
 }
 
 // ── Copilot Tool Detection ────────────────────────────────────────────
@@ -416,6 +421,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             .map((p: BrainPage) => ({ slug: p.slug, title: p.title || p.slug }))
             .sort((a, b) => a.title.localeCompare(b.title))
         );
+        // If we have a context case slug, derive jurisdiction from it
+        const ctxSlug = context.caseSlug;
+        if (ctxSlug) {
+          const casePage = pages.find((p) => p.slug === ctxSlug);
+          if (casePage) {
+            const fm = caseFrontmatter(casePage);
+            if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
+          }
+        }
       } catch {
         if (!cancelled) setCases([]);
       }
@@ -423,7 +437,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [context.caseSlug]);
 
   // Load sessions list — filtered by matter for isolation
   const refreshSessions = useCallback(async () => {
@@ -1468,7 +1482,19 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         onJurisdictionChange={setJurisdiction}
         cases={cases}
         selectedCaseSlug={selectedCaseSlug}
-        onCaseChange={setSelectedCaseSlug}
+        onCaseChange={(slug) => {
+          setSelectedCaseSlug(slug);
+          // Sync jurisdiction from the selected case
+          if (slug) {
+            api.brain
+              .getPage(slug)
+              .then((page) => {
+                const fm = caseFrontmatter(page as BrainPage);
+                if (fm.jurisdiction) setJurisdiction(fm.jurisdiction as Jurisdiction);
+              })
+              .catch(() => {});
+          }
+        }}
         onClear={handleClear}
         onExport={handleExport}
         onShare={handleShare}

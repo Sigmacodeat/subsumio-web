@@ -37,6 +37,13 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Kritisch" },
 ] as const;
 
+const JURISDICTION_OPTIONS = [
+  { value: "de", label: "Deutschland" },
+  { value: "at", label: "Österreich" },
+  { value: "ch", label: "Schweiz" },
+  { value: "eu", label: "EU" },
+] as const;
+
 type ContactRole = NonNullable<ContactFrontmatter["role"]>;
 
 interface ContactOption {
@@ -70,6 +77,7 @@ export default function NewCasePage() {
       subArea: "",
       status: "open",
       priority: "medium",
+      jurisdiction: "de",
       clientName: "",
       clientSlug: "",
       opponentName: "",
@@ -94,6 +102,7 @@ export default function NewCasePage() {
           case_number: data.caseNumber?.trim() || slug.split("/").pop(),
           legal_area: data.legalArea || undefined,
           sub_area: data.subArea || undefined,
+          jurisdiction: data.jurisdiction,
           status: data.status,
           priority: data.priority,
           client_name: data.clientName || undefined,
@@ -329,6 +338,38 @@ export default function NewCasePage() {
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
+          </div>
+
+          {/* Jurisdiction — required, determines legal system for this case */}
+          <div>
+            <span
+              id="case-jurisdiction-label"
+              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+            >
+              Rechtskreis *
+            </span>
+            <div className="flex gap-2" role="radiogroup" aria-labelledby="case-jurisdiction-label">
+              {JURISDICTION_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={watch("jurisdiction") === o.value}
+                  onClick={() => setValue("jurisdiction", o.value as CaseFormData["jurisdiction"])}
+                  className={cn(
+                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    watch("jurisdiction") === o.value
+                      ? "border-blue-500/30 bg-blue-500/10 text-blue-600"
+                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
+                  )}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {f.formState.errors.jurisdiction && (
+              <p className="mt-1 text-xs text-red-600">{f.formState.errors.jurisdiction.message}</p>
+            )}
           </div>
 
           <div>

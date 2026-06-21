@@ -1455,6 +1455,7 @@ export default function CaseDetailPage() {
                         title: file.name,
                         source: "legal_case",
                         tags: [caseData.slug],
+                        case_slug: caseData.slug,
                       });
                       const updated = [
                         ...caseData.documents,

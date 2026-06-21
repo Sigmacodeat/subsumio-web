@@ -4,6 +4,23 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 
+async function validateCaseSlug(
+  brainId: string,
+  caseSlug: string
+): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`,
+      { headers: { "x-subsumio-brain-id": brainId } }
+    );
+    if (!res.ok) return false;
+    const page = (await res.json()) as { type?: string };
+    return page.type === "legal_case";
+  } catch {
+    return false;
+  }
+}
+
 export const POST = createHandler(
   {
     action: "brain.write",
@@ -19,6 +36,26 @@ export const POST = createHandler(
     try {
       const formData = await req.formData();
       const file = formData.get("file");
+      const caseSlugRaw = formData.get("case_slug");
+      const caseSlugStr = typeof caseSlugRaw === "string" ? caseSlugRaw.trim() : "";
+      const sourceRaw = typeof formData.get("source") === "string" ? formData.get("source") as string : "documents";
+
+      // Legal document sources require a case association (§ 43e BRAO, GoBD).
+      // Knowledge sources (wiki, meetings, ideas, people, companies) are exempt
+      // — they are brain-wide reference material, not case-specific documents.
+      const LEGAL_SOURCES = new Set(["documents", "legal_case", "legal"]);
+      const requiresCase = LEGAL_SOURCES.has(sourceRaw);
+
+      if (requiresCase && !caseSlugStr) {
+        return apiError("case_required", "Ein Dokument kann nur im Kontext einer Akte hochgeladen werden. Bitte wählen Sie eine Akte aus.", 400);
+      }
+
+      if (requiresCase && caseSlugStr) {
+        const caseExists = await validateCaseSlug(ctx.brainId, caseSlugStr);
+        if (!caseExists) {
+          return apiError("case_not_found", "Die angegebene Akte existiert nicht.", 404);
+        }
+      }
 
       const result = await scanUpload(file);
       if (!result.ok) {
@@ -32,10 +69,10 @@ export const POST = createHandler(
       );
       const title = formData.get("title");
       if (typeof title === "string") cleanForm.append("title", title);
-      const source = formData.get("source");
-      if (typeof source === "string") cleanForm.append("source", source);
+      cleanForm.append("source", sourceRaw);
       const tags = formData.get("tags");
       if (typeof tags === "string") cleanForm.append("tags", tags);
+      if (caseSlugStr) cleanForm.append("case_slug", caseSlugStr);
 
       const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
         method: "POST",

@@ -13,19 +13,38 @@ import type { ExtractionStatus, ExtractionMethod } from "@/lib/extraction-status
 // ── Query Modes ───────────────────────────────────────────────────────
 
 export type QueryMode =
-  | "conservative" // nur freigegebene/hochvertrauenswürdige Quellen
-  | "balanced" // interne Akten + freigegebene Quellen
-  | "deep_matter" // gesamte Akte inklusive Historie und Kommunikation
-  | "external_law" // Rechtsquellen/Partnerquellen
-  | "admin_audit"; // Audit-/Aktivitätskontext
+  | "conservative" // nur Rechtsquellen — schnell & vertrauenswürdig
+  | "balanced" // interne Akten + Rechtsquellen — Standardmodus
+  | "deep_matter"; // komplette Akte inkl. Kommunikation — maximaler Kontext
 
-export const QUERY_MODE_LABELS: Record<QueryMode, { label: string; description: string }> = {
-  conservative: { label: "Präzise", description: "Nur freigegebene, hochvertrauenswürdige Quellen" },
-  balanced: { label: "Balanced", description: "Interne Akten + freigegebene Quellen" },
-  deep_matter: { label: "Deep Matter", description: "Gesamte Akte inkl. Historie und Kommunikation" },
-  external_law: { label: "Externe Quellen", description: "Rechtsquellen und Partnerquellen" },
-  admin_audit: { label: "Audit", description: "Audit- und Aktivitätskontext" },
+export const QUERY_MODE_LABELS: Record<
+  QueryMode,
+  { label: string; description: string; hint: string }
+> = {
+  conservative: {
+    label: "Verlässlich",
+    description: "Nur geprüfte Rechtsquellen (Gesetze, Urteile)",
+    hint: "Schnell · geringe Kosten · niedriges Halluzinationsrisiko",
+  },
+  balanced: {
+    label: "Akten + Recht",
+    description: "Interne Akten und Rechtsquellen kombiniert",
+    hint: "Standard · ausgewogene Tiefe und Geschwindigkeit",
+  },
+  deep_matter: {
+    label: "Tiefensuche",
+    description: "Komplette Akte inkl. Kommunikation und Historie",
+    hint: "Maximaler Kontext · höherer Tokenverbrauch",
+  },
 };
+
+// Legacy compatibility — maps old modes to new ones
+export function normalizeQueryMode(mode: string): QueryMode {
+  if (mode === "external_law") return "conservative";
+  if (mode === "admin_audit") return "deep_matter";
+  if (mode === "conservative" || mode === "balanced" || mode === "deep_matter") return mode;
+  return "balanced";
+}
 
 // ── Matter Context Bundle ─────────────────────────────────────────────
 
@@ -173,7 +192,16 @@ export interface MatterContextBundle {
 export interface SourceCoverageEntry {
   source_id: string;
   source_label: string;
-  source_type: "statute_corpus" | "judgement_api" | "dms" | "email" | "whatsapp" | "portal" | "upload" | "regulatory_feed" | "commercial";
+  source_type:
+    | "statute_corpus"
+    | "judgement_api"
+    | "dms"
+    | "email"
+    | "whatsapp"
+    | "portal"
+    | "upload"
+    | "regulatory_feed"
+    | "commercial";
   connected: boolean;
   last_sync_at: string | null;
   document_count: number;

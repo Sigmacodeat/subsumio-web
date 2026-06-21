@@ -1609,6 +1609,21 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           source_uri: `sigmabrain-upload:${slug}`,
         });
 
+        // Stamp case_slug into the document frontmatter so every uploaded
+        // document is traceable to its case (§ 43e BRAO, GoBD).
+        const caseSlug = fields.case_slug?.trim();
+        if (caseSlug) {
+          try {
+            await invokeOp(engine, "put_page", {
+              slug,
+              frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
+              merge: true,
+            }, tenantSource);
+          } catch {
+            /* best effort — the document is imported, stamping is enrichment */
+          }
+        }
+
         if (tagList.length > 0) {
           for (const tag of tagList) {
             try {

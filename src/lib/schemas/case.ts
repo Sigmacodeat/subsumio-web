@@ -12,11 +12,14 @@ export const caseStatusSchema = z.enum([
 
 export const casePrioritySchema = z.enum(["low", "medium", "high", "critical"]);
 
+export const caseJurisdictionSchema = z.enum(["de", "at", "ch", "eu"]);
+
 export const caseFormSchema = z.object({
   title: z.string().min(1, "Titel ist erforderlich").max(300, "Titel zu lang"),
   caseNumber: z.string().max(100).optional(),
   legalArea: z.string().max(100).optional(),
   subArea: z.string().max(100).optional(),
+  jurisdiction: caseJurisdictionSchema,
   status: caseStatusSchema,
   priority: casePrioritySchema,
   clientName: z.string().max(200).optional(),

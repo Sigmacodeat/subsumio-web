@@ -15,6 +15,11 @@ import {
   Info,
   Archive,
   FolderOpen,
+  Briefcase,
+  AlertCircle,
+  BookOpen,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +28,7 @@ import { api } from "@/lib/api";
 import { isOnline } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
 import { PageHeader } from "@/components/dashboard/page-header";
+import type { BrainPage } from "@/lib/types";
 
 interface UploadFile {
   id: string;
@@ -58,12 +64,26 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+type UploadMode = "case" | "knowledge";
+
+const KNOWLEDGE_SOURCES = [
+  { value: "wiki", label: "Kanzlei-Wiki", desc: "Präzedenzfälle, Vorlagen, Playbooks" },
+  { value: "meetings", label: "Besprechungen", desc: "Team-Meetings, Notizen" },
+  { value: "people", label: "Kontakte", desc: "Mandanten, Gegenseite, Experten" },
+  { value: "companies", label: "Unternehmen", desc: "Firmen, Behörden, Institutionen" },
+  { value: "ideas", label: "Ideen", desc: "Strategien, Verbesserungsvorschläge" },
+];
+
 export default function UploadPage() {
   const router = useRouter();
   const { t } = useLang();
   const [files, setFiles] = useState<UploadFile[]>([]);
+  const [mode, setMode] = useState<UploadMode>("case");
   const [source, setSource] = useState("wiki");
   const [tags, setTags] = useState("");
+  const [cases, setCases] = useState<BrainPage[]>([]);
+  const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
+  const [casesLoading, setCasesLoading] = useState(true);
   // GoBD-Baustein: steuerlich relevante Belege beim Ingest mit Aufbewahrungs-
   // frist + Inhalts-Hash stempeln (§ 147 AO / § 146 Abs. 4 AO). Bewusst opt-in:
   // nicht jeder Upload ist ein Buchungsbeleg.
@@ -75,6 +95,19 @@ export default function UploadPage() {
   const [scanning, setScanning] = useState(false);
   useEffect(() => {
     setFolderApi(typeof window !== "undefined" && "showDirectoryPicker" in window);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        setCases(pages);
+      } catch {
+        setCases([]);
+      } finally {
+        setCasesLoading(false);
+      }
+    })();
   }, []);
 
   const addFiles = useCallback((accepted: File[]) => {
@@ -151,14 +184,20 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
+  const canUpload = mode === "knowledge" || (mode === "case" && !!selectedCaseSlug);
+
   const uploadAll = async () => {
     const pending = files.filter((f) => f.status === "pending");
     if (pending.length === 0) return;
+    if (!canUpload) return;
 
     const tagList = tags
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
+
+    const effectiveSource = mode === "case" ? "documents" : source;
+    const caseSlug = mode === "case" ? selectedCaseSlug : undefined;
 
     for (const uploadFile of pending) {
       setFiles((prev) =>
@@ -169,7 +208,7 @@ export default function UploadPage() {
         const title = uploadFile.file.name.replace(/\.[^.]+$/, "");
         const result = await api.upload.file(
           uploadFile.file,
-          { title, source, tags: tagList.length > 0 ? tagList : undefined },
+          { title, source: effectiveSource, tags: tagList.length > 0 ? tagList : undefined, case_slug: caseSlug },
           (progress) => {
             setFiles((prev) => prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)));
           }
@@ -228,14 +267,100 @@ export default function UploadPage() {
         ]}
       />
 
-      {/* Options */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      {/* ── Mode Selector: Two-tier architecture (Akte vs. Kanzlei-Wissen) ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setMode("case")}
+          className={cn(
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            mode === "case"
+              ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
+              : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
+          )}
+        >
+          <Briefcase size={18} className={mode === "case" ? "brand-text" : "text-[color:var(--ds-text-muted)]"} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">Dokument zu Akte</span>
+              <Lock size={11} className="text-[color:var(--ds-text-subtle)]" />
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              Fallbezogene Dokumente mit Ethical-Wall-Isolation. Pflicht-Zuordnung zu einer Akte.
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={() => setMode("knowledge")}
+          className={cn(
+            "flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            mode === "knowledge"
+              ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
+              : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
+          )}
+        >
+          <BookOpen size={18} className={mode === "knowledge" ? "brand-text" : "text-[color:var(--ds-text-muted)]"} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">Kanzlei-Wissen</span>
+              <Sparkles size={11} className="text-[color:var(--ds-text-subtle)]" />
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Brain-Loop konsolidiert automatisch aus Akten.
+            </p>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Mode: Case — Akten-Auswahl (Pflichtfeld) ── */}
+      {mode === "case" && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <label
+            htmlFor="upload-case"
+            className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+          >
+            <Briefcase size={13} />
+            Akte (Pflichtfeld)
+          </label>
+          <select
+            id="upload-case"
+            value={selectedCaseSlug}
+            onChange={(e) => setSelectedCaseSlug(e.target.value)}
+            disabled={casesLoading}
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none disabled:opacity-50"
+          >
+            <option value="">
+              {casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"}
+            </option>
+            {cases.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+          {!selectedCaseSlug && !casesLoading && cases.length > 0 && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+              <AlertCircle size={12} />
+              Bitte wählen Sie eine Akte aus. Dokumente ohne Aktenbezug werden nicht akzeptiert.
+            </p>
+          )}
+          {!casesLoading && cases.length === 0 && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+              <AlertCircle size={12} />
+              Keine Akten vorhanden. Bitte erstellen Sie zuerst eine Akte.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Mode: Knowledge — Source-Auswahl ── */}
+      {mode === "knowledge" && (
+        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <label
             htmlFor="upload-source"
-            className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+            className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
           >
-            Brain Source
+            <BookOpen size={13} />
+            Wissensbereich
           </label>
           <select
             id="upload-source"
@@ -243,30 +368,39 @@ export default function UploadPage() {
             onChange={(e) => setSource(e.target.value)}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           >
-            <option value="wiki">wiki</option>
-            <option value="meetings">meetings</option>
-            <option value="people">people</option>
-            <option value="companies">companies</option>
-            <option value="ideas">ideas</option>
-            <option value="documents">documents</option>
+            {KNOWLEDGE_SOURCES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label} — {s.desc}
+              </option>
+            ))}
           </select>
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs text-[color:var(--ds-text-muted)]">
+            <Sparkles size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
+            <span>
+              Der Brain-Loop konsolidiert automatisch Wissen aus allen Akten in diese Bereiche.
+              Präzedenzfälle und Muster werden über den <strong className="text-[color:var(--ds-text)]">Consolidate-Cycle</strong> extrahiert —
+              ohne manuellen Aufwand.
+            </span>
+          </div>
         </div>
-        <div>
-          <label
-            htmlFor="upload-tags"
-            className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
-          >
-            Tags (kommasepariert)
-          </label>
-          <input
-            id="upload-tags"
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder={t("upload.tags_placeholder")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-          />
-        </div>
+      )}
+
+      {/* Tags — immer verfügbar */}
+      <div>
+        <label
+          htmlFor="upload-tags"
+          className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
+        >
+          Tags (kommasepariert)
+        </label>
+        <input
+          id="upload-tags"
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder={t("upload.tags_placeholder")}
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+        />
       </div>
 
       {/* GoBD-Belegstempel (opt-in) */}
@@ -305,7 +439,8 @@ export default function UploadPage() {
           isDragActive
             ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
             : "hover:brand-border hover:brand-soft border-[color:var(--ds-border-strong)]",
-          !isOnline() && "cursor-not-allowed opacity-50"
+          !isOnline() && "cursor-not-allowed opacity-50",
+          !canUpload && "cursor-not-allowed opacity-50"
         )}
       >
         <input {...getInputProps()} aria-label={t("aria.file_upload")} />
@@ -385,7 +520,7 @@ export default function UploadPage() {
             </h3>
             <div className="flex items-center gap-2">
               {pendingCount > 0 && (
-                <Button size="sm" variant="glow" onClick={uploadAll}>
+                <Button size="sm" variant="glow" onClick={uploadAll} disabled={!canUpload}>
                   <Upload size={13} />
                   {pendingCount} {t("upload.upload_btn")}
                 </Button>

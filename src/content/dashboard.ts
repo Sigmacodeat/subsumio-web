@@ -1491,6 +1491,10 @@ export const D = {
   "chat.case_select": { de: "Akte wählen", en: "Select case" },
   "chat.no_case": { de: "Keine Akte", en: "No case" },
   "chat.jurisdiction": { de: "Rechtskreis", en: "Jurisdiction" },
+  "chat.jurisdiction_locked": {
+    de: "Rechtskreis aus Akte übernommen",
+    en: "Jurisdiction inherited from case",
+  },
   "chat.mode": { de: "Modus", en: "Mode" },
   "chat.model": { de: "Modell", en: "Model" },
   "chat.stop": { de: "Stoppen", en: "Stop" },

@@ -523,7 +523,7 @@ export async function explainRetrieval(
       q: query,
       limit: "10",
     });
-    if (mode === "external_law") {
+    if (mode === "conservative") {
       params.set("type", "statute");
     }
 
@@ -1354,9 +1354,7 @@ export function mapQueryModeToEngineMode(
     case "conservative":
       return "conservative";
     case "deep_matter":
-    case "admin_audit":
       return "tokenmax";
-    case "external_law":
     case "balanced":
     default:
       return "balanced";

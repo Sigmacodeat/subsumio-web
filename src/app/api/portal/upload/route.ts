@@ -119,6 +119,7 @@ export const POST = createPublicHandler(
     uploadForm.append("title", scan.cleanName);
     uploadForm.append("source", "portal");
     uploadForm.append("tags", JSON.stringify([payload.case_slug, "portal"]));
+    uploadForm.append("case_slug", payload.case_slug);
 
     const upstream = await fetch(`${ENGINE_URL}/api/upload`, {
       method: "POST",

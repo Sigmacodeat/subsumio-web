@@ -13,11 +13,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  isSameOrg,
-  isSameBrain,
-  type TenantScope,
-} from "@/lib/data-classification";
+import { isSameOrg, isSameBrain, type TenantScope } from "@/lib/data-classification";
 import type {
   RetrievalExplanation,
   ExplainedSearchResult,
@@ -75,7 +71,7 @@ function makeResult(
   slug: string,
   orgId: string,
   brainId: string,
-  overrides: Partial<RetrievalExplanation> = {},
+  overrides: Partial<RetrievalExplanation> = {}
 ): ExplainedSearchResult & { _org_id: string; _brain_id: string } {
   const explanation = makeExplanation({ slug, ...overrides });
   return {
@@ -104,9 +100,7 @@ describe("Org-Isolation in Retrieval", () => {
   });
 
   it("returns empty for org with no data", () => {
-    const results = [
-      makeResult("cases/1", "org-1", "brain-a"),
-    ];
+    const results = [makeResult("cases/1", "org-1", "brain-a")];
     const scoped = results.filter((r) => r._org_id === ORG_B.org_id);
     expect(scoped).toHaveLength(0);
   });
@@ -139,14 +133,16 @@ describe("Brain-Isolation in Retrieval", () => {
 // ── 3. Source-Isolation in Retrieval ──────────────────────────────────
 
 describe("Source-Isolation in Retrieval", () => {
-  it("filters by source_type when query mode is external_law", () => {
+  it("filters by source_type when query mode is conservative", () => {
     const results = [
       makeResult("statutes/bgb", "org-1", "brain-a", { source_type: "statute_corpus" }),
       makeResult("cases/1", "org-1", "brain-a", { source_type: "dms" }),
       makeResult("judgements/bgh-1", "org-1", "brain-a", { source_type: "judgement_api" }),
     ];
     const externalLaw = results.filter(
-      (r) => r.explanation.source_type === "statute_corpus" || r.explanation.source_type === "judgement_api",
+      (r) =>
+        r.explanation.source_type === "statute_corpus" ||
+        r.explanation.source_type === "judgement_api"
     );
     expect(externalLaw).toHaveLength(2);
     expect(externalLaw.some((r) => r.explanation.source_type === "dms")).toBe(false);
@@ -222,9 +218,7 @@ describe("Ethical-Wall in Retrieval", () => {
 
   it("detects ethical wall violation when user is in both lists", () => {
     const permissions = PERMISSIONS_ETHICAL_WALL;
-    const overlap = permissions.allowed_users.filter(
-      (u) => permissions.blocked_users.includes(u),
-    );
+    const overlap = permissions.allowed_users.filter((u) => permissions.blocked_users.includes(u));
     expect(overlap).toHaveLength(1);
     expect(overlap[0]).toBe("user-3");
   });
@@ -250,7 +244,7 @@ describe("Ethical-Wall in Retrieval", () => {
 // ── 7. Query-Mode Scoping ─────────────────────────────────────────────
 
 describe("Query-Mode Scoping", () => {
-  const modes: QueryMode[] = ["conservative", "balanced", "deep_matter", "external_law", "admin_audit"];
+  const modes: QueryMode[] = ["conservative", "balanced", "deep_matter"];
 
   it("conservative mode only includes high-trust sources", () => {
     const mode: QueryMode = "conservative";
@@ -291,31 +285,11 @@ describe("Query-Mode Scoping", () => {
     expect(mode).toBe("deep_matter");
   });
 
-  it("external_law mode only includes external legal sources", () => {
-    const mode: QueryMode = "external_law";
-    const allowedSources = ["statute_corpus", "judgement_api"];
-    const results = [
-      makeResult("s1", "org-1", "brain-a", { source_type: "statute_corpus" }),
-      makeResult("s2", "org-1", "brain-a", { source_type: "judgement_api" }),
-      makeResult("s3", "org-1", "brain-a", { source_type: "dms" }),
-    ];
-    const scoped = results.filter((r) => allowedSources.includes(r.explanation.source_type ?? ""));
-    expect(scoped).toHaveLength(2);
-    expect(mode).toBe("external_law");
-  });
-
-  it("admin_audit mode includes audit and activity sources", () => {
-    const mode: QueryMode = "admin_audit";
-    expect(mode).toBe("admin_audit");
-  });
-
-  it("all 5 modes are defined", () => {
-    expect(modes).toHaveLength(5);
+  it("all 3 modes are defined", () => {
+    expect(modes).toHaveLength(3);
     expect(modes).toContain("conservative");
     expect(modes).toContain("balanced");
     expect(modes).toContain("deep_matter");
-    expect(modes).toContain("external_law");
-    expect(modes).toContain("admin_audit");
   });
 });
 

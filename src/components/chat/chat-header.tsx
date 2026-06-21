@@ -398,24 +398,14 @@ export function ChatHeader(props: ChatHeaderProps) {
             <div className="h-4 w-px bg-[color:var(--ds-border)]" aria-hidden />
           )}
 
-          {/* Jurisdiction selector — hidden in compact mode */}
+          {/* Jurisdiction indicator — read-only, derived from case or user profile */}
           {props.features.jurisdictionSelector && !compact && (
-            <div className="flex items-center gap-0.5 rounded-lg bg-[color:var(--ds-surface)] p-0.5">
-              <Scale size={10} className="ml-1 text-[color:var(--ds-text-subtle)]" />
-              {JURISDICTIONS.map((j) => (
-                <button
-                  key={j.value}
-                  onClick={() => props.onJurisdictionChange(j.value)}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
-                    props.jurisdiction === j.value
-                      ? "brand-bg brand-text-on-primary"
-                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                  )}
-                >
-                  {j.label}
-                </button>
-              ))}
+            <div
+              className="flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-text-muted)]"
+              title={t("chat.jurisdiction_locked")}
+            >
+              <Scale size={10} className="text-[color:var(--ds-text-subtle)]" />
+              {JURISDICTIONS.find((j) => j.value === props.jurisdiction)?.label ?? "DE"}
             </div>
           )}
 
@@ -457,6 +447,9 @@ export function ChatHeader(props: ChatHeaderProps) {
                       </span>
                       <span className="text-xs text-[color:var(--ds-text-subtle)]">
                         {QUERY_MODE_LABELS[mode].description}
+                      </span>
+                      <span className="text-[10px] text-[color:var(--ds-text-subtle)] opacity-70">
+                        {QUERY_MODE_LABELS[mode].hint}
                       </span>
                     </button>
                   ))}

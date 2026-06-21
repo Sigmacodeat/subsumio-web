@@ -115,7 +115,7 @@ export default function OnboardingPage() {
       setUploading(true);
       setError(null);
       try {
-        await api.upload.file(file);
+        await api.upload.file(file, { source: "wiki" });
         setUploaded(true);
       } catch {
         setError(t("onboarding.error_upload"));

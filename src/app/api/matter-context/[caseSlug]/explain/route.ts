@@ -8,7 +8,7 @@ export const maxDuration = 30;
 
 const explainQuerySchema = z.object({
   q: z.string().min(1).max(1000),
-  mode: z.enum(["conservative", "balanced", "deep_matter", "external_law", "admin_audit"]).optional(),
+  mode: z.enum(["conservative", "balanced", "deep_matter"]).optional(),
 });
 
 export const GET = createHandler(
@@ -24,7 +24,7 @@ export const GET = createHandler(
       query.q,
       ENGINE_URL,
       engineHeadersForBrain(ctx.brainId),
-      mode,
+      mode
     );
 
     return Response.json({
@@ -34,5 +34,5 @@ export const GET = createHandler(
       result_count: results.length,
       generated_at: new Date().toISOString(),
     });
-  },
+  }
 );

@@ -17,15 +17,11 @@ import type {
   ExplainedSearchResult,
   QueryMode,
 } from "@/lib/matter-context-types";
-import {
-  QUERY_MODE_LABELS,
-} from "@/lib/matter-context-types";
+import { QUERY_MODE_LABELS } from "@/lib/matter-context-types";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-function makeExplanation(
-  overrides: Partial<RetrievalExplanation> = {},
-): RetrievalExplanation {
+function makeExplanation(overrides: Partial<RetrievalExplanation> = {}): RetrievalExplanation {
   return {
     slug: "cases/test",
     title: "Test Case",
@@ -42,7 +38,7 @@ function makeExplanation(
 }
 
 function makeExplainedResult(
-  overrides: Partial<ExplainedSearchResult> & { explanation?: Partial<RetrievalExplanation> } = {},
+  overrides: Partial<ExplainedSearchResult> & { explanation?: Partial<RetrievalExplanation> } = {}
 ): ExplainedSearchResult {
   const { explanation: explOverrides, ...resultOverrides } = overrides;
   const baseSlug = resultOverrides.slug ?? "cases/test";
@@ -53,7 +49,12 @@ function makeExplainedResult(
     title: baseTitle,
     snippet: "Test snippet",
     score: baseScore,
-    explanation: makeExplanation({ slug: baseSlug, title: baseTitle, score: baseScore, ...explOverrides }),
+    explanation: makeExplanation({
+      slug: baseSlug,
+      title: baseTitle,
+      score: baseScore,
+      ...explOverrides,
+    }),
     ...resultOverrides,
   };
 }
@@ -67,7 +68,17 @@ describe("Source Explainability", () => {
   });
 
   it("source_type identifies the data origin", () => {
-    const types = ["statute_corpus", "judgement_api", "dms", "email", "whatsapp", "portal", "upload", "regulatory_feed", "commercial"];
+    const types = [
+      "statute_corpus",
+      "judgement_api",
+      "dms",
+      "email",
+      "whatsapp",
+      "portal",
+      "upload",
+      "regulatory_feed",
+      "commercial",
+    ];
     for (const type of types) {
       const explanation = makeExplanation({ source_type: type });
       expect(explanation.source_type).toBe(type);
@@ -80,7 +91,10 @@ describe("Source Explainability", () => {
   });
 
   it("external source for statute pages", () => {
-    const explanation = makeExplanation({ source: "gesetze-im-internet", source_type: "statute_corpus" });
+    const explanation = makeExplanation({
+      source: "gesetze-im-internet",
+      source_type: "statute_corpus",
+    });
     expect(explanation.source).toBe("gesetze-im-internet");
   });
 });
@@ -94,7 +108,9 @@ describe("Chunk/Page Explainability", () => {
   });
 
   it("chunk_info contains snippet", () => {
-    const explanation = makeExplanation({ chunk_info: { page: 1, snippet: "Haftung nach § 823 BGB" } });
+    const explanation = makeExplanation({
+      chunk_info: { page: 1, snippet: "Haftung nach § 823 BGB" },
+    });
     expect(explanation.chunk_info?.snippet).toContain("Haftung");
   });
 
@@ -239,9 +255,9 @@ describe("Datenlücken / Permission-Filtered", () => {
 // ── 8. Query-Mode Labels ──────────────────────────────────────────────
 
 describe("Query-Mode Labels", () => {
-  const modes: QueryMode[] = ["conservative", "balanced", "deep_matter", "external_law", "admin_audit"];
+  const modes: QueryMode[] = ["conservative", "balanced", "deep_matter"];
 
-  it("all 5 modes have labels", () => {
+  it("all 3 modes have labels", () => {
     for (const mode of modes) {
       expect(QUERY_MODE_LABELS[mode]).toBeDefined();
       expect(QUERY_MODE_LABELS[mode].label).toBeTruthy();
@@ -249,24 +265,16 @@ describe("Query-Mode Labels", () => {
     }
   });
 
-  it("conservative mode is labeled 'Präzise'", () => {
-    expect(QUERY_MODE_LABELS.conservative.label).toBe("Präzise");
+  it("conservative mode is labeled 'Verlässlich'", () => {
+    expect(QUERY_MODE_LABELS.conservative.label).toBe("Verlässlich");
   });
 
-  it("balanced mode is labeled 'Balanced'", () => {
-    expect(QUERY_MODE_LABELS.balanced.label).toBe("Balanced");
+  it("balanced mode is labeled 'Akten + Recht'", () => {
+    expect(QUERY_MODE_LABELS.balanced.label).toBe("Akten + Recht");
   });
 
   it("deep_matter mode is labeled 'Deep Matter'", () => {
-    expect(QUERY_MODE_LABELS.deep_matter.label).toBe("Deep Matter");
-  });
-
-  it("external_law mode is labeled 'Externe Quellen'", () => {
-    expect(QUERY_MODE_LABELS.external_law.label).toBe("Externe Quellen");
-  });
-
-  it("admin_audit mode is labeled 'Audit'", () => {
-    expect(QUERY_MODE_LABELS.admin_audit.label).toBe("Audit");
+    expect(QUERY_MODE_LABELS.deep_matter.label).toBe("Tiefensuche");
   });
 });
 

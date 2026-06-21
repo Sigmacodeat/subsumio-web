@@ -832,7 +832,7 @@ export const api = {
   upload: {
     async file(
       file: File,
-      options?: { title?: string; source?: string; tags?: string[] },
+      options?: { title?: string; source?: string; tags?: string[]; case_slug?: string },
       onProgress?: (progress: number) => void
     ): Promise<{ slug: string; title: string }> {
       const formData = new FormData();
@@ -840,6 +840,7 @@ export const api = {
       if (options?.title) formData.append("title", options.title);
       if (options?.source) formData.append("source", options.source);
       if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
+      if (options?.case_slug) formData.append("case_slug", options.case_slug);
 
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();

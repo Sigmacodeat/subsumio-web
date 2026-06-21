@@ -698,6 +698,7 @@ async function createMediaVaultPage(
   target?: BrainPage | null
 ): Promise<string> {
   const slug = `legal/documents/whatsapp/${safeSlugPart(media.sha256.slice(0, 16))}`;
+  const hasCase = !!target;
   await putPage(ctx.sender.brainId, {
     slug,
     title: media.filename,
@@ -705,7 +706,7 @@ async function createMediaVaultPage(
     content: [
       `WhatsApp-${media.kind} von ${ctx.sender.name || "erlaubtem Sender"}.`,
       ctx.caption ? `Beschriftung: ${ctx.caption}` : "",
-      target ? `Zugeordnet zu Akte: ${target.title}` : "Noch keiner Akte zugeordnet.",
+      hasCase ? `Zugeordnet zu Akte: ${target!.title}` : "Wartet auf Akten-Zuordnung — Dokument ist gesperrt bis eine Akte zugewiesen wird.",
       `Speicherpfad: ${media.storagePath}`,
     ]
       .filter(Boolean)
@@ -716,6 +717,7 @@ async function createMediaVaultPage(
       document_kind: media.kind,
       case_slug: target?.slug,
       case_title: target?.title,
+      assignment_status: hasCase ? "assigned" : "pending_assignment",
       uploaded_by: ctx.sender.name,
       uploaded_at: new Date().toISOString(),
       caption: ctx.caption,
@@ -726,7 +728,7 @@ async function createMediaVaultPage(
       size: media.sizeBytes,
       sha256: media.sha256,
       whatsapp_media_id: media.mediaId,
-      tags: ["whatsapp", media.kind, ...(target ? ["akte"] : ["unzugeordnet"])],
+      tags: ["whatsapp", media.kind, ...(hasCase ? ["akte"] : ["pending_assignment"])],
     },
   });
   return slug;

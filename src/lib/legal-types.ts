@@ -151,6 +151,7 @@ export interface CaseFrontmatter {
   status?: string;
   legal_area?: string;
   sub_area?: string;
+  jurisdiction?: "de" | "at" | "ch" | "eu";
   priority?: string;
   client_id?: string;
   client_name?: string;

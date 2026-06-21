@@ -95,7 +95,7 @@ export default function ResearchPage() {
       const prompt = `Recherchiere präzise zur folgenden Rechtsfrage unter Berücksichtigung des ${jurisdiction.toUpperCase()}-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nRECHTSFRAGE: ${query}`;
       const result = await api.query.think(prompt, {
         mode: "balanced",
-        queryMode: "external_law",
+        queryMode: "conservative",
         onChunk: (chunk) => {
           setCurrentAnswer((prev) => prev + chunk);
         },

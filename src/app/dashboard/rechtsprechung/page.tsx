@@ -91,7 +91,7 @@ export default function RechtsprechungPage() {
           `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : jurisdiction === "ch" ? "der Schweiz" : "Deutschland, Österreich und der Schweiz"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`,
           {
             mode: "balanced",
-            queryMode: "external_law",
+            queryMode: "conservative",
           }
         );
         const lines = thinkResult.answer.split("\n").filter((l) => l.trim());

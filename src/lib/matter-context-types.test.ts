@@ -24,9 +24,7 @@ import {
 } from "./matter-context-types";
 
 describe("QUERY_MODE_LABELS", () => {
-  const modes: QueryMode[] = [
-    "conservative", "balanced", "deep_matter", "external_law", "admin_audit",
-  ];
+  const modes: QueryMode[] = ["conservative", "balanced", "deep_matter"];
 
   test("has entry for every QueryMode", () => {
     for (const mode of modes) {
@@ -37,15 +35,15 @@ describe("QUERY_MODE_LABELS", () => {
   });
 
   test("conservative has German label", () => {
-    expect(QUERY_MODE_LABELS.conservative.label).toBe("Präzise");
+    expect(QUERY_MODE_LABELS.conservative.label).toBe("Verlässlich");
   });
 
   test("balanced has label", () => {
-    expect(QUERY_MODE_LABELS.balanced.label).toBe("Balanced");
+    expect(QUERY_MODE_LABELS.balanced.label).toBe("Akten + Recht");
   });
 
   test("deep_matter has label", () => {
-    expect(QUERY_MODE_LABELS.deep_matter.label).toBe("Deep Matter");
+    expect(QUERY_MODE_LABELS.deep_matter.label).toBe("Tiefensuche");
   });
 
   test("all descriptions are non-empty strings", () => {
@@ -68,7 +66,13 @@ describe("Type instantiation", () => {
 
   test("MatterParty with all role types", () => {
     const roles: MatterParty["role"][] = [
-      "client", "opponent", "lawyer", "court", "witness", "third_party", "other",
+      "client",
+      "opponent",
+      "lawyer",
+      "court",
+      "witness",
+      "third_party",
+      "other",
     ];
     expect(roles).toHaveLength(7);
   });
@@ -107,7 +111,13 @@ describe("Type instantiation", () => {
 
   test("MatterCommunicationEntry with channels", () => {
     const channels: MatterCommunicationEntry["channel"][] = [
-      "email", "whatsapp", "phone", "letter", "portal", "bea", "other",
+      "email",
+      "whatsapp",
+      "phone",
+      "letter",
+      "portal",
+      "bea",
+      "other",
     ];
     expect(channels).toHaveLength(7);
   });
@@ -167,26 +177,41 @@ describe("Type instantiation", () => {
 
   test("SourceCoverageEntry with source types", () => {
     const sourceTypes: SourceCoverageEntry["source_type"][] = [
-      "statute_corpus", "judgement_api", "dms", "email", "whatsapp",
-      "portal", "upload", "regulatory_feed", "commercial",
+      "statute_corpus",
+      "judgement_api",
+      "dms",
+      "email",
+      "whatsapp",
+      "portal",
+      "upload",
+      "regulatory_feed",
+      "commercial",
     ];
     expect(sourceTypes).toHaveLength(9);
   });
 
   test("MatterCoverageStatus with freshness levels", () => {
-    const freshness: MatterCoverageStatus["overall_freshness"][] = [
-      "fresh", "stale", "unknown",
-    ];
+    const freshness: MatterCoverageStatus["overall_freshness"][] = ["fresh", "stale", "unknown"];
     expect(freshness).toHaveLength(3);
   });
 
   test("GapType has all expected types", () => {
     const gapTypes: GapType[] = [
-      "missing_document", "missing_deadline", "missing_power_of_attorney",
-      "missing_attachment", "missing_deadline_confirmation", "unclear_opponent",
-      "unreviewed_document", "contradictory_facts", "stale_knowledge_asset",
-      "missing_client_info", "engine_unreachable", "incomplete_coverage",
-      "missing_communication_log", "unprivileged_communication", "ethical_wall_violation",
+      "missing_document",
+      "missing_deadline",
+      "missing_power_of_attorney",
+      "missing_attachment",
+      "missing_deadline_confirmation",
+      "unclear_opponent",
+      "unreviewed_document",
+      "contradictory_facts",
+      "stale_knowledge_asset",
+      "missing_client_info",
+      "engine_unreachable",
+      "incomplete_coverage",
+      "missing_communication_log",
+      "unprivileged_communication",
+      "ethical_wall_violation",
     ];
     expect(gapTypes).toHaveLength(15);
   });
@@ -211,7 +236,11 @@ describe("Type instantiation", () => {
 
   test("RetrievalExplanation with search modes", () => {
     const modes: RetrievalExplanation["search_mode"][] = [
-      "hybrid", "semantic", "keyword", "graph", "unknown",
+      "hybrid",
+      "semantic",
+      "keyword",
+      "graph",
+      "unknown",
     ];
     expect(modes).toHaveLength(5);
   });
@@ -244,9 +273,7 @@ describe("Type instantiation", () => {
       stale_sources: 2,
       coverage_score: 0.85,
       last_synced: "2024-01-01",
-      source_breakdown: [
-        { source_type: "dms", count: 50, fresh: true },
-      ],
+      source_breakdown: [{ source_type: "dms", count: 50, fresh: true }],
       quality_issues: [],
     };
     expect(summary.coverage_score).toBe(0.85);
@@ -283,7 +310,10 @@ describe("Type instantiation", () => {
 
   test("RecentlyChangedSource with change types", () => {
     const changeTypes: RecentlyChangedSource["change_type"][] = [
-      "created", "updated", "synced", "reviewed",
+      "created",
+      "updated",
+      "synced",
+      "reviewed",
     ];
     expect(changeTypes).toHaveLength(4);
   });
