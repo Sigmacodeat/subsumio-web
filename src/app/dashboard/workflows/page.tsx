@@ -445,7 +445,6 @@ function WorkflowCard({
   onToggle: () => void;
 }) {
   const { lang } = useLang();
-  const { lang } = useLang();
   const fm = instance.frontmatter;
   const progress = getWorkflowProgress(fm.steps);
   const pendingApprovals = getPendingApprovals(fm.steps);
