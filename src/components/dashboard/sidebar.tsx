@@ -415,7 +415,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200",
+        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"

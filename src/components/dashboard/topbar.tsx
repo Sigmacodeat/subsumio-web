@@ -523,9 +523,9 @@ export function Topbar({
           title={copilotOpen ? "Brain Copilot schließen (Cmd+J)" : "Brain Copilot öffnen (Cmd+J)"}
           aria-pressed={copilotOpen}
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+            "flex h-11 w-11 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
             copilotOpen
-              ? "brand-bg brand-text-on-primary"
+              ? "brand-bg brand-text-on-primary shadow-sm"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           )}
         >
@@ -535,7 +535,7 @@ export function Topbar({
           onClick={onGuideOpen}
           aria-label={t("guide.open")}
           title={t("guide.open")}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95"
         >
           <HelpCircle size={16} />
         </button>
@@ -543,7 +543,7 @@ export function Topbar({
           onClick={toggleTheme}
           title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
           aria-label={theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95"
         >
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
@@ -557,7 +557,7 @@ export function Topbar({
             }
             aria-expanded={notifOpen}
             aria-haspopup="menu"
-            className="relative flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+            className="relative flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95"
           >
             <Bell size={16} />
             {unreadCount > 0 && (

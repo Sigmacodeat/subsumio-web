@@ -411,7 +411,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <div
         ref={drawerRef}
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-300 ease-out md:hidden",
+          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
@@ -515,7 +515,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <aside
         className={cn(
-          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-300 ease-in-out md:flex",
+          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
           open ? "w-[380px] xl:w-[420px]" : "w-0",
           className
         )}
@@ -526,7 +526,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         <button
           onClick={onToggle}
           className={cn(
-            "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-all hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
+            "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95",
             !open && "pointer-events-none opacity-0"
           )}
           aria-label="Brain Copilot einklappen"
@@ -541,8 +541,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         {/* Panel content — stays mounted during transition for smooth animation */}
         <div
           className={cn(
-            "flex h-full min-w-0 flex-col overflow-hidden transition-opacity duration-200",
-            open ? "opacity-100" : "pointer-events-none opacity-0"
+            "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity,transform] delay-75 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            open ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-3 opacity-0"
           )}
           aria-hidden={!open}
         >
@@ -655,7 +655,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {!open && (
         <button
           onClick={onToggle}
-          className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-all hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex"
+          className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95 md:flex"
           aria-label="Brain Copilot ausklappen"
           title="Brain Copilot ausklappen (Cmd+J)"
         >
