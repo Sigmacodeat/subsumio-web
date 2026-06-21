@@ -416,7 +416,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform]",
+        "sidebar-shadow z-50 flex shrink-0 flex-col overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform] [contain:layout]",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -468,7 +468,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         )}
       </div>
 
-      <div className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
+      <div
+        className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3"
+        style={{ contain: "strict" }}
+      >
         {/* Brain status */}
         {!collapsed && (
           <div
@@ -679,7 +682,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           : "pointer-events-none grid-rows-[0fr] opacity-0"
                       )}
                     >
-                      <div className="overflow-hidden">
+                      <div className="overflow-hidden" style={{ contain: "strict" }}>
                         <div className="space-y-0.5 px-2 pb-2">
                           {section.items.map((item) => {
                             const Icon = item.icon;

@@ -517,7 +517,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <aside
         className={cn(
-          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width] md:flex",
+          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width] [contain:layout] md:flex",
           open ? "w-[380px] xl:w-[420px]" : "w-0",
           className
         )}

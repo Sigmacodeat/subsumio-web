@@ -38,6 +38,7 @@ import {
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import type { TFunc } from "@/content/dashboard";
 import {
   type RegulatoryMonitor,
   type RegulatoryAlert,
@@ -100,11 +101,13 @@ function MonitorFormDialog({
   onClose,
   onSave,
   editing,
+  t,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (m: RegulatoryMonitor) => Promise<void>;
   editing: RegulatoryMonitor | null;
+  t: TFunc;
 }) {
   const [form, setForm] = useState<MonitorFormState>(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -150,11 +153,11 @@ function MonitorFormDialog({
 
   async function handleSave() {
     if (!form.topic.trim()) {
-      setError("Topic ist erforderlich.");
+      setError(t("monitoring.form_error_topic"));
       return;
     }
     if (form.keywords.length === 0) {
-      setError("Mindestens ein Suchbegriff erforderlich.");
+      setError(t("monitoring.form_error_keywords"));
       return;
     }
     setSaving(true);
@@ -185,7 +188,7 @@ function MonitorFormDialog({
       await onSave(monitor);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Speichern fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("monitoring.form_error_save"));
     } finally {
       setSaving(false);
     }
@@ -195,31 +198,33 @@ function MonitorFormDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Monitor bearbeiten" : "Neuen Monitor anlegen"}</DialogTitle>
+          <DialogTitle>
+            {editing ? t("monitoring.form_edit_title") : t("monitoring.form_new_title")}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div>
-            <label className={labelCls}>Topic / Name *</label>
+            <label className={labelCls}>{t("monitoring.form_topic_label")}</label>
             <Input
               value={form.topic}
               onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
-              placeholder="z. B. Mietrecht, Datenschutz, Gewährleistung…"
+              placeholder={t("monitoring.form_topic_placeholder")}
             />
           </div>
 
           <div>
-            <label className={labelCls}>Beschreibung (optional)</label>
+            <label className={labelCls}>{t("monitoring.form_desc_label")}</label>
             <Input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Kurze Beschreibung des Monitorings…"
+              placeholder={t("monitoring.form_desc_placeholder")}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Jurisdiktion</label>
+              <label className={labelCls}>{t("monitoring.form_jurisdiction")}</label>
               <select
                 value={form.jurisdiction}
                 onChange={(e) =>
@@ -235,7 +240,7 @@ function MonitorFormDialog({
               </select>
             </div>
             <div>
-              <label className={labelCls}>Frequenz</label>
+              <label className={labelCls}>{t("monitoring.form_frequency")}</label>
               <select
                 value={form.frequency}
                 onChange={(e) =>
@@ -253,7 +258,7 @@ function MonitorFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>Quellen</label>
+            <label className={labelCls}>{t("monitoring.form_sources")}</label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(SOURCE_LABELS) as MonitorSource[]).map((src) => (
                 <button
@@ -273,7 +278,7 @@ function MonitorFormDialog({
           </div>
 
           <div>
-            <label className={labelCls}>Suchbegriffe / Keywords *</label>
+            <label className={labelCls}>{t("monitoring.form_keywords_label")}</label>
             <div className="mb-2 flex gap-2">
               <Input
                 value={form.newKeyword}
@@ -284,7 +289,7 @@ function MonitorFormDialog({
                     addKeyword();
                   }
                 }}
-                placeholder="z. B. Mietminderung, § 543 BGB…"
+                placeholder={t("monitoring.form_keywords_placeholder")}
               />
               <Button
                 type="button"
@@ -318,7 +323,7 @@ function MonitorFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Status</label>
+              <label className={labelCls}>{t("monitoring.form_status")}</label>
               <select
                 value={form.status}
                 onChange={(e) =>
@@ -326,8 +331,8 @@ function MonitorFormDialog({
                 }
                 className={selectCls}
               >
-                <option value="active">Aktiv</option>
-                <option value="paused">Pausiert</option>
+                <option value="active">{t("monitoring.form_status_active")}</option>
+                <option value="paused">{t("monitoring.form_status_paused")}</option>
               </select>
             </div>
             <div className="flex items-end">
@@ -337,7 +342,7 @@ function MonitorFormDialog({
                   onCheckedChange={(v) => setForm((f) => ({ ...f, email_notifications: v }))}
                 />
                 <span className="text-sm text-[color:var(--ds-text)]">
-                  E-Mail-Benachrichtigungen
+                  {t("monitoring.form_email_notifications")}
                 </span>
               </label>
             </div>
@@ -345,16 +350,14 @@ function MonitorFormDialog({
 
           {form.email_notifications && (
             <div>
-              <label className={labelCls}>
-                Benachrichtigungs-E-Mails (optional, komma-getrennt)
-              </label>
+              <label className={labelCls}>{t("monitoring.form_notify_emails_label")}</label>
               <Input
                 value={form.notify_emails}
                 onChange={(e) => setForm((f) => ({ ...f, notify_emails: e.target.value }))}
-                placeholder="leer = alle Kanzlei-Nutzer"
+                placeholder={t("monitoring.form_notify_emails_placeholder")}
               />
               <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
-                Leer lassen, um alle Nutzer der Kanzlei zu benachrichtigen.
+                {t("monitoring.form_notify_emails_hint")}
               </p>
             </div>
           )}
@@ -368,11 +371,11 @@ function MonitorFormDialog({
 
         <DialogFooter>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Abbrechen
+            {t("monitoring.form_cancel")}
           </Button>
           <Button onClick={handleSave} disabled={saving} className="brand-bg gap-1.5 text-white">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-            {editing ? "Speichern" : "Anlegen"}
+            {editing ? t("monitoring.form_save") : t("monitoring.form_create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -388,12 +391,14 @@ function MonitorCard({
   onDelete,
   onToggleStatus,
   onToggleEmail: _onToggleEmail,
+  t,
 }: {
   monitor: RegulatoryMonitor;
   onEdit: () => void;
   onDelete: () => void;
   onToggleStatus: () => void;
   onToggleEmail: () => void;
+  t: TFunc;
 }) {
   const lastRun = monitor.last_run_at
     ? new Date(monitor.last_run_at).toLocaleDateString("de-DE", {
@@ -403,7 +408,7 @@ function MonitorCard({
         hour: "2-digit",
         minute: "2-digit",
       })
-    : "Nie";
+    : t("monitoring.card_never");
 
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -414,7 +419,9 @@ function MonitorCard({
               {monitor.topic}
             </h3>
             <Badge variant={monitor.status === "active" ? "accent" : "default"}>
-              {monitor.status === "active" ? "Aktiv" : "Pausiert"}
+              {monitor.status === "active"
+                ? t("monitoring.form_status_active")
+                : t("monitoring.form_status_paused")}
             </Badge>
           </div>
           {monitor.description && (
@@ -426,21 +433,25 @@ function MonitorCard({
         <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={onToggleStatus}
-            title={monitor.status === "active" ? "Pausieren" : "Aktivieren"}
+            title={
+              monitor.status === "active"
+                ? t("monitoring.card_pause")
+                : t("monitoring.card_activate")
+            }
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             {monitor.status === "active" ? <Pause size={14} /> : <Play size={14} />}
           </button>
           <button
             onClick={onEdit}
-            title="Bearbeiten"
+            title={t("monitoring.card_edit")}
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={onDelete}
-            title="Löschen"
+            title={t("monitoring.card_delete")}
             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-red-600"
           >
             <Trash2 size={14} />
@@ -459,7 +470,10 @@ function MonitorCard({
         ))}
         {monitor.keywords.length > 5 && (
           <span className="px-2 py-0.5 text-xs text-[color:var(--ds-text-subtle)]">
-            +{monitor.keywords.length - 5} weitere
+            {t("monitoring.card_more_keywords").replace(
+              "{count}",
+              String(monitor.keywords.length - 5)
+            )}
           </span>
         )}
       </div>
@@ -473,18 +487,24 @@ function MonitorCard({
         </span>
         <span className="flex items-center gap-1">
           {monitor.email_notifications ? <Bell size={11} /> : <BellOff size={11} />}
-          {monitor.email_notifications ? "E-Mail an" : "Keine E-Mail"}
+          {monitor.email_notifications
+            ? t("monitoring.card_email_on")
+            : t("monitoring.card_email_off")}
         </span>
         {monitor.last_run_hits !== undefined && (
           <span className="flex items-center gap-1">
-            <Inbox size={11} /> {monitor.last_run_hits} Treffer
+            <Inbox size={11} /> {monitor.last_run_hits} {t("monitoring.card_hits")}
           </span>
         )}
-        <span className="text-[color:var(--ds-text-subtle)]">Letzter Lauf: {lastRun}</span>
+        <span className="text-[color:var(--ds-text-subtle)]">
+          {t("monitoring.card_last_run")} {lastRun}
+        </span>
       </div>
 
       <div className="flex items-center gap-1.5 border-t border-[color:var(--ds-border)] pt-1">
-        <span className="mr-1 text-xs text-[color:var(--ds-text-subtle)]">Quellen:</span>
+        <span className="mr-1 text-xs text-[color:var(--ds-text-subtle)]">
+          {t("monitoring.card_sources_label")}
+        </span>
         {monitor.sources.map((src) => (
           <span
             key={src}
@@ -500,7 +520,15 @@ function MonitorCard({
 
 // ─── Alert Item ────────────────────────────────────────────────────
 
-function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: () => void }) {
+function AlertItem({
+  alert,
+  onMarkRead,
+  t,
+}: {
+  alert: RegulatoryAlert;
+  onMarkRead: () => void;
+  t: TFunc;
+}) {
   return (
     <div
       className={`rounded-xl border bg-[color:var(--ds-surface)] p-4 transition-colors ${alert.read ? "border-[color:var(--ds-border)] opacity-75" : "border-[color:var(--ds-border-strong)]"}`}
@@ -548,7 +576,7 @@ function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: 
                 rel="noopener noreferrer"
                 className="brand-text inline-flex items-center gap-1 text-xs hover:underline"
               >
-                <ExternalLink size={11} /> Öffnen
+                <ExternalLink size={11} /> {t("monitoring.alert_open")}
               </a>
             )}
             {!alert.read && (
@@ -556,7 +584,7 @@ function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: 
                 onClick={onMarkRead}
                 className="inline-flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
               >
-                <Check size={11} /> Als gelesen markieren
+                <Check size={11} /> {t("monitoring.alert_mark_read")}
               </button>
             )}
           </div>
@@ -629,7 +657,7 @@ export default function MonitoringPage() {
         setLegacyKeywords([]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Laden fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("monitoring.error_load"));
     } finally {
       setLoading(false);
     }
@@ -827,8 +855,10 @@ export default function MonitoringPage() {
                 {monitors.length === 0 && legacyKeywords.length > 0 && (
                   <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700">
                     <AlertTriangle size={14} />
-                    Du nutzt noch die alte Watchlist ({legacyKeywords.length} Begriffe). Erstelle
-                    einen neuen Monitor für erweiterte Funktionen.
+                    {t("monitoring.legacy_warning").replace(
+                      "{count}",
+                      String(legacyKeywords.length)
+                    )}
                   </div>
                 )}
                 <div className="grid gap-3 md:grid-cols-2">
@@ -841,12 +871,15 @@ export default function MonitoringPage() {
                         setDialogOpen(true);
                       }}
                       onDelete={async () => {
-                        if (confirm(`Monitor "${m.topic}" wirklich löschen?`)) {
+                        if (
+                          confirm(t("monitoring.card_confirm_delete").replace("{topic}", m.topic))
+                        ) {
                           await deleteMonitor(m);
                         }
                       }}
                       onToggleStatus={() => toggleMonitorStatus(m)}
                       onToggleEmail={() => toggleMonitorEmail(m)}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -861,24 +894,24 @@ export default function MonitoringPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  Filter:
+                  {t("monitoring.filter_label")}
                 </span>
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  <option value="all">Alle Schweregrade</option>
-                  <option value="high">Hoch</option>
-                  <option value="medium">Mittel</option>
-                  <option value="low">Niedrig</option>
+                  <option value="all">{t("monitoring.filter_all_severities")}</option>
+                  <option value="high">{t("monitoring.severity_high")}</option>
+                  <option value="medium">{t("monitoring.severity_medium")}</option>
+                  <option value="low">{t("monitoring.severity_low")}</option>
                 </select>
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  <option value="all">Alle Quellen</option>
+                  <option value="all">{t("monitoring.filter_all_sources")}</option>
                   {availableSources.map((s) => (
                     <option key={s} value={s}>
                       {s}
@@ -890,7 +923,7 @@ export default function MonitoringPage() {
                   onChange={(e) => setMonitorFilter(e.target.value)}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  <option value="all">Alle Monitore</option>
+                  <option value="all">{t("monitoring.filter_all_monitors")}</option>
                   {monitors.map((m) => (
                     <option key={m.monitor_id} value={m.monitor_id}>
                       {m.topic}
@@ -900,31 +933,31 @@ export default function MonitoringPage() {
                 <div className="flex-1" />
                 <label className="flex cursor-pointer items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
                   <Switch checked={showRead} onCheckedChange={setShowRead} />
-                  Gelesen zeigen
+                  {t("monitoring.filter_show_read")}
                 </label>
               </div>
               <div className="flex items-center gap-2">
                 <ArrowUpDown size={14} className="text-[color:var(--ds-text-muted)]" />
                 <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  Sortierung:
+                  {t("monitoring.sort_label")}
                 </span>
                 <button
                   onClick={() => setSortBy("date_desc")}
                   className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "date_desc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
-                  Neueste zuerst
+                  {t("monitoring.sort_date_desc")}
                 </button>
                 <button
                   onClick={() => setSortBy("date_asc")}
                   className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "date_asc" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
-                  Älteste zuerst
+                  {t("monitoring.sort_date_asc")}
                 </button>
                 <button
                   onClick={() => setSortBy("severity")}
                   className={`rounded-lg px-2 py-1 text-xs transition-colors ${sortBy === "severity" ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
                 >
-                  Nach Schweregrad
+                  {t("monitoring.sort_severity")}
                 </button>
               </div>
             </div>
@@ -935,8 +968,8 @@ export default function MonitoringPage() {
                 <Bell size={36} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">
                   {alerts.length === 0
-                    ? "Noch keine Alerts. Der nächste Cron-Lauf erfasst neue Treffer."
-                    : "Keine Alerts mit diesen Filtern."}
+                    ? t("monitoring.alerts_empty")
+                    : t("monitoring.alerts_empty_filtered")}
                 </p>
               </div>
             ) : (
@@ -950,6 +983,7 @@ export default function MonitoringPage() {
                       onMarkRead={() => {
                         if (slug) markAlertRead(alert, slug);
                       }}
+                      t={t}
                     />
                   );
                 })}
@@ -963,17 +997,16 @@ export default function MonitoringPage() {
               <div className="flex items-center gap-2">
                 <Mail size={16} className="text-[color:var(--ds-text-muted)]" />
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  E-Mail-Benachrichtigungen
+                  {t("monitoring.settings_email_title")}
                 </h3>
               </div>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Pro Monitor kannst du E-Mail-Benachrichtigungen aktivieren. Der Cron-Job sendet bei
-                neuen Treffern einen Digest an alle konfigurierten Empfänger.
+                {t("monitoring.settings_email_desc")}
               </p>
 
               {monitors.length === 0 ? (
                 <p className="py-4 text-xs text-[color:var(--ds-text-subtle)]">
-                  Keine Monitore vorhanden.
+                  {t("monitoring.settings_no_monitors")}
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -986,8 +1019,8 @@ export default function MonitoringPage() {
                         <p className="truncate text-sm text-[color:var(--ds-text)]">{m.topic}</p>
                         <p className="text-xs text-[color:var(--ds-text-muted)]">
                           {m.email_notifications
-                            ? `Aktiv — ${m.notify_emails?.length ? m.notify_emails.join(", ") : "alle Nutzer"}`
-                            : "Deaktiviert"}
+                            ? `${t("monitoring.settings_email_active")} — ${m.notify_emails?.length ? m.notify_emails.join(", ") : t("monitoring.settings_email_all_users")}`
+                            : t("monitoring.settings_email_disabled")}
                         </p>
                       </div>
                       <Switch
@@ -1004,23 +1037,23 @@ export default function MonitoringPage() {
               <div className="flex items-center gap-2">
                 <Clock size={16} className="text-[color:var(--ds-text-muted)]" />
                 <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Cron-Job Status
+                  {t("monitoring.settings_cron_title")}
                 </h3>
               </div>
               <div className="space-y-1.5 text-xs text-[color:var(--ds-text-muted)]">
                 <p>
-                  Der Cron-Job{" "}
-                  <code className="text-[color:var(--ds-text)]">/api/cron/regulatory-monitors</code>{" "}
-                  läuft täglich um 06:45 UTC.
+                  {t("monitoring.settings_cron_schedule").replace(
+                    "{code}",
+                    "/api/cron/regulatory-monitors"
+                  )}
                 </p>
                 <p>
-                  Voraussetzung: <code className="text-[color:var(--ds-text)]">CRON_SECRET</code>{" "}
-                  und <code className="text-[color:var(--ds-text)]">RESEND_API_KEY</code> müssen
-                  gesetzt sein.
+                  {t("monitoring.settings_cron_requirements")
+                    .replace("{code1}", "CRON_SECRET")
+                    .replace("{code2}", "RESEND_API_KEY")}
                 </p>
                 <p>
-                  Quellen: RIS-OGD (AT), openlegaldata.io (DE), OpenCaseLaw.ch (CH) — geteilt mit{" "}
-                  <code className="text-[color:var(--ds-text)]">/api/cron/case-law</code>.
+                  {t("monitoring.settings_cron_sources").replace("{code}", "/api/cron/case-law")}
                 </p>
               </div>
             </div>
@@ -1029,12 +1062,15 @@ export default function MonitoringPage() {
               <div className="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
                 <div className="flex items-center gap-2">
                   <AlertTriangle size={16} className="text-amber-600" />
-                  <h3 className="text-sm font-semibold text-amber-700">Legacy Watchlist</h3>
+                  <h3 className="text-sm font-semibold text-amber-700">
+                    {t("monitoring.settings_legacy_title")}
+                  </h3>
                 </div>
                 <p className="text-xs text-amber-700">
-                  Die alte Rechtsprechungs-Watchlist mit {legacyKeywords.length} Begriffen ist
-                  weiterhin aktiv und wird vom Cron-Job zusätzlich ausgeführt. Wir empfehlen, diese
-                  in neue Monitore zu migrieren.
+                  {t("monitoring.settings_legacy_desc").replace(
+                    "{count}",
+                    String(legacyKeywords.length)
+                  )}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {legacyKeywords.map((kw) => (
@@ -1057,6 +1093,7 @@ export default function MonitoringPage() {
         onClose={() => setDialogOpen(false)}
         onSave={saveMonitor}
         editing={editingMonitor}
+        t={t}
       />
     </div>
   );
