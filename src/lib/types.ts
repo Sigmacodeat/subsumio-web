@@ -62,6 +62,14 @@ export interface BrainStats {
   last_synced?: string;
   storage_used_mb?: number;
   dream_cycle_last?: string;
+  /**
+   * Whether the engine actually answered this request. `false` means the
+   * proxy could not reach the engine (timeout, network error, non-2xx) and
+   * the counts above are fallback zeros — NOT a real empty brain. Always
+   * present on responses from `/api/stats`; optional only because older
+   * cached query data (or tests) may predate this field.
+   */
+  engine_reachable?: boolean;
 }
 
 export interface GraphNode {
@@ -283,7 +291,15 @@ export interface ObligationEntry {
   description: string;
   obligated_party: string;
   counterparty: string;
-  type: "payment" | "notice" | "delivery" | "performance" | "compliance" | "renewal" | "termination" | "other";
+  type:
+    | "payment"
+    | "notice"
+    | "delivery"
+    | "performance"
+    | "compliance"
+    | "renewal"
+    | "termination"
+    | "other";
   trigger_date?: string;
   recurring?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "one-time";
   urgency: "low" | "medium" | "high" | "critical";

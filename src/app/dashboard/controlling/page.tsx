@@ -21,7 +21,7 @@ interface LawyerStats {
 }
 
 export default function ControllingPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [stats, setStats] = useState<LawyerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -167,7 +167,10 @@ export default function ControllingPage() {
                 <span className="text-xs">Gesamtumsatz</span>
               </div>
               <div className="text-2xl font-semibold text-emerald-600">
-                {totalRevenue.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+                {totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                })}
               </div>
             </div>
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -239,7 +242,7 @@ export default function ControllingPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-emerald-600">
-                        {s.totalRevenue.toLocaleString("de-DE", {
+                        {s.totalRevenue.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                           style: "currency",
                           currency: "EUR",
                         })}

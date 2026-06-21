@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { CaseScannerResponse } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function CaseScannerPage() {
+  const { t } = useLang();
   const [lookAhead, setLookAhead] = useState(7);
   const [evidenceThreshold, setEvidenceThreshold] = useState(1);
   const [maxCases, setMaxCases] = useState(50);
@@ -28,7 +30,7 @@ export default function CaseScannerPage() {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Scanner-Start fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("scanner.error_start"));
     } finally {
       setLoading(false);
     }
@@ -37,9 +39,12 @@ export default function CaseScannerPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Akten-Scanner"
-        description="Nacht-Agent scannt alle Akten auf drohende Fristen, neue Issues und Evidenz-Lücken — wird asynchron als Engine-Job ausgeführt"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Akten-Scanner" }]}
+        title={t("scanner.title")}
+        description={t("scanner.description")}
+        breadcrumbs={[
+          { label: t("nav.dashboard"), href: "/dashboard" },
+          { label: t("scanner.title") },
+        ]}
       />
 
       {/* Info banner */}
@@ -47,22 +52,14 @@ export default function CaseScannerPage() {
         <div className="flex items-start gap-3">
           <Radar size={18} className="mt-0.5 shrink-0 text-blue-600" />
           <div className="space-y-1 text-sm text-[color:var(--ds-text-muted)]">
-            <p className="font-medium text-[color:var(--ds-text)]">
-              Wie funktioniert der Akten-Scanner?
-            </p>
-            <p>
-              Der Scanner wird als Hintergrundjob in der Engine gestartet. Er durchsucht alle
-              Fallakten nach:
-            </p>
+            <p className="font-medium text-[color:var(--ds-text)]">{t("scanner.how_it_works")}</p>
+            <p>{t("scanner.description_detail")}</p>
             <ul className="ml-2 list-inside list-disc space-y-0.5 text-xs">
-              <li>Fristen, die in den nächsten N Tagen ablaufen</li>
-              <li>Neuen Issues, die seit dem letzten Scan aufgetaucht sind</li>
-              <li>Akten mit geringer Evidenz (unter dem Schwellwert)</li>
+              <li>{t("scanner.feature_deadlines")}</li>
+              <li>{t("scanner.feature_issues")}</li>
+              <li>{t("scanner.feature_evidence")}</li>
             </ul>
-            <p className="text-xs">
-              Das Ergebnis wird als Job-Status zurückgegeben. Die detaillierten Ergebnisse schreibt
-              der Agent in die jeweiligen Akten-Seiten.
-            </p>
+            <p className="text-xs">{t("scanner.result_note")}</p>
           </div>
         </div>
       </div>
@@ -70,16 +67,18 @@ export default function CaseScannerPage() {
       {/* Configuration */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
         <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-          <Settings2 size={14} /> Konfiguration
+          <Settings2 size={14} /> {t("scanner.config")}
         </h3>
 
         {/* Look ahead */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label className="text-sm font-medium text-[color:var(--ds-text)]">
-              Vorschau-Zeitraum
+              {t("scanner.look_ahead")}
             </label>
-            <span className="font-mono text-sm text-emerald-600">{lookAhead} Tage</span>
+            <span className="font-mono text-sm text-emerald-600">
+              {lookAhead} {t("scanner.days")}
+            </span>
           </div>
           <input
             type="range"
@@ -90,7 +89,7 @@ export default function CaseScannerPage() {
             className="w-full accent-emerald-600"
           />
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Fristen in den nächsten {lookAhead} Tagen werden als kritisch markiert.
+            {t("scanner.look_ahead_desc")}
           </p>
         </div>
 
@@ -98,7 +97,7 @@ export default function CaseScannerPage() {
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label className="text-sm font-medium text-[color:var(--ds-text)]">
-              Evidenz-Schwellwert
+              {t("scanner.evidence_threshold")}
             </label>
             <span className="font-mono text-sm text-emerald-600">{evidenceThreshold}</span>
           </div>
@@ -111,14 +110,14 @@ export default function CaseScannerPage() {
             className="w-full accent-emerald-600"
           />
           <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-            Akten mit weniger als {evidenceThreshold} Evidenzstücken werden flagged.
+            {t("scanner.evidence_desc")}
           </p>
         </div>
 
         {/* Max cases */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-[color:var(--ds-text)]">
-            Max. Akten pro Scan
+            {t("scanner.max_cases")}
           </label>
           <select
             value={maxCases}
@@ -127,7 +126,7 @@ export default function CaseScannerPage() {
           >
             {[10, 25, 50, 100, 250, 500].map((n) => (
               <option key={n} value={n}>
-                {n} Akten
+                {n} {t("scanner.cases")}
               </option>
             ))}
           </select>
@@ -139,7 +138,7 @@ export default function CaseScannerPage() {
           className="w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Radar size={16} />}
-          Scan starten
+          {t("scanner.start")}
         </Button>
       </div>
 
@@ -156,9 +155,11 @@ export default function CaseScannerPage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 size={24} className="text-emerald-600" />
             <div>
-              <h3 className="text-sm font-medium text-[color:var(--ds-text)]">Scan gestartet</h3>
+              <h3 className="text-sm font-medium text-[color:var(--ds-text)]">
+                {t("scanner.started")}
+              </h3>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Job-ID: <span className="font-mono">{result.job_id}</span>
+                {t("scanner.job_id")}: <span className="font-mono">{result.job_id}</span>
               </p>
             </div>
           </div>
@@ -169,21 +170,27 @@ export default function CaseScannerPage() {
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.look_ahead_days}
               </div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Tage Vorschau</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("scanner.days_preview")}
+              </div>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
               <Radar size={16} className="mx-auto mb-1 text-emerald-600" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.evidence_threshold}
               </div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Evidenz-Schwelle</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("scanner.evidence_threshold_short")}
+              </div>
             </div>
             <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
               <Settings2 size={16} className="mx-auto mb-1 text-emerald-600" />
               <div className="text-lg font-bold text-[color:var(--ds-text)]">
                 {result.max_cases}
               </div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Max. Akten</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("scanner.max_cases_short")}
+              </div>
             </div>
           </div>
 
@@ -196,8 +203,7 @@ export default function CaseScannerPage() {
               {result.status}
             </Badge>
             <span className="text-xs text-[color:var(--ds-text-muted)]">
-              Der Agent schreibt Ergebnisse in die jeweiligen Akten-Seiten. Prüfen Sie die
-              Akten-Übersicht in einigen Minuten.
+              {t("scanner.result_wait")}
             </span>
           </div>
         </div>

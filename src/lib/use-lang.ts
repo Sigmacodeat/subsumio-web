@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Lang } from "@/content/site";
 import { createT, type TFunc } from "@/content/dashboard";
+export type { TFunc };
 import { useMe } from "@/lib/queries/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";

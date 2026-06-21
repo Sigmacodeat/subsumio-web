@@ -40,7 +40,7 @@ function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, str
 const REVIEWABLE_TYPES = ["document_draft", "contract", "legal_case", "letter", "memo"];
 
 export default function ReviewQueuePage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const STATUS_LABELS = useStatusLabels(t);
   const [pages, setPages] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +241,10 @@ export default function ReviewQueuePage() {
                         <>
                           <span>·</span>
                           <span className="flex items-center gap-1">
-                            <Clock size={10} /> {new Date(reviewedAt).toLocaleDateString("de-DE")}
+                            <Clock size={10} />{" "}
+                            {new Date(reviewedAt).toLocaleDateString(
+                              lang === "en" ? "en-GB" : "de-DE"
+                            )}
                           </span>
                         </>
                       )}

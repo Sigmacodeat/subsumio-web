@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Scale, X, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculateRvg } from "@/lib/rvg";
+import { useLang } from "@/lib/use-lang";
 
 export default function RvgDialog() {
+  const { lang } = useLang();
   const [open, setOpen] = useState(false);
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<ReturnType<typeof calculateRvg> | null>(null);
@@ -71,7 +73,7 @@ export default function RvgDialog() {
                 <div className="flex justify-between">
                   <span className="[color:var(--mk-text-muted)]">Streitwert</span>
                   <span className="font-medium [color:var(--mk-text)]">
-                    {result.streitwert.toLocaleString("de-DE")} €
+                    {result.streitwert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
                   </span>
                 </div>
                 <div className="flex justify-between">

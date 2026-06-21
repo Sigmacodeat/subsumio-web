@@ -14,6 +14,7 @@ import {
   dmsAuthHeaders,
   isDmsConfigured,
   importToBrainCommon,
+  dmsFetchJson,
   type DMSDocument,
 } from "./index";
 
@@ -134,9 +135,11 @@ describe("importToBrainCommon", () => {
   });
 
   test("imports document to brain via engine API", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 })
+      );
 
     const doc: DMSDocument = {
       id: "doc-1",
@@ -147,7 +150,13 @@ describe("importToBrainCommon", () => {
       content: "base64content",
     };
 
-    const result = await importToBrainCommon(doc, "brain-1", { "x-custom": "val" }, "iManage Work", "https://dms.example.com/docs/doc-1/content");
+    const result = await importToBrainCommon(
+      doc,
+      "brain-1",
+      { "x-custom": "val" },
+      "iManage Work",
+      "https://dms.example.com/docs/doc-1/content"
+    );
     expect(result.slug).toBe("dms/import/doc-1");
     expect(result.success).toBe(true);
     expect(fetchSpy).toHaveBeenCalled();
@@ -161,29 +170,92 @@ describe("importToBrainCommon", () => {
       .mockResolvedValueOnce(new Response("Error", { status: 500 }));
 
     const doc: DMSDocument = {
-      id: "doc-1", name: "Test", type: "pdf", author: "Max", modifiedDate: "2024-01-01",
+      id: "doc-1",
+      name: "Test",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-01-01",
     };
 
-    const result = await importToBrainCommon(doc, "brain-1", {}, "iManage Work", "https://dms.example.com/docs/doc-1/content");
+    const result = await importToBrainCommon(
+      doc,
+      "brain-1",
+      {},
+      "iManage Work",
+      "https://dms.example.com/docs/doc-1/content"
+    );
     expect(result.success).toBe(false);
     expect(result.slug).toBe("dms/import/doc-1");
   });
 
   test("uses provided headers in request", async () => {
     // Content fetch + page POST
-    const fetchSpy = vi.spyOn(globalThis, "fetch")
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(new Response("", { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ slug: "dms/doc-1", success: true }), { status: 200 })
+      );
 
     const doc: DMSDocument = {
-      id: "doc-1", name: "Test", type: "pdf", author: "Max", modifiedDate: "2024-01-01",
+      id: "doc-1",
+      name: "Test",
+      type: "pdf",
+      author: "Max",
+      modifiedDate: "2024-01-01",
     };
 
-    await importToBrainCommon(doc, "brain-1", { Authorization: "Bearer token" }, "iManage Work", "https://dms.example.com/docs/doc-1/content");
+    await importToBrainCommon(
+      doc,
+      "brain-1",
+      { Authorization: "Bearer token" },
+      "iManage Work",
+      "https://dms.example.com/docs/doc-1/content"
+    );
     // The page POST call should include the custom headers
     const pageCall = fetchSpy.mock.calls[1];
     const opts = pageCall[1] as RequestInit;
     const headers = opts.headers as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer token");
+  });
+});
+
+describe("dmsFetchJson", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("returns parsed JSON on a 2xx response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true, value: 42 }), { status: 200 })
+    );
+    const data = await dmsFetchJson<{ ok: boolean; value: number }>("https://dms.example.com/x");
+    expect(data).toEqual({ ok: true, value: 42 });
+  });
+
+  test("passes an AbortSignal with a timeout to fetch", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    await dmsFetchJson("https://dms.example.com/x");
+    const init = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test("throws a clean error on non-OK response instead of letting .json() reject", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("Not found", { status: 404 }));
+    await expect(dmsFetchJson("https://dms.example.com/x")).rejects.toThrow(/404/);
+  });
+
+  test("throws a clean error when the response body is not valid JSON", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response("<html>not json</html>", { status: 200 })
+    );
+    await expect(dmsFetchJson("https://dms.example.com/x")).rejects.toThrow(/non-JSON/);
+  });
+
+  test("throws a clean error when fetch itself rejects (network failure / timeout)", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("The operation timed out"));
+    await expect(dmsFetchJson("https://dms.example.com/x")).rejects.toThrow(/timed out/);
   });
 });

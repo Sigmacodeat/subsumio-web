@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MessageSquare, Send, User } from "lucide-react";
 import type { Comment } from "@/lib/comments";
 import { csrfFetch } from "@/lib/csrf";
+import { useLang } from "@/lib/use-lang";
 
 interface CommentThreadProps {
   parentSlug: string;
@@ -18,6 +19,7 @@ export default function CommentThread({
   currentUserId,
   currentUserName,
 }: CommentThreadProps) {
+  const { lang } = useLang();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newText, setNewText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function CommentThread({
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium [color:var(--mk-text)]">{c.authorName}</span>
                   <span className="text-xs text-[color:var(--mk-text-subtle)]">
-                    {new Date(c.createdAt).toLocaleString("de-DE", {
+                    {new Date(c.createdAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                       day: "2-digit",
                       month: "2-digit",
                       hour: "2-digit",

@@ -4,6 +4,18 @@
  * Distinguishes retryable errors (429, 5xx, network) from permanent ones (4xx).
  */
 
+/**
+ * Default timeout for outbound calls to third-party APIs (DocuSign, WorkOS,
+ * Resend, Slack, customer SCIM/mailbox endpoints, ...). A hung third-party
+ * backend must not hang the request indefinitely.
+ */
+export const EXTERNAL_FETCH_TIMEOUT_MS = 10_000;
+
+/** AbortSignal for a single external fetch call, using the shared default timeout. */
+export function externalFetchTimeout(ms: number = EXTERNAL_FETCH_TIMEOUT_MS): AbortSignal {
+  return AbortSignal.timeout(ms);
+}
+
 export interface RetryOptions {
   maxRetries?: number;
   baseDelayMs?: number;
@@ -26,7 +38,8 @@ function isRetryableError(err: unknown, retryableStatuses: number[]): boolean {
   if (err instanceof PermanentError) return false;
   if (err instanceof Error) {
     const msg = err.message;
-    if (msg.includes("ECONNRESET") || msg.includes("ETIMEDOUT") || msg.includes("ENOTFOUND")) return true;
+    if (msg.includes("ECONNRESET") || msg.includes("ETIMEDOUT") || msg.includes("ENOTFOUND"))
+      return true;
     if (msg.includes("fetch failed") || msg.includes("network")) return true;
     const statusMatch = msg.match(/HTTP (\d{3})/);
     if (statusMatch && retryableStatuses.includes(Number(statusMatch[1]))) return true;
@@ -56,10 +69,7 @@ export class PermanentError extends Error {
   }
 }
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  options?: RetryOptions,
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   let lastErr: unknown;
 
@@ -84,10 +94,10 @@ export async function withRetry<T>(
 export async function fetchWithRetry(
   input: string | URL,
   init?: RequestInit,
-  options?: RetryOptions,
+  options?: RetryOptions
 ): Promise<Response> {
   return withRetry(async () => {
-    const res = await fetch(input, init);
+    const res = await fetch(input, { ...init, signal: init?.signal ?? externalFetchTimeout() });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       const err = new Error(`HTTP ${res.status}: ${body.slice(0, 200)}`);

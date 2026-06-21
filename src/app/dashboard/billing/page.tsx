@@ -47,7 +47,7 @@ interface Usage {
 
 /** Fair-use meter — the "live usage display" the pricing page promises. */
 function UsageCard() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const usageQuery = useUsage();
   const statsQuery = useBrainStats();
 
@@ -85,7 +85,8 @@ function UsageCard() {
                 <span
                   className={`font-mono text-xs ${warn ? "text-amber-600" : "text-[color:var(--ds-text-muted)]"}`}
                 >
-                  {row.used.toLocaleString("de-DE")} / {row.max.toLocaleString("de-DE")}
+                  {row.used.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} /{" "}
+                  {row.max.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                 </span>
               </div>
               <div
@@ -114,7 +115,7 @@ function UsageCard() {
 
 /** Per-model usage breakdown — shows which models the brain used this month. */
 function ModelBreakdownCard() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const usageQuery = useUsage();
   const usage = (usageQuery.data ?? null) as Usage | null;
   if (!usage?.modelBreakdown?.length) return null;
@@ -132,7 +133,8 @@ function ModelBreakdownCard() {
             </h2>
           </div>
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {totalQueries.toLocaleString("de-DE")} {t("billing.queries_total")}
+            {totalQueries.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
+            {t("billing.queries_total")}
           </span>
         </div>
         <div className="space-y-3">
@@ -161,7 +163,8 @@ function ModelBreakdownCard() {
                   </div>
                   <div className="flex items-center gap-3 font-mono text-xs text-[color:var(--ds-text-muted)]">
                     <span>
-                      {row.queries.toLocaleString("de-DE")} {t("billing.queries")}
+                      {row.queries.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
+                      {t("billing.queries")}
                     </span>
                     {estCostUsd > 0 && (
                       <span className="flex items-center gap-1" title={t("billing.token_cost_est")}>
@@ -184,8 +187,18 @@ function ModelBreakdownCard() {
                   />
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
-                  <span>{Math.round(row.inputTokens / 1000).toLocaleString("de-DE")}K in</span>
-                  <span>{Math.round(row.outputTokens / 1000).toLocaleString("de-DE")}K out</span>
+                  <span>
+                    {Math.round(row.inputTokens / 1000).toLocaleString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                    K in
+                  </span>
+                  <span>
+                    {Math.round(row.outputTokens / 1000).toLocaleString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                    K out
+                  </span>
                 </div>
               </div>
             );
@@ -212,7 +225,7 @@ interface Me {
 }
 
 function BillingInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const params = useSearchParams();
   const status = params.get("status");
   const meQuery = useMe();

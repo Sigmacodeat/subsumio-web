@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
 
 interface PortalCase {
   slug: string;
@@ -70,6 +71,7 @@ const DEADLINE_STATUS: Record<string, string> = {
 };
 
 export default function PortalPage() {
+  const { lang } = useLang();
   const params = useParams();
   const token = decodeURIComponent(params.token as string);
   const [verifying, setVerifying] = useState(true);
@@ -391,7 +393,9 @@ export default function PortalPage() {
                     <div className="flex-1">
                       <div className="[color:var(--mk-text)]">{dl.title || "Frist"}</div>
                       <div className="text-xs [color:var(--mk-text-subtle)]">
-                        {due ? new Date(due).toLocaleDateString("de-DE") : "—"}
+                        {due
+                          ? new Date(due).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+                          : "—"}
                       </div>
                     </div>
                   </div>
@@ -530,11 +534,17 @@ export default function PortalPage() {
                   >
                     <p>{msg.text}</p>
                     <p className="mt-1 text-xs [color:var(--mk-text-subtle)]">
-                      {new Date(msg.createdAt).toLocaleDateString("de-DE")} ·{" "}
-                      {new Date(msg.createdAt).toLocaleTimeString("de-DE", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(msg.createdAt).toLocaleDateString(
+                        lang === "en" ? "en-GB" : "de-DE"
+                      )}{" "}
+                      ·{" "}
+                      {new Date(msg.createdAt).toLocaleTimeString(
+                        lang === "en" ? "en-GB" : "de-DE",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
                     </p>
                   </div>
                 </div>

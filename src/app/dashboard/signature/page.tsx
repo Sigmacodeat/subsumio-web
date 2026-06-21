@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
 import { PageHeader } from "@/components/dashboard/page-header";
 import type { BrainPage } from "@/lib/types";
+import { useLang } from "@/lib/use-lang";
 
 interface SignatureRequest {
   id: string;
@@ -83,6 +84,7 @@ const STATUS_CONFIG: Record<
 };
 
 export default function SignaturePage() {
+  const { lang } = useLang();
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
   const [drafts, setDrafts] = useState<BrainPage[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -428,7 +430,7 @@ export default function SignaturePage() {
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                     {req.recipientName} · {req.recipientEmail} · Gültig bis{" "}
-                    {new Date(req.expiresAt).toLocaleDateString("de-DE")}
+                    {new Date(req.expiresAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

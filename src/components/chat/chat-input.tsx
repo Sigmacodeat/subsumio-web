@@ -35,7 +35,7 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const charCount = text.length;
   const nearLimit = charCount > 45_000;
@@ -141,7 +141,7 @@ export function ChatInput({
               <button
                 onClick={() => removeAttachment(att.slug)}
                 className="ml-0.5 text-[color:var(--ds-text-subtle)] transition-colors hover:text-red-500"
-                aria-label="Anhang entfernen"
+                aria-label={t("chat.input.remove_attachment")}
               >
                 <X size={11} />
               </button>
@@ -157,15 +157,15 @@ export function ChatInput({
             onClick={() => setShowTemplates((v) => !v)}
             disabled={isStreaming || disabled}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-            aria-label="Vorlagen"
-            title="Vorlagen"
+            aria-label={t("chat.input.templates")}
+            title={t("chat.input.templates")}
           >
             <LayoutTemplate size={16} />
           </button>
           {showTemplates && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
               <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                Vorlagen
+                {t("chat.input.templates")}
               </div>
               <div className="max-h-64 overflow-y-auto p-1">
                 {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
@@ -198,8 +198,8 @@ export function ChatInput({
               onClick={() => fileInputRef.current?.click()}
               disabled={isStreaming || uploading || disabled}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-              aria-label="Datei hochladen"
-              title="Datei hochladen"
+              aria-label={t("chat.input.upload_file")}
+              title={t("chat.input.upload_file")}
             >
               <Paperclip size={16} />
             </button>
@@ -222,7 +222,9 @@ export function ChatInput({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={isStreaming ? "AI antwortet…" : (placeholder ?? t("chat.placeholder"))}
+          placeholder={
+            isStreaming ? t("chat.input.ai_responding") : (placeholder ?? t("chat.placeholder"))
+          }
           rows={1}
           maxLength={50000}
           className={cn(
@@ -230,7 +232,7 @@ export function ChatInput({
             nearLimit && !overLimit && "border-amber-400/60",
             overLimit && "border-red-500"
           )}
-          aria-label="Nachricht eingeben"
+          aria-label={t("chat.input.enter_message")}
         />
 
         {/* Char counter — visible when approaching limit */}
@@ -241,7 +243,7 @@ export function ChatInput({
               overLimit ? "text-red-500" : "text-amber-500"
             )}
           >
-            {charCount.toLocaleString("de-DE")} / 50.000
+            {charCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} / 50.000
           </span>
         )}
 
@@ -250,8 +252,8 @@ export function ChatInput({
           <button
             onClick={() => onStop?.()}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 active:scale-95"
-            aria-label="Generierung stoppen"
-            title="Stoppen (Esc)"
+            aria-label={t("chat.input.stop_generation")}
+            title={t("chat.input.stop_esc")}
           >
             <Square size={16} className="fill-current" />
           </button>
@@ -263,8 +265,8 @@ export function ChatInput({
               "brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
               overLimit && "bg-red-500"
             )}
-            aria-label="Senden"
-            title="Senden (Enter)"
+            aria-label={t("chat.send")}
+            title={t("chat.input.send_enter")}
           >
             <Send size={16} />
           </button>

@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { timelineToDeadline } from "@/lib/legal-deadlines";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
 interface CalendarEvent {
   id: string;
@@ -22,7 +24,7 @@ interface CalendarEvent {
   location?: string;
 }
 
-function generateIcal(events: CalendarEvent[]): string {
+function generateIcal(events: CalendarEvent[], lang: Lang = "de"): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -57,6 +59,7 @@ function escapeIcalText(s: string): string {
 }
 
 export default function CalendarExportPage() {
+  const { lang } = useLang();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -126,7 +129,7 @@ export default function CalendarExportPage() {
 
   function downloadIcal() {
     const filtered = filter === "all" ? events : events.filter((e) => e.type === filter);
-    const ical = generateIcal(filtered);
+    const ical = generateIcal(filtered, lang);
     const blob = new Blob([ical], { type: "text/calendar;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -279,7 +282,7 @@ export default function CalendarExportPage() {
                     )}
                   </div>
                   <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(ev.date).toLocaleDateString("de-DE", {
+                    {new Date(ev.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                       weekday: "short",
                       day: "numeric",
                       month: "long",

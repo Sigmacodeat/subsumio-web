@@ -89,7 +89,7 @@ function calculateDeadline(
 export default function DeadlinesPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -325,7 +325,7 @@ export default function DeadlinesPage() {
                     : "text-[color:var(--ds-text)]"
               )}
             >
-              {new Date(d.date).toLocaleDateString("de-DE")}
+              {new Date(d.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
             </div>
             <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
               {days < 0
@@ -460,7 +460,7 @@ export default function DeadlinesPage() {
                   <p className="mt-1 text-sm text-[color:var(--ds-text)]">
                     {t("deadlines.calc_due")}{" "}
                     <strong>
-                      {calcResult.dueDate.toLocaleDateString("de-DE", {
+                      {calcResult.dueDate.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                         weekday: "long",
                         day: "numeric",
                         month: "long",
@@ -558,7 +558,7 @@ export default function DeadlinesPage() {
                     <div className="text-sm text-[color:var(--ds-text)]">{r.description}</div>
                     {r.date && (
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
-                        {new Date(r.date).toLocaleDateString("de-DE")}
+                        {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                       </div>
                     )}
                   </div>

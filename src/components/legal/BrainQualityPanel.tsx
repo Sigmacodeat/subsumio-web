@@ -20,12 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
 import type { BrainQualitySummary } from "@/lib/matter-context-types";
+import { useLang } from "@/lib/use-lang";
 
 interface BrainQualityPanelProps {
   className?: string;
 }
 
 export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
+  const { lang } = useLang();
   const [summary, setSummary] = useState<BrainQualitySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,7 +192,8 @@ export function BrainQualityPanel({ className }: BrainQualityPanelProps) {
           {summary.last_synced && (
             <div className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-subtle)]">
               <Clock size={10} />
-              Letzter Sync: {new Date(summary.last_synced).toLocaleString("de-DE")}
+              Letzter Sync:{" "}
+              {new Date(summary.last_synced).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
             </div>
           )}
         </div>
@@ -210,10 +213,13 @@ function StatCard({
   value: number;
   color: string;
 }) {
+  const { lang } = useLang();
   return (
     <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-2.5 text-center">
       <Icon size={14} className={cn("mx-auto mb-1", color)} />
-      <div className={cn("text-lg font-bold", color)}>{value.toLocaleString("de-DE")}</div>
+      <div className={cn("text-lg font-bold", color)}>
+        {value.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+      </div>
       <div className="text-xs text-[color:var(--ds-text-subtle)]">{label}</div>
     </div>
   );

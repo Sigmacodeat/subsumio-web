@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { AI_MODELS, formatCost } from "@/lib/model-config";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import type { QueryResponse } from "@/lib/types";
+import { useLang } from "@/lib/use-lang";
 
 interface ModelResult {
   modelId: string;
@@ -20,6 +21,7 @@ interface ModelResult {
 }
 
 export function ModelComparison() {
+  const { lang } = useLang();
   const [query, setQuery] = useState("");
   const [modelA, setModelA] = useState<string | undefined>(undefined);
   const [modelB, setModelB] = useState<string | undefined>(undefined);
@@ -198,7 +200,7 @@ export function ModelComparison() {
                   <div className="flex items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
                     <span className="inline-flex items-center gap-1">
                       <Clock size={10} />
-                      {model.contextWindow.toLocaleString("de-DE")} ctx
+                      {model.contextWindow.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ctx
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Zap size={10} />
@@ -240,7 +242,7 @@ export function ModelComparison() {
                     {result.tokensUsed != null && (
                       <span className="inline-flex items-center gap-1">
                         <Zap size={10} />
-                        {result.tokensUsed.toLocaleString("de-DE")} Tokens
+                        {result.tokensUsed.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} Tokens
                       </span>
                     )}
                     {result.latencyMs != null && (
@@ -296,7 +298,10 @@ export function ModelComparison() {
                       ? results[0].modelName
                       : results[1].modelName}
                   </strong>{" "}
-                  ({Math.min(results[0].tokensUsed, results[1].tokensUsed).toLocaleString("de-DE")}{" "}
+                  (
+                  {Math.min(results[0].tokensUsed, results[1].tokensUsed).toLocaleString(
+                    lang === "en" ? "en-GB" : "de-DE"
+                  )}{" "}
                   Tokens)
                 </span>
               </>

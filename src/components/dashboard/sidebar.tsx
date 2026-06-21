@@ -267,7 +267,7 @@ function findActiveSection(pathname: string, sections: NavSection[]) {
 
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { pendingCount, syncing, syncPending } = useMutationQueue();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   if (collapsed || pendingCount === 0) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
@@ -289,7 +289,7 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
 
 export function NetworkStatusBadge() {
   const online = useNetworkStatus();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   if (online) return null;
   return (
     <div
@@ -314,6 +314,8 @@ interface SidebarProps {
   dreamCycle: string | null;
   userName: string | null;
   userEmail: string | null;
+  /** Real engine-reachability signal — undefined while the first stats load is in flight. */
+  brainReachable?: boolean;
 }
 
 export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
@@ -327,6 +329,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     dreamCycle,
     userName,
     userEmail,
+    brainReachable,
   },
   _ref
 ) {
@@ -334,7 +337,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const [searchQuery, setSearchQuery] = useState("");
   const [openSection, setOpenSection] = useState<DashboardKey | null>("nav.section.cockpit");
   const previousPathnameRef = useRef<string | null>(null);
-  const { t } = useLang();
+  const { t, lang } = useLang();
+
+  const brainStatusLabel =
+    brainReachable === true
+      ? t("sidebar.active")
+      : brainReachable === false
+        ? t("sidebar.offline")
+        : t("sidebar.checking");
 
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -481,7 +491,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 : "opacity-100"
             )}
             role="status"
-            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
+            aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
           >
             <div className="mb-1 flex items-center justify-between">
               <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
@@ -489,10 +499,24 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </span>
               <div className="flex items-center gap-1.5">
                 <span
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    brainReachable === true && "animate-pulse bg-emerald-500",
+                    brainReachable === false && "bg-red-500",
+                    brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
+                  )}
                   aria-hidden
                 />
-                <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    brainReachable === true && "text-emerald-600",
+                    brainReachable === false && "text-red-600",
+                    brainReachable === undefined && "text-[color:var(--ds-text-subtle)]"
+                  )}
+                >
+                  {brainStatusLabel}
+                </span>
               </div>
             </div>
             <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
@@ -505,12 +529,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
               collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
             )}
-            title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+            title={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
           >
             <span
-              className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+              className={cn(
+                "h-2 w-2 rounded-full",
+                brainReachable === true && "animate-pulse bg-emerald-500",
+                brainReachable === false && "bg-red-500",
+                brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
+              )}
               role="status"
-              aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+              aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
             />
           </div>
 
@@ -788,7 +817,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             </div>
             <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
               {dreamCycle
-                ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+                ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
                 : t("sidebar.dream_not_scheduled")}
             </p>
           </div>

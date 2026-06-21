@@ -77,6 +77,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pages = statsQuery.data?.total_pages ?? 0;
   const entities = statsQuery.data?.total_entities ?? 0;
   const dreamCycle = statsQuery.data?.dream_cycle_last ?? null;
+  // Real reachability signal (see /api/stats) — `undefined` while the first
+  // load is still in flight, so the sidebar pill can show a neutral
+  // "checking" state instead of flashing "Active" then "Offline".
+  const brainReachable = statsQuery.data?.engine_reachable;
   const industry = meQuery.data?.user?.industry ?? null;
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
@@ -184,6 +188,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         dreamCycle={dreamCycle}
         userName={userName}
         userEmail={userEmail}
+        brainReachable={brainReachable}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

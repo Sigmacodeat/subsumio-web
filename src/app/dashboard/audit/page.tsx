@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { auditLabel, type AuditEntry } from "@/lib/audit-labels";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
 const PAGE_SIZE = 25;
 
@@ -97,9 +99,9 @@ function actionIcon(action: string) {
   return AlertTriangle;
 }
 
-function formatTimestamp(ts: string): string {
+function formatTimestamp(lang: Lang, ts: string): string {
   try {
-    return new Date(ts).toLocaleString("de-DE", {
+    return new Date(ts).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -130,6 +132,7 @@ function formatRelative(ts: string): string {
 }
 
 export default function AuditLogPage() {
+  const { lang } = useLang();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -472,7 +475,7 @@ export default function AuditLogPage() {
                       >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="text-xs font-medium text-[color:var(--ds-text)]">
-                            {formatTimestamp(e.timestamp)}
+                            {formatTimestamp(lang, e.timestamp)}
                           </div>
                           <div className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
                             {formatRelative(e.timestamp)}
@@ -628,7 +631,7 @@ export default function AuditLogPage() {
                   Zeitpunkt
                 </label>
                 <p className="mt-1 text-sm text-[color:var(--ds-text)]">
-                  {formatTimestamp(selectedEntry.timestamp)}
+                  {formatTimestamp(lang, selectedEntry.timestamp)}
                 </p>
                 <p className="mt-0.5 text-xs text-[color:var(--ds-text-subtle)]">
                   {formatRelative(selectedEntry.timestamp)}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface ApiKey {
   id: string;
@@ -19,6 +20,7 @@ interface ApiKey {
 }
 
 export default function ApiKeysPage() {
+  const { lang } = useLang();
   const keysQuery = useApiKeys();
   const createMutation = useCreateApiKey();
   const deleteMutation = useDeleteApiKey();
@@ -183,7 +185,7 @@ export default function ApiKeysPage() {
                     )}
                   </td>
                   <td className="hidden px-4 py-3 text-[color:var(--ds-text-muted)] md:table-cell">
-                    {new Date(k.createdAt).toLocaleDateString("de-DE")}
+                    {new Date(k.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button

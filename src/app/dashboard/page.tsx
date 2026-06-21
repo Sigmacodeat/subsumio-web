@@ -14,7 +14,7 @@ import type { BrainStats, RecentQuery } from "@/lib/types";
 export default function DashboardPage() {
   const statsQuery = useBrainStats();
   const recentQuery = useRecentQueries(5);
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const stats = (statsQuery.data ?? null) as BrainStats | null;
   const recent = (recentQuery.data ?? []) as RecentQuery[];
@@ -73,7 +73,7 @@ export default function DashboardPage() {
                 {t("cockpit.today_title")}
               </Badge>
               <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {new Date().toLocaleDateString("de-DE", {
+                {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                   weekday: "long",
                   day: "2-digit",
                   month: "long",

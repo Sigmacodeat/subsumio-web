@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { csrfFetch } from "@/lib/csrf";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
 export interface MailMessageView {
   id: string;
@@ -42,9 +44,9 @@ interface Props {
   inboundConfigured: boolean;
 }
 
-const fmt = (iso: string) => {
+const fmt = (iso: string, lang: Lang = "de") => {
   try {
-    return new Date(iso).toLocaleString("de-DE");
+    return new Date(iso).toLocaleString(lang === "en" ? "en-GB" : "de-DE");
   } catch {
     return iso;
   }
@@ -57,6 +59,7 @@ export default function MailboxClient({
   mailConfigured,
   inboundConfigured,
 }: Props) {
+  const { lang } = useLang();
   const [messages, setMessages] = useState<MailMessageView[]>(initialMessages);
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(initialMessages[0]?.id ?? null);
@@ -250,7 +253,7 @@ export default function MailboxClient({
                       {m.subject || "(kein Betreff)"}
                     </p>
                     <p className="mt-0.5 text-xs [color:var(--mk-text-subtle)]">
-                      {fmt(m.createdAt)}
+                      {fmt(m.createdAt, lang)}
                     </p>
                   </button>
                 </li>
@@ -325,6 +328,7 @@ function FilterTab({
 }
 
 function MessageDetail({ message, onSent }: { message: MailMessageView; onSent: () => void }) {
+  const { lang } = useLang();
   const [replyOpen, setReplyOpen] = useState(false);
 
   return (
@@ -353,7 +357,7 @@ function MessageDetail({ message, onSent }: { message: MailMessageView; onSent: 
             {message.toEmails.join(", ") || "—"}
           </p>
           <p className="flex items-center gap-1">
-            <Calendar size={11} /> {fmt(message.createdAt)}
+            <Calendar size={11} /> {fmt(message.createdAt, lang)}
             {message.direction === "outbound" && (
               <span
                 className={`ml-2 rounded px-1.5 py-0.5 text-xs ${

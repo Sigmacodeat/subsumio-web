@@ -21,6 +21,7 @@ import { CitationLink, GroundingBadge } from "@/components/legal/CitationLink";
 import { AI_BADGE_LABEL, AI_NOTICE } from "@/lib/ai-act";
 import { assessGroundedness } from "@/lib/groundedness";
 import type { GroundedCitation } from "@/lib/types";
+import { useLang } from "@/lib/use-lang";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ interface CitationPanelProps {
 // ── Main Component ────────────────────────────────────────────────────
 
 export function CitationPanel({ data, compact = false, className }: CitationPanelProps) {
+  const { lang } = useLang();
   const [expanded, setExpanded] = useState(!compact);
 
   const ground = useMemo(
@@ -262,7 +264,10 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
           {/* Grounding timestamp */}
           {hasGrounding && data.grounding!.analyzed_at && (
             <div className="border-t border-[color:var(--ds-border)] pt-1 text-xs text-[color:var(--ds-text-subtle)]">
-              Corpus geprüft am {new Date(data.grounding!.analyzed_at).toLocaleString("de-DE")}
+              Corpus geprüft am{" "}
+              {new Date(data.grounding!.analyzed_at).toLocaleString(
+                lang === "en" ? "en-GB" : "de-DE"
+              )}
             </div>
           )}
         </div>

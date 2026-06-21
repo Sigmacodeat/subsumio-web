@@ -400,8 +400,9 @@ function MonitorCard({
   onToggleEmail: () => void;
   t: TFunc;
 }) {
+  const { lang } = useLang();
   const lastRun = monitor.last_run_at
-    ? new Date(monitor.last_run_at).toLocaleDateString("de-DE", {
+    ? new Date(monitor.last_run_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -597,7 +598,7 @@ function AlertItem({
 // ─── Main Page ─────────────────────────────────────────────────────
 
 export default function MonitoringPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [monitors, setMonitors] = useState<RegulatoryMonitor[]>([]);
   const [alerts, setAlerts] = useState<RegulatoryAlert[]>([]);
   const [alertSlugs, setAlertSlugs] = useState<string[]>([]);

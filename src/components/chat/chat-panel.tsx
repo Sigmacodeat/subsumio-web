@@ -85,32 +85,32 @@ const TOOL_RULES: ToolDetectionRule[] = [
   {
     pattern: /\[TOOL:navigate\s+route="([^"]+)"\]/i,
     tool: "navigate",
-    label: "Navigation",
+    label: "chat.tool.navigate",
     extractParams: (m) => ({ route: m[1] }),
   },
   {
     pattern: /\[TOOL:search_cases\s+query="([^"]+)"\]/i,
     tool: "search_cases",
-    label: "Akten durchsuchen",
+    label: "chat.tool.search_cases",
     extractParams: (m) => ({ query: m[1] }),
   },
   {
     pattern: /\[TOOL:search_deadlines(?:\s+case_slug="([^"]+)")?\s+status="([^"]+)"\]/i,
     tool: "search_deadlines",
-    label: "Fristen prüfen",
+    label: "chat.tool.search_deadlines",
     extractParams: (m) => ({ case_slug: m[1] || undefined, status: m[2] }),
   },
   {
     pattern: /\[TOOL:search_knowledge\s+query="([^"]+)"\]/i,
     tool: "search_knowledge",
-    label: "Wissensdatenbank durchsuchen",
+    label: "chat.tool.search_knowledge",
     extractParams: (m) => ({ query: m[1] }),
   },
   {
     pattern:
       /\[TOOL:create_case\s+title="([^"]+)"(?:\s+client_name="([^"]+)")?(?:\s+opponent_name="([^"]+)")?(?:\s+case_type="([^"]+)")?\]/i,
     tool: "create_case",
-    label: "Akte erstellen",
+    label: "chat.tool.create_case",
     extractParams: (m) => ({
       title: m[1],
       client_name: m[2] || undefined,
@@ -121,14 +121,14 @@ const TOOL_RULES: ToolDetectionRule[] = [
   {
     pattern: /\[TOOL:case_summary\s+case_slug="([^"]+)"\]/i,
     tool: "case_summary",
-    label: "Aktenzusammenfassung",
+    label: "chat.tool.case_summary",
     extractParams: (m) => ({ case_slug: m[1] }),
   },
   {
     pattern:
       /\[TOOL:email_draft\s+subject="([^"]+)"(?:\s+recipient="([^"]+)")?(?:\s+case_slug="([^"]+)")?(?:\s+tone="([^"]+)")?\]/i,
     tool: "email_draft",
-    label: "Email-Entwurf",
+    label: "chat.tool.email_draft",
     extractParams: (m) => ({
       subject: m[1],
       recipient: m[2] || undefined,
@@ -139,26 +139,26 @@ const TOOL_RULES: ToolDetectionRule[] = [
   {
     pattern: /\[TOOL:deadline_extract\s+document_slug="([^"]+)"\]/i,
     tool: "deadline_extract",
-    label: "Fristen extrahieren",
+    label: "chat.tool.deadline_extract",
     extractParams: (m) => ({ document_slug: m[1] }),
   },
   {
     pattern: /\[TOOL:document_summary\s+document_slug="([^"]+)"\]/i,
     tool: "document_summary",
-    label: "Dokument zusammenfassen",
+    label: "chat.tool.document_summary",
     extractParams: (m) => ({ document_slug: m[1] }),
   },
   {
     pattern: /\[TOOL:conflict_check\s+name="([^"]+)"\]/i,
     tool: "conflict_check",
-    label: "Konfliktprüfung",
+    label: "chat.tool.conflict_check",
     extractParams: (m) => ({ name: m[1] }),
   },
   {
     pattern:
       /\[TOOL:time_entry\s+case_slug="([^"]+)"\s+description="([^"]+)"(?:\s+hours="([^"]+)")?(?:\s+activity_type="([^"]+)")?\]/i,
     tool: "time_entry",
-    label: "Zeiteintrag",
+    label: "chat.tool.time_entry",
     extractParams: (m) => ({
       case_slug: m[1],
       description: m[2],
@@ -171,7 +171,7 @@ const TOOL_RULES: ToolDetectionRule[] = [
   {
     pattern: /\[TOOL:client_update\s+case_slug="([^"]+)"(?:\s+update_type="([^"]+)")?\]/i,
     tool: "client_update",
-    label: "Mandanten-Update",
+    label: "chat.tool.client_update",
     extractParams: (m) => ({
       case_slug: m[1],
       update_type: (m[2] as "status" | "deadline" | "next_steps" | "summary") || "status",
@@ -180,14 +180,14 @@ const TOOL_RULES: ToolDetectionRule[] = [
   {
     pattern: /\[TOOL:meeting_tasks\s+notes="([^"]+)"(?:\s+case_slug="([^"]+)")?\]/i,
     tool: "meeting_tasks",
-    label: "Besprechungsnotizen analysieren",
+    label: "chat.tool.meeting_tasks",
     extractParams: (m) => ({ notes: m[1], case_slug: m[2] || undefined }),
   },
   {
     pattern:
       /\[TOOL:intake_create\s+client_name="([^"]+)"\s+matter_type="([^"]+)"(?:\s+jurisdiction="([^"]+)")?(?:\s+urgency="([^"]+)")?\]/i,
     tool: "intake_create",
-    label: "Mandantsaufnahme",
+    label: "chat.tool.intake_create",
     extractParams: (m) => ({
       client_name: m[1],
       matter_type: m[2],
@@ -351,7 +351,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   { context = { type: "global" }, features, persistHistory = true, className, title, initialQuery },
   ref
 ) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const confirm = useConfirm();
   const router = useRouter();
 
@@ -1229,10 +1229,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
       if (messagesAfter > 2) {
         const ok = await confirm({
-          title: "Nachricht bearbeiten?",
-          message: `Beim Bearbeiten werden ${messagesAfter} nachfolgende Nachrichten gelöscht und neu generiert.`,
-          confirmLabel: "Bearbeiten & neu generieren",
-          cancelLabel: "Abbrechen",
+          title: t("chat.edit_confirm_title"),
+          message: `${t("chat.edit_confirm_prefix")} ${messagesAfter} ${t("chat.edit_confirm_suffix")}`,
+          confirmLabel: t("chat.edit_confirm_btn"),
+          cancelLabel: t("chat.edit_cancel"),
           variant: "danger",
         });
         if (!ok) return;
@@ -1296,9 +1296,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     yesterday.setDate(yesterday.getDate() - 1);
     const isToday = date.toDateString() === today.toDateString();
     const isYesterday = date.toDateString() === yesterday.toDateString();
-    if (isToday) return "Heute";
-    if (isYesterday) return "Gestern";
-    return date.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+    if (isToday) return t("chat.today");
+    if (isYesterday) return t("chat.yesterday");
+    return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
   }
 
   const scrollToBottom = useCallback(() => {
@@ -1346,19 +1350,22 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   // Export chat
   const handleExport = useCallback(() => {
     const lines = messages.map((m) => {
-      const prefix = m.role === "user" ? "**👤 Nutzer:**" : "**🤖 AI:**";
+      const prefix =
+        m.role === "user" ? `**👤 ${t("chat.export_user")}:**` : `**🤖 ${t("chat.export_ai")}:**`;
       const meta = [
-        m.tokensUsed ? ` (${m.tokensUsed.toLocaleString("de-DE")} tokens)` : "",
+        m.tokensUsed
+          ? ` (${m.tokensUsed.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} tokens)`
+          : "",
         m.latencyMs ? ` · ${(m.latencyMs / 1000).toFixed(1)}s` : "",
         m.model ? ` · ${m.model}` : "",
       ].join("");
       const citations = m.citations?.length
-        ? `\n\n> **Quellen:** ${m.citations.map((c) => c.title).join(", ")}`
+        ? `\n\n> **${t("chat.export_sources")}:** ${m.citations.map((c) => c.title).join(", ")}`
         : "";
-      const gaps = m.gaps?.length ? `\n\n> **Lücken:** ${m.gaps.join("; ")}` : "";
+      const gaps = m.gaps?.length ? `\n\n> **${t("chat.export_gaps")}:** ${m.gaps.join("; ")}` : "";
       return `${prefix}${meta}\n\n${m.content}${citations}${gaps}\n`;
     });
-    const content = `# ${title ?? t("chat.title")}\n\nExportiert am ${new Date().toLocaleString("de-DE")}\n\n---\n\n${lines.join("\n---\n\n")}`;
+    const content = `# ${title ?? t("chat.title")}\n\n${t("chat.export_date")} ${new Date().toLocaleString(lang === "en" ? "en-GB" : "de-DE")}\n\n---\n\n${lines.join("\n---\n\n")}`;
     const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -1366,7 +1373,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     a.download = `chat-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, [messages, title, t]);
+  }, [messages, title, t, lang]);
 
   // Share chat (read-only link via base64 encoding)
   const handleShare = useCallback(async () => {
@@ -1546,7 +1553,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         <button
           onClick={scrollToBottom}
           className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95"
-          aria-label="Nach unten scrollen"
+          aria-label={t("chat.scroll_bottom")}
         >
           <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
         </button>
@@ -1563,7 +1570,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           <button
             onClick={() => setDismissedError(true)}
             className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
-            aria-label="Fehlermeldung schließen"
+            aria-label={t("chat.dismiss_error")}
           >
             <X size={14} />
           </button>
@@ -1575,7 +1582,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         <div className="flex items-center gap-2 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-2 text-xs">
           <Reply size={12} className="shrink-0 text-[color:var(--ds-text-muted)]" />
           <span className="text-[color:var(--ds-text-subtle)]">
-            Antwort auf {replyTo.role === "user" ? "Nutzer" : "AI"}:
+            {t("chat.reply_to")}{" "}
+            {replyTo.role === "user" ? t("chat.reply_user") : t("chat.reply_ai")}:
           </span>
           <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text-muted)]">
             {replyTo.preview}
@@ -1583,7 +1591,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           <button
             onClick={() => setReplyTo(null)}
             className="shrink-0 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
-            aria-label="Antwort-Vorschau schließen"
+            aria-label={t("chat.close_reply_preview")}
           >
             <X size={12} />
           </button>

@@ -7,7 +7,16 @@ import { api } from "@/lib/api";
 // ── Queries ──
 
 export function useBrainStats() {
-  return useQuery<BrainStats>({ queryKey: ["brain", "stats"], queryFn: () => api.brain.stats() });
+  return useQuery<BrainStats>({
+    queryKey: ["brain", "stats"],
+    queryFn: () => api.brain.stats(),
+    // The brain-status indicator (sidebar pill, chat header dot) reads this
+    // query directly — without a refetch interval it only updates on
+    // remount/explicit invalidation, so an engine outage that recovers
+    // mid-session never clears from the UI until the user navigates away
+    // and back. 30s matches the cadence of other dashboard polling.
+    refetchInterval: 30_000,
+  });
 }
 
 export function useSearch(q: string, limit = 10, enabled = true) {
@@ -26,7 +35,13 @@ export function usePage(slug: string) {
   });
 }
 
-export function usePages(opts?: { limit?: number; offset?: number; source?: string; type?: string; tag?: string }) {
+export function usePages(opts?: {
+  limit?: number;
+  offset?: number;
+  source?: string;
+  type?: string;
+  tag?: string;
+}) {
   return useQuery<BrainPage[]>({
     queryKey: ["brain", "pages", opts],
     queryFn: () => api.brain.listPages(opts),
@@ -34,11 +49,17 @@ export function usePages(opts?: { limit?: number; offset?: number; source?: stri
 }
 
 export function useGraph() {
-  return useQuery<{ nodes: GraphNode[]; links: GraphLink[] }>({ queryKey: ["brain", "graph"], queryFn: () => api.brain.graph() });
+  return useQuery<{ nodes: GraphNode[]; links: GraphLink[] }>({
+    queryKey: ["brain", "graph"],
+    queryFn: () => api.brain.graph(),
+  });
 }
 
 export function useRecentQueries(limit = 10) {
-  return useQuery({ queryKey: ["brain", "queries", "recent", limit], queryFn: () => api.brain.recentQueries(limit) });
+  return useQuery({
+    queryKey: ["brain", "queries", "recent", limit],
+    queryFn: () => api.brain.recentQueries(limit),
+  });
 }
 
 // ── Mutations ──
@@ -46,7 +67,13 @@ export function useRecentQueries(limit = 10) {
 export function useCreatePage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (page: { slug: string; title: string; content?: string; type?: string; frontmatter?: Record<string, unknown> }) => api.brain.createPage(page),
+    mutationFn: (page: {
+      slug: string;
+      title: string;
+      content?: string;
+      type?: string;
+      frontmatter?: Record<string, unknown>;
+    }) => api.brain.createPage(page),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       qc.invalidateQueries({ queryKey: ["brain", "stats"] });
@@ -57,7 +84,13 @@ export function useCreatePage() {
 export function useUpdatePage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (page: { slug: string; title?: string; content?: string; type?: string; frontmatter?: Record<string, unknown> }) => api.brain.updatePage(page),
+    mutationFn: (page: {
+      slug: string;
+      title?: string;
+      content?: string;
+      type?: string;
+      frontmatter?: Record<string, unknown>;
+    }) => api.brain.updatePage(page),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       qc.invalidateQueries({ queryKey: ["brain", "page", vars.slug] });

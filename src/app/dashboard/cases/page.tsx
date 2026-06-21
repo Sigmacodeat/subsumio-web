@@ -90,7 +90,7 @@ function parseCase(page: BrainPage): LegalCaseItem {
 export default function CasesPage() {
   const router = useRouter();
   const { addToast } = useToast();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [cases, setCases] = useState<LegalCaseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -316,7 +316,7 @@ export default function CasesPage() {
       cell: (c) => (
         <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
           <Calendar size={10} />
-          {new Date(c.updatedAt).toLocaleDateString("de-DE")}
+          {new Date(c.updatedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
         </span>
       ),
     },

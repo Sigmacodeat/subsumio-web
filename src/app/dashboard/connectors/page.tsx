@@ -50,7 +50,7 @@ const CONNECTOR_LABELS: Record<string, string> = {
 };
 
 export default function ConnectorsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export default function ConnectorsPage() {
 
   function lastSyncLabel(value: number | null) {
     if (!value) return "Noch nie synchronisiert";
-    return `Letzter Sync: ${new Date(value).toLocaleString("de-DE")}`;
+    return `Letzter Sync: ${new Date(value).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`;
   }
 
   return (

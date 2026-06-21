@@ -25,6 +25,7 @@
 import { type User, getStore, buildNewUser } from "@/lib/auth/store";
 import { logAudit } from "@/lib/audit";
 import { provisionBrainAsync } from "@/lib/provision";
+import { externalFetchTimeout } from "@/lib/retry";
 
 // ── SCIM 2.0 Constants ────────────────────────────────────────────────
 
@@ -493,6 +494,7 @@ export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]>
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${process.env.WORKOS_API_KEY}` },
+      signal: externalFetchTimeout(),
     });
 
     if (!res.ok) {
@@ -534,6 +536,7 @@ export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${process.env.WORKOS_API_KEY}` },
+      signal: externalFetchTimeout(),
     });
 
     if (!res.ok) {

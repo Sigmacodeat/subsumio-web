@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { sendMail } from "@/lib/mail";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
+import { externalFetchTimeout } from "@/lib/retry";
 
 export type LeadScore = "low" | "medium" | "high" | "enterprise";
 
@@ -174,6 +175,7 @@ async function notifyMarketingLead(lead: MarketingLead): Promise<MarketingLead["
         body: JSON.stringify({
           text: `New ${lead.leadScore} Subsumio lead: ${lead.product} / ${lead.plan}\n${lead.email}\n${lead.summary}`,
         }),
+        signal: externalFetchTimeout(),
       });
       slack = res.ok;
     } catch {

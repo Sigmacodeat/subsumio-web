@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
 type RequestStatus = "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
 
@@ -65,12 +67,15 @@ function listFromResponse(data: unknown): DocumentRequestRecord[] {
   return items as DocumentRequestRecord[];
 }
 
-function createdLabel(value: string): string {
+function createdLabel(lang: Lang, value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("de-DE");
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString(lang === "en" ? "en-GB" : "de-DE");
 }
 
 export default function DocumentRequestsPage() {
+  const { lang } = useLang();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | RequestStatus>("all");
   const [search, setSearch] = useState("");
@@ -334,7 +339,7 @@ export default function DocumentRequestsPage() {
                 <div className="shrink-0 text-right text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex items-center justify-end gap-1">
                     <Clock size={12} />
-                    {createdLabel(item.frontmatter.created_at)}
+                    {createdLabel(lang, item.frontmatter.created_at)}
                   </div>
                   <div className="mt-1 font-mono">{item.slug}</div>
                 </div>
@@ -345,7 +350,7 @@ export default function DocumentRequestsPage() {
                   <div className="flex flex-wrap gap-2">
                     <span>Akte: {item.frontmatter.case_slug}</span>
                     {item.frontmatter.sent_at && (
-                      <span>Gesendet: {createdLabel(item.frontmatter.sent_at)}</span>
+                      <span>Gesendet: {createdLabel(lang, item.frontmatter.sent_at)}</span>
                     )}
                   </div>
                   {item.frontmatter.source_event_slug && (

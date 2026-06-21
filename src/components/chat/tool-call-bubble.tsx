@@ -24,6 +24,7 @@ import {
 import { useRouter } from "next/navigation";
 import type { ToolCall, ToolResultDisplay } from "@/components/chat/chat-types";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
 
 const TOOL_ICONS: Record<string, typeof FileText> = {
   navigate: ArrowRight,
@@ -54,6 +55,7 @@ export function ToolCallBubble({
   onRetry?: (id: string) => void;
 }) {
   const router = useRouter();
+  const { t } = useLang();
   const Icon = TOOL_ICONS[toolCall.type] ?? FileText;
 
   const handleNavigate = (href?: string) => {
@@ -62,13 +64,13 @@ export function ToolCallBubble({
 
   const statusLabel =
     toolCall.status === "pending"
-      ? "Ausstehend"
+      ? t("chat.tool.status_pending")
       : toolCall.status === "executing"
-        ? "Wird ausgeführt"
+        ? t("chat.tool.status_executing")
         : toolCall.status === "completed"
-          ? "Abgeschlossen"
+          ? t("chat.tool.status_completed")
           : toolCall.status === "error"
-            ? "Fehler"
+            ? t("chat.tool.status_error")
             : "";
 
   // Confirmation step for destructive tools
@@ -86,7 +88,7 @@ export function ToolCallBubble({
         <div className="flex items-center gap-2 border-b border-amber-200/50 px-3 py-2 dark:border-amber-900/50">
           <Icon size={14} className="text-amber-600 dark:text-amber-400" />
           <span className="flex-1 truncate text-xs font-medium text-amber-900 dark:text-amber-200">
-            {toolCall.label} — Bestätigung erforderlich
+            {t(toolCall.label as never)} — {t("chat.tool.confirm_required")}
           </span>
         </div>
         {paramEntries.length > 0 && (
@@ -111,14 +113,14 @@ export function ToolCallBubble({
             className="flex items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
           >
             <Check size={12} />
-            Bestätigen
+            {t("chat.tool.confirm")}
           </button>
           <button
             onClick={() => onCancel?.(toolCall.id)}
             className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none dark:text-amber-300 dark:hover:bg-amber-900/30"
           >
             <X size={12} />
-            Abbrechen
+            {t("chat.tool.cancel")}
           </button>
         </div>
       </div>
@@ -135,7 +137,9 @@ export function ToolCallBubble({
       >
         <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
         <Icon size={14} className="text-[color:var(--ds-text-muted)]" />
-        <span className="text-xs text-[color:var(--ds-text-muted)]">{toolCall.label}</span>
+        <span className="text-xs text-[color:var(--ds-text-muted)]">
+          {t(toolCall.label as never)}
+        </span>
       </div>
     );
   }
@@ -150,7 +154,7 @@ export function ToolCallBubble({
       >
         <AlertCircle size={14} className="shrink-0 text-red-500" />
         <span className="flex-1 text-xs text-red-700 dark:text-red-400">
-          {toolCall.result?.display.title ?? toolCall.label} fehlgeschlagen
+          {toolCall.result?.display?.title ?? t(toolCall.label as never)} {t("chat.tool.failed")}
         </span>
         {onRetry && (
           <button
@@ -158,7 +162,7 @@ export function ToolCallBubble({
             className="flex items-center gap-1 rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
           >
             <RotateCw size={11} />
-            Retry
+            {t("chat.tool.retry")}
           </button>
         )}
       </div>
@@ -182,6 +186,7 @@ function ToolResultCard({
   display: ToolResultDisplay;
   onNavigate: (href?: string) => void;
 }) {
+  const { t } = useLang();
   const hasItems = display.items && display.items.length > 0;
 
   return (
@@ -197,7 +202,7 @@ function ToolResultCard({
             onClick={() => onNavigate(display.href)}
             className="flex items-center gap-1 text-xs text-[color:var(--brand-primary)] transition-opacity hover:opacity-80"
           >
-            Öffnen
+            {t("chat.tool.open")}
             <ExternalLink size={11} />
           </button>
         )}
@@ -243,7 +248,7 @@ function ToolResultCard({
           onClick={() => onNavigate(display.href)}
           className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-[color:var(--brand-primary)] transition-colors hover:bg-[color:var(--ds-hover)]"
         >
-          {display.message ?? "Navigation öffnen"}
+          {display.message ?? t("chat.tool.open_navigation")}
           <ArrowRight size={12} />
         </button>
       )}

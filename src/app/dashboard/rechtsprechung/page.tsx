@@ -26,7 +26,7 @@ interface JudgementResult {
 }
 
 export default function RechtsprechungPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
@@ -278,7 +278,7 @@ export default function RechtsprechungPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar size={10} />
-                      {new Date(r.date).toLocaleDateString("de-DE")}
+                      {new Date(r.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                     </span>
                     {r.az && <span className="font-mono">{r.az}</span>}
                     {r.ecli && <span className="font-mono text-xs">{r.ecli}</span>}

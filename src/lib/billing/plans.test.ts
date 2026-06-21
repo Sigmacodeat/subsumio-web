@@ -4,6 +4,7 @@ import {
   BILLING_PLANS_DISPLAY,
   isBillingConfigured,
   stripePriceId,
+  planForPriceId,
   type BillablePlan,
 } from "./plans";
 
@@ -169,5 +170,50 @@ describe("stripePriceId", () => {
     expect(stripePriceId("team")).toBe("price_team_xyz");
     if (original) process.env.STRIPE_PRICE_TEAM = original;
     else delete process.env.STRIPE_PRICE_TEAM;
+  });
+});
+
+describe("planForPriceId", () => {
+  const originalPro = process.env.STRIPE_PRICE_PRO;
+  const originalTeam = process.env.STRIPE_PRICE_TEAM;
+
+  function restore() {
+    if (originalPro) process.env.STRIPE_PRICE_PRO = originalPro;
+    else delete process.env.STRIPE_PRICE_PRO;
+    if (originalTeam) process.env.STRIPE_PRICE_TEAM = originalTeam;
+    else delete process.env.STRIPE_PRICE_TEAM;
+  }
+
+  test("returns null for null/undefined input", () => {
+    expect(planForPriceId(null)).toBeNull();
+    expect(planForPriceId(undefined)).toBeNull();
+  });
+
+  test("returns null when the price ID matches no configured plan", () => {
+    process.env.STRIPE_PRICE_PRO = "price_pro_real";
+    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    expect(planForPriceId("price_unknown")).toBeNull();
+    restore();
+  });
+
+  test("resolves a price ID back to 'pro'", () => {
+    process.env.STRIPE_PRICE_PRO = "price_pro_real";
+    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    expect(planForPriceId("price_pro_real")).toBe("pro");
+    restore();
+  });
+
+  test("resolves a price ID back to 'team'", () => {
+    process.env.STRIPE_PRICE_PRO = "price_pro_real";
+    process.env.STRIPE_PRICE_TEAM = "price_team_real";
+    expect(planForPriceId("price_team_real")).toBe("team");
+    restore();
+  });
+
+  test("does not cross-contaminate: a stale price never resolves to the wrong plan", () => {
+    process.env.STRIPE_PRICE_PRO = "price_pro_real";
+    delete process.env.STRIPE_PRICE_TEAM;
+    expect(planForPriceId("price_team_real")).toBeNull();
+    restore();
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
 
 interface ChatLoadingSkeletonProps {
   className?: string;
@@ -8,12 +9,13 @@ interface ChatLoadingSkeletonProps {
 }
 
 export function ChatLoadingSkeleton({ className, lines = 4 }: ChatLoadingSkeletonProps) {
+  const { t } = useLang();
   return (
     <div
       className={cn("space-y-3 px-4 py-4", className)}
       role="status"
       aria-live="polite"
-      aria-label="Antwort wird geladen"
+      aria-label={t("chat.loading_aria")}
     >
       <div className="flex gap-3">
         <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-[color:var(--ds-surface-2)]" />

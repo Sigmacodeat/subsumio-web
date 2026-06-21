@@ -62,7 +62,7 @@ function text(value: unknown): string {
 }
 
 export default function WhatsAppDashboardPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [events, setEvents] = useState<BrainPage[]>([]);
   const [approvals, setApprovals] = useState<BrainPage[]>([]);
@@ -493,7 +493,7 @@ function WorkflowPanel({
   intakes: BrainPage[];
   documentRequests: BrainPage[];
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const rows = [
     ...approvals.map((page) => ({
       page,
@@ -567,7 +567,7 @@ function WorkflowPanel({
 }
 
 function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const sorted = [...pages]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20);
@@ -598,7 +598,8 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                  <Clock size={10} /> {new Date(page.created_at).toLocaleString("de-DE")}
+                  <Clock size={10} />{" "}
+                  {new Date(page.created_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                   {text(fm.intent) && <span> · {text(fm.intent)}</span>}
                 </div>
                 {text(fm.error) && (

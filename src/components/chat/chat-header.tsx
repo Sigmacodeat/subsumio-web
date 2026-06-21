@@ -70,7 +70,7 @@ const JURISDICTIONS: Array<{ value: Jurisdiction; label: string }> = [
 ];
 
 export function ChatHeader(props: ChatHeaderProps) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const compact = props.compact ?? false;
   const statsQuery = useBrainStats();
   const usageQuery = useUsage();
@@ -82,7 +82,14 @@ export function ChatHeader(props: ChatHeaderProps) {
   const stats = statsQuery.data;
   const usage = usageQuery.data;
 
-  const brainOnline = stats && (stats.total_pages > 0 || stats.total_queries > 0);
+  // engine_reachable is the real signal (the proxy route timed out / errored
+  // talking to the engine). Falling back to "any nonzero count" treats a
+  // genuinely empty-but-healthy brain as offline, and can never detect an
+  // engine outage that still returns a 200 with stale/fallback zeros.
+  // "degraded" stays reserved for our own request failing outright
+  // (statsQuery.isError) — `engine_reachable: false` is a clean "offline"
+  // reading, not a degraded one.
+  const brainOnline = stats?.engine_reachable === true;
   const brainDegraded = statsQuery.isError;
   const queriesUsed = usage?.queries ?? 0;
   const queryLimit = usage?.limits?.queriesPerMonth ?? 0;
@@ -149,7 +156,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               {props.features.tokenWidget && props.sessionTokens > 0 && !compact && (
                 <span className="inline-flex items-center gap-0.5">
                   · <Zap size={9} />
-                  {props.sessionTokens.toLocaleString("de-DE")}
+                  {props.sessionTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                 </span>
               )}
               {props.features.tokenWidget &&
@@ -182,8 +189,8 @@ export function ChatHeader(props: ChatHeaderProps) {
             <button
               onClick={props.onShare}
               className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-              aria-label="Chat teilen"
-              title="Chat teilen (Link kopieren)"
+              aria-label={t("chat.share")}
+              title={t("chat.share_title")}
             >
               <Share2 size={16} />
             </button>
@@ -221,7 +228,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95"
             >
               <Plus size={12} />
-              {props.activeSessionId ? "Session" : t("chat.new_session")}
+              {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
               <ChevronDown
                 size={11}
                 className={cn("transition-transform", showSessions && "rotate-180")}
@@ -294,7 +301,9 @@ export function ChatHeader(props: ChatHeaderProps) {
                           </p>
                           <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
                             {s.messageCount} {t("chat.session_count")} ·{" "}
-                            {new Date(s.updatedAt).toLocaleDateString("de-DE")}
+                            {new Date(s.updatedAt).toLocaleDateString(
+                              lang === "en" ? "en-GB" : "de-DE"
+                            )}
                           </p>
                           {s.tags && s.tags.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1">
@@ -321,8 +330,8 @@ export function ChatHeader(props: ChatHeaderProps) {
                                 "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
                                 s.pinned && "brand-text opacity-100"
                               )}
-                              aria-label={s.pinned ? "Abheften" : "Anheften"}
-                              title={s.pinned ? "Abheften" : "Anheften"}
+                              aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
+                              title={s.pinned ? t("chat.unpin") : t("chat.pin")}
                             >
                               <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
                             </button>

@@ -22,6 +22,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import type { BrainPage } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useLang } from "@/lib/use-lang";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CitationPanel, type CitationPanelData } from "@/components/legal/CitationPanel";
 
@@ -36,6 +37,7 @@ interface ResearchSession {
 }
 
 export default function ResearchPage() {
+  const { lang } = useLang();
   const confirm = useConfirm();
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -393,7 +395,9 @@ export default function ResearchPage() {
                       {s.answer.slice(0, 150)}…
                     </div>
                     <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
-                      <span>{new Date(s.createdAt).toLocaleString("de-DE")}</span>
+                      <span>
+                        {new Date(s.createdAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                      </span>
                       {s.citations.length > 0 && <span>{s.citations.length} Quellen</span>}
                     </div>
                   </div>
@@ -562,7 +566,7 @@ export default function ResearchPage() {
                               ((page as unknown as Record<string, unknown>).created_at as string) ||
                               page.created_at ||
                               new Date().toISOString()
-                          ).toLocaleDateString("de-DE")}
+                          ).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                         </span>
                         <div className="flex items-center gap-2">
                           {Array.isArray(fm.citations) && fm.citations.length > 0 && (

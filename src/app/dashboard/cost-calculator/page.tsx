@@ -78,7 +78,7 @@ interface CalculationResult {
 }
 
 export default function CostCalculatorPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [jurisdiction, setJurisdiction] = useState<"de" | "at">("de");
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -103,7 +103,7 @@ export default function CostCalculatorPage() {
       const fm = caseFrontmatter(page);
       const entry: ExpenseEntry = {
         id: `cost-calc-${Date.now()}`,
-        description: `Kostenschätzung (${result.jurisdiction === "de" ? "RVG" : "RATG"}) — Streitwert ${result.streitwert.toLocaleString("de-DE")} €`,
+        description: `Kostenschätzung (${result.jurisdiction === "de" ? "RVG" : "RATG"}) — Streitwert ${result.streitwert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €`,
         date: new Date().toISOString(),
         amount: result.total,
         billable: false,
@@ -274,7 +274,7 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.dispute_value")}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.streitwert.toLocaleString("de-DE")} €
+                {result.streitwert.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
@@ -282,7 +282,10 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.verfahrensgebuehr")}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.verfahrensgebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.verfahrensgebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
@@ -290,7 +293,10 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.terminsgebuehr")}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.terminGebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.terminGebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
@@ -302,7 +308,10 @@ export default function CostCalculatorPage() {
                 )}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.einigungsgebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.einigungsgebuehr.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
@@ -310,7 +319,10 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.auslagenpauschale")}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.auslagen.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.auslagen.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] py-2">
@@ -323,7 +335,9 @@ export default function CostCalculatorPage() {
                   result.terminGebuehr +
                   result.einigungsgebuehr +
                   result.auslagen
-                ).toLocaleString("de-DE", { minimumFractionDigits: 2 })}{" "}
+                ).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
                 €
               </span>
             </div>
@@ -332,7 +346,10 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.mwst")} ({result.jurisdiction === "de" ? "19%" : "20%"})
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
-                {result.mwst.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.mwst.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
             <div className="brand-soft brand-border/10 flex items-center justify-between rounded-lg border px-3 py-3">
@@ -340,7 +357,10 @@ export default function CostCalculatorPage() {
                 {t("cost_calc.estimated_fee")}
               </span>
               <span className="brand-text font-mono text-lg font-bold">
-                {result.total.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                {result.total.toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                €
               </span>
             </div>
           </div>

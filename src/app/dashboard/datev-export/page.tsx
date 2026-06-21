@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 
 export default function DatevExportPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const now = new Date();
   const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const defaultTo = now.toISOString().split("T")[0];
@@ -207,7 +207,7 @@ export default function DatevExportPage() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.net_amount")}</div>
           <div className="text-xl font-bold text-emerald-600">
-            {totalAmount.toLocaleString("de-DE")} €
+            {totalAmount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
       </div>

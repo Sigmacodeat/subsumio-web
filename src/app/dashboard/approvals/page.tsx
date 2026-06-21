@@ -20,7 +20,7 @@ function fmOf(page: { frontmatter?: Record<string, unknown> }): Partial<AgentAct
 }
 
 export default function ApprovalsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const pagesQuery = usePages({ type: "agent_action", limit: 200 });
   const [busy, setBusy] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -159,7 +159,7 @@ export default function ApprovalsPage() {
                       <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                         {t("approvals.proposed_by")} {item.proposed_by}
                         {item.proposed_at
-                          ? ` · ${new Date(item.proposed_at).toLocaleString("de-DE")}`
+                          ? ` · ${new Date(item.proposed_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}`
                           : ""}
                       </p>
                       {item.target_slug && (
@@ -283,7 +283,9 @@ export default function ApprovalsPage() {
                   </div>
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     {item.decided_by ? `${item.decided_by} · ` : ""}
-                    {item.decided_at ? new Date(item.decided_at).toLocaleString("de-DE") : ""}
+                    {item.decided_at
+                      ? new Date(item.decided_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")
+                      : ""}
                     {item.execution_status
                       ? ` · ${t("approvals.execution")}: ${item.execution_status}`
                       : ""}

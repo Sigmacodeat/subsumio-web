@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBrainStats, usePages, useRecentQueries } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
 
 type DashboardPageLike = BrainPage & {
@@ -46,8 +47,11 @@ function daysUntil(date: Date) {
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
+function formatDate(date: Date, lang: Lang = "de") {
+  return date.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+    day: "2-digit",
+    month: "short",
+  });
 }
 
 function isOpenStatus(status: unknown) {
@@ -229,7 +233,7 @@ function QueueRow({
 }
 
 function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitData>["deadlines"] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <QueuePanel
       icon={CalendarClock}
@@ -251,7 +255,7 @@ function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitDat
                 icon={CalendarClock}
                 href={pageHref(item.page, "/dashboard/deadlines")}
                 title={title}
-                meta={`${formatDate(item.due)} · ${text(item.page.frontmatter?.status, "open")}`}
+                meta={`${formatDate(item.due, lang)} · ${text(item.page.frontmatter?.status, "open")}`}
                 urgent={item.overdue || item.critical}
                 badge={
                   item.overdue
@@ -281,7 +285,7 @@ function TodayList({
   inboxCount: number;
   reviewCount: number;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const tasks = [
     {
       href: "/dashboard/deadlines",
@@ -345,7 +349,7 @@ function TodayList({
 }
 
 function InboxList({ items }: { items: DashboardPageLike[] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <QueuePanel
       icon={Inbox}
@@ -367,7 +371,7 @@ function InboxList({ items }: { items: DashboardPageLike[] }) {
                 icon={Mail}
                 href={item.type === "bea_draft" ? "/dashboard/bea" : "/dashboard/intake"}
                 title={text(item.title, t("cockpit.untitled_inbox"))}
-                meta={`${source} · ${formatDate(new Date(item.created_at))}`}
+                meta={`${source} · ${formatDate(new Date(item.created_at), lang)}`}
                 badge={source}
                 badgeVariant="info"
               />
@@ -380,7 +384,7 @@ function InboxList({ items }: { items: DashboardPageLike[] }) {
 }
 
 function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   return (
     <QueuePanel
       icon={Briefcase}
@@ -414,7 +418,7 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
 }
 
 function QuickActions() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const actions = [
     {
       href: "/dashboard/cases/new",
@@ -543,7 +547,7 @@ function MetricRail({
 }
 
 export function WidgetDashboard() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const data = useKanzleiCockpitData();
   const openInvoiceCount = data.openInvoices.length;
   const reviewCount = data.pendingReviews.length;
@@ -689,7 +693,7 @@ export function WidgetDashboard() {
                 </div>
                 {rq.created_at && (
                   <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
-                    {new Date(rq.created_at).toLocaleDateString("de-DE", {
+                    {new Date(rq.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                       day: "2-digit",
                       month: "short",
                     })}

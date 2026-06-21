@@ -5,6 +5,7 @@ import { MessageSquare, Zap, Pin, Tag, TrendingUp, Calendar, Hash, Cpu, Clock } 
 import { cn } from "@/lib/utils";
 import { getChatStats } from "@/components/chat/chat-session-store";
 import { AI_MODELS } from "@/lib/model-config";
+import { useLang } from "@/lib/use-lang";
 
 interface ChatStats {
   totalSessions: number;
@@ -16,6 +17,7 @@ interface ChatStats {
 }
 
 export default function ChatAnalyticsPage() {
+  const { lang } = useLang();
   const [stats, setStats] = useState<ChatStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,13 +69,13 @@ export default function ChatAnalyticsPage() {
     {
       icon: Zap,
       label: "Tokens gesamt",
-      value: stats.totalTokens.toLocaleString("de-DE"),
+      value: stats.totalTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE"),
       color: "text-amber-500",
     },
     {
       icon: TrendingUp,
       label: "Ø Tokens/Nachricht",
-      value: avgTokensPerMessage.toLocaleString("de-DE"),
+      value: avgTokensPerMessage.toLocaleString(lang === "en" ? "en-GB" : "de-DE"),
       color: "text-purple-500",
     },
     {
@@ -142,10 +144,10 @@ export default function ChatAnalyticsPage() {
                     height: `${(day.tokens / maxTokens) * 100}%`,
                     minHeight: day.tokens > 0 ? "4px" : "0",
                   }}
-                  title={`${day.date}: ${day.tokens.toLocaleString("de-DE")} Tokens`}
+                  title={`${day.date}: ${day.tokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} Tokens`}
                 />
                 <div className="absolute -top-8 z-10 hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs whitespace-nowrap text-[color:var(--ds-text)] shadow-lg group-hover:block">
-                  {day.tokens.toLocaleString("de-DE")} Tokens
+                  {day.tokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} Tokens
                 </div>
               </div>
             ))}
@@ -189,7 +191,7 @@ export default function ChatAnalyticsPage() {
               <div className="mt-2 flex items-center gap-3 text-xs text-[color:var(--ds-text-subtle)]">
                 <span className="inline-flex items-center gap-1">
                   <Clock size={10} />
-                  {model.contextWindow.toLocaleString("de-DE")} ctx
+                  {model.contextWindow.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ctx
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Zap size={10} />${(model.costPer1MInput + model.costPer1MOutput).toFixed(1)}/1M

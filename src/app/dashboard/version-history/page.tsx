@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface AuditEntry {
   id: string;
@@ -48,6 +49,7 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 export default function VersionHistoryPage() {
+  const { lang } = useLang();
   const [slug, setSlug] = useState("");
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [page, setPage] = useState<BrainPage | null>(null);
@@ -157,7 +159,7 @@ export default function VersionHistoryPage() {
                 <span>·</span>
                 <span className="flex items-center gap-1">
                   <Clock size={10} />
-                  {new Date(page.updated_at).toLocaleDateString("de-DE", {
+                  {new Date(page.updated_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
@@ -211,7 +213,7 @@ export default function VersionHistoryPage() {
                     </Badge>
                     <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
                       <Clock size={10} />
-                      {new Date(entry.timestamp).toLocaleString("de-DE", {
+                      {new Date(entry.timestamp).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}

@@ -30,7 +30,7 @@ interface ClientCase {
 }
 
 export default function ClientPortalPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   // Vorschau-Modus: Diese Seite zeigt dem ANWALT, wie das Mandanten-Portal
   // aussehen wird. Ein echtes Mandanten-Portal braucht eine eigene,
   // pro Mandant authentifizierte Deployment-Oberfläche (Phase 5) —
@@ -75,7 +75,7 @@ export default function ClientPortalPage() {
             status: fm.status || "open",
             lastUpdate: p.updated_at || p.created_at,
             nextStep: nextDl
-              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || nextDl.date || Date.now()).toLocaleDateString("de-DE")}`
+              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || nextDl.date || Date.now()).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
               : t("client_portal.no_deadline"),
             documents: Array.isArray(docs) ? docs.length : 0,
             messages: 0,
@@ -218,7 +218,7 @@ export default function ClientPortalPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <CalendarClock size={10} />
-                  {new Date(c.lastUpdate).toLocaleDateString("de-DE")}
+                  {new Date(c.lastUpdate).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                 </span>
               </div>
 

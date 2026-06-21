@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { auditLabel } from "@/lib/audit-labels";
+import { useLang } from "@/lib/use-lang";
 
 interface AuditEntry {
   id: string;
@@ -63,6 +64,7 @@ function actionIcon(action: string) {
 }
 
 export default function AuditTrail() {
+  const { lang } = useLang();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -224,7 +226,7 @@ export default function AuditTrail() {
                       className="border-b border-[color:var(--ds-border)]/50 last:border-0 hover:bg-[color:var(--ds-hover)]/50"
                     >
                       <td className="px-4 py-3 text-xs whitespace-nowrap text-[color:var(--ds-text-subtle)]">
-                        {new Date(e.timestamp).toLocaleString("de-DE", {
+                        {new Date(e.timestamp).toLocaleString(lang === "en" ? "en-GB" : "de-DE", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",

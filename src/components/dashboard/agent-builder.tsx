@@ -34,6 +34,7 @@ import {
   type AgentStep,
   type AgentTemplateInput,
 } from "@/lib/queries/agent-templates";
+import { useLang } from "@/lib/use-lang";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -412,6 +413,7 @@ function RunDialog({
 // ── Main Agent Builder Component ──────────────────────────────
 
 export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number) => void }) {
+  const { lang } = useLang();
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -1046,10 +1048,20 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               {/* Timestamps */}
               <div className="flex items-center gap-4 pt-2 text-xs text-[color:var(--ds-text-muted)]">
                 {selected.created_at && (
-                  <span>Erstellt: {new Date(selected.created_at).toLocaleString("de-DE")}</span>
+                  <span>
+                    Erstellt:{" "}
+                    {new Date(selected.created_at).toLocaleString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                  </span>
                 )}
                 {selected.updated_at && (
-                  <span>Aktualisiert: {new Date(selected.updated_at).toLocaleString("de-DE")}</span>
+                  <span>
+                    Aktualisiert:{" "}
+                    {new Date(selected.updated_at).toLocaleString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
+                  </span>
                 )}
               </div>
             </div>

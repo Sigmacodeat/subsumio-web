@@ -143,7 +143,7 @@ function AgentDAG({
   selectedJob: number | null;
   onSelectJob: (id: number) => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const rootJobs = useMemo(() => jobs.filter((j) => !j.parentId), [jobs]);
 
   return (
@@ -279,7 +279,7 @@ function JobDetail({
   allJobs: AgentJob[];
   onRefresh: () => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const children = allJobs.filter((j: AgentJob) => j.parentId === job.id);
   const [acting, setActing] = useState<string | null>(null);
 
@@ -578,7 +578,7 @@ function JobDetail({
                 >
                   <p className="leading-relaxed break-words whitespace-pre-wrap">{text}</p>
                   <span className="mt-1 block text-xs text-[color:var(--ds-text-subtle)]">
-                    {new Date(msg.sent_at).toLocaleTimeString("de-DE", {
+                    {new Date(msg.sent_at).toLocaleTimeString(lang === "en" ? "en-GB" : "de-DE", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -636,12 +636,14 @@ function JobDetail({
       <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
         {job.startedAt && (
           <span>
-            {t("agents.label_started")}: {new Date(job.startedAt).toLocaleString("de-DE")}
+            {t("agents.label_started")}:{" "}
+            {new Date(job.startedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </span>
         )}
         {job.completedAt && (
           <span>
-            {t("agents.label_completed")}: {new Date(job.completedAt).toLocaleString("de-DE")}
+            {t("agents.label_completed")}:{" "}
+            {new Date(job.completedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </span>
         )}
       </div>
@@ -652,7 +654,7 @@ function JobDetail({
 // ── Main Page ────────────────────────────────────────────────
 
 export default function AgentsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [tab, setTab] = useState<"jobs" | "builder">("jobs");
   const agentsQuery = useAgents();
   const submitMutation = useSubmitSupervisor();

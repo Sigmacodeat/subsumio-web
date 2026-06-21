@@ -8,6 +8,8 @@
  *   NEXT_PUBLIC_APP_URL — Callback Base URL
  */
 
+import { externalFetchTimeout } from "@/lib/retry";
+
 const API_BASE = "https://api.workos.com";
 const API_KEY = process.env.WORKOS_API_KEY || "";
 const CLIENT_ID = process.env.WORKOS_CLIENT_ID || "";
@@ -73,6 +75,7 @@ export async function authenticateWithCode(
       code,
       redirect_uri: redirectUri,
     }),
+    signal: externalFetchTimeout(),
   });
 
   const data = (await res.json().catch(() => ({}))) as WorkOSAuthResponse & {
@@ -90,6 +93,7 @@ export async function getUserProfile(userId: string): Promise<WorkOSProfile> {
 
   const res = await fetch(`${API_BASE}/user_management/users/${userId}`, {
     headers: { Authorization: `Bearer ${API_KEY}` },
+    signal: externalFetchTimeout(),
   });
 
   const data = (await res.json().catch(() => ({}))) as WorkOSProfile & { error?: string };

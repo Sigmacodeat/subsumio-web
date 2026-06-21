@@ -99,17 +99,12 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
           <Reveal variant="up">
             <SectionHeading title={t.complianceTitle} />
           </Reveal>
-          <StaggerContainer className="mt-8 space-y-4" stagger={0.08}>
-            {t.complianceItems.map((item) => (
-              <StaggerItem
-                key={item.title}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
-              >
-                <h3 className="mb-1.5 text-sm font-bold [color:var(--mk-text)]">{item.title}</h3>
-                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{item.desc}</p>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          <Reveal variant="up" delay={0.1}>
+            <AnimatedFaqList
+              items={t.complianceItems.map((item) => ({ q: item.title, a: item.desc }))}
+              tone="light"
+            />
+          </Reveal>
         </div>
       </section>
 

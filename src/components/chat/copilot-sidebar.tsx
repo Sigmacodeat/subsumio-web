@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useResizable } from "@/lib/use-resizable";
+import { useLang, type TFunc } from "@/lib/use-lang";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
 import type { ChatContextType } from "@/components/chat/chat-types";
 
@@ -56,40 +57,40 @@ const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof Sparkles> = {
 
 const ROUTE_PATTERNS: Array<{
   pattern: RegExp;
-  context: (match: RegExpMatchArray) => RouteContext;
+  context: (match: RegExpMatchArray, t: TFunc) => RouteContext;
 }> = [
   {
     pattern: /^\/dashboard\/cases(?:\/(.+))?$/,
-    context: (m) => ({
+    context: (m, t) => ({
       type: m[1] ? "case" : "global",
       caseSlug: m[1] ? `cases/${m[1]}` : undefined,
-      label: m[1] ? `Akte: ${m[1]}` : "Akten",
+      label: m[1] ? `${t("copilot.ctx.case_prefix")} ${m[1]}` : t("copilot.ctx.cases"),
       quickActions: m[1]
         ? [
             {
-              label: "Fristen dieser Akte prüfen",
+              label: t("copilot.qa.case_deadlines"),
               query: `Welche Fristen sind in der Akte ${m[1]} offen?`,
               icon: "deadline",
             },
             {
-              label: "Aktenzusammenfassung",
+              label: t("copilot.qa.case_summary"),
               query: `Fasse den aktuellen Stand der Akte ${m[1]} zusammen.`,
               icon: "case",
             },
             {
-              label: "Fehlende Dokumente",
+              label: t("copilot.qa.case_missing_docs"),
               query: `Welche Dokumente fehlen in der Akte ${m[1]}?`,
               icon: "search",
             },
           ]
         : [
             {
-              label: "Alle offenen Fristen",
+              label: t("copilot.qa.open_deadlines"),
               query: "Zeige mir alle offenen Fristen across alle Akten.",
               icon: "deadline",
             },
             {
-              label: "Akten mit hohem Aufwand",
+              label: t("copilot.qa.high_effort_cases"),
               query: "Welche Akten haben den höchsten Aufwand in diesem Quartal?",
               icon: "case",
             },
@@ -98,22 +99,22 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/deadlines$/,
-    context: () => ({
+    context: (_m, t) => ({
       type: "global",
-      label: "Fristen",
+      label: t("copilot.ctx.deadlines"),
       quickActions: [
         {
-          label: "Fristen diese Woche",
+          label: t("copilot.qa.deadlines_this_week"),
           query: "Welche Fristen fallen diese Woche an?",
           icon: "deadline",
         },
         {
-          label: "Überfällige Fristen",
+          label: t("copilot.qa.deadlines_overdue"),
           query: "Gibt es überfällige Fristen? Welche sind am kritischsten?",
           icon: "deadline",
         },
         {
-          label: "Fristenkalendar exportieren",
+          label: t("copilot.qa.deadline_export"),
           href: "/dashboard/calendar-export",
           icon: "generic",
         },
@@ -122,17 +123,17 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/research$/,
-    context: () => ({
+    context: (_m, t) => ({
       type: "global",
-      label: "Recherche",
+      label: t("copilot.ctx.research"),
       quickActions: [
         {
-          label: "Aktuelle Rechtsprechung BGB",
+          label: t("copilot.qa.research_bgb"),
           query: "Was gibt es Neues in der Rechtsprechung zum BGB?",
           icon: "research",
         },
         {
-          label: "EuGH Urteile diese Woche",
+          label: t("copilot.qa.research_eugh"),
           query: "Welche EuGH-Urteile wurden diese Woche veröffentlicht?",
           icon: "research",
         },
@@ -141,17 +142,17 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/drafting$/,
-    context: () => ({
+    context: (_m, t) => ({
       type: "global",
-      label: "Schriftsatz",
+      label: t("copilot.ctx.drafting"),
       quickActions: [
         {
-          label: "Klageentwurf generieren",
+          label: t("copilot.qa.draft_klage"),
           query: "Hilf mir, einen Klageentwurf zu verfassen.",
           icon: "draft",
         },
         {
-          label: "Berufungsbegründung",
+          label: t("copilot.qa.draft_berufung"),
           query: "Wie strukturiere ich eine Berufungsbegründung?",
           icon: "draft",
         },
@@ -160,18 +161,18 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/brain(?:\/(.+))?$/,
-    context: (m) => ({
+    context: (m, t) => ({
       type: m[1] ? "brain_page" : "global",
       pageSlug: m[1],
-      label: m[1] ? `Seite: ${m[1]}` : "Wissensdatenbank",
+      label: m[1] ? `${t("copilot.ctx.page_prefix")} ${m[1]}` : t("copilot.ctx.brain"),
       quickActions: [
         {
-          label: "Wissenslücken identifizieren",
+          label: t("copilot.qa.brain_gaps"),
           query: "Welche Wissenslücken gibt es in der Datenbank?",
           icon: "search",
         },
         {
-          label: "Letzte Aktualisierungen",
+          label: t("copilot.qa.brain_updates"),
           query: "Was wurden die letzten Änderungen in der Wissensdatenbank?",
           icon: "search",
         },
@@ -180,57 +181,65 @@ const ROUTE_PATTERNS: Array<{
   },
   {
     pattern: /^\/dashboard\/contracts$/,
-    context: () => ({
+    context: (_m, t) => ({
       type: "global",
-      label: "Verträge",
+      label: t("copilot.ctx.contracts"),
       quickActions: [
         {
-          label: "Vertragsanalyse",
+          label: t("copilot.qa.contract_analysis"),
           query: "Wie analysiere ich einen Vertrag auf Risiken?",
           icon: "case",
         },
-        { label: "Klauselbibliothek", href: "/dashboard/clause-library", icon: "generic" },
+        {
+          label: t("copilot.qa.clause_library"),
+          href: "/dashboard/clause-library",
+          icon: "generic",
+        },
       ],
     }),
   },
   {
     pattern: /^\/dashboard\/compliance$/,
-    context: () => ({
+    context: (_m, t) => ({
       type: "global",
-      label: "Compliance",
+      label: t("copilot.ctx.compliance"),
       quickActions: [
         {
-          label: "DSGVO-Check",
+          label: t("copilot.qa.gdpr_check"),
           query: "Was sind die wichtigsten DSGVO-Compliance-Punkte für eine Kanzlei?",
           icon: "research",
         },
-        { label: "Aufbewahrungsfristen", href: "/dashboard/compliance/retention", icon: "generic" },
+        {
+          label: t("copilot.qa.retention_periods"),
+          href: "/dashboard/compliance/retention",
+          icon: "generic",
+        },
       ],
     }),
   },
 ];
 
-function resolveRouteContext(pathname: string): RouteContext {
+function resolveRouteContext(pathname: string, t: TFunc): RouteContext {
   for (const { pattern, context } of ROUTE_PATTERNS) {
     const match = pathname.match(pattern);
-    if (match) return context(match);
+    if (match) return context(match, t);
   }
   return {
     type: "global",
-    label: "Dashboard",
+    label: t("copilot.ctx.dashboard"),
     quickActions: [
       {
-        label: "Aktenübersicht",
+        label: t("copilot.qa.case_overview"),
         query: "Gib mir eine Übersicht über alle aktiven Akten.",
         icon: "case",
       },
       {
-        label: "Offene Fristen",
+        label: t("copilot.qa.open_deadlines_urgent"),
         query: "Welche Fristen sind aktuell am dringendsten?",
         icon: "deadline",
       },
       {
-        label: "Kanzlei-Statistiken",
+        label: t("copilot.qa.firm_stats"),
         query: "Wie performt die Kanzlei in diesem Quartal?",
         icon: "search",
       },
@@ -242,6 +251,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { t } = useLang();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ChatPanelHandle>(null);
@@ -329,13 +339,16 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           const isOverdue =
             n.type === "deadline_overdue" ||
             (n.data?.daysRemaining !== undefined && (n.data.daysRemaining as number) < 0);
-          const title = (n.data?.title as string) ?? (n.data?.caseTitle as string) ?? "Frist";
+          const title =
+            (n.data?.title as string) ??
+            (n.data?.caseTitle as string) ??
+            t("copilot.alert.deadline");
           const days = n.data?.daysRemaining as number | undefined;
 
           return {
             label: isOverdue
-              ? `⚠️ Überfällig: ${title}${days !== undefined ? ` (${Math.abs(days)}T)` : ""}`
-              : `Frist: ${title}${days !== undefined ? ` (in ${days}T)` : ""}`,
+              ? `${t("copilot.alert.overdue_prefix")} ${title}${days !== undefined ? ` (${Math.abs(days)}T)` : ""}`
+              : `${t("copilot.alert.deadline_prefix")} ${title}${days !== undefined ? ` (in ${days}T)` : ""}`,
             query: isOverdue
               ? `Die Frist "${title}" ist überfällig. Was muss ich tun?`
               : `Welche Details gibt es zur Frist "${title}"?`,
@@ -356,7 +369,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     };
   }, [open, mobileOpen, pathname]);
 
-  const routeContext = useMemo(() => resolveRouteContext(pathname), [pathname]);
+  const routeContext = useMemo(() => resolveRouteContext(pathname, t), [pathname, t]);
 
   // Keyboard shortcut: Cmd+J toggles on desktop, opens on mobile
   useEffect(() => {
@@ -468,7 +481,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
-        aria-label="Brain Copilot"
+        aria-label={t("copilot.title")}
         aria-modal={mobileOpen ? "true" : undefined}
         aria-hidden={!mobileOpen}
         {...(!mobileOpen ? { inert: true } : {})}
@@ -481,7 +494,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 <Sparkles size={15} className="brand-text" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-[color:var(--ds-text)]">Brain Copilot</p>
+                <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("copilot.title")}
+                </p>
                 <p className="text-xs text-[color:var(--ds-text-subtle)]">{routeContext.label}</p>
               </div>
             </div>
@@ -492,7 +507,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 onToggle();
               }}
               className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-              aria-label="Brain Copilot schließen (Esc)"
+              aria-label={t("copilot.close_esc")}
             >
               <X size={18} />
             </button>
@@ -503,7 +518,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="border-b border-[color:var(--ds-border)] px-3 py-2.5">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                 <AlertCircle size={12} />
-                Proaktive Hinweise
+                {t("copilot.proactive_hints")}
               </div>
               <div className="space-y-1.5">
                 {visibleAlerts.map((alert) => {
@@ -529,7 +544,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       <button
                         onClick={() => handleDismissAlert(alertKey)}
                         className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover/alert:opacity-100 hover:text-[color:var(--ds-text)]"
-                        aria-label="Hinweis ausblenden"
+                        aria-label={t("copilot.dismiss_hint")}
                       >
                         <X size={12} />
                       </button>
@@ -545,7 +560,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             <div className="border-b border-[color:var(--ds-border)] px-3 py-2.5">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                 <Sparkles size={12} className="brand-text" />
-                Schnellaktionen
+                {t("copilot.quick_actions")}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {visibleActions.map((action) => {
@@ -566,12 +581,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     onClick={() => setActionsExpanded((v) => !v)}
                     className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                     aria-expanded={actionsExpanded}
-                    aria-label={actionsExpanded ? "Weniger anzeigen" : "Mehr anzeigen"}
+                    aria-label={
+                      actionsExpanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")
+                    }
                   >
                     {actionsExpanded ? (
                       <>
                         <ChevronUp size={12} />
-                        Weniger
+                        {t("copilot.show_less")}
                       </>
                     ) : (
                       <>
@@ -614,7 +631,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           className
         )}
         style={open ? { width: panelWidth } : undefined}
-        aria-label="Brain Copilot Panel"
+        aria-label={t("copilot.title")}
         aria-hidden={!open}
         {...(!open ? { inert: true } : {})}
       >
@@ -652,7 +669,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             )}
             role="separator"
             aria-orientation="vertical"
-            aria-label="Panel-Größe ändern (Pfeiltasten zum Anpassen)"
+            aria-label={t("copilot.resize")}
             tabIndex={0}
             aria-valuenow={panelWidth}
             aria-valuemin={320}
@@ -668,8 +685,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95",
               !open && "pointer-events-none opacity-0"
             )}
-            aria-label="Brain Copilot einklappen"
-            title="Brain Copilot einklappen"
+            aria-label={t("copilot.collapse")}
+            title={t("copilot.collapse")}
           >
             <PanelRightClose
               size={12}
@@ -694,7 +711,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold tracking-wide text-[color:var(--ds-text)] uppercase">
-                    Brain Copilot
+                    {t("copilot.title")}
                   </p>
                   <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
                     {routeContext.label}
@@ -703,8 +720,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 <button
                   onClick={onToggle}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-                  aria-label="Panel schließen"
-                  title="Panel schließen"
+                  aria-label={t("copilot.close_panel")}
+                  title={t("copilot.close_panel")}
                 >
                   <PanelRightClose size={16} />
                 </button>
@@ -716,7 +733,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
                 <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                   <AlertCircle size={12} />
-                  Proaktive Hinweise
+                  {t("copilot.proactive_hints")}
                 </div>
                 <div className="space-y-1.5">
                   {visibleAlerts.map((alert) => {
@@ -742,7 +759,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                         <button
                           onClick={() => handleDismissAlert(alertKey)}
                           className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover/alert:opacity-100 hover:text-[color:var(--ds-text)]"
-                          aria-label="Hinweis ausblenden"
+                          aria-label={t("copilot.dismiss_hint")}
                         >
                           <X size={12} />
                         </button>
@@ -758,7 +775,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
                 <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
                   <Sparkles size={12} className="brand-text" />
-                  Schnellaktionen
+                  {t("copilot.quick_actions")}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {visibleActions.map((action) => {
@@ -782,12 +799,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       onClick={() => setActionsExpanded((v) => !v)}
                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                       aria-expanded={actionsExpanded}
-                      aria-label={actionsExpanded ? "Weniger anzeigen" : "Mehr anzeigen"}
+                      aria-label={
+                        actionsExpanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")
+                      }
                     >
                       {actionsExpanded ? (
                         <>
                           <ChevronUp size={12} />
-                          Weniger
+                          {t("copilot.show_less")}
                         </>
                       ) : (
                         <>
@@ -828,15 +847,15 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         <button
           onClick={onToggle}
           className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95 md:flex"
-          aria-label="Brain Copilot ausklappen"
-          title="Brain Copilot ausklappen (Cmd+J)"
+          aria-label={t("copilot.expand")}
+          title={t("copilot.expand_hint")}
         >
           <PanelRightOpen
             size={16}
             className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
           />
           <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
-            Copilot
+            {t("copilot.copilot")}
           </span>
         </button>
       )}

@@ -6,6 +6,8 @@
 // Provider: Resend REST API (no SDK dependency). Swap the fetch for another
 // provider behind the same signature if needed.
 
+import { externalFetchTimeout } from "@/lib/retry";
+
 export interface MailInput {
   to: string | string[];
   cc?: string | string[];
@@ -27,10 +29,25 @@ export function isMailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
-export async function sendMail({ to, cc, bcc, subject, text, html, replyTo, headers }: MailInput): Promise<MailResult> {
+export async function sendMail({
+  to,
+  cc,
+  bcc,
+  subject,
+  text,
+  html,
+  replyTo,
+  headers,
+}: MailInput): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM || "Subsumio <hello@subsum.io>";
-  const bodyText = text ?? html?.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ?? "";
+  const bodyText =
+    text ??
+    html
+      ?.replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() ??
+    "";
 
   if (!apiKey) {
     console.log(
@@ -41,7 +58,7 @@ export async function sendMail({ to, cc, bcc, subject, text, html, replyTo, head
         "",
         bodyText,
         "└────────────────────────────────────────────────────────────────┘",
-      ].join("\n"),
+      ].join("\n")
     );
     return { sent: false, error: "mail_not_configured" };
   }
@@ -65,13 +82,14 @@ export async function sendMail({ to, cc, bcc, subject, text, html, replyTo, head
         ...(replyTo ? { reply_to: replyTo } : {}),
         ...(headers ? { headers } : {}),
       }),
+      signal: externalFetchTimeout(),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       console.error(`[mail] send failed (${res.status}): ${detail.slice(0, 300)}`);
       return { sent: false, error: `provider_${res.status}` };
     }
-    const data = await res.json().catch(() => ({} as { id?: string }));
+    const data = await res.json().catch(() => ({}) as { id?: string });
     return { sent: true, id: typeof data.id === "string" ? data.id : undefined };
   } catch (err) {
     console.error(`[mail] send failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -81,5 +99,7 @@ export async function sendMail({ to, cc, bcc, subject, text, html, replyTo, head
 
 /** Absolute base URL for links in emails. */
 export function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  return (
+    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  );
 }

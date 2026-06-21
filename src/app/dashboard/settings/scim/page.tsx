@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useScimStatus, useScimSync, type SyncStatus } from "@/lib/queries/scim";
 import { useMe } from "@/lib/queries/auth";
+import { useLang } from "@/lib/use-lang";
 
 function StatCard({
   label,
@@ -112,6 +113,7 @@ function CopyableField({
 }
 
 function SyncLogView({ status }: { status: SyncStatus }) {
+  const { lang } = useLang();
   const result = status.lastSyncResult;
   if (!result && !status.lastSyncAt) {
     return (
@@ -133,7 +135,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           <Clock size={14} />
           Letzte Synchronisation:{" "}
           <span className="font-medium text-[color:var(--ds-text)]">
-            {new Date(status.lastSyncAt).toLocaleString("de-DE")}
+            {new Date(status.lastSyncAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </span>
         </div>
       )}
@@ -193,8 +195,12 @@ function SyncLogView({ status }: { status: SyncStatus }) {
           )}
 
           <div className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
-            <p>Start: {new Date(result.startedAt).toLocaleString("de-DE")}</p>
-            <p>Ende: {new Date(result.completedAt).toLocaleString("de-DE")}</p>
+            <p>
+              Start: {new Date(result.startedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+            </p>
+            <p>
+              Ende: {new Date(result.completedAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+            </p>
           </div>
         </>
       )}
@@ -203,6 +209,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
 }
 
 export default function ScimSettingsPage() {
+  const { lang } = useLang();
   const meQuery = useMe();
   const statusQuery = useScimStatus();
   const syncMutation = useScimSync();
@@ -395,7 +402,9 @@ export default function ScimSettingsPage() {
                 {status?.lastSyncAt && (
                   <Badge variant="info" className="shrink-0">
                     <Clock size={11} />
-                    {new Date(status.lastSyncAt).toLocaleDateString("de-DE")}
+                    {new Date(status.lastSyncAt).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
                   </Badge>
                 )}
               </div>

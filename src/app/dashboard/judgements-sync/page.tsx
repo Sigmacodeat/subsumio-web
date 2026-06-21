@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface Source {
   id: string;
@@ -43,6 +44,7 @@ const SOURCES: Source[] = [
 ];
 
 export default function JudgementsSyncPage() {
+  const { lang } = useLang();
   const [sources, setSources] = useState(SOURCES);
   const [overallStatus, setOverallStatus] = useState<"idle" | "running" | "done">("idle");
   const [existingCount, setExistingCount] = useState(0);
@@ -125,7 +127,7 @@ export default function JudgementsSyncPage() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">Im Brain</div>
           <div className="brand-text text-xl font-bold">
-            {existingCount.toLocaleString("de-DE")}
+            {existingCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">

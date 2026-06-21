@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
+import { useLang } from "@/lib/use-lang";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationBadgesInline } from "@/components/legal/CitationPanel";
 import { GAP_ICONS, GAP_LABELS, type ChatMessage } from "@/components/chat/chat-types";
@@ -57,6 +58,7 @@ function ChatMessageBubbleInner({
   onToolRetry,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
+  const { t, lang } = useLang();
   const isUser = message.role === "user";
   const hasCitations = (message.citations?.length ?? 0) > 0;
   const hasGaps = (message.gaps?.length ?? 0) > 0;
@@ -79,7 +81,7 @@ function ChatMessageBubbleInner({
     <div
       className={cn("group flex gap-3 px-4 py-4", isUser ? "justify-end" : "justify-start")}
       role="article"
-      aria-label={isUser ? "Nutzer-Nachricht" : "AI-Antwort"}
+      aria-label={isUser ? t("chat.msg_user_aria") : t("chat.msg_ai_aria")}
     >
       <div className={cn("max-w-[85%] space-y-2", isUser ? "order-2" : "w-full max-w-3xl")}>
         {/* Attachments */}
@@ -179,8 +181,8 @@ function ChatMessageBubbleInner({
                         }
                       }}
                       className="ml-0.5 inline-flex items-center justify-center text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover/citation:opacity-100 hover:text-[color:var(--ds-text)]"
-                      aria-label={`Zitat-Slug kopieren: ${c.slug}`}
-                      title="Slug kopieren"
+                      aria-label={`${t("chat.copy_slug_aria")} ${c.slug}`}
+                      title={t("chat.copy_slug_title")}
                     >
                       <Copy size={10} />
                     </button>
@@ -193,7 +195,7 @@ function ChatMessageBubbleInner({
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
                 <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-500">
                   <AlertTriangle size={12} />
-                  Lücken im Brain ({message.gaps!.length})
+                  {t("chat.gaps_in_brain")} ({message.gaps!.length})
                 </div>
                 <ul className="space-y-1">
                   {message.gaps!.map((gap, i) => {
@@ -225,19 +227,20 @@ function ChatMessageBubbleInner({
             <AIBadge size="sm" showTooltip={false} />
             {hasCitations && <GroundingStatus citations={message.citations} gaps={message.gaps} />}
             {features?.tokenWidget && message.tokensUsed != null && (
-              <span className="inline-flex items-center gap-1" title="Tokens verbraucht">
+              <span className="inline-flex items-center gap-1" title={t("chat.tokens_used")}>
                 <Zap size={10} />
-                {message.tokensUsed.toLocaleString("de-DE")} Tokens
+                {message.tokensUsed.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
+                {t("chat.tokens_label")}
               </span>
             )}
             {features?.tokenWidget && message.latencyMs != null && (
-              <span className="inline-flex items-center gap-1" title="Antwortzeit">
+              <span className="inline-flex items-center gap-1" title={t("chat.response_time")}>
                 <Clock size={10} />
                 {(message.latencyMs / 1000).toFixed(1)}s
               </span>
             )}
             {message.model && (
-              <span className="inline-flex items-center gap-1" title="KI-Modell">
+              <span className="inline-flex items-center gap-1" title={t("chat.ai_model")}>
                 <Cpu size={10} />
                 {message.model}
               </span>
@@ -251,7 +254,7 @@ function ChatMessageBubbleInner({
             <button
               onClick={handleCopy}
               className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              aria-label="Kopieren"
+              aria-label={t("chat.copy")}
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
             </button>
@@ -259,7 +262,7 @@ function ChatMessageBubbleInner({
               <button
                 onClick={() => onRegenerate(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                aria-label="Neu generieren"
+                aria-label={t("chat.regenerate")}
               >
                 <RefreshCw size={12} />
               </button>
@@ -268,7 +271,7 @@ function ChatMessageBubbleInner({
               <button
                 onClick={() => onEdit(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                aria-label="Bearbeiten"
+                aria-label={t("chat.edit")}
               >
                 <Pencil size={12} />
               </button>
@@ -277,8 +280,8 @@ function ChatMessageBubbleInner({
               <button
                 onClick={() => onReply(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                aria-label="Antworten"
-                title="Auf diese Nachricht antworten"
+                aria-label={t("chat.reply_btn")}
+                title={t("chat.reply_title")}
               >
                 <Reply size={12} />
               </button>
@@ -287,7 +290,7 @@ function ChatMessageBubbleInner({
               <button
                 onClick={onExport}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                aria-label="Exportieren"
+                aria-label={t("chat.export_btn")}
               >
                 <Download size={12} />
               </button>

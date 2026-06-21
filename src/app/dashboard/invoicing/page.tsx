@@ -155,7 +155,7 @@ function nextInvoiceNumber(existing: Invoice[]): string {
 
 export default function InvoicingPage() {
   const confirm = useConfirm();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [cases, setCases] = useState<InvoiceCase[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -830,13 +830,13 @@ export default function InvoicingPage() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.outstanding")}</div>
           <div className="text-xl font-bold text-amber-600">
-            {totalOutstanding.toLocaleString("de-DE")} €
+            {totalOutstanding.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <div className="text-xs text-[color:var(--ds-text-muted)]">{t("inv.paid")}</div>
           <div className="text-xl font-bold text-emerald-600">
-            {totalPaid.toLocaleString("de-DE")} €
+            {totalPaid.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} €
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
@@ -921,7 +921,7 @@ export default function InvoicingPage() {
                     {expenseTotal.toFixed(2)} €) · {t("inv.fee_estimated")}:{" "}
                     {Math.round(
                       (totalMinutes / 60) * parseInt(kanzlei?.stundensatz || "200", 10)
-                    ).toLocaleString("de-DE")}{" "}
+                    ).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
                     €
                   </div>
                 );
@@ -1037,7 +1037,7 @@ export default function InvoicingPage() {
                     {inv.client} · {inv.items.length + inv.expenses.length} {t("inv.positions")} ·{" "}
                     {inv.date}
                     {inv.paidAt
-                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString("de-DE")}`
+                      ? ` · ${t("inv.paid_on")} ${new Date(inv.paidAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}`
                       : ""}
                   </div>
                 </div>
@@ -1132,7 +1132,7 @@ export default function InvoicingPage() {
 }
 
 function RvgDialog() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<RvgResult | null>(null);

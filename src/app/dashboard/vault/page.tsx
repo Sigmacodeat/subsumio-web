@@ -87,7 +87,7 @@ function parseDoc(page: BrainPage): VaultDoc {
 }
 
 export default function VaultPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const TYPE_LABELS = useTypeLabels(t);
   const confirm = useConfirm();
   const [docs, setDocs] = useState<VaultDoc[]>([]);
@@ -578,7 +578,7 @@ export default function VaultPage() {
                 <div className="flex items-center justify-between text-xs text-[color:var(--ds-text-muted)]">
                   <span className="flex items-center gap-1">
                     <Clock size={10} />
-                    {new Date(doc.createdAt).toLocaleDateString("de-DE")}
+                    {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </span>
                   {doc.size && <span>{(doc.size / 1024).toFixed(0)} KB</span>}
                 </div>

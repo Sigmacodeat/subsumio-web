@@ -48,6 +48,7 @@ import { useMe } from "@/lib/queries/auth";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
 import { usePresence } from "@/lib/use-presence";
 import type { BrainPage } from "@/lib/types";
+import type { DashboardKey } from "@/content/dashboard";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
 import { MatterContextPanel } from "@/components/legal/MatterContextPanel";
@@ -141,30 +142,30 @@ interface CaseDetail {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; icon: React.ElementType; color: StatusColor }
+  { labelKey: string; icon: React.ElementType; color: StatusColor }
 > = {
-  open: { label: "Offen", icon: Clock, color: "blue" },
-  pending: { label: "Anhängig", icon: PauseCircle, color: "amber" },
-  settled: { label: "Erledigt", icon: CheckCircle2, color: "emerald" },
-  won: { label: "Gewonnen", icon: CheckCircle2, color: "emerald" },
-  lost: { label: "Verloren", icon: XCircle, color: "red" },
-  appealed: { label: "Berufung", icon: AlertTriangle, color: "orange" },
-  dormant: { label: "Ruhend", icon: PauseCircle, color: "gray" },
+  open: { labelKey: "cases.status_open", icon: Clock, color: "blue" },
+  pending: { labelKey: "cases.status_pending", icon: PauseCircle, color: "amber" },
+  settled: { labelKey: "cases.status_settled", icon: CheckCircle2, color: "emerald" },
+  won: { labelKey: "cases.status_won", icon: CheckCircle2, color: "emerald" },
+  lost: { labelKey: "cases.status_lost", icon: XCircle, color: "red" },
+  appealed: { labelKey: "cases.status_appealed", icon: AlertTriangle, color: "orange" },
+  dormant: { labelKey: "cases.status_dormant", icon: PauseCircle, color: "gray" },
 };
 
 const TABS = [
-  { key: "overview", label: "Übersicht", icon: FileText },
-  { key: "timeline", label: "Timeline", icon: CalendarClock },
-  { key: "documents", label: "Dokumente", icon: FileText },
-  { key: "deadlines", label: "Fristen", icon: CalendarClock },
-  { key: "tasks", label: "Aufgaben", icon: ListChecks },
-  { key: "evidence", label: "Beweismittel", icon: ShieldAlert },
-  { key: "time", label: "Zeit", icon: Timer },
-  { key: "expenses", label: "Auslagen", icon: Receipt },
-  { key: "graph", label: "Graph", icon: Network },
-  { key: "superbrain", label: "Superbrain", icon: Sparkles },
-  { key: "audit", label: "Audit", icon: ShieldCheck },
-  { key: "query", label: "Query", icon: MessageSquare },
+  { key: "overview", labelKey: "cases.detail_tab_overview", icon: FileText },
+  { key: "timeline", labelKey: "cases.detail_tab_timeline", icon: CalendarClock },
+  { key: "documents", labelKey: "cases.detail_tab_documents", icon: FileText },
+  { key: "deadlines", labelKey: "cases.detail_tab_deadlines", icon: CalendarClock },
+  { key: "tasks", labelKey: "cases.detail_tab_tasks", icon: ListChecks },
+  { key: "evidence", labelKey: "cases.detail_tab_evidence", icon: ShieldAlert },
+  { key: "time", labelKey: "cases.detail_tab_time", icon: Timer },
+  { key: "expenses", labelKey: "cases.detail_tab_expenses", icon: Receipt },
+  { key: "graph", labelKey: "cases.detail_tab_graph", icon: Network },
+  { key: "superbrain", labelKey: "cases.detail_tab_superbrain", icon: Sparkles },
+  { key: "audit", labelKey: "cases.detail_tab_audit", icon: ShieldCheck },
+  { key: "query", labelKey: "cases.detail_tab_query", icon: MessageSquare },
 ];
 
 function parseCaseDetail(page: BrainPage): CaseDetail {
@@ -213,7 +214,7 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
 }
 
 export default function CaseDetailPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const params = useParams();
   const slug = decodeURIComponent(params.slug as string);
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
@@ -500,9 +501,7 @@ export default function CaseDetailPage() {
         const fm = caseFrontmatter(page);
         const remoteVersion = (fm.version as number) || 0;
         if (remoteVersion > caseData.version) {
-          setConflictWarning(
-            `Diese Akte wurde gerade von einem anderen Nutzer bearbeitet (Version ${remoteVersion}). Bitte aktualisieren.`
-          );
+          setConflictWarning(t("cases.detail_conflict_warning") + ` (${remoteVersion})`);
         }
       } catch {
         // ignore polling errors
@@ -516,9 +515,7 @@ export default function CaseDetailPage() {
   async function saveCaseUpdate(updates: Partial<CaseDetail>) {
     if (!caseData) return;
     if (conflictWarning) {
-      setSaveError(
-        "Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet. Bitte lade die Seite neu, bevor du weitere Änderungen speicherst."
-      );
+      setSaveError(t("cases.detail_conflict_save_error"));
       return;
     }
     try {
@@ -531,20 +528,20 @@ export default function CaseDetailPage() {
         actor: currentUserName,
         field: changedFields.join(", ") || "general",
         note: changedFields.includes("tasks")
-          ? "Aufgaben bearbeitet"
+          ? t("cases.detail_audit_tasks")
           : changedFields.includes("timeEntries")
-            ? "Zeiterfassung bearbeitet"
+            ? t("cases.detail_audit_time")
             : changedFields.includes("expenses")
-              ? "Auslagen bearbeitet"
+              ? t("cases.detail_audit_expenses")
               : changedFields.includes("deadlines")
-                ? "Fristen bearbeitet"
+                ? t("cases.detail_audit_deadlines")
                 : changedFields.includes("evidence")
-                  ? "Beweismittel bearbeitet"
+                  ? t("cases.detail_audit_evidence")
                   : changedFields.includes("documents")
-                    ? "Dokumente bearbeitet"
+                    ? t("cases.detail_audit_documents")
                     : changedFields.includes("status")
-                      ? "Status geändert"
-                      : "Akte bearbeitet",
+                      ? t("cases.detail_audit_status")
+                      : t("cases.detail_audit_general"),
       };
       const existingAudit = caseData.auditLog ?? [];
       const newAudit = [...existingAudit, auditEntry];
@@ -595,7 +592,8 @@ export default function CaseDetailPage() {
         if (res.status === 409) {
           const data = await res.json().catch(() => ({}));
           setConflictWarning(
-            `Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet (Version ${data.currentVersion ?? "unbekannt"}). Bitte lade die Seite neu, bevor du weitere Änderungen speicherst.`
+            t("cases.detail_conflict_warning_v2") +
+              ` (${data.currentVersion ?? t("cases.detail_unknown")})`
           );
           setSaveError(null);
           return;
@@ -642,7 +640,7 @@ export default function CaseDetailPage() {
       );
       setQueryResult(res.answer);
     } catch {
-      setQueryResult("Fehler bei der Abfrage. Bitte versuche es erneut.");
+      setQueryResult(t("cases.detail_query_error"));
     } finally {
       setQueryLoading(false);
     }
@@ -666,11 +664,11 @@ export default function CaseDetailPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center space-y-4">
         <Briefcase size={48} className="text-[color:var(--ds-border)]" />
-        <p className="text-[color:var(--ds-text-muted)]">Akte nicht gefunden</p>
+        <p className="text-[color:var(--ds-text-muted)]">{t("cases.detail_not_found")}</p>
         <Link href="/dashboard/cases">
           <Button variant="primary" className="brand-bg brand-bg gap-2 text-white">
             <ArrowLeft size={16} />
-            Zurück zu den Akten
+            {t("cases.detail_back")}
           </Button>
         </Link>
       </div>
@@ -704,7 +702,7 @@ export default function CaseDetailPage() {
               onClick={() => window.location.reload()}
               className="brand-text ml-auto text-xs hover:underline"
             >
-              Jetzt aktualisieren
+              {t("cases.detail_refresh_now")}
             </button>
           </div>
         )}
@@ -719,7 +717,9 @@ export default function CaseDetailPage() {
           >
             <ArrowLeft size={16} aria-hidden="true" />
           </Link>
-          <span className="text-xs text-[color:var(--ds-text-muted)]">Akten</span>
+          <span className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("cases.detail_breadcrumb")}
+          </span>
           <ChevronRight size={12} className="text-[color:var(--ds-text-muted)]" />
           <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
             {caseData.caseNumber}
@@ -770,7 +770,7 @@ export default function CaseDetailPage() {
               variant="default"
               className={cn("border text-xs", statusBadgeClasses(statusCfg.color))}
             >
-              {statusCfg.label}
+              {t(statusCfg.labelKey as DashboardKey)}
             </Badge>
             {activeUsers.length > 0 && (
               <div className="mt-1.5 flex items-center justify-end gap-1">
@@ -792,7 +792,7 @@ export default function CaseDetailPage() {
             )}
             {caseData.estimatedValue && (
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Streitwert: {caseData.estimatedValue.min.toLocaleString()}–
+                {t("cases.detail_streitwert")}: {caseData.estimatedValue.min.toLocaleString()}–
                 {caseData.estimatedValue.max.toLocaleString()} {caseData.estimatedValue.currency}
               </p>
             )}
@@ -804,7 +804,7 @@ export default function CaseDetailPage() {
           {caseData.clientName && (
             <span className="flex items-center gap-1">
               <Users size={10} />
-              Mandant:{" "}
+              {t("cases.detail_client")}:{" "}
               {caseData.clientSlug ? (
                 <Link
                   href={`/dashboard/contacts?highlight=${encodeURIComponent(caseData.clientSlug)}`}
@@ -820,21 +820,21 @@ export default function CaseDetailPage() {
           {caseData.opponentName && (
             <span className="flex items-center gap-1">
               <ShieldAlert size={10} />
-              Gegner:{" "}
+              {t("cases.detail_opponent")}:{" "}
               <span className="text-[color:var(--ds-text-muted)]">{caseData.opponentName}</span>
             </span>
           )}
           {caseData.courtName && (
             <span className="flex items-center gap-1">
               <Briefcase size={10} />
-              Gericht:{" "}
+              {t("cases.detail_court")}:{" "}
               <span className="text-[color:var(--ds-text-muted)]">{caseData.courtName}</span>
             </span>
           )}
           {caseData.ownLawyerName && (
             <span className="flex items-center gap-1">
               <Users size={10} />
-              Anwalt:{" "}
+              {t("cases.detail_lawyer")}:{" "}
               <span className="text-[color:var(--ds-text-muted)]">{caseData.ownLawyerName}</span>
             </span>
           )}
@@ -858,7 +858,7 @@ export default function CaseDetailPage() {
                 )}
               >
                 <Icon size={14} />
-                {tab.label}
+                {t(tab.labelKey as DashboardKey)}
               </button>
             );
           })}
@@ -876,11 +876,11 @@ export default function CaseDetailPage() {
                 className="brand-bg brand-bg gap-2 text-sm text-white"
                 onClick={() => {
                   setActiveTab("query");
-                  setQuery("Welche Strategie empfiehlst du für diese Akte?");
+                  setQuery(t("cases.detail_qb_strategy"));
                 }}
               >
                 <Lightbulb size={14} />
-                Strategie generieren
+                {t("cases.detail_btn_strategy")}
               </Button>
               <Button
                 variant="secondary"
@@ -888,18 +888,18 @@ export default function CaseDetailPage() {
                 onClick={() => setShowStatusDialog(true)}
               >
                 <ChevronRight size={14} />
-                Status ändern
+                {t("cases.detail_btn_status_change")}
               </Button>
               <Button
                 variant="secondary"
                 className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                 onClick={() => {
                   setActiveTab("query");
-                  setQuery("Bewerte die Erfolgsaussichten dieser Akte.");
+                  setQuery(t("cases.detail_qb_chances"));
                 }}
               >
                 <Scale size={14} />
-                Chancen bewerten
+                {t("cases.detail_btn_assess")}
               </Button>
               {(userRole === "admin" || userRole === "lawyer") && (
                 <>
@@ -919,7 +919,9 @@ export default function CaseDetailPage() {
                       });
                     }}
                   >
-                    {caseData.portalEnabled ? "Portal freigegeben" : "Für Portal freigeben"}
+                    {caseData.portalEnabled
+                      ? t("cases.detail_btn_portal_enabled")
+                      : t("cases.detail_btn_portal_enable")}
                   </Button>
                   {caseData.portalEnabled && (
                     <Button
@@ -941,14 +943,14 @@ export default function CaseDetailPage() {
                             setCopied(true);
                             setTimeout(() => setCopied(false), 2000);
                           } else {
-                            setSaveError("Portal-Link konnte nicht generiert werden.");
+                            setSaveError(t("cases.detail_portal_error"));
                           }
                         } catch (err) {
                           console.error(
                             "[portal] generate failed:",
                             err instanceof Error ? err.message : String(err)
                           );
-                          setSaveError("Portal-Link konnte nicht generiert werden.");
+                          setSaveError(t("cases.detail_portal_error"));
                         } finally {
                           setGeneratingPortal(false);
                         }
@@ -961,10 +963,10 @@ export default function CaseDetailPage() {
                         <Copy size={14} />
                       )}
                       {generatingPortal
-                        ? "Wird erstellt…"
+                        ? t("cases.detail_btn_portal_generating")
                         : copied
-                          ? "Link kopiert!"
-                          : "Portal-Link"}
+                          ? t("cases.detail_btn_portal_copied")
+                          : t("cases.detail_btn_portal_link")}
                     </Button>
                   )}
                 </>
@@ -976,7 +978,7 @@ export default function CaseDetailPage() {
               <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    Aktenstatus ändern
+                    {t("cases.detail_status_dialog_title")}
                   </h3>
                   <button
                     onClick={() => {
@@ -986,11 +988,11 @@ export default function CaseDetailPage() {
                     }}
                     className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                   >
-                    Abbrechen
+                    {t("cases.detail_status_dialog_cancel")}
                   </button>
                 </div>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Aktueller Status:{" "}
+                  {t("cases.detail_status_current")}{" "}
                   <span className="font-semibold">
                     {STATUS_LABELS_DE[caseData.status as CaseStatus] ?? caseData.status}
                   </span>
@@ -1008,7 +1010,9 @@ export default function CaseDetailPage() {
                             setPendingStatus(target);
                             setStatusError(null);
                           } else {
-                            setStatusError(result.reason || "Übergang nicht erlaubt");
+                            setStatusError(
+                              result.reason || t("cases.detail_status_transition_not_allowed")
+                            );
                           }
                         }}
                         className={cn(
@@ -1019,7 +1023,9 @@ export default function CaseDetailPage() {
                         )}
                       >
                         <Icon size={12} />
-                        {cfg?.label ?? STATUS_LABELS_DE[target] ?? target}
+                        {cfg
+                          ? t(cfg.labelKey as DashboardKey)
+                          : (STATUS_LABELS_DE[target] ?? target)}
                       </button>
                     );
                   })}
@@ -1048,7 +1054,7 @@ export default function CaseDetailPage() {
                       }}
                     >
                       <Check size={12} />
-                      Bestätigen
+                      {t("cases.detail_status_confirm")}
                     </Button>
                   </div>
                 )}
@@ -1059,7 +1065,7 @@ export default function CaseDetailPage() {
             {portalUrl && (userRole === "admin" || userRole === "lawyer") && (
               <div className="space-y-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
                 <p className="mb-1 text-xs font-medium text-emerald-600">
-                  Portal-Link (30 Tage gültig)
+                  {t("cases.detail_portal_valid")}
                 </p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 font-mono text-xs break-all text-[color:var(--ds-text-muted)]">
@@ -1073,7 +1079,7 @@ export default function CaseDetailPage() {
                     }}
                     className="brand-text shrink-0 text-xs hover:underline"
                   >
-                    {copied ? "Kopiert" : "Kopieren"}
+                    {copied ? t("cases.detail_portal_copied") : t("cases.detail_portal_copy")}
                   </button>
                   <button
                     onClick={async () => {
@@ -1089,15 +1095,15 @@ export default function CaseDetailPage() {
                           setPortalUrl(null);
                           setSaveError(null);
                         } else {
-                          setSaveError("Portal-Link konnte nicht widerrufen werden.");
+                          setSaveError(t("cases.detail_portal_revoke_error"));
                         }
                       } catch {
-                        setSaveError("Portal-Link konnte nicht widerrufen werden.");
+                        setSaveError(t("cases.detail_portal_revoke_error"));
                       }
                     }}
                     className="shrink-0 text-xs text-red-600 hover:underline"
                   >
-                    Widerrufen
+                    {t("cases.detail_portal_revoke")}
                   </button>
                 </div>
               </div>
@@ -1105,11 +1111,15 @@ export default function CaseDetailPage() {
 
             {/* Stammdaten — Kontakte verknüpfen */}
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Stammdaten</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("cases.detail_stammdaten")}
+              </h3>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {/* Client */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">Mandant</label>
+                  <label className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_client")}
+                  </label>
                   <select
                     value={caseData.clientSlug || ""}
                     onChange={(e) => {
@@ -1127,7 +1137,7 @@ export default function CaseDetailPage() {
                     }}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="">— Auswählen —</option>
+                    <option value="">{t("cases.detail_select_placeholder")}</option>
                     {contacts
                       .filter((c) => c.role === "client")
                       .map((c) => (
@@ -1139,7 +1149,9 @@ export default function CaseDetailPage() {
                 </div>
                 {/* Opponent */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">Gegner</label>
+                  <label className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_opponent")}
+                  </label>
                   <select
                     value={(caseData.opponentSlugs ?? [])[0] || ""}
                     onChange={(e) => {
@@ -1158,7 +1170,7 @@ export default function CaseDetailPage() {
                     }}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="">— Auswählen —</option>
+                    <option value="">{t("cases.detail_select_placeholder")}</option>
                     {contacts
                       .filter((c) => c.role === "opponent")
                       .map((c) => (
@@ -1170,7 +1182,9 @@ export default function CaseDetailPage() {
                 </div>
                 {/* Court */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">Gericht</label>
+                  <label className="text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_court")}
+                  </label>
                   <select
                     value={caseData.courtSlug || ""}
                     onChange={(e) => {
@@ -1188,7 +1202,7 @@ export default function CaseDetailPage() {
                     }}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="">— Auswählen —</option>
+                    <option value="">{t("cases.detail_select_placeholder")}</option>
                     {contacts
                       .filter((c) => c.role === "court")
                       .map((c) => (
@@ -1201,14 +1215,14 @@ export default function CaseDetailPage() {
               </div>
               {contactsLoading && (
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Kontakte werden geladen…
+                  {t("cases.detail_contacts_loading")}
                 </p>
               )}
               {contacts.length === 0 && !contactsLoading && (
                 <p className="text-xs text-amber-600">
-                  Noch keine Kontakte angelegt.{" "}
+                  {t("cases.detail_no_contacts")}{" "}
                   <Link href="/dashboard/contacts" className="brand-text hover:underline">
-                    Kontakt anlegen →
+                    {t("cases.detail_create_contact")}
                   </Link>
                 </p>
               )}
@@ -1218,7 +1232,7 @@ export default function CaseDetailPage() {
             {caseData.facts && (
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
-                  Sachverhalt
+                  {t("cases.detail_facts")}
                 </h3>
                 <div className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
                   {parseCitations(caseData.facts).map((segment, i) =>
@@ -1236,7 +1250,7 @@ export default function CaseDetailPage() {
             {caseData.claims.length > 0 && (
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
-                  Ansprüche / Klageanträge
+                  {t("cases.detail_claims")}
                 </h3>
                 <ul className="space-y-1.5">
                   {caseData.claims.map((claim, i) => (
@@ -1256,7 +1270,7 @@ export default function CaseDetailPage() {
             {caseData.defenses.length > 0 && (
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
-                  Verteidigung / Einwände
+                  {t("cases.detail_defenses")}
                 </h3>
                 <ul className="space-y-1.5">
                   {caseData.defenses.map((def, i) => (
@@ -1275,13 +1289,17 @@ export default function CaseDetailPage() {
             {/* Strategy */}
             {caseData.strategy && (
               <div className="brand-border brand-soft rounded-xl border p-4">
-                <h3 className="brand-text mb-2 text-sm font-semibold">Empfohlene Strategie</h3>
+                <h3 className="brand-text mb-2 text-sm font-semibold">
+                  {t("cases.detail_strategy")}
+                </h3>
                 <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
                   {caseData.strategy.recommended}
                 </p>
                 {caseData.strategy.risks && caseData.strategy.risks.length > 0 && (
                   <div className="mt-3">
-                    <h4 className="mb-1 text-xs font-semibold text-red-600">Risiken</h4>
+                    <h4 className="mb-1 text-xs font-semibold text-red-600">
+                      {t("cases.detail_risks")}
+                    </h4>
                     <ul className="space-y-1">
                       {(caseData.strategy.risks ?? []).map((r, i) => (
                         <li key={i} className="text-xs text-[color:var(--ds-text-muted)]">
@@ -1319,13 +1337,11 @@ export default function CaseDetailPage() {
                 className="brand-bg brand-bg gap-2 text-sm text-white"
                 onClick={() => {
                   setActiveTab("query");
-                  setQuery(
-                    "Erstelle eine Timeline für diese Akte mit allen wichtigen Ereignissen."
-                  );
+                  setQuery(t("cases.detail_qb_timeline"));
                 }}
               >
                 <CalendarClock size={14} />
-                Timeline generieren
+                {t("cases.detail_timeline_generate")}
               </Button>
             </div>
             <div className="relative space-y-4 pl-6">
@@ -1335,9 +1351,13 @@ export default function CaseDetailPage() {
                 <div className="brand-soft absolute -left-4 h-2 w-2 rounded-full" />
                 <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
-                    {new Date(caseData.createdAt).toLocaleDateString("de-DE")}
+                    {new Date(caseData.createdAt).toLocaleDateString(
+                      lang === "en" ? "en-GB" : "de-DE"
+                    )}
                   </div>
-                  <div className="text-sm text-[color:var(--ds-text)]">Akte erstellt</div>
+                  <div className="text-sm text-[color:var(--ds-text)]">
+                    {t("cases.detail_timeline_case_created")}
+                  </div>
                   <div className="text-xs text-[color:var(--ds-text-muted)]">
                     {caseData.caseNumber}
                   </div>
@@ -1361,7 +1381,9 @@ export default function CaseDetailPage() {
                   />
                   <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {ev.date ? new Date(ev.date).toLocaleDateString("de-DE") : "—"}
+                      {ev.date
+                        ? new Date(ev.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
+                        : "—"}
                     </div>
                     <div className="text-sm text-[color:var(--ds-text)]">{ev.title}</div>
                     {ev.description && (
@@ -1378,10 +1400,15 @@ export default function CaseDetailPage() {
                   <div className="absolute -left-4 h-2 w-2 rounded-full bg-amber-500" />
                   <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {new Date(caseData.updatedAt).toLocaleDateString("de-DE")}
+                      {new Date(caseData.updatedAt).toLocaleDateString(
+                        lang === "en" ? "en-GB" : "de-DE"
+                      )}
                     </div>
                     <div className="text-sm text-[color:var(--ds-text)]">
-                      Status geändert: {STATUS_CONFIG[caseData.status]?.label || caseData.status}
+                      {t("cases.detail_timeline_status_changed")}{" "}
+                      {STATUS_CONFIG[caseData.status]
+                        ? t(STATUS_CONFIG[caseData.status].labelKey as DashboardKey)
+                        : caseData.status}
                     </div>
                   </div>
                 </div>
@@ -1394,9 +1421,11 @@ export default function CaseDetailPage() {
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
                       {new Date(
                         caseData.strategy.generatedAt || caseData.updatedAt
-                      ).toLocaleDateString("de-DE")}
+                      ).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                     </div>
-                    <div className="text-sm text-[color:var(--ds-text)]">Strategie generiert</div>
+                    <div className="text-sm text-[color:var(--ds-text)]">
+                      {t("cases.detail_timeline_strategy_generated")}
+                    </div>
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
                       {caseData.strategy.recommendedApproach}
                     </div>
@@ -1418,7 +1447,7 @@ export default function CaseDetailPage() {
                     const file = e.target.files?.[0];
                     if (!file || !caseData) return;
                     if (!isOnline()) {
-                      setUploadError("Offline — Datei-Upload erfordert Internetverbindung.");
+                      setUploadError(t("cases.detail_doc_offline"));
                       return;
                     }
                     try {
@@ -1441,12 +1470,14 @@ export default function CaseDetailPage() {
                       saveCaseUpdate({ documents: updated });
                       setUploadError(null);
                     } catch (err) {
-                      setUploadError(err instanceof Error ? err.message : "Upload fehlgeschlagen.");
+                      setUploadError(
+                        err instanceof Error ? err.message : t("cases.detail_doc_upload_failed")
+                      );
                     }
                   }}
                 />
                 <span className="brand-bg brand-bg inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors">
-                  <Plus size={14} /> Dokument hochladen
+                  <Plus size={14} /> {t("cases.detail_doc_upload")}
                 </span>
               </label>
             </div>
@@ -1460,11 +1491,9 @@ export default function CaseDetailPage() {
             {caseData.documents.length === 0 ? (
               <div className="space-y-4 py-20 text-center">
                 <FileText size={48} className="mx-auto text-[color:var(--ds-border)]" />
-                <p className="text-[color:var(--ds-text-muted)]">
-                  Noch keine Dokumente zugeordnet.
-                </p>
+                <p className="text-[color:var(--ds-text-muted)]">{t("cases.detail_doc_empty")}</p>
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Nutze den Upload-Button um Verträge, Gutachten oder Schriftsätze anzuhängen.
+                  {t("cases.detail_doc_empty_hint")}
                 </p>
               </div>
             ) : (
@@ -1478,7 +1507,9 @@ export default function CaseDetailPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
-                        {new Date(doc.uploadedAt).toLocaleDateString("de-DE")}
+                        {new Date(doc.uploadedAt).toLocaleDateString(
+                          lang === "en" ? "en-GB" : "de-DE"
+                        )}
                         {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
                         {doc.kind ? ` · ${doc.kind}` : ""}
                       </div>
@@ -1488,7 +1519,7 @@ export default function CaseDetailPage() {
                         href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
                         className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
                       >
-                        Öffnen
+                        {t("cases.detail_doc_open")}
                       </Link>
                     )}
                     <button
@@ -1513,16 +1544,18 @@ export default function CaseDetailPage() {
             {/* Add/Edit Form */}
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {editingDeadlineIndex !== null ? "Frist bearbeiten" : "Frist / Termin hinzufügen"}
+                {editingDeadlineIndex !== null
+                  ? t("cases.detail_dl_edit")
+                  : t("cases.detail_dl_add")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Titel
+                    {t("cases.detail_dl_title")}
                   </label>
                   <input
                     {...deadlineForm.register("title")}
-                    placeholder="z.B. Klageerwiderung"
+                    placeholder={t("cases.detail_dl_title_ph")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
                   {deadlineForm.formState.errors.title && (
@@ -1533,7 +1566,7 @@ export default function CaseDetailPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Fälligkeitsdatum
+                    {t("cases.detail_dl_due_date")}
                   </label>
                   <input
                     type="date"
@@ -1550,56 +1583,58 @@ export default function CaseDetailPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Typ
+                    {t("cases.detail_dl_type")}
                   </label>
                   <select
                     {...deadlineForm.register("type")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="deadline">Frist</option>
-                    <option value="hearing">Verhandlung</option>
-                    <option value="meeting">Besprechung</option>
-                    <option value="filing">Schriftstück</option>
-                    <option value="reminder">Erinnerung</option>
+                    <option value="deadline">{t("cases.detail_dl_type_deadline")}</option>
+                    <option value="hearing">{t("cases.detail_dl_type_hearing")}</option>
+                    <option value="meeting">{t("cases.detail_dl_type_meeting")}</option>
+                    <option value="filing">{t("cases.detail_dl_type_filing")}</option>
+                    <option value="reminder">{t("cases.detail_dl_type_reminder")}</option>
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Status
+                    {t("cases.detail_dl_status")}
                   </label>
                   <select
                     {...deadlineForm.register("status")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="pending">Ausstehend</option>
-                    <option value="warning">Bald fällig</option>
-                    <option value="critical">Kritisch</option>
-                    <option value="overdue">Überfällig</option>
-                    <option value="done">Erledigt</option>
+                    <option value="pending">{t("cases.detail_dl_status_pending")}</option>
+                    <option value="warning">{t("cases.detail_dl_status_warning")}</option>
+                    <option value="critical">{t("cases.detail_dl_status_critical")}</option>
+                    <option value="overdue">{t("cases.detail_dl_status_overdue")}</option>
+                    <option value="done">{t("cases.detail_dl_status_done")}</option>
                   </select>
                 </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                  Beschreibung
+                  {t("cases.detail_dl_description")}
                 </label>
                 <textarea
                   {...deadlineForm.register("description")}
                   rows={2}
-                  placeholder="Beschreibung…"
+                  placeholder={t("cases.detail_dl_description_ph")}
                   className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
               <div className="brand-border brand-soft/5 space-y-3 rounded-lg border p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="brand-text text-xs font-medium">Frist aus Regel berechnen</p>
+                    <p className="brand-text text-xs font-medium">
+                      {t("cases.detail_dl_calc_rule")}
+                    </p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      Erzeugt eine prüfbare Frist mit Rechtsgrundlage und Audit-Eintrag.
+                      {t("cases.detail_dl_calc_rule_desc")}
                     </p>
                   </div>
                   <Badge variant="default" className="brand-soft brand-border brand-text text-xs">
-                    Review erforderlich
+                    {t("cases.detail_dl_review_required")}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -1630,7 +1665,7 @@ export default function CaseDetailPage() {
                       deadlineForm.reset(calculated as DeadlineFormData);
                     }}
                   >
-                    Berechnen
+                    {t("cases.detail_dl_calculate")}
                   </Button>
                 </div>
               </div>
@@ -1641,7 +1676,9 @@ export default function CaseDetailPage() {
                   onClick={deadlineForm.handleSubmit(onDeadlineSubmit)}
                 >
                   <Plus size={14} />
-                  {editingDeadlineIndex !== null ? "Speichern" : "Hinzufügen"}
+                  {editingDeadlineIndex !== null
+                    ? t("cases.detail_dl_save")
+                    : t("cases.detail_dl_add_btn")}
                 </Button>
                 {editingDeadlineIndex !== null && (
                   <Button
@@ -1658,7 +1695,7 @@ export default function CaseDetailPage() {
                       });
                     }}
                   >
-                    Abbrechen
+                    {t("cases.detail_dl_cancel")}
                   </Button>
                 )}
               </div>
@@ -1669,7 +1706,9 @@ export default function CaseDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-blue-600" />
-                  <span className="text-sm font-medium text-blue-600">KI-Fristen-Erkennung</span>
+                  <span className="text-sm font-medium text-blue-600">
+                    {t("cases.detail_dl_ai_title")}
+                  </span>
                 </div>
                 <Badge
                   variant="default"
@@ -1679,14 +1718,13 @@ export default function CaseDetailPage() {
                 </Badge>
               </div>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Fügen Sie E-Mail-Text oder ein Schriftstück ein — die KI erkennt automatisch Fristen
-                und Termine.
+                {t("cases.detail_dl_ai_desc")}
               </p>
               <textarea
                 value={aiDetectText}
                 onChange={(e) => setAiDetectText(e.target.value)}
                 rows={3}
-                placeholder="Z. B.: 'Binnen 4 Wochen ab Zustellung des Urteils vom 15.06.2026 können Berufung eingelegt werden…'"
+                placeholder={t("cases.detail_dl_ai_ph")}
                 className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none"
               />
               <div className="flex flex-wrap gap-2">
@@ -1721,7 +1759,7 @@ export default function CaseDetailPage() {
                   ) : (
                     <Sparkles size={14} />
                   )}
-                  {aiDetecting ? "Analysiere…" : "Fristen erkennen"}
+                  {aiDetecting ? t("cases.detail_dl_ai_analyzing") : t("cases.detail_dl_ai_detect")}
                 </Button>
                 {aiDetectedDeadlines.length > 0 && (
                   <Button
@@ -1732,7 +1770,7 @@ export default function CaseDetailPage() {
                       setAiDetectText("");
                     }}
                   >
-                    Zurücksetzen
+                    {t("cases.detail_dl_ai_reset")}
                   </Button>
                 )}
               </div>
@@ -1776,7 +1814,7 @@ export default function CaseDetailPage() {
                             setAiDetectedDeadlines((prev) => prev.filter((_, idx) => idx !== i));
                           }}
                         >
-                          <Plus size={12} /> Hinzufügen
+                          <Plus size={12} /> {t("cases.detail_dl_add_btn")}
                         </Button>
                       </div>
                     </div>
@@ -1790,10 +1828,10 @@ export default function CaseDetailPage() {
               <div className="space-y-3 py-12 text-center">
                 <CalendarClock size={40} className="mx-auto text-[color:var(--ds-border)]" />
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Noch keine Fristen für diese Akte.
+                  {t("cases.detail_dl_empty")}
                 </p>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Fügen Sie oben Fristen und Termine hinzu.
+                  {t("cases.detail_dl_empty_hint")}
                 </p>
               </div>
             ) : (
@@ -1823,27 +1861,27 @@ export default function CaseDetailPage() {
                     { label: string; color: string; border: string }
                   > = {
                     pending: {
-                      label: "Ausstehend",
+                      label: t("cases.detail_dl_status_pending"),
                       color: "text-blue-600",
                       border: "border-blue-500/20 bg-blue-500/5",
                     },
                     warning: {
-                      label: "Bald fällig",
+                      label: t("cases.detail_dl_status_warning"),
                       color: "text-amber-600",
                       border: "border-amber-500/20 bg-amber-500/5",
                     },
                     critical: {
-                      label: "Kritisch",
+                      label: t("cases.detail_dl_status_critical"),
                       color: "text-red-600",
                       border: "border-red-500/20 bg-red-500/5",
                     },
                     overdue: {
-                      label: "Überfällig",
+                      label: t("cases.detail_dl_status_overdue"),
                       color: "text-rose-600",
                       border: "border-rose-500/20 bg-rose-500/5",
                     },
                     done: {
-                      label: "Erledigt",
+                      label: t("cases.detail_dl_status_done"),
                       color: "text-emerald-600",
                       border: "border-emerald-500/20 bg-emerald-500/5",
                     },
@@ -1879,12 +1917,12 @@ export default function CaseDetailPage() {
                             )}
                           >
                             {dl.review_status === "approved"
-                              ? "Freigegeben"
+                              ? t("cases.detail_dl_review_approved")
                               : dl.review_status === "rejected"
-                                ? "Abgelehnt"
+                                ? t("cases.detail_dl_review_rejected")
                                 : dl.review_status === "reviewed"
-                                  ? "Geprüft"
-                                  : "Ungeprüft"}
+                                  ? t("cases.detail_dl_review_reviewed")
+                                  : t("cases.detail_dl_review_unreviewed")}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1">
@@ -1900,12 +1938,13 @@ export default function CaseDetailPage() {
                                             ? "reviewed"
                                             : "approved",
                                         reviewed_at: new Date().toISOString(),
-                                        reviewed_by: caseData.ownLawyerName || "Kanzlei",
+                                        reviewed_by:
+                                          caseData.ownLawyerName || t("cases.detail_dl_firm"),
                                       },
                                       "reviewed",
                                       item.review_status === "approved"
-                                        ? "Freigabe zurückgenommen"
-                                        : "Frist freigegeben"
+                                        ? t("cases.detail_dl_audit_unapprove")
+                                        : t("cases.detail_dl_audit_approve")
                                     )
                                   : item
                               );
@@ -1914,7 +1953,9 @@ export default function CaseDetailPage() {
                             }}
                             className="px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-emerald-600"
                           >
-                            {dl.review_status === "approved" ? "Prüfung offen" : "Freigeben"}
+                            {dl.review_status === "approved"
+                              ? t("cases.detail_dl_review_open")
+                              : t("cases.detail_dl_review_approve")}
                           </button>
                           <button
                             onClick={() => {
@@ -1923,7 +1964,7 @@ export default function CaseDetailPage() {
                             }}
                             className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
                           >
-                            Bearbeiten
+                            {t("cases.detail_dl_edit_btn")}
                           </button>
                           <button
                             onClick={() => {
@@ -1939,7 +1980,7 @@ export default function CaseDetailPage() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
                         <span>
-                          {dlDate.toLocaleDateString("de-DE", {
+                          {dlDate.toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                             weekday: "short",
                             day: "numeric",
                             month: "long",
@@ -1947,11 +1988,13 @@ export default function CaseDetailPage() {
                           })}
                         </span>
                         {!isOverdue && status !== "done" && (
-                          <span className={cfg.color}>({daysUntil} Tage)</span>
+                          <span className={cfg.color}>
+                            ({daysUntil} {t("cases.detail_dl_days")})
+                          </span>
                         )}
                         {isOverdue && (
                           <span className="text-rose-600">
-                            ({Math.abs(daysUntil)} Tage überfällig)
+                            ({Math.abs(daysUntil)} {t("cases.detail_dl_days_overdue")})
                           </span>
                         )}
                         {dl.type && (
@@ -1960,14 +2003,14 @@ export default function CaseDetailPage() {
                             className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                           >
                             {dl.type === "deadline"
-                              ? "Frist"
+                              ? t("cases.detail_dl_type_deadline")
                               : dl.type === "hearing"
-                                ? "Verhandlung"
+                                ? t("cases.detail_dl_type_hearing")
                                 : dl.type === "meeting"
-                                  ? "Besprechung"
+                                  ? t("cases.detail_dl_type_meeting")
                                   : dl.type === "filing"
-                                    ? "Schriftstück"
-                                    : "Erinnerung"}
+                                    ? t("cases.detail_dl_type_filing")
+                                    : t("cases.detail_dl_type_reminder")}
                           </Badge>
                         )}
                         {dl.law && (
@@ -1986,13 +2029,17 @@ export default function CaseDetailPage() {
                       )}
                       {dl.calculation_note && (
                         <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                          Berechnung: {dl.calculation_note}
+                          {t("cases.detail_dl_calc_note")} {dl.calculation_note}
                         </p>
                       )}
                       {dl.reviewed_at && (
                         <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                          Geprüft von {dl.reviewed_by || "Kanzlei"} am{" "}
-                          {new Date(dl.reviewed_at).toLocaleString("de-DE")}
+                          {t("cases.detail_dl_reviewed_by")}{" "}
+                          {dl.reviewed_by || t("cases.detail_dl_firm")}{" "}
+                          {t("cases.detail_dl_reviewed_at")}{" "}
+                          {new Date(dl.reviewed_at).toLocaleString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}
                         </p>
                       )}
                       <div className="mt-3 border-t border-[color:var(--ds-border)]/50 pt-3">
@@ -2034,7 +2081,7 @@ export default function CaseDetailPage() {
                       saveCaseUpdate({ tasks: updated });
                     }
                   }}
-                  placeholder="Neue Aufgabe…"
+                  placeholder={t("cases.new_task")}
                   aria-label={t("cases.new_task")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
@@ -2060,7 +2107,7 @@ export default function CaseDetailPage() {
                 }}
               >
                 <Plus size={14} />
-                Hinzufügen
+                {t("cases.detail_tasks_add")}
               </Button>
             </div>
 
@@ -2068,7 +2115,7 @@ export default function CaseDetailPage() {
               <div className="space-y-2 py-10 text-center">
                 <ListChecks size={32} className="mx-auto text-[color:var(--ds-border)]" />
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Noch keine Aufgaben für diese Akte.
+                  {t("cases.detail_tasks_empty")}
                 </p>
               </div>
             ) : (
@@ -2150,7 +2197,9 @@ export default function CaseDetailPage() {
                     <Users size={20} className="text-emerald-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Mandant</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_client")}
+                    </div>
                     <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {caseData.clientName}
                     </div>
@@ -2165,7 +2214,9 @@ export default function CaseDetailPage() {
                     <ShieldAlert size={20} className="text-red-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Gegner</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_opponent")}
+                    </div>
                     <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {caseData.opponentName}
                     </div>
@@ -2180,7 +2231,9 @@ export default function CaseDetailPage() {
                     <Landmark size={20} className="text-blue-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Gericht</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_court")}
+                    </div>
                     <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {caseData.courtName}
                     </div>
@@ -2195,7 +2248,9 @@ export default function CaseDetailPage() {
                     <User size={20} className="text-amber-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Anwalt</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_lawyer")}
+                    </div>
                     <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
                       {caseData.ownLawyerName}
                     </div>
@@ -2210,9 +2265,11 @@ export default function CaseDetailPage() {
                     <Scale size={20} className="brand-text" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Ansprüche</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_claims")}
+                    </div>
                     <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {caseData.claims.length} Klageanträge
+                      {caseData.claims.length} {t("cases.detail_graph_claims_count")}
                     </div>
                   </div>
                 </div>
@@ -2225,9 +2282,11 @@ export default function CaseDetailPage() {
                     <ShieldAlert size={20} className="text-orange-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Beweismittel</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_evidence")}
+                    </div>
                     <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {evidenceList.length} Mittel
+                      {evidenceList.length} {t("cases.detail_graph_evidence_count")}
                     </div>
                   </div>
                 </div>
@@ -2240,9 +2299,11 @@ export default function CaseDetailPage() {
                     <FileText size={20} className="text-gray-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Dokumente</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_documents")}
+                    </div>
                     <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {caseData.documents.length} Dateien
+                      {caseData.documents.length} {t("cases.detail_graph_documents_count")}
                     </div>
                   </div>
                 </div>
@@ -2255,9 +2316,11 @@ export default function CaseDetailPage() {
                     <CalendarClock size={20} className="text-pink-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">Fristen</div>
+                    <div className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_graph_deadlines")}
+                    </div>
                     <div className="text-sm font-medium text-[color:var(--ds-text)]">
-                      {deadlinesList.length} Termine
+                      {deadlinesList.length} {t("cases.detail_graph_deadlines_count")}
                     </div>
                   </div>
                 </div>
@@ -2268,7 +2331,7 @@ export default function CaseDetailPage() {
             {caseData.facts && (
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <h3 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-                  Zitierte Normen
+                  {t("cases.detail_graph_cited_norms")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {(() => {
@@ -2278,7 +2341,7 @@ export default function CaseDetailPage() {
                     if (citations.length === 0)
                       return (
                         <p className="text-xs text-[color:var(--ds-text-muted)]">
-                          Keine Normen im Sachverhalt zitiert.
+                          {t("cases.detail_graph_no_norms")}
                         </p>
                       );
                     return citations.map((c, i) => (
@@ -2303,17 +2366,17 @@ export default function CaseDetailPage() {
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {editingEvidenceIndex !== null
-                  ? "Beweismittel bearbeiten"
-                  : "Beweismittel hinzufügen"}
+                  ? t("cases.detail_ev_edit")
+                  : t("cases.detail_ev_add")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Titel
+                    {t("cases.detail_ev_title")}
                   </label>
                   <input
                     {...evidenceForm.register("title")}
-                    placeholder="z.B. Vertrag vom 01.03.2026"
+                    placeholder={t("cases.detail_ev_title_ph")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
                   {evidenceForm.formState.errors.title && (
@@ -2324,48 +2387,51 @@ export default function CaseDetailPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Typ
+                    {t("cases.detail_ev_type")}
                   </label>
                   <select
                     {...evidenceForm.register("type")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   >
-                    <option value="">Typ wählen…</option>
-                    <option value="Dokument">Dokument</option>
-                    <option value="Zeugnis">Zeugnis</option>
-                    <option value="Sachverständigengutachten">Sachverständigengutachten</option>
-                    <option value="Vertrag">Vertrag</option>
-                    <option value="Fotos/Videos">Fotos/Videos</option>
-                    <option value="E-Mail/Schriftverkehr">E-Mail/Schriftverkehr</option>
-                    <option value="Sonstiges">Sonstiges</option>
+                    <option value="">{t("cases.detail_ev_type_ph")}</option>
+                    <option value="Dokument">{t("cases.detail_ev_type_document")}</option>
+                    <option value="Zeugnis">{t("cases.detail_ev_type_testimony")}</option>
+                    <option value="Sachverständigengutachten">
+                      {t("cases.detail_ev_type_expert")}
+                    </option>
+                    <option value="Vertrag">{t("cases.detail_ev_type_contract")}</option>
+                    <option value="Fotos/Videos">{t("cases.detail_ev_type_media")}</option>
+                    <option value="E-Mail/Schriftverkehr">{t("cases.detail_ev_type_email")}</option>
+                    <option value="Sonstiges">{t("cases.detail_ev_type_other")}</option>
                   </select>
                 </div>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                  Beschreibung
+                  {t("cases.detail_ev_description")}
                 </label>
                 <textarea
                   {...evidenceForm.register("description")}
                   rows={2}
-                  placeholder="Beschreibung des Beweismittels…"
+                  placeholder={t("cases.detail_ev_description_ph")}
                   className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Quelle
+                    {t("cases.detail_ev_source")}
                   </label>
                   <input
                     {...evidenceForm.register("source")}
-                    placeholder="z.B. Akte 2026-001"
+                    placeholder={t("cases.detail_ev_source_ph")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    Beweisstärke ({Math.round((evidenceForm.watch("weight") ?? 0.5) * 100)}%)
+                    {t("cases.detail_ev_weight")} (
+                    {Math.round((evidenceForm.watch("weight") ?? 0.5) * 100)}%)
                   </label>
                   <input
                     type="range"
@@ -2384,7 +2450,9 @@ export default function CaseDetailPage() {
                   onClick={evidenceForm.handleSubmit(onEvidenceSubmit)}
                 >
                   <Plus size={14} />
-                  {editingEvidenceIndex !== null ? "Speichern" : "Hinzufügen"}
+                  {editingEvidenceIndex !== null
+                    ? t("cases.detail_ev_save")
+                    : t("cases.detail_ev_add_btn")}
                 </Button>
                 {editingEvidenceIndex !== null && (
                   <Button
@@ -2401,7 +2469,7 @@ export default function CaseDetailPage() {
                       });
                     }}
                   >
-                    Abbrechen
+                    {t("cases.detail_ev_cancel")}
                   </Button>
                 )}
               </div>
@@ -2412,10 +2480,10 @@ export default function CaseDetailPage() {
               <div className="space-y-3 py-12 text-center">
                 <ShieldAlert size={40} className="mx-auto text-[color:var(--ds-border)]" />
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Noch keine Beweismittel erfasst.
+                  {t("cases.detail_ev_empty")}
                 </p>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  Fügen Sie oben Beweismittel hinzu, um die Beweislage zu dokumentieren.
+                  {t("cases.detail_ev_empty_hint")}
                 </p>
               </div>
             ) : (
@@ -2436,7 +2504,7 @@ export default function CaseDetailPage() {
                           </Badge>
                         )}
                         <span className="text-sm font-medium text-[color:var(--ds-text)]">
-                          {ev.title || "Beweismittel"}
+                          {ev.title || t("cases.detail_ev_default_title")}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -2447,7 +2515,7 @@ export default function CaseDetailPage() {
                           }}
                           className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
                         >
-                          Bearbeiten
+                          {t("cases.detail_ev_edit_btn")}
                         </button>
                         <button
                           onClick={() => {
@@ -2469,7 +2537,7 @@ export default function CaseDetailPage() {
                     <div className="flex items-center gap-3">
                       {ev.source && (
                         <span className="text-xs text-[color:var(--ds-text-muted)]">
-                          Quelle: {ev.source}
+                          {t("cases.detail_ev_source_label")} {ev.source}
                         </span>
                       )}
                       <div className="flex-1">
@@ -2487,7 +2555,7 @@ export default function CaseDetailPage() {
                           />
                         </div>
                         <div className="mt-0.5 text-right text-xs text-[color:var(--ds-text-muted)]">
-                          Beweisstärke: {Math.round((ev.weight || 0) * 100)}%
+                          {t("cases.detail_ev_weight_label")} {Math.round((ev.weight || 0) * 100)}%
                         </div>
                       </div>
                     </div>
@@ -2509,7 +2577,9 @@ export default function CaseDetailPage() {
         {activeTab === "time" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Zeiterfassung</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("cases.detail_time_title")}
+              </h3>
 
               {/* Live Timer */}
               <div className="flex items-center gap-3">
@@ -2531,7 +2601,7 @@ export default function CaseDetailPage() {
                     }}
                     className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-600/25"
                   >
-                    <Play size={14} /> Start
+                    <Play size={14} /> {t("cases.detail_time_start")}
                   </button>
                 ) : (
                   <button
@@ -2545,12 +2615,12 @@ export default function CaseDetailPage() {
                     }}
                     className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600/25"
                   >
-                    <Square size={14} /> Stop
+                    <Square size={14} /> {t("cases.detail_time_stop")}
                   </button>
                 )}
                 {elapsedSeconds > 0 && !timerRunning && (
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    → {timeForm.watch("minutes")} Min. übernommen
+                    → {timeForm.watch("minutes")} {t("cases.detail_time_taken")}
                   </span>
                 )}
               </div>
@@ -2558,21 +2628,21 @@ export default function CaseDetailPage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_110px_110px]">
                 <input
                   {...timeForm.register("description")}
-                  placeholder="Tätigkeit…"
+                  placeholder={t("cases.detail_time_activity_ph")}
                   aria-label={t("cases.activity")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <input
                   {...timeForm.register("minutes")}
                   type="number"
-                  placeholder="Min."
+                  placeholder={t("cases.detail_time_min_ph")}
                   aria-label={t("cases.minutes")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <input
                   {...timeForm.register("rate")}
                   type="number"
-                  placeholder="€/h"
+                  placeholder={t("cases.detail_time_rate_ph")}
                   aria-label={t("cases.hourly_rate")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
@@ -2582,17 +2652,17 @@ export default function CaseDetailPage() {
                   {...timeForm.register("activity_type")}
                   className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
-                  <option>Beratung</option>
-                  <option>Telefonat</option>
-                  <option>E-Mail</option>
-                  <option>Schriftsatz</option>
-                  <option>Gerichtstermin</option>
-                  <option>Recherche</option>
-                  <option>Aktenstudium</option>
+                  <option value="Beratung">{t("cases.detail_time_act_consultation")}</option>
+                  <option value="Telefonat">{t("cases.detail_time_act_phone")}</option>
+                  <option value="E-Mail">{t("cases.detail_time_act_email")}</option>
+                  <option value="Schriftsatz">{t("cases.detail_time_act_filing")}</option>
+                  <option value="Gerichtstermin">{t("cases.detail_time_act_court")}</option>
+                  <option value="Recherche">{t("cases.detail_time_act_research")}</option>
+                  <option value="Aktenstudium">{t("cases.detail_time_act_study")}</option>
                 </select>
                 <input
                   {...timeForm.register("lawyer")}
-                  placeholder="Bearbeiter / Anwalt"
+                  placeholder={t("cases.detail_time_lawyer_ph")}
                   aria-label={t("cases.assignee")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
@@ -2602,7 +2672,7 @@ export default function CaseDetailPage() {
                     {...timeForm.register("billable")}
                     className="accent-[var(--brand-primary)]"
                   />
-                  abrechenbar
+                  {t("cases.detail_time_billable")}
                 </label>
                 <Button
                   variant="primary"
@@ -2610,7 +2680,7 @@ export default function CaseDetailPage() {
                   onClick={timeForm.handleSubmit(onTimeSubmit)}
                 >
                   <Plus size={14} />
-                  Buchen
+                  {t("cases.detail_time_book")}
                 </Button>
               </div>
             </div>
@@ -2618,10 +2688,11 @@ export default function CaseDetailPage() {
             {timeEntries.length > 0 && (
               <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Buchungen</h3>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("cases.detail_time_bookings")}
+                  </h3>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    Gesamt: {Math.floor(timeEntries.reduce((s, e) => s + e.minutes, 0) / 60)}h{" "}
-                    {timeEntries.reduce((s, e) => s + e.minutes, 0) % 60}min
+                    {`${t("cases.detail_time_total")} ${Math.floor(timeEntries.reduce((s, e) => s + e.minutes, 0) / 60)}h ${timeEntries.reduce((s, e) => s + e.minutes, 0) % 60}min`}
                   </span>
                 </div>
                 {timeEntries.map((entry) => (
@@ -2645,17 +2716,19 @@ export default function CaseDetailPage() {
                           )}
                           {entry.billed && (
                             <Badge variant="success" className="text-xs">
-                              abgerechnet
+                              {t("cases.detail_time_billed")}
                             </Badge>
                           )}
                           {entry.billable === false && (
                             <Badge variant="warning" className="text-xs">
-                              intern
+                              {t("cases.detail_time_internal")}
                             </Badge>
                           )}
                         </div>
                         <span className="text-xs text-[color:var(--ds-text-muted)]">
-                          {new Date(entry.date).toLocaleDateString("de-DE")}
+                          {new Date(entry.date).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}
                           {entry.lawyer ? ` · ${entry.lawyer}` : ""}
                           {entry.rate ? ` · ${entry.rate.toFixed(2)} €/h` : ""}
                           {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
@@ -2673,7 +2746,7 @@ export default function CaseDetailPage() {
                               saveCaseUpdate({ timeEntries: updated });
                             }}
                             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                            title="Buchung löschen"
+                            title={t("cases.detail_time_delete")}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -2698,11 +2771,13 @@ export default function CaseDetailPage() {
         {activeTab === "expenses" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Auslagen</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("cases.detail_exp_title")}
+              </h3>
               <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_130px_auto_auto]">
                 <input
                   {...expenseForm.register("description")}
-                  placeholder="z. B. Gerichtskosten, Porto, Fahrtkosten"
+                  placeholder={t("cases.detail_exp_desc_ph")}
                   aria-label={t("cases.expense")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
@@ -2710,7 +2785,7 @@ export default function CaseDetailPage() {
                   {...expenseForm.register("amount")}
                   type="number"
                   step="0.01"
-                  placeholder="Betrag €"
+                  placeholder={t("cases.detail_exp_amount_ph")}
                   aria-label={t("cases.amount")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
@@ -2720,7 +2795,7 @@ export default function CaseDetailPage() {
                     {...expenseForm.register("billable")}
                     className="accent-[var(--brand-primary)]"
                   />
-                  abrechenbar
+                  {t("cases.detail_exp_billable")}
                 </label>
                 <Button
                   variant="primary"
@@ -2728,7 +2803,7 @@ export default function CaseDetailPage() {
                   onClick={expenseForm.handleSubmit(onExpenseSubmit)}
                 >
                   <Plus size={14} />
-                  Erfassen
+                  {t("cases.detail_exp_add")}
                 </Button>
               </div>
             </div>
@@ -2737,10 +2812,11 @@ export default function CaseDetailPage() {
               <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    Auslagenliste
+                    {t("cases.detail_exp_list")}
                   </h3>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
-                    Gesamt: {expensesList.reduce((s, e) => s + e.amount, 0).toFixed(2)} €
+                    {t("cases.detail_exp_total")}{" "}
+                    {expensesList.reduce((s, e) => s + e.amount, 0).toFixed(2)} €
                   </span>
                 </div>
                 {expensesList.map((entry) => (
@@ -2756,17 +2832,19 @@ export default function CaseDetailPage() {
                           </span>
                           {entry.billed && (
                             <Badge variant="success" className="text-xs">
-                              abgerechnet
+                              {t("cases.detail_exp_billed")}
                             </Badge>
                           )}
                           {entry.billable === false && (
                             <Badge variant="warning" className="text-xs">
-                              intern
+                              {t("cases.detail_exp_internal")}
                             </Badge>
                           )}
                         </div>
                         <span className="text-xs text-[color:var(--ds-text-muted)]">
-                          {new Date(entry.date).toLocaleDateString("de-DE")}
+                          {new Date(entry.date).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}
                           {entry.invoice_number ? ` · ${entry.invoice_number}` : ""}
                         </span>
                       </div>
@@ -2782,7 +2860,7 @@ export default function CaseDetailPage() {
                               saveCaseUpdate({ expenses: updated });
                             }}
                             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                            title="Auslage löschen"
+                            title={t("cases.detail_exp_delete")}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -2807,7 +2885,9 @@ export default function CaseDetailPage() {
         {activeTab === "audit" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Audit-Trail</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("cases.detail_audit_title")}
+              </h3>
               {caseData.auditLog && caseData.auditLog.length > 0 ? (
                 <div className="space-y-2">
                   {caseData.auditLog
@@ -2832,7 +2912,8 @@ export default function CaseDetailPage() {
                             </Badge>
                           </div>
                           <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                            {entry.actor} · {new Date(entry.at).toLocaleString("de-DE")}
+                            {entry.actor} ·{" "}
+                            {new Date(entry.at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                           </div>
                         </div>
                       </div>
@@ -2840,7 +2921,7 @@ export default function CaseDetailPage() {
                 </div>
               ) : (
                 <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-                  Noch keine Audit-Einträge vorhanden.
+                  {t("cases.detail_audit_empty")}
                 </div>
               )}
             </div>
@@ -2867,7 +2948,7 @@ export default function CaseDetailPage() {
                   messageActions: true,
                 }}
                 className="h-full"
-                title={`Akten-Chat: ${caseData.title}`}
+                title={`${t("cases.detail_chat_title")}: ${caseData.title}`}
               />
             </div>
           </div>
@@ -2877,8 +2958,7 @@ export default function CaseDetailPage() {
           <div className="max-w-3xl space-y-4">
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
-                Stelle eine Frage im Kontext dieser Akte. Das Brain durchsucht alle zugehörigen
-                Dokumente und Gesetze.
+                {t("cases.detail_query_desc")}
               </p>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -2890,7 +2970,7 @@ export default function CaseDetailPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleQuery()}
-                    placeholder="Frage zur Akte…"
+                    placeholder={t("cases.detail_query_ph")}
                     aria-label={t("cases.ask_case")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
@@ -2905,7 +2985,7 @@ export default function CaseDetailPage() {
                   ) : (
                     <Send size={14} />
                   )}
-                  Senden
+                  {t("cases.detail_query_send")}
                 </Button>
               </div>
             </div>
@@ -2913,7 +2993,9 @@ export default function CaseDetailPage() {
             {queryResult && (
               <div className="brand-border brand-soft space-y-3 rounded-xl border p-4">
                 <div className="flex items-center justify-between">
-                  <span className="brand-text text-xs font-medium">KI-Antwort</span>
+                  <span className="brand-text text-xs font-medium">
+                    {t("cases.detail_query_ai_answer")}
+                  </span>
                   <button
                     onClick={() => copyToClipboard(queryResult)}
                     className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"

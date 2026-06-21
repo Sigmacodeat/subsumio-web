@@ -13,7 +13,7 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getStore, type User } from "@/lib/auth/store";
-import { withRetry } from "@/lib/retry";
+import { withRetry, externalFetchTimeout } from "@/lib/retry";
 import { DocusignError, AuthError } from "@/lib/errors";
 import { createIdempotencyStore } from "@/lib/idempotency";
 
@@ -94,6 +94,7 @@ async function getServiceAccessToken(): Promise<string> {
           grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
           assertion: await buildJwt(),
         }),
+        signal: externalFetchTimeout(),
       }),
     { maxRetries: 2, baseDelayMs: 1000 }
   );
@@ -194,6 +195,7 @@ async function refreshUserToken(refreshToken: string): Promise<TokenResponse> {
       client_id: IK,
       client_secret: SECRET,
     }),
+    signal: externalFetchTimeout(),
   });
   const data = (await res.json().catch(() => ({}))) as TokenResponse & { error?: string };
   if (!res.ok)
@@ -269,6 +271,7 @@ export async function createEnvelope(
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(req),
+      signal: externalFetchTimeout(),
     })
   );
   const data = (await res.json().catch(() => ({}))) as {
@@ -292,6 +295,7 @@ export async function createEnvelopeAsUser(
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(req),
+      signal: externalFetchTimeout(),
     })
   );
   const data = (await res.json().catch(() => ({}))) as {
@@ -312,6 +316,7 @@ export async function getEnvelopeStatus(
   const res = await withRetry(() =>
     fetch(`${BASE}/accounts/${ACCOUNT}/envelopes/${encodeURIComponent(envelopeId)}`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: externalFetchTimeout(),
     })
   );
   const data = (await res.json().catch(() => ({}))) as {
@@ -337,6 +342,7 @@ export async function listEnvelopes(
   const res = await withRetry(() =>
     fetch(url.toString(), {
       headers: { Authorization: `Bearer ${token}` },
+      signal: externalFetchTimeout(),
     })
   );
   const data = (await res.json().catch(() => ({}))) as {

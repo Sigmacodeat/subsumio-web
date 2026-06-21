@@ -34,7 +34,7 @@ interface EvalHistoryResponse {
 }
 
 export default function RagEvalPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EvalSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -235,7 +235,7 @@ export default function RagEvalPage() {
                 </Button>
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
                   {t("rag_eval.baseline_label")}{" "}
-                  {new Date(baseline.timestamp).toLocaleString("de-DE")}
+                  {new Date(baseline.timestamp).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                 </span>
               </div>
             )}
@@ -323,7 +323,7 @@ export default function RagEvalPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-[color:var(--ds-text)]">
-                        {new Date(run.timestamp).toLocaleString("de-DE")}
+                        {new Date(run.timestamp).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
                       </span>
                       {isBaseline && (
                         <Badge
@@ -494,7 +494,8 @@ export default function RagEvalPage() {
           </div>
 
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {t("rag_eval.eval_run")} {new Date(result.timestamp).toLocaleString("de-DE")} ·{" "}
+            {t("rag_eval.eval_run")}{" "}
+            {new Date(result.timestamp).toLocaleString(lang === "en" ? "en-GB" : "de-DE")} ·{" "}
             {t("rag_eval.fixture_v")}
             {result.fixtureVersion} · {result.totalQueries} {t("rag_eval.queries")}
           </p>

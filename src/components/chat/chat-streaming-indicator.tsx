@@ -3,19 +3,21 @@
 import { useEffect, useState } from "react";
 import { Search, Brain, Sparkles, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
 
 interface ChatStreamingIndicatorProps {
   className?: string;
 }
 
 const PHASES = [
-  { icon: Search, label: "Brain wird durchsucht…", duration: 1500 },
-  { icon: Brain, label: "Antwort wird synthetisiert…", duration: 2000 },
-  { icon: Sparkles, label: "Quellen werden verifiziert…", duration: 1500 },
+  { icon: Search, labelKey: "chat.streaming.search", duration: 1500 },
+  { icon: Brain, labelKey: "chat.streaming.synthesize", duration: 2000 },
+  { icon: Sparkles, labelKey: "chat.streaming.verify", duration: 1500 },
 ] as const;
 
 export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProps) {
   const [phase, setPhase] = useState(0);
+  const { t } = useLang();
 
   useEffect(() => {
     if (phase >= PHASES.length) return;
@@ -25,7 +27,7 @@ export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProp
 
   const currentPhase = Math.min(phase, PHASES.length - 1);
   const Icon = phase >= PHASES.length ? CheckCircle2 : PHASES[currentPhase].icon;
-  const label = phase >= PHASES.length ? "Fertig!" : PHASES[currentPhase].label;
+  const label = phase >= PHASES.length ? t("chat.done") : t(PHASES[currentPhase].labelKey as never);
 
   return (
     <div

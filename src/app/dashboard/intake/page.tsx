@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
+import type { Lang } from "@/content/site";
 
 type IntakeStatus = "new" | "needs_info" | "conflict_check" | "accepted" | "rejected" | "converted";
 
@@ -63,12 +65,15 @@ function listFromResponse(data: unknown): IntakeRecord[] {
   return items as IntakeRecord[];
 }
 
-function createdLabel(value: string): string {
+function createdLabel(lang: Lang, value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("de-DE");
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString(lang === "en" ? "en-GB" : "de-DE");
 }
 
 export default function IntakePage() {
+  const { lang } = useLang();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | IntakeStatus>("all");
   const [search, setSearch] = useState("");
@@ -349,7 +354,7 @@ export default function IntakePage() {
                 <div className="shrink-0 text-right text-xs text-[color:var(--ds-text-muted)]">
                   <div className="flex items-center justify-end gap-1">
                     <Clock size={12} />
-                    {createdLabel(item.frontmatter.created_at)}
+                    {createdLabel(lang, item.frontmatter.created_at)}
                   </div>
                   <div className="mt-1 font-mono">{item.slug}</div>
                 </div>

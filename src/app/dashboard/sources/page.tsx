@@ -123,6 +123,7 @@ function SourceCard({
   refreshing: string | null;
   t: TFunc;
 }) {
+  const { lang } = useLang();
   const [expanded, setExpanded] = useState(false);
   const statusCfg = STATUS_CONFIG[source.status];
   const typeCfg = TYPE_CONFIG[source.type];
@@ -188,7 +189,9 @@ function SourceCard({
             {source.last_sync_at && (
               <span>
                 {t("sources.sync_label")}{" "}
-                {new Date(source.last_sync_at).toLocaleDateString("de-DE")}
+                {new Date(source.last_sync_at).toLocaleDateString(
+                  lang === "en" ? "en-GB" : "de-DE"
+                )}
               </span>
             )}
           </div>
@@ -240,7 +243,9 @@ function SourceCard({
                       </span>
                       <span className="font-mono">{diff.statute_code}</span>
                       <span className="text-[color:var(--ds-text-subtle)]">
-                        {new Date(diff.detected_at).toLocaleDateString("de-DE")}
+                        {new Date(diff.detected_at).toLocaleDateString(
+                          lang === "en" ? "en-GB" : "de-DE"
+                        )}
                       </span>
                     </div>
                   ))}
@@ -305,7 +310,7 @@ function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc 
 // ── Main Page ─────────────────────────────────────────────────────────
 
 export default function SourcesPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [registry, setRegistry] = useState<SourceRegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<string | null>(null);

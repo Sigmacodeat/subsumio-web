@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Webhook } from "svix";
 import { getSharedPgPool, type PublicUser } from "@/lib/auth/store";
+import { externalFetchTimeout } from "@/lib/retry";
 import { sendMail, type MailInput } from "@/lib/mail";
 import { createSchemaInit } from "@/lib/schema-init";
 
@@ -240,6 +241,7 @@ async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail 
     `https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`,
     {
       headers: { Authorization: `Bearer ${apiKey}` },
+      signal: externalFetchTimeout(),
     }
   );
   if (!res.ok) {

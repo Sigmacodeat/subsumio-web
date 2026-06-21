@@ -104,7 +104,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 export default function WorkflowsPage() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const pagesQuery = usePages({ type: "workflow", limit: 200 });
   const meQuery = useMe();
   const createMutation = useCreatePage();
@@ -444,6 +444,8 @@ function WorkflowCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { lang } = useLang();
+  const { lang } = useLang();
   const fm = instance.frontmatter;
   const progress = getWorkflowProgress(fm.steps);
   const pendingApprovals = getPendingApprovals(fm.steps);
@@ -521,7 +523,10 @@ function WorkflowCard({
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
             <span>
-              Gestartet: {fm.started_at ? new Date(fm.started_at).toLocaleString("de-DE") : "—"}
+              Gestartet:{" "}
+              {fm.started_at
+                ? new Date(fm.started_at).toLocaleString(lang === "en" ? "en-GB" : "de-DE")
+                : "—"}
             </span>
             <span>·</span>
             <span>Von: {fm.started_by}</span>
