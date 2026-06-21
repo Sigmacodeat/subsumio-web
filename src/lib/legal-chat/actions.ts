@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { ENGINE_URL, engineHeadersForBrain, engineHeadersForBrainWithMatterScope } from "@/lib/engine";
+import {
+  ENGINE_URL,
+  engineHeadersForBrain,
+  engineHeadersForBrainWithMatterScope,
+} from "@/lib/engine";
 import type { BrainPage } from "@/lib/types";
 import type { StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
@@ -72,7 +76,7 @@ async function engineRequest<T>(
   brainId: string,
   path: string,
   init?: RequestInit,
-  matterScope?: string[] | "all",
+  matterScope?: string[] | "all"
 ): Promise<T> {
   const headers = matterScope
     ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
@@ -1288,7 +1292,7 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
 async function think(
   brainId: string,
   query: string,
-  matterScope?: string[] | "all",
+  matterScope?: string[] | "all"
 ): Promise<string> {
   const headers = matterScope
     ? engineHeadersForBrainWithMatterScope(brainId, matterScope)
@@ -1609,12 +1613,22 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       recentMessages.length > 0
         ? `[Kontext: Letzte Nachrichten von diesem Anwalt — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
         : "";
-    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.query}`, ctx.sender.matterScope);
+    const answer = await think(
+      ctx.sender.brainId,
+      `${contextPrefix}${intent.query}`,
+      ctx.sender.matterScope
+    );
     return answer.slice(0, 3500);
   }
 
   if (intent.kind === "rvg_calc") {
     const result = calculateRvg(intent.streitwert);
+    // Followup D.14: a deterministic calculation, but still rechtsrelevant —
+    // every WhatsApp legal answer should carry its statutory basis so the
+    // lawyer can verify it without re-deriving the VV-RVG numbers themselves.
+    // These three Nr.-references are standard, stable VV-RVG line items for
+    // exactly the three fee types computed above (not generated, not at risk
+    // of drifting/hallucinating).
     return [
       `RVG 2025 Berechnung — Streitwert: ${result.streitwert.toLocaleString("de-DE")} EUR`,
       `Basisgebühr: ${result.basisGebuehr.toFixed(2)} EUR`,
@@ -1625,6 +1639,8 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       `Summe netto: ${result.summeNetto.toFixed(2)} EUR`,
       `MwSt (19%): ${result.mwst.toFixed(2)} EUR`,
       `Summe brutto: ${result.summeBrutto.toFixed(2)} EUR`,
+      ``,
+      `Rechtsgrundlage: § 13 RVG (Gebührentabelle); Verfahrensgebühr Nr. 3100 VV RVG, Terminsgebühr Nr. 3104 VV RVG, Einigungsgebühr Nr. 1000 VV RVG.`,
     ].join("\n");
   }
 
@@ -1641,6 +1657,10 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       `Startdatum: ${intent.startDate}`,
       `Bundesland: ${intent.bundesland}`,
       `Enddatum: ${result.date}`,
+      // Followup D.14: rule.law already carries the precise statutory basis
+      // (calculateDeadline returns it too, as result.law) — was computed but
+      // never surfaced in the WhatsApp reply text.
+      `Rechtsgrundlage: ${result.law}`,
       `Hinweis: ${result.calculation_note || "Bitte im Fristenkalender fachlich prüfen."}`,
     ].join("\n");
   }
@@ -2156,7 +2176,11 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       recentMessages.length > 0
         ? `[Kontext: Letzte Nachrichten — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
         : "";
-    const answer = await think(ctx.sender.brainId, `${contextPrefix}${intent.text}`, ctx.sender.matterScope);
+    const answer = await think(
+      ctx.sender.brainId,
+      `${contextPrefix}${intent.text}`,
+      ctx.sender.matterScope
+    );
     return answer.slice(0, 3500);
   }
 
