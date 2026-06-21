@@ -11,6 +11,12 @@ type BiString = { de: string; en: string };
 
 export const D = {
   // ── Sidebar: section titles ──
+  "nav.section.cockpit": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
+  "nav.section.cases_clients": { de: "Akten & Mandanten", en: "Cases & Clients" },
+  "nav.section.inbox_deadlines": { de: "Eingang & Fristen", en: "Inbox & Deadlines" },
+  "nav.section.documents_drafting": { de: "Dokumente & Drafting", en: "Documents & Drafting" },
+  "nav.section.research_knowledge": { de: "Recherche & Wissen", en: "Research & Knowledge" },
+  "nav.section.billing_compliance": { de: "Abrechnung & Compliance", en: "Billing & Compliance" },
   "nav.section.brain": { de: "Gehirn", en: "Brain" },
   "nav.section.cases_deadlines": { de: "Akten & Fristen", en: "Cases & Deadlines" },
   "nav.section.research": { de: "Recherche", en: "Research" },
@@ -114,6 +120,7 @@ export const D = {
   },
   "sidebar.offline": { de: "Offline", en: "Offline" },
   "sidebar.filter_placeholder": { de: "Navigation filtern…", en: "Filter navigation…" },
+  "sidebar.clear_filter": { de: "Filter löschen", en: "Clear filter" },
   "sidebar.no_results": { de: "Keine Treffer für", en: "No results for" },
   "sidebar.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
   "sidebar.dream_last_run": { de: "Letzter Lauf:", en: "Last run:" },
@@ -139,6 +146,7 @@ export const D = {
   "topbar.notifications": { de: "Benachrichtigungen", en: "Notifications" },
   "topbar.close": { de: "Schließen", en: "Close" },
   "topbar.no_notifications": { de: "Keine neuen Benachrichtigungen", en: "No new notifications" },
+  "topbar.mark_read": { de: "Als gelesen markieren", en: "Mark as read" },
   "topbar.user_menu": { de: "Benutzermenü", en: "User menu" },
   "topbar.open_menu": { de: "Menü öffnen", en: "Open menu" },
   "topbar.user_fallback": { de: "Benutzer", en: "User" },
@@ -153,11 +161,11 @@ export const D = {
   "topbar.notif_dream_hours": { de: "Stunden", en: "hours" },
 
   // ── Dashboard page ──
-  "dashboard.title": { de: "Dashboard", en: "Dashboard" },
+  "dashboard.title": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
   "dashboard.desc_loading": { de: "Lade Brain-Status…", en: "Loading brain status…" },
   "dashboard.desc_online": {
-    de: "Verbunden — frag dein Brain oder lade Akten hoch",
-    en: "Connected — query your brain or upload documents",
+    de: "Tagessteuerung für Akten, Fristen, Eingang, Reviews und Abrechnung.",
+    en: "Daily control for cases, deadlines, inbox, reviews, and billing.",
   },
   "dashboard.desc_offline": {
     de: "Engine nicht erreichbar — Verbindung prüfen",
@@ -218,10 +226,10 @@ export const D = {
     en: "The Dream Cycle runs at night, consolidates your knowledge, fixes citations and finds contradictions.",
   },
   "dashboard.dream_setup": { de: "Dream Cycle einrichten", en: "Set up Dream Cycle" },
-  "dashboard.welcome": { de: "Willkommen bei Subsumio!", en: "Welcome to Subsumio!" },
+  "dashboard.welcome": { de: "Willkommen im Kanzlei-OS.", en: "Welcome to your firm OS." },
   "dashboard.welcome_desc": {
-    de: "Dein Brain ist bereit. In 3 Schritten startest du: lade ein Dokument hoch, stelle eine Frage und erkunde deinen Wissensgraphen.",
-    en: "Your brain is ready. Get started in 3 steps: upload a document, ask a question and explore your knowledge graph.",
+    de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
+    en: "Start with a case, import existing firm data, or connect inbox channels. The brain works in the background while the cockpit runs the day.",
   },
   "dashboard.welcome_upload": { de: "Erstes Dokument hochladen", en: "Upload first document" },
   "dashboard.welcome_ask": { de: "Brain fragen", en: "Ask brain" },
@@ -242,6 +250,72 @@ export const D = {
   "dashboard.time_day": { de: "vor", en: "" },
   "dashboard.time_day_suffix": { de: "Tag", en: "day ago" },
   "dashboard.time_days_suffix": { de: "Tagen", en: "days ago" },
+
+  // ── Kanzlei cockpit ──
+  "cockpit.ai_limited": { de: "KI eingeschränkt", en: "AI limited" },
+  "cockpit.degraded_title": { de: "KI-/Brain-Schicht eingeschränkt", en: "AI/brain layer limited" },
+  "cockpit.degraded_desc": {
+    de: "Das Kanzlei-Cockpit bleibt bedienbar. Suche, Graph und KI-Antworten können bis zur Wiederverbindung eingeschränkt sein.",
+    en: "The firm cockpit remains usable. Search, graph, and AI answers may be limited until reconnection.",
+  },
+  "cockpit.stat_deadlines": { de: "Kritische Fristen", en: "Critical Deadlines" },
+  "cockpit.stat_deadlines_desc": { de: "überfällig oder ≤ 3 Tage", en: "overdue or ≤ 3 days" },
+  "cockpit.stat_cases": { de: "Offene Akten", en: "Open Cases" },
+  "cockpit.stat_cases_desc": { de: "aktive Mandate", en: "active matters" },
+  "cockpit.stat_inbox": { de: "Eingang", en: "Inbox" },
+  "cockpit.stat_inbox_desc": { de: "zu triagieren", en: "to triage" },
+  "cockpit.stat_reviews": { de: "Reviews", en: "Reviews" },
+  "cockpit.stat_reviews_desc": { de: "Freigaben offen", en: "pending approvals" },
+  "cockpit.stat_billing": { de: "Abrechnung", en: "Billing" },
+  "cockpit.stat_billing_desc": { de: "offene Rechnungen", en: "open invoices" },
+  "cockpit.action_case": { de: "Neue Akte", en: "New Case" },
+  "cockpit.action_deadline": { de: "Frist prüfen", en: "Check Deadline" },
+  "cockpit.action_intake": { de: "Eingang triagieren", en: "Triage Inbox" },
+  "cockpit.action_draft": { de: "Schriftsatz", en: "Draft" },
+  "cockpit.action_upload": { de: "Dokument hochladen", en: "Upload Document" },
+  "cockpit.action_ai": { de: "KI fragen", en: "Ask AI" },
+  "cockpit.today_title": { de: "Heute zu steuern", en: "Today to Manage" },
+  "cockpit.deadlines_title": { de: "Fristen & Termine", en: "Deadlines & Events" },
+  "cockpit.inbox_title": { de: "Eingang", en: "Inbox" },
+  "cockpit.cases_title": { de: "Aktive Akten", en: "Active Cases" },
+  "cockpit.ai_control_title": { de: "KI-Kontrolle", en: "AI Control" },
+  "cockpit.open": { de: "Öffnen", en: "Open" },
+  "cockpit.plan": { de: "Planen", en: "Plan" },
+  "cockpit.triage": { de: "Triage", en: "Triage" },
+  "cockpit.review": { de: "Prüfen", en: "Review" },
+  "cockpit.check": { de: "Check", en: "Check" },
+  "cockpit.analyze": { de: "Analyse", en: "Analyze" },
+  "cockpit.overdue": { de: "Überfällig", en: "Overdue" },
+  "cockpit.no_deadlines": {
+    de: "Keine kritischen Fristen im Cockpit.",
+    en: "No critical deadlines in the cockpit.",
+  },
+  "cockpit.no_inbox": { de: "Kein ungeklärter Eingang.", en: "No untriaged inbox items." },
+  "cockpit.no_cases": {
+    de: "Noch keine aktive Akte im Cockpit.",
+    en: "No active cases in the cockpit yet.",
+  },
+  "cockpit.untitled_inbox": { de: "Unbenannter Eingang", en: "Untitled inbox item" },
+  "cockpit.case_area_fallback": { de: "Rechtsgebiet offen", en: "Legal area open" },
+  "cockpit.task_deadlines": { de: "Fristen zuerst absichern", en: "Secure deadlines first" },
+  "cockpit.task_inbox": { de: "Eingang triagieren", en: "Triage inbox" },
+  "cockpit.task_reviews": { de: "Freigaben prüfen", en: "Review approvals" },
+  "cockpit.task_cases": { de: "Aktive Akten fortschreiben", en: "Move active cases forward" },
+  "cockpit.task_critical": { de: "kritisch", en: "critical" },
+  "cockpit.task_clear": { de: "keine kritische Frist", en: "no critical deadline" },
+  "cockpit.task_items": { de: "offen", en: "open" },
+  "cockpit.task_active_cases": { de: "aktive Akten", en: "active cases" },
+  "cockpit.conflicts": { de: "Kollisionen vor Mandatsannahme", en: "Conflicts before engagement" },
+  "cockpit.documents": {
+    de: "Dokumente mit KI-Fundstellen prüfen",
+    en: "Review documents with AI citations",
+  },
+  "cockpit.brain_pages": { de: "Brain-Seiten", en: "brain pages" },
+  "cockpit.brain_queries": { de: "Queries", en: "queries" },
+  "cockpit.brain_degraded": {
+    de: "Brain-Metriken gerade nicht verfügbar.",
+    en: "Brain metrics currently unavailable.",
+  },
 
   // ── Cases page ──
   "cases.title": { de: "Akten", en: "Cases" },
@@ -750,6 +824,63 @@ export const D = {
   "topbar.keyboard_shortcuts": { de: "Tastaturkürzel", en: "Keyboard shortcuts" },
   "topbar.profile": { de: "Profil", en: "Profile" },
   "topbar.mark_all_read": { de: "Alle als gelesen markieren", en: "Mark all as read" },
+  "topbar.search_loading": { de: "Suche…", en: "Searching…" },
+  "topbar.search_no_results": { de: "Keine Treffer für", en: "No results for" },
+  "topbar.search_enter_all": { de: "↵ für alle Ergebnisse", en: "↵ for all results" },
+  "topbar.search_hits": { de: "Treffer", en: "results" },
+
+  // ── Command Palette UI ──
+  "cmd.placeholder": {
+    de: "Seite suchen oder Aktion ausführen…",
+    en: "Search pages or run actions…",
+  },
+  "cmd.search_aria": { de: "Command Palette Suche", en: "Command Palette search" },
+  "cmd.no_results": { de: "Keine Treffer für", en: "No results for" },
+  "cmd.recent": { de: "Zuletzt verwendet", en: "Recently used" },
+  "cmd.navigate": { de: "navigieren", en: "navigate" },
+  "cmd.open": { de: "öffnen", en: "open" },
+  "cmd.close": { de: "schließen", en: "close" },
+  "cmd.command_single": { de: "Befehl", en: "command" },
+  "cmd.command_plural": { de: "Befehle", en: "commands" },
+  "cmd.section.brain": { de: "Gehirn", en: "Brain" },
+  "cmd.section.cases_deadlines": { de: "Akten & Fristen", en: "Cases & Deadlines" },
+  "cmd.section.research": { de: "Recherche", en: "Research" },
+  "cmd.section.drafts_billing": { de: "Schriftsätze & Abrechnung", en: "Drafts & Billing" },
+  "cmd.section.data_integration": { de: "Daten & Integration", en: "Data & Integration" },
+  "cmd.section.admin": { de: "Verwaltung", en: "Administration" },
+  "cmd.action.theme": { de: "Design wechseln", en: "Toggle theme" },
+  "cmd.action.sidebar": { de: "Sidebar ein/aus", en: "Toggle sidebar" },
+  "cmd.action.refresh": { de: "Daten aktualisieren", en: "Refresh data" },
+  "cmd.action.help.shortcuts": { de: "Tastaturkürzel", en: "Keyboard shortcuts" },
+  "cmd.action.help.docs": { de: "Dokumentation", en: "Documentation" },
+  "cmd.action.help.support": { de: "Support", en: "Support" },
+
+  // ── Dashboard error/loading ──
+  "dashboard.error_title": { de: "Etwas ist schiefgelaufen", en: "Something went wrong" },
+  "dashboard.error_default": {
+    de: "Ein unerwarteter Fehler ist aufgetreten.",
+    en: "An unexpected error occurred.",
+  },
+  "dashboard.retry_btn": { de: "Erneut versuchen", en: "Try again" },
+  "dashboard.loading": { de: "Laden…", en: "Loading…" },
+
+  // ── Onboarding errors ──
+  "onboarding.error_complete": {
+    de: "Onboarding konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+    en: "Onboarding could not be completed. Please try again.",
+  },
+
+  // ── Widget Dashboard ──
+  "widget.stats": { de: "Statistiken", en: "Statistics" },
+  "widget.recent_activity": { de: "Letzte Aktivitäten", en: "Recent Activity" },
+  "widget.deadlines": { de: "Fristen", en: "Deadlines" },
+  "widget.quick_actions": { de: "Schnellaktionen", en: "Quick Actions" },
+  "widget.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
+  "widget.getting_started": { de: "Erste Schritte", en: "Getting Started" },
+  "widget.customize": { de: "Widgets anpassen", en: "Customize widgets" },
+  "widget.exit_customize": { de: "Ansicht beenden", en: "Exit customization" },
+  "widget.reset": { de: "Zurücksetzen", en: "Reset" },
+  "widget.hidden": { de: "Ausgeblendete Widgets", en: "Hidden widgets" },
 
   // ── Onboarding wizard ──
   "onboarding.title": { de: "Willkommen bei Subsumio", en: "Welcome to Subsumio" },
@@ -802,6 +933,48 @@ export const D = {
   "onboarding.step_query_ask": { de: "Fragen", en: "Ask" },
   "onboarding.step_query_thinking": { de: "Denke nach…", en: "Thinking…" },
   "onboarding.step_done": { de: "Fertig!", en: "Done!" },
+
+  // ── Shared aria-labels ──
+  "aria.loading": { de: "Wird geladen", en: "Loading" },
+  "aria.loading_data": { de: "Daten werden geladen", en: "Loading data" },
+  "aria.send": { de: "Senden", en: "Send" },
+  "aria.copy_command": { de: "Befehl kopieren", en: "Copy command" },
+  "aria.cancel_edit": { de: "Bearbeiten abbrechen", en: "Cancel edit" },
+  "aria.back_to_cases": { de: "Zurück zur Aktenliste", en: "Back to case list" },
+  "aria.file_upload": { de: "Datei hochladen", en: "Upload file" },
+  "aria.search_docs": { de: "Dokumente durchsuchen", en: "Search documents" },
+  "aria.search_norms": {
+    de: "Norm suchen… z.B. § 823 BGB, Art. 5 GG",
+    en: "Search norm… e.g. § 823 BGB, Art. 5 GG",
+  },
+  "aria.search_judgements": {
+    de: "Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz",
+    en: "Search judgment… e.g. liability, breach of contract, data protection",
+  },
+  "aria.compliance_area": { de: "Compliance-Bereich", en: "Compliance area" },
+  "aria.checklist_loading": { de: "Checkliste wird geladen", en: "Checklist is loading" },
+  "aria.owner": { de: "Inhaber", en: "Owner" },
+
+  // ── Cases detail page ──
+  "cases.new_task": { de: "Neue Aufgabe", en: "New task" },
+  "cases.activity": { de: "Tätigkeit", en: "Activity" },
+  "cases.minutes": { de: "Minuten", en: "Minutes" },
+  "cases.hourly_rate": { de: "Stundensatz", en: "Hourly rate" },
+  "cases.assignee": { de: "Bearbeiter oder Anwalt", en: "Assignee or lawyer" },
+  "cases.expense": { de: "Auslage", en: "Expense" },
+  "cases.amount": { de: "Betrag", en: "Amount" },
+  "cases.ask_case": { de: "Frage zur Akte", en: "Ask about this case" },
+
+  // ── Agents page ──
+  "agents.message": { de: "Nachricht an Agenten", en: "Message to agent" },
+  "agents.task_placeholder": { de: "Beschreibe die Aufgabe...", en: "Describe the task..." },
+
+  // ── Approvals page ──
+  "approvals.reject_reason": { de: "Grund der Ablehnung", en: "Reason for rejection" },
+
+  // ── Drafting page ──
+  "drafting.name": { de: "Name", en: "Name" },
+  "drafting.describe_case": { de: "Beschreibe den Sachverhalt", en: "Describe the case" },
   "onboarding.step_done_desc": {
     de: "Dein Kanzlei-Brain ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
     en: "Your firm brain is ready. You can upload more documents and ask questions anytime.",

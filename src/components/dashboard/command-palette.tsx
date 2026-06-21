@@ -4,413 +4,142 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
-  LayoutDashboard,
-  MessageSquare,
   BookOpen,
-  Network,
-  Upload,
-  Settings,
-  Bot,
-  Sparkles,
-  Gavel,
-  Workflow,
-  Briefcase,
-  Users,
-  ShieldCheck,
-  FolderOpen,
-  CalendarClock,
-  Swords,
-  UserCircle,
-  Globe,
-  Landmark,
   RefreshCw,
-  ShieldAlert,
-  Table2,
-  Bell,
-  PenTool,
-  Scale,
-  FileText,
-  FileSpreadsheet,
-  FileSignature,
-  Plug,
-  Mail,
-  Archive,
-  EyeOff,
-  ScrollText,
-  CreditCard,
-  Smartphone,
-  Building2,
-  Shield,
-  Key,
-  BarChart3,
   Zap,
   CornerDownLeft,
-  ClipboardList,
   Sun,
   PanelLeft,
   Keyboard,
   LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
+import { BOTTOM_ITEMS, NAV_SECTIONS } from "@/components/dashboard/sidebar";
 
 interface CommandItem {
   id: string;
   label: string;
+  labelKey?: DashboardKey;
   hint?: string;
   icon: typeof Search;
   href?: string;
   action?: () => void;
   section: string;
+  sectionKey?: DashboardKey;
   keywords?: string;
 }
 
-const COMMANDS: CommandItem[] = [
-  // Gehirn
-  {
-    id: "dashboard",
-    label: "Übersicht",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-    section: "Gehirn",
-  },
-  {
-    id: "assistant",
-    label: "Assistant",
-    icon: Bot,
-    href: "/dashboard/assistant",
-    section: "Gehirn",
-  },
-  {
-    id: "query",
-    label: "Brain fragen",
-    icon: MessageSquare,
-    href: "/dashboard/query",
-    section: "Gehirn",
-    keywords: "search ask question",
-  },
-  { id: "agents", label: "Agenten", icon: Sparkles, href: "/dashboard/agents", section: "Gehirn" },
-  {
-    id: "approvals",
-    label: "Freigaben",
-    icon: Gavel,
-    href: "/dashboard/approvals",
-    section: "Gehirn",
-  },
-  {
-    id: "workflows",
-    label: "Workflows",
-    icon: Workflow,
-    href: "/dashboard/workflows",
-    section: "Gehirn",
-    keywords: "workflow template automation",
-  },
-  {
-    id: "brain",
-    label: "Brain erkunden",
-    icon: BookOpen,
-    href: "/dashboard/brain",
-    section: "Gehirn",
-    keywords: "pages entities",
-  },
-  {
-    id: "graph",
-    label: "Graph ansehen",
-    icon: Network,
-    href: "/dashboard/graph",
-    section: "Gehirn",
-    keywords: "knowledge network edges",
-  },
-  {
-    id: "upload",
-    label: "Dokument hochladen",
-    icon: Upload,
-    href: "/dashboard/upload",
-    section: "Gehirn",
-    keywords: "file import pdf",
-  },
-  {
-    id: "rag-eval",
-    label: "RAG-Eval",
-    icon: BarChart3,
-    href: "/dashboard/rag-eval",
-    section: "Gehirn",
-    keywords: "evaluation metrics",
-  },
-
+const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   // Akten & Fristen
-  {
-    id: "cases",
-    label: "Akten",
-    icon: Briefcase,
-    href: "/dashboard/cases",
-    section: "Akten & Fristen",
-    keywords: "matters",
-  },
-  {
-    id: "contacts",
-    label: "Kontakte",
-    icon: Users,
-    href: "/dashboard/contacts",
-    section: "Akten & Fristen",
-    keywords: "people clients",
-  },
-  {
-    id: "contracts",
-    label: "Verträge",
-    icon: ShieldCheck,
-    href: "/dashboard/contracts",
-    section: "Akten & Fristen",
-  },
-  {
-    id: "playbooks",
-    label: "Playbooks",
-    icon: ClipboardList,
-    href: "/dashboard/playbooks",
-    section: "Akten & Fristen",
-    keywords: "contract review rules playbook",
-  },
-  {
-    id: "vault",
-    label: "Dokumenten-Vault",
-    icon: FolderOpen,
-    href: "/dashboard/vault",
-    section: "Akten & Fristen",
-    keywords: "documents files",
-  },
-  {
-    id: "deadlines",
-    label: "Fristen",
-    icon: CalendarClock,
-    href: "/dashboard/deadlines",
-    section: "Akten & Fristen",
-    keywords: "dates due",
-  },
-  {
-    id: "opponents",
-    label: "Gegner",
-    icon: Swords,
-    href: "/dashboard/opponents",
-    section: "Akten & Fristen",
-  },
-  {
-    id: "client-portal",
-    label: "Mandanten-Portal",
-    icon: UserCircle,
-    href: "/dashboard/client-portal",
-    section: "Akten & Fristen",
-  },
-
+  cases: "nav.cases",
+  contacts: "nav.contacts",
+  contracts: "nav.contracts",
+  playbooks: "nav.playbooks",
+  vault: "nav.vault",
+  deadlines: "nav.deadlines",
+  opponents: "nav.opponents",
+  "client-portal": "nav.client_portal",
   // Recherche
-  {
-    id: "research",
-    label: "Legal Research",
-    icon: Globe,
-    href: "/dashboard/research",
-    section: "Recherche",
-  },
-  {
-    id: "rechtsprechung",
-    label: "Rechtsprechung",
-    icon: Landmark,
-    href: "/dashboard/rechtsprechung",
-    section: "Recherche",
-    keywords: "judgments cases",
-  },
-  {
-    id: "norms",
-    label: "Normen",
-    icon: BookOpen,
-    href: "/dashboard/norms",
-    section: "Recherche",
-    keywords: "statutes laws",
-  },
-  {
-    id: "judgements-sync",
-    label: "Urteile-Sync",
-    icon: RefreshCw,
-    href: "/dashboard/judgements-sync",
-    section: "Recherche",
-  },
-  {
-    id: "kollisionspruefung",
-    label: "Kollisionsprüfung",
-    icon: ShieldAlert,
-    href: "/dashboard/kollisionspruefung",
-    section: "Recherche",
-    keywords: "conflict check",
-  },
-  {
-    id: "tabular-review",
-    label: "Massen-Review",
-    icon: Table2,
-    href: "/dashboard/tabular-review",
-    section: "Recherche",
-  },
-  {
-    id: "monitoring",
-    label: "Monitoring",
-    icon: Bell,
-    href: "/dashboard/monitoring",
-    section: "Recherche",
-  },
-
+  research: "nav.legal_research",
+  analyze: "nav.analyze",
+  "precedent-search": "nav.precedent_search",
+  translate: "nav.translate",
+  rechtsprechung: "nav.rechtsprechung",
+  norms: "nav.norms",
+  "judgements-sync": "nav.judgements_sync",
+  kollisionspruefung: "nav.kollisionspruefung",
+  "tabular-review": "nav.tabular_review",
+  "obligation-tracking": "nav.obligation_tracking",
+  "case-scanner": "nav.case_scanner",
+  "clause-library": "nav.clause_library",
+  "review-queue": "nav.review_queue",
+  "version-history": "nav.version_history",
+  monitoring: "nav.monitoring",
+  sources: "nav.sources",
   // Schriftsätze & Abrechnung
-  {
-    id: "drafting",
-    label: "Schriftsatz",
-    icon: PenTool,
-    href: "/dashboard/drafting",
-    section: "Schriftsätze & Abrechnung",
-    keywords: "draft writing",
-  },
-  {
-    id: "cost-calculator",
-    label: "Kostenrechner",
-    icon: Scale,
-    href: "/dashboard/cost-calculator",
-    section: "Schriftsätze & Abrechnung",
-  },
-  {
-    id: "invoicing",
-    label: "Rechnungen",
-    icon: FileText,
-    href: "/dashboard/invoicing",
-    section: "Schriftsätze & Abrechnung",
-    keywords: "invoices billing",
-  },
-  {
-    id: "datev-export",
-    label: "DATEV-Export",
-    icon: FileSpreadsheet,
-    href: "/dashboard/datev-export",
-    section: "Schriftsätze & Abrechnung",
-  },
-  {
-    id: "signature",
-    label: "e-Signatur",
-    icon: FileSignature,
-    href: "/dashboard/signature",
-    section: "Schriftsätze & Abrechnung",
-  },
-
+  drafting: "nav.drafting",
+  "cost-calculator": "nav.cost_calculator",
+  invoicing: "nav.invoicing",
+  "datev-export": "nav.datev_export",
+  signature: "nav.signature",
   // Daten & Integration
-  {
-    id: "connectors",
-    label: "Konnektoren",
-    icon: Plug,
-    href: "/dashboard/connectors",
-    section: "Daten & Integration",
-  },
-  {
-    id: "whatsapp",
-    label: "WhatsApp",
-    icon: MessageSquare,
-    href: "/dashboard/whatsapp",
-    section: "Daten & Integration",
-  },
-  {
-    id: "import-kanzlei",
-    label: "Kanzlei-Import",
-    icon: FileSpreadsheet,
-    href: "/dashboard/import-kanzlei",
-    section: "Daten & Integration",
-  },
-  { id: "bea", label: "beA", icon: Mail, href: "/dashboard/bea", section: "Daten & Integration" },
-  {
-    id: "email-import",
-    label: "E-Mail-Import",
-    icon: Mail,
-    href: "/dashboard/email-import",
-    section: "Daten & Integration",
-  },
-  {
-    id: "calendar-export",
-    label: "Kalender",
-    icon: CalendarClock,
-    href: "/dashboard/calendar-export",
-    section: "Daten & Integration",
-  },
-  {
-    id: "compliance",
-    label: "Compliance",
-    icon: ShieldCheck,
-    href: "/dashboard/compliance",
-    section: "Daten & Integration",
-  },
-  {
-    id: "anonymize",
-    label: "Anonymisierung",
-    icon: EyeOff,
-    href: "/dashboard/anonymize",
-    section: "Daten & Integration",
-  },
-  {
-    id: "verfahrensdoku",
-    label: "Verfahrensdoku",
-    icon: ScrollText,
-    href: "/dashboard/verfahrensdoku",
-    section: "Daten & Integration",
-  },
-  {
-    id: "data-export",
-    label: "Datenexport",
-    icon: Archive,
-    href: "/dashboard/data-export",
-    section: "Daten & Integration",
-  },
-
+  connectors: "nav.connectors",
+  whatsapp: "nav.whatsapp",
+  intake: "nav.intake",
+  "document-requests": "nav.document_requests",
+  "import-kanzlei": "nav.import_kanzlei",
+  bea: "nav.bea",
+  "email-import": "nav.email_import",
+  "calendar-export": "nav.calendar_export",
+  compliance: "nav.compliance",
+  retention: "nav.retention",
+  anonymize: "nav.anonymize",
+  "word-addin": "nav.word_addin",
+  verfahrensdoku: "nav.verfahrensdoku",
+  "data-export": "nav.data_export",
   // Verwaltung
-  { id: "team", label: "Team", icon: Users, href: "/dashboard/team", section: "Verwaltung" },
-  {
-    id: "controlling",
-    label: "Controlling",
-    icon: BarChart3,
-    href: "/dashboard/controlling",
-    section: "Verwaltung",
-  },
-  {
-    id: "api-keys",
-    label: "API-Keys",
-    icon: Key,
-    href: "/dashboard/api-keys",
-    section: "Verwaltung",
-  },
-  {
-    id: "billing",
-    label: "Abrechnung",
-    icon: CreditCard,
-    href: "/dashboard/billing",
-    section: "Verwaltung",
-  },
-  {
-    id: "mobile",
-    label: "Mobile",
-    icon: Smartphone,
-    href: "/dashboard/mobile",
-    section: "Verwaltung",
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: Settings,
-    href: "/dashboard/settings",
-    section: "Verwaltung",
-  },
-  {
-    id: "settings-kanzlei",
-    label: "Kanzlei-Einstellungen",
-    icon: Building2,
-    href: "/dashboard/settings/kanzlei",
-    section: "Verwaltung",
-  },
-  {
-    id: "settings-security",
-    label: "Sicherheit",
-    icon: Shield,
-    href: "/dashboard/settings/security",
-    section: "Verwaltung",
-  },
-];
+  team: "nav.team",
+  audit: "nav.audit_log",
+  controlling: "nav.controlling",
+  "api-keys": "nav.api_keys",
+  billing: "nav.billing",
+  mobile: "nav.mobile",
+  settings: "nav.settings",
+  "settings-kanzlei": "nav.kanzlei",
+  "settings-security": "nav.security",
+  "settings-ai-model": "nav.ai_model",
+};
+
+const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
+  "nav.section.cockpit": "nav.section.cockpit",
+  "nav.section.cases_clients": "nav.section.cases_clients",
+  "nav.section.inbox_deadlines": "nav.section.inbox_deadlines",
+  "nav.section.documents_drafting": "nav.section.documents_drafting",
+  "nav.section.research_knowledge": "nav.section.research_knowledge",
+  "nav.section.billing_compliance": "nav.section.billing_compliance",
+  Gehirn: "cmd.section.brain",
+  "Akten & Fristen": "cmd.section.cases_deadlines",
+  Recherche: "cmd.section.research",
+  "Schriftsätze & Abrechnung": "cmd.section.drafts_billing",
+  "Daten & Integration": "cmd.section.data_integration",
+  Verwaltung: "cmd.section.admin",
+};
+
+const NAV_COMMANDS: CommandItem[] = (() => {
+  const seen = new Set<string>();
+  const commands: CommandItem[] = [];
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      if (item.comingSoon || seen.has(item.href)) continue;
+      seen.add(item.href);
+      commands.push({
+        id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
+        label: item.labelKey,
+        labelKey: item.labelKey,
+        icon: item.icon,
+        href: item.href,
+        section: section.titleKey,
+        sectionKey: section.titleKey,
+      });
+    }
+  }
+  for (const item of BOTTOM_ITEMS) {
+    if (item.comingSoon || seen.has(item.href)) continue;
+    seen.add(item.href);
+    commands.push({
+      id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
+      label: item.labelKey,
+      labelKey: item.labelKey,
+      icon: item.icon,
+      href: item.href,
+      section: "nav.section.admin",
+      sectionKey: "nav.section.admin",
+    });
+  }
+  return commands;
+})();
 
 interface CommandPaletteProps {
   open: boolean;
@@ -446,71 +175,89 @@ export function CommandPalette({
   onToggleSidebar,
 }: CommandPaletteProps) {
   const router = useRouter();
+  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const recentIds = useMemo(() => loadRecent(), [open]);
+  const resolveLabel = useCallback(
+    (cmd: CommandItem) => {
+      if (cmd.labelKey) return t(cmd.labelKey);
+      const key = CMD_LABEL_KEYS[cmd.id];
+      if (key) return t(key);
+      return cmd.label;
+    },
+    [t]
+  );
+
+  const resolveSection = useCallback(
+    (section: string) => {
+      const key = CMD_SECTION_KEYS[section];
+      if (key) return t(key);
+      return section;
+    },
+    [t]
+  );
 
   const allCommands = useMemo(() => {
-    const cmds: CommandItem[] = [...COMMANDS];
+    const cmds: CommandItem[] = [...NAV_COMMANDS];
     if (onToggleTheme) {
       cmds.push({
         id: "action-toggle-theme",
-        label: "Theme wechseln",
+        label: t("cmd.action.theme"),
         icon: Sun,
         action: onToggleTheme,
-        section: "Aktionen",
+        section: t("cmd.section.admin"),
         keywords: "dark light theme mode farbe hell dunkel",
       });
     }
     if (onToggleSidebar) {
       cmds.push({
         id: "action-toggle-sidebar",
-        label: "Sidebar ein-/ausklappen",
+        label: t("cmd.action.sidebar"),
         icon: PanelLeft,
         action: onToggleSidebar,
-        section: "Aktionen",
+        section: t("cmd.section.admin"),
         keywords: "collapse expand sidebar menu seitenleiste",
       });
     }
     cmds.push({
       id: "action-refresh",
-      label: "Daten aktualisieren",
+      label: t("cmd.action.refresh"),
       icon: RefreshCw,
       action: () => window.location.reload(),
-      section: "Aktionen",
+      section: t("cmd.section.admin"),
       keywords: "reload refresh neu laden aktualisieren",
     });
     cmds.push({
       id: "help-docs",
-      label: "Dokumentation",
+      label: t("cmd.action.help.docs"),
       icon: BookOpen,
       href: "/docs",
-      section: "Hilfe",
+      section: t("cmd.section.admin"),
       keywords: "help docs manual anleitung doku",
     });
     cmds.push({
       id: "help-shortcuts",
-      label: "Tastaturkürzel anzeigen",
+      label: t("cmd.action.help.shortcuts"),
       icon: Keyboard,
       href: "/docs#shortcuts",
-      section: "Hilfe",
+      section: t("cmd.section.admin"),
       keywords: "keyboard shortcuts hotkeys tastatur",
     });
     cmds.push({
       id: "help-support",
-      label: "Support kontaktieren",
+      label: t("cmd.action.help.support"),
       icon: LifeBuoy,
       action: () => {
         window.location.href = "mailto:support@subsumio.com";
       },
-      section: "Hilfe",
+      section: t("cmd.section.admin"),
       keywords: "help contact support hilfe kontakt",
     });
     return cmds;
-  }, [onToggleTheme, onToggleSidebar]);
+  }, [onToggleTheme, onToggleSidebar, t]);
 
   useEffect(() => {
     if (open) {
@@ -524,17 +271,19 @@ export function CommandPalette({
     if (!query.trim()) return allCommands;
     const q = query.toLowerCase().trim();
     return allCommands.filter((cmd) => {
-      const haystack = `${cmd.label} ${cmd.section} ${cmd.keywords ?? ""}`.toLowerCase();
+      const haystack =
+        `${resolveLabel(cmd)} ${resolveSection(cmd.section)} ${cmd.label} ${cmd.section} ${cmd.keywords ?? ""}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [query, allCommands]);
+  }, [query, allCommands, resolveLabel, resolveSection]);
 
   const recentItems = useMemo(() => {
     if (query.trim()) return [];
+    const recentIds = open ? loadRecent() : [];
     return recentIds
       .map((id) => allCommands.find((cmd) => cmd.id === id))
       .filter((cmd): cmd is CommandItem => !!cmd);
-  }, [recentIds, query, allCommands]);
+  }, [open, query, allCommands]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, CommandItem[]>();
@@ -622,7 +371,7 @@ export function CommandPalette({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Command Palette"
+        aria-label={t("cmd.search_aria")}
         className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 px-4 md:px-0"
       >
         <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
@@ -637,9 +386,9 @@ export function CommandPalette({
                 setQuery(e.target.value);
                 setActiveIndex(0);
               }}
-              placeholder="Seite suchen oder Aktion ausführen…"
+              placeholder={t("cmd.placeholder")}
               className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
-              aria-label="Command Palette Suche"
+              aria-label={t("cmd.search_aria")}
               role="combobox"
               aria-expanded="true"
               aria-controls="command-list"
@@ -660,7 +409,7 @@ export function CommandPalette({
               <div className="px-4 py-10 text-center">
                 <Search size={22} className="mx-auto mb-3 text-[color:var(--ds-border-strong)]" />
                 <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  Keine Treffer für „{query}
+                  {t("cmd.no_results")} „{query}
                   {"\u201C"}
                 </p>
               </div>
@@ -670,7 +419,7 @@ export function CommandPalette({
                   <div className="mb-1.5">
                     <div className="px-4 py-1.5">
                       <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                        Zuletzt verwendet
+                        {t("cmd.recent")}
                       </span>
                     </div>
                     {recentItems.map((cmd) => {
@@ -694,7 +443,7 @@ export function CommandPalette({
                           aria-selected={isActive}
                         >
                           <Icon size={16} className="shrink-0" />
-                          <span className="flex-1 text-sm font-medium">{cmd.label}</span>
+                          <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
                           {isActive && (
                             <CornerDownLeft
                               size={14}
@@ -710,7 +459,7 @@ export function CommandPalette({
                   <div key={section} className="mb-1.5">
                     <div className="px-4 py-1.5">
                       <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                        {section}
+                        {resolveSection(section)}
                       </span>
                     </div>
                     {items.map((cmd) => {
@@ -734,7 +483,7 @@ export function CommandPalette({
                           aria-selected={isActive}
                         >
                           <Icon size={16} className="shrink-0" />
-                          <span className="flex-1 text-sm font-medium">{cmd.label}</span>
+                          <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
                           {cmd.hint && (
                             <span className="text-xs text-[color:var(--ds-text-subtle)]">
                               {cmd.hint}
@@ -762,24 +511,25 @@ export function CommandPalette({
                 <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
                   ↑↓
                 </kbd>
-                navigieren
+                {t("cmd.navigate")}
               </span>
               <span className="flex items-center gap-1.5">
                 <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
                   ↵
                 </kbd>
-                öffnen
+                {t("cmd.open")}
               </span>
               <span className="flex items-center gap-1.5">
                 <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
                   ESC
                 </kbd>
-                schließen
+                {t("cmd.close")}
               </span>
             </div>
             <span className="flex items-center gap-1">
               <Zap size={10} />
-              {flatList.length} {flatList.length === 1 ? "Befehl" : "Befehle"}
+              {flatList.length}{" "}
+              {flatList.length === 1 ? t("cmd.command_single") : t("cmd.command_plural")}
             </span>
           </div>
         </div>
