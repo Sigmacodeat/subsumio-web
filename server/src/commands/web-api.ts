@@ -50,6 +50,7 @@ function requireWebApiKey(apiKey: string | undefined) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!apiKey) return next();
     const header =
+      (req.headers["x-subsumio-api-key"] as string | undefined) ??
       (req.headers["x-sigmabrain-api-key"] as string | undefined) ??
       req.headers.authorization?.match(/^Bearer\s+(\S+)$/i)?.[1];
     if (header !== apiKey) {

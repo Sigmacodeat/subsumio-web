@@ -32,28 +32,30 @@ export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProp
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-xs text-[color:var(--ds-text-muted)]",
+        "flex items-center gap-2 px-3 py-2 text-[11px] text-[color:var(--ds-text-muted)]",
         className
       )}
       role="status"
       aria-live="polite"
     >
       <Icon
-        size={12}
+        size={11}
         className={cn(
           "shrink-0",
           phase >= PHASES.length ? "text-emerald-500" : "brand-text animate-pulse"
         )}
       />
-      <span>{label}</span>
+      <span className="font-medium">{label}</span>
       {phase < PHASES.length && (
         <div className="flex items-center gap-0.5">
           {PHASES.map((_, i) => (
             <span
               key={i}
               className={cn(
-                "h-1 w-1 rounded-full transition-colors",
-                i <= currentPhase ? "brand-text" : "bg-[color:var(--ds-border)]"
+                "h-1 w-1 rounded-full transition-all duration-300",
+                i <= currentPhase
+                  ? "brand-text scale-100"
+                  : "scale-75 bg-[color:var(--ds-border)] opacity-50"
               )}
             />
           ))}

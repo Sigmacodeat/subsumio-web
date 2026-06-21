@@ -79,18 +79,18 @@ function ChatMessageBubbleInner({
 
   return (
     <div
-      className={cn("group flex gap-3 px-4 py-4", isUser ? "justify-end" : "justify-start")}
+      className={cn("group flex gap-2.5 px-3 py-2.5", isUser ? "justify-end" : "justify-start")}
       role="article"
       aria-label={isUser ? t("chat.msg_user_aria") : t("chat.msg_ai_aria")}
     >
-      <div className={cn("max-w-[85%] space-y-2", isUser ? "order-2" : "w-full max-w-3xl")}>
+      <div className={cn("max-w-[85%] space-y-1.5", isUser ? "order-2" : "w-full")}>
         {/* Attachments */}
         {hasAttachments && (
           <div className="flex flex-wrap gap-1.5">
             {message.attachments!.map((att) => (
               <span
                 key={att.slug}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)]"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]"
               >
                 <FileText size={11} />
                 {att.name}
@@ -102,7 +102,7 @@ function ChatMessageBubbleInner({
         {/* Message bubble */}
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 text-sm leading-relaxed",
+            "rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed",
             isUser
               ? "brand-bg brand-text-on-primary rounded-br-md"
               : "rounded-bl-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
@@ -131,7 +131,7 @@ function ChatMessageBubbleInner({
 
         {/* Tool calls (assistant only) */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {message.toolCalls.map((tc) => (
               <ToolCallBubble
                 key={tc.id}
@@ -146,7 +146,7 @@ function ChatMessageBubbleInner({
 
         {/* Citations + Gaps (assistant only) */}
         {!isUser && !message.isStreaming && (hasCitations || hasGaps) && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {hasCitations && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <CitationBadgesInline
@@ -192,12 +192,12 @@ function ChatMessageBubbleInner({
             )}
 
             {hasGaps && (
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-500">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5">
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-700 dark:text-amber-500">
                   <AlertTriangle size={12} />
                   {t("chat.gaps_in_brain")} ({message.gaps!.length})
                 </div>
-                <ul className="space-y-1">
+                <ul className="space-y-0.5">
                   {message.gaps!.map((gap, i) => {
                     const gapType = parseGapType(gap);
                     const icon = gapType ? GAP_ICONS[gapType] : "⚠";
@@ -205,7 +205,7 @@ function ChatMessageBubbleInner({
                     return (
                       <li
                         key={i}
-                        className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-500"
+                        className="flex items-start gap-1.5 text-[11px] text-amber-700 dark:text-amber-500"
                       >
                         <span className="shrink-0">{icon}</span>
                         <span>
@@ -223,25 +223,25 @@ function ChatMessageBubbleInner({
 
         {/* Metadata row (assistant only) */}
         {!isUser && !message.isStreaming && !message.error && (
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
             <AIBadge size="sm" showTooltip={false} />
             {hasCitations && <GroundingStatus citations={message.citations} gaps={message.gaps} />}
             {features?.tokenWidget && message.tokensUsed != null && (
-              <span className="inline-flex items-center gap-1" title={t("chat.tokens_used")}>
-                <Zap size={10} />
+              <span className="inline-flex items-center gap-0.5" title={t("chat.tokens_used")}>
+                <Zap size={9} />
                 {message.tokensUsed.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
                 {t("chat.tokens_label")}
               </span>
             )}
             {features?.tokenWidget && message.latencyMs != null && (
-              <span className="inline-flex items-center gap-1" title={t("chat.response_time")}>
-                <Clock size={10} />
+              <span className="inline-flex items-center gap-0.5" title={t("chat.response_time")}>
+                <Clock size={9} />
                 {(message.latencyMs / 1000).toFixed(1)}s
               </span>
             )}
             {message.model && (
-              <span className="inline-flex items-center gap-1" title={t("chat.ai_model")}>
-                <Cpu size={10} />
+              <span className="inline-flex items-center gap-0.5" title={t("chat.ai_model")}>
+                <Cpu size={9} />
                 {message.model}
               </span>
             )}
@@ -250,10 +250,10 @@ function ChatMessageBubbleInner({
 
         {/* Action buttons (show on hover) */}
         {features?.messageActions && !message.isStreaming && (
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <button
               onClick={handleCopy}
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               aria-label={t("chat.copy")}
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -261,7 +261,7 @@ function ChatMessageBubbleInner({
             {!isUser && onRegenerate && (
               <button
                 onClick={() => onRegenerate(message.id)}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("chat.regenerate")}
               >
                 <RefreshCw size={12} />
@@ -270,7 +270,7 @@ function ChatMessageBubbleInner({
             {isUser && onEdit && (
               <button
                 onClick={() => onEdit(message.id)}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("chat.edit")}
               >
                 <Pencil size={12} />
@@ -279,7 +279,7 @@ function ChatMessageBubbleInner({
             {onReply && (
               <button
                 onClick={() => onReply(message.id)}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("chat.reply_btn")}
                 title={t("chat.reply_title")}
               >
@@ -289,7 +289,7 @@ function ChatMessageBubbleInner({
             {onExport && (
               <button
                 onClick={onExport}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("chat.export_btn")}
               >
                 <Download size={12} />

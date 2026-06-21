@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Sparkles,
   ChevronDown,
   Trash2,
   Download,
@@ -128,18 +127,24 @@ export function ChatHeader(props: ChatHeaderProps) {
   return (
     <div className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
       {/* Top row: title + actions */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2.5">
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-            <Sparkles size={15} className="brand-text" />
-          </div>
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">
+            <h2 className="truncate text-[13px] font-semibold tracking-tight text-[color:var(--ds-text)]">
               {t("chat.title")}
             </h2>
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
               {props.features.brainStatus && !compact && (
-                <span className="inline-flex items-center gap-1">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium",
+                    brainDegraded
+                      ? "bg-amber-500/10 text-amber-600"
+                      : brainOnline
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : "bg-red-500/10 text-red-600"
+                  )}
+                >
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full",
@@ -155,8 +160,9 @@ export function ChatHeader(props: ChatHeaderProps) {
               )}
               {props.features.tokenWidget && props.sessionTokens > 0 && !compact && (
                 <span className="inline-flex items-center gap-0.5">
-                  · <Zap size={9} />
-                  {props.sessionTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                  <Zap size={9} />
+                  {props.sessionTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
+                  {t("chat.tokens_label")}
                 </span>
               )}
               {props.features.tokenWidget &&
@@ -167,295 +173,303 @@ export function ChatHeader(props: ChatHeaderProps) {
                     className="inline-flex items-center gap-0.5"
                     title={t("chat.cost_estimate")}
                   >
-                    · ~{formatCost(costEstimate)}
+                    ~{formatCost(costEstimate)}
                   </span>
                 )}
               {props.features.tokenWidget && queriesRemaining != null && !compact && (
                 <span className="inline-flex items-center gap-0.5">
-                  · {queriesRemaining} {t("chat.queries_remaining")}
+                  {queriesRemaining.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
+                  {t("chat.queries_remaining")}
                 </span>
               )}
               {props.messageCount > 0 && (
                 <span>
-                  · {props.messageCount} {t("chat.session_count")}
+                  {props.messageCount} {t("chat.session_count")}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           {props.onShare && props.messageCount > 0 && (
             <button
               onClick={props.onShare}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label={t("chat.share")}
               title={t("chat.share_title")}
             >
-              <Share2 size={16} />
+              <Share2 size={14} />
             </button>
           )}
           {props.features.exportChat && props.messageCount > 0 && (
             <button
               onClick={props.onExport}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label={t("chat.export")}
               title={t("chat.export")}
             >
-              <Download size={16} />
+              <Download size={14} />
             </button>
           )}
           {props.messageCount > 0 && (
             <button
               onClick={props.onClear}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600 active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600 active:scale-95"
               aria-label={t("chat.clear")}
               title={t("chat.clear")}
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Controls row */}
-      <div className="flex flex-wrap items-center gap-2 px-4 pb-2.5 max-md:gap-1.5">
-        {/* Sessions dropdown */}
-        {props.sessions && props.onSelectSession && (
-          <div ref={sessionsRef} className="relative">
-            <button
-              onClick={() => setShowSessions((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95"
-            >
-              <Plus size={12} />
-              {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
-              <ChevronDown
-                size={11}
-                className={cn("transition-transform", showSessions && "rotate-180")}
-              />
-            </button>
-            {showSessions && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
-                <div className="border-b border-[color:var(--ds-border)] p-2">
-                  <button
-                    onClick={() => {
-                      props.onNewSession();
-                      setShowSessions(false);
-                    }}
-                    className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95"
-                  >
-                    <Plus size={13} />
-                    {t("chat.new_session")}
-                  </button>
-                </div>
-                {props.onSessionSearchChange && (
-                  <div className="border-b border-[color:var(--ds-border)] p-2">
-                    <div className="relative">
-                      <Search
-                        size={12}
-                        className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-                      />
-                      <input
-                        value={props.sessionSearch ?? ""}
-                        onChange={(e) => props.onSessionSearchChange?.(e.target.value)}
-                        placeholder={t("chat.search_sessions")}
-                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                      />
-                      {props.sessionSearch && (
-                        <button
-                          onClick={() => props.onSessionSearchChange?.("")}
-                          className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <div className="max-h-64 overflow-y-auto p-1">
-                  {filteredSessions.length === 0 ? (
-                    <p className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-subtle)]">
-                      {t("chat.no_sessions")}
-                    </p>
-                  ) : (
-                    filteredSessions.map((s) => (
-                      <div
-                        key={s.id}
-                        className={cn(
-                          "group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]",
-                          s.id === props.activeSessionId && "brand-soft"
-                        )}
-                      >
-                        {s.pinned && (
-                          <Pin size={10} className="brand-text shrink-0" fill="currentColor" />
-                        )}
-                        <button
-                          onClick={() => {
-                            props.onSelectSession?.(s.id);
-                            setShowSessions(false);
-                          }}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
-                            {s.title}
-                          </p>
-                          <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
-                            {s.messageCount} {t("chat.session_count")} ·{" "}
-                            {new Date(s.updatedAt).toLocaleDateString(
-                              lang === "en" ? "en-GB" : "de-DE"
-                            )}
-                          </p>
-                          {s.tags && s.tags.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {s.tags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
-                                >
-                                  <Tag size={7} />
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </button>
-                        <div className="flex shrink-0 items-center gap-0.5">
-                          {props.onTogglePin && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                props.onTogglePin?.(s.id);
-                              }}
-                              className={cn(
-                                "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
-                                s.pinned && "brand-text opacity-100"
-                              )}
-                              aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
-                              title={s.pinned ? t("chat.unpin") : t("chat.pin")}
-                            >
-                              <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
-                            </button>
-                          )}
-                          {props.onDeleteSession && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                props.onDeleteSession?.(s.id);
-                              }}
-                              className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500"
-                              aria-label={t("chat.confirm_delete_session")}
-                            >
-                              <Trash2 size={11} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Case selector */}
-        {props.features.caseSelector && (
-          <div className="relative">
-            <select
-              value={props.selectedCaseSlug}
-              onChange={(e) => props.onCaseChange(e.target.value)}
-              className="appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              aria-label={t("chat.case_select")}
-            >
-              <option value="">{t("chat.no_case")}</option>
-              {props.cases.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <Briefcase
-              size={11}
-              className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-            />
-            <ChevronDown
-              size={11}
-              className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-            />
-          </div>
-        )}
-
-        {/* Jurisdiction selector — hidden in compact mode */}
-        {props.features.jurisdictionSelector && !compact && (
-          <div className="flex items-center gap-0.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-0.5">
-            <Scale size={10} className="ml-1 text-[color:var(--ds-text-subtle)]" />
-            {JURISDICTIONS.map((j) => (
+      {/* Controls row — unified toolbar track */}
+      <div className="px-3 pb-2.5">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-[color:var(--ds-surface-2)] p-1.5 max-md:gap-1">
+          {/* Sessions dropdown */}
+          {props.sessions && props.onSelectSession && (
+            <div ref={sessionsRef} className="relative">
               <button
-                key={j.value}
-                onClick={() => props.onJurisdictionChange(j.value)}
-                className={cn(
-                  "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
-                  props.jurisdiction === j.value
-                    ? "brand-bg brand-text-on-primary"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                )}
+                onClick={() => setShowSessions((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95"
               >
-                {j.label}
+                <Plus size={12} />
+                {props.activeSessionId ? t("chat.session_label") : t("chat.new_session")}
+                <ChevronDown
+                  size={11}
+                  className={cn("transition-transform", showSessions && "rotate-180")}
+                />
               </button>
-            ))}
-          </div>
-        )}
+              {showSessions && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
+                  <div className="border-b border-[color:var(--ds-border)] p-2">
+                    <button
+                      onClick={() => {
+                        props.onNewSession();
+                        setShowSessions(false);
+                      }}
+                      className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95"
+                    >
+                      <Plus size={13} />
+                      {t("chat.new_session")}
+                    </button>
+                  </div>
+                  {props.onSessionSearchChange && (
+                    <div className="border-b border-[color:var(--ds-border)] p-2">
+                      <div className="relative">
+                        <Search
+                          size={12}
+                          className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                        />
+                        <input
+                          value={props.sessionSearch ?? ""}
+                          onChange={(e) => props.onSessionSearchChange?.(e.target.value)}
+                          placeholder={t("chat.search_sessions")}
+                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                        />
+                        {props.sessionSearch && (
+                          <button
+                            onClick={() => props.onSessionSearchChange?.("")}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="max-h-64 overflow-y-auto p-1">
+                    {filteredSessions.length === 0 ? (
+                      <p className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-subtle)]">
+                        {t("chat.no_sessions")}
+                      </p>
+                    ) : (
+                      filteredSessions.map((s) => (
+                        <div
+                          key={s.id}
+                          className={cn(
+                            "group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]",
+                            s.id === props.activeSessionId && "brand-soft"
+                          )}
+                        >
+                          {s.pinned && (
+                            <Pin size={10} className="brand-text shrink-0" fill="currentColor" />
+                          )}
+                          <button
+                            onClick={() => {
+                              props.onSelectSession?.(s.id);
+                              setShowSessions(false);
+                            }}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                              {s.title}
+                            </p>
+                            <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+                              {s.messageCount} {t("chat.session_count")} ·{" "}
+                              {new Date(s.updatedAt).toLocaleDateString(
+                                lang === "en" ? "en-GB" : "de-DE"
+                              )}
+                            </p>
+                            {s.tags && s.tags.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {s.tags.slice(0, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
+                                  >
+                                    <Tag size={7} />
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </button>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            {props.onTogglePin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  props.onTogglePin?.(s.id);
+                                }}
+                                className={cn(
+                                  "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
+                                  s.pinned && "brand-text opacity-100"
+                                )}
+                                aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
+                                title={s.pinned ? t("chat.unpin") : t("chat.pin")}
+                              >
+                                <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
+                              </button>
+                            )}
+                            {props.onDeleteSession && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  props.onDeleteSession?.(s.id);
+                                }}
+                                className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500"
+                                aria-label={t("chat.confirm_delete_session")}
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Query mode selector */}
-        {props.features.modeSelector && (
-          <div ref={modeRef} className="relative">
-            <button
-              onClick={() => setShowModeMenu((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95"
-            >
-              <Activity size={11} />
-              {QUERY_MODE_LABELS[props.queryMode].label}
+          {/* Case selector */}
+          {props.features.caseSelector && (
+            <div className="relative">
+              <select
+                value={props.selectedCaseSlug}
+                onChange={(e) => props.onCaseChange(e.target.value)}
+                className="appearance-none rounded-lg bg-transparent py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] focus:bg-[color:var(--ds-surface)] focus:outline-none"
+                aria-label={t("chat.case_select")}
+              >
+                <option value="">{t("chat.no_case")}</option>
+                {props.cases.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+              <Briefcase
+                size={11}
+                className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+              />
               <ChevronDown
                 size={11}
-                className={cn("transition-transform", showModeMenu && "rotate-180")}
+                className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
               />
-            </button>
-            {showModeMenu && (
-              <div className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg">
-                {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => {
-                      props.onQueryModeChange(mode);
-                      setShowModeMenu(false);
-                    }}
-                    className={cn(
-                      "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                      props.queryMode === mode && "brand-soft"
-                    )}
-                  >
-                    <span
+            </div>
+          )}
+
+          {/* Divider */}
+          {props.features.caseSelector && props.features.jurisdictionSelector && !compact && (
+            <div className="h-4 w-px bg-[color:var(--ds-border)]" aria-hidden />
+          )}
+
+          {/* Jurisdiction selector — hidden in compact mode */}
+          {props.features.jurisdictionSelector && !compact && (
+            <div className="flex items-center gap-0.5 rounded-lg bg-[color:var(--ds-surface)] p-0.5">
+              <Scale size={10} className="ml-1 text-[color:var(--ds-text-subtle)]" />
+              {JURISDICTIONS.map((j) => (
+                <button
+                  key={j.value}
+                  onClick={() => props.onJurisdictionChange(j.value)}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                    props.jurisdiction === j.value
+                      ? "brand-bg brand-text-on-primary"
+                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                  )}
+                >
+                  {j.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Query mode selector */}
+          {props.features.modeSelector && (
+            <div ref={modeRef} className="relative">
+              <button
+                onClick={() => setShowModeMenu((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-surface)] hover:text-[color:var(--ds-text)] active:scale-95"
+              >
+                <Activity size={11} />
+                {QUERY_MODE_LABELS[props.queryMode].label}
+                <ChevronDown
+                  size={11}
+                  className={cn("transition-transform", showModeMenu && "rotate-180")}
+                />
+              </button>
+              {showModeMenu && (
+                <div className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg">
+                  {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        props.onQueryModeChange(mode);
+                        setShowModeMenu(false);
+                      }}
                       className={cn(
-                        "text-xs font-medium",
-                        props.queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                        "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                        props.queryMode === mode && "brand-soft"
                       )}
                     >
-                      {QUERY_MODE_LABELS[mode].label}
-                    </span>
-                    <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                      {QUERY_MODE_LABELS[mode].description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          props.queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                        )}
+                      >
+                        {QUERY_MODE_LABELS[mode].label}
+                      </span>
+                      <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                        {QUERY_MODE_LABELS[mode].description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Model selector — hidden in compact mode */}
-        {props.features.modelSelector && !compact && (
-          <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
-        )}
+          {/* Model selector — hidden in compact mode */}
+          {props.features.modelSelector && !compact && (
+            <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
+          )}
+        </div>
       </div>
     </div>
   );

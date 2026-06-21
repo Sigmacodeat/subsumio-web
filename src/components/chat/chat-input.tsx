@@ -1,11 +1,22 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Send, Square, Paperclip, X, FileText, LayoutTemplate } from "lucide-react";
+import {
+  Send,
+  Square,
+  Paperclip,
+  X,
+  FileText,
+  LayoutTemplate,
+  ChevronDown,
+  Activity,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
 import { CHAT_TEMPLATES, type ChatTemplate } from "@/components/chat/chat-types";
+import { ModelSelector } from "@/components/dashboard/model-selector";
+import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 
 interface ChatInputProps {
   onSend: (text: string, attachments?: Array<{ name: string; slug: string }>) => void;
@@ -15,8 +26,14 @@ interface ChatInputProps {
   placeholder?: string;
   features?: {
     fileUpload?: boolean;
+    modelSelector?: boolean;
+    modeSelector?: boolean;
   };
   className?: string;
+  modelOverride?: string;
+  onModelChange?: (model: string | undefined) => void;
+  queryMode?: QueryMode;
+  onQueryModeChange?: (mode: QueryMode) => void;
 }
 
 export function ChatInput({
@@ -27,15 +44,21 @@ export function ChatInput({
   placeholder,
   features,
   className,
+  modelOverride,
+  onModelChange,
+  queryMode,
+  onQueryModeChange,
 }: ChatInputProps) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Array<{ name: string; slug: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showModeMenu, setShowModeMenu] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
+  const modeRef = useRef<HTMLDivElement>(null);
   const { t, lang } = useLang();
 
   const charCount = text.length;
@@ -51,18 +74,21 @@ export function ChatInput({
     autoFocus();
   }, [autoFocus]);
 
-  // Close template dropdown on outside click
+  // Close template and mode dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (templateRef.current && !templateRef.current.contains(e.target as Node)) {
         setShowTemplates(false);
       }
+      if (modeRef.current && !modeRef.current.contains(e.target as Node)) {
+        setShowModeMenu(false);
+      }
     }
-    if (showTemplates) {
+    if (showTemplates || showModeMenu) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showTemplates]);
+  }, [showTemplates, showModeMenu]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -143,11 +169,11 @@ export function ChatInput({
     >
       {/* Attachments preview */}
       {attachments.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+        <div className="flex flex-wrap gap-1.5 px-3 pt-2">
           {attachments.map((att) => (
             <span
               key={att.slug}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] text-[color:var(--ds-text-muted)]"
             >
               <FileText size={11} />
               {att.name}
@@ -178,127 +204,205 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="relative flex items-end gap-2 px-4 py-3">
-        {/* Template picker */}
-        <div ref={templateRef} className="relative">
-          <button
-            onClick={() => setShowTemplates((v) => !v)}
-            disabled={isStreaming || disabled}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-            aria-label={t("chat.input.templates")}
-            title={t("chat.input.templates")}
-          >
-            <LayoutTemplate size={16} />
-          </button>
-          {showTemplates && (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
-              <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {t("chat.input.templates")}
-              </div>
-              <div className="max-h-64 overflow-y-auto p-1">
-                {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
-                  <button
-                    key={tpl.id}
-                    onClick={() => {
-                      setText(tpl.template);
-                      setShowTemplates(false);
-                      autoFocus();
-                    }}
-                    className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
-                  >
-                    <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                      {tpl.label}
-                    </span>
-                    <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
-                      {tpl.category}
-                    </span>
-                  </button>
-                ))}
-              </div>
+      {/* Model + Mode selector row — compact pills above input */}
+      {(features?.modelSelector || features?.modeSelector) && (
+        <div className="flex items-center gap-1.5 px-3 pt-2">
+          {/* Mode selector */}
+          {features?.modeSelector && queryMode && onQueryModeChange && (
+            <div ref={modeRef} className="relative">
+              <button
+                onClick={() => setShowModeMenu((v) => !v)}
+                disabled={isStreaming || disabled}
+                className="inline-flex items-center gap-1 rounded-lg bg-[color:var(--ds-surface-2)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+                aria-label={t("chat.mode")}
+              >
+                <Activity size={11} className="text-[color:var(--ds-text-subtle)]" />
+                {QUERY_MODE_LABELS[queryMode].label}
+                <ChevronDown
+                  size={10}
+                  className={cn("transition-transform", showModeMenu && "rotate-180")}
+                />
+              </button>
+              {showModeMenu && (
+                <div className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg">
+                  {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        onQueryModeChange(mode);
+                        setShowModeMenu(false);
+                      }}
+                      className={cn(
+                        "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                        queryMode === mode && "brand-soft"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium",
+                          queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                        )}
+                      >
+                        {QUERY_MODE_LABELS[mode].label}
+                      </span>
+                      <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                        {QUERY_MODE_LABELS[mode].description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
 
-        {/* File upload button */}
-        {features?.fileUpload !== false && (
-          <>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isStreaming || uploading || disabled}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
-              aria-label={t("chat.input.upload_file")}
-              title={t("chat.input.upload_file")}
-            >
-              <Paperclip size={16} />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx,.txt,.md,.eml,.msg"
+          {/* Model selector */}
+          {features?.modelSelector && onModelChange && (
+            <ModelSelector
+              selectedModelId={modelOverride}
+              onSelect={onModelChange}
+              className="[&>button]:rounded-lg [&>button]:border-0 [&>button]:bg-[color:var(--ds-surface-2)] [&>button]:px-2 [&>button]:py-1 [&>button]:text-[11px]"
             />
-          </>
-        )}
-
-        {/* Textarea */}
-        <textarea
-          ref={textareaRef}
-          data-chat-input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder={
-            isStreaming ? t("chat.input.ai_responding") : (placeholder ?? t("chat.placeholder"))
-          }
-          rows={1}
-          maxLength={50000}
-          className={cn(
-            "min-h-[36px] flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50",
-            nearLimit && !overLimit && "border-amber-400/60",
-            overLimit && "border-red-500"
           )}
-          aria-label={t("chat.input.enter_message")}
-        />
+        </div>
+      )}
 
-        {/* Char counter — visible when approaching limit */}
-        {nearLimit && (
-          <span
-            className={cn(
-              "absolute right-14 bottom-1 text-[10px] font-medium",
-              overLimit ? "text-red-500" : "text-amber-500"
+      <div className="px-3 pt-2 pb-3">
+        <div
+          className={cn(
+            "relative flex items-end gap-2 rounded-2xl border bg-[color:var(--ds-surface-2)] px-3 py-2.5 shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
+            overLimit
+              ? "border-red-500"
+              : nearLimit
+                ? "border-amber-400/60"
+                : "border-[color:var(--ds-border)] focus-within:border-[var(--brand-primary)]/50"
+          )}
+        >
+          {/* Template picker */}
+          <div ref={templateRef} className="relative">
+            <button
+              onClick={() => setShowTemplates((v) => !v)}
+              disabled={isStreaming || disabled}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+              aria-label={t("chat.input.templates")}
+              title={t("chat.input.templates")}
+            >
+              <LayoutTemplate size={18} />
+            </button>
+            {showTemplates && (
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
+                <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  {t("chat.input.templates")}
+                </div>
+                <div className="max-h-64 overflow-y-auto p-1">
+                  {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => {
+                        setText(tpl.template);
+                        setShowTemplates(false);
+                        autoFocus();
+                      }}
+                      className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
+                    >
+                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                        {tpl.label}
+                      </span>
+                      <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                        {tpl.category}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-          >
-            {charCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} / 50.000
+          </div>
+
+          {/* File upload button */}
+          {features?.fileUpload !== false && (
+            <>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isStreaming || uploading || disabled}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                aria-label={t("chat.input.upload_file")}
+                title={t("chat.input.upload_file")}
+              >
+                <Paperclip size={18} />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx,.txt,.md,.eml,.msg"
+              />
+            </>
+          )}
+
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            data-chat-input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={
+              isStreaming ? t("chat.input.ai_responding") : (placeholder ?? t("chat.placeholder"))
+            }
+            rows={1}
+            maxLength={50000}
+            className="min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[13px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
+            aria-label={t("chat.input.enter_message")}
+          />
+
+          {/* Char counter — visible when approaching limit */}
+          {nearLimit && (
+            <span
+              className={cn(
+                "absolute right-14 bottom-1 text-[10px] font-medium",
+                overLimit ? "text-red-500" : "text-amber-500"
+              )}
+            >
+              {charCount.toLocaleString(lang === "en" ? "en-GB" : "de-DE")} / 50.000
+            </span>
+          )}
+
+          {/* Send / Stop button */}
+          {isStreaming ? (
+            <button
+              onClick={() => onStop?.()}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 hover:shadow-md active:scale-95"
+              aria-label={t("chat.input.stop_generation")}
+              title={t("chat.input.stop_esc")}
+            >
+              <Square size={16} className="fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={!canSend}
+              className={cn(
+                "brand-bg brand-text-on-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-[0_2px_8px_-2px_var(--brand-glow)] transition-[opacity,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 hover:shadow-[0_4px_14px_-2px_var(--brand-glow)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
+                overLimit && "bg-red-500"
+              )}
+              aria-label={t("chat.send")}
+              title={t("chat.input.send_enter")}
+            >
+              <Send size={18} />
+            </button>
+          )}
+        </div>
+        <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-[color:var(--ds-text-subtle)]">
+          <span className="inline-flex items-center gap-1">
+            <kbd className="rounded bg-[color:var(--ds-surface-2)] px-1 py-0.5 font-sans text-[10px]">
+              ↵
+            </kbd>
+            {t("chat.input.send_enter")}
           </span>
-        )}
-
-        {/* Send / Stop button */}
-        {isStreaming ? (
-          <button
-            onClick={() => onStop?.()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 active:scale-95"
-            aria-label={t("chat.input.stop_generation")}
-            title={t("chat.input.stop_esc")}
-          >
-            <Square size={16} className="fill-current" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={!canSend}
-            className={cn(
-              "brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
-              overLimit && "bg-red-500"
-            )}
-            aria-label={t("chat.send")}
-            title={t("chat.input.send_enter")}
-          >
-            <Send size={16} />
-          </button>
-        )}
+          <span className="hidden opacity-70 sm:inline">PDF · DOCX · TXT · MD · EML · MSG</span>
+        </div>
       </div>
     </div>
   );

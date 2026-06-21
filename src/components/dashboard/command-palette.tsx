@@ -100,11 +100,6 @@ const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
   "nav.section.documents_drafting": "nav.section.documents_drafting",
   "nav.section.research_knowledge": "nav.section.research_knowledge",
   "nav.section.billing_compliance": "nav.section.billing_compliance",
-  Gehirn: "cmd.section.brain",
-  "Akten & Fristen": "cmd.section.cases_deadlines",
-  Recherche: "cmd.section.research",
-  "Schriftsätze & Abrechnung": "cmd.section.drafts_billing",
-  "Daten & Integration": "cmd.section.data_integration",
   Verwaltung: "cmd.section.admin",
 };
 

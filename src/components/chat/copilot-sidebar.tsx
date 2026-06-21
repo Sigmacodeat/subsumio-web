@@ -247,6 +247,133 @@ function resolveRouteContext(pathname: string, t: TFunc): RouteContext {
   };
 }
 
+interface ProactiveAlertsProps {
+  alerts: Array<{ label: string; query: string; severity: "urgent" | "warning" }>;
+  onQuery: (query: string) => void;
+  onDismiss: (key: string) => void;
+  t: TFunc;
+  className?: string;
+}
+
+function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: ProactiveAlertsProps) {
+  if (alerts.length === 0) return null;
+  return (
+    <div className={cn("shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2", className)}>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+        <AlertCircle size={10} />
+        {t("copilot.proactive_hints")}
+      </div>
+      <div className="space-y-1">
+        {alerts.map((alert) => {
+          const alertKey = `${alert.label}-${alert.query}`;
+          return (
+            <div
+              key={alertKey}
+              className={cn(
+                "group/alert flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                alert.severity === "urgent"
+                  ? "border-l-2 border-red-200/60 border-l-red-500 bg-red-50/40 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:border-l-red-400 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
+                  : "border-l-2 border-amber-200/60 border-l-amber-500 bg-amber-50/40 text-amber-700 hover:bg-amber-50 dark:border-amber-900/40 dark:border-l-amber-400 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
+              )}
+            >
+              <Clock size={11} className="shrink-0" />
+              <button onClick={() => onQuery(alert.query)} className="min-w-0 flex-1 truncate">
+                {alert.label}
+              </button>
+              <button
+                onClick={() => onDismiss(alertKey)}
+                className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover/alert:opacity-100 hover:text-[color:var(--ds-text)]"
+                aria-label={t("copilot.dismiss_hint")}
+              >
+                <X size={11} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface QuickActionsChipsProps {
+  actions: QuickAction[];
+  onAction: (action: QuickAction) => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  t: TFunc;
+  variant?: "mobile" | "desktop";
+}
+
+function QuickActionsChips({
+  actions,
+  onAction,
+  expanded,
+  onToggleExpanded,
+  t,
+  variant = "desktop",
+}: QuickActionsChipsProps) {
+  if (actions.length === 0) return null;
+  const visibleActions = expanded ? actions : actions.slice(0, 3);
+  const isDesktop = variant === "desktop";
+  return (
+    <div
+      className={cn(
+        "shrink-0 border-b border-[color:var(--ds-border)]",
+        isDesktop ? "px-3.5 py-3" : "px-3 py-2.5"
+      )}
+    >
+      <div
+        className={cn(
+          "mb-2 flex items-center gap-1.5 font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase",
+          isDesktop ? "text-[11px]" : "text-xs"
+        )}
+      >
+        <Sparkles size={isDesktop ? 11 : 12} className="brand-text" />
+        {t("copilot.quick_actions")}
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        {visibleActions.map((action) => {
+          const Icon = QUICK_ACTION_ICONS[action.icon];
+          return (
+            <button
+              key={action.label}
+              onClick={() => onAction(action)}
+              className="group/action flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-left text-xs text-[color:var(--ds-text-muted)] shadow-sm transition-[border-color,background-color,color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
+            >
+              <span className="group-hover/action:brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] transition-colors">
+                <Icon
+                  size={13}
+                  className="group-hover/action:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
+                />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{action.label}</span>
+            </button>
+          );
+        })}
+        {actions.length > 3 && (
+          <button
+            onClick={onToggleExpanded}
+            className="col-span-2 inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            aria-expanded={expanded}
+            aria-label={expanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp size={12} />
+                {t("copilot.show_less")}
+              </>
+            ) : (
+              <>
+                <ChevronDown size={12} />+{actions.length - 3}
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -459,11 +586,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     [proactiveAlerts, dismissedAlerts]
   );
 
-  const visibleActions = useMemo(
-    () => (actionsExpanded ? routeContext.quickActions : routeContext.quickActions.slice(0, 3)),
-    [actionsExpanded, routeContext.quickActions]
-  );
-
   return (
     <>
       {/* Mobile overlay */}
@@ -494,16 +616,22 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
           {/* Mobile header bar */}
-          <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
             <div className="flex items-center gap-2.5">
-              <div className="brand-soft brand-border flex h-8 w-8 items-center justify-center rounded-lg border">
-                <Sparkles size={15} className="brand-text" />
+              <div
+                className="brand-bg flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_-2px_var(--brand-glow)]"
+                aria-hidden
+              >
+                <Sparkles size={15} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-[color:var(--ds-text)]">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+                  <span className="brand-text h-1.5 w-1.5 shrink-0 rounded-full" />
+                  <span className="truncate">{routeContext.label}</span>
+                </div>
+                <p className="font-display text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
                   {t("copilot.title")}
                 </p>
-                <p className="text-xs text-[color:var(--ds-text-subtle)]">{routeContext.label}</p>
               </div>
             </div>
             <button
@@ -512,7 +640,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 setMobileOpen(false);
                 onToggle();
               }}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label={t("copilot.close_esc")}
             >
               <X size={18} />
@@ -520,92 +648,22 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           </div>
 
           {/* Proactive deadline alerts (G6) — mobile */}
-          {visibleAlerts.length > 0 && (
-            <div className="border-b border-[color:var(--ds-border)] px-3 py-2.5">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                <AlertCircle size={12} />
-                {t("copilot.proactive_hints")}
-              </div>
-              <div className="space-y-1.5">
-                {visibleAlerts.map((alert) => {
-                  const alertKey = `${alert.label}-${alert.query}`;
-                  return (
-                    <div
-                      key={alertKey}
-                      className={cn(
-                        "group/alert flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
-                        alert.severity === "urgent"
-                          ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
-                          : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                      )}
-                    >
-                      <Clock size={13} className="shrink-0" />
-                      <button
-                        onClick={() => chatRef.current?.sendMessage(alert.query)}
-                        className="min-w-0 flex-1 truncate"
-                      >
-                        {alert.label}
-                      </button>
-                      <ChevronRight size={12} className="shrink-0 opacity-50" />
-                      <button
-                        onClick={() => handleDismissAlert(alertKey)}
-                        className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover/alert:opacity-100 hover:text-[color:var(--ds-text)]"
-                        aria-label={t("copilot.dismiss_hint")}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          <ProactiveAlerts
+            alerts={visibleAlerts}
+            onQuery={(q) => chatRef.current?.sendMessage(q)}
+            onDismiss={handleDismissAlert}
+            t={t}
+          />
 
           {/* Quick actions — mobile */}
-          {routeContext.quickActions.length > 0 && (
-            <div className="border-b border-[color:var(--ds-border)] px-3 py-2.5">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                <Sparkles size={12} className="brand-text" />
-                {t("copilot.quick_actions")}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {visibleActions.map((action) => {
-                  const Icon = QUICK_ACTION_ICONS[action.icon];
-                  return (
-                    <button
-                      key={action.label}
-                      onClick={() => handleQuickAction(action)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
-                    >
-                      <Icon size={12} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
-                      {action.label}
-                    </button>
-                  );
-                })}
-                {routeContext.quickActions.length > 3 && (
-                  <button
-                    onClick={() => setActionsExpanded((v) => !v)}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-expanded={actionsExpanded}
-                    aria-label={
-                      actionsExpanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")
-                    }
-                  >
-                    {actionsExpanded ? (
-                      <>
-                        <ChevronUp size={12} />
-                        {t("copilot.show_less")}
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown size={12} />+{routeContext.quickActions.length - 3}
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          <QuickActionsChips
+            actions={routeContext.quickActions}
+            onAction={handleQuickAction}
+            expanded={actionsExpanded}
+            onToggleExpanded={() => setActionsExpanded((v) => !v)}
+            t={t}
+            variant="mobile"
+          />
 
           {isMobile && (
             <ChatPanel
@@ -708,122 +766,53 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             )}
             aria-hidden={!open}
           >
-            {/* Context header — premium gradient bar */}
+            {/* Context header — compact agency bar */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-              <div className="brand-bg absolute inset-x-0 top-0 h-0.5 opacity-80" />
-              <div className="flex items-center gap-2.5 px-3.5 py-3">
-                <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-                  <Sparkles size={15} className="brand-text" />
+              <div className="brand-bg absolute inset-x-0 top-0 h-[2px] opacity-90" />
+              <div className="flex items-center gap-2.5 px-3 py-2.5">
+                <div
+                  className="brand-bg flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_-2px_var(--brand-glow)]"
+                  aria-hidden
+                >
+                  <Sparkles size={15} className="text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold tracking-wide text-[color:var(--ds-text)] uppercase">
+                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+                    <span className="brand-text h-1.5 w-1.5 shrink-0 rounded-full" />
+                    <span className="truncate">{routeContext.label}</span>
+                  </div>
+                  <p className="font-display text-[13px] font-semibold tracking-tight text-[color:var(--ds-text)]">
                     {t("copilot.title")}
-                  </p>
-                  <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
-                    {routeContext.label}
                   </p>
                 </div>
                 <button
                   onClick={onToggle}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
                   aria-label={t("copilot.close_panel")}
                   title={t("copilot.close_panel")}
                 >
-                  <PanelRightClose size={16} />
+                  <PanelRightClose size={15} />
                 </button>
               </div>
             </div>
 
             {/* Proactive deadline alerts (G6) — premium cards */}
-            {visibleAlerts.length > 0 && (
-              <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                  <AlertCircle size={12} />
-                  {t("copilot.proactive_hints")}
-                </div>
-                <div className="space-y-1.5">
-                  {visibleAlerts.map((alert) => {
-                    const alertKey = `${alert.label}-${alert.query}`;
-                    return (
-                      <div
-                        key={alertKey}
-                        className={cn(
-                          "group/alert flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
-                          alert.severity === "urgent"
-                            ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
-                            : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                        )}
-                      >
-                        <Clock size={13} className="shrink-0" />
-                        <button
-                          onClick={() => chatRef.current?.sendMessage(alert.query)}
-                          className="min-w-0 flex-1 truncate"
-                        >
-                          {alert.label}
-                        </button>
-                        <ChevronRight size={12} className="shrink-0 opacity-50" />
-                        <button
-                          onClick={() => handleDismissAlert(alertKey)}
-                          className="shrink-0 text-[color:var(--ds-text-subtle)] opacity-0 transition-opacity group-hover/alert:opacity-100 hover:text-[color:var(--ds-text)]"
-                          aria-label={t("copilot.dismiss_hint")}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <ProactiveAlerts
+              alerts={visibleAlerts}
+              onQuery={(q) => chatRef.current?.sendMessage(q)}
+              onDismiss={handleDismissAlert}
+              t={t}
+            />
 
             {/* Quick actions — contextual icon chips */}
-            {routeContext.quickActions.length > 0 && (
-              <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
-                <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                  <Sparkles size={12} className="brand-text" />
-                  {t("copilot.quick_actions")}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {visibleActions.map((action) => {
-                    const Icon = QUICK_ACTION_ICONS[action.icon];
-                    return (
-                      <button
-                        key={action.label}
-                        onClick={() => handleQuickAction(action)}
-                        className="group/action inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
-                      >
-                        <Icon
-                          size={12}
-                          className="group-hover/action:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
-                        />
-                        {action.label}
-                      </button>
-                    );
-                  })}
-                  {routeContext.quickActions.length > 3 && (
-                    <button
-                      onClick={() => setActionsExpanded((v) => !v)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-[color:var(--ds-text-subtle)] transition-[color,background-color] duration-200 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                      aria-expanded={actionsExpanded}
-                      aria-label={
-                        actionsExpanded ? t("copilot.show_less_aria") : t("copilot.show_more_aria")
-                      }
-                    >
-                      {actionsExpanded ? (
-                        <>
-                          <ChevronUp size={12} />
-                          {t("copilot.show_less")}
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={12} />+{routeContext.quickActions.length - 3}
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            <QuickActionsChips
+              actions={routeContext.quickActions}
+              onAction={handleQuickAction}
+              expanded={actionsExpanded}
+              onToggleExpanded={() => setActionsExpanded((v) => !v)}
+              t={t}
+              variant="desktop"
+            />
 
             {/* Chat panel — desktop only, single instance */}
             <div className="min-h-0 min-w-0 flex-1">

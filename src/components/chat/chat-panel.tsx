@@ -1452,8 +1452,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <ChatHeader
         compact={isCompact}
         features={{
-          modelSelector: resolvedFeatures.modelSelector,
-          modeSelector: resolvedFeatures.modeSelector,
+          modelSelector: false,
+          modeSelector: false,
           caseSelector: resolvedFeatures.caseSelector,
           jurisdictionSelector: resolvedFeatures.jurisdictionSelector,
           brainStatus: resolvedFeatures.brainStatus,
@@ -1606,7 +1606,15 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }}
         onStop={handleStop}
         isStreaming={isStreaming}
-        features={{ fileUpload: resolvedFeatures.fileUpload }}
+        features={{
+          fileUpload: resolvedFeatures.fileUpload,
+          modelSelector: resolvedFeatures.modelSelector,
+          modeSelector: resolvedFeatures.modeSelector,
+        }}
+        modelOverride={modelOverride}
+        onModelChange={setModelOverride}
+        queryMode={queryMode}
+        onQueryModeChange={setQueryMode}
       />
     </div>
   );
