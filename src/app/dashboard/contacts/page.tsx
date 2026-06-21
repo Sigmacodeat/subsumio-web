@@ -23,6 +23,7 @@ import { api } from "@/lib/api";
 import { OFFLINE_KEYS, isOnline, enqueueMutation, getCache, setCache } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
 import type { ContactFrontmatter } from "@/lib/legal-types";
+import type { DashboardKey } from "@/content/dashboard";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { contactFormSchema } from "@/lib/schemas/contact";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -50,13 +51,7 @@ interface ContactsCache {
   cases: BrainPage[];
 }
 
-const ROLE_LABEL: Record<ContactRole, string> = {
-  client: "Mandant",
-  opponent: "Gegner",
-  court: "Gericht",
-  lawyer: "Anwalt",
-  other: "Sonstige",
-};
+const ROLE_KEYS: ContactRole[] = ["client", "opponent", "court", "lawyer", "other"];
 
 const ROLE_COLORS: Record<ContactRole, string> = {
   client: "bg-blue-500/10 border-blue-500/20 text-blue-600",
@@ -112,6 +107,8 @@ function slugifyContact(name: string): string {
 export default function ContactsPage() {
   const { t } = useLang();
   const { addToast } = useToast();
+
+  const roleLabel = (role: ContactRole): string => t(`contacts.role_${role}` as DashboardKey);
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -141,17 +138,15 @@ export default function ContactsPage() {
       if (cached) {
         setContacts(cached.contacts);
         setCases(cached.cases);
-        setLoadError(
-          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Kontakte angezeigt."
-        );
+        setLoadError(t("contacts.err_offline_cache"));
       } else {
-        setLoadError(err instanceof Error ? err.message : "Kontakte konnten nicht geladen werden.");
+        setLoadError(err instanceof Error ? err.message : t("contacts.err_load_failed"));
         setContacts([]);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const createForm = useDashboardForm({
     schema: contactFormSchema,
@@ -201,7 +196,7 @@ export default function ContactsPage() {
       setContacts(nextContacts);
       await setCache<ContactsCache>(OFFLINE_KEYS.contacts, { contacts: nextContacts, cases });
       createForm.resetForm();
-      addToast({ type: "success", title: "Kontakt angelegt", description: contact.name });
+      addToast({ type: "success", title: t("contacts.toast_created"), description: contact.name });
     },
   });
 
@@ -256,7 +251,11 @@ export default function ContactsPage() {
       setContacts(nextContacts);
       await setCache<ContactsCache>(OFFLINE_KEYS.contacts, { contacts: nextContacts, cases });
       setEditingSlug(null);
-      addToast({ type: "success", title: "Kontakt aktualisiert", description: data.name.trim() });
+      addToast({
+        type: "success",
+        title: t("contacts.toast_updated"),
+        description: data.name.trim(),
+      });
     },
   });
 
@@ -324,8 +323,8 @@ export default function ContactsPage() {
       }
       addToast({
         type: "success",
-        title: "Kontakt gelöscht",
-        description: contact?.name ?? "Kontakt entfernt",
+        title: t("contacts.toast_deleted"),
+        description: contact?.name ?? t("contacts.toast_deleted_fallback"),
         duration: 6000,
       });
     } catch (err) {
@@ -333,22 +332,24 @@ export default function ContactsPage() {
       await setCache<ContactsCache>(OFFLINE_KEYS.contacts, { contacts: backup, cases });
       addToast({
         type: "error",
-        title: "Löschen fehlgeschlagen",
-        description: err instanceof Error ? err.message : "Unbekannter Fehler",
+        title: t("contacts.toast_delete_failed"),
+        description: err instanceof Error ? err.message : t("contacts.err_unknown"),
       });
     }
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
-      <PageHeader title="Kontakte" description="Mandanten, Gegner, Gerichte und Ansprechpartner" />
+      <PageHeader title={t("contacts.title")} description={t("contacts.description")} />
 
       {/* Create form */}
       <form
         onSubmit={createForm.handleSubmit}
         className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
       >
-        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Kontakt anlegen</h2>
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("contacts.create_title")}
+        </h2>
         {createForm.error && (
           <div className="flex items-center gap-2 text-xs text-red-600">
             <AlertTriangle size={14} /> {createForm.error}
@@ -358,7 +359,7 @@ export default function ContactsPage() {
           <div>
             <Input
               {...createForm.form.register("name")}
-              placeholder="Name"
+              placeholder={t("contacts.placeholder_name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {createForm.form.formState.errors.name && (
@@ -371,9 +372,9 @@ export default function ContactsPage() {
             {...createForm.form.register("role")}
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           >
-            {Object.entries(ROLE_LABEL).map(([key, label]) => (
+            {ROLE_KEYS.map((key) => (
               <option key={key} value={key}>
-                {label}
+                {roleLabel(key)}
               </option>
             ))}
           </select>
@@ -381,13 +382,13 @@ export default function ContactsPage() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Input
             {...createForm.form.register("company")}
-            placeholder="Firma / Organisation"
+            placeholder={t("contacts.placeholder_company")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
           <div>
             <Input
               {...createForm.form.register("email")}
-              placeholder="E-Mail"
+              placeholder={t("contacts.placeholder_email")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {createForm.form.formState.errors.email && (
@@ -398,21 +399,21 @@ export default function ContactsPage() {
           </div>
           <Input
             {...createForm.form.register("phone")}
-            placeholder="Telefon"
+            placeholder={t("contacts.placeholder_phone")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
         <textarea
           {...createForm.form.register("address")}
           rows={2}
-          placeholder="Adresse"
+          placeholder={t("contacts.placeholder_address")}
           className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
         <div className="flex gap-3">
           <textarea
             {...createForm.form.register("notes")}
             rows={2}
-            placeholder="Notizen"
+            placeholder={t("contacts.placeholder_notes")}
             className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
           <Button
@@ -425,7 +426,9 @@ export default function ContactsPage() {
             ) : (
               <Plus size={14} />
             )}
-            {createForm.status === "submitting" ? "Speichern…" : "Anlegen"}
+            {createForm.status === "submitting"
+              ? t("contacts.btn_saving")
+              : t("contacts.btn_create")}
           </Button>
         </div>
       </form>
@@ -433,16 +436,16 @@ export default function ContactsPage() {
       {/* Role filter chips */}
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip
-          label="Alle"
+          label={t("contacts.filter_all")}
           active={roleFilter === "all"}
           onClick={() => setRoleFilter("all")}
         />
-        {Object.entries(ROLE_LABEL).map(([key, label]) => {
+        {ROLE_KEYS.map((key) => {
           const count = roleCounts[key] || 0;
           return (
             <FilterChip
               key={key}
-              label={`${label} (${count})`}
+              label={`${roleLabel(key)} (${count})`}
               active={roleFilter === key}
               onClick={() => setRoleFilter(roleFilter === key ? "all" : key)}
             />
@@ -452,7 +455,7 @@ export default function ContactsPage() {
 
       {/* Search */}
       <SearchBar
-        placeholder="Kontakte suchen…"
+        placeholder={t("contacts.search_placeholder")}
         onSearch={setQuery}
         onClear={() => setQuery("")}
         className="max-w-md"
@@ -469,7 +472,7 @@ export default function ContactsPage() {
             className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
           >
             <RotateCcw size={13} />
-            Erneut versuchen
+            {t("contacts.btn_retry")}
           </Button>
         </div>
       )}
@@ -500,12 +503,12 @@ export default function ContactsPage() {
             <UserCircle size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
           <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            Keine Kontakte gefunden
+            {t("contacts.empty_title")}
           </h3>
           <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
             {contacts.length === 0
-              ? "Lege deinen ersten Kontakt an über das Formular oben."
-              : "Passe deine Suche oder Filter an."}
+              ? t("contacts.empty_hint_no_contacts")
+              : t("contacts.empty_hint_filtered")}
           </p>
         </div>
       ) : (
@@ -522,7 +525,7 @@ export default function ContactsPage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                      Kontakt bearbeiten
+                      {t("contacts.edit_title")}
                     </h3>
                     <button
                       type="button"
@@ -542,7 +545,7 @@ export default function ContactsPage() {
                     <div>
                       <Input
                         {...editForm.form.register("name")}
-                        placeholder="Name"
+                        placeholder={t("contacts.placeholder_name")}
                         className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                       />
                       {editForm.form.formState.errors.name && (
@@ -555,22 +558,22 @@ export default function ContactsPage() {
                       {...editForm.form.register("role")}
                       className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                     >
-                      {Object.entries(ROLE_LABEL).map(([key, label]) => (
+                      {ROLE_KEYS.map((key) => (
                         <option key={key} value={key}>
-                          {label}
+                          {roleLabel(key)}
                         </option>
                       ))}
                     </select>
                     <div className="grid grid-cols-2 gap-2">
                       <Input
                         {...editForm.form.register("company")}
-                        placeholder="Firma"
+                        placeholder={t("contacts.placeholder_company_short")}
                         className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                       />
                       <div>
                         <Input
                           {...editForm.form.register("email")}
-                          placeholder="E-Mail"
+                          placeholder={t("contacts.placeholder_email")}
                           className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                         />
                         {editForm.form.formState.errors.email && (
@@ -583,20 +586,20 @@ export default function ContactsPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <Input
                         {...editForm.form.register("phone")}
-                        placeholder="Telefon"
+                        placeholder={t("contacts.placeholder_phone")}
                         className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                       />
                     </div>
                     <textarea
                       {...editForm.form.register("address")}
                       rows={2}
-                      placeholder="Adresse"
+                      placeholder={t("contacts.placeholder_address")}
                       className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                     />
                     <textarea
                       {...editForm.form.register("notes")}
                       rows={2}
-                      placeholder="Notizen"
+                      placeholder={t("contacts.placeholder_notes")}
                       className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                     />
                   </div>
@@ -611,7 +614,9 @@ export default function ContactsPage() {
                       ) : (
                         <Save size={14} />
                       )}
-                      {editForm.status === "submitting" ? "Speichern…" : "Speichern"}
+                      {editForm.status === "submitting"
+                        ? t("contacts.btn_saving")
+                        : t("contacts.btn_save")}
                     </Button>
                   </div>
                 </form>
@@ -638,21 +643,21 @@ export default function ContactsPage() {
                       variant="default"
                       className={`border text-xs ${ROLE_COLORS[contact.role]}`}
                     >
-                      {ROLE_LABEL[contact.role]}
+                      {roleLabel(contact.role)}
                     </Badge>
                     <button
                       onClick={() => startEdit(contact)}
-                      aria-label={`${contact.name} bearbeiten`}
+                      aria-label={`${contact.name} ${t("contacts.aria_edit")}`}
                       className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                      title="Bearbeiten"
+                      title={t("contacts.title_edit")}
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => deleteContact(contact.slug)}
-                      aria-label={`${contact.name} löschen`}
+                      aria-label={`${contact.name} ${t("contacts.aria_delete")}`}
                       className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                      title="Löschen"
+                      title={t("contacts.title_delete")}
                     >
                       <Trash2 size={13} />
                     </button>
@@ -678,7 +683,7 @@ export default function ContactsPage() {
                 {linked.length > 0 && (
                   <div className="space-y-1">
                     <div className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                      Verknüpfte Akten
+                      {t("contacts.linked_cases")}
                     </div>
                     {linked.map((c) => (
                       <Link

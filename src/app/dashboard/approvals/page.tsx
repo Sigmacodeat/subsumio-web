@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useLang } from "@/lib/use-lang";
 import { Loader2, CheckCircle2, XCircle, Clock, FileText, UserCheck, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ACTION_LABELS, type AgentActionFrontmatter } from "@/lib/approval";
 import { usePages } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -183,10 +184,11 @@ export default function ApprovalsPage() {
                         className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-red-500/50 focus:outline-none"
                       />
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          size="sm"
+                          variant="danger"
                           onClick={() => decide(item, "rejected", reason.trim() || undefined)}
                           disabled={busy === item.slug}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-red-600/90 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-60"
                         >
                           {busy === item.slug ? (
                             <Loader2 size={13} className="animate-spin" />
@@ -194,24 +196,26 @@ export default function ApprovalsPage() {
                             <XCircle size={13} />
                           )}
                           {t("approvals.reject_confirm")}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => {
                             setRejecting(null);
                             setReason("");
                           }}
-                          className="rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                         >
                           {t("approvals.cancel")}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
+                        size="sm"
+                        variant="success"
                         onClick={() => decide(item, "approved")}
                         disabled={busy === item.slug}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
                       >
                         {busy === item.slug ? (
                           <Loader2 size={13} className="animate-spin" />
@@ -219,18 +223,19 @@ export default function ApprovalsPage() {
                           <CheckCircle2 size={13} />
                         )}
                         {t("approvals.approve_execute")}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
                         onClick={() => {
                           setRejecting(item.slug);
                           setReason("");
                         }}
                         disabled={busy === item.slug}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:border-red-500/30 hover:text-red-600 disabled:opacity-60"
                       >
                         <XCircle size={13} />
                         {t("approvals.reject")}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

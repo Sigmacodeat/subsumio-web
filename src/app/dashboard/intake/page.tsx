@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -180,13 +181,13 @@ export default function IntakePage() {
         description="WhatsApp- und Portal-Anfragen triagieren, prüfen und in Akten überführen"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Intake" }]}
         actions={
-          <button
+          <Button
+            variant="secondary"
             onClick={() => void qc.invalidateQueries({ queryKey: ["intake", "list"] })}
-            className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
           >
             <RefreshCw size={16} />
             Aktualisieren
-          </button>
+          </Button>
         }
       />
 
@@ -251,10 +252,9 @@ export default function IntakePage() {
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             Manuelle Erfassung für Telefon, Mail oder Walk-in.
           </p>
-          <button
+          <Button
             onClick={() => void createIntake()}
             disabled={createMutation.isPending || !createForm.summary.trim()}
-            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {createMutation.isPending ? (
               <Loader2 size={14} className="animate-spin" />
@@ -262,7 +262,7 @@ export default function IntakePage() {
               <Plus size={14} />
             )}
             Anlegen
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -450,16 +450,15 @@ export default function IntakePage() {
                       placeholder="Ziel-Akte (optional)"
                       className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)]"
                     />
-                    <button
+                    <Button
                       onClick={() => void convertToCase(item)}
                       disabled={convertMutation.isPending}
-                      className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                     >
                       {convertMutation.isPending ? (
                         <Loader2 size={14} className="animate-spin" />
                       ) : null}
                       Akte anlegen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -510,18 +509,14 @@ function ActionButton({
   danger?: boolean;
 }) {
   return (
-    <button
+    <Button
+      size="sm"
+      variant={danger ? "danger" : "secondary"}
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50",
-        danger
-          ? "border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10"
-          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
-      )}
     >
       <Icon size={12} />
       {label}
-    </button>
+    </Button>
   );
 }

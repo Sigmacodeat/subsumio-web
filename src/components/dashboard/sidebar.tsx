@@ -416,7 +416,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 flex shrink-0 flex-col overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform] [contain:layout]",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform]",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -436,164 +436,170 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         }
       }}
     >
-      {/* Logo */}
-      <div
-        className={cn(
-          "flex h-16 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
-          collapsed && "md:justify-center md:px-0"
-        )}
-      >
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:hidden"
-          aria-label={t("sidebar.close_menu")}
-        >
-          <X size={18} />
-        </button>
-        <Link
-          href="/dashboard"
-          aria-label="Subsumio Dashboard"
-          onClick={() => setMobileOpen(false)}
-        >
-          <SubsumioMark size={32} />
-        </Link>
-        <Link
-          href="/dashboard"
-          className={cn(
-            "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            collapsed ? "pointer-events-none opacity-0" : "opacity-100"
-          )}
-          onClick={() => setMobileOpen(false)}
-        >
-          Subsum<span className="brand-text">•io</span>
-        </Link>
-      </div>
-
-      <div
-        className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3"
-        style={{ contain: "strict" }}
-      >
-        {/* Brain status — expanded version */}
+      {/* Inner wrapper — fixed width, never reflows. Only the outer aside clips. */}
+      <div className="flex h-full w-64 flex-col">
+        {/* Logo */}
         <div
           className={cn(
-            "mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            collapsed
-              ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
-              : "opacity-100"
-          )}
-          role="status"
-          aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
-        >
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-              {t("sidebar.brain_status")}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
-              <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
-            </div>
-          </div>
-          <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-            {pages} pages · {entities} entities
-          </div>
-        </div>
-        {/* Brain status — collapsed dot */}
-        <div
-          className={cn(
-            "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
-            collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
-          )}
-          title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
-        >
-          <span
-            className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
-            role="status"
-            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
-          />
-        </div>
-
-        {/* Sync status */}
-        <SyncStatus collapsed={collapsed} />
-
-        {/* Search / Filter */}
-        <div
-          className={cn(
-            "px-3 pt-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            collapsed ? "pointer-events-none h-0 overflow-hidden pt-0 opacity-0" : "opacity-100"
+            "flex h-16 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
+            collapsed && "md:justify-center md:px-0"
           )}
         >
-          <div className="relative">
-            <Search
-              size={14}
-              className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("sidebar.filter_placeholder")}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
-              aria-label={t("sidebar.filter_placeholder")}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
-                aria-label={t("sidebar.clear_filter")}
-              >
-                <X size={12} />
-              </button>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:hidden"
+            aria-label={t("sidebar.close_menu")}
+          >
+            <X size={18} />
+          </button>
+          <Link
+            href="/dashboard"
+            aria-label="Subsumio Dashboard"
+            onClick={() => setMobileOpen(false)}
+          >
+            <SubsumioMark size={32} />
+          </Link>
+          <Link
+            href="/dashboard"
+            className={cn(
+              "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              collapsed ? "pointer-events-none opacity-0" : "opacity-100"
             )}
-          </div>
+            onClick={() => setMobileOpen(false)}
+          >
+            Subsum<span className="brand-text">•io</span>
+          </Link>
         </div>
 
-        {/* Nav */}
-        <nav className="px-3 py-4" aria-label={t("sidebar.main_nav")}>
-          {!hasResults && !collapsed && (
-            <div className="px-3 py-8 text-center">
-              <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                {t("sidebar.no_results")} „{searchQuery}&quot;
-              </p>
+        <div className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
+          {/* Brain status — expanded version */}
+          <div
+            className={cn(
+              "mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              collapsed
+                ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
+                : "opacity-100"
+            )}
+            role="status"
+            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                {t("sidebar.brain_status")}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
+                  aria-hidden
+                />
+                <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
+              </div>
             </div>
-          )}
-          <div className={cn("space-y-1", collapsed && "hidden md:block")}>
-            {PRIMARY_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = isActiveHref(pathname, item.href);
-              return (
-                <Link
-                  key={`primary-${item.href}`}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={collapsed ? t(item.labelKey) : undefined}
-                  onClick={() => setMobileOpen(false)}
-                  title={collapsed ? t(item.labelKey) : undefined}
-                  className={cn(
-                    "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
-                    collapsed && "justify-center px-0",
-                    active
-                      ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
-                      : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
-                  )}
+            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+              {pages} pages · {entities} entities
+            </div>
+          </div>
+          {/* Brain status — collapsed dot */}
+          <div
+            className={cn(
+              "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
+              collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
+            )}
+            title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+          >
+            <span
+              className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+              role="status"
+              aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+            />
+          </div>
+
+          {/* Sync status */}
+          <SyncStatus collapsed={collapsed} />
+
+          {/* Search / Filter */}
+          <div
+            className={cn(
+              "px-3 pt-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              collapsed ? "pointer-events-none h-0 overflow-hidden pt-0 opacity-0" : "opacity-100"
+            )}
+          >
+            <div className="relative">
+              <Search
+                size={14}
+                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("sidebar.filter_placeholder")}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                aria-label={t("sidebar.filter_placeholder")}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+                  aria-label={t("sidebar.clear_filter")}
                 >
-                  <Icon size={17} className="shrink-0" />
-                  <span
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav className="px-3 py-4" aria-label={t("sidebar.main_nav")}>
+            {!hasResults && !collapsed && (
+              <div className="px-3 py-8 text-center">
+                <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                  {t("sidebar.no_results")} „{searchQuery}&quot;
+                </p>
+              </div>
+            )}
+            <div className={cn("space-y-1", collapsed && "hidden md:block")}>
+              {PRIMARY_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const active = isActiveHref(pathname, item.href);
+                return (
+                  <Link
+                    key={`primary-${item.href}`}
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={collapsed ? t(item.labelKey) : undefined}
+                    onClick={() => setMobileOpen(false)}
+                    title={collapsed ? t(item.labelKey) : undefined}
                     className={cn(
-                      "transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                      collapsed
-                        ? "pointer-events-none w-0 overflow-hidden opacity-0"
-                        : "opacity-100"
+                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      active
+                        ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
+                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
-                    {highlightMatch(t(item.labelKey), searchQuery)}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+                    <Icon size={17} className="shrink-0" />
+                    <span
+                      className={cn(
+                        "transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                        collapsed
+                          ? "pointer-events-none w-0 overflow-hidden opacity-0"
+                          : "opacity-100"
+                      )}
+                    >
+                      {highlightMatch(t(item.labelKey), searchQuery)}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
 
-          {collapsed ? (
-            <div className="mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4">
+            {/* Collapsed: flat icon list */}
+            <div
+              className={cn(
+                "mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4 transition-[opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                collapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"
+              )}
+            >
               {accordionSections
                 .flatMap((section) => section.items)
                 .filter((item, index, allItems) => {
@@ -613,7 +619,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       onClick={() => setMobileOpen(false)}
                       title={t(item.labelKey)}
                       className={cn(
-                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
+                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                         active
                           ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -624,8 +630,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   );
                 })}
             </div>
-          ) : (
-            <div className="mt-4 space-y-2">
+            {/* Expanded: accordion sections */}
+            <div
+              className={cn(
+                "mt-4 space-y-2 transition-[opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                collapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"
+              )}
+            >
               {accordionSections.map((section) => {
                 const isOpen = openSection === section.titleKey;
                 const sectionActive = section.items.some((item) =>
@@ -747,86 +758,86 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 );
               })}
             </div>
-          )}
-        </nav>
+          </nav>
 
-        {/* Dream Cycle indicator */}
-        <div
-          className={cn(
-            "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            dreamCycle
-              ? "border-emerald-500/20 bg-emerald-500/[0.06]"
-              : "border-amber-500/20 bg-amber-500/[0.06]",
-            collapsed
-              ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
-              : "opacity-100"
-          )}
-        >
-          <div className="flex items-center gap-2">
-            <Zap
-              size={12}
-              className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
-            />
-            <span
-              className={cn(
-                "text-xs font-semibold",
-                dreamCycle ? "text-emerald-700" : "text-amber-700"
-              )}
-            >
-              {t("sidebar.dream_cycle")}
-            </span>
-          </div>
-          <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
-            {dreamCycle
-              ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-              : t("sidebar.dream_not_scheduled")}
-          </p>
-        </div>
-
-        {/* User profile section */}
-        <div className="border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
-          <Link
-            href="/dashboard/settings"
-            onClick={() => setMobileOpen(false)}
+          {/* Dream Cycle indicator */}
+          <div
             className={cn(
-              "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95",
-              collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+              "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              dreamCycle
+                ? "border-emerald-500/20 bg-emerald-500/[0.06]"
+                : "border-amber-500/20 bg-amber-500/[0.06]",
+              collapsed
+                ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
+                : "opacity-100"
             )}
           >
-            <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
-              <User size={15} className="brand-text" />
+            <div className="flex items-center gap-2">
+              <Zap
+                size={12}
+                className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
+              />
+              <span
+                className={cn(
+                  "text-xs font-semibold",
+                  dreamCycle ? "text-emerald-700" : "text-amber-700"
+                )}
+              >
+                {t("sidebar.dream_cycle")}
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
-                {userName ?? t("sidebar.user")}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                {userEmail ?? ""}
-              </p>
-            </div>
-          </Link>
-        </div>
-      </div>
+            <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
+              {dreamCycle
+                ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+                : t("sidebar.dream_not_scheduled")}
+            </p>
+          </div>
 
-      <div className="border-t border-[color:var(--ds-border)] px-3 py-3">
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
-          aria-expanded={!collapsed}
-          className={cn(
-            "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:flex",
-            collapsed && "justify-center px-0"
-          )}
-        >
-          {collapsed ? (
-            <ChevronRight size={16} />
-          ) : (
-            <>
-              <ChevronLeft size={16} />
-              <span>{t("sidebar.collapse")}</span>
-            </>
-          )}
-        </button>
+          {/* User profile section */}
+          <div className="border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95",
+                collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+              )}
+            >
+              <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+                <User size={15} className="brand-text" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                  {userName ?? t("sidebar.user")}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                  {userEmail ?? ""}
+                </p>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        <div className="border-t border-[color:var(--ds-border)] px-3 py-3">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
+            aria-expanded={!collapsed}
+            className={cn(
+              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+              collapsed && "justify-center px-0"
+            )}
+          >
+            {collapsed ? (
+              <ChevronRight size={16} />
+            ) : (
+              <>
+                <ChevronLeft size={16} />
+                <span>{t("sidebar.collapse")}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </aside>
   );

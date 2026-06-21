@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+import { Button } from "@/components/ui/button";
 
 const CASES_LIMIT = 500;
 
@@ -96,17 +97,14 @@ export default function ControllingPage() {
         actions={
           <div className="flex gap-2">
             {(["month", "quarter", "year"] as const).map((p) => (
-              <button
+              <Button
                 key={p}
+                size="sm"
+                variant={period === p ? "outline" : "secondary"}
                 onClick={() => setPeriod(p)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  period === p
-                    ? "brand-soft/20 brand-text brand-border border"
-                    : "border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
-                }`}
               >
                 {p === "month" ? "Monat" : p === "quarter" ? "Quartal" : "Jahr"}
-              </button>
+              </Button>
             ))}
           </div>
         }

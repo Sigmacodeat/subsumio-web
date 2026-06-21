@@ -517,7 +517,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <aside
         className={cn(
-          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width] [contain:layout] md:flex",
+          "relative hidden min-w-0 shrink-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width] md:block",
           open ? "w-[380px] xl:w-[420px]" : "w-0",
           className
         )}
@@ -525,131 +525,134 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         aria-hidden={!open}
         inert={!open || undefined}
       >
-        {/* Collapse toggle — premium vertical tab */}
-        <button
-          onClick={onToggle}
-          className={cn(
-            "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95",
-            !open && "pointer-events-none opacity-0"
-          )}
-          aria-label="Brain Copilot einklappen"
-          title="Brain Copilot einklappen"
-        >
-          <PanelRightClose
-            size={12}
-            className="text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]"
-          />
-        </button>
-
-        {/* Panel content — stays mounted during transition for smooth animation */}
-        <div
-          className={cn(
-            "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity,transform] delay-75 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            open ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-3 opacity-0"
-          )}
-          aria-hidden={!open}
-        >
-          {/* Context header — premium gradient bar */}
-          <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-            <div className="brand-bg absolute inset-x-0 top-0 h-0.5 opacity-80" />
-            <div className="flex items-center gap-2.5 px-3.5 py-3">
-              <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-                <Sparkles size={15} className="brand-text" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold tracking-wide text-[color:var(--ds-text)] uppercase">
-                  Brain Copilot
-                </p>
-                <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
-                  {routeContext.label}
-                </p>
-              </div>
-              <button
-                onClick={onToggle}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-                aria-label="Panel schließen"
-                title="Panel schließen"
-              >
-                <PanelRightClose size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Proactive deadline alerts (G6) — premium cards */}
-          {proactiveAlerts.length > 0 && (
-            <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                <AlertCircle size={12} />
-                Proaktive Hinweise
-              </div>
-              <div className="space-y-1.5">
-                {proactiveAlerts.map((alert, idx) => (
-                  <button
-                    key={`${alert.label}-${idx}`}
-                    onClick={() => {
-                      const ref = desktopChatRef.current ?? mobileChatRef.current;
-                      ref?.sendMessage(alert.query);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
-                      alert.severity === "urgent"
-                        ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
-                        : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                    )}
-                  >
-                    <Clock size={13} className="shrink-0" />
-                    <span className="min-w-0 flex-1 truncate">{alert.label}</span>
-                    <ChevronRight size={12} className="shrink-0 opacity-50" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Quick actions — contextual icon chips */}
-          {routeContext.quickActions.length > 0 && (
-            <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                <Sparkles size={12} className="brand-text" />
-                Schnellaktionen
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {routeContext.quickActions.slice(0, 3).map((action) => {
-                  const Icon = QUICK_ACTION_ICONS[action.icon];
-                  return (
-                    <button
-                      key={action.label}
-                      onClick={() => handleQuickAction(action)}
-                      className="group/action inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
-                    >
-                      <Icon
-                        size={12}
-                        className="group-hover/action:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
-                      />
-                      {action.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Chat panel */}
-          <div className="min-h-0 min-w-0 flex-1">
-            <ChatPanel
-              ref={desktopChatRef}
-              context={{
-                type: routeContext.type,
-                caseSlug: routeContext.caseSlug,
-                pageSlug: routeContext.pageSlug,
-              }}
-              className="h-full rounded-none border-0"
-              features={{
-                brainStatus: true,
-                tokenWidget: true,
-                sessionHistory: true,
-              }}
+        {/* Inner wrapper — fixed width, never reflows. Only outer aside clips. */}
+        <div className="flex h-full w-[380px] flex-col xl:w-[420px]">
+          {/* Collapse toggle — premium vertical tab */}
+          <button
+            onClick={onToggle}
+            className={cn(
+              "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95",
+              !open && "pointer-events-none opacity-0"
+            )}
+            aria-label="Brain Copilot einklappen"
+            title="Brain Copilot einklappen"
+          >
+            <PanelRightClose
+              size={12}
+              className="text-[color:var(--ds-text-muted)] transition-colors group-hover:text-[color:var(--ds-text)]"
             />
+          </button>
+
+          {/* Panel content — stays mounted during transition for smooth animation */}
+          <div
+            className={cn(
+              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity] delay-75 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              open ? "opacity-100" : "pointer-events-none opacity-0"
+            )}
+            aria-hidden={!open}
+          >
+            {/* Context header — premium gradient bar */}
+            <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+              <div className="brand-bg absolute inset-x-0 top-0 h-0.5 opacity-80" />
+              <div className="flex items-center gap-2.5 px-3.5 py-3">
+                <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
+                  <Sparkles size={15} className="brand-text" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold tracking-wide text-[color:var(--ds-text)] uppercase">
+                    Brain Copilot
+                  </p>
+                  <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+                    {routeContext.label}
+                  </p>
+                </div>
+                <button
+                  onClick={onToggle}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                  aria-label="Panel schließen"
+                  title="Panel schließen"
+                >
+                  <PanelRightClose size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Proactive deadline alerts (G6) — premium cards */}
+            {proactiveAlerts.length > 0 && (
+              <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                  <AlertCircle size={12} />
+                  Proaktive Hinweise
+                </div>
+                <div className="space-y-1.5">
+                  {proactiveAlerts.map((alert, idx) => (
+                    <button
+                      key={`${alert.label}-${idx}`}
+                      onClick={() => {
+                        const ref = desktopChatRef.current ?? mobileChatRef.current;
+                        ref?.sendMessage(alert.query);
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                        alert.severity === "urgent"
+                          ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
+                          : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                      )}
+                    >
+                      <Clock size={13} className="shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">{alert.label}</span>
+                      <ChevronRight size={12} className="shrink-0 opacity-50" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick actions — contextual icon chips */}
+            {routeContext.quickActions.length > 0 && (
+              <div className="shrink-0 border-b border-[color:var(--ds-border)] px-3 py-2.5">
+                <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                  <Sparkles size={12} className="brand-text" />
+                  Schnellaktionen
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {routeContext.quickActions.slice(0, 3).map((action) => {
+                    const Icon = QUICK_ACTION_ICONS[action.icon];
+                    return (
+                      <button
+                        key={action.label}
+                        onClick={() => handleQuickAction(action)}
+                        className="group/action inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
+                      >
+                        <Icon
+                          size={12}
+                          className="group-hover/action:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
+                        />
+                        {action.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Chat panel */}
+            <div className="min-h-0 min-w-0 flex-1">
+              <ChatPanel
+                ref={desktopChatRef}
+                context={{
+                  type: routeContext.type,
+                  caseSlug: routeContext.caseSlug,
+                  pageSlug: routeContext.pageSlug,
+                }}
+                className="h-full rounded-none border-0"
+                features={{
+                  brainStatus: true,
+                  tokenWidget: true,
+                  sessionHistory: true,
+                }}
+              />
+            </div>
           </div>
         </div>
       </aside>

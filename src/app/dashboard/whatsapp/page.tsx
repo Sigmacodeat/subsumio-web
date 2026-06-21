@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -267,18 +268,14 @@ export default function WhatsAppDashboardPage() {
                 <option value="client">{t("whatsapp.role_client")}</option>
                 <option value="intake">{t("whatsapp.role_intake")}</option>
               </select>
-              <button
-                onClick={() => void addIdentity()}
-                disabled={savingIdentity || !phone.trim()}
-                className="brand-bg inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              >
+              <Button onClick={() => void addIdentity()} disabled={savingIdentity || !phone.trim()}>
                 {savingIdentity ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <CheckCircle2 size={14} />
                 )}
                 {t("whatsapp.activate")}
-              </button>
+              </Button>
             </div>
             {status?.identities?.length ? (
               <div className="space-y-2">
@@ -300,7 +297,9 @@ export default function WhatsAppDashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
+                      <Button
+                        size="sm"
+                        variant="secondary"
                         onClick={() =>
                           void api.whatsapp
                             .updateIdentity({
@@ -309,20 +308,20 @@ export default function WhatsAppDashboardPage() {
                             })
                             .then(() => reload())
                         }
-                        className="rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                       >
                         {identity.status === "active"
                           ? t("whatsapp.suspend")
                           : t("whatsapp.activate")}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
                         onClick={() =>
                           void api.whatsapp.deleteIdentity(identity.id).then(() => reload())
                         }
-                        className="rounded-md border border-red-500/20 px-2 py-1 text-red-700"
                       >
                         {t("whatsapp.delete")}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
@@ -193,13 +194,10 @@ export default function WorkflowsPage() {
         description="Kanzlei-Workflows mit verketteten Aktionen und Vier-Augen-Freigabe"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workflows" }]}
         actions={
-          <button
-            onClick={() => setSelectedTemplate("due_diligence")}
-            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-          >
+          <Button onClick={() => setSelectedTemplate("due_diligence")}>
             <Plus size={16} />
             Neuer Workflow
-          </button>
+          </Button>
         }
       />
 
@@ -224,12 +222,14 @@ export default function WorkflowsPage() {
         >
           <AlertCircle size={16} className="shrink-0 text-red-600" />
           <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-          <button
-            onClick={() => setError(null)}
+          <Button
+            size="icon"
+            variant="ghost"
             className="ml-auto text-red-600 hover:text-red-700"
+            onClick={() => setError(null)}
           >
             <XCircle size={16} />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -260,16 +260,17 @@ export default function WorkflowsPage() {
                           {template.description}
                         </p>
                       </div>
-                      <button
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => {
                           setSelectedTemplate(null);
                           setCustomPrompt("");
                           setCaseSlug("");
                         }}
-                        className="text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                       >
                         Abbrechen
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Steps preview */}
@@ -325,18 +326,14 @@ export default function WorkflowsPage() {
                       />
                     </div>
 
-                    <button
-                      onClick={() => handleStart(selectedTemplate)}
-                      disabled={starting}
-                      className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                    >
+                    <Button onClick={() => handleStart(selectedTemplate)} disabled={starting}>
                       {starting ? (
                         <Loader2 size={16} className="animate-spin" />
                       ) : (
                         <Play size={16} />
                       )}
                       {starting ? "Starte..." : "Workflow starten"}
-                    </button>
+                    </Button>
                   </>
                 );
               })()}

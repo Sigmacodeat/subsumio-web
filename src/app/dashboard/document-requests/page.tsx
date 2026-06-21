@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -165,13 +166,13 @@ export default function DocumentRequestsPage() {
         description="Offene Unterlagenanforderungen, Versandstatus und Fulfillment im Blick"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokumentenanfragen" }]}
         actions={
-          <button
+          <Button
+            variant="secondary"
             onClick={() => void qc.invalidateQueries({ queryKey: ["document-requests", "list"] })}
-            className="inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
           >
             <RefreshCw size={16} />
             Aktualisieren
-          </button>
+          </Button>
         }
       />
 
@@ -236,10 +237,9 @@ export default function DocumentRequestsPage() {
           <p className="text-xs text-[color:var(--ds-text-muted)]">
             Manuell für WhatsApp, Portal oder Mail anlegen.
           </p>
-          <button
+          <Button
             onClick={() => void createRequest()}
             disabled={createMutation.isPending || !createForm.case_slug.trim()}
-            className="brand-bg inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {createMutation.isPending ? (
               <Loader2 size={14} className="animate-spin" />
@@ -247,7 +247,7 @@ export default function DocumentRequestsPage() {
               <Plus size={14} />
             )}
             Anlegen
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -457,18 +457,14 @@ function ActionButton({
   danger?: boolean;
 }) {
   return (
-    <button
+    <Button
+      size="sm"
+      variant={danger ? "danger" : "secondary"}
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50",
-        danger
-          ? "border-red-500/20 bg-red-500/5 text-red-600 hover:bg-red-500/10"
-          : "border-[color:var(--ds-border)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-surface-hover)]"
-      )}
     >
       <Icon size={12} />
       {label}
-    </button>
+    </Button>
   );
 }
