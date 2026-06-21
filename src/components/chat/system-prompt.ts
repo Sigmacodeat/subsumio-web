@@ -1,6 +1,6 @@
 import type { Jurisdiction } from "@/components/chat/chat-types";
 
-const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
+export const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
   de: "deutsches",
   at: "österreichisches",
   ch: "schweizerisches",
@@ -29,7 +29,9 @@ interface PromptContextParams {
   attachmentFetcher?: (slug: string) => Promise<string>;
 }
 
-export async function buildPromptContext(params: PromptContextParams): Promise<string> {
+export async function buildPromptContext(
+  params: PromptContextParams
+): Promise<{ systemPrompt: string; userInput: string }> {
   const {
     jurisdiction,
     selectedCaseSlug,

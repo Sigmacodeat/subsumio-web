@@ -16,6 +16,11 @@ import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
+import {
+  buildPromptContext,
+  processStreamingChunk,
+  JURISDICTION_LABELS,
+} from "@/components/chat/system-prompt";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import {
@@ -66,13 +71,6 @@ interface ChatPanelProps {
   title?: string;
   initialQuery?: string;
 }
-
-const JURISDICTION_LABELS: Record<Jurisdiction, string> = {
-  de: "deutsches",
-  at: "österreichisches",
-  ch: "schweizerisches",
-  eu: "EU-",
-};
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
   return mode === "deep_matter" || mode === "admin_audit" ? "tokenmax" : "balanced";
@@ -345,7 +343,13 @@ function sanitizeSessionMessages(msgs: ChatMessage[]): ChatMessage[] {
 }
 
 export interface ChatPanelHandle {
-  sendMessage: (text: string) => void;
+  sendMessage: (
+    text: string,
+    options?: {
+      attachments?: Array<{ name: string; slug: string }>;
+      replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
+    }
+  ) => void;
 }
 
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
@@ -751,7 +755,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   useImperativeHandle(
     ref,
     () => ({
-      sendMessage: (text: string) => handleSend(text),
+      sendMessage: (
+        text: string,
+        options?: {
+          attachments?: Array<{ name: string; slug: string }>;
+          replyTo?: { id: string; role: "user" | "assistant"; preview: string } | null;
+        }
+      ) => handleSend(text, options?.attachments, options?.replyTo ?? undefined),
     }),
     [handleSend]
   );
