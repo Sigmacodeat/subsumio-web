@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
@@ -36,16 +35,18 @@ export const GET = createHandler(
     try {
       const params = buildSearchParams(q, query.limit, typeFilter);
 
-      const res = await fetch(
-        `${ENGINE_URL}/api/search?${params.toString()}`,
-        { headers: ctx.headers },
-      );
+      const res = await fetch(`${ENGINE_URL}/api/search?${params.toString()}`, {
+        headers: ctx.headers,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       return Response.json(data);
     } catch (err) {
-      console.error("[search] engine search failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unreachable", "Suche nicht verfügbar", 503);
+      console.error(
+        "[search] engine search failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return Response.json([]);
     }
-  },
+  }
 );

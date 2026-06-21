@@ -104,11 +104,24 @@ Optimierungsplan nicht einzeln vergessen werden dürfen.
 
 ### Phase B — Homepage (`/`, `landing.tsx`)
 
-- [ ] **B1.** Logo-Social-Proof von statischem Grid auf Endlos-Carousel (wie Harvey/Legartis) umstellen — erhöht wahrgenommene Marktdurchdringung.
-- [ ] **B2.** Trust/Zertifikats-Badges (DSGVO, ISO, Self-Hosted/EU-Cloud) klickbar machen mit Detail-Flyout (Inspiration: Harveys 6 klickbare Security-Badges) statt reiner Icon-Reihe.
-- [ ] **B3.** Pro Feature-Karte (Section `#features`) eine kleine Inline-Demo-Animation statt nur Icon+Text — z. B. Mini-Loop, der eine Kernaktion zeigt (Fristen-Erkennung, Zitat-Generierung). Stilistisch an Dashboard-`line-reveal`/`stream-in` anlehnen.
-- [ ] **B4.** Testimonial-Section auf rotierende Multi-Karten (Foto + Titel + Firma) erweitern statt Einzelzitat — erhöht Glaubwürdigkeit ggü. Legartis/Harvey-Pattern.
-- [ ] **B5.** Zielgruppen-Tabs (Kanzlei / Solo / In-House / Mittelstand) direkt als Homepage-Teaser-Section mit Tab-Switch einbauen (wie Legartis' Team-Tabs), die auf die jeweiligen `/solutions/*`-Seiten verlinken — aktuell nur über Nav-Dropdown erreichbar, keine Homepage-Sichtbarkeit.
+> **Korrektur nach Code-Verifikation (2026-06-21, dritte Folge-Session):** B1, B2 und B4
+> wie ursprünglich formuliert sind **nicht umsetzbar, ohne unehrlich zu werden**. Der
+> Code zeigt an mehreren Stellen eine bewusste Anti-Fake-Social-Proof-Haltung: der
+> Use-Cases-Abschnitt in `landing.tsx` trägt den Kommentar "real workflows, not fake
+> testimonials", und `security-page.tsx` hat einen eigenen "Honest roadmap"-Abschnitt
+> für Zertifizierungen, die es noch nicht gibt. Es existieren aktuell keine echten
+> Kundenlogos, keine echten Testimonials und keine ISO/SOC2-Zertifikate zum Verlinken —
+> Subsumio ist (Stand jetzt) ein Pre-Launch-Produkt ohne diese Assets. B1/B2/B4 wie bei
+> Harvey/Legartis umzusetzen würde bedeuten, Kunden/Zertifikate zu erfinden. **Empfehlung:
+> B1/B2/B4 zurückstellen, bis echte Kundenlogos/Testimonials/Zertifikate vorliegen** —
+> dann sind sie technisch trivial nachzurüsten (das `GlowCard`/`motion-system`-Muster
+> trägt sie problemlos.
+
+- [ ] **B1.** (Zurückgestellt — fehlende echte Kundenlogos, siehe Hinweis oben.)
+- [ ] **B2.** (Zurückgestellt — fehlende echte Zertifikate, siehe Hinweis oben.)
+- [ ] **B3.** Pro Feature-Karte (Section `#features`) eine kleine Inline-Demo-Animation statt nur Icon+Text — z. B. Mini-Loop, der eine Kernaktion zeigt (Fristen-Erkennung, Zitat-Generierung). Stilistisch an Dashboard-`line-reveal`/`stream-in` anlehnen. Weiterhin offen.
+- [ ] **B4.** (Zurückgestellt — fehlende echte Testimonials, siehe Hinweis oben.)
+- [x] **B5.** Zielgruppen-Tabs (Kanzlei / Solo / In-House / Mittelstand) als Homepage-Teaser-Section eingebaut: neue Komponente `src/components/marketing/audience-tabs.tsx` (`AudienceTabs`), eingebunden in `landing.tsx` nach dem Use-Cases-Abschnitt. Tab-Switch (Framer-Motion `AnimatePresence mode="wait"`) zeigt Badge/Headline/Sub aus den bereits bestehenden `SOLUTIONS[lang]`-Daten (keine neuen/erfundenen Inhalte) plus Link zur jeweiligen `/solutions/*`-Seite. `tsc --noEmit` clean; SSR-Default-Inhalt (erster Slug `law-firms`) im Preview bestätigt. Tab-Klick-Interaktion konnte in dieser Session wegen einer parallel aktiven, gemeinsam genutzten Preview-Session (ständige Fast-Refresh-Zyklen durch parallele Datei-Speicherungen, State-Reset bei jedem Rebuild) nicht zuverlässig per Automation verifiziert werden — Code-Pattern ist Standard-`useState`/`onClick`, identisch zum bereits verifizierten Muster in `solution-page.tsx`. **Empfehlung: manuell im Browser kurz nachprüfen.**
 - [ ] **B6.** `GraphHero`/Hero-Animation (aus `features-page.tsx`) prüfen, ob sie auch auf der Homepage als Hero-Visual genutzt werden kann/sollte, um die "KI sieht aus wie Dashboard"-Konsistenz zu erhöhen.
 
 ### Phase C — `/features`

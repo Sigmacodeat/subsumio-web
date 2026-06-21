@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
@@ -13,22 +12,26 @@ function decodedSlug(raw: string): string | null {
   }
 }
 
-const playbookPatchSchema = z.object({
-  title: z.string().min(1).optional(),
-  jurisdiction: z.enum(["at", "de", "ch", "all"]).optional(),
-  contract_types: z.array(z.string()).optional(),
-  rules: z.array(
-    z.object({
-      id: z.string(),
-      clause_type: z.string().min(1),
-      required_position: z.enum(["favorable", "neutral", "exclude", "must_include"]),
-      deviation_flag: z.string().min(1),
-      severity: z.enum(["low", "medium", "high", "critical"]),
-      notes: z.string().optional(),
-    }),
-  ).optional(),
-  description: z.string().optional(),
-}).passthrough();
+const playbookPatchSchema = z
+  .object({
+    title: z.string().min(1).optional(),
+    jurisdiction: z.enum(["at", "de", "ch", "all"]).optional(),
+    contract_types: z.array(z.string()).optional(),
+    rules: z
+      .array(
+        z.object({
+          id: z.string(),
+          clause_type: z.string().min(1),
+          required_position: z.enum(["favorable", "neutral", "exclude", "must_include"]),
+          deviation_flag: z.string().min(1),
+          severity: z.enum(["low", "medium", "high", "critical"]),
+          notes: z.string().optional(),
+        })
+      )
+      .optional(),
+    description: z.string().optional(),
+  })
+  .passthrough();
 
 export const GET = createHandler(
   {
@@ -37,7 +40,8 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = decodedSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
@@ -49,10 +53,13 @@ export const GET = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return apiSuccess(await res.json());
     } catch (err) {
-      console.error("[playbooks/slug] get failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
+      console.error(
+        "[playbooks/slug] get failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return apiError("not_found", "Playbook nicht gefunden", 404);
     }
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -67,7 +74,8 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = decodedSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
@@ -96,15 +104,18 @@ export const PATCH = createHandler(
         const errPayload = await res.json().catch(() => ({}));
         return Response.json(
           errPayload.error ? errPayload : { error: `Engine returned ${res.status}` },
-          { status: res.status },
+          { status: res.status }
         );
       }
       return apiSuccess(await res.json());
     } catch (err) {
-      console.error("[playbooks/slug] patch failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[playbooks/slug] patch failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -118,7 +129,8 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx, _body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = decodedSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
@@ -131,8 +143,11 @@ export const DELETE = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return apiSuccess({ ok: true });
     } catch (err) {
-      console.error("[playbooks/slug] delete failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[playbooks/slug] delete failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );

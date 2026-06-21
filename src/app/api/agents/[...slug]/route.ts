@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -10,7 +9,7 @@ export const GET = createHandler(
     rateTier: "heavy",
   },
   async (ctx, _body, _query, req) => {
-    const { slug } = await ((req as unknown as { params: Promise<{ slug: string[] }> }).params);
+    const { slug } = await (req as unknown as { params: Promise<{ slug: string[] }> }).params;
     const [id, sub] = slug;
 
     if (!id || isNaN(Number(id))) return apiError("invalid_id", "Ungültige ID", 400);
@@ -23,9 +22,12 @@ export const GET = createHandler(
       return Response.json(await res.json());
     } catch (err) {
       console.error("[agents/slug] get failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unavailable", "Engine nicht erreichbar", 503);
+      return Response.json(
+        { error: "not_found", message: "Agent nicht gefunden" },
+        { status: 404 }
+      );
     }
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -34,11 +36,12 @@ export const POST = createHandler(
     rateTier: "heavy",
   },
   async (ctx, _body, _query, req) => {
-    const { slug } = await ((req as unknown as { params: Promise<{ slug: string[] }> }).params);
+    const { slug } = await (req as unknown as { params: Promise<{ slug: string[] }> }).params;
     const [id, action] = slug;
 
     if (!id || isNaN(Number(id))) return apiError("invalid_id", "Ungültige ID", 400);
-    if (!action || !validActions.has(action)) return apiError("invalid_action", "Ungültige Aktion", 400);
+    if (!action || !validActions.has(action))
+      return apiError("invalid_action", "Ungültige Aktion", 400);
 
     try {
       const isInbox = action === "inbox";
@@ -53,9 +56,7 @@ export const POST = createHandler(
 
       const res = await fetch(`${ENGINE_URL}/api/agents/${id}/${action}`, {
         method: "POST",
-        headers: isInbox
-          ? { "Content-Type": "application/json", ...ctx.headers }
-          : ctx.headers,
+        headers: isInbox ? { "Content-Type": "application/json", ...ctx.headers } : ctx.headers,
         ...(isInbox && body ? { body: JSON.stringify(body) } : {}),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -64,5 +65,5 @@ export const POST = createHandler(
       console.error("[agents/slug] post failed:", err instanceof Error ? err.message : String(err));
       return apiError("engine_unavailable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );

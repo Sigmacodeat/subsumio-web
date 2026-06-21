@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
@@ -14,13 +13,18 @@ const pagesQuerySchema = z.object({
   cursor: z.string().optional(),
 });
 
-const pagesPostSchema = z.object({
-  slug: z.string().min(1, "slug_required").refine((s) => !s.includes("..") && !s.includes("//"), "invalid_slug"),
-  title: z.string().min(1, "title_required"),
-  content: z.string().optional(),
-  type: z.string().optional(),
-  frontmatter: z.record(z.unknown()).optional(),
-}).passthrough();
+const pagesPostSchema = z
+  .object({
+    slug: z
+      .string()
+      .min(1, "slug_required")
+      .refine((s) => !s.includes("..") && !s.includes("//"), "invalid_slug"),
+    title: z.string().min(1, "title_required"),
+    content: z.string().optional(),
+    type: z.string().optional(),
+    frontmatter: z.record(z.unknown()).optional(),
+  })
+  .passthrough();
 
 export const GET = createHandler(
   {
@@ -36,7 +40,9 @@ export const GET = createHandler(
       if (val) params.set(key, val);
     }
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, { headers: ctx.headers });
+      const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
+        headers: ctx.headers,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       // Relay cursor pagination metadata from engine if present
@@ -47,9 +53,9 @@ export const GET = createHandler(
       return Response.json(data);
     } catch (err) {
       console.error("[pages] list failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unreachable", "Seiten nicht abrufbar", 503);
+      return Response.json([]);
     }
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -75,13 +81,22 @@ export const POST = createHandler(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       void recordQuota(ctx, "pages");
       const result = await res.json();
-      broadcastSseEvent(ctx.brainId, "case.updated", { slug: body.slug, by: ctx.user.email, at: new Date().toISOString(), action: "created" });
+      broadcastSseEvent(ctx.brainId, "case.updated", {
+        slug: body.slug,
+        by: ctx.user.email,
+        at: new Date().toISOString(),
+        action: "created",
+      });
 
       // Auto-conflict-check for legal_case pages
-      let conflictWarning: { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> } | undefined;
+      let conflictWarning:
+        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
+        | undefined;
       if (body.type === "legal_case") {
         const fm = body.frontmatter ?? {};
-        const namesToCheck = [fm.client_name, fm.opponent_name].filter((n): n is string => typeof n === "string" && n.trim().length > 0);
+        const namesToCheck = [fm.client_name, fm.opponent_name].filter(
+          (n): n is string => typeof n === "string" && n.trim().length > 0
+        );
         if (namesToCheck.length > 0) {
           try {
             const conflicts: Array<{ name: string; slug: string; type: string }> = [];
@@ -92,13 +107,20 @@ export const POST = createHandler(
                 body: JSON.stringify({ name }),
               });
               if (checkRes.ok) {
-                const checkData = await checkRes.json() as { matches?: Array<{ name: string; slug: string; type: string }> };
+                const checkData = (await checkRes.json()) as {
+                  matches?: Array<{ name: string; slug: string; type: string }>;
+                };
                 if (checkData.matches?.length) {
-                  conflicts.push(...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type })));
+                  conflicts.push(
+                    ...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
+                  );
                 }
               }
             }
-            conflictWarning = { checked: true, matches: conflicts.length > 0 ? conflicts : undefined };
+            conflictWarning = {
+              checked: true,
+              matches: conflicts.length > 0 ? conflicts : undefined,
+            };
           } catch {
             conflictWarning = { checked: false };
           }
@@ -110,5 +132,5 @@ export const POST = createHandler(
       console.error("[pages] create failed:", e instanceof Error ? e.message : String(e));
       return apiError("internal_error", "Seite konnte nicht erstellt werden", 500);
     }
-  },
+  }
 );

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
@@ -19,12 +18,15 @@ export const GET = createHandler(
     cacheMaxAge: 15,
   },
   async (ctx, _body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = validSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers: ctx.headers });
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers: ctx.headers,
+      });
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const page = await res.json();
@@ -33,10 +35,13 @@ export const GET = createHandler(
       }
       return Response.json(page);
     } catch (err) {
-      console.error("[invoices/slug] get failed:", err instanceof Error ? err.message : String(err));
-      return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
+      console.error(
+        "[invoices/slug] get failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return apiError("not_found", "Rechnung nicht gefunden", 404);
     }
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -46,7 +51,8 @@ export const PATCH = createHandler(
     body: patchSchema,
   },
   async (ctx, body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = validSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
@@ -55,8 +61,16 @@ export const PATCH = createHandler(
     }
 
     const BLOCKED_STATUS = new Set(["sent", "paid"]);
-    if (typeof body.status === "string" && BLOCKED_STATUS.has(body.status) && !body._allow_status_override) {
-      return apiError("use_dedicated_endpoint", "Use /api/invoices/send or /api/invoices/remind", 409);
+    if (
+      typeof body.status === "string" &&
+      BLOCKED_STATUS.has(body.status) &&
+      !body._allow_status_override
+    ) {
+      return apiError(
+        "use_dedicated_endpoint",
+        "Use /api/invoices/send or /api/invoices/remind",
+        409
+      );
     }
 
     try {
@@ -68,15 +82,23 @@ export const PATCH = createHandler(
       if (res.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        return Response.json(payload.error ? payload : { error: `Engine returned ${res.status}` }, { status: res.status });
+        return Response.json(payload.error ? payload : { error: `Engine returned ${res.status}` }, {
+          status: res.status,
+        });
       }
-      void logAudit("invoice.update", "invoice", { entityId: slug, details: { fields: Object.keys(body) } });
+      void logAudit("invoice.update", "invoice", {
+        entityId: slug,
+        details: { fields: Object.keys(body) },
+      });
       return Response.json(await res.json());
     } catch (err) {
-      console.error("[invoices/slug] patch failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[invoices/slug] patch failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -85,12 +107,15 @@ export const DELETE = createHandler(
     rateTier: "standard",
   },
   async (ctx, _body, _query, req) => {
-    const { slug: rawSlug } = await ((req as unknown as { params: Promise<{ slug: string }> }).params);
+    const { slug: rawSlug } = await (req as unknown as { params: Promise<{ slug: string }> })
+      .params;
     const slug = validSlug(rawSlug);
     if (!slug) return apiError("invalid_slug", "Ungültiger Slug", 400);
 
     try {
-      const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers: ctx.headers });
+      const checkRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        headers: ctx.headers,
+      });
       if (checkRes.status === 404) return apiError("not_found", "Rechnung nicht gefunden", 404);
       if (checkRes.ok) {
         const page = await checkRes.json();
@@ -114,8 +139,11 @@ export const DELETE = createHandler(
       void logAudit("invoice.delete", "invoice", { entityId: slug });
       return Response.json({ ok: true });
     } catch (err) {
-      console.error("[invoices/slug] delete failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[invoices/slug] delete failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("engine_unreachable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );

@@ -50,7 +50,11 @@ import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
 import { apiError, apiRateLimited, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
-import { createCitationGateStream, groundJsonResponse, emptyGroundingMetadata } from "@/lib/citation-gate";
+import {
+  createCitationGateStream,
+  groundJsonResponse,
+  emptyGroundingMetadata,
+} from "@/lib/citation-gate";
 import { sanitizeObjectStrings } from "@/lib/prompt-sanitizer";
 import { validateCronAuth } from "@/lib/cron-auth";
 import { timingSafeCompare } from "@/lib/crypto-utils";
@@ -220,9 +224,14 @@ export function createHandler<
     const corsResponse = handleCors(req, options.cors ?? false);
     if (corsResponse) return corsResponse;
 
-    // 1. Engine config check
-    const configError = engineConfigurationResponse();
-    if (configError) return withCorsHeaders(configError, options.cors ?? false);
+    // 1. Engine config check — only block state-changing operations.
+    //    GET routes have their own try/catch with graceful fallbacks (empty
+    //    lists, zeroed stats) so the dashboard remains usable even when the
+    //    engine is temporarily unreachable.
+    if (isStateChanging(req.method)) {
+      const configError = engineConfigurationResponse();
+      if (configError) return withCorsHeaders(configError, options.cors ?? false);
+    }
 
     // 1b. Internal service bypass (x-internal-secret)
     let internalContext: EngineContext | null = null;
@@ -575,9 +584,8 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
       const rawPayload = options.transformBody
         ? options.transformBody(body as z.infer<B>)
         : (body as Record<string, unknown>);
-      const payload = (options.sanitizeBody ?? true)
-        ? sanitizeObjectStrings(rawPayload)
-        : rawPayload;
+      const payload =
+        (options.sanitizeBody ?? true) ? sanitizeObjectStrings(rawPayload) : rawPayload;
       try {
         const upstream = await fetch(`${ENGINE_URL}${options.enginePath}`, {
           method: "POST",
