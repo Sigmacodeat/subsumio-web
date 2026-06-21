@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, FileText, Info, Loader2, Inbox } from "lucide-react";
+import { Save, FileText, Info, Loader2, Inbox, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { PageHeader } from "@/components/dashboard/page-header";
+import {
+  createFilingPackage,
+  submitForApproval,
+  approveFiling,
+  cancelFiling,
+  getFilingStatusLabel,
+  type FilingPackage,
+} from "@/lib/efiling-architecture";
 
 interface BeaDraft {
   slug: string;
@@ -15,6 +23,11 @@ interface BeaDraft {
   caseNumber?: string;
   createdAt: string;
   aiGenerated?: boolean;
+}
+
+/** Brain-page slug for a draft's filing package — one package per draft. */
+function filingSlugForDraft(draftSlug: string): string {
+  return draftSlug.replace("legal/bea-drafts/", "legal/bea-filings/");
 }
 
 interface BeaImported {
@@ -27,6 +40,8 @@ interface BeaImported {
 export default function BeaPage() {
   const [drafts, setDrafts] = useState<BeaDraft[]>([]);
   const [imported, setImported] = useState<BeaImported[]>([]);
+  const [filings, setFilings] = useState<Record<string, FilingPackage>>({});
+  const [filingBusy, setFilingBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
   const [subject, setSubject] = useState("");
@@ -42,11 +57,20 @@ export default function BeaPage() {
     let cancelled = false;
     (async () => {
       try {
-        const [draftPages, importedPages] = await Promise.all([
+        const [draftPages, importedPages, filingPages] = await Promise.all([
           api.brain.listPages({ type: "bea_draft", limit: 50 }),
           api.brain.listPages({ type: "bea_message", limit: 50 }),
+          api.brain.listPages({ type: "filing_package", limit: 50 }),
         ]);
         if (cancelled) return;
+        const filingsBySlug: Record<string, FilingPackage> = {};
+        for (const p of filingPages) {
+          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+          if (fm.draft_slug && typeof fm.draft_slug === "string") {
+            filingsBySlug[fm.draft_slug] = fm.package as FilingPackage;
+          }
+        }
+        setFilings(filingsBySlug);
         setDrafts(
           draftPages.map((p) => {
             const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -133,6 +157,62 @@ export default function BeaPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** Persist a FilingPackage (create-or-update) as its dedicated brain page. */
+  async function saveFilingPackage(draftSlug: string, pkg: FilingPackage): Promise<void> {
+    await api.brain.createPage({
+      slug: filingSlugForDraft(draftSlug),
+      title: `Filing-Paket: ${pkg.court_case_number ?? draftSlug}`,
+      type: "filing_package",
+      frontmatter: { draft_slug: draftSlug, package: pkg },
+    });
+    setFilings((prev) => ({ ...prev, [draftSlug]: pkg }));
+  }
+
+  async function createPackageForDraft(draft: BeaDraft): Promise<void> {
+    setFilingBusy(draft.slug);
+    try {
+      const pkg = createFilingPackage({
+        case_slug: draft.caseNumber ?? draft.slug,
+        brain_id: "default",
+        org_id: "default",
+        channel: "beA",
+        court_case_number: draft.caseNumber,
+        created_by: "dashboard-user",
+      });
+      await saveFilingPackage(draft.slug, pkg);
+      setStatusMessage("Filing-Paket angelegt (Status: Entwurf).");
+    } catch (e) {
+      setStatusMessage(
+        e instanceof Error ? e.message : "Filing-Paket konnte nicht angelegt werden."
+      );
+    } finally {
+      setFilingBusy(null);
+    }
+  }
+
+  async function advanceFiling(
+    draftSlug: string,
+    action: "submit" | "approve" | "cancel"
+  ): Promise<void> {
+    const pkg = filings[draftSlug];
+    if (!pkg) return;
+    setFilingBusy(draftSlug);
+    try {
+      const next =
+        action === "submit"
+          ? submitForApproval(pkg, "dashboard-user")
+          : action === "approve"
+            ? approveFiling(pkg, "dashboard-user")
+            : cancelFiling(pkg, "dashboard-user", "Manuell verworfen im Dashboard");
+      await saveFilingPackage(draftSlug, next);
+      setStatusMessage(`Filing-Paket-Status: ${getFilingStatusLabel(next.status)}.`);
+    } catch (e) {
+      setStatusMessage(e instanceof Error ? e.message : "Status konnte nicht aktualisiert werden.");
+    } finally {
+      setFilingBusy(null);
     }
   }
 
@@ -347,6 +427,66 @@ export default function BeaPage() {
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         An: {msg.recipient} {msg.caseNumber && `· Akte ${msg.caseNumber}`} ·{" "}
                         {msg.createdAt}
+                      </div>
+                      {/* Filing-Paket: State-Machine aus efiling-architecture.ts.
+                          "Versand" bleibt bewusst aus (siehe Hinweisbanner oben) —
+                          dies verwaltet nur draft -> pending_approval -> approved/cancelled. */}
+                      <div className="mt-2 flex items-center gap-2">
+                        {filings[msg.slug] ? (
+                          <>
+                            <Badge
+                              variant="default"
+                              className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                            >
+                              Filing: {getFilingStatusLabel(filings[msg.slug].status)}
+                            </Badge>
+                            {filings[msg.slug].status === "draft" && (
+                              <Button
+                                variant="secondary"
+                                className="h-7 gap-1 px-2 text-xs"
+                                disabled={filingBusy === msg.slug}
+                                onClick={() => void advanceFiling(msg.slug, "submit")}
+                              >
+                                Zur Freigabe einreichen
+                              </Button>
+                            )}
+                            {filings[msg.slug].status === "pending_approval" && (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  className="h-7 gap-1 px-2 text-xs"
+                                  disabled={filingBusy === msg.slug}
+                                  onClick={() => void advanceFiling(msg.slug, "approve")}
+                                >
+                                  Freigeben
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  className="h-7 gap-1 px-2 text-xs"
+                                  disabled={filingBusy === msg.slug}
+                                  onClick={() => void advanceFiling(msg.slug, "cancel")}
+                                >
+                                  Verwerfen
+                                </Button>
+                              </>
+                            )}
+                            {filings[msg.slug].status === "approved" && (
+                              <span className="text-xs text-[color:var(--ds-text-muted)]">
+                                Freigegeben — Versand erfolgt in Ihrer beA-Software.
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            className="h-7 gap-1 px-2 text-xs"
+                            disabled={filingBusy === msg.slug}
+                            onClick={() => void createPackageForDraft(msg)}
+                          >
+                            <Send size={12} aria-hidden="true" />
+                            Filing-Paket anlegen
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
