@@ -1,12 +1,62 @@
 import { handleLegalChatMedia, handleLegalChatMessage } from "@/lib/legal-chat/actions";
-import { buildDocumentRequest, extractRequestedDocumentItems, writeDocumentRequest } from "@/lib/document-requests";
+import {
+  buildDocumentRequest,
+  extractRequestedDocumentItems,
+  writeDocumentRequest,
+} from "@/lib/document-requests";
 import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
 import { downloadAndStoreWhatsAppMedia, type StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import { transcribeVoiceMessage } from "@/lib/whatsapp/transcribe";
+import { phoneHash } from "@/lib/whatsapp/verify";
 import type { WhatsAppIdentity, WhatsAppIncomingMessage } from "@/lib/whatsapp/types";
 import { buildWhatsAppApproval, writeWhatsAppApproval } from "./approvals";
-import { buildConversationEvent, writeConversationEvent, type ConversationEventStatus } from "./events";
+import {
+  buildConversationEvent,
+  writeConversationEvent,
+  type ConversationEventStatus,
+} from "./events";
 import { canAutoRouteWhatsApp, classifyWhatsAppRisk, textFromWhatsAppMessage } from "./risk";
+import { parseFeedbackFromReply, recordBriefingFeedback } from "@/lib/whatsapp/briefing-feedback";
+import { wasBriefingSentToday } from "@/lib/whatsapp/daily-briefing";
+
+/**
+ * Briefing feedback was dead code (P1-SECR-006 followup): nothing ever
+ * called recordBriefingFeedback, so proactivePrecision in
+ * computeSecretaryMetrics stayed null forever. Wiring it in here, AFTER
+ * handleText runs rather than before, is deliberate: "ja"/"nein" already
+ * mean confirm/cancel for a pending action (the higher-value, established
+ * flow) — that ambiguity is exactly why a bare "ja" can't be intercepted
+ * up front without risking misrouting a real confirmation. Only when
+ * handleText itself reports "no pending action found" AND a briefing went
+ * out today to this sender do we treat the same reply as feedback instead.
+ */
+const NO_PENDING_ACTION_REPLIES = [
+  "Keine offene Aktion zum Speichern gefunden.",
+  "Keine offene Aktion zum Verwerfen gefunden.",
+];
+
+async function captureBriefingFeedbackIfApplicable(
+  sender: WhatsAppIdentity,
+  normalizedText: string,
+  reply: string | null
+): Promise<string | null> {
+  if (!reply || !NO_PENDING_ACTION_REPLIES.includes(reply)) return null;
+  const parsed = parseFeedbackFromReply(normalizedText);
+  if (!parsed.isFeedback || parsed.useful === null) return null;
+  const dedupKey = `${sender.brainId}:${phoneHash(sender.phone)}`;
+  if (!(await wasBriefingSentToday(dedupKey))) return null;
+
+  await recordBriefingFeedback({
+    brain_id: sender.brainId,
+    org_id: sender.orgId,
+    user_id: sender.id,
+    useful: parsed.useful,
+    briefing_at: new Date().toISOString(),
+  });
+  return parsed.useful
+    ? "Danke fürs Feedback! Freut mich, dass das Briefing hilft."
+    : "Danke fürs Feedback — ich werde versuchen, das Briefing nützlicher zu machen.";
+}
 
 export interface OrchestrationResult {
   reply: string | null;
@@ -32,7 +82,9 @@ function confirmationText(message: WhatsAppIncomingMessage): string | null {
   return null;
 }
 
-function isMediaMessage(message: WhatsAppIncomingMessage): message is Extract<
+function isMediaMessage(
+  message: WhatsAppIncomingMessage
+): message is Extract<
   WhatsAppIncomingMessage,
   { type: "image" | "audio" | "voice" | "video" | "document" | "sticker" }
 > {
@@ -51,7 +103,9 @@ function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
 }
 
 function caseSlugFromText(text: string): string | undefined {
-  const match = text.match(/\b(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?)/i);
+  const match = text.match(
+    /\b(?:akt|akte|az|aktenzeichen)\s+([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?)/i
+  );
   const ref = match?.[1]?.trim();
   if (!ref) return undefined;
   if (ref.includes("/")) {
@@ -133,12 +187,14 @@ export async function orchestrateWhatsAppMessage(
         targetSlug = written.slug;
       }
     }
-    const documentItems = risk.intent === "document_request"
-      ? extractRequestedDocumentItems(normalizedText).map((item) => item.label)
-      : undefined;
-    const documentMessageDraft = risk.intent === "document_request"
-      ? `Bitte reichen Sie folgende Unterlagen ein: ${(documentItems ?? ["Unterlagen"]).join(", ")}.`
-      : undefined;
+    const documentItems =
+      risk.intent === "document_request"
+        ? extractRequestedDocumentItems(normalizedText).map((item) => item.label)
+        : undefined;
+    const documentMessageDraft =
+      risk.intent === "document_request"
+        ? `Bitte reichen Sie folgende Unterlagen ein: ${(documentItems ?? ["Unterlagen"]).join(", ")}.`
+        : undefined;
     const approval = buildWhatsAppApproval({
       sender,
       eventSlug: event.slug,
@@ -159,7 +215,12 @@ export async function orchestrateWhatsAppMessage(
     };
   }
 
-  if (message.type === "text" || message.type === "button_reply" || message.type === "list_reply" || message.type === "reaction") {
+  if (
+    message.type === "text" ||
+    message.type === "button_reply" ||
+    message.type === "list_reply" ||
+    message.type === "reaction"
+  ) {
     if (message.type === "reaction" && !normalizedText) {
       return {
         reply: `Reaktion ${message.emoji} erhalten. Nutze Daumen hoch zum Bestaetigen, Daumen runter zum Verwerfen.`,
@@ -173,11 +234,12 @@ export async function orchestrateWhatsAppMessage(
       messageId: message.id,
       text: normalizedText,
     });
-    return { reply, eventSlug: event.slug, status: "executed" };
+    const feedbackReply = await captureBriefingFeedbackIfApplicable(sender, normalizedText, reply);
+    return { reply: feedbackReply ?? reply, eventSlug: event.slug, status: "executed" };
   }
 
   if (isMediaMessage(message)) {
-    const media = storedMedia ?? await downloadMedia(message);
+    const media = storedMedia ?? (await downloadMedia(message));
     if (message.type === "voice" && normalizedText) {
       const reply = await handleText({
         sender,
@@ -192,7 +254,12 @@ export async function orchestrateWhatsAppMessage(
       };
     }
     const reply = await handleMedia(
-      { sender, fromPhone: message.from, messageId: message.id, caption: "caption" in message ? message.caption : undefined },
+      {
+        sender,
+        fromPhone: message.from,
+        messageId: message.id,
+        caption: "caption" in message ? message.caption : undefined,
+      },
       media
     );
     return { reply, eventSlug: event.slug, status: "executed" };

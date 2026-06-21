@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { fetchPages, createDailyDedup } from "@/lib/cron-utils";
 import { loadAllowedSenders, phoneHash } from "@/lib/whatsapp/verify";
-import { buildDailyBriefing, type BriefingCase } from "@/lib/whatsapp/daily-briefing";
+import {
+  buildDailyBriefing,
+  BRIEFING_DEDUP_TABLE,
+  type BriefingCase,
+} from "@/lib/whatsapp/daily-briefing";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
 
@@ -22,7 +26,7 @@ export const dynamic = "force-dynamic";
  * otherwise the send is gated and audited as `outbound_blocked` (honest no-op).
  */
 
-const dedupBriefing = createDailyDedup("subsumio_daily_briefing_sent");
+const dedupBriefing = createDailyDedup(BRIEFING_DEDUP_TABLE);
 
 function quietHoursFromEnv(now: Date): QuietHours | undefined {
   const raw = process.env.WHATSAPP_BRIEFING_QUIET_HOURS; // e.g. "21-7"

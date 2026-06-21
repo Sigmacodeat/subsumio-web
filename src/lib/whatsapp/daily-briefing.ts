@@ -103,7 +103,12 @@ export function buildDailyBriefing(input: BuildBriefingInput): string | null {
   const documents = input.newDocuments ?? [];
   const conflicts = input.conflicts ?? [];
 
-  if (deadlines.length === 0 && approvals.length === 0 && documents.length === 0 && conflicts.length === 0) {
+  if (
+    deadlines.length === 0 &&
+    approvals.length === 0 &&
+    documents.length === 0 &&
+    conflicts.length === 0
+  ) {
     return null;
   }
 
@@ -117,7 +122,7 @@ export function buildDailyBriefing(input: BuildBriefingInput): string | null {
     lines.push(
       `📋 ${deadlines.length} Frist${deadlines.length === 1 ? "" : "en"} in den nächsten Tagen${
         dueToday.length > 0 ? ` (${dueToday.length} heute fällig)` : ""
-      }:`,
+      }:`
     );
     for (const d of deadlines) {
       const flag = d.dueDate === today ? "🔴" : "•";
@@ -137,7 +142,9 @@ export function buildDailyBriefing(input: BuildBriefingInput): string | null {
 
   // New documents section
   if (documents.length > 0) {
-    lines.push(`📄 ${documents.length} neue${documents.length === 1 ? "s Dokument" : " Dokumente"}:`);
+    lines.push(
+      `📄 ${documents.length} neue${documents.length === 1 ? "s Dokument" : " Dokumente"}:`
+    );
     for (const doc of documents) {
       lines.push(`• ${doc.title}${doc.case_slug ? ` (Akte ${doc.case_slug})` : ""}`);
     }
@@ -156,4 +163,30 @@ export function buildDailyBriefing(input: BuildBriefingInput): string | null {
 
   lines.push('Antworten Sie mit "heute" für die volle Tagesübersicht.');
   return lines.join("\n");
+}
+
+/** Table name shared with the cron route's createDailyDedup() — single source. */
+export const BRIEFING_DEDUP_TABLE = "subsumio_daily_briefing_sent";
+
+/**
+ * Did this recipient get a daily briefing today? Used by the webhook to
+ * disambiguate an inbound "👍"/"hilfreich"-shaped reply as briefing
+ * feedback (vs. an unrelated chat message) — feedback is only captured
+ * when a briefing was actually sent today, not on every "ja" anyone types.
+ *
+ * Reads the same dedup table createDailyDedup() writes (cron/daily-briefing
+ * keys it by `${brainId}:${phoneHash}`, see that route). Returns false
+ * (fail toward "not feedback", i.e. normal chat handling) when no DB pool
+ * is configured — same dev-mode posture as createDailyDedup itself.
+ */
+export async function wasBriefingSentToday(dedupKey: string): Promise<boolean> {
+  const { getSharedPgPool } = await import("@/lib/auth/store");
+  const pool = getSharedPgPool();
+  if (!pool) return false;
+  const day = new Date().toISOString().slice(0, 10);
+  const { rowCount } = await pool.query(
+    `SELECT 1 FROM ${BRIEFING_DEDUP_TABLE} WHERE brain_id = $1 AND day = $2`,
+    [dedupKey, day]
+  );
+  return (rowCount ?? 0) > 0;
 }
