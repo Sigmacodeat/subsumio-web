@@ -618,7 +618,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   <div
                     key={section.titleKey}
                     className={cn(
-                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-out",
+                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       section.titleKey === "nav.section.admin"
                         ? "border-[color:var(--ds-border)] bg-transparent"
                         : "border-transparent",
@@ -672,7 +672,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       id={panelId}
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                        "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                         isOpen
                           ? "grid-rows-[1fr] opacity-100"
                           : "pointer-events-none grid-rows-[0fr] opacity-0"
