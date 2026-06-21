@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, forwardRef } from "react";
+import { useState, useMemo, useEffect, forwardRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Zap,
   Bell,
   User,
@@ -76,6 +77,8 @@ type NavItem = {
   comingSoon?: boolean;
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[] };
+
+const SIDEBAR_OPEN_SECTION_KEY = "subsumio-sidebar-open-section";
 
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -209,6 +212,52 @@ export const BOTTOM_ITEMS: NavItem[] = [
   { href: "/dashboard/settings/security", icon: Shield, labelKey: "nav.security" },
 ];
 
+const PRIMARY_ITEMS: NavItem[] = [
+  { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
+  { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
+  { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
+  { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
+];
+
+const ADMIN_SECTION: NavSection = {
+  titleKey: "nav.section.admin",
+  items: BOTTOM_ITEMS,
+};
+
+const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
+  { href: "/dashboard/deadlines", section: "nav.section.inbox_deadlines" },
+  { href: "/dashboard/intake", section: "nav.section.inbox_deadlines" },
+  { href: "/dashboard/cases", section: "nav.section.cases_clients" },
+  { href: "/dashboard/contacts", section: "nav.section.cases_clients" },
+  { href: "/dashboard/vault", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/drafting", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/upload", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/research", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/query", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/team", section: "nav.section.admin" },
+  { href: "/dashboard/settings", section: "nav.section.admin" },
+];
+
+function sectionDomId(titleKey: DashboardKey) {
+  return `sidebar-section-${titleKey.replaceAll(".", "-")}`;
+}
+
+function isActiveHref(pathname: string, href: string) {
+  return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+}
+
+function findActiveSection(pathname: string, sections: NavSection[]) {
+  const preferred = PREFERRED_SECTION_BY_HREF.find((entry) => isActiveHref(pathname, entry.href));
+  if (preferred && sections.some((section) => section.titleKey === preferred.section)) {
+    return preferred.section;
+  }
+  return sections.find((section) =>
+    section.items.some((item) => !item.comingSoon && isActiveHref(pathname, item.href))
+  )?.titleKey;
+}
+
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { pendingCount, syncing, syncPending } = useMutationQueue();
   const { t } = useLang();
@@ -276,6 +325,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
+  const [openSection, setOpenSection] = useState<DashboardKey>("nav.section.cockpit");
   const { t } = useLang();
 
   const filteredSections = useMemo(() => {
@@ -296,6 +346,34 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   }, [searchQuery, t]);
 
   const hasResults = filteredSections.length > 0 || filteredBottomItems.length > 0;
+  const accordionSections = useMemo<NavSection[]>(() => {
+    const sections = [...filteredSections];
+    if (filteredBottomItems.length > 0) {
+      sections.push({ ...ADMIN_SECTION, items: filteredBottomItems });
+    }
+    return sections;
+  }, [filteredSections, filteredBottomItems]);
+
+  useEffect(() => {
+    const activeSection = findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]);
+    if (activeSection) {
+      setOpenSection(activeSection);
+      try {
+        localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, activeSection);
+      } catch {}
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(SIDEBAR_OPEN_SECTION_KEY) as DashboardKey | null;
+      if (stored) setOpenSection(stored);
+    } catch {}
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const activeSection = findActiveSection(pathname, accordionSections);
+    setOpenSection(activeSection ?? accordionSections[0]?.titleKey ?? "nav.section.cockpit");
+  }, [accordionSections, pathname, searchQuery]);
 
   const highlightMatch = (text: string, query: string) => {
     if (!query.trim()) return text;
@@ -311,6 +389,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         {text.slice(idx + q.length)}
       </>
     );
+  };
+
+  const toggleSection = (titleKey: DashboardKey) => {
+    setOpenSection(titleKey);
+    try {
+      localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, titleKey);
+    } catch {}
   };
 
   return (
@@ -448,73 +533,171 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </p>
             </div>
           )}
-          {filteredSections.map((section) => (
-            <div key={section.titleKey} className="mb-5">
-              {!collapsed && (
-                <div className="mb-2 px-3">
-                  <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                    {t(section.titleKey)}
-                  </span>
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
+          <div className={cn("space-y-1", collapsed && "hidden md:block")}>
+            {PRIMARY_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = isActiveHref(pathname, item.href);
+              return (
+                <Link
+                  key={`primary-${item.href}`}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={collapsed ? t(item.labelKey) : undefined}
+                  onClick={() => setMobileOpen(false)}
+                  title={collapsed ? t(item.labelKey) : undefined}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                    collapsed && "justify-center px-0",
+                    active
+                      ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                      : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  )}
+                >
+                  <Icon size={17} className="shrink-0" />
+                  {!collapsed && <span>{highlightMatch(t(item.labelKey), searchQuery)}</span>}
+                </Link>
+              );
+            })}
+          </div>
+
+          {collapsed ? (
+            <div className="mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4">
+              {accordionSections
+                .flatMap((section) => section.items)
+                .filter((item, index, allItems) => {
+                  if (item.comingSoon) return false;
+                  if (PRIMARY_ITEMS.some((primary) => primary.href === item.href)) return false;
+                  return allItems.findIndex((candidate) => candidate.href === item.href) === index;
+                })
+                .map((item) => {
                   const Icon = item.icon;
-                  if (item.comingSoon) {
-                    return (
-                      <button
-                        key={item.href}
-                        disabled
-                        className={cn(
-                          "flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none",
-                          collapsed && "justify-center px-0"
-                        )}
-                        title={
-                          collapsed
-                            ? `${t(item.labelKey)} — ${t("sidebar.coming_soon")}`
-                            : undefined
-                        }
-                        aria-disabled="true"
-                      >
-                        <Icon size={17} className="shrink-0 opacity-50" />
-                        {!collapsed && (
-                          <span className="flex flex-1 items-center justify-between">
-                            {t(item.labelKey)}
-                            <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
-                              {t("sidebar.coming_soon")}
-                            </span>
-                          </span>
-                        )}
-                      </button>
-                    );
-                  }
-                  const active =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                  const active = isActiveHref(pathname, item.href);
                   return (
                     <Link
-                      key={item.href}
+                      key={`collapsed-${item.href}`}
                       href={item.href}
                       aria-current={active ? "page" : undefined}
-                      aria-label={collapsed ? t(item.labelKey) : undefined}
+                      aria-label={t(item.labelKey)}
                       onClick={() => setMobileOpen(false)}
+                      title={t(item.labelKey)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                        collapsed && "justify-center px-0",
+                        "flex items-center justify-center rounded-lg py-2.5 text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                         active
-                          ? "brand-soft brand-text hover:brand-soft-strong border-l-2 border-[var(--brand-primary)]"
-                          : "hover:brand-text text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                          ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                          : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                       )}
-                      title={collapsed ? t(item.labelKey) : undefined}
                     >
                       <Icon size={17} className="shrink-0" />
-                      {!collapsed && highlightMatch(t(item.labelKey), searchQuery)}
                     </Link>
                   );
                 })}
-              </div>
             </div>
-          ))}
+          ) : (
+            <div className="mt-4 space-y-2">
+              {accordionSections.map((section) => {
+                const isOpen = openSection === section.titleKey;
+                const sectionActive = section.items.some((item) =>
+                  isActiveHref(pathname, item.href)
+                );
+                const SectionIcon = section.items[0]?.icon ?? FolderOpen;
+                const panelId = sectionDomId(section.titleKey);
+                return (
+                  <div
+                    key={section.titleKey}
+                    className={cn(
+                      "rounded-xl border transition-colors duration-150",
+                      section.titleKey === "nav.section.admin"
+                        ? "border-[color:var(--ds-border)] bg-transparent"
+                        : "border-transparent",
+                      isOpen || sectionActive
+                        ? "bg-[color:var(--ds-surface-2)]"
+                        : "hover:bg-[color:var(--ds-hover)]"
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.titleKey)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                    >
+                      <SectionIcon
+                        size={16}
+                        className={cn(
+                          "shrink-0",
+                          sectionActive ? "brand-text" : "text-[color:var(--ds-text-muted)]"
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{t(section.titleKey)}</span>
+                      {sectionActive && (
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
+                      )}
+                      <ChevronDown
+                        size={14}
+                        className={cn(
+                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-200",
+                          isOpen && "rotate-180"
+                        )}
+                      />
+                    </button>
+                    <div
+                      id={panelId}
+                      className={cn(
+                        "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                        isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                      )}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="space-y-0.5 px-2 pb-2">
+                          {section.items.map((item) => {
+                            const Icon = item.icon;
+                            if (item.comingSoon) {
+                              return (
+                                <button
+                                  key={item.href}
+                                  disabled
+                                  className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none"
+                                  aria-disabled="true"
+                                >
+                                  <Icon size={16} className="shrink-0 opacity-50" />
+                                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                    <span className="truncate">{t(item.labelKey)}</span>
+                                    <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
+                                      {t("sidebar.coming_soon")}
+                                    </span>
+                                  </span>
+                                </button>
+                              );
+                            }
+                            const active = isActiveHref(pathname, item.href);
+                            return (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                aria-current={active ? "page" : undefined}
+                                onClick={() => setMobileOpen(false)}
+                                className={cn(
+                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                                  active
+                                    ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                )}
+                              >
+                                <Icon size={16} className="shrink-0" />
+                                <span className="min-w-0 flex-1 truncate">
+                                  {highlightMatch(t(item.labelKey), searchQuery)}
+                                </span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
         {/* Dream Cycle indicator */}
@@ -549,61 +732,26 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </div>
         )}
 
-        {/* Bottom — Verwaltung + User Profile */}
-        <div className="space-y-0.5 border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
+        {/* User profile section */}
+        <div className="border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
           {!collapsed && (
-            <div className="mb-2 px-3">
-              <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                {t("nav.section.admin")}
-              </span>
-            </div>
-          )}
-          {filteredBottomItems.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                aria-label={collapsed ? t(item.labelKey) : undefined}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                  collapsed && "justify-center px-0",
-                  active
-                    ? "brand-soft brand-text hover:brand-soft-strong border-l-2 border-[var(--brand-primary)]"
-                    : "hover:brand-text text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                )}
-                title={collapsed ? t(item.labelKey) : undefined}
-              >
-                <Icon size={17} className="shrink-0" />
-                {!collapsed && highlightMatch(t(item.labelKey), searchQuery)}
-              </Link>
-            );
-          })}
-
-          {/* User profile section */}
-          {!collapsed && (
-            <div className="mt-4 border-t border-[color:var(--ds-border)] pt-4">
-              <Link
-                href="/dashboard/settings"
-                onClick={() => setMobileOpen(false)}
-                className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-[color:var(--ds-hover)]"
-              >
-                <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
-                  <User size={15} className="brand-text" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
-                    {userName ?? t("sidebar.user")}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                    {userEmail ?? ""}
-                  </p>
-                </div>
-              </Link>
-            </div>
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setMobileOpen(false)}
+              className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-[color:var(--ds-hover)]"
+            >
+              <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+                <User size={15} className="brand-text" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                  {userName ?? t("sidebar.user")}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                  {userEmail ?? ""}
+                </p>
+              </div>
+            </Link>
           )}
         </div>
       </div>

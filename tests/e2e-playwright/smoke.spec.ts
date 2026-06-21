@@ -211,6 +211,21 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     await expect(nav.getByText(/Cases & Clients|Akten & Mandanten/i)).toBeVisible();
     await expect(nav.getByText(/Inbox & Deadlines|Eingang & Fristen/i)).toBeVisible();
     await expect(nav.getByText(/Documents & Drafting|Dokumente & Drafting/i)).toBeVisible();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(
+      nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })
+    ).toHaveAttribute("aria-expanded", "true");
+
+    await nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i }).click();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(
+      nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i })
+    ).toHaveAttribute("aria-expanded", "true");
+
+    await page.goto("/dashboard/deadlines", { waitUntil: "domcontentloaded" });
+    await expect(
+      nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i })
+    ).toHaveAttribute("aria-expanded", "true");
     await expect(
       page.getByText(/Failed to load brain status|Brain-Status konnte nicht geladen werden/i)
     ).toHaveCount(0);

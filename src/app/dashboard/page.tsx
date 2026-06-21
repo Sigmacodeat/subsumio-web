@@ -6,7 +6,6 @@ import { Briefcase, CalendarClock, Inbox, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
-import { PageHeader } from "@/components/dashboard/page-header";
 import { WidgetDashboard } from "@/components/dashboard/widget-dashboard";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
@@ -38,7 +37,7 @@ export default function DashboardPage() {
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-10">
+    <div className="mx-auto max-w-7xl space-y-6 p-5 md:p-8">
       {isFirstTime && (
         <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-[color:var(--ds-surface)] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -66,11 +65,29 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <PageHeader
-        title={t("dashboard.title")}
-        description={t("dashboard.desc_online")}
-        actions={
-          <div className="flex items-center gap-2.5" role="status" aria-live="polite">
+      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-5 py-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge variant="accent" className="text-xs">
+                {t("cockpit.today_title")}
+              </Badge>
+              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                {new Date().toLocaleDateString("de-DE", {
+                  weekday: "long",
+                  day: "2-digit",
+                  month: "long",
+                })}
+              </span>
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-[color:var(--ds-text)] md:text-2xl">
+              {t("dashboard.title")}
+            </h1>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+              {t("dashboard.desc_online")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5" role="status" aria-live="polite">
             {!loading && (
               <Badge
                 variant={degraded ? "warning" : engineOnline ? "success" : "info"}
@@ -98,8 +115,8 @@ export default function DashboardPage() {
               </Button>
             </Link>
           </div>
-        }
-      />
+        </div>
+      </section>
 
       <WidgetDashboard />
     </div>
