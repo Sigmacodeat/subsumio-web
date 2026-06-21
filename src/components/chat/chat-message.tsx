@@ -158,7 +158,7 @@ function ChatMessageBubbleInner({
                   <div key={c.slug} className="group/citation inline-flex items-center">
                     <a
                       href={`/dashboard/brain/${c.slug.split("/").map(encodeURIComponent).join("/")}`}
-                      className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-all"
+                      className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200"
                       target="_blank"
                       rel="noopener noreferrer"
                       title={c.title}
@@ -178,7 +178,7 @@ function ChatMessageBubbleInner({
                           // Clipboard API may be unavailable
                         }
                       }}
-                      className="ml-0.5 inline-flex items-center justify-center text-[color:var(--ds-text-subtle)] opacity-0 transition-all group-hover/citation:opacity-100 hover:text-[color:var(--ds-text)]"
+                      className="ml-0.5 inline-flex items-center justify-center text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover/citation:opacity-100 hover:text-[color:var(--ds-text)]"
                       aria-label={`Zitat-Slug kopieren: ${c.slug}`}
                       title="Slug kopieren"
                     >

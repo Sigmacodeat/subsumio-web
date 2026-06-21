@@ -344,7 +344,7 @@ export default function CasesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       <PageHeader
         title={t("cases.title")}
         description={`${cases.length} ${t("cases.count")}`}

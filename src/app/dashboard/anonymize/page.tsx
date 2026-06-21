@@ -52,24 +52,30 @@ export default function AnonymizePage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Anonymisierung"
         description="Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB)"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Anonymisierung" }]}
       />
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Eingabe */}
         <div className="space-y-2">
-          <label className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold">Original</label>
+          <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+            Original
+          </label>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Text einfügen — z. B. Schriftsatz, Mandanten-Mail, Sachverhalt …"
-            className="w-full h-80 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-4 py-3 text-sm text-[color:var(--ds-text)] font-mono leading-relaxed focus:outline-none focus:border-emerald-500/50 resize-none"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
-          <Button onClick={run} disabled={loading || !input.trim()} className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white">
+          <Button
+            onClick={run}
+            disabled={loading || !input.trim()}
+            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+          >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
             Anonymisieren
           </Button>
@@ -78,9 +84,14 @@ export default function AnonymizePage() {
         {/* Ergebnis */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold">Anonymisiert</label>
+            <label className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Anonymisiert
+            </label>
             {result && (
-              <button onClick={copyResult} className="flex items-center gap-1.5 text-xs text-emerald-600 hover:underline">
+              <button
+                onClick={copyResult}
+                className="flex items-center gap-1.5 text-xs text-emerald-600 hover:underline"
+              >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
                 {copied ? "Kopiert" : "Kopieren"}
               </button>
@@ -90,13 +101,13 @@ export default function AnonymizePage() {
             readOnly
             value={result?.anonymized ?? ""}
             placeholder="Das Ergebnis erscheint hier."
-            className="w-full h-80 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-4 py-3 text-sm text-[color:var(--ds-text)] font-mono leading-relaxed focus:outline-none resize-none"
+            className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:outline-none"
           />
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -104,32 +115,50 @@ export default function AnonymizePage() {
       {result && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-[color:var(--ds-text-muted)]">{result.count} Ersetzungen:</span>
+            <span className="text-sm text-[color:var(--ds-text-muted)]">
+              {result.count} Ersetzungen:
+            </span>
             {Object.entries(result.stats).map(([type, n]) => (
-              <Badge key={type} variant="default" className="text-xs bg-emerald-500/10 border-emerald-500/20 text-emerald-700">
+              <Badge
+                key={type}
+                variant="default"
+                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-700"
+              >
                 {TYPE_LABELS[type] ?? type}: {n}
               </Badge>
             ))}
-            <Badge variant="default" className="text-xs bg-[color:var(--ds-border)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
-              {result.llm_used ? "Namen via KI erkannt" : "nur Muster-Erkennung (kein KI-Schlüssel)"}
+            <Badge
+              variant="default"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-border)] text-xs text-[color:var(--ds-text-muted)]"
+            >
+              {result.llm_used
+                ? "Namen via KI erkannt"
+                : "nur Muster-Erkennung (kein KI-Schlüssel)"}
             </Badge>
           </div>
 
           {result.replacements.length > 0 && (
             <details className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-              <summary className="px-4 py-3 text-sm text-[color:var(--ds-text)] cursor-pointer select-none">
+              <summary className="cursor-pointer px-4 py-3 text-sm text-[color:var(--ds-text)] select-none">
                 Re-Identifikations-Mapping ({result.replacements.length}) — nur für Berechtigte
               </summary>
-              <div className="px-4 pb-3 max-h-72 overflow-y-auto">
+              <div className="max-h-72 overflow-y-auto px-4 pb-3">
                 <table className="w-full text-xs">
-                  <thead className="text-[color:var(--ds-text-muted)] text-left">
-                    <tr><th className="py-1 pr-4">Platzhalter</th><th className="py-1">Original</th></tr>
+                  <thead className="text-left text-[color:var(--ds-text-muted)]">
+                    <tr>
+                      <th className="py-1 pr-4">Platzhalter</th>
+                      <th className="py-1">Original</th>
+                    </tr>
                   </thead>
                   <tbody className="font-mono">
                     {result.replacements.map((r, i) => (
                       <tr key={i} className="border-t border-[color:var(--ds-border)]/60">
-                        <td className="py-1 pr-4 text-emerald-600 whitespace-nowrap">{r.placeholder}</td>
-                        <td className="py-1 text-[color:var(--ds-text-muted)] break-all">{r.original}</td>
+                        <td className="py-1 pr-4 whitespace-nowrap text-emerald-600">
+                          {r.placeholder}
+                        </td>
+                        <td className="py-1 break-all text-[color:var(--ds-text-muted)]">
+                          {r.original}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

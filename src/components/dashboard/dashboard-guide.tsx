@@ -70,14 +70,17 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[90] flex justify-end bg-black/30" role="presentation">
+    <div
+      className="fixed inset-0 z-[90] flex justify-end bg-black/30 backdrop-blur-sm"
+      role="presentation"
+    >
       <button
         className="absolute inset-0 cursor-default"
         onClick={onClose}
         aria-label={t("topbar.close")}
       />
       <aside
-        className="card-shadow-elevated relative z-[91] flex h-full w-full max-w-sm flex-col border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+        className="card-shadow-elevated relative z-[91] flex h-full w-full max-w-sm flex-col border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
         role="dialog"
         aria-modal="true"
         aria-label={t("guide.title")}
@@ -91,10 +94,10 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
           </div>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
             aria-label={t("topbar.close")}
           >
-            <X size={15} />
+            <X size={18} />
           </button>
         </div>
 
@@ -115,7 +118,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                   key={link.href}
                   href={link.href}
                   onClick={onClose}
-                  className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
                 >
                   {link.label}
                 </Link>
@@ -153,14 +156,14 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
             <div className="grid gap-2">
               <Link
                 href="/docs"
-                className="brand-text text-sm font-medium hover:underline"
+                className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95"
                 onClick={onClose}
               >
                 {t("cmd.action.help.docs")}
               </Link>
               <Link
                 href="/dashboard/assistant"
-                className="brand-text text-sm font-medium hover:underline"
+                className="brand-text text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline active:scale-95"
                 onClick={onClose}
               >
                 {t("nav.assistant")}
@@ -172,7 +175,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
         <div className="border-t border-[color:var(--ds-border)] p-4">
           <a
             href="mailto:support@subsumio.com"
-            className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2.5 text-sm font-medium text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
           >
             <LifeBuoy size={15} />
             {t("guide.contact_support")}

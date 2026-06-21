@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getConnector } from "@/lib/dms";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -7,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 const dmsSearchSchema = z.object({
   q: z.string().default(""),
-  limit: z.string().optional(),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 20, 100))
+    .optional(),
   folderId: z.string().optional(),
 });
 
@@ -32,5 +34,5 @@ export const GET = createHandler(
       console.error("[dms search] error:", msg);
       return apiError("search_failed", msg, 500);
     }
-  },
+  }
 );

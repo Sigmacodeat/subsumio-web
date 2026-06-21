@@ -114,13 +114,14 @@ export async function lookupCorpusParagraph(
   try {
     const text = await fs.readFile(path.join(CORPUS_DIR, meta.file), "utf8");
     const paraNum = paragraph.replace(/^\u00a7\s*/, "").trim();
+    const escapedPara = paraNum.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     const deMatch = text.match(
-      new RegExp(`## \u00a7 ${paraNum}[^\\n]*\\n([\\s\\S]{0,1500}?)(?=\\n## \u00a7|$)`)
+      new RegExp(`## \u00a7 ${escapedPara}[^\\n]*\\n([\\s\\S]{0,1500}?)(?=\\n## \u00a7|$)`)
     );
     if (deMatch) return deMatch[1].trim();
 
-    const atIdx = text.search(new RegExp(`\u00a7\\s*${paraNum}\\.`));
+    const atIdx = text.search(new RegExp(`\u00a7\\s*${escapedPara}\\.`));
     if (atIdx !== -1) {
       const nextAt = text.search(new RegExp(`\u00a7\\s*${String(Number(paraNum) + 1)}\\.`));
       const end = nextAt !== -1 ? nextAt : atIdx + 1000;

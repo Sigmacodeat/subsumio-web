@@ -44,7 +44,7 @@ export function ChatEmptyState({
           <button
             key={i}
             onClick={() => onExampleClick(q)}
-            className="group flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-all hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)]"
+            className="group flex items-start gap-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-left transition-[border-color,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--brand-primary)]/30 hover:bg-[color:var(--ds-hover)] active:scale-95"
           >
             <div className="group-hover:brand-soft group-hover:brand-text flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)] transition-colors">
               {i === 0 ? (

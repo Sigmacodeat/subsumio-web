@@ -187,7 +187,7 @@ export default function WorkflowsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Workflows"
         description="Kanzlei-Workflows mit verketteten Aktionen und Vier-Augen-Freigabe"

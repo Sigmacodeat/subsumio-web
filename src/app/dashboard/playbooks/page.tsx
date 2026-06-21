@@ -284,7 +284,7 @@ export default function PlaybooksPage() {
   const isFormOpen = creating || editingSlug !== null;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Contract Playbooks"
         description="Rule-Based Contract Review — definiere Klausel-Standards und flagge Deviationen beim Redlining"

@@ -48,7 +48,7 @@ export default function PrecedentSearchPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Präzedenzsuche"
         description="Durchsucht interne Fallakten mit Stichwort- und Vektorsuche und bewertet Relevanz nach Rechtsgebiet, Datum und Ausgang"

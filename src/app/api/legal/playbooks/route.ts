@@ -3,8 +3,14 @@ import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 
 const playbooksQuerySchema = z.object({
-  limit: z.string().optional(),
-  offset: z.string().optional(),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 50, 200))
+    .optional(),
+  offset: z
+    .string()
+    .transform((v) => Math.max(parseInt(v, 10) || 0, 0))
+    .optional(),
   jurisdiction: z.string().optional(),
   contract_type: z.string().optional(),
 });
@@ -40,8 +46,8 @@ export const GET = createHandler(
   async (ctx, _body, query, _req) => {
     const params = new URLSearchParams();
     params.set("type", "legal_playbook");
-    if (query.limit) params.set("limit", query.limit);
-    if (query.offset) params.set("offset", query.offset);
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+    if (query.offset !== undefined) params.set("offset", String(query.offset));
 
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {

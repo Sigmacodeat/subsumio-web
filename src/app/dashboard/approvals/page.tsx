@@ -89,7 +89,7 @@ export default function ApprovalsPage() {
   const decided = items.filter((i) => i.status !== "pending");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Freigaben"
         description="Vier-Augen-Prinzip — KI-/Agenten-Vorschläge werden erst durch eine zweite Person wirksam"

@@ -35,7 +35,7 @@ export default function CaseScannerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Akten-Scanner"
         description="Nacht-Agent scannt alle Akten auf drohende Fristen, neue Issues und Evidenz-Lücken — wird asynchron als Engine-Job ausgeführt"

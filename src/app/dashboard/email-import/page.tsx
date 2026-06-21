@@ -57,7 +57,7 @@ export default function EmailImportPage() {
   const unmatchedCount = Object.values(results).filter((r) => !r.success).length;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="E-Mail-Import"
         description="Mandanten-E-Mails automatisch Akten zuordnen"

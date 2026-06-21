@@ -6,7 +6,10 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 
 const searchQuerySchema = z.object({
   q: z.string().default(""),
-  limit: z.string().default("10"),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 10, 100))
+    .default("10"),
   type: z.string().optional(),
 });
 
@@ -33,7 +36,7 @@ export const GET = createHandler(
     }
 
     try {
-      const params = buildSearchParams(q, query.limit, typeFilter);
+      const params = buildSearchParams(q, String(query.limit), typeFilter);
 
       const res = await fetch(`${ENGINE_URL}/api/search?${params.toString()}`, {
         headers: ctx.headers,

@@ -407,7 +407,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <div
         ref={drawerRef}
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
@@ -432,10 +432,10 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 setMobileOpen(false);
                 onToggle();
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label="Brain Copilot schließen (Esc)"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
 

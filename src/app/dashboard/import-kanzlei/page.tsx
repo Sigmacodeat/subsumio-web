@@ -339,7 +339,7 @@ export default function ImportKanzleiPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Kanzlei-Import"
         description="Aktenliste aus RA-MICRO, Advoware oder DATEV Anwalt (CSV) übernehmen"

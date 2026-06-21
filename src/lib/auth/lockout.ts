@@ -110,7 +110,11 @@ async function persistLockout(key: string, entry: LockoutEntry): Promise<void> {
     const allLockouts: Record<string, LockoutEntry> = {};
     try {
       const raw = await fs.readFile(LOCKOUT_FILE, "utf-8");
-      Object.assign(allLockouts, JSON.parse(raw));
+      const parsed = JSON.parse(raw);
+      for (const [k, v] of Object.entries(parsed)) {
+        if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+        allLockouts[k] = v as LockoutEntry;
+      }
     } catch {}
     allLockouts[key] = entry;
     const tmp = LOCKOUT_FILE + ".tmp";

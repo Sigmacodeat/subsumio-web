@@ -15,6 +15,8 @@ export default function SecuritySettingsPage() {
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
   const [copied, setCopied] = useState(false);
   const [orgRequires2FA, setOrgRequires2FA] = useState(false);
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
 
   const meQuery = useMe();
   const setupMutation = use2FASetup();
@@ -57,10 +59,16 @@ export default function SecuritySettingsPage() {
 
   async function disable2FA() {
     setError(null);
+    if (!disablePassword) {
+      setError("Bitte geben Sie Ihr Passwort ein");
+      return;
+    }
     try {
-      const data = await disableMutation.mutateAsync();
+      const data = await disableMutation.mutateAsync(disablePassword);
       if (data?.error) throw new Error(data.error);
       setStep("idle");
+      setShowDisableDialog(false);
+      setDisablePassword("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Deaktivierung fehlgeschlagen");
     }
@@ -68,27 +76,26 @@ export default function SecuritySettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto flex items-center justify-center py-20">
+      <div className="mx-auto flex max-w-2xl items-center justify-center p-6 py-20">
         <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-2xl mx-auto space-y-6">
-      <PageHeader
-        title="Sicherheit"
-        description="Zwei-Faktor-Authentifizierung"
-      />
+    <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
+      <PageHeader title="Sicherheit" description="Zwei-Faktor-Authentifizierung" />
 
       {orgRequires2FA && !enabled && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
-            <p className="text-sm font-medium text-amber-600">2FA von Ihrer Kanzlei vorgeschrieben</p>
-            <p className="text-xs text-[color:var(--ds-text-muted)] mt-1">
-              Ihr Administrator hat 2FA für alle Teammitglieder verpflichtend aktiviert.
-              Bitte richten Sie Zwei-Faktor-Authentifizierung ein, um Zugriff zu behalten.
+            <p className="text-sm font-medium text-amber-600">
+              2FA von Ihrer Kanzlei vorgeschrieben
+            </p>
+            <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+              Ihr Administrator hat 2FA für alle Teammitglieder verpflichtend aktiviert. Bitte
+              richten Sie Zwei-Faktor-Authentifizierung ein, um Zugriff zu behalten.
             </p>
           </div>
         </div>
@@ -96,66 +103,132 @@ export default function SecuritySettingsPage() {
 
       {enabled ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
             <CheckCircle2 size={18} className="text-emerald-600" />
             <div className="flex-1">
-              <p className="text-sm text-emerald-600 font-medium">2FA ist aktiviert</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)]">Ihr Account ist durch TOTP-geschützt.</p>
+              <p className="text-sm font-medium text-emerald-600">2FA ist aktiviert</p>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
+                Ihr Account ist durch TOTP-geschützt.
+              </p>
             </div>
             <Button
               variant="ghost"
-              className="text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-2 text-sm"
-              onClick={disable2FA}
-              disabled={disableMutation.isPending}
+              className="gap-2 text-sm text-red-600 hover:bg-red-500/10 hover:text-red-700"
+              onClick={() => {
+                setShowDisableDialog(true);
+                setError(null);
+              }}
             >
-              {disableMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              <Trash2 size={14} />
               Deaktivieren
             </Button>
           </div>
 
           {backupCodes && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+            <div className="space-y-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
                 <div>
-                  <p className="text-sm font-medium text-amber-600">Backup-Codes — sicher speichern!</p>
-                  <p className="text-xs text-[color:var(--ds-text-muted)] mt-1">
-                    Diese Codes werden nur einmal angezeigt. Speichern Sie sie an einem sicheren Ort.
-                    Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
+                  <p className="text-sm font-medium text-amber-600">
+                    Backup-Codes — sicher speichern!
+                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    Diese Codes werden nur einmal angezeigt. Speichern Sie sie an einem sicheren
+                    Ort. Jeder Code kann einmal anstelle eines TOTP-Codes verwendet werden.
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                 {backupCodes.map((code) => (
-                  <div key={code} className="px-3 py-1.5 rounded bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] text-center">
+                  <div
+                    key={code}
+                    className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-center"
+                  >
                     {code}
                   </div>
                 ))}
               </div>
               <Button
                 variant="ghost"
-                className="text-xs gap-2 w-full"
+                className="w-full gap-2 text-xs"
                 onClick={() => {
                   navigator.clipboard.writeText(backupCodes.join("\n"));
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
               >
-                {copied ? <CheckCircle2 size={14} className="text-emerald-600" /> : <KeyRound size={14} />}
+                {copied ? (
+                  <CheckCircle2 size={14} className="text-emerald-600" />
+                ) : (
+                  <KeyRound size={14} />
+                )}
                 {copied ? "Kopiert!" : "Alle Codes kopieren"}
               </Button>
             </div>
           )}
+
+          {showDisableDialog && (
+            <div className="space-y-3 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+                <div>
+                  <p className="text-sm font-medium text-red-600">2FA deaktivieren</p>
+                  <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    Bitte bestätigen Sie mit Ihrem Passwort, dass Sie 2FA deaktivieren möchten.
+                  </p>
+                </div>
+              </div>
+              <input
+                type="password"
+                placeholder="Passwort"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") disable2FA();
+                }}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:ring-2 focus:ring-red-500/30 focus:outline-none"
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  className="text-sm"
+                  onClick={() => {
+                    setShowDisableDialog(false);
+                    setDisablePassword("");
+                    setError(null);
+                  }}
+                >
+                  Abbrechen
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="gap-2 text-sm text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                  onClick={disable2FA}
+                  disabled={disableMutation.isPending || !disablePassword}
+                >
+                  {disableMutation.isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Bestätigen & Deaktivieren
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-start gap-3">
-            <KeyRound size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <KeyRound size={16} className="mt-0.5 shrink-0 text-amber-600" />
             <div>
-              <p className="text-sm text-[color:var(--ds-text)] font-medium">Zwei-Faktor-Authentifizierung (2FA)</p>
-              <p className="text-xs text-[color:var(--ds-text-muted)] mt-1">
-                Schützen Sie Ihren Account mit einem zeitbasierten Einmalcode (TOTP).
-                Scannen Sie den QR-Code mit einer Authenticator-App (z.B. Google Authenticator, Authy).
+              <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                Zwei-Faktor-Authentifizierung (2FA)
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                Schützen Sie Ihren Account mit einem zeitbasierten Einmalcode (TOTP). Scannen Sie
+                den QR-Code mit einer Authenticator-App (z.B. Google Authenticator, Authy).
               </p>
             </div>
           </div>
@@ -163,7 +236,7 @@ export default function SecuritySettingsPage() {
           {step === "idle" && (
             <Button
               variant="primary"
-              className="bg-amber-600 hover:bg-amber-500 text-white gap-2 text-sm"
+              className="gap-2 bg-amber-600 text-sm text-white hover:bg-amber-500"
               onClick={startSetup}
             >
               <QrCode size={14} />
@@ -173,7 +246,7 @@ export default function SecuritySettingsPage() {
 
           {step === "setup" && (
             <div className="space-y-3">
-              <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center space-y-2">
+              <div className="space-y-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
                 <p className="text-xs text-[color:var(--ds-text-muted)]">QR-Code scannen:</p>
                 <QRCodeSVG data={qrUrl} size={180} />
               </div>
@@ -184,11 +257,11 @@ export default function SecuritySettingsPage() {
                   onChange={(e) => setToken(e.target.value)}
                   placeholder="6-stelliger Code"
                   maxLength={6}
-                  className="flex-1 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-amber-500/50 text-center tracking-widest"
+                  className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-center text-sm tracking-widest text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-amber-500/50 focus:outline-none"
                 />
                 <Button
                   variant="primary"
-                  className="bg-amber-600 hover:bg-amber-500 text-white text-sm"
+                  className="bg-amber-600 text-sm text-white hover:bg-amber-500"
                   onClick={verify}
                   disabled={token.length !== 6}
                 >
@@ -199,7 +272,7 @@ export default function SecuritySettingsPage() {
           )}
 
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700 flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-700">
               <AlertTriangle size={14} />
               {error}
             </div>
@@ -218,7 +291,7 @@ function QRCodeSVG({ data, size }: { data: string; size: number }) {
   if (svg) {
     return (
       <div
-        className="inline-block border border-[color:var(--ds-border)] bg-white rounded p-2"
+        className="inline-block rounded border border-[color:var(--ds-border)] bg-white p-2"
         style={{ width: size + 16, height: size + 16 }}
         title={data}
         dangerouslySetInnerHTML={{ __html: svg }}
@@ -229,7 +302,7 @@ function QRCodeSVG({ data, size }: { data: string; size: number }) {
   // Fallback: deterministic grid pattern while the real QR loads or if the API is unavailable
   return (
     <div
-           className="inline-block border border-[color:var(--ds-border)] bg-white rounded animate-pulse"
+      className="inline-block animate-pulse rounded border border-[color:var(--ds-border)] bg-white"
       style={{ width: size, height: size }}
       title={data}
     >

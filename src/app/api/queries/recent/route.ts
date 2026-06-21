@@ -1,10 +1,12 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler } from "@/lib/api-handler";
 
 const recentQuerySchema = z.object({
-  limit: z.string().default("10"),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 10, 100))
+    .default("10"),
 });
 
 export const GET = createHandler(
@@ -16,12 +18,14 @@ export const GET = createHandler(
   },
   async (ctx, _body, query, _req) => {
     try {
-      const res = await fetch(`${ENGINE_URL}/api/queries/recent?limit=${query.limit}`, { headers: ctx.headers });
+      const res = await fetch(`${ENGINE_URL}/api/queries/recent?limit=${query.limit}`, {
+        headers: ctx.headers,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
       console.error("[queries/recent] failed:", err instanceof Error ? err.message : String(err));
       return Response.json([]);
     }
-  },
+  }
 );

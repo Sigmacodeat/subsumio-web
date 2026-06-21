@@ -24,7 +24,11 @@ export interface RegisterInput {
 }
 
 export function useMe() {
-  return useQuery({ queryKey: ["auth", "me"], queryFn: () => api.auth.me(), staleTime: 5 * 60 * 1000 });
+  return useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: () => api.auth.me(),
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 export function useLogin() {
@@ -110,7 +114,12 @@ export function use2FAVerify() {
 export function use2FADisable() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => csrfFetch("/api/auth/2fa/disable", { method: "POST" }).then((r) => r.json()),
+    mutationFn: (password: string) =>
+      csrfFetch("/api/auth/2fa/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      }).then((r) => r.json()),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["auth", "me"] }),
   });
 }

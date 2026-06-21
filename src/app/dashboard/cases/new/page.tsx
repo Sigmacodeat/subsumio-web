@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Loader2,
-  Plus,
-  AlertTriangle,
-  ShieldAlert,
-  Users,
-} from "lucide-react";
+import { Loader2, Plus, AlertTriangle, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -20,7 +14,11 @@ import type { ContactFrontmatter } from "@/lib/legal-types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { caseFormSchema, type CaseFormData } from "@/lib/schemas/case";
-import { checkInternalConflict, type ContactRef, type ConflictCheckResult } from "@/lib/contact-conflict";
+import {
+  checkInternalConflict,
+  type ContactRef,
+  type ConflictCheckResult,
+} from "@/lib/contact-conflict";
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Offen" },
@@ -106,7 +104,11 @@ export default function NewCasePage() {
           court_slug: data.courtSlug || undefined,
           own_lawyer_name: data.lawyerName || undefined,
           own_lawyer_slug: data.lawyerSlug || undefined,
-          tags: data.tags?.split(",").map((t) => t.trim()).filter(Boolean) ?? [],
+          tags:
+            data.tags
+              ?.split(",")
+              .map((t) => t.trim())
+              .filter(Boolean) ?? [],
           portal_enabled: data.portalEnabled,
           version: 0,
         },
@@ -123,10 +125,17 @@ export default function NewCasePage() {
 
   useEffect(() => {
     let cancelled = false;
-    api.brain.listPages({ type: "legal_contact", limit: 500 })
-      .then((pages) => { if (!cancelled) setContacts(contactOptions(pages)); })
-      .catch(() => { if (!cancelled) setContacts([]); });
-    return () => { cancelled = true; };
+    api.brain
+      .listPages({ type: "legal_contact", limit: 500 })
+      .then((pages) => {
+        if (!cancelled) setContacts(contactOptions(pages));
+      })
+      .catch(() => {
+        if (!cancelled) setContacts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const clients = contacts.filter((c) => c.role === "client");
@@ -149,7 +158,10 @@ export default function NewCasePage() {
     const refs: ContactRef[] = [];
     if (clientName?.trim()) refs.push({ name: clientName.trim(), role: "client" });
     if (opponentName?.trim()) refs.push({ name: opponentName.trim(), role: "opponent" });
-    if (refs.length < 2) { setConflictResult(null); return; }
+    if (refs.length < 2) {
+      setConflictResult(null);
+      return;
+    }
     setConflictResult(checkInternalConflict(refs));
   }, [clientName, opponentName]);
 
@@ -172,14 +184,17 @@ export default function NewCasePage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Neue Akte"
         breadcrumbs={[{ label: "Akten", href: "/dashboard/cases" }, { label: "Neu" }]}
       />
 
       {form.error && (
-        <div role="alert" className="mb-4 flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-red-600 text-sm">
+        <div
+          role="alert"
+          className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600"
+        >
           <AlertTriangle size={16} />
           {form.error}
         </div>
@@ -189,19 +204,23 @@ export default function NewCasePage() {
         <div
           role="alert"
           className={cn(
-            "mb-4 flex items-start gap-2.5 px-4 py-3 rounded-lg border text-sm",
+            "mb-4 flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm",
             conflictResult.severity === "critical"
               ? "border-red-500/30 bg-red-500/5 text-red-600"
-              : "border-amber-500/30 bg-amber-500/5 text-amber-600",
+              : "border-amber-500/30 bg-amber-500/5 text-amber-600"
           )}
         >
-          {conflictResult.severity === "critical"
-            ? <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-            : <Users size={16} className="mt-0.5 shrink-0" />}
+          {conflictResult.severity === "critical" ? (
+            <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+          ) : (
+            <Users size={16} className="mt-0.5 shrink-0" />
+          )}
           <div className="space-y-1">
             <p className="font-semibold">{conflictResult.warning}</p>
             {conflictResult.hits.map((hit, i) => (
-              <p key={i} className="text-xs opacity-90">{hit.reason}</p>
+              <p key={i} className="text-xs opacity-90">
+                {hit.reason}
+              </p>
             ))}
           </div>
         </div>
@@ -209,41 +228,58 @@ export default function NewCasePage() {
 
       <form onSubmit={form.handleSubmit} className="space-y-5">
         {/* Basic info */}
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Grunddaten</h2>
 
           <div>
-            <label htmlFor="case-title" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Titel *</label>
+            <label
+              htmlFor="case-title"
+              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+            >
+              Titel *
+            </label>
             <Input
               id="case-title"
               {...register("title")}
               placeholder="z.B. Musterfall GmbH vs. Schuldner AG"
-              className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
-              <p className="text-xs text-red-600 mt-1">{f.formState.errors.title.message}</p>
+              <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="case-number" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Aktenzeichen</label>
+              <label
+                htmlFor="case-number"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Aktenzeichen
+              </label>
               <Input
                 id="case-number"
                 {...register("caseNumber")}
                 placeholder="z.B. 2026-001"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
             <div>
-              <label htmlFor="case-status" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Status</label>
+              <label
+                htmlFor="case-status"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Status
+              </label>
               <select
                 id="case-status"
                 {...register("status")}
-                className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               >
                 {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -251,27 +287,42 @@ export default function NewCasePage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="case-legal-area" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Rechtsgebiet</label>
+              <label
+                htmlFor="case-legal-area"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Rechtsgebiet
+              </label>
               <Input
                 id="case-legal-area"
                 {...register("legalArea")}
                 placeholder="z.B. Zivilrecht"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
             <div>
-              <label htmlFor="case-sub-area" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Untergebiet</label>
+              <label
+                htmlFor="case-sub-area"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Untergebiet
+              </label>
               <Input
                 id="case-sub-area"
                 {...register("subArea")}
                 placeholder="z.B. Vertragsrecht"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
             </div>
           </div>
 
           <div>
-            <span id="case-priority-label" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Priorität</span>
+            <span
+              id="case-priority-label"
+              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+            >
+              Priorität
+            </span>
             <div className="flex gap-2" role="group" aria-labelledby="case-priority-label">
               {PRIORITY_OPTIONS.map((o) => (
                 <button
@@ -280,16 +331,16 @@ export default function NewCasePage() {
                   onClick={() => setValue("priority", o.value as CaseFormData["priority"])}
                   aria-pressed={priority === o.value}
                   className={cn(
-                    "flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all",
+                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
                     priority === o.value
                       ? o.value === "critical"
-                        ? "bg-red-500/10 border-red-500/30 text-red-600"
+                        ? "border-red-500/30 bg-red-500/10 text-red-600"
                         : o.value === "high"
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600"
-                        : o.value === "low"
-                        ? "bg-gray-500/10 border-gray-500/30 text-gray-400"
-                        : "bg-blue-500/10 border-blue-500/30 text-blue-600"
-                      : "bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
+                          : o.value === "low"
+                            ? "border-gray-500/30 bg-gray-500/10 text-gray-400"
+                            : "border-blue-500/30 bg-blue-500/10 text-blue-600"
+                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
                   )}
                 >
                   {o.label}
@@ -300,45 +351,71 @@ export default function NewCasePage() {
         </div>
 
         {/* Parties */}
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Beteiligte</h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="case-client" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Mandant</label>
+              <label
+                htmlFor="case-client"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Mandant
+              </label>
               <Input
                 id="case-client"
-                {...register("clientName", { onChange: () => { if (clientSlug) setValue("clientSlug", ""); } })}
+                {...register("clientName", {
+                  onChange: () => {
+                    if (clientSlug) setValue("clientSlug", "");
+                  },
+                })}
                 placeholder="Name des Mandanten"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               {clients.length > 0 && (
                 <select
                   value={clientSlug}
                   onChange={(e) => applyContact(e.target.value, "client")}
-                  className="mt-2 w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="">Kontakt verknüpfen…</option>
-                  {clients.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                  {clients.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
             <div>
-              <label htmlFor="case-opponent" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Gegner</label>
+              <label
+                htmlFor="case-opponent"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Gegner
+              </label>
               <Input
                 id="case-opponent"
-                {...register("opponentName", { onChange: () => { if (opponentSlug) setValue("opponentSlug", ""); } })}
+                {...register("opponentName", {
+                  onChange: () => {
+                    if (opponentSlug) setValue("opponentSlug", "");
+                  },
+                })}
                 placeholder="Name der Gegenseite"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               {opponents.length > 0 && (
                 <select
                   value={opponentSlug}
                   onChange={(e) => applyContact(e.target.value, "opponent")}
-                  className="mt-2 w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="">Kontakt verknüpfen…</option>
-                  {opponents.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                  {opponents.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -346,40 +423,66 @@ export default function NewCasePage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="case-court" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Gericht</label>
+              <label
+                htmlFor="case-court"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Gericht
+              </label>
               <Input
                 id="case-court"
-                {...register("courtName", { onChange: () => { if (courtSlug) setValue("courtSlug", ""); } })}
+                {...register("courtName", {
+                  onChange: () => {
+                    if (courtSlug) setValue("courtSlug", "");
+                  },
+                })}
                 placeholder="z.B. LG Wien"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               {courts.length > 0 && (
                 <select
                   value={courtSlug}
                   onChange={(e) => applyContact(e.target.value, "court")}
-                  className="mt-2 w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="">Kontakt verknüpfen…</option>
-                  {courts.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                  {courts.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
             <div>
-              <label htmlFor="case-lawyer" className="block text-xs text-[color:var(--ds-text-muted)] mb-1.5">Zuständiger Anwalt</label>
+              <label
+                htmlFor="case-lawyer"
+                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                Zuständiger Anwalt
+              </label>
               <Input
                 id="case-lawyer"
-                {...register("lawyerName", { onChange: () => { if (lawyerSlug) setValue("lawyerSlug", ""); } })}
+                {...register("lawyerName", {
+                  onChange: () => {
+                    if (lawyerSlug) setValue("lawyerSlug", "");
+                  },
+                })}
                 placeholder="Name des Anwalts"
-                className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               {lawyers.length > 0 && (
                 <select
                   value={lawyerSlug}
                   onChange={(e) => applyContact(e.target.value, "lawyer")}
-                  className="mt-2 w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-xs text-[color:var(--ds-text)] focus:outline-none focus:border-[color:var(--brand-primary)]"
+                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 >
                   <option value="">Kontakt verknüpfen…</option>
-                  {lawyers.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                  {lawyers.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -387,30 +490,34 @@ export default function NewCasePage() {
         </div>
 
         {/* Facts */}
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]"><label htmlFor="case-facts">Sachverhalt</label></h2>
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            <label htmlFor="case-facts">Sachverhalt</label>
+          </h2>
           <textarea
             id="case-facts"
             {...register("facts")}
             rows={6}
             placeholder="Beschreibe den Sachverhalt…"
-            className="w-full bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none focus:border-[color:var(--brand-primary)] resize-y"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
         </div>
 
         {/* Tags */}
-        <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]"><label htmlFor="case-tags">Tags</label></h2>
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            <label htmlFor="case-tags">Tags</label>
+          </h2>
           <Input
             id="case-tags"
             {...register("tags")}
             placeholder="Komma-getrennte Tags: z.B. Vertragsbruch, Schadensersatz"
-            className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
 
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               {...register("portalEnabled")}
@@ -418,9 +525,12 @@ export default function NewCasePage() {
               className="mt-1"
             />
             <span>
-              <span className="block text-sm font-semibold text-[color:var(--ds-text)]">Für Mandantenportal-Vorschau freigeben</span>
-              <span className="block text-xs text-[color:var(--ds-text-muted)] mt-0.5">
-                Nur freigegebene Akten erscheinen in der Portal-Vorschau. Ein echter Mandantenlogin bleibt ein separates Deployment.
+              <span className="block text-sm font-semibold text-[color:var(--ds-text)]">
+                Für Mandantenportal-Vorschau freigeben
+              </span>
+              <span className="mt-0.5 block text-xs text-[color:var(--ds-text-muted)]">
+                Nur freigegebene Akten erscheinen in der Portal-Vorschau. Ein echter Mandantenlogin
+                bleibt ein separates Deployment.
               </span>
             </span>
           </label>
@@ -429,7 +539,11 @@ export default function NewCasePage() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href="/dashboard/cases">
-            <Button type="button" variant="ghost" className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            >
               Abbrechen
             </Button>
           </Link>
@@ -437,9 +551,13 @@ export default function NewCasePage() {
             type="submit"
             variant="primary"
             disabled={form.status === "submitting"}
-            className="brand-bg text-white gap-2"
+            className="brand-bg gap-2 text-white"
           >
-            {form.status === "submitting" ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+            {form.status === "submitting" ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Plus size={16} />
+            )}
             Akte erstellen
           </Button>
         </div>

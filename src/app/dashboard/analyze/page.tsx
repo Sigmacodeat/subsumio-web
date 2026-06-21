@@ -55,7 +55,7 @@ export default function AnalyzePage() {
   const canRun = mode === "slug" ? slug.trim().length > 0 : text.trim().length > 0;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Dokument-Analyse"
         description="KI-gestütztes Issue-Spotting mit Quellenprüfung — erkennt Parteien, Fristen, Risiken und zitiert nur verifizierte Normen"

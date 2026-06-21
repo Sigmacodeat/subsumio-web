@@ -173,31 +173,31 @@ export function ChatHeader(props: ChatHeaderProps) {
           {props.onShare && props.messageCount > 0 && (
             <button
               onClick={props.onShare}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label="Chat teilen"
               title="Chat teilen (Link kopieren)"
             >
-              <Share2 size={14} />
+              <Share2 size={16} />
             </button>
           )}
           {props.features.exportChat && props.messageCount > 0 && (
             <button
               onClick={props.onExport}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label={t("chat.export")}
               title={t("chat.export")}
             >
-              <Download size={14} />
+              <Download size={16} />
             </button>
           )}
           {props.messageCount > 0 && (
             <button
               onClick={props.onClear}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-red-500/10 hover:text-red-600"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600 active:scale-95"
               aria-label={t("chat.clear")}
               title={t("chat.clear")}
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} />
             </button>
           )}
         </div>
@@ -210,7 +210,7 @@ export function ChatHeader(props: ChatHeaderProps) {
           <div ref={sessionsRef} className="relative">
             <button
               onClick={() => setShowSessions((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95"
             >
               <Plus size={12} />
               {props.activeSessionId ? "Session" : t("chat.new_session")}
@@ -227,7 +227,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                       props.onNewSession();
                       setShowSessions(false);
                     }}
-                    className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all hover:opacity-90"
+                    className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95"
                   >
                     <Plus size={13} />
                     {t("chat.new_session")}
@@ -310,7 +310,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                 props.onTogglePin?.(s.id);
                               }}
                               className={cn(
-                                "text-[color:var(--ds-text-subtle)] opacity-0 transition-all group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
+                                "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
                                 s.pinned && "brand-text opacity-100"
                               )}
                               aria-label={s.pinned ? "Abheften" : "Anheften"}
@@ -325,7 +325,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                                 e.stopPropagation();
                                 props.onDeleteSession?.(s.id);
                               }}
-                              className="text-[color:var(--ds-text-subtle)] opacity-0 transition-all group-hover:opacity-100 hover:text-red-500"
+                              className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500"
                               aria-label={t("chat.confirm_delete_session")}
                             >
                               <Trash2 size={11} />
@@ -347,7 +347,7 @@ export function ChatHeader(props: ChatHeaderProps) {
             <select
               value={props.selectedCaseSlug}
               onChange={(e) => props.onCaseChange(e.target.value)}
-              className="appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-1.5 pr-7 pl-7 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,color] duration-200 hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               aria-label={t("chat.case_select")}
             >
               <option value="">{t("chat.no_case")}</option>
@@ -377,7 +377,7 @@ export function ChatHeader(props: ChatHeaderProps) {
                 key={j.value}
                 onClick={() => props.onJurisdictionChange(j.value)}
                 className={cn(
-                  "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                  "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
                   props.jurisdiction === j.value
                     ? "brand-bg brand-text-on-primary"
                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
@@ -394,7 +394,7 @@ export function ChatHeader(props: ChatHeaderProps) {
           <div ref={modeRef} className="relative">
             <button
               onClick={() => setShowModeMenu((v) => !v)}
-              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95"
             >
               <Activity size={11} />
               {QUERY_MODE_LABELS[props.queryMode].label}

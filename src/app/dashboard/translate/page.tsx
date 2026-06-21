@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Languages,
-  Loader2,
-  AlertTriangle,
-  Copy,
-  Check,
-  BookOpen,
-} from "lucide-react";
+import { Languages, Loader2, AlertTriangle, Copy, Check, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -73,7 +66,7 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Juristische Übersetzung"
         description="KI-Übersetzung mit Erhaltung juristischer Fachterminologie, Normzitate und Formatierung"
@@ -81,40 +74,62 @@ export default function TranslatePage() {
       />
 
       {/* Language selectors */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-4">
+      <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold block mb-1.5">Quellsprache</label>
+            <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Quellsprache
+            </label>
             <select
               value={sourceLang}
               onChange={(e) => setSourceLang(e.target.value)}
-              className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] min-w-[140px]"
+              className="min-w-[140px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
               <option value="auto">Auto-Erkennung</option>
-              {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="text-[color:var(--ds-text-muted)] pb-2">→</div>
+          <div className="pb-2 text-[color:var(--ds-text-muted)]">→</div>
 
           <div>
-            <label className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold block mb-1.5">Zielsprache</label>
+            <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Zielsprache
+            </label>
             <select
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
-              className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-2 text-sm text-[color:var(--ds-text)] min-w-[140px]"
+              className="min-w-[140px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
-              {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="flex gap-3 ml-auto">
-            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)] cursor-pointer">
-              <input type="checkbox" checked={legalTerminology} onChange={(e) => setLegalTerminology(e.target.checked)} className="accent-emerald-600" />
+          <div className="ml-auto flex gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <input
+                type="checkbox"
+                checked={legalTerminology}
+                onChange={(e) => setLegalTerminology(e.target.checked)}
+                className="accent-emerald-600"
+              />
               Juristische Terminologie
             </label>
-            <label className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)] cursor-pointer">
-              <input type="checkbox" checked={preserveFormatting} onChange={(e) => setPreserveFormatting(e.target.checked)} className="accent-emerald-600" />
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+              <input
+                type="checkbox"
+                checked={preserveFormatting}
+                onChange={(e) => setPreserveFormatting(e.target.checked)}
+                className="accent-emerald-600"
+              />
               Formatierung erhalten
             </label>
           </div>
@@ -124,13 +139,23 @@ export default function TranslatePage() {
         <div className="flex gap-2">
           <button
             onClick={() => setMode("text")}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", mode === "text" ? "brand-soft brand-text border brand-border" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] border border-transparent")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+              mode === "text"
+                ? "brand-soft brand-text brand-border border"
+                : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+            )}
           >
             Direkter Text
           </button>
           <button
             onClick={() => setMode("slug")}
-            className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", mode === "slug" ? "brand-soft brand-text border brand-border" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] border border-transparent")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+              mode === "slug"
+                ? "brand-soft brand-text brand-border border"
+                : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+            )}
           >
             Aus Vault (Slug)
           </button>
@@ -141,25 +166,29 @@ export default function TranslatePage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="Dokument-Slug aus dem Brain"
-            className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)]"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
           />
         ) : (
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Zu übersetzender Text…"
-            className="w-full h-40 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-4 py-3 text-sm text-[color:var(--ds-text)] font-mono leading-relaxed focus:outline-none focus:border-emerald-500/50 resize-none"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
         )}
 
-        <Button onClick={run} disabled={loading || !canRun} className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white">
+        <Button
+          onClick={run}
+          disabled={loading || !canRun}
+          className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+        >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
           Übersetzen
         </Button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -168,16 +197,17 @@ export default function TranslatePage() {
         <div className="space-y-4">
           {/* Translated text */}
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold flex items-center gap-2">
-                <Languages size={14} /> Übersetzung ({result.source_language} → {result.target_language})
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                <Languages size={14} /> Übersetzung ({result.source_language} →{" "}
+                {result.target_language})
               </h3>
               <Button variant="ghost" size="sm" onClick={copyResult} className="gap-1.5 text-xs">
                 {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
                 {copied ? "Kopiert" : "Kopieren"}
               </Button>
             </div>
-            <div className="prose prose-sm max-w-none text-[color:var(--ds-text)] whitespace-pre-wrap leading-relaxed">
+            <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
               {result.translated_text}
             </div>
           </div>
@@ -185,16 +215,24 @@ export default function TranslatePage() {
           {/* Glossary */}
           {result.glossary.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <BookOpen size={14} /> Glossar ({result.glossary.length})
               </h3>
               <div className="space-y-2">
                 {result.glossary.map((g, i) => (
                   <div key={i} className="flex items-start gap-3 text-sm">
-                    <span className="font-mono text-[color:var(--ds-text)] min-w-[120px]">{g.source_term}</span>
+                    <span className="min-w-[120px] font-mono text-[color:var(--ds-text)]">
+                      {g.source_term}
+                    </span>
                     <span className="text-[color:var(--ds-text-muted)]">→</span>
-                    <span className="font-mono text-emerald-600 min-w-[120px]">{g.target_term}</span>
-                    {g.note && <span className="text-xs text-[color:var(--ds-text-muted)] italic">{g.note}</span>}
+                    <span className="min-w-[120px] font-mono text-emerald-600">
+                      {g.target_term}
+                    </span>
+                    {g.note && (
+                      <span className="text-xs text-[color:var(--ds-text-muted)] italic">
+                        {g.note}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -205,13 +243,18 @@ export default function TranslatePage() {
           {result.warnings.length > 0 && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-xs text-amber-600">{w}</p>
+                <p key={i} className="text-xs text-amber-600">
+                  {w}
+                </p>
               ))}
             </div>
           )}
 
           {result.attorney_review_required && (
-            <Badge variant="default" className="text-xs bg-amber-500/10 border-amber-500/20 text-amber-600">
+            <Badge
+              variant="default"
+              className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+            >
               Anwaltliche Prüfung der Übersetzung empfohlen
             </Badge>
           )}

@@ -216,7 +216,7 @@ export default function ScimSettingsPage() {
   // RBAC: Only admin can access this page
   if (userRole !== "admin") {
     return (
-      <div className="mx-auto max-w-4xl p-6 md:p-8">
+      <div className="mx-auto max-w-4xl p-4 md:p-8">
         <PageHeader
           title="SCIM Directory Sync"
           description="Zugriffsverwaltung über Identity Provider"
@@ -246,7 +246,7 @@ export default function ScimSettingsPage() {
   const workosConfigured = status?.workosDirectorySyncConfigured ?? false;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="SCIM Directory Sync"
         description="Automatische Benutzerbereitstellung über Identity Provider (WorkOS)"

@@ -67,7 +67,7 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          "brand-bg brand-text-on-primary fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg)] focus-visible:outline-none",
+          "brand-bg brand-text-on-primary fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-[transform,box-shadow,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-105 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg)] focus-visible:outline-none active:scale-95",
           open && "pointer-events-none opacity-0",
           className
         )}

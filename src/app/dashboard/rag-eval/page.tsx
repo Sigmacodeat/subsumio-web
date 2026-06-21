@@ -123,7 +123,7 @@ export default function RagEvalPage() {
     gateResult?.status === "pass" ? "emerald" : gateResult?.status === "warn" ? "amber" : "red";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
         title="Retrieval-Qualität"
         description="Benchmark, Freigabeprüfung und menschliche Review für KI-Antworten"

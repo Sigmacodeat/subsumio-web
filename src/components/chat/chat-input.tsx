@@ -152,7 +152,7 @@ export function ChatInput({
           <button
             onClick={() => setShowTemplates((v) => !v)}
             disabled={isStreaming || disabled}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
             aria-label="Vorlagen"
             title="Vorlagen"
           >
@@ -193,7 +193,7 @@ export function ChatInput({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isStreaming || uploading || disabled}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-all hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] disabled:opacity-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] transition-[border-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
               aria-label="Datei hochladen"
               title="Datei hochladen"
             >
@@ -228,7 +228,7 @@ export function ChatInput({
         {isStreaming ? (
           <button
             onClick={() => onStop?.()}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white transition-all hover:bg-red-600"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 active:scale-95"
             aria-label="Generierung stoppen"
             title="Stoppen (Esc)"
           >
@@ -238,7 +238,7 @@ export function ChatInput({
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || disabled || uploading}
-            className="brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Senden"
             title="Senden (Enter)"
           >

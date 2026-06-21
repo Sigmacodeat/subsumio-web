@@ -158,7 +158,7 @@ export function ModelComparison() {
           <button
             onClick={runComparison}
             disabled={!query.trim() || !modelA || !modelB || results.some((r) => r.loading)}
-            className="brand-bg brand-text-on-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="brand-bg brand-text-on-primary inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {results.some((r) => r.loading) ? (
               <Loader2 size={14} className="animate-spin" />

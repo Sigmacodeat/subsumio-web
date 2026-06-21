@@ -37,7 +37,7 @@ export default function DashboardPage() {
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-5 md:p-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       {isFirstTime && (
         <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-[color:var(--ds-surface)] p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
