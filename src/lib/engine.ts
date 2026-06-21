@@ -30,7 +30,7 @@ export const ENGINE_URL = CONFIGURED_ENGINE_URL || "http://localhost:3001";
  */
 function createSignedIdentityToken(
   sourceId: string,
-  matterScope: string[] | "all",
+  matterScope: string[] | "all"
 ): string | undefined {
   const secret = env("SUBSUMIO_WEB_API_KEY");
   if (!secret) return undefined;
@@ -54,7 +54,11 @@ export function engineConfigurationResponse(): Response | null {
       const apiKey = env("SUBSUMIO_WEB_API_KEY");
       if (!apiKey) {
         return Response.json(
-          { error: "engine_api_key_missing", message: "Server configuration error." },
+          {
+            error: "engine_api_key_missing",
+            message: "Server configuration error: SUBSUMIO_WEB_API_KEY is not set.",
+            hint: "Set SUBSUMIO_WEB_API_KEY in the environment and restart the engine + web process.",
+          },
           { status: 503 }
         );
       }
@@ -64,7 +68,8 @@ export function engineConfigurationResponse(): Response | null {
   return Response.json(
     {
       error: "engine_not_configured",
-      message: "Server configuration error.",
+      message: "Server configuration error: SUBSUMIO_API_URL is not set.",
+      hint: "Set SUBSUMIO_API_URL to the engine URL (e.g. http://engine:3001) and restart.",
     },
     { status: 503 }
   );
@@ -150,7 +155,7 @@ export function engineHeadersForBrain(brainId: string): Record<string, string> {
  */
 export function engineHeadersForBrainWithMatterScope(
   brainId: string,
-  matterScope: string[] | "all",
+  matterScope: string[] | "all"
 ): Record<string, string> {
   const headers = engineHeadersForBrain(brainId);
   const token = createSignedIdentityToken(brainId, matterScope);
