@@ -467,7 +467,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         )}
       </div>
 
-      <div className="flex-1 overflow-x-hidden overflow-y-auto pb-3">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
         {/* Brain status */}
         {!collapsed && (
           <div

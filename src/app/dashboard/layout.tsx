@@ -10,6 +10,7 @@ import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
 import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
+import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
@@ -79,9 +80,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
   const userEmail = meQuery.data?.user?.email ?? null;
 
-  // Body-scroll-lock when mobile drawer or command palette is open
+  // Body-scroll-lock when mobile drawer, copilot drawer, command palette or guide is open
   useEffect(() => {
-    if (mobileOpen || cmdOpen || guideOpen) {
+    if (
+      mobileOpen ||
+      cmdOpen ||
+      guideOpen ||
+      (copilotOpen && typeof window !== "undefined" && window.innerWidth < 768)
+    ) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -89,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileOpen, cmdOpen, guideOpen]);
+  }, [mobileOpen, cmdOpen, guideOpen, copilotOpen]);
 
   // Focus-trap for mobile drawer
   useEffect(() => {
@@ -195,7 +201,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main
           id="main-content"
           role="main"
-          className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
+          className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
         >
           {children}
         </main>
@@ -209,6 +215,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
+
+      {/* Mobile bottom tab bar — agency-level navigation */}
+      <MobileTabBar
+        onCopilotToggle={() => setCopilotOpen((v) => !v)}
+        copilotOpen={copilotOpen}
+        onMobileMenuOpen={() => setMobileOpen(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onGuideOpen={() => setGuideOpen(true)}
+      />
     </div>
   );
 }

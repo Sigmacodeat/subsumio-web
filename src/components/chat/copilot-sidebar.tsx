@@ -243,6 +243,20 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const mobileChatRef = useRef<ChatPanelHandle>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Sync `open` prop with mobile drawer — when toggled on mobile, open the drawer
+  useEffect(() => {
+    if (open && typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileOpen(true);
+    } else if (!open) {
+      setMobileOpen(false);
+    }
+  }, [open]);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   // ── G6: Proactive Suggestions — fetch from /api/notifications (unified) ──
   const [proactiveAlerts, setProactiveAlerts] = useState<
     Array<{ label: string; query: string; severity: "urgent" | "warning" }>
@@ -358,11 +372,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     return () => document.removeEventListener("keydown", handleTabKey);
   }, [mobileOpen]);
 
-  // Close mobile drawer on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   const handleQuickAction = useCallback(
     (action: QuickAction) => {
       if (action.href) {
@@ -378,31 +387,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
   return (
     <>
-      {/* ── Mobile: Floating FAB + Drawer overlay ── */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className={cn(
-          "brand-bg brand-text-on-primary fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg)] focus-visible:outline-none md:hidden",
-          mobileOpen && "pointer-events-none opacity-0",
-          className
-        )}
-        aria-label="Brain Copilot öffnen (Cmd+J)"
-        title="Brain Copilot öffnen (Cmd+J)"
-      >
-        {!mobileOpen && (
-          <span
-            className="brand-bg absolute inset-0 animate-ping rounded-full opacity-20"
-            aria-hidden
-          />
-        )}
-        <Sparkles size={22} className="relative" />
-      </button>
-
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm md:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => {
+            setMobileOpen(false);
+            if (open) onToggle();
+          }}
           aria-hidden="true"
         />
       )}
@@ -418,7 +410,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         aria-label="Brain Copilot"
         aria-modal="true"
       >
-        <div className="flex h-full flex-col bg-[color:var(--ds-surface)] shadow-2xl">
+        <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
           {/* Mobile header bar */}
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-3">
             <div className="flex items-center gap-2.5">
@@ -432,8 +424,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             </div>
             <button
               ref={closeButtonRef}
-              onClick={() => setMobileOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              onClick={() => {
+                setMobileOpen(false);
+                onToggle();
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label="Brain Copilot schließen (Esc)"
             >
               <X size={16} />

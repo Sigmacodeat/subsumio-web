@@ -385,7 +385,7 @@ export function Topbar({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 md:px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] md:px-6">
       <div className="flex max-w-sm min-w-0 flex-1 items-center gap-3 md:max-w-md lg:max-w-lg">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
@@ -509,13 +509,13 @@ export function Topbar({
             // Dispatch ⌘K to trigger command palette
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none sm:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95 md:hidden"
           aria-label={t("topbar.search_aria")}
         >
           <Search size={18} />
         </button>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 max-md:hidden">
         {/* Brain Copilot toggle */}
         <button
           onClick={onCopilotToggle}
@@ -547,7 +547,7 @@ export function Topbar({
         >
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
-        <div className="relative" ref={notifRef}>
+        <div className="relative max-md:hidden" ref={notifRef}>
           <button
             onClick={() => setNotifOpen(!notifOpen)}
             aria-label={
