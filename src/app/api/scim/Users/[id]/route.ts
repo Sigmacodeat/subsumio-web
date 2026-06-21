@@ -84,7 +84,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[scim/Users PUT] error:", msg);
-    return scimError(500, `Failed to update user: ${msg}`);
+    return scimError(500, "Failed to update user");
   }
 }
 
@@ -137,7 +137,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[scim/Users PATCH] error:", msg);
-    return scimError(500, `Failed to patch user: ${msg}`);
+    return scimError(500, "Failed to patch user");
   }
 }
 

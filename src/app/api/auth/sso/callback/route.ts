@@ -80,8 +80,10 @@ export async function GET(req: NextRequest) {
       302
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[sso callback] error:", msg);
-    return Response.json({ error: "sso_failed", message: msg }, { status: 500 });
+    console.error("[sso callback] error:", err instanceof Error ? err.message : String(err));
+    return Response.json(
+      { error: "sso_failed", message: "SSO-Login fehlgeschlagen" },
+      { status: 500 }
+    );
   }
 }

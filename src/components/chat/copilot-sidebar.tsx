@@ -252,10 +252,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     }
   }, [open]);
 
-  // Close mobile drawer on route change
+  // Close mobile drawer on route change — sync with layout state
   useEffect(() => {
     setMobileOpen(false);
-  }, [pathname]);
+    if (open && typeof window !== "undefined" && window.innerWidth < 768) {
+      onToggle();
+    }
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── G6: Proactive Suggestions — fetch from /api/notifications (unified) ──
   const [proactiveAlerts, setProactiveAlerts] = useState<
@@ -330,6 +333,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           onToggle();
         } else {
           setMobileOpen((v) => !v);
+          onToggle();
         }
       }
       if (e.key === "Escape") {

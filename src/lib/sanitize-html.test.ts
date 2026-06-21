@@ -65,4 +65,29 @@ describe("sanitizeHtml", () => {
     const html = "<table><tr><td>cell</td></tr></table>";
     expect(sanitizeHtml(html)).toBe(html);
   });
+
+  it("blocks data:image/svg+xml URLs (XSS via SVG)", () => {
+    const html = '<img src="data:image/svg+xml,<svg onload=alert(1)>" alt="xss">';
+    const result = sanitizeHtml(html);
+    expect(result).not.toContain("onload");
+    expect(result).not.toContain("data:image/svg+xml");
+  });
+
+  it("blocks data:text/html URLs", () => {
+    const html = '<a href="data:text/html,<script>alert(1)</script>">click</a>';
+    const result = sanitizeHtml(html);
+    expect(result).not.toContain("data:text/html");
+  });
+
+  it("allows safe data:image/png URLs", () => {
+    const html = '<img src="data:image/png;base64,iVBORw0KGgo=" alt="pic">';
+    const result = sanitizeHtml(html);
+    expect(result).toContain("data:image/png");
+  });
+
+  it("allows safe data:image/jpeg URLs", () => {
+    const html = '<img src="data:image/jpeg;base64,/9j/4AAQ=" alt="pic">';
+    const result = sanitizeHtml(html);
+    expect(result).toContain("data:image/jpeg");
+  });
 });

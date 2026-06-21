@@ -11,12 +11,10 @@ import {
   Inbox,
   MoreHorizontal,
   X,
-  Bell,
   Sun,
   Moon,
   HelpCircle,
   Settings,
-  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -69,8 +67,32 @@ export function MobileTabBar({
         setMoreOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setMoreOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [moreOpen]);
+
+  // Close more-sheet on route change
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  // Body scroll lock when more-sheet is open
+  useEffect(() => {
+    if (moreOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [moreOpen]);
 
   const activeTab = TABS.findIndex((tab) => isActive(pathname, tab.href));

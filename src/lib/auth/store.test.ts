@@ -111,6 +111,27 @@ describe("toPublic", () => {
     expect(pub.industry).toBe("legal");
     expect(pub.orgId).toBe("org-1");
   });
+
+  test("removes all sensitive fields (Bug 201 regression)", () => {
+    const user = makeUser({
+      passwordHash: "hash",
+      twoFactorSecret: "TOTP_SECRET",
+      pendingTwoFactorSecret: "PENDING_SECRET",
+      twoFactorBackupCodes: ["hash1", "hash2"],
+      docusignAccessToken: "token-abc",
+      docusignRefreshToken: "refresh-xyz",
+      docusignTokenExpiresAt: "2026-01-01T00:00:00Z",
+    });
+    const pub = toPublic(user);
+    const pubRecord = pub as Record<string, unknown>;
+    expect(pubRecord.passwordHash).toBeUndefined();
+    expect(pubRecord.twoFactorSecret).toBeUndefined();
+    expect(pubRecord.pendingTwoFactorSecret).toBeUndefined();
+    expect(pubRecord.twoFactorBackupCodes).toBeUndefined();
+    expect(pubRecord.docusignAccessToken).toBeUndefined();
+    expect(pubRecord.docusignRefreshToken).toBeUndefined();
+    expect(pubRecord.docusignTokenExpiresAt).toBeUndefined();
+  });
 });
 
 describe("buildNewOrg", () => {
@@ -220,7 +241,8 @@ describe("FileUserStore (dev mode)", () => {
   test("getByScimExternalId finds user", async () => {
     const store = getStore();
     const user = makeUser({
-      id: "test-scim-1", email: "scim@test.com",
+      id: "test-scim-1",
+      email: "scim@test.com",
       scimExternalId: "ext-123",
     });
     await store.create(user);
@@ -242,7 +264,9 @@ describe("FileUserStore (dev mode)", () => {
     const store = getStore();
     const user = makeUser({ id: "test-upd-id", email: "updid@test.com" });
     await store.create(user);
-    const updated = await store.update("test-upd-id", { id: "different-id" } as unknown as Parameters<typeof store.update>[1]);
+    const updated = await store.update("test-upd-id", {
+      id: "different-id",
+    } as unknown as Parameters<typeof store.update>[1]);
     expect(updated?.id).toBe("test-upd-id");
   });
 
@@ -263,8 +287,12 @@ describe("FileUserStore (dev mode)", () => {
 
   test("countReferrals counts users with matching referredBy", async () => {
     const store = getStore();
-    await store.create(makeUser({ id: "test-ref-a", email: "refa@test.com", referredBy: "CODE1234" }));
-    await store.create(makeUser({ id: "test-ref-b", email: "refb@test.com", referredBy: "CODE1234" }));
+    await store.create(
+      makeUser({ id: "test-ref-a", email: "refa@test.com", referredBy: "CODE1234" })
+    );
+    await store.create(
+      makeUser({ id: "test-ref-b", email: "refb@test.com", referredBy: "CODE1234" })
+    );
     await store.create(makeUser({ id: "test-ref-c", email: "refc@test.com", referredBy: "OTHER" }));
     const count = await store.countReferrals("CODE1234");
     expect(count).toBeGreaterThanOrEqual(2);
@@ -306,8 +334,11 @@ describe("FileOrgStore (dev mode)", () => {
   test("create and getById round-trip", async () => {
     const store = getOrgStore();
     const org: Org = {
-      id: "org-test-1", name: "Test Org", brainId: "brain-org-1",
-      ownerId: "user-1", createdAt: new Date().toISOString(),
+      id: "org-test-1",
+      name: "Test Org",
+      brainId: "brain-org-1",
+      ownerId: "user-1",
+      createdAt: new Date().toISOString(),
     };
     await store.create(org);
     const found = await store.getById("org-test-1");
@@ -323,8 +354,11 @@ describe("FileOrgStore (dev mode)", () => {
   test("update modifies org", async () => {
     const store = getOrgStore();
     const org: Org = {
-      id: "org-upd-1", name: "Original", brainId: "brain-1",
-      ownerId: "user-1", createdAt: new Date().toISOString(),
+      id: "org-upd-1",
+      name: "Original",
+      brainId: "brain-1",
+      ownerId: "user-1",
+      createdAt: new Date().toISOString(),
     };
     await store.create(org);
     const updated = await store.update("org-upd-1", { name: "Updated" });
@@ -339,8 +373,11 @@ describe("FileOrgStore (dev mode)", () => {
   test("delete removes org", async () => {
     const store = getOrgStore();
     const org: Org = {
-      id: "org-del-1", name: "Delete Me", brainId: "brain-del",
-      ownerId: "user-1", createdAt: new Date().toISOString(),
+      id: "org-del-1",
+      name: "Delete Me",
+      brainId: "brain-del",
+      ownerId: "user-1",
+      createdAt: new Date().toISOString(),
     };
     await store.create(org);
     await store.delete("org-del-1");
@@ -355,12 +392,18 @@ describe("FileOrgStore (dev mode)", () => {
   test("list returns all orgs", async () => {
     const store = getOrgStore();
     await store.create({
-      id: "org-list-1", name: "A", brainId: "b1",
-      ownerId: "u1", createdAt: new Date().toISOString(),
+      id: "org-list-1",
+      name: "A",
+      brainId: "b1",
+      ownerId: "u1",
+      createdAt: new Date().toISOString(),
     });
     await store.create({
-      id: "org-list-2", name: "B", brainId: "b2",
-      ownerId: "u2", createdAt: new Date().toISOString(),
+      id: "org-list-2",
+      name: "B",
+      brainId: "b2",
+      ownerId: "u2",
+      createdAt: new Date().toISOString(),
     });
     const all = await store.list();
     expect(all.length).toBeGreaterThanOrEqual(2);

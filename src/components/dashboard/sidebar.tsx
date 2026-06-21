@@ -444,7 +444,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:hidden"
           aria-label={t("sidebar.close_menu")}
         >
           <X size={18} />
@@ -559,7 +559,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   onClick={() => setMobileOpen(false)}
                   title={collapsed ? t(item.labelKey) : undefined}
                   className={cn(
-                    "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                    "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
                     collapsed && "justify-center px-0",
                     active
                       ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
@@ -594,7 +594,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       onClick={() => setMobileOpen(false)}
                       title={t(item.labelKey)}
                       className={cn(
-                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
                         active
                           ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -708,7 +708,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 aria-current={active ? "page" : undefined}
                                 onClick={() => setMobileOpen(false)}
                                 className={cn(
-                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
                                   active
                                     ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -769,7 +769,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             <Link
               href="/dashboard/settings"
               onClick={() => setMobileOpen(false)}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-[color:var(--ds-hover)]"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95"
             >
               <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
                 <User size={15} className="brand-text" />
@@ -793,7 +793,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
           aria-expanded={!collapsed}
           className={cn(
-            "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-all duration-150 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+            "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:flex",
             collapsed && "justify-center px-0"
           )}
         >
