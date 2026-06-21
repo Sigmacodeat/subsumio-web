@@ -22,11 +22,19 @@ import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
+import { normalizeKanzleiSettings, saveKanzleiSettings } from "@/lib/kanzlei-settings";
 
-type Step = "welcome" | "industry" | "upload" | "query" | "done";
+type Step = "welcome" | "industry" | "profile" | "upload" | "query" | "done";
 
-const STEPS: Step[] = ["welcome", "industry", "upload", "query", "done"];
-const STEP_INDEX: Record<Step, number> = { welcome: 0, industry: 1, upload: 2, query: 3, done: 4 };
+const STEPS: Step[] = ["welcome", "industry", "profile", "upload", "query", "done"];
+const STEP_INDEX: Record<Step, number> = {
+  welcome: 0,
+  industry: 1,
+  profile: 2,
+  upload: 3,
+  query: 4,
+  done: 5,
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -34,7 +42,15 @@ export default function OnboardingPage() {
   const meQuery = useMe();
   const { t } = useLang();
   const [step, setStep] = useState<Step>("welcome");
-  const [industry, setIndustry] = useState<string | null>(null);
+  const [industry, setIndustry] = useState<string | null>("legal");
+  const [profile, setProfile] = useState({
+    kanzleiName: "",
+    anwaltName: "",
+    kanzleiEmail: "",
+    country: "AT",
+    role: "lawyer",
+    focus: "",
+  });
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
   const [queryText, setQueryText] = useState("");
@@ -47,6 +63,8 @@ export default function OnboardingPage() {
 
   const currentIdx = STEP_INDEX[step];
   const totalSteps = STEPS.length - 1;
+  const userName = meQuery.data?.user?.name ?? "";
+  const userEmail = meQuery.data?.user?.email ?? "";
 
   const goTo = (s: Step) => {
     setError(null);
@@ -106,21 +124,45 @@ export default function OnboardingPage() {
     setQuerying(false);
   }, [queryText, t, queryAnswer]);
 
+  const saveProfile = useCallback(async () => {
+    const contactName = profile.anwaltName.trim() || userName.trim();
+    const contactEmail = profile.kanzleiEmail.trim() || userEmail.trim();
+    if (!profile.kanzleiName.trim() && !contactName && !contactEmail) {
+      return;
+    }
+    const settings = normalizeKanzleiSettings({
+      kanzleiName: profile.kanzleiName.trim(),
+      anwaltName: contactName,
+      kanzleiEmail: contactEmail,
+      country: profile.country,
+      rechtsgebietSaetze: profile.focus
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+        .reduce<Record<string, number>>((acc, item) => {
+          acc[item] = 200;
+          return acc;
+        }, {}),
+    });
+    await saveKanzleiSettings(settings);
+  }, [profile, userEmail, userName]);
+
   const finish = useCallback(async () => {
     setCompleting(true);
     try {
+      await saveProfile();
       await csrfFetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ industry }),
+        body: JSON.stringify({ industry, profile }),
       });
       await qc.invalidateQueries({ queryKey: ["auth", "me"] });
       router.replace("/dashboard");
     } catch {
-      setError("Onboarding konnte nicht abgeschlossen werden. Bitte erneut versuchen.");
+      setError(t("onboarding.error_complete"));
     }
     setCompleting(false);
-  }, [industry, qc, router]);
+  }, [industry, profile, qc, router, saveProfile, t]);
 
   const skipOnboarding = useCallback(async () => {
     setCompleting(true);
@@ -138,7 +180,9 @@ export default function OnboardingPage() {
     setCompleting(false);
   }, [qc, router]);
 
-  const userName = meQuery.data?.user?.name ?? "";
+  const updateProfile = (key: keyof typeof profile, value: string) => {
+    setProfile((current) => ({ ...current, [key]: value }));
+  };
 
   return (
     <div
@@ -242,7 +286,7 @@ export default function OnboardingPage() {
                   </button>
                   <button
                     onClick={() => setIndustry("other")}
-                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                    className={`flex items-center gap-4 rounded-xl border-2 p-4 text-left opacity-70 transition-all ${
                       industry === "other"
                         ? "brand-border bg-[color:var(--brand-primary)]/5"
                         : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)]/30"
@@ -256,7 +300,7 @@ export default function OnboardingPage() {
                         {t("onboarding.industry_other")}
                       </p>
                       <p className="text-xs text-[color:var(--ds-text-muted)]">
-                        Generisches Brain ohne Branchen-Schema
+                        Subsumio ist aktuell fuer Kanzlei-Workflows optimiert
                       </p>
                     </div>
                     {industry === "other" && <CheckCircle2 size={18} className="brand-text" />}
@@ -267,6 +311,114 @@ export default function OnboardingPage() {
                     <ArrowLeft size={14} /> {t("onboarding.back")}
                   </Button>
                   <Button variant="glow" size="sm" onClick={next} disabled={!industry}>
+                    {t("onboarding.next")} <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Profile */}
+            {step === "profile" && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
+                    <Scale size={18} className="brand-text" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                      {t("onboarding.step_profile")}
+                    </h2>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.step_profile_desc")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_firm")}
+                    </span>
+                    <input
+                      value={profile.kanzleiName}
+                      onChange={(e) => updateProfile("kanzleiName", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder="Kanzlei Muster"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_owner")}
+                    </span>
+                    <input
+                      value={profile.anwaltName}
+                      onChange={(e) => updateProfile("anwaltName", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={userName || "Dr. Muster"}
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_email")}
+                    </span>
+                    <input
+                      value={profile.kanzleiEmail}
+                      onChange={(e) => updateProfile("kanzleiEmail", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={userEmail || "office@kanzlei.at"}
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_country")}
+                    </span>
+                    <select
+                      value={profile.country}
+                      onChange={(e) => updateProfile("country", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    >
+                      <option value="AT">Österreich</option>
+                      <option value="DE">Deutschland</option>
+                      <option value="CH">Schweiz</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr]">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_role")}
+                    </span>
+                    <select
+                      value={profile.role}
+                      onChange={(e) => updateProfile("role", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    >
+                      <option value="lawyer">{t("onboarding.role_lawyer")}</option>
+                      <option value="assistant">{t("onboarding.role_assistant")}</option>
+                      <option value="management">{t("onboarding.role_management")}</option>
+                    </select>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.profile_focus")}
+                    </span>
+                    <input
+                      value={profile.focus}
+                      onChange={(e) => updateProfile("focus", e.target.value)}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder={t("onboarding.profile_focus_hint")}
+                    />
+                  </label>
+                </div>
+
+                {error && <p className="text-xs text-red-600">{error}</p>}
+
+                <div className="flex justify-between pt-2">
+                  <Button variant="ghost" size="sm" onClick={back}>
+                    <ArrowLeft size={14} /> {t("onboarding.back")}
+                  </Button>
+                  <Button variant="glow" size="sm" onClick={next}>
                     {t("onboarding.next")} <ArrowRight size={14} />
                   </Button>
                 </div>

@@ -860,6 +860,38 @@ export const D = {
   "cmd.action.help.docs": { de: "Dokumentation", en: "Documentation" },
   "cmd.action.help.support": { de: "Support", en: "Support" },
 
+  // ── Dashboard guide ──
+  "guide.open": { de: "Subsumio Guide öffnen", en: "Open Subsumio Guide" },
+  "guide.title": { de: "Subsumio Guide", en: "Subsumio Guide" },
+  "guide.subtitle": {
+    de: "Kontextuelle Hilfe fuer Setup und Kanzlei-Workflows",
+    en: "Contextual help for setup and firm workflows",
+  },
+  "guide.default_title": { de: "Kanzlei-Cockpit verstehen", en: "Understand the firm cockpit" },
+  "guide.default_desc": {
+    de: "Starte mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
+    en: "Start with cases, deadlines, and inbox. System and brain features stay in the background until needed.",
+  },
+  "guide.setup_title": { de: "Setup-Checkliste", en: "Setup checklist" },
+  "guide.setup_firm": {
+    de: "Kanzlei-Daten und Briefkopf pflegen",
+    en: "Add firm data and letterhead",
+  },
+  "guide.setup_case": {
+    de: "Erste Akte mit Mandant und Gegner anlegen",
+    en: "Create first case with client and opponent",
+  },
+  "guide.setup_deadline": {
+    de: "Fristenquelle verbinden oder Frist erfassen",
+    en: "Connect deadline source or add a deadline",
+  },
+  "guide.setup_team": {
+    de: "Teamrollen und Freigaben pruefen",
+    en: "Review team roles and approvals",
+  },
+  "guide.learn_title": { de: "Weiterfuehren", en: "Continue" },
+  "guide.contact_support": { de: "Support kontaktieren", en: "Contact support" },
+
   // ── Dashboard error/loading ──
   "dashboard.error_title": { de: "Etwas ist schiefgelaufen", en: "Something went wrong" },
   "dashboard.error_default": {
@@ -908,6 +940,24 @@ export const D = {
   "onboarding.step_industry_desc": {
     de: "Wir personalisieren dein Dashboard und Brain-Schema basierend auf deiner Praxis.",
     en: "We personalize your dashboard and brain schema based on your practice.",
+  },
+  "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
+  "onboarding.step_profile_desc": {
+    de: "Diese Angaben befuellen Cockpit, Briefkopf, Rechnung und erste Workflows.",
+    en: "These details power the cockpit, letterhead, billing, and first workflows.",
+  },
+  "onboarding.profile_firm": { de: "Kanzleiname", en: "Firm name" },
+  "onboarding.profile_owner": { de: "Ansprechpartner", en: "Main contact" },
+  "onboarding.profile_email": { de: "Kanzlei-E-Mail", en: "Firm email" },
+  "onboarding.profile_country": { de: "Land / Rechtsraum", en: "Country / jurisdiction" },
+  "onboarding.profile_role": { de: "Deine Rolle", en: "Your role" },
+  "onboarding.role_lawyer": { de: "Anwalt", en: "Lawyer" },
+  "onboarding.role_assistant": { de: "Assistenz", en: "Assistant" },
+  "onboarding.role_management": { de: "Management", en: "Management" },
+  "onboarding.profile_focus": { de: "Rechtsgebiete", en: "Practice areas" },
+  "onboarding.profile_focus_hint": {
+    de: "z.B. Arbeitsrecht, Gesellschaftsrecht, Prozessrecht",
+    en: "e.g. employment, corporate, litigation",
   },
   "onboarding.step_upload": { de: "Erstes Dokument", en: "First document" },
   "onboarding.step_upload_desc": {

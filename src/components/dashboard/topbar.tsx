@@ -19,6 +19,7 @@ import {
   Brain as BrainIcon,
   Loader2,
   CornerDownLeft,
+  HelpCircle,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
@@ -38,6 +39,7 @@ interface TopbarProps {
   mobileOpen: boolean;
   onMobileMenuOpen: () => void;
   onMobileMenuClose: () => void;
+  onGuideOpen: () => void;
 }
 
 export function Topbar({
@@ -48,6 +50,7 @@ export function Topbar({
   mobileOpen,
   onMobileMenuOpen,
   onMobileMenuClose,
+  onGuideOpen,
 }: TopbarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -429,6 +432,14 @@ export function Topbar({
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        <button
+          onClick={onGuideOpen}
+          aria-label={t("guide.open")}
+          title={t("guide.open")}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+        >
+          <HelpCircle size={16} />
+        </button>
         <button
           onClick={toggleTheme}
           title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}

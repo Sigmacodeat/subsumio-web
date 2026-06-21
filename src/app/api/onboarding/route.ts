@@ -6,6 +6,16 @@ import { provisionBrainAsync } from "@/lib/provision";
 
 const completeSchema = z.object({
   industry: z.string().nullable().optional(),
+  profile: z
+    .object({
+      kanzleiName: z.string().max(200).optional(),
+      anwaltName: z.string().max(200).optional(),
+      kanzleiEmail: z.string().max(200).optional(),
+      country: z.string().max(20).optional(),
+      role: z.string().max(40).optional(),
+      focus: z.string().max(500).optional(),
+    })
+    .optional(),
 });
 
 export const POST = createHandler(
@@ -16,7 +26,11 @@ export const POST = createHandler(
     audit: (ctx, body) => ({
       action: "onboarding.complete" as const,
       entityType: "user",
-      details: { user: ctx.user.email, industry: body.industry ?? null },
+      details: {
+        user: ctx.user.email,
+        industry: body.industry ?? null,
+        role: body.profile?.role ?? null,
+      },
     }),
   },
   async (ctx, body, _query, _req) => {

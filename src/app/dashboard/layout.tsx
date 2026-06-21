@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
+import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -39,6 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const statsQuery = useBrainStats();
   const meQuery = useMe();
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const { t } = useLang();
   const pathname = usePathname();
@@ -66,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Body-scroll-lock when mobile drawer or command palette is open
   useEffect(() => {
-    if (mobileOpen || cmdOpen) {
+    if (mobileOpen || cmdOpen || guideOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -74,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileOpen, cmdOpen]);
+  }, [mobileOpen, cmdOpen, guideOpen]);
 
   // Focus-trap for mobile drawer
   useEffect(() => {
@@ -172,6 +174,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           mobileOpen={mobileOpen}
           onMobileMenuOpen={() => setMobileOpen(true)}
           onMobileMenuClose={() => setMobileOpen(false)}
+          onGuideOpen={() => setGuideOpen(true)}
         />
 
         <main id="main-content" role="main" className="flex-1 overflow-y-auto">
@@ -185,6 +188,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onToggleTheme={toggleTheme}
         onToggleSidebar={() => setCollapsed((c) => !c)}
       />
+      <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   );
 }

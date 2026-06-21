@@ -6,10 +6,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Subsumio — the brain your firm never had",
+    name: "Subsumio — Kanzlei-OS",
     short_name: "Subsumio",
     description:
-      "Every meeting, deal, email and document — turned into one answer instead of ten search results.",
+      "Kanzlei-OS fuer Akten, Fristen, Eingang, Dokumente, Abrechnung und zitierte KI-Antworten.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

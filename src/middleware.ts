@@ -12,6 +12,11 @@ import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const APP_HOSTS = new Set(
+  ["app.subsum.io", "cockpit.subsum.io", ...(process.env.SUBSUMIO_APP_HOSTS?.split(",") ?? [])]
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean)
+);
 const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   "/api/webhook/",
   "/api/billing/webhook",
@@ -30,6 +35,13 @@ function isWebhookCsrfExempt(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
+  const host = req.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+
+  if (APP_HOSTS.has(host) && pathname === "/") {
+    const dashboard = req.nextUrl.clone();
+    dashboard.pathname = "/dashboard";
+    return NextResponse.redirect(dashboard);
+  }
 
   // --- CSRF validation for state-changing API requests ---
   if (pathname.startsWith("/api/") && !SAFE_METHODS.has(method)) {
@@ -78,6 +90,9 @@ export async function middleware(req: NextRequest) {
         maxAge: 30 * 24 * 3600,
       });
     }
+    // Set x-pathname header so server components (root layout) can read the
+    // current path to determine if MarketingShell should wrap the page.
+    res.headers.set("x-pathname", pathname);
     return res;
   }
 
