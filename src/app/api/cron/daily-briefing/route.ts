@@ -53,7 +53,14 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const key = `${sender.brainId}:${phoneHash(sender.phone)}`;
       if (await dedupBriefing(key)) continue;
 
-      const pages = await fetchPages(sender.brainId, "case", 1000);
+      // Subsumio: was "case" — a page type nothing in this codebase writes
+      // (legal cases are typed "legal_case" everywhere else, e.g. cron/
+      // deadlines.ts, matter-context.ts), so the briefing was silently
+      // grounded on an empty/wrong page set. Also folds in standalone
+      // legal_deadline pages, the same second source cron/deadlines.ts
+      // reads — a deadline tracked as its own page (not embedded in a
+      // case's frontmatter.deadlines[]) was invisible to the briefing.
+      const pages = await fetchPages(sender.brainId, "legal_case", 1000);
       const cases: BriefingCase[] = pages.map((p) => {
         const fm = p.frontmatter ?? {};
         return {
@@ -62,6 +69,22 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           deadlines: Array.isArray(fm.deadlines) ? (fm.deadlines as BriefingCase["deadlines"]) : [],
         };
       });
+
+      const standaloneDeadlinePages = await fetchPages(sender.brainId, "legal_deadline", 200);
+      if (standaloneDeadlinePages.length > 0) {
+        cases.push({
+          caseNumber: "—",
+          title: "Eigenständige Fristen",
+          deadlines: standaloneDeadlinePages.map((p) => {
+            const fm = p.frontmatter ?? {};
+            return {
+              title: p.title || "Frist",
+              due_date: String(fm.due_date ?? fm.date ?? fm.deadline_date ?? ""),
+              done: fm.status === "done",
+            };
+          }),
+        });
+      }
 
       const text = buildDailyBriefing({ anwaltName: sender.name, cases, now });
       if (!text) {
