@@ -17,10 +17,14 @@ interface DeadlineItem {
 
 async function listCasePages(brainId: string): Promise<BrainPage[]> {
   try {
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages?type=case&limit=1000`,
-      { headers: engineHeadersForBrain(brainId) },
-    );
+    // Subsumio: was type=case — a page type nothing in this codebase
+    // writes (same bug class as the daily-briefing cron, fixed earlier in
+    // this followup pass). Real case pages are typed "legal_case"
+    // everywhere else (cron/deadlines.ts, matter-context.ts, import-kanzlei,
+    // bea filing). This cron was silently scanning an empty/wrong page set.
+    const res = await fetch(`${ENGINE_URL}/api/pages?type=legal_case&limit=1000`, {
+      headers: engineHeadersForBrain(brainId),
+    });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : [];
@@ -29,7 +33,11 @@ async function listCasePages(brainId: string): Promise<BrainPage[]> {
   }
 }
 
-async function updatePageDeadlines(brainId: string, slug: string, fm: Record<string, unknown>): Promise<void> {
+async function updatePageDeadlines(
+  brainId: string,
+  slug: string,
+  fm: Record<string, unknown>
+): Promise<void> {
   try {
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -75,7 +83,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
     for (const page of pages) {
       const fm = page.frontmatter ?? {};
-      const deadlines = Array.isArray(fm.deadlines) ? fm.deadlines as DeadlineItem[] : [];
+      const deadlines = Array.isArray(fm.deadlines) ? (fm.deadlines as DeadlineItem[]) : [];
       const upcoming = deadlines.filter((d) => {
         const dd = String(d.due_date ?? d.date ?? "");
         if (!dd || dd < today) return false;
@@ -114,5 +122,10 @@ ${upcoming.map((d) => `<li><strong>${String(d.title ?? "Frist")}</strong> — ${
     }
   }
 
-  return NextResponse.json({ ok: true, brains_checked: brainsChecked, sent: totalSent, errors: errors.length > 0 ? errors : undefined });
+  return NextResponse.json({
+    ok: true,
+    brains_checked: brainsChecked,
+    sent: totalSent,
+    errors: errors.length > 0 ? errors : undefined,
+  });
 });
