@@ -1,18 +1,16 @@
 import { ENGINE_URL } from "@/lib/engine";
-import { scanUpload } from "@/lib/upload-pipeline";
+import { scanUploadWithDuplicateCheck } from "@/lib/upload-pipeline";
 import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
+import { brainDuplicateStore } from "@/lib/duplicate-store";
 
 async function validateCaseSlug(
-  brainId: string,
+  headers: Record<string, string>,
   caseSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(
-      `${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`,
-      { headers: { "x-subsumio-brain-id": brainId } }
-    );
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, { headers });
     if (!res.ok) return false;
     const page = (await res.json()) as { type?: string };
     return page.type === "legal_case";
@@ -38,7 +36,10 @@ export const POST = createHandler(
       const file = formData.get("file");
       const caseSlugRaw = formData.get("case_slug");
       const caseSlugStr = typeof caseSlugRaw === "string" ? caseSlugRaw.trim() : "";
-      const sourceRaw = typeof formData.get("source") === "string" ? formData.get("source") as string : "documents";
+      const sourceRaw =
+        typeof formData.get("source") === "string"
+          ? (formData.get("source") as string)
+          : "documents";
 
       // Legal document sources require a case association (§ 43e BRAO, GoBD).
       // Knowledge sources (wiki, meetings, ideas, people, companies) are exempt
@@ -47,19 +48,27 @@ export const POST = createHandler(
       const requiresCase = LEGAL_SOURCES.has(sourceRaw);
 
       if (requiresCase && !caseSlugStr) {
-        return apiError("case_required", "Ein Dokument kann nur im Kontext einer Akte hochgeladen werden. Bitte wählen Sie eine Akte aus.", 400);
+        return apiError(
+          "case_required",
+          "Ein Dokument kann nur im Kontext einer Akte hochgeladen werden. Bitte wählen Sie eine Akte aus.",
+          400
+        );
       }
 
       if (requiresCase && caseSlugStr) {
-        const caseExists = await validateCaseSlug(ctx.brainId, caseSlugStr);
+        const caseExists = await validateCaseSlug(ctx.headers, caseSlugStr);
         if (!caseExists) {
           return apiError("case_not_found", "Die angegebene Akte existiert nicht.", 404);
         }
       }
 
-      const result = await scanUpload(file);
+      const duplicateStore = brainDuplicateStore(ctx.headers);
+      const result = await scanUploadWithDuplicateCheck(file, duplicateStore);
       if (!result.ok) {
-        return Response.json({ error: result.error, message: result.message }, { status: result.status });
+        return Response.json(
+          { error: result.error, message: result.message },
+          { status: result.status }
+        );
       }
 
       const cleanForm = new FormData();
@@ -89,6 +98,10 @@ export const POST = createHandler(
         const initialMeta = createInitialMetadata(result.cleanName, result.mimeType);
         try {
           const uploadResult = JSON.parse(text) as { slug?: string; title?: string };
+          // Record the file hash so identical future uploads are detected as duplicates.
+          if (uploadResult.slug) {
+            void duplicateStore.record(result.sha256, uploadResult.slug, result.cleanName);
+          }
           const enriched = JSON.stringify({
             ...uploadResult,
             extraction_status: initialStatus,
@@ -96,19 +109,19 @@ export const POST = createHandler(
           });
           const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
           if (internalSecret && uploadResult.slug) {
-              void fetch(`${req.nextUrl.origin}/api/legal/analyze`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-internal-secret": internalSecret,
-                },
-                body: JSON.stringify({
-                  document_slug: uploadResult.slug,
-                  brain_id: ctx.brainId,
-                }),
-              }).catch(() => {
-                /* silent: analysis is best-effort */
-              });
+            void fetch(`${req.nextUrl.origin}/api/legal/analyze`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-internal-secret": internalSecret,
+              },
+              body: JSON.stringify({
+                document_slug: uploadResult.slug,
+                brain_id: ctx.brainId,
+              }),
+            }).catch(() => {
+              /* silent: analysis is best-effort */
+            });
           }
           return new Response(enriched, {
             status: upstream.status,

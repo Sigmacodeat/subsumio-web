@@ -6,9 +6,9 @@ import {
   Trash2,
   Download,
   Plus,
-  Scale,
+  MessageSquareText,
   Briefcase,
-  Zap,
+  Scale,
   Activity,
   Search,
   X,
@@ -19,10 +19,8 @@ import {
 import { cn } from "@/lib/utils";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
-import { useUsage } from "@/lib/queries/settings";
 import { useLang } from "@/lib/use-lang";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
-import { AI_MODELS, formatCost } from "@/lib/model-config";
 import type { Jurisdiction, ThinkMode, ChatSession } from "@/components/chat/chat-types";
 
 interface ChatHeaderProps {
@@ -72,14 +70,12 @@ export function ChatHeader(props: ChatHeaderProps) {
   const { t, lang } = useLang();
   const compact = props.compact ?? false;
   const statsQuery = useBrainStats();
-  const usageQuery = useUsage();
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
   const modeRef = useRef<HTMLDivElement>(null);
   const sessionsRef = useRef<HTMLDivElement>(null);
 
   const stats = statsQuery.data;
-  const usage = usageQuery.data;
 
   // engine_reachable is the real signal (the proxy route timed out / errored
   // talking to the engine). Falling back to "any nonzero count" treats a
@@ -90,18 +86,6 @@ export function ChatHeader(props: ChatHeaderProps) {
   // reading, not a degraded one.
   const brainOnline = stats?.engine_reachable === true;
   const brainDegraded = statsQuery.isError;
-  const queriesUsed = usage?.queries ?? 0;
-  const queryLimit = usage?.limits?.queriesPerMonth ?? 0;
-  const queriesRemaining = queryLimit > 0 ? Math.max(0, queryLimit - queriesUsed) : null;
-
-  // Cost estimate based on session tokens and selected model
-  const selectedModel = AI_MODELS.find((m) => m.id === props.modelOverride);
-  const costEstimate =
-    selectedModel && props.sessionTokens > 0
-      ? ((props.sessionTokens / 1_000_000) *
-          (selectedModel.costPer1MInput + selectedModel.costPer1MOutput)) /
-        2
-      : null;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -127,24 +111,18 @@ export function ChatHeader(props: ChatHeaderProps) {
   return (
     <div className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
       {/* Top row: title + actions */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
+            <MessageSquareText size={16} className="text-[color:var(--ds-text-muted)]" />
+          </div>
           <div className="min-w-0">
-            <h2 className="truncate text-[13px] font-semibold tracking-tight text-[color:var(--ds-text)]">
+            <h2 className="truncate text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
               {t("chat.title")}
             </h2>
-            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--ds-text-subtle)]">
               {props.features.brainStatus && !compact && (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium",
-                    brainDegraded
-                      ? "bg-amber-500/10 text-amber-600"
-                      : brainOnline
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-red-500/10 text-red-600"
-                  )}
-                >
+                <span className="inline-flex items-center gap-1.5 font-medium">
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full",
@@ -156,30 +134,6 @@ export function ChatHeader(props: ChatHeaderProps) {
                     : brainOnline
                       ? t("chat.brain_online")
                       : t("chat.brain_offline")}
-                </span>
-              )}
-              {props.features.tokenWidget && props.sessionTokens > 0 && !compact && (
-                <span className="inline-flex items-center gap-0.5">
-                  <Zap size={9} />
-                  {props.sessionTokens.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
-                  {t("chat.tokens_label")}
-                </span>
-              )}
-              {props.features.tokenWidget &&
-                costEstimate != null &&
-                costEstimate > 0 &&
-                !compact && (
-                  <span
-                    className="inline-flex items-center gap-0.5"
-                    title={t("chat.cost_estimate")}
-                  >
-                    ~{formatCost(costEstimate)}
-                  </span>
-                )}
-              {props.features.tokenWidget && queriesRemaining != null && !compact && (
-                <span className="inline-flex items-center gap-0.5">
-                  {queriesRemaining.toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
-                  {t("chat.queries_remaining")}
                 </span>
               )}
               {props.messageCount > 0 && (

@@ -23,7 +23,7 @@ export const D = {
   // ── Sidebar: nav items (brain) ──
   "nav.overview": { de: "Übersicht", en: "Overview" },
   "nav.assistant": { de: "Akten-Chat", en: "Case Chat" },
-  "nav.chat": { de: "Brain-Chat", en: "Brain Chat" },
+  "nav.chat": { de: "Assistent", en: "Assistant" },
   "nav.chat_analytics": { de: "Chat-Analytics", en: "Chat Analytics" },
   "nav.chat_compare": { de: "Modell-Vergleich", en: "Model Comparison" },
   "nav.agents": { de: "Agenten", en: "Agents" },
@@ -106,7 +106,7 @@ export const D = {
   "nav.security": { de: "Sicherheit", en: "Security" },
 
   // ── Sidebar: UI strings ──
-  "sidebar.brain_status": { de: "Brain Status", en: "Brain Status" },
+  "sidebar.brain_status": { de: "Wissensbasis", en: "Knowledge base" },
   "sidebar.active": { de: "Active", en: "Active" },
   "sidebar.pages_entities": { de: "pages", en: "pages" },
   "sidebar.changes_pending": { de: "Änderung(en) ausstehend", en: "change(s) pending" },
@@ -136,8 +136,8 @@ export const D = {
   "sidebar.main_nav": { de: "Hauptnavigation", en: "Main navigation" },
 
   // ── Topbar ──
-  "topbar.search_placeholder": { de: "Brain durchsuchen…", en: "Search brain…" },
-  "topbar.search_aria": { de: "Brain durchsuchen", en: "Search brain" },
+  "topbar.search_placeholder": { de: "Wissensbasis durchsuchen…", en: "Search knowledge base…" },
+  "topbar.search_aria": { de: "Wissensbasis durchsuchen", en: "Search knowledge base" },
   "topbar.theme_light": { de: "Zu hellem Design wechseln", en: "Switch to light theme" },
   "topbar.theme_dark": { de: "Zu dunklem Design wechseln", en: "Switch to dark theme" },
   "topbar.theme_light_aria": { de: "Helles Design aktivieren", en: "Activate light theme" },
@@ -151,7 +151,10 @@ export const D = {
   "topbar.user_fallback": { de: "Benutzer", en: "User" },
   "topbar.settings": { de: "Einstellungen", en: "Settings" },
   "topbar.logout": { de: "Abmelden", en: "Log out" },
-  "topbar.brain_selector_aria": { de: "Aktiven Brain wechseln", en: "Switch active brain" },
+  "topbar.brain_selector_aria": {
+    de: "Aktive Wissensbasis wechseln",
+    en: "Switch active knowledge base",
+  },
   "topbar.notif_deadline_soon": { de: "Frist bald fällig", en: "Deadline approaching" },
   "topbar.notif_deadline_overdue": { de: "Frist überfällig", en: "Deadline overdue" },
   "topbar.notif_days": { de: "Tage", en: "days" },
@@ -165,14 +168,14 @@ export const D = {
 
   // ── Dashboard page ──
   "dashboard.title": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
-  "dashboard.desc_loading": { de: "Lade Brain-Status…", en: "Loading brain status…" },
+  "dashboard.desc_loading": { de: "Lade Status…", en: "Loading status…" },
   "dashboard.desc_online": {
     de: "Tagessteuerung für Akten, Fristen, Eingang, Reviews und Abrechnung.",
     en: "Daily control for cases, deadlines, inbox, reviews, and billing.",
   },
   "dashboard.desc_offline": {
-    de: "Engine nicht erreichbar — Verbindung prüfen",
-    en: "Engine unreachable — check connection",
+    de: "Wissensbasis nicht erreichbar — Verbindung prüfen",
+    en: "Knowledge base unreachable — check connection",
   },
   "dashboard.connected": { de: "Verbunden", en: "Connected" },
   "dashboard.offline": { de: "Offline", en: "Offline" },
@@ -191,8 +194,8 @@ export const D = {
   "dashboard.gs_upload_btn": { de: "Hochladen", en: "Upload" },
   "dashboard.gs_query": { de: "Erste Frage stellen", en: "Ask first question" },
   "dashboard.gs_query_desc": {
-    de: "Belegte KI-Antwort mit Fundstellen",
-    en: "Cited AI answer with sources",
+    de: "Belegte Antwort mit Fundstellen",
+    en: "Cited answer with sources",
   },
   "dashboard.gs_query_btn": { de: "Fragen", en: "Ask" },
   "dashboard.gs_graph": { de: "Wissensgraph erkunden", en: "Explore knowledge graph" },
@@ -211,9 +214,9 @@ export const D = {
   "dashboard.quick_actions": { de: "Schnellzugriff", en: "Quick actions" },
   "dashboard.qa_upload": { de: "Dokument hochladen", en: "Upload document" },
   "dashboard.qa_upload_desc": { de: "PDF, Markdown oder Text", en: "PDF, Markdown or text" },
-  "dashboard.qa_query": { de: "Brain fragen", en: "Ask brain" },
-  "dashboard.qa_query_desc": { de: "KI-Synthese starten", en: "Start AI synthesis" },
-  "dashboard.qa_explore": { de: "Brain erkunden", en: "Explore brain" },
+  "dashboard.qa_query": { de: "Assistent fragen", en: "Ask assistant" },
+  "dashboard.qa_query_desc": { de: "Recherche & Antwort starten", en: "Start research & answer" },
+  "dashboard.qa_explore": { de: "Wissensbasis erkunden", en: "Explore knowledge base" },
   "dashboard.qa_explore_desc": { de: "Seiten & Entitäten", en: "Pages & entities" },
   "dashboard.qa_graph": { de: "Graph ansehen", en: "View graph" },
   "dashboard.qa_graph_desc": { de: "Wissensstruktur", en: "Knowledge structure" },
@@ -255,11 +258,11 @@ export const D = {
   "dashboard.time_days_suffix": { de: "Tagen", en: "days ago" },
 
   // ── Kanzlei cockpit ──
-  "cockpit.ai_limited": { de: "KI eingeschränkt", en: "AI limited" },
-  "cockpit.degraded_title": { de: "KI-/Brain-Schicht eingeschränkt", en: "AI/brain layer limited" },
+  "cockpit.ai_limited": { de: "Verbindung eingeschränkt", en: "Connection limited" },
+  "cockpit.degraded_title": { de: "Wissensbasis eingeschränkt", en: "Knowledge base limited" },
   "cockpit.degraded_desc": {
-    de: "Das Kanzlei-Cockpit bleibt bedienbar. Suche, Graph und KI-Antworten können bis zur Wiederverbindung eingeschränkt sein.",
-    en: "The firm cockpit remains usable. Search, graph, and AI answers may be limited until reconnection.",
+    de: "Das Kanzlei-Cockpit bleibt bedienbar. Suche, Graph und Assistenten-Antworten können bis zur Wiederverbindung eingeschränkt sein.",
+    en: "The firm cockpit remains usable. Search, graph, and assistant answers may be limited until reconnection.",
   },
   "cockpit.stat_deadlines": { de: "Kritische Fristen", en: "Critical Deadlines" },
   "cockpit.stat_deadlines_desc": { de: "überfällig oder ≤ 3 Tage", en: "overdue or ≤ 3 days" },
@@ -276,7 +279,7 @@ export const D = {
   "cockpit.action_intake": { de: "Eingang triagieren", en: "Triage Inbox" },
   "cockpit.action_draft": { de: "Schriftsatz", en: "Draft" },
   "cockpit.action_upload": { de: "Dokument hochladen", en: "Upload Document" },
-  "cockpit.action_ai": { de: "KI fragen", en: "Ask AI" },
+  "cockpit.action_ai": { de: "Assistent", en: "Assistant" },
   "cockpit.quick_title": { de: "Sofortaktionen", en: "Quick Actions" },
   "cockpit.quick_desc": {
     de: "Die häufigsten Kanzlei-Schritte ohne Umweg.",
@@ -286,7 +289,7 @@ export const D = {
   "cockpit.deadlines_title": { de: "Fristen & Termine", en: "Deadlines & Events" },
   "cockpit.inbox_title": { de: "Eingang", en: "Inbox" },
   "cockpit.cases_title": { de: "Aktive Akten", en: "Active Cases" },
-  "cockpit.ai_control_title": { de: "KI-Kontrolle", en: "AI Control" },
+  "cockpit.ai_control_title": { de: "Qualitätskontrolle", en: "Quality Control" },
   "cockpit.open": { de: "Öffnen", en: "Open" },
   "cockpit.plan": { de: "Planen", en: "Plan" },
   "cockpit.triage": { de: "Triage", en: "Triage" },
@@ -315,25 +318,27 @@ export const D = {
   "cockpit.task_active_cases": { de: "aktive Akten", en: "active cases" },
   "cockpit.conflicts": { de: "Kollisionen vor Mandatsannahme", en: "Conflicts before engagement" },
   "cockpit.documents": {
-    de: "Dokumente mit KI-Fundstellen prüfen",
-    en: "Review documents with AI citations",
+    de: "Dokumente auf Fundstellen prüfen",
+    en: "Review documents with citations",
   },
-  "cockpit.brain_pages": { de: "Brain-Seiten", en: "brain pages" },
-  "cockpit.brain_queries": { de: "Queries", en: "queries" },
+  "cockpit.brain_pages": { de: "Wissensseiten", en: "knowledge pages" },
+  "cockpit.brain_queries": { de: "Anfragen", en: "queries" },
   "cockpit.brain_degraded": {
-    de: "Brain-Metriken gerade nicht verfügbar.",
-    en: "Brain metrics currently unavailable.",
+    de: "Metriken der Wissensbasis gerade nicht verfügbar.",
+    en: "Knowledge base metrics currently unavailable.",
   },
+  "cockpit.recent_queries": { de: "Letzte Anfragen", en: "Recent Queries" },
+  "cockpit.recent_queries_all": { de: "Alle anzeigen", en: "Show all" },
 
   // ── Cases page ──
   "cases.title": { de: "Akten", en: "Cases" },
-  "cases.count": { de: "Akten im Brain", en: "cases in brain" },
+  "cases.count": { de: "Akten in der Wissensbasis", en: "cases in knowledge base" },
   "cases.new": { de: "Neue Akte", en: "New case" },
   "cases.all": { de: "Alle", en: "All" },
   "cases.search": { de: "Akten suchen…", en: "Search cases…" },
   "cases.error_offline": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Akten angezeigt.",
-    en: "Cloud brain unavailable. Showing cached cases.",
+    de: "Wissensbasis gerade nicht erreichbar. Es werden zwischengespeicherte Akten angezeigt.",
+    en: "Knowledge base unavailable. Showing cached cases.",
   },
   "cases.error_load": { de: "Akten konnten nicht geladen werden.", en: "Failed to load cases." },
   "cases.retry": { de: "Erneut versuchen", en: "Retry" },
@@ -383,8 +388,8 @@ export const D = {
   "deadlines.calc_remaining": { de: "Tage verbleibend", en: "days remaining" },
   "deadlines.detect_title": { de: "Fristen erkennen", en: "Detect deadlines" },
   "deadlines.detect_desc": {
-    de: "Füge einen Text (E-Mail, Brief, Gerichtsbescheid) ein. Die KI erkennt automatisch Fristen, Termine und gesetzliche Deadlines und schlägt deren Anlage vor.",
-    en: "Paste text (email, letter, court notice). AI automatically detects deadlines, dates and statutory deadlines and suggests creating them.",
+    de: "Füge einen Text (E-Mail, Brief, Gerichtsbescheid) ein. Der Assistent erkennt automatisch Fristen, Termine und gesetzliche Deadlines und schlägt deren Anlage vor.",
+    en: "Paste text (email, letter, court notice). The assistant automatically detects deadlines, dates and statutory deadlines and suggests creating them.",
   },
   "deadlines.detect_placeholder": { de: "Text hier einfügen…", en: "Paste text here…" },
   "deadlines.detect_analyzing": { de: "Analysiere…", en: "Analyzing…" },
@@ -396,8 +401,8 @@ export const D = {
   "deadlines.all": { de: "Alle", en: "All" },
   "deadlines.search": { de: "Fristen suchen…", en: "Search deadlines…" },
   "deadlines.error_offline": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Fristen angezeigt.",
-    en: "Cloud brain unavailable. Showing cached deadlines.",
+    de: "Wissensbasis gerade nicht erreichbar. Es werden zwischengespeicherte Fristen angezeigt.",
+    en: "Knowledge base unavailable. Showing cached deadlines.",
   },
   "deadlines.error_load": {
     de: "Fristen konnten nicht geladen werden.",
@@ -485,8 +490,8 @@ export const D = {
   "inv.confirm_delete_msg": { de: "Möchtest du Rechnung", en: "Do you want to delete invoice" },
   "inv.confirm_delete_confirm": { de: "Löschen", en: "Delete" },
   "inv.error_offline": {
-    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Rechnungen angezeigt.",
-    en: "Cloud brain unavailable. Showing cached invoices.",
+    de: "Wissensbasis gerade nicht erreichbar. Es werden zwischengespeicherte Rechnungen angezeigt.",
+    en: "Knowledge base unavailable. Showing cached invoices.",
   },
   "inv.email_sending": { de: "E-Mail wird gesendet…", en: "Sending email…" },
   "inv.email_sent": { de: "E-Mail gesendet an", en: "Email sent to" },
@@ -1470,12 +1475,12 @@ export const D = {
   },
 
   // ── Unified Chat ──
-  "chat.placeholder": { de: "Frage an das Brain stellen…", en: "Ask the Brain…" },
-  "chat.title": { de: "Brain-Chat", en: "Brain Chat" },
-  "chat.empty_title": { de: "Brain-Chat bereit", en: "Brain Chat ready" },
+  "chat.placeholder": { de: "Frage oder Aufgabe eingeben…", en: "Enter a question or task…" },
+  "chat.title": { de: "Assistent", en: "Assistant" },
+  "chat.empty_title": { de: "Wie kann ich unterstützen?", en: "How can I help?" },
   "chat.empty_desc": {
-    de: "Stelle eine Frage oder wähle eine Akte für kontextbezogene Antworten.",
-    en: "Ask a question or select a case for context-aware answers.",
+    de: "Stelle eine Frage, analysiere ein Dokument oder wähle eine Akte für kontextbezogene Antworten.",
+    en: "Ask a question, analyse a document, or select a case for context-aware answers.",
   },
   "chat.clear": { de: "Chat löschen", en: "Clear chat" },
   "chat.export": { de: "Chat exportieren", en: "Export chat" },
@@ -1483,9 +1488,9 @@ export const D = {
   "chat.sessions": { de: "Konversationen", en: "Conversations" },
   "chat.no_sessions": { de: "Keine Konversationen", en: "No conversations" },
   "chat.session_count": { de: "Nachrichten", en: "messages" },
-  "chat.brain_online": { de: "Brain online", en: "Brain online" },
-  "chat.brain_offline": { de: "Brain offline", en: "Brain offline" },
-  "chat.brain_degraded": { de: "Brain eingeschränkt", en: "Brain degraded" },
+  "chat.brain_online": { de: "Verbunden", en: "Connected" },
+  "chat.brain_offline": { de: "Wissensbasis offline", en: "Knowledge base offline" },
+  "chat.brain_degraded": { de: "Verbindung eingeschränkt", en: "Connection limited" },
   "chat.tokens_session": { de: "Session-Tokens", en: "Session tokens" },
   "chat.queries_remaining": { de: "Anfragen verbleibend", en: "Queries remaining" },
   "chat.case_select": { de: "Akte wählen", en: "Select case" },
@@ -2816,10 +2821,10 @@ export const D = {
   "chat.response_time": { de: "Antwortzeit", en: "Response time" },
   "chat.ai_model": { de: "KI-Modell", en: "AI model" },
   "chat.tokens_label": { de: "Tokens", en: "Tokens" },
-  "chat.gaps_in_brain": { de: "Lücken im Brain", en: "Gaps in brain" },
+  "chat.gaps_in_brain": { de: "Lücken in der Wissensbasis", en: "Gaps in knowledge base" },
 
   // ── Chat: input ──
-  "chat.input.ai_responding": { de: "AI antwortet…", en: "AI is responding…" },
+  "chat.input.ai_responding": { de: "Antwort wird erstellt…", en: "Generating response…" },
   "chat.input.remove_attachment": { de: "Anhang entfernen", en: "Remove attachment" },
   "chat.input.templates": { de: "Vorlagen", en: "Templates" },
   "chat.input.upload_file": { de: "Datei hochladen", en: "Upload file" },
@@ -2846,10 +2851,10 @@ export const D = {
   "chat.export_date": { de: "Exportiert am", en: "Exported on" },
 
   // ── Chat: streaming indicator ──
-  "chat.streaming.search": { de: "Brain wird durchsucht…", en: "Searching brain…" },
-  "chat.streaming.synthesize": { de: "Antwort wird synthetisiert…", en: "Synthesizing answer…" },
-  "chat.streaming.verify": { de: "Quellen werden verifiziert…", en: "Verifying sources…" },
-  "chat.done": { de: "Fertig!", en: "Done!" },
+  "chat.streaming.search": { de: "Wissensbasis wird durchsucht…", en: "Searching knowledge base…" },
+  "chat.streaming.synthesize": { de: "Antwort wird erstellt…", en: "Building answer…" },
+  "chat.streaming.verify": { de: "Quellen werden geprüft…", en: "Checking sources…" },
+  "chat.done": { de: "Fertig", en: "Done" },
 
   // ── Chat: loading skeleton ──
   "chat.loading_aria": { de: "Antwort wird geladen", en: "Loading response" },

@@ -8,6 +8,9 @@
 
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
+import { readdirSync, readFileSync, statSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -267,15 +270,28 @@ function mapPage(page: Record<string, unknown>, tags: string[] = []) {
 
 /**
  * Multi-tenant scoping (V1 provisioning): the Next.js dashboard proxies
- * forward the logged-in user's brainId as `x-sigmabrain-source` —
- * server-to-server, never from the browser. Every operation context and
- * every raw query in this module scopes to it; unknown/invalid headers
- * fall back to 'default' (single-tenant/self-hosted behavior unchanged).
+ * forward the logged-in user's brainId as `x-subsumio-source` —
+ * server-to-server, never from the browser. The engine still accepts the
+ * legacy `x-sigmabrain-source` header for backward compatibility. Every
+ * operation context and every raw query in this module scopes to the
+ * resolved source; unknown/invalid headers fall back to 'default'
+ * (single-tenant/self-hosted behavior unchanged).
  */
 const SOURCE_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
+/**
+ * Resolve the tenant source from the incoming request headers.
+ *
+ * Canonical header (Subsumio rebrand): `x-subsumio-source`.
+ * Legacy header (Sigmabrain pre-rebrand): `x-sigmabrain-source`.
+ *
+ * Accepting both prevents a silent source-scoping failure: the Next.js
+ * dashboard proxies send `x-subsumio-source`, while the engine previously
+ * only read `x-sigmabrain-source`. Without this fallback every dashboard
+ * request landed on the `default` source, breaking multi-tenant isolation.
+ */
 function requestSourceId(req: Request): string {
-  const h = req.headers["x-sigmabrain-source"];
+  const h = req.headers["x-subsumio-source"] ?? req.headers["x-sigmabrain-source"];
   const v = Array.isArray(h) ? h[0] : h;
   return v && SOURCE_RE.test(v) ? v : "default";
 }
@@ -496,7 +512,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       if (requestSourceId(req) === "default") {
         res.status(400).json({
           error: "tenant_required",
-          message: "This deployment requires a valid x-sigmabrain-source tenant header.",
+          message:
+            "This deployment requires a valid x-subsumio-source (or legacy x-sigmabrain-source) tenant header.",
         });
         return;
       }
@@ -2591,6 +2608,124 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "connector_toggle_failed", message: msg });
+    }
+  });
+
+  // ============================================================
+  // Law corpus sync: import bundled statutes into shared sources
+  // ============================================================
+  //
+  // This is a host-admin operation: it mutates the shared read sources
+  // (law-de, law-at, law-ch) that every tenant federates into search. In
+  // multi-tenant mode it is intentionally restricted to the default/no-tenant
+  // caller so tenants cannot pollute each other's shared corpus.
+  //
+  // Callers: the dashboard cron at /api/cron/law-sync, or manual CLI/admin use.
+
+  const rejectSharedSourceActionInTenantMode = (req: Request, res: Response): boolean => {
+    if (!requireTenant) return false;
+    if (requestSourceId(req) === "default") return false;
+    res.status(403).json({
+      error: "host_admin_only",
+      message:
+        "Rechtsquellen-Synchronisation ist installationsweit und in Multi-Tenant-Deployments dem Host-Betreiber vorbehalten.",
+    });
+    return true;
+  };
+
+  const LAW_CORPUS_DIR = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "..",
+    "law-corpus"
+  );
+  const LAW_SOURCE_MAP: Record<string, string> = {
+    de: "law-de",
+    at: "law-at",
+    ch: "law-ch",
+    eu: "law-eu",
+  };
+
+  async function ensureSharedSource(sourceId: string): Promise<void> {
+    await engine.executeRaw(
+      `INSERT INTO sources (id, name, config)
+       VALUES ($1, $1, '{"federated": true}'::jsonb)
+       ON CONFLICT (id) DO NOTHING`,
+      [sourceId]
+    );
+  }
+
+  async function syncLawCorpus(): Promise<{
+    success: boolean;
+    sources: Record<string, { files: number; imported: number; skipped: number; errors: number }>;
+    error?: string;
+  }> {
+    const result: Record<
+      string,
+      { files: number; imported: number; skipped: number; errors: number }
+    > = {};
+    const { isAvailable } = await import("../core/ai/gateway.ts");
+    const noEmbed = !isAvailable("embedding");
+
+    for (const [dir, sourceId] of Object.entries(LAW_SOURCE_MAP)) {
+      const dirPath = join(LAW_CORPUS_DIR, dir);
+      result[sourceId] = { files: 0, imported: 0, skipped: 0, errors: 0 };
+
+      try {
+        statSync(dirPath);
+      } catch {
+        continue;
+      }
+
+      await ensureSharedSource(sourceId);
+
+      let files: string[];
+      try {
+        files = readdirSync(dirPath).filter((f) => f.endsWith(".md"));
+      } catch {
+        continue;
+      }
+
+      result[sourceId].files = files.length;
+      for (const file of files) {
+        const filePath = join(dirPath, file);
+        const slug = `statutes/${dir}/${file.replace(/\.md$/, "")}`;
+        try {
+          const content = readFileSync(filePath, "utf8");
+          const importResult = await importFromContent(engine, slug, content, {
+            noEmbed,
+            sourceId,
+            sourcePath: `law-corpus/${dir}/${file}`,
+            source_kind: "law_corpus",
+            source_uri: `file://${filePath}`,
+            ingested_via: "law_sync",
+          });
+          if (importResult.status === "imported") {
+            result[sourceId].imported++;
+          } else {
+            result[sourceId].skipped++;
+          }
+        } catch (e) {
+          result[sourceId].errors++;
+          console.error(
+            `[law-sync] failed to import ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+          );
+        }
+      }
+    }
+
+    return { success: true, sources: result };
+  }
+
+  app.post("/api/admin/law-sync", async (req: Request, res: Response) => {
+    if (rejectSharedSourceActionInTenantMode(req, res)) return;
+    try {
+      const summary = await syncLawCorpus();
+      res.json(summary);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "law_sync_failed", message: msg });
     }
   });
 

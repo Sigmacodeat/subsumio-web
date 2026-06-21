@@ -53,6 +53,11 @@ NEXT STEPS (≈10 min, mostly DNS wait):
      cp .env.example .env && nano .env      # fill ENGINE_DOMAIN + secrets
   5. docker compose up -d --build           # first build ~3-5 min
   6. curl https://api.subsum.io/health       # expect 200 once TLS issues
-  7. In Vercel, set SIGMABRAIN_API_URL=https://api.subsum.io and
-     SIGMABRAIN_WEB_API_KEY=<same as GBRAIN_WEB_API_KEY>, then redeploy.
+  7. Import statutes (AT/DE/CH/EU) into shared read-only sources:
+       cd /opt/subsumio
+       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \
+         bun run server/scripts/import-eu-statutes-http.ts --source law-eu
+       # Repeat for AT/DE/CH as needed (see server/scripts/import-statutes-split.ts)
+  8. In Vercel, set SUBSUMIO_API_URL=https://api.subsum.io and
+     SUBSUMIO_WEB_API_KEY=<same as in .env>, then redeploy.
 EOF

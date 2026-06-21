@@ -67,7 +67,12 @@ function formatBytes(bytes: number) {
 type UploadMode = "case" | "knowledge";
 
 const KNOWLEDGE_SOURCES = [
-  { value: "wiki", label: "Kanzlei-Wiki", desc: "Präzedenzfälle, Vorlagen, Playbooks" },
+  {
+    value: "kanzleiwissen",
+    label: "Kanzleiwissen",
+    desc: "Playbooks, Vorlagen, Präzedenzfälle, interne Standards",
+  },
+  { value: "wiki", label: "Kanzlei-Wiki", desc: "Allgemeines Wissen, FAQs, Handbücher" },
   { value: "meetings", label: "Besprechungen", desc: "Team-Meetings, Notizen" },
   { value: "people", label: "Kontakte", desc: "Mandanten, Gegenseite, Experten" },
   { value: "companies", label: "Unternehmen", desc: "Firmen, Behörden, Institutionen" },
@@ -79,7 +84,7 @@ export default function UploadPage() {
   const { t } = useLang();
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [mode, setMode] = useState<UploadMode>("case");
-  const [source, setSource] = useState("wiki");
+  const [source, setSource] = useState("kanzleiwissen");
   const [tags, setTags] = useState("");
   const [cases, setCases] = useState<BrainPage[]>([]);
   const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
@@ -208,7 +213,12 @@ export default function UploadPage() {
         const title = uploadFile.file.name.replace(/\.[^.]+$/, "");
         const result = await api.upload.file(
           uploadFile.file,
-          { title, source: effectiveSource, tags: tagList.length > 0 ? tagList : undefined, case_slug: caseSlug },
+          {
+            title,
+            source: effectiveSource,
+            tags: tagList.length > 0 ? tagList : undefined,
+            case_slug: caseSlug,
+          },
           (progress) => {
             setFiles((prev) => prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)));
           }
@@ -278,10 +288,15 @@ export default function UploadPage() {
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
           )}
         >
-          <Briefcase size={18} className={mode === "case" ? "brand-text" : "text-[color:var(--ds-text-muted)]"} />
+          <Briefcase
+            size={18}
+            className={mode === "case" ? "brand-text" : "text-[color:var(--ds-text-muted)]"}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[color:var(--ds-text)]">Dokument zu Akte</span>
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                Dokument zu Akte
+              </span>
               <Lock size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
@@ -298,14 +313,20 @@ export default function UploadPage() {
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
           )}
         >
-          <BookOpen size={18} className={mode === "knowledge" ? "brand-text" : "text-[color:var(--ds-text-muted)]"} />
+          <BookOpen
+            size={18}
+            className={mode === "knowledge" ? "brand-text" : "text-[color:var(--ds-text-muted)]"}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[color:var(--ds-text)]">Kanzlei-Wissen</span>
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                Kanzlei-Wissen
+              </span>
               <Sparkles size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Brain-Loop konsolidiert automatisch aus Akten.
+              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Brain-Loop konsolidiert
+              automatisch aus Akten.
             </p>
           </div>
         </button>
@@ -378,8 +399,9 @@ export default function UploadPage() {
             <Sparkles size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
             <span>
               Der Brain-Loop konsolidiert automatisch Wissen aus allen Akten in diese Bereiche.
-              Präzedenzfälle und Muster werden über den <strong className="text-[color:var(--ds-text)]">Consolidate-Cycle</strong> extrahiert —
-              ohne manuellen Aufwand.
+              Präzedenzfälle und Muster werden über den{" "}
+              <strong className="text-[color:var(--ds-text)]">Consolidate-Cycle</strong> extrahiert
+              — ohne manuellen Aufwand.
             </span>
           </div>
         </div>

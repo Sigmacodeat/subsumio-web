@@ -291,7 +291,7 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: #f6f7f9;
+  --ds-bg: #f7f8fa;
   --ds-surface: #ffffff;
   --ds-surface-2: #f1f3f6;
   --ds-hover: #eceef3;
@@ -302,22 +302,22 @@
   --ds-text-subtle: #576072; /* 5.6:1 on #f1f3f6 — AA+ (was #64748b, 4.28:1 fail on surface-2) */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
-  --brand-primary: #1e3a5f;
-  --brand-primary-hover: #2f4f78;
-  --brand-secondary: #0f766e;
-  --brand-tertiary: #1e3a5f;
-  --brand-glow: rgba(15, 118, 110, 0.12);
-  --brand-gradient-from: #0f766e;
-  --brand-gradient-via: #1e3a5f;
-  --brand-gradient-to: #111827;
+  --brand-primary: #1a365d;
+  --brand-primary-hover: #274d7a;
+  --brand-secondary: #b48a2a;
+  --brand-tertiary: #1a365d;
+  --brand-glow: rgba(26, 54, 93, 0.1);
+  --brand-gradient-from: #1a365d;
+  --brand-gradient-via: #b48a2a;
+  --brand-gradient-to: #0f172a;
   --brand-text: var(--brand-primary);
-  --accent-gold: #a67c00;
-  --accent-gold-soft: rgba(166, 124, 0, 0.06);
-  --accent-gold-border: rgba(166, 124, 0, 0.18);
-  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.03);
-  --card-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
-  --card-shadow-elevated: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 36px rgba(15, 23, 42, 0.08);
-  --sidebar-shadow: 1px 0 0 var(--ds-border), 4px 0 24px rgba(15, 23, 42, 0.03);
+  --accent-gold: #9f7b22;
+  --accent-gold-soft: rgba(180, 138, 42, 0.08);
+  --accent-gold-border: rgba(180, 138, 42, 0.2);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
+  --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
+  --card-shadow-elevated: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.08);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(15, 23, 42, 0.04);
   color-scheme: light;
 }
 
@@ -334,33 +334,33 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: #080b10;
-  --ds-surface: #101722;
-  --ds-surface-2: #172131;
-  --ds-hover: #1c293a;
-  --ds-border: #223047;
-  --ds-border-strong: #34445f;
-  --ds-text: #edf2f7;
-  --ds-text-muted: #a4b1c3; /* AA on #101722 */
-  --ds-text-subtle: #7f8da3; /* AA on #101722 */
-  --ds-ring: var(--brand-primary);
-  --ds-accent: var(--brand-primary);
-  --brand-primary: #2f4f78;
-  --brand-primary-hover: #3f6594;
-  --brand-secondary: #5eead4;
-  --brand-tertiary: #d4a843;
-  --brand-glow: rgba(94, 234, 212, 0.12);
-  --brand-gradient-from: #5eead4;
-  --brand-gradient-via: #2f4f78;
-  --brand-gradient-to: #080b10;
+  --ds-bg: #0a0c10;
+  --ds-surface: #12151c;
+  --ds-surface-2: #1a1e28;
+  --ds-hover: #232834;
+  --ds-border: #2a303c;
+  --ds-border-strong: #3d4657;
+  --ds-text: #eef1f5;
+  --ds-text-muted: #9aa5b8; /* AA on #12151c */
+  --ds-text-subtle: #7a8496; /* AA on #12151c */
+  --ds-ring: var(--brand-secondary);
+  --ds-accent: var(--brand-secondary);
+  --brand-primary: #3b5c85;
+  --brand-primary-hover: #4f729c;
+  --brand-secondary: #c9a42f;
+  --brand-tertiary: #7b8fa8;
+  --brand-glow: rgba(201, 164, 47, 0.1);
+  --brand-gradient-from: #c9a42f;
+  --brand-gradient-via: #3b5c85;
+  --brand-gradient-to: #0a0c10;
   --brand-text: var(--brand-secondary);
-  --accent-gold: #d4a843;
-  --accent-gold-soft: rgba(212, 168, 67, 0.08);
-  --accent-gold-border: rgba(212, 168, 67, 0.2);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
-  --card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.15);
-  --card-shadow-elevated: 0 4px 6px rgba(0, 0, 0, 0.2), 0 12px 36px rgba(0, 0, 0, 0.2);
-  --sidebar-shadow: 1px 0 0 var(--ds-border), 4px 0 24px rgba(0, 0, 0, 0.15);
+  --accent-gold: #d4b146;
+  --accent-gold-soft: rgba(201, 164, 47, 0.1);
+  --accent-gold-border: rgba(201, 164, 47, 0.22);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+  --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.18);
+  --card-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 40px rgba(0, 0, 0, 0.22);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(0, 0, 0, 0.18);
   color-scheme: dark;
 }
 

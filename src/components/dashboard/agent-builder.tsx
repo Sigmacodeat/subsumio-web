@@ -13,7 +13,7 @@ import {
   X,
   Loader2,
   AlertCircle,
-  Sparkles,
+  CheckCircle,
   GripVertical,
   ChevronDown,
   ChevronUp,
@@ -692,7 +692,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             )}
             {successMsg && !error && (
               <div className="flex items-center gap-1.5 text-xs text-emerald-500">
-                <Sparkles size={13} />
+                <CheckCircle size={13} />
                 <span>{successMsg}</span>
               </div>
             )}

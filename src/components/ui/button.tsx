@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "brand-bg text-white shadow-[var(--brand-glow)] shadow-sm transition-shadow hover:shadow-md",
+          "bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,box-shadow,transform] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:translate-y-0 active:scale-[0.98]",
         secondary:
           "border border-[color:var(--mk-border)] bg-transparent text-[color:var(--mk-text-muted)] hover:border-[color:var(--mk-border-strong)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         ghost:
           "bg-transparent text-[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         danger:
           "border border-red-500/20 bg-red-500/10 text-red-400 hover:border-red-500/40 hover:bg-red-500/20",
-        success: "bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500",
-        glow: "brand-bg text-white shadow-[0_0_16px_-4px_var(--brand-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_24px_-2px_var(--brand-glow)] active:translate-y-0 active:shadow-[0_0_12px_-4px_var(--brand-glow)]",
+        success: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500",
+        glow: "bg-[color:var(--brand-primary)] text-white shadow-md transition-[background-color,box-shadow,transform] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:translate-y-0 active:scale-[0.98]",
         outline: "brand-border brand-text hover:brand-border-strong hover:brand-soft border",
       },
       size: {

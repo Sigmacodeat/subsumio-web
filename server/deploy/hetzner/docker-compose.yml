@@ -35,7 +35,8 @@ services:
     environment:
       DATABASE_URL: postgres://sigmabrain:${POSTGRES_PASSWORD}@db:5432/sigmabrain
       PORT: "3131"
-      GBRAIN_HOME: /data
+      SUBSUMIO_HOME: /data
+      GBRAIN_HOME: /data   # legacy alias for engine internals
     volumes:
       - engine-data:/data     # uploaded files / vault on durable volume
     depends_on:

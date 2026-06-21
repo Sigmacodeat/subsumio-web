@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Sparkles,
+  MessageSquareText,
   X,
   PanelRightClose,
   PanelRightOpen,
@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -46,7 +47,7 @@ interface QuickAction {
   icon: "case" | "deadline" | "research" | "draft" | "search" | "generic";
 }
 
-const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof Sparkles> = {
+const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof MessageSquareText> = {
   case: Briefcase,
   deadline: CalendarClock,
   research: Search,
@@ -328,7 +329,7 @@ function QuickActionsChips({
           isDesktop ? "text-[11px]" : "text-xs"
         )}
       >
-        <Sparkles size={isDesktop ? 11 : 12} className="brand-text" />
+        <Zap size={isDesktop ? 11 : 12} className="text-[color:var(--brand-secondary)]" />
         {t("copilot.quick_actions")}
       </div>
       <div className="grid grid-cols-2 gap-1.5">
@@ -619,14 +620,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
             <div className="flex items-center gap-2.5">
               <div
-                className="brand-bg flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_-2px_var(--brand-glow)]"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 aria-hidden
               >
-                <Sparkles size={15} className="text-white" />
+                <MessageSquareText size={15} className="text-[color:var(--ds-text-muted)]" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
-                  <span className="brand-text h-1.5 w-1.5 shrink-0 rounded-full" />
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-secondary)]" />
                   <span className="truncate">{routeContext.label}</span>
                 </div>
                 <p className="font-display text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
@@ -768,17 +769,17 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           >
             {/* Context header — compact agency bar */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-              <div className="brand-bg absolute inset-x-0 top-0 h-[2px] opacity-90" />
+              <div className="absolute inset-x-0 top-0 h-[2px] bg-[color:var(--brand-primary)] opacity-90" />
               <div className="flex items-center gap-2.5 px-3 py-2.5">
                 <div
-                  className="brand-bg flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_14px_-2px_var(--brand-glow)]"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                   aria-hidden
                 >
-                  <Sparkles size={15} className="text-white" />
+                  <MessageSquareText size={15} className="text-[color:var(--ds-text-muted)]" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
-                    <span className="brand-text h-1.5 w-1.5 shrink-0 rounded-full" />
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-secondary)]" />
                     <span className="truncate">{routeContext.label}</span>
                   </div>
                   <p className="font-display text-[13px] font-semibold tracking-tight text-[color:var(--ds-text)]">

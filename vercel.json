@@ -2,6 +2,8 @@
   "version": 2,
   "framework": "nextjs",
   "crons": [
+    { "path": "/api/cron/law-sync", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/judgements-sync", "schedule": "30 3 * * *" },
     { "path": "/api/cron/deadlines", "schedule": "0 6 * * *" },
     { "path": "/api/cron/daily-briefing", "schedule": "30 6 * * *" },
     { "path": "/api/cron/deadline-reminders", "schedule": "0 7 * * *" },

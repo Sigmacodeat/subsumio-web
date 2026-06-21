@@ -83,9 +83,13 @@ function parseFrontmatter(raw: string): { meta: StatuteMeta; bodyStart: number }
 }
 
 /** A section heading: `## § …` (DE/AT codes) or `## Art. …` / `## Art …`
- *  (CH OR/ZGB/StGB, German Grundgesetz). Captures the marker and the rest.
- *  Handles single (§ 1a / Art. 8), and ranges/lists (§§ 29 und 30). */
+ *  (CH OR/ZGB/StGB, German Grundgesetz), or `Artikel X` (EU regulations).
+ *  Captures the marker and the rest. Handles single (§ 1a / Art. 8),
+ *  and ranges/lists (§§ 29 und 30). */
 const SECTION_HEADING = /^##\s+(§+|Art\.?)\s+(.+?)\s*$/;
+/** EU regulation heading: `Artikel 12` (no ## prefix, full word).
+ *  EUR-Lex exports use this format instead of `## Art. 12`. */
+const EU_ARTICLE_HEADING = /^Artikel\s+(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*$/i;
 
 /** Extract the bare ref + title from a heading's text after the marker.
  *  Works for "1 — Steuerpflicht" (DE em-dash), "1 Vertragsfreiheit" (CH plain),
@@ -94,9 +98,7 @@ function parseHeading(text: string): { ref: string; title: string } {
   // NOTE: no `i` flag — section letter-suffixes (1a, 4h, 4k) are always
   // lowercase; making [a-z] case-insensitive would slurp a capitalized title
   // word into the ref ("1 Vertragsfreiheit").
-  const numMatch = text.match(
-    /^(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*(.*)$/,
-  );
+  const numMatch = text.match(/^(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*(.*)$/);
   let ref: string;
   let title: string;
   if (numMatch) {
@@ -160,10 +162,11 @@ export function splitStatute(markdown: string): SplitStatuteResult {
 
   for (const line of lines) {
     const m = line.match(SECTION_HEADING);
-    if (m) {
+    const euM = !m ? line.match(EU_ARTICLE_HEADING) : null;
+    if (m || euM) {
       flush();
-      const marker: "§" | "Art." = m[1].startsWith("§") ? "§" : "Art.";
-      const { ref, title } = parseHeading(m[2]);
+      const marker: "§" | "Art." = m ? (m[1].startsWith("§") ? "§" : "Art.") : "Art.";
+      const { ref, title } = parseHeading(m ? m[2] : euM![1] || "");
       let id = refToId(ref, marker);
       // Disambiguate accidental id collisions deterministically.
       const n = seenIds.get(id) ?? 0;

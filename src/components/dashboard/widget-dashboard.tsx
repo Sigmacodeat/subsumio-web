@@ -671,9 +671,9 @@ export function WidgetDashboard() {
       {data.recent.length > 0 && (
         <QueuePanel
           icon={MessageSquare}
-          title="Letzte Anfragen"
+          title={t("cockpit.recent_queries")}
           href="/dashboard/chat"
-          action="Alle anzeigen"
+          action={t("cockpit.recent_queries_all")}
         >
           <div>
             {data.recent.slice(0, 5).map((rq) => (

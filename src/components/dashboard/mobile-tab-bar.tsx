@@ -7,7 +7,9 @@ import {
   LayoutDashboard,
   Briefcase,
   CalendarClock,
-  Sparkles,
+  MessageSquareText,
+  Brain,
+  PanelRightOpen,
   Inbox,
   MoreHorizontal,
   X,
@@ -29,9 +31,11 @@ interface MobileTabBarProps {
   onGuideOpen: () => void;
 }
 
+type IconType = typeof LayoutDashboard;
+
 interface TabItem {
   href: string;
-  icon: typeof LayoutDashboard;
+  icon: IconType;
   labelKey: DashboardKey;
 }
 
@@ -146,7 +150,7 @@ export function MobileTabBar({
           {/* Action grid */}
           <div className="grid grid-cols-4 gap-1 px-3 pb-3">
             <MoreSheetButton
-              icon={Sparkles}
+              icon={PanelRightOpen}
               label="Copilot"
               active={copilotActive}
               onClick={() => {
@@ -183,8 +187,12 @@ export function MobileTabBar({
           {/* Secondary links */}
           <div className="border-t border-[color:var(--ds-border)] px-3 py-3">
             <div className="grid grid-cols-3 gap-1">
-              <MoreSheetLink href="/dashboard/chat" icon={Sparkles} label={t("nav.chat")} />
-              <MoreSheetLink href="/dashboard/brain" icon={Sparkles} label={t("nav.brain")} />
+              <MoreSheetLink
+                href="/dashboard/chat"
+                icon={MessageSquareText}
+                label={t("nav.chat")}
+              />
+              <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
               <MoreSheetLink href="/dashboard/settings" icon={Settings} label={t("nav.settings")} />
             </div>
           </div>
@@ -234,24 +242,28 @@ export function MobileTabBar({
             );
           })}
 
-          {/* Copilot tab — special brand accent */}
+          {/* Copilot tab */}
           <button
             onClick={onCopilotToggle}
-            aria-label="Brain Copilot"
+            aria-label="Copilot"
             aria-pressed={copilotActive}
             role="tab"
             aria-selected={copilotActive}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
               copilotActive
-                ? "brand-text"
+                ? "text-[color:var(--brand-primary)]"
                 : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
             )}
           >
             <div className="relative">
-              <Sparkles size={22} className="shrink-0" strokeWidth={copilotActive ? 2.5 : 2} />
+              <PanelRightOpen
+                size={22}
+                className="shrink-0"
+                strokeWidth={copilotActive ? 2.5 : 2}
+              />
               {copilotActive && (
-                <span className="brand-bg absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
               )}
             </div>
             <span className="text-[10px] leading-none font-medium">Copilot</span>
@@ -286,7 +298,7 @@ function MoreSheetButton({
   active,
   onClick,
 }: {
-  icon: typeof Sparkles;
+  icon: IconType;
   label: string;
   active?: boolean;
   onClick: () => void;
@@ -315,7 +327,7 @@ function MoreSheetLink({
   label,
 }: {
   href: string;
-  icon: typeof Sparkles;
+  icon: IconType;
   label: string;
 }) {
   return (

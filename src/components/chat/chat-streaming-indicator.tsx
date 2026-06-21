@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Brain, Sparkles, CheckCircle2 } from "lucide-react";
+import { Search, Database, CheckSquare, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 
@@ -11,8 +11,8 @@ interface ChatStreamingIndicatorProps {
 
 const PHASES = [
   { icon: Search, labelKey: "chat.streaming.search", duration: 1500 },
-  { icon: Brain, labelKey: "chat.streaming.synthesize", duration: 2000 },
-  { icon: Sparkles, labelKey: "chat.streaming.verify", duration: 1500 },
+  { icon: Database, labelKey: "chat.streaming.synthesize", duration: 2000 },
+  { icon: CheckSquare, labelKey: "chat.streaming.verify", duration: 1500 },
 ] as const;
 
 export function ChatStreamingIndicator({ className }: ChatStreamingIndicatorProps) {

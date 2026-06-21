@@ -20,7 +20,7 @@ import {
   Loader2,
   CornerDownLeft,
   HelpCircle,
-  Sparkles,
+  PanelRightOpen,
   Languages,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
@@ -517,20 +517,20 @@ export function Topbar({
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2 max-md:hidden">
-        {/* Brain Copilot toggle */}
+        {/* Copilot toggle */}
         <button
           onClick={onCopilotToggle}
-          aria-label={copilotOpen ? "Brain Copilot schließen" : "Brain Copilot öffnen"}
-          title={copilotOpen ? "Brain Copilot schließen (Cmd+J)" : "Brain Copilot öffnen (Cmd+J)"}
+          aria-label={copilotOpen ? "Copilot schließen" : "Copilot öffnen"}
+          title={copilotOpen ? "Copilot schließen (Cmd+J)" : "Copilot öffnen (Cmd+J)"}
           aria-pressed={copilotOpen}
           className={cn(
             "flex h-11 w-11 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
             copilotOpen
-              ? "brand-bg brand-text-on-primary shadow-sm"
+              ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           )}
         >
-          <Sparkles size={16} />
+          <PanelRightOpen size={16} />
         </button>
         <button
           onClick={onGuideOpen}

@@ -269,15 +269,15 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="px-3 pt-2 pb-3">
+      <div className="px-4 pt-3 pb-4">
         <div
           className={cn(
-            "relative flex items-end gap-2 rounded-2xl border bg-[color:var(--ds-surface-2)] px-3 py-2.5 shadow-sm transition-[border-color,box-shadow] duration-200 focus-within:shadow-md",
+            "relative flex items-end gap-2 rounded-2xl border bg-[color:var(--ds-surface)] px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_rgba(15,23,42,0.08)]",
             overLimit
               ? "border-red-500"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[var(--brand-primary)]/50"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-border-strong)]"
           )}
         >
           {/* Template picker */}
@@ -356,7 +356,7 @@ export function ChatInput({
             }
             rows={1}
             maxLength={50000}
-            className="min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[13px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
+            className="min-h-[44px] flex-1 resize-none bg-transparent px-1 py-2.5 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
             aria-label={t("chat.input.enter_message")}
           />
 
@@ -387,7 +387,7 @@ export function ChatInput({
               onClick={handleSubmit}
               disabled={!canSend}
               className={cn(
-                "brand-bg brand-text-on-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-[0_2px_8px_-2px_var(--brand-glow)] transition-[opacity,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 hover:shadow-[0_4px_14px_-2px_var(--brand-glow)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
                 overLimit && "bg-red-500"
               )}
               aria-label={t("chat.send")}

@@ -46,7 +46,7 @@ import {
   Shield,
   Key,
   FolderOpen,
-  Sparkles,
+  MessageSquareText,
   Globe,
   Search,
   ClipboardList,
@@ -112,7 +112,7 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
-      { href: "/dashboard/chat", icon: Sparkles, labelKey: "nav.chat" },
+      { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
       { href: "/dashboard/chat/analytics", icon: LineChart, labelKey: "nav.chat_analytics" },
       { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
@@ -207,7 +207,12 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.realestate",
         comingSoon: true,
       },
-      { href: "/dashboard/recruiting", icon: UserPlus, labelKey: "nav.recruiting", comingSoon: true },
+      {
+        href: "/dashboard/recruiting",
+        icon: UserPlus,
+        labelKey: "nav.recruiting",
+        comingSoon: true,
+      },
       { href: "/dashboard/tax", icon: Coins, labelKey: "nav.tax", comingSoon: true },
       { href: "/dashboard/vc", icon: Network, labelKey: "nav.vc", comingSoon: true },
     ],
@@ -232,7 +237,7 @@ export const BOTTOM_ITEMS: NavItem[] = [
 
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/chat", icon: Sparkles, labelKey: "nav.chat" },
+  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
   { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
@@ -497,7 +502,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Brain status — expanded version */}
           <div
             className={cn(
-              "mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "mx-3 mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
               collapsed
                 ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
                 : "opacity-100"
@@ -505,33 +510,26 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             role="status"
             aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
           >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
                 {t("sidebar.brain_status")}
               </span>
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    brainReachable === true && "animate-pulse bg-emerald-500",
+                    brainReachable === true && "bg-emerald-500",
                     brainReachable === false && "bg-red-500",
-                    brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
+                    brainReachable === undefined && "bg-[color:var(--ds-text-subtle)]"
                   )}
                   aria-hidden
                 />
-                <span
-                  className={cn(
-                    "text-xs font-medium",
-                    brainReachable === true && "text-emerald-600",
-                    brainReachable === false && "text-red-600",
-                    brainReachable === undefined && "text-[color:var(--ds-text-subtle)]"
-                  )}
-                >
+                <span className="text-[11px] font-medium text-[color:var(--ds-text-muted)]">
                   {brainStatusLabel}
                 </span>
               </div>
             </div>
-            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+            <div className="mt-1 font-mono text-[10px] text-[color:var(--ds-text-subtle)] tabular-nums">
               {pages} pages · {entities} entities
             </div>
           </div>
@@ -568,14 +566,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             <div className="relative">
               <Search
                 size={14}
-                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
               />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
                 aria-label={t("sidebar.filter_placeholder")}
               />
               {searchQuery && (
