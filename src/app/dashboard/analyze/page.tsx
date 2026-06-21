@@ -9,7 +9,6 @@ import {
   CalendarClock,
   Scale,
   CheckCircle2,
-  Sparkles,
   ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -343,7 +342,7 @@ export default function AnalyzePage() {
                     key={i}
                     className="flex items-start gap-2 text-sm text-[color:var(--ds-text)]"
                   >
-                    <Sparkles size={13} className="mt-0.5 shrink-0 text-emerald-600" />
+                    <ListChecks size={13} className="mt-0.5 shrink-0 text-emerald-600" />
                     {a}
                   </li>
                 ))}

@@ -11,7 +11,7 @@ import {
   Copy,
   Check,
   Download,
-  Sparkles,
+  PenTool,
   ChevronDown,
   ChevronRight,
   Check as CheckIcon,
@@ -376,7 +376,7 @@ export function ContractRedlineViewer({
           disabled={loading || !originalText.trim()}
           className="gap-2 text-xs"
         >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <PenTool size={14} />}
           {loading ? "Analysiere…" : "Redline starten"}
         </Button>
       </div>
@@ -451,13 +451,13 @@ export function ContractRedlineViewer({
                 Vertragsredaktion starten
               </h3>
               <p className="mx-auto mt-1 max-w-md text-xs text-[color:var(--ds-text-muted)]">
-                Die KI analysiert den Vertrag clause-by-clause, identifiziert Risiken und schlägt
-                überarbeitete Formulierungen vor.
+                Der Assistent analysiert den Vertrag clause-by-clause, identifiziert Risiken und
+                schlägt überarbeitete Formulierungen vor.
                 {playbookSlug && ` Playbook: ${playbookSlug}`}
               </p>
             </div>
             <Button variant="primary" size="sm" onClick={runRedline} className="gap-2">
-              <Sparkles size={14} />
+              <PenTool size={14} />
               Analyse starten
             </Button>
           </div>
@@ -567,8 +567,8 @@ export function ContractRedlineViewer({
                         {/* Revised with diff highlighting */}
                         <div className="bg-[color:var(--ds-hover)]/30 p-4">
                           <div className="mb-2 flex items-center gap-1.5">
-                            <Sparkles size={12} className="brand-text" />
-                            <span className="brand-text text-xs font-semibold tracking-wide uppercase">
+                            <PenTool size={12} className="text-[color:var(--brand-secondary)]" />
+                            <span className="text-xs font-semibold tracking-wide text-[color:var(--brand-secondary)] uppercase">
                               Überarbeitet
                             </span>
                           </div>

@@ -12,7 +12,6 @@ import {
   XCircle,
   Clock,
   Loader2,
-  Sparkles,
   RefreshCw,
   RotateCcw,
   Send,
@@ -20,6 +19,7 @@ import {
   User,
   Wand2,
   ListTree,
+  Cpu,
 } from "lucide-react";
 import {
   useAgents,
@@ -421,7 +421,7 @@ function JobDetail({
 
       {job.model && (
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="brand-text" />
+          <Cpu size={14} className="brand-text" />
           <span className="text-sm text-[color:var(--ds-text-muted)]">
             {t("agents.label_model")}:{" "}
             <span className="text-[color:var(--ds-text)]">{job.model}</span>
@@ -731,7 +731,7 @@ export default function AgentsPage() {
             {/* Workflow Templates */}
             <div className="space-y-2 border-b border-[color:var(--ds-border)] p-4">
               <div className="flex items-center gap-2">
-                <Sparkles size={14} className="brand-text" />
+                <Cpu size={14} className="brand-text" />
                 <span className="text-xs font-semibold text-[color:var(--ds-text)]">
                   {t("agents.workflow_templates")}
                 </span>
@@ -787,7 +787,7 @@ export default function AgentsPage() {
             <div className="border-b border-[color:var(--ds-border)] p-4">
               <form onSubmit={handleSubmit} className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={14} className="brand-text" />
+                  <Cpu size={14} className="brand-text" />
                   <span className="text-xs font-semibold text-[color:var(--ds-text)]">
                     {t("agents.new_supervisor")}
                   </span>

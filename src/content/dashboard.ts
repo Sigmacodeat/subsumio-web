@@ -1118,7 +1118,7 @@ export const D = {
   "cases.detail_tab_time": { de: "Zeit", en: "Time" },
   "cases.detail_tab_expenses": { de: "Auslagen", en: "Expenses" },
   "cases.detail_tab_graph": { de: "Graph", en: "Graph" },
-  "cases.detail_tab_superbrain": { de: "Superbrain", en: "Superbrain" },
+  "cases.detail_tab_superbrain": { de: "Assistent", en: "Assistant" },
   "cases.detail_tab_audit": { de: "Audit", en: "Audit" },
   "cases.detail_tab_query": { de: "Query", en: "Query" },
   "cases.detail_btn_strategy": { de: "Strategie generieren", en: "Generate strategy" },
@@ -1604,8 +1604,8 @@ export const D = {
   // ── Approvals page ──
   "approvals.title": { de: "Freigaben", en: "Approvals" },
   "approvals.desc": {
-    de: "Vier-Augen-Prinzip — KI-/Agenten-Vorschläge werden erst durch eine zweite Person wirksam",
-    en: "Four-eyes principle — AI/agent proposals only take effect after approval by a second person",
+    de: "Vier-Augen-Prinzip — Assistenten-/Agenten-Vorschläge werden erst durch eine zweite Person wirksam",
+    en: "Four-eyes principle — assistant/agent proposals only take effect after approval by a second person",
   },
   "approvals.breadcrumb": { de: "Freigaben", en: "Approvals" },
   "approvals.notice": {
@@ -1635,8 +1635,8 @@ export const D = {
   // ── Analyze page ──
   "analyze.title": { de: "Dokument-Analyse", en: "Document Analysis" },
   "analyze.desc": {
-    de: "KI-gestütztes Issue-Spotting mit Quellenprüfung — erkennt Parteien, Fristen, Risiken und zitiert nur verifizierte Normen",
-    en: "AI-powered issue-spotting with source verification — detects parties, deadlines, risks and cites only verified statutes",
+    de: "Assistentengestütztes Issue-Spotting mit Quellenprüfung — erkennt Parteien, Fristen, Risiken und zitiert nur verifizierte Normen",
+    en: "Assistant-powered issue-spotting with source verification — detects parties, deadlines, risks and cites only verified statutes",
   },
   "analyze.breadcrumb": { de: "Dokument-Analyse", en: "Document Analysis" },
   "analyze.mode_slug": { de: "Aus Vault (Slug)", en: "From Vault (Slug)" },
@@ -1964,8 +1964,8 @@ export const D = {
   // ── RAG Eval page ──
   "rag_eval.title": { de: "Retrieval-Qualität", en: "Retrieval Quality" },
   "rag_eval.desc": {
-    de: "Benchmark, Freigabeprüfung und menschliche Review für KI-Antworten",
-    en: "Benchmark, gate check and human review for AI responses",
+    de: "Benchmark, Freigabeprüfung und menschliche Review für Assistenten-Antworten",
+    en: "Benchmark, gate check and human review for assistant responses",
   },
   "rag_eval.breadcrumb": { de: "Retrieval-Qualität", en: "Retrieval Quality" },
 
@@ -2162,8 +2162,8 @@ export const D = {
   },
   "sources.about_title": { de: "Über die Quellen-Registry", en: "About the Source Registry" },
   "sources.about_desc": {
-    de: "Die Source Registry ist die zentrale Instanz für Rechtsdaten-Provenance in Subsumio. Sie verfolgt den Status aller Rechtsquellen — Gesetzeskorpora, Judikatur-APIs und regulatorische Feeds — mit Freshness-Indikatoren, Authority-Tier und Sync-Historie. Jede AI-Antwort kann über die Registry nachweisen, aus welchen Quellen und welchem Stand sie stammt.",
-    en: "The Source Registry is the central instance for legal data provenance in Subsumio. It tracks the status of all legal sources — statute corpora, judgement APIs and regulatory feeds — with freshness indicators, authority tier and sync history. Every AI response can use the registry to prove which sources and which state it originates from.",
+    de: "Die Source Registry ist die zentrale Instanz für Rechtsdaten-Provenance in Subsumio. Sie verfolgt den Status aller Rechtsquellen — Gesetzeskorpora, Judikatur-APIs und regulatorische Feeds — mit Freshness-Indikatoren, Authority-Tier und Sync-Historie. Jede Assistenten-Antwort kann über die Registry nachweisen, aus welchen Quellen und welchem Stand sie stammt.",
+    en: "The Source Registry is the central instance for legal data provenance in Subsumio. It tracks the status of all legal sources — statute corpora, judgement APIs and regulatory feeds — with freshness indicators, authority tier and sync history. Every assistant response can use the registry to prove which sources and which state it originates from.",
   },
   "sources.fresh_hint": {
     de: "Fresh = innerhalb des Sync-Intervalls",
@@ -2236,7 +2236,10 @@ export const D = {
     de: 'Inhalt KI-generiert — als „{label}" kennzeichnen (EU AI Act Art. 50)',
     en: 'Content AI-generated — mark as "{label}" (EU AI Act Art. 50)',
   },
-  "bea.save_draft": { de: "Als Entwurf im Brain speichern", en: "Save as draft in brain" },
+  "bea.save_draft": {
+    de: "Als Entwurf in der Wissensbasis speichern",
+    en: "Save as draft in knowledge base",
+  },
   "bea.loading_aria": { de: "beA-Nachrichten werden geladen", en: "Loading beA messages" },
   "bea.drafts": { de: "Entwürfe", en: "Drafts" },
   "bea.no_drafts": { de: "Keine Entwürfe vorhanden.", en: "No drafts available." },
@@ -2814,12 +2817,12 @@ export const D = {
   "chat.reply_btn": { de: "Antworten", en: "Reply" },
   "chat.reply_title": { de: "Auf diese Nachricht antworten", en: "Reply to this message" },
   "chat.msg_user_aria": { de: "Nutzer-Nachricht", en: "User message" },
-  "chat.msg_ai_aria": { de: "AI-Antwort", en: "AI response" },
+  "chat.msg_ai_aria": { de: "Assistenten-Antwort", en: "Assistant response" },
   "chat.copy_slug_aria": { de: "Zitat-Slug kopieren:", en: "Copy citation slug:" },
   "chat.copy_slug_title": { de: "Slug kopieren", en: "Copy slug" },
   "chat.tokens_used": { de: "Tokens verbraucht", en: "Tokens used" },
   "chat.response_time": { de: "Antwortzeit", en: "Response time" },
-  "chat.ai_model": { de: "KI-Modell", en: "AI model" },
+  "chat.ai_model": { de: "Modell", en: "Model" },
   "chat.tokens_label": { de: "Tokens", en: "Tokens" },
   "chat.gaps_in_brain": { de: "Lücken in der Wissensbasis", en: "Gaps in knowledge base" },
 
@@ -2875,8 +2878,8 @@ export const D = {
   // ── Chat: model comparison ──
   "chat.model_comparison": { de: "Modell-Vergleich", en: "Model Comparison" },
   "chat.model_comparison_desc": {
-    de: "Vergleiche Antworten verschiedener KI-Modelle auf dieselbe Frage side-by-side.",
-    en: "Compare responses from different AI models to the same question side-by-side.",
+    de: "Vergleiche Antworten verschiedener Modelle auf dieselbe Frage side-by-side.",
+    en: "Compare responses from different models to the same question side-by-side.",
   },
   "chat.model_comparison_question": { de: "Frage", en: "Question" },
   "chat.model_comparison_placeholder": {

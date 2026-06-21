@@ -38,7 +38,7 @@ import {
   User,
   Play,
   Square,
-  Sparkles,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -163,7 +163,7 @@ const TABS = [
   { key: "time", labelKey: "cases.detail_tab_time", icon: Timer },
   { key: "expenses", labelKey: "cases.detail_tab_expenses", icon: Receipt },
   { key: "graph", labelKey: "cases.detail_tab_graph", icon: Network },
-  { key: "superbrain", labelKey: "cases.detail_tab_superbrain", icon: Sparkles },
+  { key: "superbrain", labelKey: "cases.detail_tab_superbrain", icon: Lightbulb },
   { key: "audit", labelKey: "cases.detail_tab_audit", icon: ShieldCheck },
   { key: "query", labelKey: "cases.detail_tab_query", icon: MessageSquare },
 ];
@@ -1706,7 +1706,7 @@ export default function CaseDetailPage() {
             <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-blue-600" />
+                  <PenTool size={16} className="text-blue-600" />
                   <span className="text-sm font-medium text-blue-600">
                     {t("cases.detail_dl_ai_title")}
                   </span>
@@ -1758,7 +1758,7 @@ export default function CaseDetailPage() {
                   {aiDetecting ? (
                     <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <Sparkles size={14} />
+                    <PenTool size={14} />
                   )}
                   {aiDetecting ? t("cases.detail_dl_ai_analyzing") : t("cases.detail_dl_ai_detect")}
                 </Button>

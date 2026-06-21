@@ -44,6 +44,19 @@ export interface WebApiOptions {
   requireTenant?: boolean;
 }
 
+/**
+ * P0-SECR-002: Express Request augmentation for the verified matter scope.
+ * Every /api request gets `matterScope` attached by the middleware below.
+ * "all" = unrestricted; string[] = only pages under these slug prefixes.
+ */
+declare global {
+  namespace Express {
+    interface Request {
+      matterScope?: string[] | "all";
+    }
+  }
+}
+
 interface ParsedMultipart {
   fields: Record<string, string>;
   file?: { filename: string; data: Buffer; mimeType: string };
@@ -375,6 +388,40 @@ function filterByMatterScope<T extends { slug?: string }>(
 }
 
 /**
+ * P0-SECR-002: Fail-closed single-slug check. Throws a not-found style error
+ * so callers cannot distinguish "does not exist" from "exists but out of scope".
+ */
+function assertMatterScope(scope: string[] | "all" | undefined, slug: string): void {
+  if (scope === undefined || scope === "all" || scope.length === 0) return;
+  const inScope = scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+  if (!inScope) {
+    throw new EngineNotFoundError(
+      `Page ${slug} is outside the caller's matter scope. This is intentionally indistinguishable from not found.`
+    );
+  }
+}
+
+/**
+ * P0-SECR-002: Middleware that attaches the verified matter scope to every request.
+ * Invalid identity tokens are rejected with 403; absent tokens default to "all".
+ */
+function matterScopeMiddleware(apiKey: string | undefined) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      req.matterScope = verifiedMatterScope(req, apiKey);
+      next();
+    } catch (e) {
+      if (e instanceof OperationError) {
+        res.status(403).json({ error: e.code, message: e.message });
+        return;
+      }
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "matter_scope_error", message: msg });
+    }
+  };
+}
+
+/**
  * Shared, public, READ-ONLY reference sources every tenant may query alongside
  * their own (e.g. the statute corpus imported into `law-at`/`law-de`). Set via
  * `GBRAIN_SHARED_READ_SOURCES=law-at,law-de`. Empty by default → behaviour is
@@ -521,6 +568,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     });
     console.error("[web-api] fail-closed tenant mode active (GBRAIN_REQUIRE_TENANT)");
   }
+
+  // P0-SECR-002: attach verified matter scope to every request. Invalid
+  // identity tokens are rejected; absent tokens default to "all".
+  app.use("/api", matterScopeMiddleware(apiKey));
 
   app.get("/api/stats", async (req: Request, res: Response) => {
     try {
@@ -1361,7 +1412,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       let existingType: string | undefined;
       if (merge) {
         try {
-          const existingRaw = await invokeOp(engine, "get_page", { slug }, sourceId);
+          const existingRaw = await invokeOp(
+            engine,
+            "get_page",
+            { slug },
+            sourceId,
+            undefined,
+            req.matterScope ?? "all"
+          );
           const existing = existingRaw as Record<string, unknown>;
           if (existing && typeof existing === "object") {
             if (existing.frontmatter && typeof existing.frontmatter === "object") {
@@ -1409,7 +1467,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         markdown = `---\n${yamlBlock}\n---\n\n${content}`;
       }
 
-      const result = await invokeOp(engine, "put_page", { slug, content: markdown }, sourceId);
+      assertMatterScope(req.matterScope, slug);
+      const result = await invokeOp(
+        engine,
+        "put_page",
+        { slug, content: markdown },
+        sourceId,
+        undefined,
+        req.matterScope ?? "all"
+      );
       res.json({ slug, success: true, ...(result && typeof result === "object" ? result : {}) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";

@@ -8,9 +8,9 @@ import { useSearchParams } from "next/navigation";
 import {
   CreditCard,
   Check,
+  CheckCircle2,
   ArrowRight,
   AlertTriangle,
-  Sparkles,
   Gift,
   Gauge,
   Settings,
@@ -299,7 +299,7 @@ function BillingInner() {
 
       {status === "success" && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-          <Sparkles size={16} className="text-emerald-600" />
+          <CheckCircle2 size={16} className="text-emerald-600" />
           <p className="text-sm text-emerald-700">{t("billing.success")}</p>
         </div>
       )}

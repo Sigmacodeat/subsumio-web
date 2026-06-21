@@ -12,7 +12,7 @@ import {
   Calculator,
   ChevronDown,
   Mail,
-  Sparkles,
+  FileSearch,
   Loader2,
   RotateCcw,
 } from "lucide-react";
@@ -369,7 +369,7 @@ export default function DeadlinesPage() {
               onClick={() => setShowAiDetect(!showAiDetect)}
               className="gap-2 text-xs"
             >
-              <Sparkles size={14} />
+              <FileSearch size={14} />
               {t("deadlines.detect")}
             </Button>
           </div>
@@ -489,7 +489,7 @@ export default function DeadlinesPage() {
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="brand-text" />
+              <FileSearch size={16} className="text-[color:var(--brand-primary)]" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("deadlines.detect_title")}
               </h2>
@@ -537,7 +537,7 @@ export default function DeadlinesPage() {
             disabled={aiLoading || !aiText.trim()}
             className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50"
           >
-            {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <FileSearch size={14} />}
             {aiLoading ? t("deadlines.detect_analyzing") : t("deadlines.detect_button")}
           </button>
 
