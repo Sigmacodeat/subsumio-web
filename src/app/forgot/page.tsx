@@ -3,6 +3,7 @@ import RecoveryForm from "@/components/auth/recovery-form";
 
 export const metadata: Metadata = {
   title: "Reset password",
+  description: "Reset your Subsumio password securely and regain access to your legal workspace.",
   robots: { index: false },
   alternates: { canonical: "/forgot", languages: { en: "/forgot", de: "/de/forgot" } },
 };

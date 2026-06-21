@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
@@ -50,15 +49,22 @@ export const POST = createHandler(
         return Response.json({
           success: false,
           error: "no_case_match",
-          message: "Keine passende Akte gefunden. Pr\u00fcfen Sie Betreff (Aktenzeichen) oder Absender.",
-          suggestions: cases.slice(0, 5).map((c) => ({ slug: c.slug, caseNumber: c.case_number, title: c.title })),
+          message:
+            "Keine passende Akte gefunden. Pr\u00fcfen Sie Betreff (Aktenzeichen) oder Absender.",
+          suggestions: cases
+            .slice(0, 5)
+            .map((c) => ({ slug: c.slug, caseNumber: c.case_number, title: c.title })),
         });
       }
 
-      const existingDocs = (matchedCase.documents || []) as Array<{ id?: string; name?: string; notes?: string }>;
+      const existingDocs = (matchedCase.documents || []) as Array<{
+        id?: string;
+        name?: string;
+        notes?: string;
+      }>;
       const isDuplicate = existingDocs.some((doc) => {
         const docNotes = doc.notes || "";
-        return docNotes.includes(`Von: ${body.from}`) && (doc.name === `E-Mail: ${body.subject}`);
+        return docNotes.includes(`Von: ${body.from}`) && doc.name === `E-Mail: ${body.subject}`;
       });
       if (isDuplicate) {
         return Response.json({
@@ -99,7 +105,8 @@ export const POST = createHandler(
         document: documentEntry,
       });
     } catch (err) {
-      return apiError("import_failed", err instanceof Error ? err.message : "import_failed", 500);
+      console.error("[email-import] failed:", err instanceof Error ? err.message : String(err));
+      return apiError("import_failed", "E-Mail-Import fehlgeschlagen", 500);
     }
-  },
+  }
 );

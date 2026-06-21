@@ -6,6 +6,9 @@ import { Users, Clock, Euro, TrendingUp, Loader2, BarChart3 } from "lucide-react
 import { api } from "@/lib/api";
 import { caseFrontmatter, type TimeEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+
+const CASES_LIMIT = 500;
 
 interface LawyerStats {
   name: string;
@@ -21,12 +24,14 @@ export default function ControllingPage() {
   const [stats, setStats] = useState<LawyerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [capped, setCapped] = useState(false);
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
 
   useEffect(() => {
     async function load() {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+        const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
+        setCapped(pages.length >= CASES_LIMIT);
         const lawyerMap = new Map<string, LawyerStats>();
 
         pages.forEach((p) => {
@@ -112,6 +117,8 @@ export default function ControllingPage() {
           {loadError}
         </div>
       )}
+
+      {capped && <CappedResultsNotice limit={CASES_LIMIT} />}
 
       {loading ? (
         <div

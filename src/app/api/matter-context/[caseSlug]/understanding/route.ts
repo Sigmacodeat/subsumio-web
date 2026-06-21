@@ -11,11 +11,11 @@ export const GET = createHandler(
     cacheMaxAge: 30,
   },
   async (ctx, _body, _query, req) => {
-    const { caseSlug } = await ((req as unknown as { params: Promise<{ caseSlug: string }> }).params);
+    const { caseSlug } = await (req as unknown as { params: Promise<{ caseSlug: string }> }).params;
     if (!caseSlug) {
       return Response.json(
         { error: "missing_slug", message: "Case slug is required." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -23,10 +23,11 @@ export const GET = createHandler(
       caseSlug,
       ENGINE_URL,
       engineHeadersForBrain(ctx.brainId),
+      ctx.user.id
     );
 
     const panel = buildUnderstandingPanel(bundle);
 
     return Response.json(panel);
-  },
+  }
 );

@@ -79,6 +79,26 @@ function statusColor(status: AgentJob["status"]): string {
   }
 }
 
+// SVG `fill`/`stroke` ignore Tailwind's `bg-*` utilities (those only set
+// `background-color`, which has no effect on SVG paint), so the graph
+// below needs its own color mapping onto the same design tokens
+// `statusColor` uses conceptually — kept as CSS var references so a
+// theme/token change still propagates here.
+function statusFill(status: AgentJob["status"]): string {
+  switch (status) {
+    case "completed":
+      return "var(--color-success)";
+    case "active":
+      return "var(--color-info)";
+    case "waiting":
+      return "var(--color-warning)";
+    case "failed":
+      return "var(--color-danger)";
+    case "paused":
+      return "var(--ds-text-muted)";
+  }
+}
+
 function statusLabel(status: AgentJob["status"]): string {
   switch (status) {
     case "completed":
@@ -143,15 +163,7 @@ function AgentDAG({
                   <path
                     d={`M ${rootX + 70} ${rootY} C ${midX} ${rootY}, ${midX} ${childY}, ${childX - 70} ${childY}`}
                     fill="none"
-                    stroke={
-                      child.status === "completed"
-                        ? "#10b981"
-                        : child.status === "active"
-                          ? "#3b82f6"
-                          : child.status === "failed"
-                            ? "#ef4444"
-                            : "#f59e0b"
-                    }
+                    stroke={statusFill(child.status)}
                     strokeWidth={2}
                     strokeDasharray={child.status === "waiting" ? "4 4" : undefined}
                     opacity={0.6}
@@ -159,15 +171,7 @@ function AgentDAG({
                   {/* Arrow head */}
                   <polygon
                     points={`${childX - 70},${childY} ${childX - 78},${childY - 4} ${childX - 78},${childY + 4}`}
-                    fill={
-                      child.status === "completed"
-                        ? "#10b981"
-                        : child.status === "active"
-                          ? "#3b82f6"
-                          : child.status === "failed"
-                            ? "#ef4444"
-                            : "#f59e0b"
-                    }
+                    fill={statusFill(child.status)}
                   />
                 </g>
               );
@@ -211,12 +215,16 @@ function AgentDAG({
                   width={140}
                   height={60}
                   rx={8}
-                  fill={isSelected ? "#4c1d95" : "var(--ds-border)"}
-                  stroke={isSelected ? "#8b5cf6" : "#2e2e5a"}
+                  fill={
+                    isSelected
+                      ? "var(--color-accent-glow, var(--ds-surface-2))"
+                      : "var(--ds-border)"
+                  }
+                  stroke={isSelected ? "var(--brand-primary)" : "var(--ds-border-strong)"}
                   strokeWidth={isSelected ? 2 : 1}
                 />
                 {/* Status indicator */}
-                <circle cx={x + 12} cy={y + 12} r={5} className={statusColor(job.status)} />
+                <circle cx={x + 12} cy={y + 12} r={5} fill={statusFill(job.status)} />
                 {/* Specialist icon indicator */}
                 {job.subagentDef && (
                   <text

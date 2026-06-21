@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  */
 export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => {
   const rawBody = await req.clone().text();
-  const body = (await req.json()) as {
+  let body: {
     event?: string;
     data?: {
       envelopeId?: string;
@@ -35,6 +35,11 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     };
     eventId?: string;
   };
+  try {
+    body = JSON.parse(rawBody) as typeof body;
+  } catch {
+    return Response.json({ ok: true, error: "invalid_json" });
+  }
 
   const eventId = body.eventId ?? body.data?.envelopeId;
   const envelopeId = body.data?.envelopeId;
@@ -98,8 +103,13 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       { headers }
     );
     if (searchRes.ok) {
-      const results = (await searchRes.json()) as { pages?: Array<{ slug: string }> };
-      const page = results.pages?.[0];
+      const raw = await searchRes.json();
+      const results = Array.isArray(raw)
+        ? raw
+        : Array.isArray((raw as Record<string, unknown>)?.pages)
+          ? (raw as Record<string, unknown[]>).pages
+          : [];
+      const page = results[0] as { slug: string } | undefined;
       if (page) {
         const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(page.slug)}`, {
           method: "PATCH",

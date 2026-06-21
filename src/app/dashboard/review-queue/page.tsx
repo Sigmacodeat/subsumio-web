@@ -53,7 +53,9 @@ export default function ReviewQueuePage() {
         try {
           const result = await api.brain.listPages({ type, limit: 100 });
           all.push(...result);
-        } catch { /* skip type if it fails */ }
+        } catch {
+          /* skip type if it fails */
+        }
       }
       setPages(all);
     } catch (e) {
@@ -63,7 +65,9 @@ export default function ReviewQueuePage() {
     }
   }, []);
 
-  useEffect(() => { void loadPages(); }, [loadPages]);
+  useEffect(() => {
+    void loadPages();
+  }, [loadPages]);
 
   const reviewItems = useMemo(() => {
     return pages
@@ -81,7 +85,10 @@ export default function ReviewQueuePage() {
       })
       .sort((a, b) => {
         const order = { pending: 0, in_review: 1, changes_requested: 2, rejected: 3, approved: 4 };
-        return (order[a.status as keyof typeof order] ?? 5) - (order[b.status as keyof typeof order] ?? 5);
+        return (
+          (order[a.status as keyof typeof order] ?? 5) -
+          (order[b.status as keyof typeof order] ?? 5)
+        );
       });
   }, [pages, statusFilter, assigneeFilter]);
 
@@ -131,11 +138,11 @@ export default function ReviewQueuePage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
-        title="Review-Queue"
-        description="Kollaborative Dokumenten-Prüfung mit Status-Tracking und Zuweisungen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Review-Queue" }]}
+        title="Prüfwarteschlange"
+        description="Kollaborative Dokumentenprüfung mit Status, Zuständigkeiten und nachvollziehbarer Freigabe"
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Prüfwarteschlange" }]}
       />
 
       {/* Filters */}
@@ -145,35 +152,46 @@ export default function ReviewQueuePage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
           >
             <option value="all">Alle Status</option>
-            {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {Object.entries(STATUS_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
           </select>
         </div>
         {assignees.length > 0 && (
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
+            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
           >
             <option value="all">Alle Bearbeiter</option>
-            {assignees.map((a) => <option key={a} value={a}>{a}</option>)}
+            {assignees.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
           </select>
         )}
-        <Badge variant="default" className="text-xs bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
+        <Badge
+          variant="default"
+          className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+        >
           {reviewItems.length} Dokumente
         </Badge>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center justify-center h-32">
+        <div className="flex h-32 items-center justify-center">
           <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
         </div>
       )}
@@ -182,61 +200,95 @@ export default function ReviewQueuePage() {
       {!loading && reviewItems.length > 0 && (
         <div className="space-y-2">
           {reviewItems.map(({ page, status, assignee, reviewedAt }) => (
-            <div key={page.slug} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+            <div
+              key={page.slug}
+              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                  <FileText size={16} className="text-[color:var(--ds-text-muted)] mt-0.5 shrink-0" />
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <FileText
+                    size={16}
+                    className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
+                  />
                   <div className="min-w-0">
-                    <a href={`/dashboard/vault/${page.slug}`} className="text-sm font-medium text-[color:var(--ds-text)] hover:underline truncate block">
+                    <a
+                      href={`/dashboard/vault/${page.slug}`}
+                      className="block truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
+                    >
                       {page.title}
                     </a>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
                       <span className="font-mono">{page.slug}</span>
                       <span>·</span>
                       <span>{page.type}</span>
                       {assignee && (
                         <>
                           <span>·</span>
-                          <span className="flex items-center gap-1"><User size={10} /> {assignee}</span>
+                          <span className="flex items-center gap-1">
+                            <User size={10} /> {assignee}
+                          </span>
                         </>
                       )}
                       {reviewedAt && (
                         <>
                           <span>·</span>
-                          <span className="flex items-center gap-1"><Clock size={10} /> {new Date(reviewedAt).toLocaleDateString("de-DE")}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={10} /> {new Date(reviewedAt).toLocaleDateString("de-DE")}
+                          </span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="default" className={cn("text-xs border", STATUS_STYLES[status] ?? STATUS_STYLES.pending)}>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge
+                    variant="default"
+                    className={cn("border text-xs", STATUS_STYLES[status] ?? STATUS_STYLES.pending)}
+                  >
                     {STATUS_LABELS[status] ?? status}
                   </Badge>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[color:var(--ds-border)]">
+              <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
                 <input
                   type="text"
                   placeholder="Bearbeiter zuweisen…"
                   defaultValue={assignee ?? ""}
-                  onBlur={(e) => { if (e.target.value.trim() && e.target.value.trim() !== assignee) void assignTo(page.slug, e.target.value.trim()); }}
-                  className="text-xs bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-md px-2 py-1 text-[color:var(--ds-text)] w-40"
+                  onBlur={(e) => {
+                    if (e.target.value.trim() && e.target.value.trim() !== assignee)
+                      void assignTo(page.slug, e.target.value.trim());
+                  }}
+                  className="w-40 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
                 />
-                <div className="flex gap-1 ml-auto">
+                <div className="ml-auto flex gap-1">
                   {updating === page.slug ? (
                     <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" onClick={() => updateStatus(page.slug, "approved")} className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateStatus(page.slug, "approved")}
+                        className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                      >
                         <CheckSquare size={12} /> Freigeben
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => updateStatus(page.slug, "changes_requested")} className="text-xs text-orange-600 hover:bg-orange-500/10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateStatus(page.slug, "changes_requested")}
+                        className="text-xs text-orange-600 hover:bg-orange-500/10"
+                      >
                         Überarbeiten
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => updateStatus(page.slug, "rejected")} className="text-xs text-red-600 hover:bg-red-500/10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateStatus(page.slug, "rejected")}
+                        className="text-xs text-red-600 hover:bg-red-500/10"
+                      >
                         Ablehnen
                       </Button>
                     </>
@@ -249,10 +301,12 @@ export default function ReviewQueuePage() {
       )}
 
       {!loading && reviewItems.length === 0 && !error && (
-        <div className="text-center py-16">
-          <Inbox size={40} className="mx-auto text-[color:var(--ds-text-muted)] opacity-40 mb-3" />
+        <div className="py-16 text-center">
+          <Inbox size={40} className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Keine Dokumente in der Review-Queue. Dokumente mit Frontmatter-Feld <code className="text-xs bg-[color:var(--ds-hover)] px-1 rounded">review_status</code> erscheinen hier.
+            Keine Dokumente in der Review-Queue. Dokumente mit Frontmatter-Feld{" "}
+            <code className="rounded bg-[color:var(--ds-hover)] px-1 text-xs">review_status</code>{" "}
+            erscheinen hier.
           </p>
         </div>
       )}

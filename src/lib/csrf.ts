@@ -50,9 +50,7 @@ export function validateCsrf(req: Request, cookieValue: string | undefined): boo
 /** Read the CSRF token from the cookie (browser-only). Returns undefined on server or if cookie is missing. */
 export function getCsrfToken(): string | undefined {
   if (typeof document === "undefined") return undefined;
-  const csrfCookie = document.cookie
-    .split("; ")
-    .find((c) => c.startsWith(`${CSRF_COOKIE}=`));
+  const csrfCookie = document.cookie.split("; ").find((c) => c.startsWith(`${CSRF_COOKIE}=`));
   return csrfCookie?.split("=")[1];
 }
 
@@ -61,10 +59,7 @@ export function getCsrfToken(): string | undefined {
  * header for state-changing requests (POST/PUT/PATCH/DELETE).
  * Use this instead of raw fetch() in dashboard components.
  */
-export async function csrfFetch(
-  input: string | URL,
-  init?: RequestInit,
-): Promise<Response> {
+export async function csrfFetch(input: string | URL, init?: RequestInit): Promise<Response> {
   const method = (init?.method ?? "GET").toUpperCase();
   const isStateChanging = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
 
@@ -74,6 +69,9 @@ export async function csrfFetch(
     const token = getCsrfToken();
     if (token) {
       headers.set(CSRF_HEADER, token);
+    } else if (typeof window !== "undefined") {
+      // CSRF cookie missing — server will likely reject. Log for debugging.
+      console.warn(`[csrf] No CSRF token for ${method} request — server may reject`);
     }
   }
 

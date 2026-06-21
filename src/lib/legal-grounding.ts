@@ -6,16 +6,31 @@ import type { RawCitation, GroundedCitation } from "@/lib/types";
 
 export const CORPUS_META: Record<
   string,
-  { jurisdiction: "at" | "de" | "ch"; label: string; file: string }
+  { jurisdiction: "at" | "de" | "ch" | "eu"; label: string; file: string }
 > = {
+  // ── Austria (21 statutes) ──────────────────────────────────────────
   abgb: { jurisdiction: "at", label: "ABGB", file: "at/abgb.md" },
   ahg: { jurisdiction: "at", label: "AHG", file: "at/ahg.md" },
+  aktg_at: { jurisdiction: "at", label: "AktG (AT)", file: "at/aktg-at.md" },
+  angg: { jurisdiction: "at", label: "AngG", file: "at/angg.md" },
+  arbvg: { jurisdiction: "at", label: "ArbVG", file: "at/arbvg.md" },
+  asvg: { jurisdiction: "at", label: "ASVG", file: "at/asvg.md" },
+  avg: { jurisdiction: "at", label: "AVG", file: "at/avg.md" },
   bao: { jurisdiction: "at", label: "BAO", file: "at/bao.md" },
   eo: { jurisdiction: "at", label: "EO", file: "at/eo.md" },
+  estg_at: { jurisdiction: "at", label: "EStG (AT)", file: "at/estg-at.md" },
+  gmbhg_at: { jurisdiction: "at", label: "GmbHG (AT)", file: "at/gmbhg-at.md" },
+  io: { jurisdiction: "at", label: "IO", file: "at/io.md" },
+  kschg: { jurisdiction: "at", label: "KSchG", file: "at/kschg.md" },
+  kstg_at: { jurisdiction: "at", label: "KStG (AT)", file: "at/kstg-at.md" },
+  mrg: { jurisdiction: "at", label: "MRG", file: "at/mrg.md" },
   stgb_at: { jurisdiction: "at", label: "StGB (AT)", file: "at/stgb-at.md" },
   stpo_at: { jurisdiction: "at", label: "StPO (AT)", file: "at/stpo-at.md" },
+  stvo_at: { jurisdiction: "at", label: "StVO (AT)", file: "at/stvo-at.md" },
   ugb: { jurisdiction: "at", label: "UGB", file: "at/ugb.md" },
+  ustg_at: { jurisdiction: "at", label: "UStG (AT)", file: "at/ustg-at.md" },
   zpo_at: { jurisdiction: "at", label: "ZPO (AT)", file: "at/zpo-at.md" },
+  // ── Germany (13 statutes) ──────────────────────────────────────────
   ao: { jurisdiction: "de", label: "AO", file: "de/ao.md" },
   bgb: { jurisdiction: "de", label: "BGB", file: "de/bgb.md" },
   estg: { jurisdiction: "de", label: "EStG", file: "de/estg.md" },
@@ -29,9 +44,18 @@ export const CORPUS_META: Record<
   ustg: { jurisdiction: "de", label: "UStG", file: "de/ustg.md" },
   uwg: { jurisdiction: "de", label: "UWG", file: "de/uwg.md" },
   zpo: { jurisdiction: "de", label: "ZPO", file: "de/zpo.md" },
+  // ── Switzerland (3 statutes) ───────────────────────────────────────
   or: { jurisdiction: "ch", label: "OR", file: "ch/or.md" },
   stgb_ch: { jurisdiction: "ch", label: "StGB (CH)", file: "ch/stgb.md" },
   zgb: { jurisdiction: "ch", label: "ZGB", file: "ch/zgb.md" },
+  // ── EU (key regulations via EUR-Lex) ────────────────────────────────
+  dsgvo: { jurisdiction: "eu", label: "DSGVO", file: "eu/dsgvo.md" },
+  dsrl: { jurisdiction: "eu", label: "DSRL", file: "eu/dsrl.md" },
+  eprivacy: { jurisdiction: "eu", label: "ePrivacy", file: "eu/eprivacy.md" },
+  romi: { jurisdiction: "eu", label: "Rom I", file: "eu/romi.md" },
+  romii: { jurisdiction: "eu", label: "Rom II", file: "eu/romii.md" },
+  brusselsibis: { jurisdiction: "eu", label: "Brussels Ibis", file: "eu/brusselsibis.md" },
+  euco: { jurisdiction: "eu", label: "EuCO", file: "eu/euco.md" },
 };
 
 export const CORPUS_DIR = path.join(process.cwd(), "law-corpus");
@@ -98,9 +122,7 @@ export async function lookupCorpusParagraph(
 
     const atIdx = text.search(new RegExp(`\u00a7\\s*${paraNum}\\.`));
     if (atIdx !== -1) {
-      const nextAt = text.search(
-        new RegExp(`\u00a7\\s*${String(Number(paraNum) + 1)}\\.`)
-      );
+      const nextAt = text.search(new RegExp(`\u00a7\\s*${String(Number(paraNum) + 1)}\\.`));
       const end = nextAt !== -1 ? nextAt : atIdx + 1000;
       return text.slice(atIdx, end).slice(0, 800).trim();
     }
@@ -111,9 +133,7 @@ export async function lookupCorpusParagraph(
   }
 }
 
-export async function groundCitations(
-  rawCitations: RawCitation[]
-): Promise<GroundedCitation[]> {
+export async function groundCitations(rawCitations: RawCitation[]): Promise<GroundedCitation[]> {
   const results: GroundedCitation[] = [];
 
   for (const cite of rawCitations.slice(0, 20)) {
@@ -128,9 +148,7 @@ export async function groundCitations(
     if (!sourceText) {
       const normalized = normalizeStatuteCode(code);
       const codeKey = Object.keys(CORPUS_META).find(
-        (k) =>
-          k === normalized ||
-          CORPUS_META[k].label.toUpperCase().startsWith(code.toUpperCase())
+        (k) => k === normalized || CORPUS_META[k].label.toUpperCase().startsWith(code.toUpperCase())
       );
       if (codeKey) {
         sourceText = await lookupCorpusParagraph(codeKey, paragraph);

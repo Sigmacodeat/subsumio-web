@@ -93,14 +93,21 @@ async function engineRequest<T>(
     const error = await res.text().catch(() => "");
     throw new Error(error || `Engine HTTP ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  if (!text) return undefined as unknown as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Engine returned non-JSON response: ${text.slice(0, 200)}`);
+  }
 }
 
 async function listPages(brainId: string, type: string, limit = 200): Promise<BrainPage[]> {
-  return engineRequest<BrainPage[]>(
+  const result = await engineRequest<BrainPage[]>(
     brainId,
     `/api/pages?type=${encodeURIComponent(type)}&limit=${limit}`
   );
+  return Array.isArray(result) ? result : [];
 }
 
 async function getPage(brainId: string, slug: string): Promise<BrainPage> {
@@ -1308,7 +1315,7 @@ async function think(
   if (!res.ok) throw new Error(`Brain-Q&A fehlgeschlagen: HTTP ${res.status}`);
   const contentType = res.headers.get("Content-Type") || "";
   if (!contentType.includes("text/event-stream")) {
-    const data = (await res.json()) as { answer?: string };
+    const data = (await res.json().catch(() => ({}))) as { answer?: string };
     return data.answer || "Keine Antwort erhalten.";
   }
   if (!res.body) return "Keine Antwort erhalten.";
@@ -1677,7 +1684,7 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
         body: JSON.stringify({ name: intent.name, caseRef: intent.caseRef }),
       });
       if (!res.ok) throw new Error(`Conflict-Check HTTP ${res.status}`);
-      const data = (await res.json()) as {
+      const data = (await res.json().catch(() => ({}))) as {
         conflicts?: Array<{
           case_title: string;
           case_slug: string;

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { api } from "@/lib/api";
@@ -7,10 +6,14 @@ import { createHandler, apiError } from "@/lib/api-handler";
 
 function calculateReminderFee(count: number, baseAmount: number): number {
   switch (count) {
-    case 1: return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
-    case 2: return Math.max(40, Math.round(baseAmount * 1.0 * 100) / 100);
-    case 3: return Math.max(60, Math.round(baseAmount * 1.3 * 100) / 100);
-    default: return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
+    case 1:
+      return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
+    case 2:
+      return Math.max(40, Math.round(baseAmount * 1.0 * 100) / 100);
+    case 3:
+      return Math.max(60, Math.round(baseAmount * 1.3 * 100) / 100);
+    default:
+      return Math.max(20, Math.round(baseAmount * 0.5 * 100) / 100);
   }
 }
 
@@ -57,7 +60,9 @@ export const POST = createHandler(
           const contactPage = await api.brain.getPage(clientSlug);
           const cfm = contactPage.frontmatter as Record<string, unknown>;
           recipient = String(cfm.email ?? "");
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       if (!recipient) {
         return apiError("no_recipient_email", "Keine Empfänger-E-Mail", 400);
@@ -73,18 +78,24 @@ export const POST = createHandler(
       const mahnungLabels = ["Erste Mahnung", "Zweite Mahnung", "Dritte Mahnung"];
       const label = mahnungLabels[Math.min(nextCount - 1, 2)] || `${nextCount}. Mahnung`;
       const fromAddr = settings.emailFrom ?? settings.smtpUser;
+      const esc = (s: unknown) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
+        );
+      const invoiceNumber = esc(fm.invoice_number ?? body.invoiceSlug);
 
       await transporter.sendMail({
         from: fromAddr,
         to: recipient,
-        subject: `${label} – Rechnung ${String(fm.invoice_number ?? body.invoiceSlug)}`,
-        html: `<p>Sehr geehrte${client ? ` ${client}` : ""},</p>
-<p>wir mussten feststellen, dass die Rechnung <strong>${String(fm.invoice_number ?? body.invoiceSlug)}</strong> über <strong>${total.toFixed(2)} €</strong> noch nicht beglichen wurde.</p>
+        subject: `${label} – Rechnung ${invoiceNumber}`,
+        html: `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
+<p>wir mussten feststellen, dass die Rechnung <strong>${invoiceNumber}</strong> über <strong>${total.toFixed(2)} €</strong> noch nicht beglichen wurde.</p>
 <p><strong>${label}</strong></p>
 <p>Mahngebühr: <strong>${fee.toFixed(2)} €</strong></p>
 <p>Neuer Gesamtbetrag: <strong>${newTotal.toFixed(2)} €</strong></p>
 <p>Bitte überweisen Sie den Betrag umgehend.</p>
-<p>Mit freundlichen Grüßen<br/>${settings.anwaltName || settings.kanzleiName || ""}</p>`,
+<p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`,
       });
 
       const sentAt = new Date().toISOString();
@@ -100,10 +111,16 @@ export const POST = createHandler(
         },
       });
 
-      return Response.json({ ok: true, reminderCount: nextCount, fee, newTotal, sentTo: recipient });
+      return Response.json({
+        ok: true,
+        reminderCount: nextCount,
+        fee,
+        newTotal,
+        sentTo: recipient,
+      });
     } catch (err) {
       console.error("[invoice-remind] failed:", err instanceof Error ? err.message : String(err));
-      return apiError("send_failed", err instanceof Error ? err.message : String(err), 500);
+      return apiError("send_failed", "Mahnung konnte nicht gesendet werden", 500);
     }
-  },
+  }
 );

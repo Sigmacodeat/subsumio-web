@@ -1,7 +1,9 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { normalizePhone, type WhatsAppSenderBinding } from "./types";
 
-export function verifyWebhookChallenge(searchParams: URLSearchParams): { ok: true; challenge: string } | { ok: false; status: number; error: string } {
+export function verifyWebhookChallenge(
+  searchParams: URLSearchParams
+): { ok: true; challenge: string } | { ok: false; status: number; error: string } {
   const mode = searchParams.get("hub.mode");
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
@@ -16,7 +18,19 @@ export function verifyWebhookChallenge(searchParams: URLSearchParams): { ok: tru
 
 export function verifyWhatsAppSignature(rawBody: string, signatureHeader: string | null): boolean {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
-  if (!appSecret) return process.env.NODE_ENV !== "production";
+  if (!appSecret) {
+    // Fail closed by default. Local development can opt into the bypass
+    // explicitly via WHATSAPP_SKIP_SIGNATURE_CHECK=true — an unset
+    // NODE_ENV (e.g. a misconfigured staging deploy) must never be treated
+    // as "safe to skip verification".
+    if (
+      process.env.WHATSAPP_SKIP_SIGNATURE_CHECK === "true" &&
+      process.env.NODE_ENV !== "production"
+    ) {
+      return true;
+    }
+    return false;
+  }
   if (!signatureHeader?.startsWith("sha256=")) return false;
 
   const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
@@ -45,7 +59,14 @@ export function loadAllowedSenders(): WhatsAppSenderBinding[] {
   const phone = process.env.WHATSAPP_ALLOWED_PHONE;
   const brainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID;
   if (phone && brainId) {
-    return [{ phone: normalizePhone(phone), brainId, name: process.env.WHATSAPP_DEFAULT_USER_NAME || "WhatsApp Anwalt", role: "lawyer" }];
+    return [
+      {
+        phone: normalizePhone(phone),
+        brainId,
+        name: process.env.WHATSAPP_DEFAULT_USER_NAME || "WhatsApp Anwalt",
+        role: "lawyer",
+      },
+    ];
   }
   return [];
 }

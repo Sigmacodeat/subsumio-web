@@ -25,6 +25,54 @@ export interface ChatMessage {
   attachments?: Array<{ name: string; slug: string }>;
   error?: string;
   replyTo?: { id: string; role: ChatRole; preview: string };
+  toolCalls?: ToolCall[];
+}
+
+export type ToolType =
+  | "navigate"
+  | "search_cases"
+  | "search_deadlines"
+  | "search_knowledge"
+  | "create_case"
+  | "case_summary"
+  | "email_draft"
+  | "deadline_extract"
+  | "document_summary"
+  | "conflict_check"
+  | "time_entry"
+  | "client_update"
+  | "meeting_tasks"
+  | "intake_create";
+
+export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
+  "create_case",
+  "intake_create",
+  "time_entry",
+]);
+
+export interface ToolCall {
+  id: string;
+  type: ToolType;
+  label: string;
+  params: Record<string, unknown>;
+  status: "pending" | "executing" | "completed" | "error";
+  result?: ToolResult;
+  requiresConfirmation?: boolean;
+}
+
+export interface ToolResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+  display: ToolResultDisplay;
+}
+
+export interface ToolResultDisplay {
+  kind: "navigation" | "list" | "summary" | "confirmation";
+  title: string;
+  items?: Array<{ label: string; value?: string; href?: string }>;
+  href?: string;
+  message?: string;
 }
 
 export interface ChatSession {

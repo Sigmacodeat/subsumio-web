@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import DocsPage from "@/components/marketing/docs-page";
 
 export const metadata: Metadata = {
-  title: "Subsumio Handbuch — Kanzleisoftware Funktionen",
+  title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
   description:
-    "Vollständige Feature-Dokumentation — 72 API-Endpunkte, 57 Dashboard-Seiten, 10 Kategorien. Brain, Akten, Fristen, Rechnung, Sicherheit, Mobile. Direkt aus dem Quellcode.",
+    "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
   alternates: { canonical: "/de/docs", languages: { en: "/docs", de: "/de/docs" } },
 };
 

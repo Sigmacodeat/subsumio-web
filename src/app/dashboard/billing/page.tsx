@@ -26,6 +26,7 @@ import { useUsage, useCheckout } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { getModelById, formatCost } from "@/lib/model-config";
+import { csrfFetch } from "@/lib/csrf";
 
 interface ModelBreakdownRow {
   modelId: string;
@@ -251,10 +252,9 @@ function BillingInner() {
     setBusy("portal");
     setNotice(null);
     try {
-      const csrfToken = document.cookie.match(/sb_csrf=([^;]+)/)?.[1] ?? "";
-      const res = await fetch("/api/billing/portal", {
+      const res = await csrfFetch("/api/billing/portal", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+        headers: { "Content-Type": "application/json" },
       });
       const data = await res.json();
       if (res.ok && data.url) {

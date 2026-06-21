@@ -41,7 +41,7 @@ export const POST = createHandler(
       const payload = {
         query: safeBody.query,
         mode: engineMode,
-        case_slug: body.case_slug,
+        case_slug: safeBody.case_slug,
         query_mode: body.query_mode,
         model: body.model,
       };
@@ -56,7 +56,11 @@ export const POST = createHandler(
         return apiError("engine_error", `Engine returned ${upstream.status}`, upstream.status);
       }
 
-      return apiStream(createCitationGateStream(upstream.body!), {
+      if (!upstream.body) {
+        return apiError("engine_error", "Engine returned empty body", 502);
+      }
+
+      return apiStream(createCitationGateStream(upstream.body), {
         contentType: upstream.headers.get("Content-Type") || "text/event-stream",
         aiGenerated: true,
       });

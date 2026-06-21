@@ -1,7 +1,11 @@
 import { createHandler, apiError } from "@/lib/api-handler";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { buildMatterContext } from "@/lib/matter-context";
-import { runSuperbrainEval, SUPERBRAIN_EVAL_FIXTURES, type MatterContextForEval } from "@/lib/superbrain-eval";
+import {
+  runSuperbrainEval,
+  SUPERBRAIN_EVAL_FIXTURES,
+  type MatterContextForEval,
+} from "@/lib/superbrain-eval";
 
 export const maxDuration = 60;
 
@@ -16,7 +20,7 @@ export const GET = createHandler(
 
     const contextFetcher = async (caseSlug: string): Promise<MatterContextForEval | null> => {
       try {
-        const bundle = await buildMatterContext(caseSlug, ENGINE_URL, headers);
+        const bundle = await buildMatterContext(caseSlug, ENGINE_URL, headers, ctx.user.id);
         return {
           parties: bundle.parties,
           deadlines: bundle.deadlines,
@@ -44,5 +48,5 @@ export const GET = createHandler(
       console.error("[superbrain-eval] failed:", err instanceof Error ? err.message : String(err));
       return apiError("eval_error", "Superbrain Eval failed", 500);
     }
-  },
+  }
 );

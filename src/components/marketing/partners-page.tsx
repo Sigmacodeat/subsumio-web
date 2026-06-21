@@ -34,8 +34,9 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             <span className="badge-pulse h-1.5 w-1.5 rounded-full [background:var(--signal-amber)]" />
             {t.badge}
           </span>
-          <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+          <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
             {t.h1a}
+            <span className="sr-only"> </span>
             <br />
             <span className="gradient-text-gold glow-text">{t.h1b}</span>
           </h1>

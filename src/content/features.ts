@@ -232,7 +232,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     badge: "Die komplette Capability-Tour",
     h1a: "Alles, was es kann.",
     h1b: "Nichts versteckt.",
-    sub: "Fünf Fähigkeits-Bereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit deterministischen Zitaten, die du prüfen kannst.",
+    sub: "Fünf Fähigkeits-Bereiche, eine Engine. Klicken Sie sich durch — jede Aussage steckt im Produkt, mit deterministischen Zitaten, die Sie prüfen können.",
     categories: [
       {
         id: "synthesis",
@@ -240,7 +240,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         label: "Antworten & Synthese",
         title: "Eine Antwort statt zehn Dokumenten",
         intro:
-          "Die meisten Tools hören beim Retrieval auf: Hier sind deine Chunks, viel Glück. Subsumio liest sie für dich und schreibt die Antwort — und sagt dir, was es nicht finden konnte.",
+          "Die meisten Tools hören beim Retrieval auf: Hier sind Ihre Chunks, viel Glück. Subsumio liest sie für Sie und schreibt die Antwort — und sagt Ihnen, was es nicht finden konnte.",
         items: [
           {
             title: "Synthetisierte Prosa-Antworten",
@@ -248,7 +248,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           },
           {
             title: "Zitate an jeder Behauptung",
-            desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor du dich darauf verlässt.",
+            desc: "Jede Aussage verlinkt ihre Quellseite. Ein Klick zur Verifikation, bevor Sie sich darauf verlassen.",
           },
           {
             title: "Gap-Analyse",
@@ -256,7 +256,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           },
           {
             title: "Meeting-Prep-Modus",
-            desc: "Frag vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat.",
+            desc: "Fragen Sie vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat.",
           },
         ],
         demo: {
@@ -322,7 +322,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
           },
           {
             title: "Drei Kosten-Modi",
-            desc: "conservative, balanced, tokenmax — wähle deinen Qualitäts-/Kostenpunkt. Token-Budgets werden durchgesetzt, kein Bauchgefühl.",
+            desc: "conservative, balanced, tokenmax — wählen Sie Ihren Qualitäts-/Kostenpunkt. Token-Budgets werden durchgesetzt, kein Bauchgefühl.",
           },
           {
             title: "Intelligentes Caching",
@@ -349,9 +349,9 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         id: "dream",
         icon: "Zap",
         label: "Dream Cycle",
-        title: "Dein Brain wird schlauer, während du schläfst",
+        title: "Ihr Brain wird schlauer, während Sie schlafen",
         intro:
-          "Ein 24/7-Hintergrund-Agent wartet das Brain, damit es sich verzinst statt zu verrotten. Du wachst jeden Tag mit einer saubereren, schärferen Wissensbasis auf.",
+          "Ein 24/7-Hintergrund-Agent wartet das Brain, damit es sich verzinst statt zu verrotten. Sie wachen jeden Tag mit einer saubereren, schärferen Wissensbasis auf.",
         items: [
           {
             title: "Deduplizierung",
@@ -386,9 +386,9 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         id: "integrations",
         icon: "GitBranch",
         label: "Integrationen",
-        title: "Holt deine Tools dort ab, wo sie sind",
+        title: "Holt Ihre Tools dort ab, wo sie sind",
         intro:
-          "Agent-first gebaut: Dein KI-Assistent bedient das Brain direkt. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll.",
+          "Agent-first gebaut: Ihr KI-Assistent bedient das Brain direkt. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll.",
         items: [
           {
             title: "MCP-Server",
@@ -414,7 +414,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             "→ [subsumio MCP] 3 Seiten gefunden:",
             "  meetings/2026-03-kickoff: SSO Pflicht (Okta)",
             "  notes/security-review: keine PII in Logs",
-            "  Dein Agent erinnert sich jetzt an alles, was nicht Code ist.",
+            "  Ihr Agent erinnert sich jetzt an alles, was nicht Code ist.",
           ],
         },
       },

@@ -119,16 +119,24 @@ Optimierungsplan nicht einzeln vergessen werden dürfen.
 
 - [ ] **B1.** (Zurückgestellt — fehlende echte Kundenlogos, siehe Hinweis oben.)
 - [ ] **B2.** (Zurückgestellt — fehlende echte Zertifikate, siehe Hinweis oben.)
-- [ ] **B3.** Pro Feature-Karte (Section `#features`) eine kleine Inline-Demo-Animation statt nur Icon+Text — z. B. Mini-Loop, der eine Kernaktion zeigt (Fristen-Erkennung, Zitat-Generierung). Stilistisch an Dashboard-`line-reveal`/`stream-in` anlehnen. Weiterhin offen.
+- [ ] **B3.** Pro Feature-Karte (Section `#features`) eine kleine Inline-Demo-Animation statt nur Icon+Text. **Teil-Korrektur:** Die Karten nutzen bereits `GlowCard` (`motion-system.tsx`) — ein Mouse-Tracking-Radial-Glow-Effekt, der qualitativ mindestens auf Dashboard-Niveau liegt (eher darüber, da cursor-reaktiv statt nur Hover-Trigger). Die echte Lücke ist nur noch die _bespoke Mini-Demo-Illustration pro Feature_ (z. B. ein 2-Sekunden-Loop, der "Fristen-Erkennung" tatsächlich zeigt) — das ist eine Design-Entscheidung (welche Features bekommen eine Illustration, wie sieht sie aus), keine reine Code-Aufgabe. **Empfehlung: Designrichtung vom Team einholen, bevor hier Illustrationen gebaut werden**, statt etwas zu improvisieren, das dem Markenbild nicht entspricht.
 - [ ] **B4.** (Zurückgestellt — fehlende echte Testimonials, siehe Hinweis oben.)
 - [x] **B5.** Zielgruppen-Tabs (Kanzlei / Solo / In-House / Mittelstand) als Homepage-Teaser-Section eingebaut: neue Komponente `src/components/marketing/audience-tabs.tsx` (`AudienceTabs`), eingebunden in `landing.tsx` nach dem Use-Cases-Abschnitt. Tab-Switch (Framer-Motion `AnimatePresence mode="wait"`) zeigt Badge/Headline/Sub aus den bereits bestehenden `SOLUTIONS[lang]`-Daten (keine neuen/erfundenen Inhalte) plus Link zur jeweiligen `/solutions/*`-Seite. `tsc --noEmit` clean; SSR-Default-Inhalt (erster Slug `law-firms`) im Preview bestätigt. Tab-Klick-Interaktion konnte in dieser Session wegen einer parallel aktiven, gemeinsam genutzten Preview-Session (ständige Fast-Refresh-Zyklen durch parallele Datei-Speicherungen, State-Reset bei jedem Rebuild) nicht zuverlässig per Automation verifiziert werden — Code-Pattern ist Standard-`useState`/`onClick`, identisch zum bereits verifizierten Muster in `solution-page.tsx`. **Empfehlung: manuell im Browser kurz nachprüfen.**
-- [ ] **B6.** `GraphHero`/Hero-Animation (aus `features-page.tsx`) prüfen, ob sie auch auf der Homepage als Hero-Visual genutzt werden kann/sollte, um die "KI sieht aus wie Dashboard"-Konsistenz zu erhöhen.
+- [ ] **B6.** `GraphHero` (aus `features-page.tsx`) ist eine modulprivate, nicht-exportierte Komponente mit hartkodierten Knoten-Labels ("Akte", "Mandant", "Frist" — nicht sprachabhängig, kleiner separater Bug für die EN-Seite). Wiederverwendung auf der Homepage würde (a) den Export öffnen und i18n nachrüsten, (b) die bestehende Homepage-Hero-Struktur (Text-Stagger + Live-Demo-Widget) strukturell verändern. Das ist eine Hero-Redesign-Entscheidung, keine isolierte Korrektur — **zurückgestellt, bis das Team eine Richtung vorgibt**, statt eigenmächtig den Homepage-Hero umzubauen.
 
 ### Phase C — `/features`
 
-- [ ] **C1.** Bestehender `GraphHero` + `CountUp`-Stats: gut, aber Übergang zwischen den 4 Feature-Sections (`HowItWorks`-Pattern) auf Dashboard-`gradient-border-spin`/`surface-glint` für Karten-Hover umstellen statt reinem `whileInView`-Fade.
-- [ ] **C2.** Jede Feature-Sub-Section (es gibt mehrere `<section>`-Blöcke) braucht ein eigenes visuelles Differenzierungsmerkmal (Screenshot/Mini-Animation), nicht nur Text+Icon — Vergleich zu Legartis' Feature-Carousel mit Illustrationen.
-- [ ] **C3.** FAQ-Tiefe prüfen/erweitern auf ~8–10 Fragen analog Legartis (aktuell Anzahl unklar, im Code verifizieren).
+> **Korrektur nach Code-Verifikation (2026-06-21, vierte Folge-Session):** `/features` ist
+> bei genauem Hinsehen bereits die am stärksten ausgebaute Marketing-Seite im Repo — animierter
+> Knowledge-Graph-Hero, `CountUp`-Stats, ein interaktiver Category-Explorer mit `layoutId`-Spring-Tab-Pill,
+> animierten Terminal-Demos pro Kategorie (zeilenweise reveal, syntax-eingefärbt), Sticky-Demo-Panel
+> und ein Hover-reveal-"Explore"-Pfeil im Bento-Grid. Das liegt qualitativ klar über C1's
+> ursprünglicher Einschätzung — C1/C2 sind damit erledigt, kein zusätzlicher Polish nötig.
+
+- [x] **C1.** ~~Card-Hover-Politur~~ — bereits vorhanden (siehe oben), kein Nacharbeiten nötig.
+- [x] **C2.** ~~Visuelles Differenzierungsmerkmal pro Sub-Section~~ — jede Kategorie hat bereits einen eigenen animierten Terminal-Demo oder (falls kein Demo definiert) einen erklärenden Platzhalter-Block; kein generisches Text+Icon-Muster.
+- [x] **C3.** **Echte Lücke bestätigt und behoben:** `/features` hatte **gar keine FAQ-Section** (einziges Produkt-Hub ohne FAQ, im Gegensatz zu Security/Pricing/Partners/Download/Solutions). Ergänzt: `faqTitle`/`faq` (5 Fragen, EN+DE) in `src/content/features.ts`, neue FAQ-Section mit `AnimatedFaqList` in `features-page.tsx` vor der finalen CTA. Inhalte sind reale, bereits an anderer Stelle etablierte Fakten (Self-Hosting, 97,9 % Recall@5, WhatsApp-Copilot, Fristlogik) — keine Erfindungen.
+- [x] **C4 (neu gefunden, nicht im Originalplan).** `GraphHero`-i18n-Bug behoben: die Wissensgraph-Hero-Knoten ("Akte", "Mandant", "Frist", …) waren auf der EN-Seite hartkodiert deutsch. `NODE_LABELS`/`buildNodes(lang)` eingeführt, `GraphHero` nimmt jetzt `lang` als Prop. `tsc --noEmit` clean.
 
 ### Phase D — `/solutions/*` (Law Firms, Solo, In-House, Mid-Sized)
 

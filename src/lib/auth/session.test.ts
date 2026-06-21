@@ -27,7 +27,7 @@ describe("b64url / b64urlDecode", () => {
     const encoded = b64url(data.buffer);
     const decoded = b64urlDecode(encoded);
     expect(new Uint8Array(decoded.length).map((_, i) => decoded.charCodeAt(i))).toEqual(
-      new Uint8Array([0, 255, 128, 64, 32]),
+      new Uint8Array([0, 255, 128, 64, 32])
     );
   });
 });
@@ -52,12 +52,20 @@ describe("getAuthSecret", () => {
   test("throws in production without secret", () => {
     process.env.NODE_ENV = "production";
     delete process.env.AUTH_SECRET;
-    expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set in production");
+    expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
+  });
+
+  test("throws on any Vercel deployment (e.g. preview) without secret", () => {
+    delete process.env.NODE_ENV;
+    process.env.VERCEL_ENV = "preview";
+    delete process.env.AUTH_SECRET;
+    expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
   });
 
   test("returns fallback in dev", () => {
     process.env.NODE_ENV = "development";
     delete process.env.AUTH_SECRET;
+    delete process.env.VERCEL_ENV;
     expect(getAuthSecret()).toBe("subsumio-dev-secret-change-me");
   });
 });
@@ -81,7 +89,7 @@ describe("signSession + verifySession", () => {
       { uid: "u2", email: "b@c.com", role: "admin" },
       getAuthSecret(),
       60,
-      5,
+      5
     );
     const payload = await verifySession(token);
     expect(payload!.v).toBe(5);
@@ -99,17 +107,14 @@ describe("signSession + verifySession", () => {
     const token = await signSession(
       { uid: "u4", email: "d@e.com", role: "lawyer" },
       getAuthSecret(),
-      -1, // already expired
+      -1 // already expired
     );
     const payload = await verifySession(token);
     expect(payload).toBeNull();
   });
 
   test("verify rejects wrong secret", async () => {
-    const token = await signSession(
-      { uid: "u5", email: "e@f.com", role: "lawyer" },
-      "secret-a",
-    );
+    const token = await signSession({ uid: "u5", email: "e@f.com", role: "lawyer" }, "secret-a");
     const payload = await verifySession(token, "secret-b");
     expect(payload).toBeNull();
   });
@@ -132,7 +137,12 @@ describe("session revocation", () => {
 
   test("new session after revocation is valid", async () => {
     await revokeAllSessions("u7");
-    const token = await signSession({ uid: "u7", email: "g@h.com", role: "lawyer" }, getAuthSecret(), SESSION_TTL_SECONDS, 2);
+    const token = await signSession(
+      { uid: "u7", email: "g@h.com", role: "lawyer" },
+      getAuthSecret(),
+      SESSION_TTL_SECONDS,
+      2
+    );
     expect(await verifySession(token)).not.toBeNull();
   });
 
@@ -157,7 +167,7 @@ describe("Session Revocation Edge-Cases", () => {
       { uid: userId, email: "a@b.com", role: "lawyer" },
       getAuthSecret(),
       SESSION_TTL_SECONDS,
-      1,
+      1
     );
     expect(await verifySession(token1)).toBeNull(); // v=1, min >= 2
 
@@ -166,7 +176,7 @@ describe("Session Revocation Edge-Cases", () => {
       { uid: userId, email: "a@b.com", role: "lawyer" },
       getAuthSecret(),
       SESSION_TTL_SECONDS,
-      3,
+      3
     );
     expect(await verifySession(token3)).not.toBeNull();
   });
@@ -212,7 +222,7 @@ describe("Session Revocation Edge-Cases", () => {
       { uid: userId, email: "a@b.com", role: "lawyer" },
       getAuthSecret(),
       SESSION_TTL_SECONDS,
-      2,
+      2
     );
     expect(await verifySession(token2)).not.toBeNull();
   });
@@ -222,7 +232,7 @@ describe("Session Revocation Edge-Cases", () => {
     const token = await signSession(
       { uid: userId, email: "a@b.com", role: "lawyer" },
       getAuthSecret(),
-      -10, // already expired
+      -10 // already expired
     );
     expect(await verifySession(token)).toBeNull();
   });

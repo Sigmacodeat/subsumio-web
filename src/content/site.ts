@@ -113,7 +113,7 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "For In-House",
             href: "/solutions/in-house",
-            description: "Legal ops with audit-ready memory",
+            description: "Legal ops with auditable memory",
             icon: "Building2",
           },
           {
@@ -214,17 +214,17 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "Für Einzelanwälte",
             href: "/solutions/solo",
-            description: "Ein Seat, ein Brain, null Overhead",
+            description: "Ein Nutzer, volle Kanzlei-KI, kein IT-Aufwand",
             icon: "User",
           },
           {
             label: "Für Justiziariate",
             href: "/solutions/in-house",
-            description: "Legal Ops mit audit-ready Gedächtnis",
+            description: "Legal Ops mit nachvollziehbarer Wissensbasis",
             icon: "Building2",
           },
           {
-            label: "Für Mittelständische",
+            label: "Für mittelständische Kanzleien",
             href: "/solutions/mid-sized",
             description: "Schlanke Teams, überproportionale Wirkung",
             icon: "Users",
@@ -326,7 +326,7 @@ export const FOOTER = {
     note: "Your data, your keys — self-hosted on your hardware or our EU cloud. Built for confidentiality-first work.",
   },
   de: {
-    tagline: "Das Brain deiner Kanzlei.",
+    tagline: "Die Wissensbasis deiner Kanzlei.",
     columns: [
       {
         title: "Plattform",
@@ -372,7 +372,7 @@ export const FOOTER = {
         ],
       },
     ],
-    note: "Deine Daten, deine Keys — self-hosted auf deiner Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
+    note: "Deine Daten, deine Schlüssel — On-Premise auf deiner Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
   },
 } as const;
 
@@ -471,23 +471,24 @@ export const PRICING: Record<
       "Annual billing −20 %. Included AI query and storage quotas shown per plan. Overages billed at transparent per-unit rates at month end — no surprise bills, no silent throttling. Token add-on packs available: 500 queries for €199, 1,500 for €499, 5,000 for €1,499.",
   },
   de: {
-    title: "Kanzleisoftware Preise — pro Seat, kein Lock-in",
-    sub: "Pro Seat, jährliche Abrechnung. Das Brain deiner Kanzlei auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
+    title: "Kanzleisoftware Preise — pro Nutzer, kein Lock-in",
+    sub: "Pro Nutzer, jährliche Abrechnung. Dein Kanzleiwissen auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
     tiers: [
       {
         id: "pro",
         name: "Pro",
         price: "890 €",
         priceMonthly: "1.113 €",
-        period: "/Seat/Mon.",
-        periodMonthly: "/Seat/Mon.",
-        blurb: "Für Anwälte, die von ihrem Wissen leben. Jahreszahlung spart 20%.",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Für Anwälte, die ihr Kanzleiwissen täglich produktiv nutzen. Jahreszahlung spart 20 %.",
         features: [
           "Voll verwaltet — keine API-Keys nötig",
-          "1.000 KI-Anfragen/Seat/Mon. inklusive",
-          "75 GB Cloud-Speicher pro Seat",
+          "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "75 GB Cloud-Speicher pro Nutzer",
           "300 WhatsApp-Nachrichten/Mon. inklusive",
-          "24/7 Dream Cycle (Dedupe, Zitate, Widersprüche)",
+          "Nächtliche Konsolidierung: Duplikate, Zitate, Widersprüche",
           "Live-Verbrauchsanzeige — transparente Mehrkosten",
           "Priorisierter Support",
           "Mehrverbrauch: 0,45 €/Anfrage · 0,25 €/WA",
@@ -501,17 +502,18 @@ export const PRICING: Record<
         name: "Team",
         price: "1.290 €",
         priceMonthly: "1.613 €",
-        period: "/Seat/Mon.",
-        periodMonthly: "/Seat/Mon.",
-        blurb: "Ein gemeinsames Brain, pro Nutzer gescoped. Ab 5 Seats. Jahreszahlung spart 20%.",
+        period: "/Nutzer/Mon.",
+        periodMonthly: "/Nutzer/Mon.",
+        blurb:
+          "Ein gemeinsames Kanzleiwissen mit rollenbasierten Zugriffsrechten. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
         features: [
           "Alles aus Pro",
-          "Geteiltes Firmen-Gedächtnis",
-          "4.000 KI-Anfragen/Seat/Mon. inklusive",
-          "200 GB Cloud-Speicher pro Seat",
+          "Geteiltes Kanzleiwissen",
+          "4.000 KI-Anfragen/Nutzer/Mon. inklusive",
+          "200 GB Cloud-Speicher pro Nutzer",
           "1.000 WhatsApp-Nachrichten/Mon. inklusive",
-          "Zugriff pro Nutzer gescoped — fuzz-getestet, null Leaks",
-          "Admin & Nutzungs-Analytics",
+          "Rollenbasierte Zugriffe pro Akte und Nutzer",
+          "Admin- und Nutzungsanalyse",
           "Onboarding-Session inklusive",
           "Mehrverbrauch: 0,40 €/Anfrage · 0,20 €/WA",
         ],
@@ -522,12 +524,13 @@ export const PRICING: Record<
         id: "ent",
         name: "Enterprise",
         price: "ab 1.890 €",
-        period: "/Seat/Mon.",
-        blurb: "Compliance-tauglich. Ab 20 Seats, deine Infrastruktur oder EU-Cloud.",
+        period: "/Nutzer/Mon.",
+        blurb:
+          "Für hohe Compliance-Anforderungen. Ab 20 Nutzern, auf deiner Infrastruktur oder in der EU-Cloud.",
         features: [
-          "15.000 KI-Anfragen/Seat/Mon. (Fair Use darüber)",
-          "5.000 WhatsApp-Nachrichten/Seat/Mon.",
-          "500 GB Speicher pro Seat",
+          "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
+          "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
+          "500 GB Speicher pro Nutzer",
           "EU-Cloud, Vercel Blob/S3 oder On-Prem",
           "Individuelle Aufbewahrungsrichtlinie",
           "AVV, SLA, SSO/SAML",
@@ -540,7 +543,7 @@ export const PRICING: Record<
       },
     ],
     footnote:
-      "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Token-Add-on-Pakete: 500 Anfragen für 199 €, 1.500 für 499 €, 5.000 für 1.499 €.",
+      "Jahreszahlung −20 %. KI-Anfragen und Speicher-Kontingente sind je Plan inklusive. Mehrverbrauch wird zu transparenten Einheitspreisen am Monatsende abgerechnet — keine Überraschungsrechnung, kein stilles Drosseln. Zusatzpakete: 500 Anfragen für 199 €, 1.500 für 499 €, 5.000 für 1.499 €.",
   },
 };
 
@@ -579,7 +582,7 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
     items: [
       {
         q: "Gibt es eine kostenlose Testversion?",
-        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht für dich ist, kündige innerhalb von 14 Tagen für eine volle Rückerstattung.",
+        a: "Ja. Jeder gehostete Plan startet mit einem 14-Tage-Reverse-Trial — voller Zugriff, keine Kreditkarte. Wenn Subsumio nicht das Richtige für dich ist, kündige innerhalb von 14 Tagen für eine volle Rückerstattung.",
       },
       {
         q: "Kann ich jederzeit den Plan wechseln?",
@@ -587,7 +590,7 @@ export const PRICING_FAQ: Record<Lang, { title: string; items: { q: string; a: s
       },
       {
         q: "Wie funktioniert die jährliche Abrechnung?",
-        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Seat abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
+        a: "Jahreszahlung gibt dir 20% Rabatt auf den Monatspreis. Du wirst einmal pro Jahr pro Nutzer abgerechnet. Monatsabrechnung ist verfügbar, wenn du mehr Flexibilität möchtest.",
       },
       {
         q: "Was passiert mit meinen Daten bei Kündigung?",
@@ -750,7 +753,7 @@ export const LANDING = {
     badge: "KI-Kanzleisoftware",
     h1a: "Jede Akte,",
     h1b: "eine belegte Antwort.",
-    sub: "Subsumio ist die KI-Kanzleisoftware, die Akten, Fristen, E-Mails, Dokumente und Recherche zu einem belegten Workspace macht — gebaut für DACH-Kanzleien.",
+    sub: "Subsumio ist die KI-Kanzleisoftware, die Akten, Fristen, E-Mails, Dokumente und Recherche in eine belegbare Kanzlei-Arbeitsoberfläche bringt — gebaut für DACH-Kanzleien.",
     ctaPrimary: "Jetzt starten",
     ctaSecondary: "Antwort ansehen",
     demo: {
@@ -772,7 +775,7 @@ export const LANDING = {
       { value: "97,9 %", label: "Recall@5 — Retrieval-Benchmark" },
       { value: "72", label: "API-Endpunkte, voll dokumentiert" },
       { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
-      { value: "0", label: "Mandantendaten-Leaks, by design" },
+      { value: "0", label: "bekannte Mandantendaten-Leaks" },
     ],
     statsNote: "Engine-Klasse Retrieval, kein Chat-Wrapper — jede KI-Antwort nennt ihre Quelle.",
     featuresTitle: "Für Kanzleien gebaut",
@@ -812,8 +815,8 @@ export const LANDING = {
       {
         icon: "Shield",
         color: "violet",
-        title: "Self-hosted oder EU-Cloud",
-        desc: "Die volle Engine auf deiner Hardware mit deinen Keys — oder gemanagte EU-Cloud mit AVV. Mandantendaten verlassen nie deine Kontrolle.",
+        title: "On-Premise oder EU-Cloud",
+        desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur — oder verwaltete EU-Cloud mit AVV. Mandantendaten bleiben unter deiner Kontrolle.",
       },
     ],
     howTitle: "Vom Dokument zur belegten Antwort",
@@ -827,8 +830,8 @@ export const LANDING = {
       {
         step: "02",
         icon: "Network",
-        title: "Es versteht",
-        desc: "Bei jedem Schreibvorgang werden typisierte Kanten — Personen, Fristen, Beziehungen — als juristischer Wissensgraph extrahiert. Ohne zusätzliche LLM-Calls.",
+        title: "Strukturieren",
+        desc: "Bei jedem Speichern erkennt die Engine Personen, Fristen und Beziehungen und baut daraus einen juristischen Wissensgraphen. Ohne manuelle Datenpflege.",
       },
       {
         step: "03",
@@ -843,8 +846,8 @@ export const LANDING = {
         desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
       },
     ],
-    scenariosTitle: "Use Cases",
-    scenariosSub: "Echte Workflows aus der Engine — keine Mockups.",
+    scenariosTitle: "Praxis-Workflows",
+    scenariosSub: "Echte Kanzleiabläufe aus dem Produkt — keine Marketing-Mockups.",
     scenarios: [
       {
         role: "Eingangspost",
@@ -871,7 +874,7 @@ export const LANDING = {
       },
       {
         q: "Brauche ich API-Keys oder einen Server?",
-        a: "Nein. Anmelden, Brain läuft — voll verwaltet, keine Keys, keine Infrastruktur. Enterprise-Self-Hosting läuft auf deiner eigenen Hardware mit deinen eigenen Keys.",
+        a: "Nein. Bei gehosteten Plänen ist Subsumio vollständig verwaltet: keine API-Keys, keine eigene Infrastruktur. Enterprise-On-Premise läuft auf eigener Hardware mit eigenen Schlüsseln.",
       },
       {
         q: "Was passiert, wenn ich an Plan-Limits stoße?",
@@ -879,10 +882,10 @@ export const LANDING = {
       },
       {
         q: "Trainiert ihr auf meinen Daten?",
-        a: "Niemals. Dein Wissen gehört allein dir — es wird nie zum Training geteilter Modelle genutzt. Self-hosted verlässt nichts dein Haus; in unserer EU-Cloud bleibt es verschlüsselt und pro Kunde isoliert.",
+        a: "Niemals. Dein Kanzleiwissen gehört allein dir und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf deiner Infrastruktur; in der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet.",
       },
     ],
-    ctaTitle: "Dein Brain wartet.",
+    ctaTitle: "Dein Kanzleiwissen wird abfragbar.",
     ctaSub: "Drei Minuten bis zur ersten Antwort. Keine Kreditkarte.",
     ctaButton: "Mit Subsumio starten",
   },

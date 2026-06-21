@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { sanitizeHtml } from "@/lib/sanitize-html";
+import { csrfFetch } from "@/lib/csrf";
 
 export interface MailMessageView {
   id: string;
@@ -418,7 +419,7 @@ function ReplyForm({
     setSending(true);
     setErr(null);
     try {
-      const res = await fetch(`/api/email/messages/${messageId}/reply`, {
+      const res = await csrfFetch(`/api/email/messages/${messageId}/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -480,7 +481,7 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
     setSending(true);
     setErr(null);
     try {
-      const res = await fetch("/api/email/messages", {
+      const res = await csrfFetch("/api/email/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to: to.split(",").map((s) => s.trim()), subject, text }),

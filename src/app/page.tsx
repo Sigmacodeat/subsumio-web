@@ -4,14 +4,14 @@ import { JsonLd, organizationLd, softwareApplicationLd, faqPageLd } from "@/comp
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — AI legal software for law firms",
+  title: "Subsumio — AI legal software for DACH law firms",
   description:
-    "AI legal software that turns matters, deadlines, emails and documents into cited answers. Self-hosted or EU cloud, built for DACH law firms.",
+    "AI legal software for matters, deadlines, documents, DATEV and cited answers. GDPR-ready, EU cloud or on-premise for DACH law firms.",
   alternates: { canonical: "/", languages: { en: "/", de: "/de" } },
   openGraph: {
-    title: "Subsumio — AI legal software for law firms",
+    title: "Subsumio — AI legal software for DACH law firms",
     description:
-      "AI legal software that turns matters, deadlines, emails and documents into cited answers. Self-hosted or EU cloud.",
+      "Matters, deadlines, documents, DATEV and cited AI answers. GDPR-ready, EU cloud or on-premise.",
     url: "/",
     type: "website",
   },

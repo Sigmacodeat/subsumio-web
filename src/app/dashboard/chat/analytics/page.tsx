@@ -40,8 +40,8 @@ export default function ChatAnalyticsPage() {
         <MessageSquare size={40} className="mb-4 text-[color:var(--ds-text-subtle)]" />
         <h2 className="text-lg font-semibold text-[color:var(--ds-text)]">Chat Analytics</h2>
         <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-          Noch keine Chat-Daten vorhanden. Starte eine Konversation im Brain-Chat, um Statistiken zu
-          sehen.
+          Noch keine Chat-Daten vorhanden. Starte eine Konversation im Brain Copilot, um Statistiken
+          zu sehen.
         </p>
       </div>
     );

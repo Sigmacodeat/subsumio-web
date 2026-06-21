@@ -144,7 +144,7 @@ export async function listAuditLogs(opts: {
 
       if (opts?.action) {
         conditions.push(`action LIKE $${paramIdx++}`);
-        params.push(`%${opts.action}%`);
+        params.push(`%${opts.action.replace(/[%_]/g, "\\$&")}%`);
       }
       if (opts?.entityType) {
         conditions.push(`entity_type = $${paramIdx++}`);

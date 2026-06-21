@@ -175,7 +175,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
       t: lang === "de" ? "Sprachnotiz unterwegs" : "Voice note on the go",
       d:
         lang === "de"
-          ? "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist."
+          ? "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind."
           : "Dictate after the hearing — transcribed and attached before you're back at the office.",
     },
   ];

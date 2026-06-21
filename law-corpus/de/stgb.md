@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "StGB"
 version_date: "2026-05-31"
-retrieved_at: "2026-06-12"
+retrieved_at: "2026-06-21"
 source_url: "https://www.gesetze-im-internet.de/stgb/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -157,7 +157,7 @@ Jeder Beteiligte wird ohne Rücksicht auf die Schuld des anderen nach seiner Sch
 
 ## § 31 — Rücktritt vom Versuch der Beteiligung
 
-(1) Nach § 30 wird nicht bestraft, wer freiwillig 1.den Versuch aufgibt, einen anderen zu einem Verbrechen zu bestimmen, und eine etwa bestehende Gefahr, daß der andere die Tat begeht, abwendet, 2.nachdem er sich zu einem Verbrechen bereit erklärt hatte, sein Vorhaben aufgibt oder, 3.nachdem er ein Verbrechen verabredet oder das Erbieten eines anderen zu einem Verbrechen angenommen hatte, die Tat verhindert. 
+(1) Nach § 30 wird nicht bestraft, wer freiwillig 1.den Versuch aufgibt, einen anderen zu einem Verbrechen zu bestimmen, und eine etwa bestehende Gefahr, daß der andere die Tat begeht, abwendet, 2.nachdem er sich zu einem Verbrechen bereit erklärt hatte, sein Vorhaben aufgibt oder, 3.nachdem er ein Verbrechen verabredet oder das Erbieten eines anderen zu einem Verbrechen angenommen hatte, die Tat verhindert.
 (2) Unterbleibt die Tat ohne Zutun des Zurücktretenden oder wird sie unabhängig von seinem früheren Verhalten begangen, so genügt zu seiner Straflosigkeit sein freiwilliges und ernsthaftes Bemühen, die Tat zu verhindern.
 
 ## § 32 — Notwehr
@@ -222,6 +222,7 @@ An die Stelle einer uneinbringlichen Geldstrafe tritt Ersatzfreiheitsstrafe. Zwe
 (4) Werden gegen den Täter mehrere Fahrverbote rechtskräftig verhängt, so sind die Verbotsfristen nacheinander zu berechnen. Die Verbotsfrist auf Grund des früher wirksam gewordenen Fahrverbots läuft zuerst. Werden Fahrverbote gleichzeitig wirksam, so läuft die Verbotsfrist auf Grund des früher angeordneten Fahrverbots zuerst, bei gleichzeitiger Anordnung ist die frühere Tat maßgebend.
 
 ## § 45 — Verlust der Amtsfähigkeit, der Wählbarkeit und des
+
 Stimmrechts
 
 (1) Wer wegen eines Verbrechens zu Freiheitsstrafe von mindestens einem Jahr verurteilt wird, verliert für die Dauer von fünf Jahren die Fähigkeit, öffentliche Ämter zu bekleiden und Rechte aus öffentlichen Wahlen zu erlangen.
@@ -238,7 +239,7 @@ Stimmrechts
 
 ## § 45b — Wiederverleihung von Fähigkeiten und Rechten
 
-(1) Das Gericht kann nach § 45 Abs. 1 und 2 verlorene Fähigkeiten und nach § 45 Abs. 5 verlorene Rechte wiederverleihen, wenn 1.der Verlust die Hälfte der Zeit, für die er dauern sollte, wirksam war und 2.zu erwarten ist, daß der Verurteilte künftig keine vorsätzlichen Straftaten mehr begehen wird. 
+(1) Das Gericht kann nach § 45 Abs. 1 und 2 verlorene Fähigkeiten und nach § 45 Abs. 5 verlorene Rechte wiederverleihen, wenn 1.der Verlust die Hälfte der Zeit, für die er dauern sollte, wirksam war und 2.zu erwarten ist, daß der Verurteilte künftig keine vorsätzlichen Straftaten mehr begehen wird.
 (2) In die Fristen wird die Zeit nicht eingerechnet, in welcher der Verurteilte auf behördliche Anordnung in einer Anstalt verwahrt worden ist.
 
 ## § 46 — Grundsätze der Strafzumessung
@@ -268,7 +269,7 @@ Hat der Täter 1.in dem Bemühen, einen Ausgleich mit dem Verletzten zu erreiche
 
 ## § 49 — Besondere gesetzliche Milderungsgründe
 
-(1) Ist eine Milderung nach dieser Vorschrift vorgeschrieben oder zugelassen, so gilt für die Milderung folgendes: 1.An die Stelle von lebenslanger Freiheitsstrafe tritt Freiheitsstrafe nicht unter drei Jahren. 2.Bei zeitiger Freiheitsstrafe darf höchstens auf drei Viertel des angedrohten Höchstmaßes erkannt werden. Bei Geldstrafe gilt dasselbe für die Höchstzahl der Tagessätze. 3.Das erhöhte Mindestmaß einer Freiheitsstrafe ermäßigt sichim Falle eines Mindestmaßes von zehn oder fünf Jahren auf zwei Jahre,im Falle eines Mindestmaßes von drei oder zwei Jahren auf sechs Monate,im Falle eines Mindestmaßes von einem Jahr auf drei Monate,im übrigen auf das gesetzliche Mindestmaß. 
+(1) Ist eine Milderung nach dieser Vorschrift vorgeschrieben oder zugelassen, so gilt für die Milderung folgendes: 1.An die Stelle von lebenslanger Freiheitsstrafe tritt Freiheitsstrafe nicht unter drei Jahren. 2.Bei zeitiger Freiheitsstrafe darf höchstens auf drei Viertel des angedrohten Höchstmaßes erkannt werden. Bei Geldstrafe gilt dasselbe für die Höchstzahl der Tagessätze. 3.Das erhöhte Mindestmaß einer Freiheitsstrafe ermäßigt sichim Falle eines Mindestmaßes von zehn oder fünf Jahren auf zwei Jahre,im Falle eines Mindestmaßes von drei oder zwei Jahren auf sechs Monate,im Falle eines Mindestmaßes von einem Jahr auf drei Monate,im übrigen auf das gesetzliche Mindestmaß.
 (2) Darf das Gericht nach einem Gesetz, das auf diese Vorschrift verweist, die Strafe nach seinem Ermessen mildern, so kann es bis zum gesetzlichen Mindestmaß der angedrohten Strafe herabgehen oder statt auf Freiheitsstrafe auf Geldstrafe erkennen.
 
 ## § 50 — Zusammentreffen von Milderungsgründen
@@ -373,6 +374,7 @@ Das Gericht kann Entscheidungen nach den §§ 56b bis 56d auch nachträglich tre
 (4) Das Gericht kann Fristen von höchstens zwei Jahren festsetzen, vor deren Ablauf ein Antrag des Verurteilten, den Strafrest zur Bewährung auszusetzen, unzulässig ist.
 
 ## § 57b — Aussetzung des Strafrestes bei lebenslanger Freiheitsstrafe
+
 als Gesamtstrafe
 
 Ist auf lebenslange Freiheitsstrafe als Gesamtstrafe erkannt, so werden bei der Feststellung der besonderen Schwere der Schuld (§ 57a Abs. 1 Satz 1 Nr. 2) die einzelnen Straftaten zusammenfassend gewürdigt.
@@ -486,9 +488,9 @@ Ist die Unterbringung in einem psychiatrischen Krankenhaus nach § 67d Abs. 6 f�
 ## § 67e — Überprüfung
 
 (1) Das Gericht kann jederzeit prüfen, ob die weitere Vollstreckung der Unterbringung zur Bewährung auszusetzen oder für erledigt zu erklären ist. Es muß dies vor Ablauf bestimmter Fristen prüfen.
-(2) Die Fristen betragen bei der Unterbringung 
-in einer Entziehungsanstalt sechs Monate, 
-in einem psychiatrischen Krankenhaus ein Jahr, 
+(2) Die Fristen betragen bei der Unterbringung
+in einer Entziehungsanstalt sechs Monate,
+in einem psychiatrischen Krankenhaus ein Jahr,
 in der Sicherungsverwahrung ein Jahr, nach dem Vollzug von zehn Jahren der Unterbringung neun Monate.
 (3) Das Gericht kann die Fristen kürzen. Es kann im Rahmen der gesetzlichen Prüfungsfristen auch Fristen festsetzen, vor deren Ablauf ein Antrag auf Prüfung unzulässig ist.
 (4) Die Fristen laufen vom Beginn der Unterbringung an. Lehnt das Gericht die Aussetzung oder Erledigungserklärung ab, so beginnen die Fristen mit der Entscheidung von neuem.
@@ -846,7 +848,7 @@ Wer im räumlichen Geltungsbereich dieses Gesetzes öffentlich, in einer Versamm
 ## § 87 — Agententätigkeit zu Sabotagezwecken
 
 (1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer einen Auftrag einer Regierung, Vereinigung oder Einrichtung außerhalb des räumlichen Geltungsbereichs dieses Gesetzes zur Vorbereitung von Sabotagehandlungen, die in diesem Geltungsbereich begangen werden sollen, dadurch befolgt, daß er 1.sich bereit hält, auf Weisung einer der bezeichneten Stellen solche Handlungen zu begehen, 2.Sabotageobjekte auskundschaftet, 3.Sabotagemittel herstellt, sich oder einem anderen verschafft, verwahrt, einem anderen überläßt oder in diesen Bereich einführt, 4.Lager zur Aufnahme von Sabotagemitteln oder Stützpunkte für die Sabotagetätigkeit einrichtet, unterhält oder überprüft, 5.sich zur Begehung von Sabotagehandlungen schulen läßt oder andere dazu schult oder 6.die Verbindung zwischen einem Sabotageagenten (Nummern 1 bis 5) und einer der bezeichneten Stellen herstellt oder aufrechterhält, und sich dadurch absichtlich oder wissentlich für Bestrebungen gegen den Bestand oder die Sicherheit der Bundesrepublik Deutschland oder gegen Verfassungsgrundsätze einsetzt.
-(2) Sabotagehandlungen im Sinne des Absatzes 1 sind 1.Handlungen, die den Tatbestand der §§ 109e, 305, 306 bis 306c, 307 bis 309, 313, 315, 315b, 316b, 316c Abs. 1 Nr. 2, der §§ 317 oder 318 verwirklichen, und 2.andere Handlungen, durch die der Betrieb eines für die Landesverteidigung, den Schutz der Zivilbevölkerung gegen Kriegsgefahren oder für die Gesamtwirtschaft wichtigen Unternehmens dadurch verhindert oder gestört wird, daß eine dem Betrieb dienende Sache zerstört, beschädigt, beseitigt, verändert oder unbrauchbar gemacht oder daß die für den Betrieb bestimmte Energie entzogen wird. 
+(2) Sabotagehandlungen im Sinne des Absatzes 1 sind 1.Handlungen, die den Tatbestand der §§ 109e, 305, 306 bis 306c, 307 bis 309, 313, 315, 315b, 316b, 316c Abs. 1 Nr. 2, der §§ 317 oder 318 verwirklichen, und 2.andere Handlungen, durch die der Betrieb eines für die Landesverteidigung, den Schutz der Zivilbevölkerung gegen Kriegsgefahren oder für die Gesamtwirtschaft wichtigen Unternehmens dadurch verhindert oder gestört wird, daß eine dem Betrieb dienende Sache zerstört, beschädigt, beseitigt, verändert oder unbrauchbar gemacht oder daß die für den Betrieb bestimmte Energie entzogen wird.
 (3) Das Gericht kann von einer Bestrafung nach diesen Vorschriften absehen, wenn der Täter freiwillig sein Verhalten aufgibt und sein Wissen so rechtzeitig einer Dienststelle offenbart, daß Sabotagehandlungen, deren Planung er kennt, noch verhindert werden können.
 
 ## § 87a — Ausübung fremder Einflussnahme und darauf gerichtete Agententätigkeit
@@ -934,7 +936,7 @@ Die §§ 84, 85 und 87 gelten nur für Taten, die durch eine im räumlichen Gelt
 ## § 92 — Begriffsbestimmungen
 
 (1) Im Sinne dieses Gesetzes beeinträchtigt den Bestand der Bundesrepublik Deutschland, wer ihre Freiheit von fremder Botmäßigkeit aufhebt, ihre staatliche Einheit beseitigt oder ein zu ihr gehörendes Gebiet abtrennt.
-(2) Im Sinne dieses Gesetzes sind Verfassungsgrundsätze 1.das Recht des Volkes, die Staatsgewalt in Wahlen und Abstimmungen und durch besondere Organe der Gesetzgebung, der vollziehenden Gewalt und der Rechtsprechung auszuüben und die Volksvertretung in allgemeiner, unmittelbarer, freier, gleicher und geheimer Wahl zu wählen, 2.die Bindung der Gesetzgebung an die verfassungsmäßige Ordnung und die Bindung der vollziehenden Gewalt und der Rechtsprechung an Gesetz und Recht, 3.das Recht auf die Bildung und Ausübung einer parlamentarischen Opposition, 4.die Ablösbarkeit der Regierung und ihre Verantwortlichkeit gegenüber der Volksvertretung, 5.die Unabhängigkeit der Gerichte und 6.der Ausschluß jeder Gewalt- und Willkürherrschaft. 
+(2) Im Sinne dieses Gesetzes sind Verfassungsgrundsätze 1.das Recht des Volkes, die Staatsgewalt in Wahlen und Abstimmungen und durch besondere Organe der Gesetzgebung, der vollziehenden Gewalt und der Rechtsprechung auszuüben und die Volksvertretung in allgemeiner, unmittelbarer, freier, gleicher und geheimer Wahl zu wählen, 2.die Bindung der Gesetzgebung an die verfassungsmäßige Ordnung und die Bindung der vollziehenden Gewalt und der Rechtsprechung an Gesetz und Recht, 3.das Recht auf die Bildung und Ausübung einer parlamentarischen Opposition, 4.die Ablösbarkeit der Regierung und ihre Verantwortlichkeit gegenüber der Volksvertretung, 5.die Unabhängigkeit der Gerichte und 6.der Ausschluß jeder Gewalt- und Willkürherrschaft.
 (3) Im Sinne dieses Gesetzes sind 1.Bestrebungen gegen den Bestand der Bundesrepublik Deutschland solche Bestrebungen, deren Träger darauf hinarbeiten, den Bestand der Bundesrepublik Deutschland zu beeinträchtigen (Absatz 1), 2.Bestrebungen gegen die Sicherheit der Bundesrepublik Deutschland solche Bestrebungen, deren Träger darauf hinarbeiten, die äußere oder innere Sicherheit der Bundesrepublik Deutschland zu beeinträchtigen, 3.Bestrebungen gegen Verfassungsgrundsätze solche Bestrebungen, deren Träger darauf hinarbeiten, einen Verfassungsgrundsatz (Absatz 2) zu beseitigen, außer Geltung zu setzen oder zu untergraben.
 
 ## § 92a — Nebenfolgen
@@ -1033,6 +1035,7 @@ Straftaten nach diesem Abschnitt werden nur verfolgt, wenn die Bundesrepublik De
 (2) In minder schweren Fällen ist die Strafe Freiheitsstrafe von sechs Monaten bis zu fünf Jahren.
 
 ## § 106 — Nötigung des Bundespräsidenten und von Mitgliedern eines
+
 Verfassungsorgans
 
 (1) Wer 1.den Bundespräsidenten oder 2.ein Mitglieda)eines Gesetzgebungsorgans des Bundes oder eines Landes, b)der Bundesversammlung oder c)der Regierung oder des Verfassungsgerichts des Bundes oder eines Landes rechtswidrig mit Gewalt oder durch Drohung mit einem empfindlichen Übel nötigt, seine Befugnisse nicht oder in einem bestimmten Sinne auszuüben, wird mit Freiheitsstrafe von drei Monaten bis zu fünf Jahren bestraft.
@@ -1368,6 +1371,7 @@ Wer eine der in § 138 Absatz 1 Nummer 2 bis 4 und 5 letzte Alternative oder in 
 -
 
 ## § 145 — Mißbrauch von Notrufen und Beeinträchtigung von
+
 Unfallverhütungs- und Nothilfemitteln
 
 (1) Wer absichtlich oder wissentlich 1.Notrufe oder Notzeichen mißbraucht oder 2.vortäuscht, daß wegen eines Unglücksfalles oder wegen gemeiner Gefahr oder Not die Hilfe anderer erforderlich sei, wird mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe bestraft.
@@ -1394,7 +1398,7 @@ Wer einen Beruf, einen Berufszweig, ein Gewerbe oder einen Gewerbezweig für sic
 
 ## § 146 — Geldfälschung
 
-(1) Mit Freiheitsstrafe nicht unter einem Jahr wird bestraft, wer 1.Geld in der Absicht nachmacht, daß es als echt in Verkehr gebracht oder daß ein solches Inverkehrbringen ermöglicht werde, oder Geld in dieser Absicht so verfälscht, daß der Anschein eines höheren Wertes hervorgerufen wird, 2.falsches Geld in dieser Absicht sich verschafft oder feilhält oder 3.falsches Geld, das er unter den Voraussetzungen der Nummern 1 oder 2 nachgemacht, verfälscht oder sich verschafft hat, als echt in Verkehr bringt. 
+(1) Mit Freiheitsstrafe nicht unter einem Jahr wird bestraft, wer 1.Geld in der Absicht nachmacht, daß es als echt in Verkehr gebracht oder daß ein solches Inverkehrbringen ermöglicht werde, oder Geld in dieser Absicht so verfälscht, daß der Anschein eines höheren Wertes hervorgerufen wird, 2.falsches Geld in dieser Absicht sich verschafft oder feilhält oder 3.falsches Geld, das er unter den Voraussetzungen der Nummern 1 oder 2 nachgemacht, verfälscht oder sich verschafft hat, als echt in Verkehr bringt.
 (2) Handelt der Täter gewerbsmäßig oder als Mitglied einer Bande, die sich zur fortgesetzten Begehung einer Geldfälschung verbunden hat, so ist die Strafe Freiheitsstrafe nicht unter zwei Jahren.
 (3) In minder schweren Fällen des Absatzes 1 ist auf Freiheitsstrafe von drei Monaten bis zu fünf Jahren, in minder schweren Fällen des Absatzes 2 auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren zu erkennen.
 
@@ -1405,14 +1409,14 @@ Wer einen Beruf, einen Berufszweig, ein Gewerbe oder einen Gewerbezweig für sic
 
 ## § 148 — Wertzeichenfälschung
 
-(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.amtliche Wertzeichen in der Absicht nachmacht, daß sie als echt verwendet oder in Verkehr gebracht werden oder daß ein solches Verwenden oder Inverkehrbringen ermöglicht werde, oder amtliche Wertzeichen in dieser Absicht so verfälscht, daß der Anschein eines höheren Wertes hervorgerufen wird, 2.falsche amtliche Wertzeichen in dieser Absicht sich verschafft oder 3.falsche amtliche Wertzeichen als echt verwendet, feilhält oder in Verkehr bringt. 
+(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.amtliche Wertzeichen in der Absicht nachmacht, daß sie als echt verwendet oder in Verkehr gebracht werden oder daß ein solches Verwenden oder Inverkehrbringen ermöglicht werde, oder amtliche Wertzeichen in dieser Absicht so verfälscht, daß der Anschein eines höheren Wertes hervorgerufen wird, 2.falsche amtliche Wertzeichen in dieser Absicht sich verschafft oder 3.falsche amtliche Wertzeichen als echt verwendet, feilhält oder in Verkehr bringt.
 (2) Wer bereits verwendete amtliche Wertzeichen, an denen das Entwertungszeichen beseitigt worden ist, als gültig verwendet oder in Verkehr bringt, wird mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe bestraft.
 (3) Der Versuch ist strafbar.
 
 ## § 149 — Vorbereitung der Fälschung von Geld und Wertzeichen
 
 (1) Wer eine Fälschung von Geld oder Wertzeichen vorbereitet, indem er 1.Platten, Formen, Drucksätze, Druckstöcke, Negative, Matrizen, Computerprogramme oder ähnliche Vorrichtungen, die ihrer Art nach zur Begehung der Tat geeignet sind, 2.Papier, das einer solchen Papierart gleicht oder zum Verwechseln ähnlich ist, die zur Herstellung von Geld oder amtlichen Wertzeichen bestimmt und gegen Nachahmung besonders gesichert ist, oder 3.Hologramme oder andere Bestandteile, die der Sicherung gegen Fälschung dienen, herstellt, sich oder einem anderen verschafft, feilhält, verwahrt oder einem anderen überläßt, wird, wenn er eine Geldfälschung vorbereitet, mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe, sonst mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe bestraft.
-(2) Nach Absatz 1 wird nicht bestraft, wer freiwillig 1.die Ausführung der vorbereiteten Tat aufgibt und eine von ihm verursachte Gefahr, daß andere die Tat weiter vorbereiten oder sie ausführen, abwendet oder die Vollendung der Tat verhindert und 2.die Fälschungsmittel, soweit sie noch vorhanden und zur Fälschung brauchbar sind, vernichtet, unbrauchbar macht, ihr Vorhandensein einer Behörde anzeigt oder sie dort abliefert. 
+(2) Nach Absatz 1 wird nicht bestraft, wer freiwillig 1.die Ausführung der vorbereiteten Tat aufgibt und eine von ihm verursachte Gefahr, daß andere die Tat weiter vorbereiten oder sie ausführen, abwendet oder die Vollendung der Tat verhindert und 2.die Fälschungsmittel, soweit sie noch vorhanden und zur Fälschung brauchbar sind, vernichtet, unbrauchbar macht, ihr Vorhandensein einer Behörde anzeigt oder sie dort abliefert.
 (3) Wird ohne Zutun des Täters die Gefahr, daß andere die Tat weiter vorbereiten oder sie ausführen, abgewendet oder die Vollendung der Tat verhindert, so genügt an Stelle der Voraussetzungen des Absatzes 2 Nr. 1 das freiwillige und ernsthafte Bemühen des Täters, dieses Ziel zu erreichen.
 
 ## § 150 — Einziehung
@@ -1808,7 +1812,7 @@ Wenn eine Beleidigung auf der Stelle erwidert wird, so kann der Richter beide Be
 
 ## § 201 — Verletzung der Vertraulichkeit des Wortes
 
-(1) Mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe wird bestraft, wer unbefugt 1.das nichtöffentlich gesprochene Wort eines anderen auf einen Tonträger aufnimmt oder 2.eine so hergestellte Aufnahme gebraucht oder einem Dritten zugänglich macht. 
+(1) Mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe wird bestraft, wer unbefugt 1.das nichtöffentlich gesprochene Wort eines anderen auf einen Tonträger aufnimmt oder 2.eine so hergestellte Aufnahme gebraucht oder einem Dritten zugänglich macht.
 (2) Ebenso wird bestraft, wer unbefugt 1.das nicht zu seiner Kenntnis bestimmte nichtöffentlich gesprochene Wort eines anderen mit einem Abhörgerät abhört oder 2.das nach Absatz 1 Nr. 1 aufgenommene oder nach Absatz 2 Nr. 1 abgehörte nichtöffentlich gesprochene Wort eines anderen im Wortlaut oder seinem wesentlichen Inhalt nach öffentlich mitteilt. Die Tat nach Satz 1 Nr. 2 ist nur strafbar, wenn die öffentliche Mitteilung geeignet ist, berechtigte Interessen eines anderen zu beeinträchtigen. Sie ist nicht rechtswidrig, wenn die öffentliche Mitteilung zur Wahrnehmung überragender öffentlicher Interessen gemacht wird.
 (3) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer als Amtsträger oder als für den öffentlichen Dienst besonders Verpflichteter die Vertraulichkeit des Wortes verletzt (Absätze 1 und 2).
 (4) Der Versuch ist strafbar.
@@ -1871,18 +1875,18 @@ Wer unbefugt sich oder einem anderen unter Anwendung von technischen Mitteln nic
 ## § 206 — Verletzung des Post- oder Fernmeldegeheimnisses
 
 (1) Wer unbefugt einer anderen Person eine Mitteilung über Tatsachen macht, die dem Post- oder Fernmeldegeheimnis unterliegen und die ihm als Inhaber oder Beschäftigtem eines Unternehmens bekanntgeworden sind, das geschäftsmäßig Post- oder Telekommunikationsdienste erbringt, wird mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe bestraft.
-(2) Ebenso wird bestraft, wer als Inhaber oder Beschäftigter eines in Absatz 1 bezeichneten Unternehmens unbefugt 1.eine Sendung, die einem solchen Unternehmen zur Übermittlung anvertraut worden und verschlossen ist, öffnet oder sich von ihrem Inhalt ohne Öffnung des Verschlusses unter Anwendung technischer Mittel Kenntnis verschafft, 2.eine einem solchen Unternehmen zur Übermittlung anvertraute Sendung unterdrückt oder 3.eine der in Absatz 1 oder in Nummer 1 oder 2 bezeichneten Handlungen gestattet oder fördert. 
-(3) Die Absätze 1 und 2 gelten auch für Personen, die 1.Aufgaben der Aufsicht über ein in Absatz 1 bezeichnetes Unternehmen wahrnehmen, 2.von einem solchen Unternehmen oder mit dessen Ermächtigung mit dem Erbringen von Post- oder Telekommunikationsdiensten betraut sind oder 3.mit der Herstellung einer dem Betrieb eines solchen Unternehmens dienenden Anlage oder mit Arbeiten daran betraut sind. 
+(2) Ebenso wird bestraft, wer als Inhaber oder Beschäftigter eines in Absatz 1 bezeichneten Unternehmens unbefugt 1.eine Sendung, die einem solchen Unternehmen zur Übermittlung anvertraut worden und verschlossen ist, öffnet oder sich von ihrem Inhalt ohne Öffnung des Verschlusses unter Anwendung technischer Mittel Kenntnis verschafft, 2.eine einem solchen Unternehmen zur Übermittlung anvertraute Sendung unterdrückt oder 3.eine der in Absatz 1 oder in Nummer 1 oder 2 bezeichneten Handlungen gestattet oder fördert.
+(3) Die Absätze 1 und 2 gelten auch für Personen, die 1.Aufgaben der Aufsicht über ein in Absatz 1 bezeichnetes Unternehmen wahrnehmen, 2.von einem solchen Unternehmen oder mit dessen Ermächtigung mit dem Erbringen von Post- oder Telekommunikationsdiensten betraut sind oder 3.mit der Herstellung einer dem Betrieb eines solchen Unternehmens dienenden Anlage oder mit Arbeiten daran betraut sind.
 (4) Wer unbefugt einer anderen Person eine Mitteilung über Tatsachen macht, die ihm als außerhalb des Post- oder Telekommunikationsbereichs tätigem Amtsträger auf Grund eines befugten oder unbefugten Eingriffs in das Post- oder Fernmeldegeheimnis bekanntgeworden sind, wird mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe bestraft.
 (5) Dem Postgeheimnis unterliegen die näheren Umstände des Postverkehrs bestimmter Personen sowie der Inhalt von Postsendungen. Dem Fernmeldegeheimnis unterliegen der Inhalt der Telekommunikation und ihre näheren Umstände, insbesondere die Tatsache, ob jemand an einem Telekommunikationsvorgang beteiligt ist oder war. Das Fernmeldegeheimnis erstreckt sich auch auf die näheren Umstände erfolgloser Verbindungsversuche.
 
 ## § 211 — Mord
 
 (1) Der Mörder wird mit lebenslanger Freiheitsstrafe bestraft.
-(2) Mörder ist, wer 
-aus Mordlust, zur Befriedigung des Geschlechtstriebs, aus Habgier oder sonst aus niedrigen Beweggründen, 
-heimtückisch oder grausam oder mit gemeingefährlichen Mitteln oder 
-um eine andere Straftat zu ermöglichen oder zu verdecken, 
+(2) Mörder ist, wer
+aus Mordlust, zur Befriedigung des Geschlechtstriebs, aus Habgier oder sonst aus niedrigen Beweggründen,
+heimtückisch oder grausam oder mit gemeingefährlichen Mitteln oder
+um eine andere Straftat zu ermöglichen oder zu verdecken,
 einen Menschen tötet.
 
 ## § 212 — Totschlag
@@ -1958,7 +1962,7 @@ War der Totschläger ohne eigene Schuld durch eine ihm oder einem Angehörigen z
 ## § 221 — Aussetzung
 
 (1) Wer einen Menschen 1.in eine hilflose Lage versetzt oder 2.in einer hilflosen Lage im Stich läßt, obwohl er ihn in seiner Obhut hat oder ihm sonst beizustehen verpflichtet ist, und ihn dadurch der Gefahr des Todes oder einer schweren Gesundheitsschädigung aussetzt, wird mit Freiheitsstrafe von drei Monaten bis zu fünf Jahren bestraft.
-(2) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.die Tat gegen sein Kind oder eine Person begeht, die ihm zur Erziehung oder zur Betreuung in der Lebensführung anvertraut ist, oder 2.durch die Tat eine schwere Gesundheitsschädigung des Opfers verursacht. 
+(2) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.die Tat gegen sein Kind oder eine Person begeht, die ihm zur Erziehung oder zur Betreuung in der Lebensführung anvertraut ist, oder 2.durch die Tat eine schwere Gesundheitsschädigung des Opfers verursacht.
 (3) Verursacht der Täter durch die Tat den Tod des Opfers, so ist die Strafe Freiheitsstrafe nicht unter drei Jahren.
 (4) In minder schweren Fällen des Absatzes 2 ist auf Freiheitsstrafe von sechs Monaten bis zu fünf Jahren, in minder schweren Fällen des Absatzes 3 auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren zu erkennen.
 
@@ -2078,9 +2082,9 @@ In den Fällen der §§ 232, 232a Absatz 1 bis 5, der §§ 232b, 233 Absatz 1 bi
 ## § 235 — Entziehung Minderjähriger
 
 (1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.eine Person unter achtzehn Jahren mit Gewalt, durch Drohung mit einem empfindlichen Übel oder durch List oder 2.ein Kind, ohne dessen Angehöriger zu sein, den Eltern, einem Elternteil, dem Vormund oder dem Pfleger entzieht oder vorenthält.
-(2) Ebenso wird bestraft, wer ein Kind den Eltern, einem Elternteil, dem Vormund oder dem Pfleger 1.entzieht, um es in das Ausland zu verbringen, oder 2.im Ausland vorenthält, nachdem es dorthin verbracht worden ist oder es sich dorthin begeben hat. 
+(2) Ebenso wird bestraft, wer ein Kind den Eltern, einem Elternteil, dem Vormund oder dem Pfleger 1.entzieht, um es in das Ausland zu verbringen, oder 2.im Ausland vorenthält, nachdem es dorthin verbracht worden ist oder es sich dorthin begeben hat.
 (3) In den Fällen des Absatzes 1 Nr. 2 und des Absatzes 2 Nr. 1 ist der Versuch strafbar.
-(4) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.das Opfer durch die Tat in die Gefahr des Todes oder einer schweren Gesundheitsschädigung oder einer erheblichen Schädigung der körperlichen oder seelischen Entwicklung bringt oder 2.die Tat gegen Entgelt oder in der Absicht begeht, sich oder einen Dritten zu bereichern. 
+(4) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.das Opfer durch die Tat in die Gefahr des Todes oder einer schweren Gesundheitsschädigung oder einer erheblichen Schädigung der körperlichen oder seelischen Entwicklung bringt oder 2.die Tat gegen Entgelt oder in der Absicht begeht, sich oder einen Dritten zu bereichern.
 (5) Verursacht der Täter durch die Tat den Tod des Opfers, so ist die Strafe Freiheitsstrafe nicht unter drei Jahren.
 (6) In minder schweren Fällen des Absatzes 4 ist auf Freiheitsstrafe von sechs Monaten bis zu fünf Jahren, in minder schweren Fällen des Absatzes 5 auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren zu erkennen.
 (7) Die Entziehung Minderjähriger wird in den Fällen der Absätze 1 bis 3 nur auf Antrag verfolgt, es sei denn, daß die Strafverfolgungsbehörde wegen des besonderen öffentlichen Interesses an der Strafverfolgung ein Einschreiten von Amts wegen für geboten hält.
@@ -2110,8 +2114,8 @@ In den Fällen der §§ 232, 232a Absatz 1 bis 5, der §§ 232b, 233 Absatz 1 bi
 
 (1) Wer einen Menschen einsperrt oder auf andere Weise der Freiheit beraubt, wird mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe bestraft.
 (2) Der Versuch ist strafbar.
-(3) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.das Opfer länger als eine Woche der Freiheit beraubt oder 2.durch die Tat oder eine während der Tat begangene Handlung eine schwere Gesundheitsschädigung des Opfers verursacht. 
-(4) Verursacht der Täter durch die Tat oder eine während der Tat begangene Handlung den Tod des Opfers, so ist die Strafe Freiheitsstrafe nicht unter drei Jahren. 
+(3) Auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren ist zu erkennen, wenn der Täter 1.das Opfer länger als eine Woche der Freiheit beraubt oder 2.durch die Tat oder eine während der Tat begangene Handlung eine schwere Gesundheitsschädigung des Opfers verursacht.
+(4) Verursacht der Täter durch die Tat oder eine während der Tat begangene Handlung den Tod des Opfers, so ist die Strafe Freiheitsstrafe nicht unter drei Jahren.
 (5) In minder schweren Fällen des Absatzes 3 ist auf Freiheitsstrafe von sechs Monaten bis zu fünf Jahren, in minder schweren Fällen des Absatzes 4 auf Freiheitsstrafe von einem Jahr bis zu zehn Jahren zu erkennen.
 
 ## § 239a — Erpresserischer Menschenraub
@@ -2159,7 +2163,7 @@ In den Fällen der §§ 239a und 239b kann das Gericht Führungsaufsicht anordne
 
 ## § 243 — Besonders schwerer Fall des Diebstahls
 
-(1) In besonders schweren Fällen wird der Diebstahl mit Freiheitsstrafe von drei Monaten bis zu zehn Jahren bestraft. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.zur Ausführung der Tat in ein Gebäude, einen Dienst- oder Geschäftsraum oder in einen anderen umschlossenen Raum einbricht, einsteigt, mit einem falschen Schlüssel oder einem anderen nicht zur ordnungsmäßigen Öffnung bestimmten Werkzeug eindringt oder sich in dem Raum verborgen hält, 2.eine Sache stiehlt, die durch ein verschlossenes Behältnis oder eine andere Schutzvorrichtung gegen Wegnahme besonders gesichert ist, 3.gewerbsmäßig stiehlt, 4.aus einer Kirche oder einem anderen der Religionsausübung dienenden Gebäude oder Raum eine Sache stiehlt, die dem Gottesdienst gewidmet ist oder der religiösen Verehrung dient, 5.eine Sache von Bedeutung für Wissenschaft, Kunst oder Geschichte oder für die technische Entwicklung stiehlt, die sich in einer allgemein zugänglichen Sammlung befindet oder öffentlich ausgestellt ist, 6.stiehlt, indem er die Hilflosigkeit einer anderen Person, einen Unglücksfall oder eine gemeine Gefahr ausnutzt oder 7.eine Handfeuerwaffe, zu deren Erwerb es nach dem Waffengesetz der Erlaubnis bedarf, ein Maschinengewehr, eine Maschinenpistole, ein voll- oder halbautomatisches Gewehr oder eine Sprengstoff enthaltende Kriegswaffe im Sinne des Kriegswaffenkontrollgesetzes oder Sprengstoff stiehlt. 
+(1) In besonders schweren Fällen wird der Diebstahl mit Freiheitsstrafe von drei Monaten bis zu zehn Jahren bestraft. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.zur Ausführung der Tat in ein Gebäude, einen Dienst- oder Geschäftsraum oder in einen anderen umschlossenen Raum einbricht, einsteigt, mit einem falschen Schlüssel oder einem anderen nicht zur ordnungsmäßigen Öffnung bestimmten Werkzeug eindringt oder sich in dem Raum verborgen hält, 2.eine Sache stiehlt, die durch ein verschlossenes Behältnis oder eine andere Schutzvorrichtung gegen Wegnahme besonders gesichert ist, 3.gewerbsmäßig stiehlt, 4.aus einer Kirche oder einem anderen der Religionsausübung dienenden Gebäude oder Raum eine Sache stiehlt, die dem Gottesdienst gewidmet ist oder der religiösen Verehrung dient, 5.eine Sache von Bedeutung für Wissenschaft, Kunst oder Geschichte oder für die technische Entwicklung stiehlt, die sich in einer allgemein zugänglichen Sammlung befindet oder öffentlich ausgestellt ist, 6.stiehlt, indem er die Hilflosigkeit einer anderen Person, einen Unglücksfall oder eine gemeine Gefahr ausnutzt oder 7.eine Handfeuerwaffe, zu deren Erwerb es nach dem Waffengesetz der Erlaubnis bedarf, ein Maschinengewehr, eine Maschinenpistole, ein voll- oder halbautomatisches Gewehr oder eine Sprengstoff enthaltende Kriegswaffe im Sinne des Kriegswaffenkontrollgesetzes oder Sprengstoff stiehlt.
 (2) In den Fällen des Absatzes 1 Satz 2 Nr. 1 bis 6 ist ein besonders schwerer Fall ausgeschlossen, wenn sich die Tat auf eine geringwertige Sache bezieht.
 
 ## § 244 — Diebstahl mit Waffen; Bandendiebstahl; Wohnungseinbruchdiebstahl
@@ -2218,8 +2222,8 @@ Der Diebstahl und die Unterschlagung geringwertiger Sachen werden in den Fällen
 
 ## § 250 — Schwerer Raub
 
-(1) Auf Freiheitsstrafe nicht unter drei Jahren ist zu erkennen, wenn 1.der Täter oder ein anderer Beteiligter am Rauba)eine Waffe oder ein anderes gefährliches Werkzeug bei sich führt, b)sonst ein Werkzeug oder Mittel bei sich führt, um den Widerstand einer anderen Person durch Gewalt oder Drohung mit Gewalt zu verhindern oder zu überwinden, c)eine andere Person durch die Tat in die Gefahr einer schweren Gesundheitsschädigung bringt oder 2.der Täter den Raub als Mitglied einer Bande, die sich zur fortgesetzten Begehung von Raub oder Diebstahl verbunden hat, unter Mitwirkung eines anderen Bandenmitglieds begeht. 
-(2) Auf Freiheitsstrafe nicht unter fünf Jahren ist zu erkennen, wenn der Täter oder ein anderer Beteiligter am Raub 1.bei der Tat eine Waffe oder ein anderes gefährliches Werkzeug verwendet, 2.in den Fällen des Absatzes 1 Nr. 2 eine Waffe bei sich führt oder 3.eine andere Persona)bei der Tat körperlich schwer mißhandelt oder b)durch die Tat in die Gefahr des Todes bringt. 
+(1) Auf Freiheitsstrafe nicht unter drei Jahren ist zu erkennen, wenn 1.der Täter oder ein anderer Beteiligter am Rauba)eine Waffe oder ein anderes gefährliches Werkzeug bei sich führt, b)sonst ein Werkzeug oder Mittel bei sich führt, um den Widerstand einer anderen Person durch Gewalt oder Drohung mit Gewalt zu verhindern oder zu überwinden, c)eine andere Person durch die Tat in die Gefahr einer schweren Gesundheitsschädigung bringt oder 2.der Täter den Raub als Mitglied einer Bande, die sich zur fortgesetzten Begehung von Raub oder Diebstahl verbunden hat, unter Mitwirkung eines anderen Bandenmitglieds begeht.
+(2) Auf Freiheitsstrafe nicht unter fünf Jahren ist zu erkennen, wenn der Täter oder ein anderer Beteiligter am Raub 1.bei der Tat eine Waffe oder ein anderes gefährliches Werkzeug verwendet, 2.in den Fällen des Absatzes 1 Nr. 2 eine Waffe bei sich führt oder 3.eine andere Persona)bei der Tat körperlich schwer mißhandelt oder b)durch die Tat in die Gefahr des Todes bringt.
 (3) In minder schweren Fällen der Absätze 1 und 2 ist die Strafe Freiheitsstrafe von einem Jahr bis zu zehn Jahren.
 
 ## § 251 — Raub mit Todesfolge
@@ -2442,7 +2446,7 @@ Der Täuschung im Rechtsverkehr steht die fälschliche Beeinflussung einer Daten
 
 ## § 274 — Urkundenunterdrückung; Veränderung einer Grenzbezeichnung
 
-(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.eine Urkunde oder eine technische Aufzeichnung, welche ihm entweder überhaupt nicht oder nicht ausschließlich gehört, in der Absicht, einem anderen Nachteil zuzufügen, vernichtet, beschädigt oder unterdrückt, 2.beweiserhebliche Daten (§ 202a Abs. 2), über die er nicht oder nicht ausschließlich verfügen darf, in der Absicht, einem anderen Nachteil zuzufügen, löscht, unterdrückt, unbrauchbar macht oder verändert oder 3.einen Grenzstein oder ein anderes zur Bezeichnung einer Grenze oder eines Wasserstandes bestimmtes Merkmal in der Absicht, einem anderen Nachteil zuzufügen, wegnimmt, vernichtet, unkenntlich macht, verrückt oder fälschlich setzt. 
+(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.eine Urkunde oder eine technische Aufzeichnung, welche ihm entweder überhaupt nicht oder nicht ausschließlich gehört, in der Absicht, einem anderen Nachteil zuzufügen, vernichtet, beschädigt oder unterdrückt, 2.beweiserhebliche Daten (§ 202a Abs. 2), über die er nicht oder nicht ausschließlich verfügen darf, in der Absicht, einem anderen Nachteil zuzufügen, löscht, unterdrückt, unbrauchbar macht oder verändert oder 3.einen Grenzstein oder ein anderes zur Bezeichnung einer Grenze oder eines Wasserstandes bestimmtes Merkmal in der Absicht, einem anderen Nachteil zuzufügen, wegnimmt, vernichtet, unkenntlich macht, verrückt oder fälschlich setzt.
 (2) Der Versuch ist strafbar.
 
 ## § 275 — Vorbereitung der Fälschung von amtlichen Ausweisen; Vorbereitung der Herstellung von unrichtigen Impfausweisen
@@ -2490,7 +2494,7 @@ Gegenstände, auf die sich eine Straftat nach § 267, § 268, § 271 Abs. 2 und 
 
 ## § 283 — Bankrott
 
-(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer bei Überschuldung oder bei drohender oder eingetretener Zahlungsunfähigkeit 1.Bestandteile seines Vermögens, die im Falle der Eröffnung des Insolvenzverfahrens zur Insolvenzmasse gehören, beiseite schafft oder verheimlicht oder in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise zerstört, beschädigt oder unbrauchbar macht, 2.in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise Verlust- oder Spekulationsgeschäfte oder Differenzgeschäfte mit Waren oder Wertpapieren eingeht oder durch unwirtschaftliche Ausgaben, Spiel oder Wette übermäßige Beträge verbraucht oder schuldig wird, 3.Waren oder Wertpapiere auf Kredit beschafft und sie oder die aus diesen Waren hergestellten Sachen erheblich unter ihrem Wert in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise veräußert oder sonst abgibt, 4.Rechte anderer vortäuscht oder erdichtete Rechte anerkennt, 5.Handelsbücher, zu deren Führung er gesetzlich verpflichtet ist, zu führen unterläßt oder so führt oder verändert, daß die Übersicht über seinen Vermögensstand erschwert wird, 6.Handelsbücher oder sonstige Unterlagen, zu deren Aufbewahrung ein Kaufmann nach Handelsrecht verpflichtet ist, vor Ablauf der für Buchführungspflichtige bestehenden Aufbewahrungsfristen beiseite schafft, verheimlicht, zerstört oder beschädigt und dadurch die Übersicht über seinen Vermögensstand erschwert, 7.entgegen dem Handelsrechta)Bilanzen so aufstellt, daß die Übersicht über seinen Vermögensstand erschwert wird, oder b)es unterläßt, die Bilanz seines Vermögens oder das Inventar in der vorgeschriebenen Zeit aufzustellen, oder 8.in einer anderen, den Anforderungen einer ordnungsgemäßen Wirtschaft grob widersprechenden Weise seinen Vermögensstand verringert oder seine wirklichen geschäftlichen Verhältnisse verheimlicht oder verschleiert. 
+(1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer bei Überschuldung oder bei drohender oder eingetretener Zahlungsunfähigkeit 1.Bestandteile seines Vermögens, die im Falle der Eröffnung des Insolvenzverfahrens zur Insolvenzmasse gehören, beiseite schafft oder verheimlicht oder in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise zerstört, beschädigt oder unbrauchbar macht, 2.in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise Verlust- oder Spekulationsgeschäfte oder Differenzgeschäfte mit Waren oder Wertpapieren eingeht oder durch unwirtschaftliche Ausgaben, Spiel oder Wette übermäßige Beträge verbraucht oder schuldig wird, 3.Waren oder Wertpapiere auf Kredit beschafft und sie oder die aus diesen Waren hergestellten Sachen erheblich unter ihrem Wert in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise veräußert oder sonst abgibt, 4.Rechte anderer vortäuscht oder erdichtete Rechte anerkennt, 5.Handelsbücher, zu deren Führung er gesetzlich verpflichtet ist, zu führen unterläßt oder so führt oder verändert, daß die Übersicht über seinen Vermögensstand erschwert wird, 6.Handelsbücher oder sonstige Unterlagen, zu deren Aufbewahrung ein Kaufmann nach Handelsrecht verpflichtet ist, vor Ablauf der für Buchführungspflichtige bestehenden Aufbewahrungsfristen beiseite schafft, verheimlicht, zerstört oder beschädigt und dadurch die Übersicht über seinen Vermögensstand erschwert, 7.entgegen dem Handelsrechta)Bilanzen so aufstellt, daß die Übersicht über seinen Vermögensstand erschwert wird, oder b)es unterläßt, die Bilanz seines Vermögens oder das Inventar in der vorgeschriebenen Zeit aufzustellen, oder 8.in einer anderen, den Anforderungen einer ordnungsgemäßen Wirtschaft grob widersprechenden Weise seinen Vermögensstand verringert oder seine wirklichen geschäftlichen Verhältnisse verheimlicht oder verschleiert.
 (2) Ebenso wird bestraft, wer durch eine der in Absatz 1 bezeichneten Handlungen seine Überschuldung oder Zahlungsunfähigkeit herbeiführt.
 (3) Der Versuch ist strafbar.
 (4) Wer in den Fällen 1.des Absatzes 1 die Überschuldung oder die drohende oder eingetretene Zahlungsunfähigkeit fahrlässig nicht kennt oder 2.des Absatzes 2 die Überschuldung oder Zahlungsunfähigkeit leichtfertig verursacht, wird mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe bestraft.
@@ -2503,7 +2507,7 @@ In besonders schweren Fällen des § 283 Abs. 1 bis 3 wird der Bankrott mit Frei
 
 ## § 283b — Verletzung der Buchführungspflicht
 
-(1) Mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe wird bestraft, wer 1.Handelsbücher, zu deren Führung er gesetzlich verpflichtet ist, zu führen unterläßt oder so führt oder verändert, daß die Übersicht über seinen Vermögensstand erschwert wird, 2.Handelsbücher oder sonstige Unterlagen, zu deren Aufbewahrung er nach Handelsrecht verpflichtet ist, vor Ablauf der gesetzlichen Aufbewahrungsfristen beiseite schafft, verheimlicht, zerstört oder beschädigt und dadurch die Übersicht über seinen Vermögensstand erschwert, 3.entgegen dem Handelsrechta)Bilanzen so aufstellt, daß die Übersicht über seinen Vermögensstand erschwert wird, oder b)es unterläßt, die Bilanz seines Vermögens oder das Inventar in der vorgeschriebenen Zeit aufzustellen. 
+(1) Mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe wird bestraft, wer 1.Handelsbücher, zu deren Führung er gesetzlich verpflichtet ist, zu führen unterläßt oder so führt oder verändert, daß die Übersicht über seinen Vermögensstand erschwert wird, 2.Handelsbücher oder sonstige Unterlagen, zu deren Aufbewahrung er nach Handelsrecht verpflichtet ist, vor Ablauf der gesetzlichen Aufbewahrungsfristen beiseite schafft, verheimlicht, zerstört oder beschädigt und dadurch die Übersicht über seinen Vermögensstand erschwert, 3.entgegen dem Handelsrechta)Bilanzen so aufstellt, daß die Übersicht über seinen Vermögensstand erschwert wird, oder b)es unterläßt, die Bilanz seines Vermögens oder das Inventar in der vorgeschriebenen Zeit aufzustellen.
 (2) Wer in den Fällen des Absatzes 1 Nr. 1 oder 3 fahrlässig handelt, wird mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe bestraft.
 (3) § 283 Abs. 6 gilt entsprechend.
 
@@ -2517,7 +2521,7 @@ In besonders schweren Fällen des § 283 Abs. 1 bis 3 wird der Bankrott mit Frei
 
 (1) Mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe wird bestraft, wer 1.in Kenntnis der einem anderen drohenden Zahlungsunfähigkeit oder 2.nach Zahlungseinstellung, in einem Insolvenzverfahren oder in einem Verfahren zur Herbeiführung der Entscheidung über die Eröffnung des Insolvenzverfahrens eines anderen Bestandteile des Vermögens eines anderen, die im Falle der Eröffnung des Insolvenzverfahrens zur Insolvenzmasse gehören, mit dessen Einwilligung oder zu dessen Gunsten beiseite schafft oder verheimlicht oder in einer den Anforderungen einer ordnungsgemäßen Wirtschaft widersprechenden Weise zerstört, beschädigt oder unbrauchbar macht.
 (2) Der Versuch ist strafbar.
-(3) In besonders schweren Fällen ist die Strafe Freiheitsstrafe von sechs Monaten bis zu zehn Jahren. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.aus Gewinnsucht handelt oder 2.wissentlich viele Personen in die Gefahr des Verlustes ihrer dem anderen anvertrauten Vermögenswerte oder in wirtschaftliche Not bringt. 
+(3) In besonders schweren Fällen ist die Strafe Freiheitsstrafe von sechs Monaten bis zu zehn Jahren. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.aus Gewinnsucht handelt oder 2.wissentlich viele Personen in die Gefahr des Verlustes ihrer dem anderen anvertrauten Vermögenswerte oder in wirtschaftliche Not bringt.
 (4) Die Tat ist nur dann strafbar, wenn der andere seine Zahlungen eingestellt hat oder über sein Vermögen das Insolvenzverfahren eröffnet oder der Eröffnungsantrag mangels Masse abgewiesen worden ist.
 
 ## § 284 — Unerlaubte Veranstaltung eines Glücksspiels
@@ -2536,6 +2540,7 @@ Wer sich an einem öffentlichen Glücksspiel (§ 284) beteiligt, wird mit Freihe
 In den Fällen der §§ 284 und 285 werden die Spieleinrichtungen und das auf dem Spieltisch oder in der Bank vorgefundene Geld eingezogen, wenn sie dem Täter oder Teilnehmer zur Zeit der Entscheidung gehören. Andernfalls können die Gegenstände eingezogen werden; § 74a ist anzuwenden.
 
 ## § 287 — Unerlaubte Veranstaltung einer Lotterie oder einer
+
 Ausspielung
 
 (1) Wer ohne behördliche Erlaubnis öffentliche Lotterien oder Ausspielungen beweglicher oder unbeweglicher Sachen veranstaltet, namentlich den Abschluß von Spielverträgen für eine öffentliche Lotterie oder Ausspielung anbietet oder auf den Abschluß solcher Spielverträge gerichtete Angebote annimmt, wird mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe bestraft.
@@ -2635,7 +2640,7 @@ In besonders schweren Fällen wird eine Tat nach den §§ 299, 299a und 299b mit
 (1) Wer eine Datenverarbeitung, die für einen anderen von wesentlicher Bedeutung ist, dadurch erheblich stört, dass er 1.eine Tat nach § 303a Abs. 1 begeht, 2.Daten (§ 202a Abs. 2) in der Absicht, einem anderen Nachteil zuzufügen, eingibt oder übermittelt oder 3.eine Datenverarbeitungsanlage oder einen Datenträger zerstört, beschädigt, unbrauchbar macht, beseitigt oder verändert, wird mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe bestraft.
 (2) Handelt es sich um eine Datenverarbeitung, die für einen fremden Betrieb, ein fremdes Unternehmen oder eine Behörde von wesentlicher Bedeutung ist, ist die Strafe Freiheitsstrafe bis zu fünf Jahren oder Geldstrafe.
 (3) Der Versuch ist strafbar.
-(4) In besonders schweren Fällen des Absatzes 2 ist die Strafe Freiheitsstrafe von sechs Monaten bis zu zehn Jahren. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.einen Vermögensverlust großen Ausmaßes herbeiführt, 2.gewerbsmäßig oder als Mitglied einer Bande handelt, die sich zur fortgesetzten Begehung von Computersabotage verbunden hat, 3.durch die Tat die Versorgung der Bevölkerung mit lebenswichtigen Gütern oder Dienstleistungen oder die Sicherheit der Bundesrepublik Deutschland beeinträchtigt. 
+(4) In besonders schweren Fällen des Absatzes 2 ist die Strafe Freiheitsstrafe von sechs Monaten bis zu zehn Jahren. Ein besonders schwerer Fall liegt in der Regel vor, wenn der Täter 1.einen Vermögensverlust großen Ausmaßes herbeiführt, 2.gewerbsmäßig oder als Mitglied einer Bande handelt, die sich zur fortgesetzten Begehung von Computersabotage verbunden hat, 3.durch die Tat die Versorgung der Bevölkerung mit lebenswichtigen Gütern oder Dienstleistungen oder die Sicherheit der Bundesrepublik Deutschland beeinträchtigt.
 (5) Für die Vorbereitung einer Straftat nach Absatz 1 gilt § 202c entsprechend.
 
 ## § 303c — Strafantrag
@@ -2699,7 +2704,7 @@ Verursacht der Täter durch eine Brandstiftung nach den §§ 306 bis 306b wenigs
 
 (1) Wer es unternimmt, durch Freisetzen von Kernenergie eine Explosion herbeizuführen und dadurch Leib oder Leben eines anderen Menschen oder fremde Sachen von bedeutendem Wert zu gefährden, wird mit Freiheitsstrafe nicht unter fünf Jahren bestraft.
 (2) Wer durch Freisetzen von Kernenergie eine Explosion herbeiführt und dadurch Leib oder Leben eines anderen Menschen oder fremde Sachen von bedeutendem Wert fahrlässig gefährdet, wird mit Freiheitsstrafe von einem Jahr bis zu zehn Jahren bestraft.
-(3) Verursacht der Täter durch die Tat wenigstens leichtfertig den Tod eines anderen Menschen, so ist die Strafe 1.in den Fällen des Absatzes 1 lebenslange Freiheitsstrafe oder Freiheitsstrafe nicht unter zehn Jahren, 2.in den Fällen des Absatzes 2 Freiheitsstrafe nicht unter fünf Jahren. 
+(3) Verursacht der Täter durch die Tat wenigstens leichtfertig den Tod eines anderen Menschen, so ist die Strafe 1.in den Fällen des Absatzes 1 lebenslange Freiheitsstrafe oder Freiheitsstrafe nicht unter zehn Jahren, 2.in den Fällen des Absatzes 2 Freiheitsstrafe nicht unter fünf Jahren.
 (4) Wer in den Fällen des Absatzes 2 fahrlässig handelt und die Gefahr fahrlässig verursacht, wird mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe bestraft.
 
 ## § 308 — Herbeiführen einer Sprengstoffexplosion
@@ -2763,7 +2768,7 @@ Verursacht der Täter durch eine Brandstiftung nach den §§ 306 bis 306b wenigs
 
 (1) Wer die Sicherheit des Schienenbahn-, Schwebebahn-, Schiffs- oder Luftverkehrs dadurch beeinträchtigt, daß er 1.Anlagen oder Beförderungsmittel zerstört, beschädigt oder beseitigt, 2.Hindernisse bereitet, 3.falsche Zeichen oder Signale gibt oder 4.einen ähnlichen, ebenso gefährlichen Eingriff vornimmt, und dadurch Leib oder Leben eines anderen Menschen oder fremde Sachen von bedeutendem Wert gefährdet, wird mit Freiheitsstrafe von sechs Monaten bis zu zehn Jahren bestraft.
 (2) Der Versuch ist strafbar.
-(3) Auf Freiheitsstrafe nicht unter einem Jahr ist zu erkennen, wenn der Täter 1.in der Absicht handelt,a)einen Unglücksfall herbeizuführen oder b)eine andere Straftat zu ermöglichen oder zu verdecken, oder 2.durch die Tat eine schwere Gesundheitsschädigung eines anderen Menschen oder eine Gesundheitsschädigung einer großen Zahl von Menschen verursacht. 
+(3) Auf Freiheitsstrafe nicht unter einem Jahr ist zu erkennen, wenn der Täter 1.in der Absicht handelt,a)einen Unglücksfall herbeizuführen oder b)eine andere Straftat zu ermöglichen oder zu verdecken, oder 2.durch die Tat eine schwere Gesundheitsschädigung eines anderen Menschen oder eine Gesundheitsschädigung einer großen Zahl von Menschen verursacht.
 (4) In minder schweren Fällen des Absatzes 1 ist auf Freiheitsstrafe von drei Monaten bis zu fünf Jahren, in minder schweren Fällen des Absatzes 3 auf Freiheitsstrafe von sechs Monaten bis zu fünf Jahren zu erkennen.
 (5) Wer in den Fällen des Absatzes 1 die Gefahr fahrlässig verursacht, wird mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe bestraft.
 (6) Wer in den Fällen des Absatzes 1 fahrlässig handelt und die Gefahr fahrlässig verursacht, wird mit Freiheitsstrafe bis zu zwei Jahren oder mit Geldstrafe bestraft.
@@ -2910,7 +2915,7 @@ Wer wissentlich einem anderen, der auf Grund behördlicher Anordnung oder ohne s
 
 (1) Wer beim Betrieb einer Anlage, insbesondere einer Betriebsstätte oder Maschine, unter Verletzung verwaltungsrechtlicher Pflichten Lärm verursacht, der geeignet ist, außerhalb des zur Anlage gehörenden Bereichs die Gesundheit eines anderen zu schädigen, wird mit Freiheitsstrafe bis zu drei Jahren oder mit Geldstrafe bestraft.
 (2) Wer beim Betrieb einer Anlage, insbesondere einer Betriebsstätte oder Maschine, unter Verletzung verwaltungsrechtlicher Pflichten, die dem Schutz vor Lärm, Erschütterungen oder nichtionisierenden Strahlen dienen, die Gesundheit eines anderen, ihm nicht gehörende Tiere oder fremde Sachen von bedeutendem Wert gefährdet, wird mit Freiheitsstrafe bis zu fünf Jahren oder mit Geldstrafe bestraft.
-(3) Handelt der Täter fahrlässig, so ist die Strafe 1.in den Fällen des Absatzes 1 Freiheitsstrafe bis zu zwei Jahren oder Geldstrafe, 2.in den Fällen des Absatzes 2 Freiheitsstrafe bis zu drei Jahren oder Geldstrafe. 
+(3) Handelt der Täter fahrlässig, so ist die Strafe 1.in den Fällen des Absatzes 1 Freiheitsstrafe bis zu zwei Jahren oder Geldstrafe, 2.in den Fällen des Absatzes 2 Freiheitsstrafe bis zu drei Jahren oder Geldstrafe.
 (4) Die Absätze 1 bis 3 gelten nicht für Kraftfahrzeuge, Schienen-, Luft- oder Wasserfahrzeuge.
 
 ## § 326 — Unerlaubter Umgang mit Abfällen

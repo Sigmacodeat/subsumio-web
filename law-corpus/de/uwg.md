@@ -3,8 +3,8 @@ title: "UWG — Gesetz gegen den unlauteren Wettbewerb"
 type: "law"
 jurisdiction: "de"
 abbreviation: "UWG"
-version_date: "2026-05-27"
-retrieved_at: "2026-06-12"
+version_date: "2026-06-18"
+retrieved_at: "2026-06-21"
 source_url: "https://www.gesetze-im-internet.de/uwg_2004/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -49,6 +49,7 @@ Unlauter handelt, wer 1.die Kennzeichen, Waren, Dienstleistungen, Tätigkeiten o
 (3) Eine geschäftliche Handlung ist auch irreführend, wenn 1.sie im Zusammenhang mit der Vermarktung von Waren oder Dienstleistungen einschließlich vergleichender Werbung eine Verwechslungsgefahr mit einer anderen Ware oder Dienstleistung oder mit der Marke oder einem anderen Kennzeichen eines Mitbewerbers hervorruft oder2.mit ihr eine Ware in einem Mitgliedstaat der Europäischen Union als identisch mit einer in anderen Mitgliedstaaten der Europäischen Union auf dem Markt bereitgestellten Ware vermarktet wird, obwohl sich diese Waren in ihrer Zusammensetzung oder in ihren Merkmalen wesentlich voneinander unterscheiden, sofern dies nicht durch legitime und objektive Faktoren gerechtfertigt ist.
 (4) Angaben im Sinne von Absatz 2 sind auch Angaben im Rahmen vergleichender Werbung sowie bildliche Darstellungen und sonstige Veranstaltungen, die darauf zielen und geeignet sind, solche Angaben zu ersetzen.
 (5) Es wird vermutet, dass es irreführend ist, mit der Herabsetzung eines Preises zu werben, sofern der Preis nur für eine unangemessen kurze Zeit gefordert worden ist. Ist streitig, ob und in welchem Zeitraum der Preis gefordert worden ist, so trifft die Beweislast denjenigen, der mit der Preisherabsetzung geworben hat.
+(6) Eine geschäftliche Handlung, die gegen § 312d Absatz 2 Satz 2 des Bürgerlichen Gesetzbuchs verstößt, ist irreführend.
 
 ## § 5a — Irreführung durch Unterlassen
 

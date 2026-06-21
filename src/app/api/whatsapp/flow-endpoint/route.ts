@@ -13,7 +13,11 @@
  */
 
 import { NextRequest } from "next/server";
-import { decryptFlowRequest, encryptFlowResponse, type FlowEndpointResponse } from "@/lib/whatsapp/flow-crypto";
+import {
+  decryptFlowRequest,
+  encryptFlowResponse,
+  type FlowEndpointResponse,
+} from "@/lib/whatsapp/flow-crypto";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { randomUUID } from "node:crypto";
 
@@ -39,8 +43,18 @@ const LEGAL_AREA_MAP = Object.fromEntries(LEGAL_AREAS.map((a) => [a.id, a.title]
 
 function generateSlots(dateStr: string): Array<{ id: string; title: string }> {
   const slots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "11:00",
+    "11:30",
+    "14:00",
+    "14:30",
+    "15:00",
+    "15:30",
+    "16:00",
+    "16:30",
   ];
   // In production, check against existing appointments in the brain
   // For now, return all slots as available
@@ -59,7 +73,7 @@ async function handleCaseIntake(
   action: string,
   data: Record<string, unknown>,
   flowToken: string,
-  brainId: string,
+  brainId: string
 ): Promise<FlowHandlerResult> {
   switch (action) {
     case "review_intake": {
@@ -78,7 +92,9 @@ async function handleCaseIntake(
     }
     case "create_case": {
       // Create the case in the brain
-      const caseNumber = String(data.case_number || `2026-${String(Math.floor(Math.random() * 999) + 1).padStart(3, "0")}`);
+      const caseNumber = String(
+        data.case_number || `2026-${String(Math.floor(Math.random() * 999) + 1).padStart(3, "0")}`
+      );
       const caseSlug = `legal/cases/${caseNumber}`;
       const clientName = String(data.client_name || "Unbekannt");
       const opponentName = String(data.opponent_name || "");
@@ -111,7 +127,10 @@ async function handleCaseIntake(
           }),
         });
       } catch (err) {
-        console.error("[flow/case-intake] brain write failed:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[flow/case-intake] brain write failed:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
 
       return {
@@ -138,7 +157,7 @@ async function handleAppointmentBooking(
   action: string,
   data: Record<string, unknown>,
   flowToken: string,
-  brainId: string,
+  brainId: string
 ): Promise<FlowHandlerResult> {
   switch (action) {
     case "get_slots": {
@@ -197,7 +216,10 @@ async function handleAppointmentBooking(
           }),
         });
       } catch (err) {
-        console.error("[flow/appointment] brain write failed:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[flow/appointment] brain write failed:",
+          err instanceof Error ? err.message : String(err)
+        );
       }
 
       return {
@@ -224,11 +246,16 @@ async function handleAppointmentBooking(
 // ── Route Handler ──────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const body = await req.json() as {
-    encrypted_aes_key: string;
-    encrypted_flow_data: string;
-    initial_vector: string;
-  };
+  let body: { encrypted_aes_key: string; encrypted_flow_data: string; initial_vector: string };
+  try {
+    body = (await req.json()) as {
+      encrypted_aes_key: string;
+      encrypted_flow_data: string;
+      initial_vector: string;
+    };
+  } catch {
+    return Response.json({ error: "invalid_json" }, { status: 400 });
+  }
 
   if (!body.encrypted_aes_key || !body.encrypted_flow_data || !body.initial_vector) {
     return Response.json({ error: "missing_encrypted_fields" }, { status: 400 });
@@ -245,7 +272,9 @@ export async function POST(req: NextRequest) {
   const tokenParts = request.flow_token?.split(":") ?? [];
   const brainId = process.env.WHATSAPP_DEFAULT_BRAIN_ID || tokenParts[1] || "";
 
-  console.log(`[whatsapp/flow] screen=${request.screen} action=${request.action} flow_token=${request.flow_token?.slice(0, 20)}...`);
+  console.log(
+    `[whatsapp/flow] screen=${request.screen} action=${request.action} flow_token=${request.flow_token?.slice(0, 20)}...`
+  );
 
   // Determine which flow this is based on the flow_token prefix
   const flowType = tokenParts[0] === "appointment" ? "appointment_booking" : "case_intake";
@@ -272,20 +301,23 @@ export async function POST(req: NextRequest) {
         String(request.data.action || request.action),
         request.data,
         request.flow_token,
-        brainId,
+        brainId
       );
     } else if (flowType === "appointment_booking") {
       result = await handleAppointmentBooking(
         String(request.data.action || request.action),
         request.data,
         request.flow_token,
-        brainId,
+        brainId
       );
     } else {
       result = { screen: "INTAKE_FORM", data: { legal_areas: LEGAL_AREAS } };
     }
   } catch (err) {
-    console.error("[whatsapp/flow] handler error:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[whatsapp/flow] handler error:",
+      err instanceof Error ? err.message : String(err)
+    );
     result = {
       screen: request.screen,
       data: { ...request.data, error: "processing_failed" },

@@ -1,8 +1,13 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { runEval } from "@/lib/rag-eval";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import { appendEvalHistory, loadEvalHistory, loadBaseline, saveBaseline, evaluateReleaseGate } from "@/lib/release-gate";
+import {
+  appendEvalHistory,
+  loadEvalHistory,
+  loadBaseline,
+  saveBaseline,
+  evaluateReleaseGate,
+} from "@/lib/release-gate";
 
 export const POST = createHandler(
   {
@@ -13,9 +18,12 @@ export const POST = createHandler(
     try {
       const summary = await runEval(async (query) => {
         try {
-          const res = await fetch(`${ENGINE_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`, {
-            headers: ctx.headers,
-          });
+          const res = await fetch(
+            `${ENGINE_URL}/api/search?q=${encodeURIComponent(query)}&limit=10`,
+            {
+              headers: ctx.headers,
+            }
+          );
           if (!res.ok) return [];
           const data = (await res.json()) as { results?: Array<{ slug: string }> };
           return (data.results || []).map((r) => r.slug);
@@ -35,9 +43,10 @@ export const POST = createHandler(
 
       return apiSuccess({ ...summary, gate: gateResult });
     } catch (err) {
-      return apiError("eval_failed", err instanceof Error ? err.message : "eval_failed", 500);
+      console.error("[rag-eval] run failed:", err instanceof Error ? err.message : String(err));
+      return apiError("eval_failed", "Eval-Ausführung fehlgeschlagen", 500);
     }
-  },
+  }
 );
 
 export const GET = createHandler(
@@ -56,9 +65,10 @@ export const GET = createHandler(
         totalRuns: history.length,
       });
     } catch (err) {
-      return apiError("eval_history_failed", err instanceof Error ? err.message : "eval_history_failed", 500);
+      console.error("[rag-eval] history failed:", err instanceof Error ? err.message : String(err));
+      return apiError("eval_history_failed", "Eval-Historie konnte nicht geladen werden", 500);
     }
-  },
+  }
 );
 
 export const PUT = createHandler(
@@ -70,7 +80,11 @@ export const PUT = createHandler(
     try {
       const history = await loadEvalHistory(ENGINE_URL, ctx.headers);
       if (history.length === 0) {
-        return apiError("no_eval_runs", "Keine Eval-Runs vorhanden — führen Sie zuerst einen Eval durch.", 400);
+        return apiError(
+          "no_eval_runs",
+          "Keine Eval-Runs vorhanden — führen Sie zuerst einen Eval durch.",
+          400
+        );
       }
 
       // Set the latest run as baseline
@@ -79,7 +93,11 @@ export const PUT = createHandler(
 
       return apiSuccess({ baseline: latest, message: "Baseline aktualisiert." });
     } catch (err) {
-      return apiError("baseline_save_failed", err instanceof Error ? err.message : "baseline_save_failed", 500);
+      console.error(
+        "[rag-eval] baseline failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return apiError("baseline_save_failed", "Baseline konnte nicht gespeichert werden", 500);
     }
-  },
+  }
 );

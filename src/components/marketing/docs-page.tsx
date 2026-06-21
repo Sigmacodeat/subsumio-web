@@ -8,6 +8,7 @@ import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs, type Lang } from "@/content/docs";
 import { p } from "@/content/site";
 import { ICONS } from "./chrome";
+import DashboardReel from "./dashboard-reel";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
@@ -54,6 +55,91 @@ function FeatureCard({
   );
 }
 
+function DocsProof({ lang }: { lang: Lang }) {
+  const items =
+    lang === "de"
+      ? [
+          {
+            icon: "FolderOpen",
+            title: "Akten",
+            desc: "Akte, Quellen, Fristen und Beteiligte bleiben in einem prüfbaren Kontext.",
+          },
+          {
+            icon: "MessageSquare",
+            title: "Copilot",
+            desc: "Fragen, Zeitbuchungen und Uploads landen dort, wo die Arbeit passiert.",
+          },
+          {
+            icon: "Shield",
+            title: "Kontrolle",
+            desc: "Berechtigungen, Audit-Trail und On-Premise-Option sind Teil des Produktkerns.",
+          },
+        ]
+      : [
+          {
+            icon: "FolderOpen",
+            title: "Matters",
+            desc: "Matter files, sources, deadlines and parties stay in one verifiable context.",
+          },
+          {
+            icon: "MessageSquare",
+            title: "Copilot",
+            desc: "Questions, time entries and uploads land where the work actually happens.",
+          },
+          {
+            icon: "Shield",
+            title: "Control",
+            desc: "Permissions, audit trail and self-hosting are part of the product core.",
+          },
+        ];
+
+  return (
+    <section className="relative z-10 px-6 pb-24">
+      <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <motion.div {...reveal}>
+          <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
+            {lang === "de" ? "Dashboard statt Datenblatt" : "Dashboard, not a datasheet"}
+          </p>
+          <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
+            {lang === "de"
+              ? "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow."
+              : "Every description points to a real legal workflow."}
+          </h2>
+          <p className="mb-7 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            {lang === "de"
+              ? "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht."
+              : "The docs are not a raw API inventory. They show which dashboard surface exists, which legal workflow it improves and which security assumption sits underneath it."}
+          </p>
+          <div className="grid gap-3">
+            {items.map((item) => {
+              const Icon = ICONS[item.icon];
+              return (
+                <div
+                  key={item.title}
+                  className="flex gap-3 rounded-lg border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]"
+                >
+                  <div className="brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                    {Icon && <Icon size={17} className="brand-text" />}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold [color:var(--mk-text)]">{item.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+        <motion.div {...reveal}>
+          <DashboardReel lang={lang} />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 export default function DocsPage({ lang }: { lang: Lang }) {
   const d = getDocs(lang);
 
@@ -81,8 +167,9 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             />
             {d.hero.badge}
           </div>
-          <h1 className="mb-5 text-5xl leading-[1.05] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+          <h1 className="mb-5 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.05] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
             {d.hero.title}
+            <span className="sr-only"> </span>
             <br />
             <span className="gradient-text">{d.hero.claim}</span>
           </h1>
@@ -94,6 +181,8 @@ export default function DocsPage({ lang }: { lang: Lang }) {
           </p>
         </motion.div>
       </section>
+
+      <DocsProof lang={lang} />
 
       {/* Categories */}
       <section className="relative z-10 px-6 pb-28">

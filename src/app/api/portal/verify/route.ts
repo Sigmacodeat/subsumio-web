@@ -1,7 +1,7 @@
-
 import { z } from "zod";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { clientIp } from "@/lib/auth/rate-limit";
 
 const verifySchema = z.object({
   token: z.string().min(1, "token_required"),
@@ -11,6 +11,9 @@ export const GET = createPublicHandler(
   {
     query: verifySchema,
     cors: true,
+    rateLimitKey: (req) => `portal-verify:${clientIp(req.headers)}`,
+    rateLimitMax: 30,
+    rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
     const payload = await verifyPortalToken(query.token);
@@ -23,5 +26,5 @@ export const GET = createPublicHandler(
       caseSlug: payload.case_slug,
       expiresAt: payload.exp,
     });
-  },
+  }
 );

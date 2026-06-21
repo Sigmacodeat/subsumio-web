@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Brain,
+  Sparkles,
   ChevronDown,
   Trash2,
   Download,
@@ -122,7 +122,7 @@ export function ChatHeader(props: ChatHeaderProps) {
       <div className="flex items-center justify-between gap-2 px-4 py-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-            <Brain size={15} className="brand-text" />
+            <Sparkles size={15} className="brand-text" />
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">

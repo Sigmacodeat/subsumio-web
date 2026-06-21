@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/chat-panel";
 
@@ -67,14 +67,20 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
       <button
         onClick={() => setOpen(true)}
         className={cn(
-          "brand-bg brand-text-on-primary fixed right-6 bottom-6 z-40 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 hover:shadow-xl",
+          "brand-bg brand-text-on-primary fixed right-6 bottom-6 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg)] focus-visible:outline-none",
           open && "pointer-events-none opacity-0",
           className
         )}
-        aria-label="Brain-Chat öffnen (Cmd+J)"
-        title="Brain-Chat öffnen (Cmd+J)"
+        aria-label="Brain Copilot öffnen (Cmd+J)"
+        title="Brain Copilot öffnen (Cmd+J)"
       >
-        <MessageCircle size={20} />
+        {!open && (
+          <span
+            className="brand-bg absolute inset-0 animate-ping rounded-full opacity-20"
+            aria-hidden
+          />
+        )}
+        <Sparkles size={22} className="relative" />
       </button>
 
       {/* Drawer overlay */}
@@ -94,7 +100,7 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
           open ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
-        aria-label="Brain-Chat"
+        aria-label="Brain Copilot"
         aria-modal="true"
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] shadow-2xl">
@@ -103,7 +109,7 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
             ref={closeButtonRef}
             onClick={() => setOpen(false)}
             className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-            aria-label="Chat schließen (Esc)"
+            aria-label="Brain Copilot schließen (Esc)"
           >
             <X size={16} />
           </button>

@@ -7,6 +7,7 @@ import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
+import { planForPriceId } from "@/lib/billing/plans";
 
 // In-memory fallback for dev mode (no Postgres)
 const processedEventIds = new Set<string>();
@@ -82,6 +83,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     client_reference_id?: string;
     customer?: string;
     metadata?: { plan?: string; user_id?: string };
+    items?: { data?: Array<{ price?: { id?: string } }> };
   };
 
   switch (event.type) {
@@ -97,21 +99,31 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       break;
     }
     case "customer.subscription.updated": {
-      // Plan upgrade/downgrade via Stripe portal. The subscription's
-      // price ID maps back to a plan via metadata or price lookup.
+      // Plan upgrade/downgrade, including changes made via the Stripe
+      // customer portal (which does NOT propagate our checkout-time
+      // metadata). The subscription's actual price ID — present on the
+      // event object itself, signed by Stripe — is the source of truth;
+      // metadata is only a fallback for legacy events that predate price
+      // resolution, and only when it matches a real plan.
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
       const metadata = obj.metadata as { plan?: string; user_id?: string } | undefined;
-      const plan = metadata?.plan;
+      const priceId = obj.items?.data?.[0]?.price?.id;
+      const resolvedPlan =
+        planForPriceId(priceId) ??
+        (metadata?.plan === "pro" || metadata?.plan === "team" ? metadata.plan : null);
       const userId = metadata?.user_id;
-      if (userId && (plan === "pro" || plan === "team")) {
-        await store.update(userId, { plan: plan as Plan });
+      if (!resolvedPlan) {
+        console.warn(
+          `[stripe-webhook] subscription.updated: could not resolve plan for price ${priceId ?? "unknown"} (customer ${customerId ?? "unknown"})`
+        );
+        break;
+      }
+      if (userId) {
+        await store.update(userId, { plan: resolvedPlan as Plan });
       } else if (customerId) {
-        // Fallback: find by customer ID and update plan from metadata
         const users = await store.list();
         const user = users.find((u) => u.stripeCustomerId === customerId);
-        if (user && plan && (plan === "pro" || plan === "team")) {
-          await store.update(user.id, { plan: plan as Plan });
-        }
+        if (user) await store.update(user.id, { plan: resolvedPlan as Plan });
       }
       break;
     }

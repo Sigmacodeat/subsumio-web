@@ -56,7 +56,9 @@ export const GET = createHandler(
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      let pages = (data.pages ?? []) as Array<Record<string, unknown>>;
+      let pages = (Array.isArray(data) ? data : (data.pages ?? [])) as Array<
+        Record<string, unknown>
+      >;
 
       if (query.search) {
         const q = query.search.toLowerCase();

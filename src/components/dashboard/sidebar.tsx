@@ -33,7 +33,6 @@ import {
   FileSpreadsheet,
   ScrollText,
   Bot,
-  MessageCircle,
   FileText,
   Mail,
   RefreshCw,
@@ -99,7 +98,7 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
-      { href: "/dashboard/chat", icon: MessageCircle, labelKey: "nav.chat" },
+      { href: "/dashboard/chat", icon: Sparkles, labelKey: "nav.chat" },
       { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
       { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
@@ -218,7 +217,7 @@ export const BOTTOM_ITEMS: NavItem[] = [
 
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/chat", icon: MessageCircle, labelKey: "nav.chat" },
+  { href: "/dashboard/chat", icon: Sparkles, labelKey: "nav.chat" },
   { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
@@ -417,10 +416,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     <aside
       className={cn(
         "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-all duration-200",
-        "fixed inset-y-0 left-0 md:static",
+        "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
-        mobileOpen ? "w-64 translate-x-0" : "-translate-x-full md:translate-x-0",
-        "w-64"
+        mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}
       onKeyDown={(e) => {
         if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;

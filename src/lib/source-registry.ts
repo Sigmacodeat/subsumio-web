@@ -109,13 +109,22 @@ const JUDGEMENT_APIS: JudgementApiDef[] = [
     api_endpoint: "https://mcp.opencaselaw.ch/api/decisions",
     auto_sync_interval_hours: 24,
   },
+  {
+    id: "eur-lex-eu",
+    label: "EUR-Lex EuGH",
+    jurisdiction: "EU",
+    authority_tier: "official",
+    license: "EUR-Lex — Amtliche Veröffentlichung der Europäischen Union",
+    api_endpoint: "https://eur-lex.europa.eu/europa-webservices/rs/search",
+    auto_sync_interval_hours: 48,
+  },
 ];
 
 // ── Freshness calculation ─────────────────────────────────────────────
 
 export function calculateFreshness(
   lastSyncAt: string | null,
-  intervalHours: number,
+  intervalHours: number
 ): { freshness_hours: number | null; status: SourceStatus } {
   if (!lastSyncAt) {
     return { freshness_hours: null, status: "unknown" };
@@ -141,7 +150,7 @@ export function hashContent(content: string): string {
 }
 
 export async function scanCorpusFile(
-  filePath: string,
+  filePath: string
 ): Promise<{ exists: boolean; document_count: number; hash: string | null; size: number }> {
   try {
     const content = await fs.readFile(filePath, "utf8");
@@ -173,7 +182,7 @@ export async function saveCurrentHashes(hashes: Record<string, string>): Promise
     await fs.mkdir(DIFF_STORE, { recursive: true });
     await fs.writeFile(
       path.join(DIFF_STORE, "corpus-hashes.json"),
-      JSON.stringify(hashes, null, 2),
+      JSON.stringify(hashes, null, 2)
     );
   } catch {
     // Non-fatal — diff tracking is best-effort
@@ -182,7 +191,7 @@ export async function saveCurrentHashes(hashes: Record<string, string>): Promise
 
 export async function computeCorpusDiff(
   currentHashes: Record<string, string>,
-  previousHashes: Record<string, string>,
+  previousHashes: Record<string, string>
 ): Promise<CorpusDiffEntry[]> {
   const now = new Date().toISOString();
   const diffs: CorpusDiffEntry[] = [];
@@ -244,7 +253,7 @@ export async function buildStatuteEntries(): Promise<SourceRegistryEntry[]> {
 
     const { freshness_hours, status } = calculateFreshness(
       lastModified,
-      720, // 30 days for statute corpus
+      720 // 30 days for statute corpus
     );
 
     entries.push({
@@ -290,15 +299,12 @@ async function getFileMtime(filePath: string): Promise<string | null> {
 }
 
 export function buildJudgementApiEntries(
-  syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>,
+  syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>
 ): SourceRegistryEntry[] {
   return JUDGEMENT_APIS.map((api) => {
     const syncInfo = syncStatus?.[api.id];
     const lastSync = syncInfo?.last_sync_at ?? null;
-    const { freshness_hours, status } = calculateFreshness(
-      lastSync,
-      api.auto_sync_interval_hours,
-    );
+    const { freshness_hours, status } = calculateFreshness(lastSync, api.auto_sync_interval_hours);
 
     return {
       id: api.id,
@@ -320,7 +326,7 @@ export function buildJudgementApiEntries(
 }
 
 export async function buildSourceRegistry(
-  syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>,
+  syncStatus?: Record<string, { last_sync_at: string | null; last_error?: string }>
 ): Promise<SourceRegistryResponse> {
   const [statuteEntries, judgementEntries] = await Promise.all([
     buildStatuteEntries(),
@@ -346,7 +352,7 @@ const SYNC_STATUS_SLUG = "monitoring/source-registry-sync-status";
 
 export async function loadSyncStatus(
   engineUrl: string,
-  engineHeaders: Record<string, string>,
+  engineHeaders: Record<string, string>
 ): Promise<Record<string, { last_sync_at: string | null; last_error?: string }>> {
   try {
     const res = await fetch(`${engineUrl}/api/pages/${SYNC_STATUS_SLUG}`, {
@@ -378,7 +384,7 @@ export async function loadSyncStatus(
 export async function saveSyncStatus(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  status: Record<string, { last_sync_at: string | null; last_error?: string }>,
+  status: Record<string, { last_sync_at: string | null; last_error?: string }>
 ): Promise<void> {
   try {
     const syncStatusArray = Object.entries(status).map(([id, info]) => ({
@@ -428,18 +434,19 @@ export function provenanceFromEntry(entry: SourceRegistryEntry): SourceProvenanc
 export function findSourceForCitation(
   sources: SourceRegistryEntry[],
   code: string,
-  jurisdiction?: string,
+  jurisdiction?: string
 ): SourceProvenance | null {
   const normalizedCode = code.toLowerCase().replace(/[^a-z0-9]/g, "");
   const match = sources.find((s) => {
     const labelNorm = s.label.toLowerCase().replace(/[^a-z0-9]/g, "");
     const idNorm = s.id.replace("corpus-", "").toLowerCase();
     return (
-      labelNorm === normalizedCode ||
-      idNorm === normalizedCode ||
-      labelNorm.startsWith(normalizedCode) ||
-      idNorm.startsWith(normalizedCode)
-    ) && (!jurisdiction || s.jurisdiction === jurisdiction.toUpperCase());
+      (labelNorm === normalizedCode ||
+        idNorm === normalizedCode ||
+        labelNorm.startsWith(normalizedCode) ||
+        idNorm.startsWith(normalizedCode)) &&
+      (!jurisdiction || s.jurisdiction === jurisdiction.toUpperCase())
+    );
   });
   return match ? provenanceFromEntry(match) : null;
 }

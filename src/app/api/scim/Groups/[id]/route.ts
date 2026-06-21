@@ -13,7 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 // Import the shared groups map from the shared module
-import { groups } from "@/lib/scim-groups";
+import { groups, getGroupForOrg, type StoredScimGroup } from "@/lib/scim-groups";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -23,11 +23,12 @@ interface RouteParams {
  * GET /api/scim/Groups/:id
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
-  const group = groups.get(id);
+  const group = getGroupForOrg(id, orgId);
 
   if (!group) {
     return scimError(404, `Group ${id} not found`);
@@ -41,11 +42,12 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
  * Replace group attributes.
  */
 export async function PUT(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
-  const existing = groups.get(id);
+  const existing = getGroupForOrg(id, orgId);
 
   if (!existing) {
     return scimError(404, `Group ${id} not found`);
@@ -64,7 +66,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     return scimError(400, "Missing or invalid schemas");
   }
 
-  const updated: SCIMGroup = {
+  const updated: StoredScimGroup = {
     ...scimGroup,
     id,
     schemas: [SCIM_SCHEMA_GROUP],
@@ -73,6 +75,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
       created: existing.meta?.created,
       lastModified: new Date().toISOString(),
     },
+    _orgId: orgId,
   };
 
   groups.set(id, updated);
@@ -83,11 +86,12 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
  * PATCH /api/scim/Groups/:id
  */
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
-  const existing = groups.get(id);
+  const existing = getGroupForOrg(id, orgId);
 
   if (!existing) {
     return scimError(404, `Group ${id} not found`);
@@ -106,7 +110,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return scimError(400, "Missing or invalid schemas for PATCH");
   }
 
-  const updated = { ...existing };
+  const updated: StoredScimGroup = { ...existing };
 
   for (const op of patchReq.Operations || []) {
     applyGroupPatch(updated, op);
@@ -126,12 +130,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
  * DELETE /api/scim/Groups/:id
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
 
-  if (!groups.has(id)) {
+  if (!getGroupForOrg(id, orgId)) {
     return scimError(404, `Group ${id} not found`);
   }
 

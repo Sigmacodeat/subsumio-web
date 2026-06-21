@@ -125,9 +125,9 @@ export default function RagEvalPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
-        title="RAG-Eval & Quality Gate"
-        description="Retrieval-Qualitäts-Benchmark, Release-Gate und Human Review"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "RAG-Eval" }]}
+        title="Retrieval-Qualität"
+        description="Benchmark, Freigabeprüfung und menschliche Review für KI-Antworten"
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Retrieval-Qualität" }]}
         actions={
           <div className="flex items-center gap-2">
             {history.length > 0 && (
@@ -296,7 +296,6 @@ export default function RagEvalPage() {
             {history.slice(0, 10).map((run, i) => {
               const prevRun = history[i + 1];
               const pDelta = prevRun ? run.overallPrecision - prevRun.overallPrecision : 0;
-              const rDelta = prevRun ? run.overallRecall - prevRun.overallRecall : 0;
               const isBaseline = baseline?.timestamp === run.timestamp;
               return (
                 <div

@@ -31,9 +31,18 @@ function createTestNotification(overrides: Partial<NotificationRecord> = {}): No
 describe("Notification Model — Types & Labels", () => {
   it("has labels for all notification types", () => {
     const types: NotificationType[] = [
-      "mention", "deadline_alert", "deadline_overdue", "approval_request",
-      "approval_decision", "conflict_alert", "new_document", "case_update",
-      "client_message", "system", "whatsapp_inbound", "fristen_briefing",
+      "mention",
+      "deadline_alert",
+      "deadline_overdue",
+      "approval_request",
+      "approval_decision",
+      "conflict_alert",
+      "new_document",
+      "case_update",
+      "client_message",
+      "system",
+      "whatsapp_inbound",
+      "fristen_briefing",
     ];
     for (const type of types) {
       expect(NOTIFICATION_TYPE_LABELS[type]).toBeTruthy();
@@ -118,7 +127,7 @@ describe("Notification Model — InMemoryStore", () => {
     const store = new InMemoryNotificationStore();
     await store.create(createTestNotification({ id: "n1" }));
     await store.create(createTestNotification({ id: "n2" }));
-    await store.markRead("n1");
+    await store.markRead("n1", "user-1", "brain-1");
 
     const unread = await store.list({ user_id: "user-1", brain_id: "brain-1", unread_only: true });
     expect(unread).toHaveLength(1);
@@ -130,7 +139,11 @@ describe("Notification Model — InMemoryStore", () => {
     await store.create(createTestNotification({ id: "n1", type: "deadline_alert" }));
     await store.create(createTestNotification({ id: "n2", type: "conflict_alert" }));
 
-    const filtered = await store.list({ user_id: "user-1", brain_id: "brain-1", type: "conflict_alert" });
+    const filtered = await store.list({
+      user_id: "user-1",
+      brain_id: "brain-1",
+      type: "conflict_alert",
+    });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].type).toBe("conflict_alert");
   });
@@ -140,7 +153,11 @@ describe("Notification Model — InMemoryStore", () => {
     await store.create(createTestNotification({ id: "n1", priority: "urgent" }));
     await store.create(createTestNotification({ id: "n2", priority: "normal" }));
 
-    const filtered = await store.list({ user_id: "user-1", brain_id: "brain-1", priority: "urgent" });
+    const filtered = await store.list({
+      user_id: "user-1",
+      brain_id: "brain-1",
+      priority: "urgent",
+    });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].priority).toBe("urgent");
   });
@@ -148,7 +165,7 @@ describe("Notification Model — InMemoryStore", () => {
   it("marks single notification as read", async () => {
     const store = new InMemoryNotificationStore();
     await store.create(createTestNotification({ id: "n1" }));
-    const result = await store.markRead("n1");
+    const result = await store.markRead("n1", "user-1", "brain-1");
     expect(result).toBe(true);
     const record = await store.getById("n1");
     expect(record!.read_at).not.toBeNull();
@@ -156,7 +173,7 @@ describe("Notification Model — InMemoryStore", () => {
 
   it("markRead returns false for non-existent", async () => {
     const store = new InMemoryNotificationStore();
-    expect(await store.markRead("nonexistent")).toBe(false);
+    expect(await store.markRead("nonexistent", "user-1", "brain-1")).toBe(false);
   });
 
   it("marks all notifications as read", async () => {
@@ -170,7 +187,7 @@ describe("Notification Model — InMemoryStore", () => {
   it("archives notification", async () => {
     const store = new InMemoryNotificationStore();
     await store.create(createTestNotification({ id: "n1" }));
-    expect(await store.archive("n1")).toBe(true);
+    expect(await store.archive("n1", "user-1", "brain-1")).toBe(true);
     const record = await store.getById("n1");
     expect(record!.archived).toBe(true);
   });
@@ -178,7 +195,7 @@ describe("Notification Model — InMemoryStore", () => {
   it("deletes notification", async () => {
     const store = new InMemoryNotificationStore();
     await store.create(createTestNotification({ id: "n1" }));
-    expect(await store.delete("n1")).toBe(true);
+    expect(await store.delete("n1", "user-1", "brain-1")).toBe(true);
     expect(await store.getById("n1")).toBeNull();
   });
 
@@ -187,16 +204,20 @@ describe("Notification Model — InMemoryStore", () => {
     await store.create(createTestNotification({ id: "n1" }));
     await store.create(createTestNotification({ id: "n2" }));
     await store.create(createTestNotification({ id: "n3" }));
-    await store.markRead("n1");
+    await store.markRead("n1", "user-1", "brain-1");
     const count = await store.getUnreadCount("user-1", "brain-1");
     expect(count).toBe(2);
   });
 
   it("returns stats", async () => {
     const store = new InMemoryNotificationStore();
-    await store.create(createTestNotification({ id: "n1", type: "deadline_alert", priority: "high" }));
-    await store.create(createTestNotification({ id: "n2", type: "conflict_alert", priority: "urgent" }));
-    await store.markRead("n1");
+    await store.create(
+      createTestNotification({ id: "n1", type: "deadline_alert", priority: "high" })
+    );
+    await store.create(
+      createTestNotification({ id: "n2", type: "conflict_alert", priority: "urgent" })
+    );
+    await store.markRead("n1", "user-1", "brain-1");
 
     const stats = await store.getStats("user-1", "brain-1");
     expect(stats.total).toBe(2);
@@ -213,7 +234,9 @@ describe("Notification Model — InMemoryStore", () => {
   it("respects limit and offset", async () => {
     const store = new InMemoryNotificationStore();
     for (let i = 0; i < 10; i++) {
-      await store.create(createTestNotification({ id: `n${i}`, created_at: new Date(Date.now() + i).toISOString() }));
+      await store.create(
+        createTestNotification({ id: `n${i}`, created_at: new Date(Date.now() + i).toISOString() })
+      );
     }
     const page1 = await store.list({ user_id: "user-1", brain_id: "brain-1", limit: 3, offset: 0 });
     const page2 = await store.list({ user_id: "user-1", brain_id: "brain-1", limit: 3, offset: 3 });

@@ -607,16 +607,25 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
         }
 
         if (options.stream) {
-          const body = options.citationGate
-            ? createCitationGateStream(upstream.body!)
-            : upstream.body!;
-          return apiStream(body, {
+          if (!upstream.body) {
+            return apiError("engine_error", "Engine returned empty body", 502);
+          }
+          const streamBody = options.citationGate
+            ? createCitationGateStream(upstream.body)
+            : upstream.body;
+          return apiStream(streamBody, {
             contentType: upstream.headers.get("Content-Type") || "text/event-stream",
             aiGenerated: true,
           });
         }
 
-        const result = (await upstream.json()) as Record<string, unknown>;
+        const resultText = await upstream.text();
+        let result: Record<string, unknown>;
+        try {
+          result = resultText ? (JSON.parse(resultText) as Record<string, unknown>) : {};
+        } catch {
+          result = { error: "Invalid JSON from engine", raw: resultText.slice(0, 500) };
+        }
 
         if (options.citationGate) {
           try {

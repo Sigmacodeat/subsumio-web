@@ -206,7 +206,7 @@ export const D = {
   "dashboard.show_all": { de: "Alle anzeigen", en: "Show all" },
   "dashboard.no_activity": { de: "Noch keine Aktivität", en: "No activity yet" },
   "dashboard.no_activity_desc": {
-    de: "Lade ein Dokument hoch oder stelle eine Frage, um zu starten",
+    de: "Laden Sie ein Dokument hoch oder stellen Sie eine Frage, um zu starten",
     en: "Upload a document or ask a question to get started",
   },
   "dashboard.quick_actions": { de: "Schnellzugriff", en: "Quick actions" },
@@ -226,13 +226,13 @@ export const D = {
   "dashboard.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
   "dashboard.dream_inactive": { de: "Inaktiv", en: "Inactive" },
   "dashboard.dream_desc": {
-    de: "Der Dream Cycle läuft nachts und konsolidiert dein Wissen, fixiert Zitate und findet Widersprüche.",
+    de: "Der Dream Cycle läuft nachts und konsolidiert Ihr Wissen, fixiert Zitate und findet Widersprüche.",
     en: "The Dream Cycle runs at night, consolidates your knowledge, fixes citations and finds contradictions.",
   },
   "dashboard.dream_setup": { de: "Dream Cycle einrichten", en: "Set up Dream Cycle" },
   "dashboard.welcome": { de: "Willkommen im Kanzlei-OS.", en: "Welcome to your firm OS." },
   "dashboard.welcome_desc": {
-    de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
+    de: "Starten Sie mit einer Akte, importieren Sie bestehende Kanzleidaten oder verbinden Sie Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
     en: "Start with a case, import existing firm data, or connect inbox channels. The brain works in the background while the cockpit runs the day.",
   },
   "dashboard.welcome_upload": { de: "Erstes Dokument hochladen", en: "Upload first document" },
@@ -340,10 +340,10 @@ export const D = {
   "cases.retry": { de: "Erneut versuchen", en: "Retry" },
   "cases.empty_title": { de: "Keine Akten gefunden", en: "No cases found" },
   "cases.empty_no_cases": {
-    de: "Erstelle deine erste Akte oder importiere bestehende Fälle.",
+    de: "Erstellen Sie Ihre erste Akte oder importieren Sie bestehende Fälle.",
     en: "Create your first case or import existing ones.",
   },
-  "cases.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
+  "cases.empty_filtered": { de: "Passen Sie Ihre Filter an.", en: "Adjust your filters." },
   "cases.empty_create": { de: "Neue Akte erstellen", en: "Create new case" },
   "cases.bulk_delete": { de: "Auswahl löschen", en: "Delete selection" },
   "cases.col_title": { de: "Akte", en: "Case" },
@@ -410,7 +410,7 @@ export const D = {
     de: "Fristen werden automatisch aus hochgeladenen Dokumenten extrahiert.",
     en: "Deadlines are automatically extracted from uploaded documents.",
   },
-  "deadlines.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
+  "deadlines.empty_filtered": { de: "Passen Sie Ihre Filter an.", en: "Adjust your filters." },
   "deadlines.col_title": { de: "Frist", en: "Deadline" },
   "deadlines.col_case": { de: "Akte", en: "Case" },
   "deadlines.col_date": { de: "Datum", en: "Date" },
@@ -741,7 +741,7 @@ export const D = {
   "settings.role_client_viewer": { de: "Client Viewer", en: "Client Viewer" },
   "settings.account_title": { de: "Account", en: "Account" },
   "settings.plan": { de: "Plan", en: "Plan" },
-  "settings.plan_desc": { de: "Dein aktuelles Abonnement", en: "Your current subscription" },
+  "settings.plan_desc": { de: "Ihr aktuelles Abonnement", en: "Your current subscription" },
   "settings.upgrade": { de: "Upgrade auf Pro →", en: "Upgrade to Pro →" },
   "settings.usage": { de: "Nutzung", en: "Usage" },
   "settings.usage_desc": { de: "Aktueller Monat", en: "Current month" },
@@ -749,7 +749,7 @@ export const D = {
   "settings.usage_queries": { de: "Queries", en: "Queries" },
   "settings.referral": { de: "Empfehlen & sparen", en: "Refer & save" },
   "settings.referral_desc": {
-    de: "Du bekommst 1 Monat gratis pro geworbenem Kunden — der Geworbene auch.",
+    de: "Sie bekommen 1 Monat gratis pro geworbenem Kunden — der Geworbene auch.",
     en: "You get 1 month free per referred customer — so do they.",
   },
   "settings.referral_info": {
@@ -767,7 +767,7 @@ export const D = {
   },
   "settings.data_export": { de: "Datenexport (DSGVO)", en: "Data export (GDPR)" },
   "settings.data_export_desc": {
-    de: "Alle deine Daten — Konto, Nutzung und das komplette Brain (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
+    de: "Alle Ihre Daten — Konto, Nutzung und das komplette Brain (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
     en: "All your data — account, usage and the complete brain (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
@@ -873,7 +873,7 @@ export const D = {
   },
   "guide.default_title": { de: "Kanzlei-Cockpit verstehen", en: "Understand the firm cockpit" },
   "guide.default_desc": {
-    de: "Starte mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
+    de: "Starten Sie mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis Sie sie brauchen.",
     en: "Start with cases, deadlines, and inbox. System and brain features stay in the background until needed.",
   },
   "guide.setup_title": { de: "Setup-Checkliste", en: "Setup checklist" },
@@ -937,12 +937,12 @@ export const D = {
   "onboarding.finish": { de: "Fertig — Dashboard öffnen", en: "Finish — Open dashboard" },
   "onboarding.step_welcome": { de: "Willkommen", en: "Welcome" },
   "onboarding.step_welcome_desc": {
-    de: "Dein Kanzlei-Brain wird gleich einsatzbereit sein. Lass uns kurz einrichten, was du brauchst.",
+    de: "Ihr Kanzlei-Brain wird gleich einsatzbereit sein. Lassen Sie uns kurz einrichten, was Sie brauchen.",
     en: "Your firm brain will be ready in a moment. Let's quickly set up what you need.",
   },
   "onboarding.step_industry": { de: "Branche wählen", en: "Choose industry" },
   "onboarding.step_industry_desc": {
-    de: "Wir personalisieren dein Dashboard und Brain-Schema basierend auf deiner Praxis.",
+    de: "Wir personalisieren Ihr Dashboard und Brain-Schema basierend auf Ihrer Praxis.",
     en: "We personalize your dashboard and brain schema based on your practice.",
   },
   "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
@@ -954,7 +954,7 @@ export const D = {
   "onboarding.profile_owner": { de: "Ansprechpartner", en: "Main contact" },
   "onboarding.profile_email": { de: "Kanzlei-E-Mail", en: "Firm email" },
   "onboarding.profile_country": { de: "Land / Rechtsraum", en: "Country / jurisdiction" },
-  "onboarding.profile_role": { de: "Deine Rolle", en: "Your role" },
+  "onboarding.profile_role": { de: "Ihre Rolle", en: "Your role" },
   "onboarding.role_lawyer": { de: "Anwalt", en: "Lawyer" },
   "onboarding.role_assistant": { de: "Assistenz", en: "Assistant" },
   "onboarding.role_management": { de: "Management", en: "Management" },
@@ -982,7 +982,7 @@ export const D = {
   },
   "onboarding.step_query": { de: "Erste Frage", en: "First question" },
   "onboarding.step_query_desc": {
-    de: "Stelle eine Frage zu deinem Brain. Die KI antwortet mit Fundstellen.",
+    de: "Stellen Sie eine Frage zu Ihrem Brain. Die KI antwortet mit Fundstellen.",
     en: "Ask a question about your brain. AI answers with citations.",
   },
   "onboarding.step_query_placeholder": {
@@ -996,7 +996,7 @@ export const D = {
   // ── Onboarding: WhatsApp setup step ──
   "onboarding.step_whatsapp": { de: "WhatsApp verbinden", en: "Connect WhatsApp" },
   "onboarding.step_whatsapp_desc": {
-    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
+    de: "Verbinden Sie Ihre WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
     en: "Connect your WhatsApp Business number — clients can message directly and AI routes requests.",
   },
   "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
@@ -1016,7 +1016,7 @@ export const D = {
   // ── Onboarding: Billing/rate setup step ──
   "onboarding.step_billing": { de: "Stundensatz & Abrechnung", en: "Hourly rate & billing" },
   "onboarding.step_billing_desc": {
-    de: "Lege deinen Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
+    de: "Legen Sie Ihren Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
     en: "Set your hourly rate and billing increment — used for time tracking and invoices.",
   },
   "onboarding.billing_rate": { de: "Stundensatz (€)", en: "Hourly rate (€)" },
@@ -1068,9 +1068,9 @@ export const D = {
 
   // ── Drafting page ──
   "drafting.name": { de: "Name", en: "Name" },
-  "drafting.describe_case": { de: "Beschreibe den Sachverhalt", en: "Describe the case" },
+  "drafting.describe_case": { de: "Beschreiben Sie den Sachverhalt", en: "Describe the case" },
   "onboarding.step_done_desc": {
-    de: "Dein Kanzlei-Brain ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
+    de: "Ihr Kanzlei-Brain ist einsatzbereit. Sie können jederzeit Dokumente nachladen und Fragen stellen.",
     en: "Your firm brain is ready. You can upload more documents and ask questions anytime.",
   },
   "onboarding.industry_legal": { de: "Kanzlei / Rechtsabteilung", en: "Law firm / legal team" },

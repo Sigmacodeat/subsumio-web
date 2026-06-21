@@ -67,14 +67,14 @@ const copy = {
   },
   de: {
     eyebrow: "Die Subsumio-Engine",
-    title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der deine Kanzlei läuft.",
-    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
-    center: "Dein Kanzlei-Brain",
+    title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der Ihre Kanzlei läuft.",
+    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über Ihre eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
+    center: "Ihr Kanzlei-Brain",
     proof: [
       {
         icon: Database,
         title: "Eigene Daten zuerst",
-        desc: "Antworten kommen aus deinen Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen.",
+        desc: "Antworten kommen aus Ihren Akten, Mandanten, Deals und Dokumenten, nicht aus generischen Web-Vermutungen.",
       },
       {
         icon: GitBranch,
@@ -92,12 +92,12 @@ const copy = {
         desc: "Self-hosted mit eigenen Keys und Hardware, oder gemanagte EU-Cloud wenn es schnell gehen soll.",
       },
     ],
-    capabilityTitle: "Was dein Brain kann",
+    capabilityTitle: "Was Ihr Brain kann",
     capabilities: [
       {
         icon: Brain,
         title: "Verzinst",
-        desc: "Jede Akte, jede E-Mail, jede Frist speist das Brain — es erinnert sich an alles, was deine Kanzlei je getan hat.",
+        desc: "Jede Akte, jede E-Mail, jede Frist speist das Brain — es erinnert sich an alles, was Ihre Kanzlei je getan hat.",
       },
       {
         icon: FileSearch,
@@ -107,7 +107,7 @@ const copy = {
       {
         icon: ShieldCheck,
         title: "Schützt",
-        desc: "Scoping pro Mandat, fuzz-getestete Isolation, kein Training auf deinen Daten. Vertraulichkeit per Architektur, nicht per Versprechen.",
+        desc: "Scoping pro Mandat, fuzz-getestete Isolation, kein Training auf Ihren Daten. Vertraulichkeit per Architektur, nicht per Versprechen.",
       },
     ],
     cta: "Features ansehen",

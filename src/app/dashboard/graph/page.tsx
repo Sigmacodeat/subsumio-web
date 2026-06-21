@@ -19,7 +19,20 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { GraphNode, GraphLink } from "@/lib/types";
 
-const NODE_COLORS: Record<string, string> = {
+// Hex fallbacks only fire before the design tokens are resolved from
+// `--graph-*` CSS vars on mount (see `resolveNodeColors`) — keeps a single
+// source of truth in globals.css rather than scattering hex through
+// canvas drawing code and JSX.
+const NODE_COLOR_VARS: Record<string, string> = {
+  person: "--graph-person",
+  company: "--graph-company",
+  idea: "--graph-idea",
+  document: "--graph-document",
+  event: "--graph-event",
+  place: "--graph-place",
+};
+
+const NODE_COLOR_FALLBACKS: Record<string, string> = {
   person: "#60a5fa",
   company: "#34d399",
   idea: "#a78bfa",
@@ -27,6 +40,21 @@ const NODE_COLORS: Record<string, string> = {
   event: "#f97316",
   place: "#2dd4bf",
 };
+
+// Used where a hex literal is required for string-concatenated alpha
+// (`color + "20"`) — `var(--graph-fallback)` can't be used there since
+// you can't append an alpha suffix to an unresolved var() reference.
+// Keep in sync with --graph-fallback in globals.css.
+const GRAPH_FALLBACK_HEX = "#585866";
+
+function resolveNodeColors(root: HTMLElement): Record<string, string> {
+  const cs = getComputedStyle(root);
+  const resolved: Record<string, string> = {};
+  for (const [type, varName] of Object.entries(NODE_COLOR_VARS)) {
+    resolved[type] = cs.getPropertyValue(varName).trim() || NODE_COLOR_FALLBACKS[type];
+  }
+  return resolved;
+}
 
 type LayoutNode = GraphNode & { x: number; y: number };
 
@@ -39,6 +67,7 @@ export default function GraphPage() {
   const [zoom, setZoom] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nodeColors, setNodeColors] = useState<Record<string, string>>(NODE_COLOR_FALLBACKS);
 
   const loadGraph = useCallback(async () => {
     setLoading(true);
@@ -102,11 +131,15 @@ export default function GraphPage() {
     const themeRoot =
       (canvas.closest('[data-app="dashboard"]') as HTMLElement | null) ?? document.documentElement;
     let lastTheme = "";
-    const palette = { text: "#15151d", subtle: "#8a8a98" };
+    const palette = { text: "#15151d", subtle: "#8a8a98", accentGlow: "rgba(47, 107, 255, 0.15)" };
+    let resolvedNodeColors = NODE_COLOR_FALLBACKS;
     const readPalette = () => {
       const cs = getComputedStyle(themeRoot);
       palette.text = cs.getPropertyValue("--ds-text").trim() || palette.text;
       palette.subtle = cs.getPropertyValue("--ds-text-subtle").trim() || palette.subtle;
+      palette.accentGlow = cs.getPropertyValue("--color-accent-glow").trim() || palette.accentGlow;
+      resolvedNodeColors = resolveNodeColors(themeRoot);
+      setNodeColors(resolvedNodeColors);
     };
     readPalette();
 
@@ -132,7 +165,7 @@ export default function GraphPage() {
         ctx.beginPath();
         ctx.moveTo(src.x, src.y);
         ctx.lineTo(tgt.x, tgt.y);
-        ctx.strokeStyle = "rgba(47, 107, 255, 0.15)";
+        ctx.strokeStyle = palette.accentGlow;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -145,7 +178,8 @@ export default function GraphPage() {
       });
 
       layoutNodes.forEach((node) => {
-        const color = NODE_COLORS[node.type] || "#585866";
+        const color =
+          resolvedNodeColors[node.type] || NODE_COLOR_FALLBACKS[node.type] || GRAPH_FALLBACK_HEX;
         const radius = 8 + node.connections * 2;
         const pulse = Math.sin(tick * 2) * 2;
 
@@ -278,7 +312,7 @@ export default function GraphPage() {
                 Legende
               </p>
               <div className="space-y-2">
-                {Object.entries(NODE_COLORS)
+                {Object.entries(nodeColors)
                   .slice(0, 4)
                   .map(([type, color]) => (
                     <div key={type} className="flex items-center gap-2">
@@ -317,14 +351,17 @@ export default function GraphPage() {
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
               style={{
-                backgroundColor: (NODE_COLORS[selected.type] || "#585866") + "20",
-                border: `1px solid ${NODE_COLORS[selected.type] || "#585866"}40`,
+                backgroundColor: (nodeColors[selected.type] || GRAPH_FALLBACK_HEX) + "20",
+                border: `1px solid ${nodeColors[selected.type] || GRAPH_FALLBACK_HEX}40`,
               }}
             >
               {(() => {
                 const Icon = typeIconMap[selected.type] || FileText;
                 return (
-                  <Icon size={17} style={{ color: NODE_COLORS[selected.type] || "#585866" }} />
+                  <Icon
+                    size={17}
+                    style={{ color: nodeColors[selected.type] || GRAPH_FALLBACK_HEX }}
+                  />
                 );
               })()}
             </div>

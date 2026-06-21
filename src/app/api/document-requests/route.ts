@@ -71,17 +71,28 @@ export const GET = createHandler(
     const res = await fetch(`${ENGINE_URL}/api/pages?type=document_request&limit=${limit}`, {
       headers: ctx.headers,
     });
-    if (!res.ok) return apiError("document_requests_list_failed", "Dokumentenanfragen konnten nicht geladen werden", 502);
+    if (!res.ok)
+      return apiError(
+        "document_requests_list_failed",
+        "Dokumentenanfragen konnten nicht geladen werden",
+        502
+      );
 
-    const requests = pagesFrom(await res.json())
+    const requests = pagesFrom(await res.json().catch(() => []))
       .map(documentRequestFromPage)
-      .filter((item): item is NonNullable<ReturnType<typeof documentRequestFromPage>> => item !== null)
+      .filter(
+        (item): item is NonNullable<ReturnType<typeof documentRequestFromPage>> => item !== null
+      )
       .filter((item) => !query.caseSlug || item.frontmatter.case_slug === query.caseSlug)
       .filter((item) => !query.status || item.frontmatter.status === query.status)
-      .sort((a, b) => new Date(b.frontmatter.created_at).getTime() - new Date(a.frontmatter.created_at).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.frontmatter.created_at).getTime() -
+          new Date(a.frontmatter.created_at).getTime()
+      );
 
     return Response.json({ requests, total: requests.length });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -123,11 +134,20 @@ export const POST = createHandler(
         frontmatter: request.frontmatter,
       }),
     });
-    if (!res.ok) return apiError("document_request_create_failed", "Dokumentenanfrage konnte nicht erstellt werden", 502);
+    if (!res.ok)
+      return apiError(
+        "document_request_create_failed",
+        "Dokumentenanfrage konnte nicht erstellt werden",
+        502
+      );
 
-    broadcastSseEvent(ctx.brainId, "document_request.created", { slug: request.slug, caseSlug: body.case_slug, by: ctx.user.email });
+    broadcastSseEvent(ctx.brainId, "document_request.created", {
+      slug: request.slug,
+      caseSlug: body.case_slug,
+      by: ctx.user.email,
+    });
     return Response.json({ request }, { status: 201 });
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -145,20 +165,24 @@ export const PATCH = createHandler(
   async (ctx, body, _query, _req) => {
     const patch: Partial<DocumentRequestFrontmatter> = {
       status: body.status,
-      items: body.items?.map((item) => typeof item === "string"
-        ? { key: item.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: item, required: true }
-        : {
-            key: item.key || (item.label || "unterlage").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-            label: item.label || item.key || "Unterlage",
-            required: item.required ?? true,
-            received_document_slug: item.received_document_slug,
-          }),
+      items: body.items?.map((item) =>
+        typeof item === "string"
+          ? { key: item.toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: item, required: true }
+          : {
+              key:
+                item.key || (item.label || "unterlage").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+              label: item.label || item.key || "Unterlage",
+              required: item.required ?? true,
+              received_document_slug: item.received_document_slug,
+            }
+      ),
       message_draft: body.message_draft,
       sent_at: body.sent_at,
       updated_at: new Date().toISOString(),
     };
     Object.keys(patch).forEach((key) => {
-      if ((patch as Record<string, unknown>)[key] === undefined) delete (patch as Record<string, unknown>)[key];
+      if ((patch as Record<string, unknown>)[key] === undefined)
+        delete (patch as Record<string, unknown>)[key];
     });
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
@@ -173,9 +197,17 @@ export const PATCH = createHandler(
         merge: true,
       }),
     });
-    if (!res.ok) return apiError("document_request_update_failed", "Dokumentenanfrage konnte nicht aktualisiert werden", 502);
+    if (!res.ok)
+      return apiError(
+        "document_request_update_failed",
+        "Dokumentenanfrage konnte nicht aktualisiert werden",
+        502
+      );
 
-    broadcastSseEvent(ctx.brainId, "document_request.updated", { slug: body.slug, by: ctx.user.email });
+    broadcastSseEvent(ctx.brainId, "document_request.updated", {
+      slug: body.slug,
+      by: ctx.user.email,
+    });
     return Response.json({ ok: true, slug: body.slug, patch });
-  },
+  }
 );

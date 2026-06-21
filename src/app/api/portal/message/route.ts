@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { verifyPortalToken } from "@/lib/portal-token";
@@ -14,6 +13,7 @@ export const POST = createPublicHandler(
   {
     body: messageSchema,
     cors: true,
+    skipCsrf: true,
     rateLimitKey: (req) => `portal-msg:ip:${clientIp(req.headers)}`,
     rateLimitMax: 10,
     rateLimitWindowMs: 60_000,
@@ -24,7 +24,11 @@ export const POST = createPublicHandler(
       return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
     }
     if (!payload.brain_id) {
-      return apiError("new_portal_link_required", "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.", 403);
+      return apiError(
+        "new_portal_link_required",
+        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
+        403
+      );
     }
 
     try {
@@ -51,5 +55,5 @@ export const POST = createPublicHandler(
       console.error("[portal/message] failed:", err instanceof Error ? err.message : String(err));
       return apiError("save_failed", "Nachricht konnte nicht gespeichert werden", 500);
     }
-  },
+  }
 );

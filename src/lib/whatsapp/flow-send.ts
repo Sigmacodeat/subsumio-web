@@ -63,29 +63,31 @@ export async function sendWhatsAppFlow(opts: SendFlowOptions): Promise<{ message
     interactive.footer = { text: opts.footerText };
   }
 
-  const res = await withRetry(() => fetch(
-    `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(phoneNumberId)}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: opts.to.replace(/^\+/, ""),
-        type: "interactive",
-        interactive,
-      }),
-    },
-  ));
+  const res = await withRetry(() =>
+    fetch(
+      `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(phoneNumberId)}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: opts.to.replace(/^\+/, ""),
+          type: "interactive",
+          interactive,
+        }),
+      }
+    )
+  );
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp Flow send failed: HTTP ${res.status}`);
   }
 
-  const data = await res.json() as { messages?: Array<{ id?: string }> };
+  const data = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }> };
   return { messageId: data.messages?.[0]?.id ?? "" };
 }

@@ -34,6 +34,10 @@ export function createSchemaInit(ddl: string | string[]): () => Promise<void> {
           await pool.query(sql);
         }
       })();
+      // Reset on failure so transient errors don't permanently block schema init
+      ready.catch(() => {
+        ready = null;
+      });
     }
     return ready;
   };

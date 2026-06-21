@@ -16,8 +16,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -28,14 +27,15 @@ interface RouteParams {
  * Retrieve a single user by ID.
  */
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
   const store = getStore();
   const user = await store.getById(id);
 
-  if (!user) {
+  if (!user || user.orgId !== orgId) {
     return scimError(404, `User ${id} not found`);
   }
 
@@ -47,14 +47,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
  * Replace a user's attributes (full replacement per SCIM 2.0 spec).
  */
 export async function PUT(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
   const store = getStore();
   const existing = await store.getById(id);
 
-  if (!existing) {
+  if (!existing || existing.orgId !== orgId) {
     return scimError(404, `User ${id} not found`);
   }
 
@@ -78,7 +79,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { user } = await provisionOrUpdateUser(scimUser);
+    const { user } = await provisionOrUpdateUser(scimUser, orgId);
     return scimResponse(userToScim(user, BASE_URL));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -92,14 +93,15 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
  * Apply partial updates per SCIM 2.0 PATCH operation.
  */
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
   const store = getStore();
   const existing = await store.getById(id);
 
-  if (!existing) {
+  if (!existing || existing.orgId !== orgId) {
     return scimError(404, `User ${id} not found`);
   }
 
@@ -130,7 +132,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   }
 
   try {
-    const { user } = await provisionOrUpdateUser(currentScim);
+    const { user } = await provisionOrUpdateUser(currentScim, orgId);
     return scimResponse(userToScim(user, BASE_URL));
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -144,11 +146,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
  * Deactivate a user (NOT delete — for audit trail).
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { id } = await params;
-  const updated = await deprovisionUser(id);
+  const updated = await deprovisionUser(id, orgId);
 
   if (!updated) {
     return scimError(404, `User ${id} not found`);

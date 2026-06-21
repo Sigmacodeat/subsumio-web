@@ -32,7 +32,7 @@ const COPY = {
       {
         icon: Mic,
         t: "Sprachnotiz unterwegs",
-        d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+        d: "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor Sie im Büro sind.",
       },
     ],
     phoneHeader: "Subsumio-Copilot",
@@ -57,7 +57,7 @@ const COPY = {
     bentoEyebrow: "Alle Funktionen",
     bentoTitle: "Alles, was die Kanzlei braucht — in einem Gehirn",
     bentoSub:
-      "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
+      "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf Ihrer Infrastruktur.",
   },
   en: {
     waEyebrow: "The winning USP",

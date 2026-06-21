@@ -11,7 +11,7 @@ import {
   scimError,
   scimResponse,
   scimListResponse,
-  validateScimAuth,
+  resolveScimOrgId,
   requireScimAuth,
   userToScim,
   scimToUserData,
@@ -136,7 +136,7 @@ describe("scimListResponse", () => {
   });
 });
 
-describe("validateScimAuth", () => {
+describe("resolveScimOrgId", () => {
   const origEnv = { ...process.env };
 
   afterEach(() => {
@@ -148,56 +148,84 @@ describe("validateScimAuth", () => {
     return await import("./scim");
   }
 
-  test("returns false when SCIM_BEARER_TOKEN is not set", async () => {
+  test("returns null when no tokens are configured", async () => {
+    delete process.env.SCIM_BEARER_TOKENS;
     delete process.env.SCIM_BEARER_TOKEN;
-    const { validateScimAuth: fresh } = await freshImport();
+    delete process.env.SCIM_SINGLE_TENANT_ORG_ID;
+    const { resolveScimOrgId: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer some-token" },
     });
-    expect(fresh(req)).toBe(false);
+    expect(fresh(req)).toBeNull();
   });
 
-  test("returns false when Authorization header is missing", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
-    const { validateScimAuth: fresh } = await freshImport();
+  test("returns null when Authorization header is missing", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:token-a";
+    const { resolveScimOrgId: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users");
-    expect(fresh(req)).toBe(false);
+    expect(fresh(req)).toBeNull();
   });
 
-  test("returns false when Authorization header is not Bearer", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
-    const { validateScimAuth: fresh } = await freshImport();
+  test("returns null when Authorization header is not Bearer", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:token-a";
+    const { resolveScimOrgId: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Basic abc123" },
     });
-    expect(fresh(req)).toBe(false);
+    expect(fresh(req)).toBeNull();
   });
 
-  test("returns true for valid bearer token", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
-    const { validateScimAuth: fresh } = await freshImport();
-    const req = new Request("https://example.com/api/scim/Users", {
-      headers: { Authorization: "Bearer valid-token" },
+  test("resolves the matching org for a multi-tenant token", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:token-a,org-b:token-b";
+    const { resolveScimOrgId: fresh } = await freshImport();
+    const reqA = new Request("https://example.com/api/scim/Users", {
+      headers: { Authorization: "Bearer token-a" },
     });
-    expect(fresh(req)).toBe(true);
+    const reqB = new Request("https://example.com/api/scim/Users", {
+      headers: { Authorization: "Bearer token-b" },
+    });
+    expect(fresh(reqA)).toBe("org-a");
+    expect(fresh(reqB)).toBe("org-b");
   });
 
-  test("returns false for wrong token", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
-    const { validateScimAuth: fresh } = await freshImport();
+  test("a token from one org never resolves another org's id", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:token-a,org-b:token-b";
+    const { resolveScimOrgId: fresh } = await freshImport();
+    const req = new Request("https://example.com/api/scim/Users", {
+      headers: { Authorization: "Bearer token-a" },
+    });
+    expect(fresh(req)).not.toBe("org-b");
+  });
+
+  test("returns null for an unknown token", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:token-a";
+    const { resolveScimOrgId: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer wrong-token" },
     });
-    expect(fresh(req)).toBe(false);
+    expect(fresh(req)).toBeNull();
   });
 
-  test("returns false for token of different length", async () => {
+  test("legacy SCIM_BEARER_TOKEN only resolves when SCIM_SINGLE_TENANT_ORG_ID is set", async () => {
+    delete process.env.SCIM_BEARER_TOKENS;
     process.env.SCIM_BEARER_TOKEN = "valid-token";
-    const { validateScimAuth: fresh } = await freshImport();
+    delete process.env.SCIM_SINGLE_TENANT_ORG_ID;
+    const { resolveScimOrgId: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
-      headers: { Authorization: "Bearer valid-token-extra" },
+      headers: { Authorization: "Bearer valid-token" },
     });
-    expect(fresh(req)).toBe(false);
+    expect(fresh(req)).toBeNull();
+  });
+
+  test("legacy SCIM_BEARER_TOKEN resolves the configured single-tenant org", async () => {
+    delete process.env.SCIM_BEARER_TOKENS;
+    process.env.SCIM_BEARER_TOKEN = "valid-token";
+    process.env.SCIM_SINGLE_TENANT_ORG_ID = "legacy-org";
+    const { resolveScimOrgId: fresh } = await freshImport();
+    const req = new Request("https://example.com/api/scim/Users", {
+      headers: { Authorization: "Bearer valid-token" },
+    });
+    expect(fresh(req)).toBe("legacy-org");
   });
 });
 
@@ -213,22 +241,22 @@ describe("requireScimAuth", () => {
     return await import("./scim");
   }
 
-  test("returns null when authorized", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
+  test("returns the resolved org when authorized", async () => {
+    process.env.SCIM_BEARER_TOKENS = "org-a:valid-token";
     const { requireScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users", {
       headers: { Authorization: "Bearer valid-token" },
     });
-    expect(fresh(req)).toBeNull();
+    expect(fresh(req)).toEqual({ orgId: "org-a" });
   });
 
   test("returns 401 Response when not authorized", async () => {
-    process.env.SCIM_BEARER_TOKEN = "valid-token";
+    process.env.SCIM_BEARER_TOKENS = "org-a:valid-token";
     const { requireScimAuth: fresh } = await freshImport();
     const req = new Request("https://example.com/api/scim/Users");
     const result = fresh(req);
     expect(result).toBeInstanceOf(Response);
-    expect(result!.status).toBe(401);
+    expect((result as Response).status).toBe(401);
   });
 });
 

@@ -25,7 +25,9 @@ const intakePostSchema = z.object({
 
 const intakePatchSchema = z.object({
   slug: z.string().min(1, "slug_required"),
-  status: z.enum(["new", "needs_info", "conflict_check", "accepted", "rejected", "converted"]).optional(),
+  status: z
+    .enum(["new", "needs_info", "conflict_check", "accepted", "rejected", "converted"])
+    .optional(),
   conflict_check_status: z.enum(["pending", "clear", "conflict", "needs_review"]).optional(),
   converted_case_slug: z.string().optional(),
   missing_documents: z.array(z.string().min(1).max(120)).optional(),
@@ -57,15 +59,19 @@ export const GET = createHandler(
     });
     if (!res.ok) return apiError("intake_list_failed", "Intakes konnten nicht geladen werden", 502);
 
-    const pages = pagesFrom(await res.json());
+    const pages = pagesFrom(await res.json().catch(() => []));
     const intakes = pages
       .map(intakeFromPage)
       .filter((item): item is NonNullable<ReturnType<typeof intakeFromPage>> => item !== null)
       .filter((item) => !query.status || item.frontmatter.status === query.status)
-      .sort((a, b) => new Date(b.frontmatter.created_at).getTime() - new Date(a.frontmatter.created_at).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.frontmatter.created_at).getTime() -
+          new Date(a.frontmatter.created_at).getTime()
+      );
 
     return Response.json({ intakes, total: intakes.length });
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -102,11 +108,12 @@ export const POST = createHandler(
         frontmatter: intake.frontmatter,
       }),
     });
-    if (!res.ok) return apiError("intake_create_failed", "Intake konnte nicht erstellt werden", 502);
+    if (!res.ok)
+      return apiError("intake_create_failed", "Intake konnte nicht erstellt werden", 502);
 
     broadcastSseEvent(ctx.brainId, "intake.created", { slug: intake.slug, by: ctx.user.email });
     return Response.json({ intake }, { status: 201 });
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -131,7 +138,8 @@ export const PATCH = createHandler(
       updated_at: new Date().toISOString(),
     };
     Object.keys(patch).forEach((key) => {
-      if ((patch as Record<string, unknown>)[key] === undefined) delete (patch as Record<string, unknown>)[key];
+      if ((patch as Record<string, unknown>)[key] === undefined)
+        delete (patch as Record<string, unknown>)[key];
     });
 
     const res = await fetch(`${ENGINE_URL}/api/pages`, {
@@ -146,9 +154,10 @@ export const PATCH = createHandler(
         merge: true,
       }),
     });
-    if (!res.ok) return apiError("intake_update_failed", "Intake konnte nicht aktualisiert werden", 502);
+    if (!res.ok)
+      return apiError("intake_update_failed", "Intake konnte nicht aktualisiert werden", 502);
 
     broadcastSseEvent(ctx.brainId, "intake.updated", { slug: body.slug, by: ctx.user.email });
     return Response.json({ ok: true, slug: body.slug, patch });
-  },
+  }
 );

@@ -75,7 +75,10 @@ export async function authenticateWithCode(
     }),
   });
 
-  const data = (await res.json()) as WorkOSAuthResponse & { error?: string; message?: string };
+  const data = (await res.json().catch(() => ({}))) as WorkOSAuthResponse & {
+    error?: string;
+    message?: string;
+  };
   if (!res.ok) {
     throw new Error(data.message || data.error || `WorkOS authentication failed: ${res.status}`);
   }
@@ -89,7 +92,7 @@ export async function getUserProfile(userId: string): Promise<WorkOSProfile> {
     headers: { Authorization: `Bearer ${API_KEY}` },
   });
 
-  const data = (await res.json()) as WorkOSProfile & { error?: string };
+  const data = (await res.json().catch(() => ({}))) as WorkOSProfile & { error?: string };
   if (!res.ok) throw new Error(data.error || `WorkOS profile fetch failed: ${res.status}`);
   return data;
 }

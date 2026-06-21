@@ -206,21 +206,30 @@ export function normalizeMailRecipients(value: unknown, field: string): string[]
 
 export function buildMailDraft(body: unknown, replyToMessageId?: string): MailDraftInput {
   const payload = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
-  const subject = String(payload.subject ?? "").trim();
-  const text = typeof payload.text === "string" ? payload.text.trim() : "";
-  const html = typeof payload.html === "string" ? payload.html.trim() : "";
+  const subject = String(payload.subject ?? "")
+    .trim()
+    .slice(0, 500);
+  const text = typeof payload.text === "string" ? payload.text.trim().slice(0, 100_000) : "";
+  const html = typeof payload.html === "string" ? payload.html.trim().slice(0, 500_000) : "";
   if (!subject) throw new Error("subject_required");
   if (!text && !html) throw new Error("body_required");
+  const to = normalizeMailRecipients(payload.to, "to");
+  if (to.length > 50) throw new Error("too_many_recipients");
+  const cc = normalizeMailRecipients(payload.cc, "cc");
+  const bcc = normalizeMailRecipients(payload.bcc, "bcc");
+  if (cc.length + bcc.length > 50) throw new Error("too_many_recipients");
   return {
-    to: normalizeMailRecipients(payload.to, "to"),
-    cc: normalizeMailRecipients(payload.cc, "cc"),
-    bcc: normalizeMailRecipients(payload.bcc, "bcc"),
+    to,
+    cc,
+    bcc,
     subject,
     text: text || undefined,
     html: html || undefined,
     replyToMessageId:
       replyToMessageId ??
-      (typeof payload.replyToMessageId === "string" ? payload.replyToMessageId : undefined),
+      (typeof payload.replyToMessageId === "string"
+        ? payload.replyToMessageId.slice(0, 200)
+        : undefined),
   };
 }
 
@@ -240,7 +249,7 @@ async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail 
     );
     return null;
   }
-  return (await res.json()) as ResendReceivedEmail;
+  return (await res.json().catch(() => null)) as ResendReceivedEmail | null;
 }
 
 export function verifyResendWebhook(payload: string, headers: Headers): ResendWebhookEvent {

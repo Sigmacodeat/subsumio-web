@@ -69,6 +69,7 @@ export function ChatInput({
   function handleSubmit() {
     const trimmed = text.trim();
     if (!trimmed || isStreaming || disabled) return;
+    if (trimmed.length > 50_000) return;
     onSend(trimmed, attachments.length > 0 ? attachments : undefined);
     setText("");
     setAttachments([]);
@@ -80,15 +81,23 @@ export function ChatInput({
       e.preventDefault();
       handleSubmit();
     }
-    if (e.key === "Escape" && isStreaming) {
-      e.preventDefault();
-      onStop?.();
+    if (e.key === "Escape") {
+      if (showTemplates) {
+        e.preventDefault();
+        setShowTemplates(false);
+        return;
+      }
+      if (isStreaming) {
+        e.preventDefault();
+        onStop?.();
+      }
     }
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
+    if (files.length > 10) return;
     setUploading(true);
     try {
       const uploaded = await Promise.all(files.map((f) => api.upload.file(f, { source: "chat" })));

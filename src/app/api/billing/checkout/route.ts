@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { isBillingConfigured, stripePriceId, BILLABLE_PLANS } from "@/lib/billing/plans";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -20,12 +19,20 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, req) => {
     if (!isBillingConfigured()) {
-      return apiError("billing_not_configured", "Stripe is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_PRICE_PRO and STRIPE_PRICE_TEAM to enable checkout.", 501);
+      return apiError(
+        "billing_not_configured",
+        "Stripe is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_PRICE_PRO and STRIPE_PRICE_TEAM to enable checkout.",
+        501
+      );
     }
 
     const priceId = stripePriceId(body.plan);
     if (!priceId) {
-      return apiError("price_not_configured", `Missing env ${BILLABLE_PLANS[body.plan].stripePriceEnv}.`, 501);
+      return apiError(
+        "price_not_configured",
+        `Missing env ${BILLABLE_PLANS[body.plan].stripePriceEnv}.`,
+        501
+      );
     }
 
     const origin = req.nextUrl.origin;
@@ -51,10 +58,13 @@ export const POST = createHandler(
       body: params.toString(),
     });
 
-    const data = await resp.json();
+    const data = (await resp.json().catch(() => ({}))) as {
+      error?: { message?: string };
+      url?: string;
+    };
     if (!resp.ok) {
       return apiError("stripe_error", data?.error?.message ?? "Stripe request failed", 502);
     }
     return Response.json({ url: data.url });
-  },
+  }
 );

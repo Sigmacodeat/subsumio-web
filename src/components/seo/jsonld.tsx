@@ -31,7 +31,7 @@ export function softwareApplicationLd(lang: Lang) {
     operatingSystem: "Web, Self-hosted",
     description:
       lang === "de"
-        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: eine belegte Antwort statt zehn Dokumente — aus euren Akten, Mails, Fristen und Schriftsätzen. Self-hosted oder EU-Cloud."
+        ? "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: eine belegte Antwort statt zehn Dokumente — aus euren Akten, Mails, Fristen und Schriftsätzen. On-Premise oder EU-Cloud."
         : "AI legal software for law firms in Austria, Germany and Switzerland: one cited answer instead of ten documents — from your matters, emails, deadlines and pleadings. Self-hosted or EU cloud.",
     offers: [
       {
@@ -49,7 +49,7 @@ export function softwareApplicationLd(lang: Lang) {
           "@type": "UnitPriceSpecification",
           price: "290",
           priceCurrency: "EUR",
-          unitText: lang === "de" ? "pro Seat und Monat" : "per seat per month",
+          unitText: lang === "de" ? "pro Nutzer und Monat" : "per seat per month",
         },
       },
     ],

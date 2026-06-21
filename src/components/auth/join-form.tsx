@@ -8,6 +8,7 @@ import { Users, ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
+import { csrfFetch } from "@/lib/csrf";
 import { p, type Lang } from "@/content/site";
 
 const COPY = {
@@ -74,7 +75,7 @@ export default function JoinForm({
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/org/join", {
+      const res = await csrfFetch("/api/org/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, org, email }),

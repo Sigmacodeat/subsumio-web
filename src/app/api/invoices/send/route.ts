@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { api } from "@/lib/api";
@@ -39,7 +38,9 @@ export const POST = createHandler(
           const contactPage = await api.brain.getPage(clientSlug);
           const cfm = contactPage.frontmatter as Record<string, unknown>;
           recipient = String(cfm.email ?? "");
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       if (!recipient) {
         return apiError("no_recipient_email", "Keine Empfänger-E-Mail", 400);
@@ -53,10 +54,16 @@ export const POST = createHandler(
       });
 
       const fromAddr = settings.emailFrom ?? settings.smtpUser;
-      const subject = `Rechnung ${String(fm.invoice_number ?? body.invoiceSlug)} – ${settings.kanzleiName || "Ihre Kanzlei"}`;
-      const html = `<p>Sehr geehrte${client ? ` ${client}` : ""},</p>
-<p>anbei finden Sie die Rechnung <strong>${String(fm.invoice_number ?? body.invoiceSlug)}</strong>.</p>
-<p>Mit freundlichen Grüßen<br/>${settings.anwaltName || settings.kanzleiName || ""}</p>`;
+      const esc = (s: unknown) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
+        );
+      const invoiceNumber = esc(fm.invoice_number ?? body.invoiceSlug);
+      const subject = `Rechnung ${invoiceNumber} – ${settings.kanzleiName || "Ihre Kanzlei"}`;
+      const html = `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
+<p>anbei finden Sie die Rechnung <strong>${invoiceNumber}</strong>.</p>
+<p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`;
 
       await transporter.sendMail({ from: fromAddr, to: recipient, subject, html });
 
@@ -72,7 +79,7 @@ export const POST = createHandler(
       return Response.json({ ok: true, sentTo: recipient });
     } catch (err) {
       console.error("[invoice-send] failed:", err instanceof Error ? err.message : String(err));
-      return apiError("send_failed", err instanceof Error ? err.message : String(err), 500);
+      return apiError("send_failed", "Rechnung konnte nicht gesendet werden", 500);
     }
-  },
+  }
 );

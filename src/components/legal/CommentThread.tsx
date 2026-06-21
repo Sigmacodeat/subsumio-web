@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Send, User } from "lucide-react";
 import type { Comment } from "@/lib/comments";
+import { csrfFetch } from "@/lib/csrf";
 
 interface CommentThreadProps {
   parentSlug: string;
@@ -40,7 +41,7 @@ export default function CommentThread({
     if (!newText.trim()) return;
     setSending(true);
     try {
-      const res = await fetch("/api/comments", {
+      const res = await csrfFetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

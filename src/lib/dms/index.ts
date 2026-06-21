@@ -56,6 +56,33 @@ export function isDmsConfigured(): boolean {
   return Boolean(DMS_BASE && DMS_API_KEY);
 }
 
+const DMS_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * Safe wrapper around fetch+json for DMS connector calls: bounds every
+ * outbound request with a timeout (a hung DMS backend must not hang the
+ * request indefinitely) and raises a clean error on non-2xx/non-JSON
+ * responses instead of letting `.json()` throw an unhandled rejection.
+ */
+export async function dmsFetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, { ...init, signal: AbortSignal.timeout(DMS_FETCH_TIMEOUT_MS) });
+  } catch (err) {
+    throw new Error(
+      `DMS request to ${url} failed: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+  if (!res.ok) {
+    throw new Error(`DMS request to ${url} returned ${res.status}`);
+  }
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new Error(`DMS request to ${url} returned a non-JSON response`);
+  }
+}
+
 // --- Shared importToBrain implementation ------------------------------------
 
 /**
@@ -71,10 +98,23 @@ export async function importToBrainCommon(
 ): Promise<{ slug: string; success: boolean }> {
   let content = doc.content;
   if (!content) {
-    const contentRes = await fetch(contentUrl, { headers: dmsAuthHeaders() });
-    if (contentRes.ok) {
-      const blob = await contentRes.arrayBuffer();
-      content = Buffer.from(blob).toString("base64");
+    try {
+      const contentRes = await fetch(contentUrl, {
+        headers: dmsAuthHeaders(),
+        signal: AbortSignal.timeout(DMS_FETCH_TIMEOUT_MS),
+      });
+      if (contentRes.ok) {
+        const blob = await contentRes.arrayBuffer();
+        content = Buffer.from(blob).toString("base64");
+      } else {
+        console.warn(
+          `[dms] content fetch from ${contentUrl} returned ${contentRes.status}; importing without content`
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `[dms] content fetch from ${contentUrl} failed: ${err instanceof Error ? err.message : String(err)}; importing without content`
+      );
     }
   }
 

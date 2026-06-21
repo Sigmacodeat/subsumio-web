@@ -56,12 +56,24 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith("/api/auth/reset") ||
       pathname.startsWith("/api/auth/2fa/login-verify") ||
       pathname.startsWith("/api/cron/") ||
+      pathname.startsWith("/api/portal/") ||
       isWebhookCsrfExempt(pathname);
 
     if (!isExempt) {
       const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
       const headerToken = req.headers.get(CSRF_HEADER_NAME);
-      if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+      if (!cookieToken || !headerToken) {
+        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
+      }
+      // Timing-safe comparison (same pattern as csrf.ts validateCsrf)
+      if (cookieToken.length !== headerToken.length) {
+        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
+      }
+      let diff = 0;
+      for (let i = 0; i < cookieToken.length; i++) {
+        diff |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
+      }
+      if (diff !== 0) {
         return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
       }
     }

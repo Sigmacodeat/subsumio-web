@@ -1,8 +1,8 @@
-
 import { z } from "zod";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { clientIp } from "@/lib/auth/rate-limit";
 import type { BrainPage } from "@/lib/types";
 
 const messagesSchema = z.object({
@@ -14,6 +14,9 @@ export const GET = createPublicHandler(
   {
     query: messagesSchema,
     cors: true,
+    rateLimitKey: (req) => `portal-messages:${clientIp(req.headers)}`,
+    rateLimitMax: 30,
+    rateLimitWindowMs: 60_000,
   },
   async (req, _body, query) => {
     const payload = await verifyPortalToken(query.token);
@@ -21,7 +24,11 @@ export const GET = createPublicHandler(
       return apiError("invalid_or_expired_token", "Token ungültig oder abgelaufen", 403);
     }
     if (!payload.brain_id) {
-      return apiError("new_portal_link_required", "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.", 403);
+      return apiError(
+        "new_portal_link_required",
+        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
+        403
+      );
     }
 
     try {
@@ -55,5 +62,5 @@ export const GET = createPublicHandler(
       console.error("[portal/messages] failed:", err instanceof Error ? err.message : String(err));
       return apiError("load_failed", "Nachrichten konnten nicht geladen werden", 500);
     }
-  },
+  }
 );

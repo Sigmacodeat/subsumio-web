@@ -27,12 +27,14 @@ interface TranscriptionResult {
  * and send it to Whisper.
  */
 export async function transcribeVoiceMessage(
-  media: StoredWhatsAppMedia,
+  media: StoredWhatsAppMedia
 ): Promise<TranscriptionResult> {
   const openaiKey = process.env.OPENAI_API_KEY;
 
   if (!openaiKey) {
-    console.warn("[whatsapp/transcribe] OPENAI_API_KEY not configured — voice transcription skipped");
+    console.warn(
+      "[whatsapp/transcribe] OPENAI_API_KEY not configured — voice transcription skipped"
+    );
     return {
       text: "",
       provider: "none",
@@ -52,7 +54,10 @@ export async function transcribeVoiceMessage(
       audioBytes = await readFile(media.storagePath);
     }
   } catch (err) {
-    console.error("[whatsapp/transcribe] failed to read audio file:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[whatsapp/transcribe] failed to read audio file:",
+      err instanceof Error ? err.message : String(err)
+    );
     return {
       text: "",
       provider: "none",
@@ -69,13 +74,15 @@ export async function transcribeVoiceMessage(
     formData.append("model", process.env.WHATSAPP_TRANSCRIPTION_MODEL || "whisper-1");
     formData.append("language", process.env.WHATSAPP_TRANSCRIPTION_LANGUAGE || "de");
 
-    const res = await withRetry(() => fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: formData,
-    }));
+    const res = await withRetry(() =>
+      fetch("https://api.openai.com/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: formData,
+      })
+    );
 
     if (!res.ok) {
       const error = await res.text().catch(() => "");
@@ -86,7 +93,11 @@ export async function transcribeVoiceMessage(
       };
     }
 
-    const data = await res.json() as { text?: string; language?: string; duration?: number };
+    const data = (await res.json().catch(() => ({}))) as {
+      text?: string;
+      language?: string;
+      duration?: number;
+    };
     return {
       text: data.text?.trim() ?? "",
       language: data.language,
@@ -94,7 +105,10 @@ export async function transcribeVoiceMessage(
       provider: "openai-whisper",
     };
   } catch (err) {
-    console.error("[whatsapp/transcribe] Whisper request failed:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[whatsapp/transcribe] Whisper request failed:",
+      err instanceof Error ? err.message : String(err)
+    );
     return {
       text: "",
       provider: "none",

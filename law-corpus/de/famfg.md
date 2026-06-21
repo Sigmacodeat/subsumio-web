@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "FamFG"
 version_date: "2026-06-11"
-retrieved_at: "2026-06-12"
+retrieved_at: "2026-06-21"
 source_url: "https://www.gesetze-im-internet.de/famfg/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -55,21 +55,21 @@ Allgemeine Vorschriften
 §  86Vollstreckungstitel§  87Verfahren; Beschwerde
 Unterabschnitt 2
 Vollstreckung von
- Entscheidungen über die Herausgabe
- von Personen und die Regelung des Umgangs
+Entscheidungen über die Herausgabe
+von Personen und die Regelung des Umgangs
 
 §  88Grundsätze§  89Ordnungsmittel§  90Anwendung unmittelbaren Zwanges§  91Richterlicher Durchsuchungsbeschluss§  92Vollstreckungsverfahren§  93Einstellung der Vollstreckung§  94Eidesstattliche Versicherung
 Unterabschnitt 3
 Vollstreckung
- nach der Zivilprozessordnung
+nach der Zivilprozessordnung
 
 §  95Anwendung der Zivilprozessordnung§  96Vollstreckung in Verfahren nach dem Gewaltschutzgesetz und in Ehewohnungssachen§  96aVollstreckung in Abstammungssachen
 Abschnitt 9
 Verfahren mit Auslandsbezug
 Unterabschnitt 1
 Verhältnis zu
- völkerrechtlichen Vereinbarungen und
- Rechtsakten der Europäischen Union
+völkerrechtlichen Vereinbarungen und
+Rechtsakten der Europäischen Union
 
 §  97Vorrang und Unberührtheit
 Unterabschnitt 2
@@ -78,7 +78,7 @@ Internationale Zuständigkeit
 §  98Ehesachen; Verbund von Scheidungs- und Folgesachen§  99Kindschaftssachen§ 100Abstammungssachen§ 101Adoptionssachen§ 102Versorgungsausgleichssachen§ 103Lebenspartnerschaftssachen§ 104Betreuungs- und Unterbringungssachen; Pflegschaft für Erwachsene§ 105Andere Verfahren§ 106Keine ausschließliche Zuständigkeit
 Unterabschnitt 3
 Anerkennung und
- Vollstreckbarkeit ausländischer Entscheidungen
+Vollstreckbarkeit ausländischer Entscheidungen
 
 § 107Anerkennung ausländischer Entscheidungen in Ehesachen§ 108Anerkennung anderer ausländischer Entscheidungen§ 109Anerkennungshindernisse§ 110Vollstreckbarkeit ausländischer Entscheidungen
 Buch 2
@@ -89,15 +89,15 @@ Allgemeine Vorschriften
 § 111Familiensachen§ 112Familienstreitsachen§ 113Anwendung von Vorschriften der Zivilprozessordnung§ 114Vertretung durch einen Rechtsanwalt; Vollmacht§ 115Zurückweisung von Angriffs- und Verteidigungsmitteln§ 116Entscheidung durch Beschluss; Wirksamkeit§ 117Rechtsmittel in Ehe- und Familienstreitsachen§ 118Wiederaufnahme§ 119Einstweilige Anordnung und Arrest§ 120Vollstreckung
 Abschnitt 2
 Verfahren
- in Ehesachen; Verfahren in
- Scheidungssachen und Folgesachen
+in Ehesachen; Verfahren in
+Scheidungssachen und Folgesachen
 Unterabschnitt 1
 Verfahren in Ehesachen
 
 § 121Ehesachen§ 122Örtliche Zuständigkeit§ 123Abgabe bei Anhängigkeit mehrerer Ehesachen§ 124Antrag§ 125Verfahrensfähigkeit§ 126Mehrere Ehesachen; Ehesachen und andere Verfahren§ 127Eingeschränkte Amtsermittlung§ 128Persönliches Erscheinen der Ehegatten§ 129Mitwirkung der Verwaltungsbehörde oder dritter Personen§ 129aVorrang- und Beschleunigungsgebot§ 130Säumnis der Beteiligten§ 131Tod eines Ehegatten§ 132Kosten bei Aufhebung der Ehe
 Unterabschnitt 2
 Verfahren in
- Scheidungssachen und Folgesachen
+Scheidungssachen und Folgesachen
 
 § 133Inhalt der Antragsschrift§ 134Zustimmung zur Scheidung und zur Rücknahme; Widerruf§ 135Außergerichtliche Konfliktbeilegung über Folgesachen§ 136Aussetzung des Verfahrens§ 137Verbund von Scheidungs- und Folgesachen§ 138Beiordnung eines Rechtsanwalts§ 139Einbeziehung weiterer Beteiligter und dritter Personen§ 140Abtrennung§ 141Rücknahme des Scheidungsantrags§ 142Einheitliche Endentscheidung; Abweisung des Scheidungsantrags§ 143Einspruch§ 144Verzicht auf Anschlussrechtsmittel§ 145Befristung und Einschränkung von Rechtsmittelerweiterung und Anschlussrechtsmittel§ 146Zurückverweisung§ 147Erweiterte Aufhebung§ 148Wirksamwerden von Entscheidungen in Folgesachen§ 149Erstreckung der Bewilligung von Verfahrenskostenhilfe§ 150Kosten in Scheidungssachen und Folgesachen
 Abschnitt 3
@@ -114,7 +114,7 @@ Verfahren in Adoptionssachen
 § 186Adoptionssachen§ 187Örtliche Zuständigkeit§ 188Beteiligte§ 189Fachliche Äußerung§ 190(weggefallen)§ 191Verfahrensbeistand§ 192Anhörung der Beteiligten§ 193Anhörung weiterer Personen§ 194Anhörung des Jugendamts§ 195Anhörung des Landesjugendamts§ 196Unzulässigkeit der Verbindung§ 196aZurückweisung des Antrags§ 197Beschluss über die Annahme als Kind§ 198Beschluss in weiteren Verfahren§ 199Anwendung des Adoptionswirkungsgesetzes
 Abschnitt 6
 Verfahren in
- Ehewohnungs- und Haushaltssachen
+Ehewohnungs- und Haushaltssachen
 
 § 200Ehewohnungssachen; Haushaltssachen§ 201Örtliche Zuständigkeit§ 202Abgabe an das Gericht der Ehesache§ 203Antrag§ 204Beteiligte§ 205Anhörung des Jugendamts in Ehewohnungssachen§ 206Besondere Vorschriften in Haushaltssachen§ 207Erörterungstermin§ 208Tod eines Ehegatten§ 209Durchführung der Entscheidung, Wirksamkeit
 Abschnitt 7
@@ -123,7 +123,7 @@ Verfahren in Gewaltschutzsachen
 § 210Gewaltschutzsachen§ 211Örtliche Zuständigkeit§ 212Beteiligte§ 213Anhörung des Jugendamts§ 214Einstweilige Anordnung§ 214aBestätigung des Vergleichs§ 215Durchführung der Endentscheidung§ 216Wirksamkeit; Vollstreckung vor Zustellung§ 216aMitteilung von Entscheidungen
 Abschnitt 8
 Verfahren
- in Versorgungsausgleichssachen
+in Versorgungsausgleichssachen
 
 § 217Versorgungsausgleichssachen§ 218Örtliche Zuständigkeit§ 219Beteiligte§ 220Verfahrensrechtliche Auskunftspflicht§ 221Erörterung, Aussetzung§ 222Durchführung der externen Teilung§ 223Antragserfordernis für Ausgleichsansprüche nach der Scheidung§ 224Entscheidung über den Versorgungsausgleich§ 225Zulässigkeit einer Abänderung des Wertausgleichs bei der Scheidung§ 226Durchführung einer Abänderung des Wertausgleichs bei der Scheidung§ 227Sonstige Abänderungen§ 228Zulässigkeit der Beschwerde§ 229Elektronischer Rechtsverkehr zwischen den Familiengerichten und den Versorgungsträgern§ 230(weggefallen)
 Abschnitt 9
@@ -138,7 +138,7 @@ Einstweilige Anordnung
 § 246Besondere Vorschriften für die einstweilige Anordnung§ 247Einstweilige Anordnung vor Geburt des Kindes§ 248Einstweilige Anordnung bei Feststellung der Vaterschaft
 Unterabschnitt 3
 Vereinfachtes Verfahren
- über den Unterhalt Minderjähriger
+über den Unterhalt Minderjähriger
 
 § 249Statthaftigkeit des vereinfachten Verfahrens§ 250Antrag§ 251Maßnahmen des Gerichts§ 252Einwendungen des Antragsgegners§ 253Festsetzungsbeschluss§ 254Mitteilungen über Einwendungen§ 255Streitiges Verfahren§ 256Beschwerde§ 257Besondere Verfahrensvorschriften§ 258Sonderregelungen für maschinelle Bearbeitung§ 259Formulare§ 260Bestimmung des Amtsgerichts
 Abschnitt 10
@@ -147,37 +147,37 @@ Verfahren in Güterrechtssachen
 § 261Güterrechtssachen§ 262Verfahren nach den §§ 1382 und 1383 des Bürgerlichen Gesetzbuchs§ 263Abgabe an das Gericht der Ehesache§ 264Verfahren auf Stundung und auf Übertragung von Vermögensgegenständen§ 265Einheitliche Entscheidung
 Abschnitt 11
 Verfahren
- in sonstigen Familiensachen
+in sonstigen Familiensachen
 
 § 266Sonstige Familiensachen§ 267Örtliche Zuständigkeit§ 268Abgabe an das Gericht der Ehesache
 Abschnitt 12
 Verfahren
- in Lebenspartnerschaftssachen
+in Lebenspartnerschaftssachen
 
 § 269Lebenspartnerschaftssachen§ 270Anwendbare Vorschriften
 Buch 3
 Verfahren in
- Betreuungs- und Unterbringungssachen
+Betreuungs- und Unterbringungssachen
 Abschnitt 1
 Verfahren in Betreuungssachen
 
 § 271Betreuungssachen§ 272Örtliche Zuständigkeit§ 273Abgabe bei Änderung des gewöhnlichen Aufenthalts§ 274Beteiligte§ 275Stellung des Betroffenen im Verfahren§ 276Verfahrenspfleger§ 277Vergütung und Aufwendungsersatz des Verfahrenspflegers§ 278Persönliche Anhörung des Betroffenen§ 279Anhörung der sonstigen Beteiligten, der Betreuungsbehörde und des gesetzlichen Vertreters§ 280Einholung eines Gutachtens§ 281Ärztliches Zeugnis; Entbehrlichkeit eines Gutachtens§ 282Vorhandene Gutachten zur Feststellung der Pflegebedürftigkeit§ 283Vorführung zur Untersuchung§ 284Unterbringung zur Begutachtung§ 285Ermittlung und Herausgabe einer Betreuungsverfügung oder einer Vorsorgevollmacht§ 286Inhalt der Beschlussformel§ 287Wirksamwerden von Beschlüssen§ 288Bekanntgabe§ 289(weggefallen)§ 290Bestellungsurkunde§ 291Überprüfung der Betreuerauswahl§ 292Zahlungen an den Betreuer; Verordnungsermächtigung§ 292aZahlungen an die Staatskasse§ 293Erweiterung der Betreuung oder des Einwilligungsvorbehalts§ 294Aufhebung und Einschränkung der Betreuung oder des Einwilligungsvorbehalts§ 295Verlängerung der Betreuung oder des Einwilligungsvorbehalts§ 296Entlassung des Betreuers und Bestellung eines neuen Betreuers§ 297Sterilisation§ 298Verfahren in Fällen des § 1829 des Bürgerlichen Gesetzbuchs§ 299Persönliche Anhörung in anderen Genehmigungsverfahren§ 300Einstweilige Anordnung§ 301Einstweilige Anordnung bei gesteigerter Dringlichkeit§ 302Dauer der einstweiligen Anordnung§ 303Ergänzende Vorschriften über die Beschwerde§ 304Beschwerde der Staatskasse§ 305Beschwerde des Untergebrachten§ 306Aufhebung des Einwilligungsvorbehalts§ 307Kosten in Betreuungssachen§ 308Mitteilung von Entscheidungen§ 309Mitteilungen an die Meldebehörde§ 309aMitteilungen an die Betreuungsbehörde§ 310Mitteilungen während einer freiheitsentziehenden Unterbringung oder freiheitsentziehenden Maßnahme§ 311Mitteilungen zur Strafverfolgung
 Abschnitt 2
 Verfahren
- in Unterbringungssachen
+in Unterbringungssachen
 
 § 312Unterbringungssachen§ 313Örtliche Zuständigkeit§ 314Abgabe der Unterbringungssache§ 315Beteiligte§ 316Verfahrensfähigkeit§ 317Verfahrenspfleger§ 318Vergütung und Aufwendungsersatz des Verfahrenspflegers§ 319Persönliche Anhörung des Betroffenen§ 320Anhörung der sonstigen Beteiligten und der zuständigen Behörde§ 321Einholung eines Gutachtens§ 322Vorführung zur Untersuchung; Unterbringung zur Begutachtung§ 323Inhalt der Beschlussformel§ 324Wirksamwerden von Beschlüssen§ 325Bekanntgabe§ 326Zuführung zur Unterbringung; Verbringung zu einem stationären Aufenthalt§ 327Vollzugsangelegenheiten§ 328Aussetzung des Vollzugs§ 329Dauer und Verlängerung der Unterbringungsmaßnahme§ 330Aufhebung der Unterbringungsmaßnahme§ 331Einstweilige Anordnung§ 332Einstweilige Anordnung bei gesteigerter Dringlichkeit§ 333Dauer der einstweiligen Anordnung§ 334Einstweilige Maßregeln§ 335Ergänzende Vorschriften über die Beschwerde§ 336Einlegung der Beschwerde durch den Betroffenen§ 337Kosten in Unterbringungssachen§ 338Mitteilung von Entscheidungen§ 339Benachrichtigung von Angehörigen
 Abschnitt 3
 Verfahren in
- betreuungsgerichtlichen Zuweisungssachen
+betreuungsgerichtlichen Zuweisungssachen
 
 § 340Betreuungsgerichtliche Zuweisungssachen§ 341Örtliche Zuständigkeit
 Buch 4
 Verfahren in
- Nachlass- und Teilungssachen
+Nachlass- und Teilungssachen
 Abschnitt 1
 Begriffsbestimmung;
- örtliche Zuständigkeit
+örtliche Zuständigkeit
 
 § 342Begriffsbestimmung§ 343Örtliche Zuständigkeit§ 344Besondere örtliche Zuständigkeit
 Abschnitt 2
@@ -188,17 +188,17 @@ Allgemeine Bestimmungen
 § 345Beteiligte
 Unterabschnitt 2
 Verwahrung von
- Verfügungen von Todes wegen
+Verfügungen von Todes wegen
 
 § 346Verfahren bei besonderer amtlicher Verwahrung§ 347Mitteilung über die Verwahrung
 Unterabschnitt 3
 Eröffnung von
- Verfügungen von Todes wegen
+Verfügungen von Todes wegen
 
 § 348Eröffnung von Verfügungen von Todes wegen durch das Nachlassgericht§ 349Besonderheiten bei der Eröffnung von gemeinschaftlichen Testamenten und Erbverträgen§ 350Eröffnung der Verfügung von Todes wegen durch ein anderes Gericht§ 351Eröffnungsfrist für Verfügungen von Todes wegen
 Unterabschnitt 4
 Erbscheinsverfahren;
- Testamentsvollstreckung
+Testamentsvollstreckung
 
 § 352Angaben im Antrag auf Erteilung eines Erbscheins; Nachweis der Richtigkeit§ 352aGemeinschaftlicher Erbschein§ 352bInhalt des Erbscheins für den Vorerben; Angabe des Testamentsvollstreckers§ 352cGegenständlich beschränkter Erbschein§ 352dÖffentliche Aufforderung§ 352eEntscheidung über Erbscheinsanträge§ 353Einziehung oder Kraftloserklärung von Erbscheinen§ 354Sonstige Zeugnisse§ 355Testamentsvollstreckung
 Unterabschnitt 5
@@ -211,7 +211,7 @@ Verfahren in Teilungssachen
 § 363Antrag§ 364(weggefallen)§ 365Ladung§ 366Außergerichtliche Vereinbarung§ 367Wiedereinsetzung§ 368Auseinandersetzungsplan; Bestätigung§ 369Verteilung durch das Los§ 370Aussetzung bei Streit§ 371Wirkung der bestätigten Vereinbarung und Auseinandersetzung; Vollstreckung§ 372Rechtsmittel§ 373Auseinandersetzung einer Gütergemeinschaft
 Buch 5
 Verfahren in Registersachen,
- unternehmensrechtliche Verfahren
+unternehmensrechtliche Verfahren
 Abschnitt 1
 Begriffsbestimmung
 
@@ -232,12 +232,12 @@ Zwangsgeldverfahren
 § 388Androhung§ 389Festsetzung§ 390Verfahren bei Einspruch§ 391Beschwerde§ 392Verfahren bei unbefugtem Firmengebrauch
 Unterabschnitt 3
 Löschungs-
- und Auflösungsverfahren
+und Auflösungsverfahren
 
 § 393Löschung einer Firma§ 394Löschung vermögensloser Gesellschaften und Genossenschaften§ 395Löschung unzulässiger Eintragungen§ 396(weggefallen)§ 397Löschung nichtiger Gesellschaften und Genossenschaften§ 398Löschung nichtiger Beschlüsse§ 399Auflösung wegen Mangels der Satzung
 Unterabschnitt 4
 Ergänzende
- Vorschriften für das Vereinsregister
+Vorschriften für das Vereinsregister
 
 § 400Mitteilungspflichten§ 401Entziehung der Rechtsfähigkeit
 Abschnitt 4
@@ -246,12 +246,12 @@ Unternehmensrechtliche Verfahren
 § 402Anfechtbarkeit§ 403Weigerung des Dispacheurs§ 404Aushändigung von Schriftstücken; Einsichtsrecht§ 405Termin; Ladung§ 406Verfahren im Termin§ 407Verfolgung des Widerspruchs§ 408Beschwerde§ 409Wirksamkeit; Vollstreckung
 Buch 6
 Verfahren in weiteren
- Angelegenheiten der freiwilligen Gerichtsbarkeit
+Angelegenheiten der freiwilligen Gerichtsbarkeit
 
 § 410Weitere Angelegenheiten der freiwilligen Gerichtsbarkeit§ 411Örtliche Zuständigkeit§ 412Beteiligte§ 413Eidesstattliche Versicherung§ 414Unanfechtbarkeit
 Buch 7
 Verfahren
- in Freiheitsentziehungssachen
+in Freiheitsentziehungssachen
 
 § 415Freiheitsentziehungssachen§ 416Örtliche Zuständigkeit§ 417Antrag§ 418Beteiligte§ 419Verfahrenspfleger§ 420Anhörung; Vorführung§ 421Inhalt der Beschlussformel§ 422Wirksamwerden von Beschlüssen§ 423Absehen von der Bekanntgabe§ 424Aussetzung des Vollzugs§ 425Dauer und Verlängerung der Freiheitsentziehung§ 426Aufhebung§ 427Einstweilige Anordnung§ 428Verwaltungsmaßnahme; richterliche Prüfung§ 429Ergänzende Vorschriften über die Beschwerde§ 430Auslagenersatz§ 431Mitteilung von Entscheidungen§ 432Benachrichtigung von Angehörigen
 Buch 8
@@ -262,15 +262,15 @@ Allgemeine Verfahrensvorschriften
 § 433Aufgebotssachen§ 434Antrag; Inhalt des Aufgebots§ 435Öffentliche Bekanntmachung§ 436Gültigkeit der öffentlichen Bekanntmachung§ 437Aufgebotsfrist§ 438Anmeldung nach dem Anmeldezeitpunkt§ 439Erlass des Ausschließungsbeschlusses; Beschwerde; Wiedereinsetzung und Wiederaufnahme§ 440Wirkung einer Anmeldung§ 441Öffentliche Zustellung des Ausschließungsbeschlusses
 Abschnitt 2
 Aufgebot des
- Eigentümers von Grundstücken,
- Schiffen und Schiffsbauwerken
+Eigentümers von Grundstücken,
+Schiffen und Schiffsbauwerken
 
 § 442Aufgebot des Grundstückseigentümers; örtliche Zuständigkeit§ 443Antragsberechtigter§ 444Glaubhaftmachung§ 445Inhalt des Aufgebots§ 446Aufgebot des Schiffseigentümers
 Abschnitt 3
 Aufgebot des
- Gläubigers von Grund- und
- Schiffspfandrechten sowie des
- Berechtigten sonstiger dinglicher Rechte
+Gläubigers von Grund- und
+Schiffspfandrechten sowie des
+Berechtigten sonstiger dinglicher Rechte
 
 § 447Aufgebot des Grundpfandrechtsgläubigers; örtliche Zuständigkeit§ 448Antragsberechtigter§ 449Glaubhaftmachung§ 450Besondere Glaubhaftmachung§ 451Verfahren bei Ausschluss mittels Hinterlegung§ 452Aufgebot des Schiffshypothekengläubigers; örtliche Zuständigkeit§ 453Aufgebot des Berechtigten bei Vormerkung, Vorkaufsrecht, Reallast
 Abschnitt 4
@@ -283,7 +283,7 @@ Aufgebot der Schiffsgläubiger
 § 465Aufgebot der Schiffsgläubiger
 Abschnitt 6
 Aufgebot zur
- Kraftloserklärung von Urkunden
+Kraftloserklärung von Urkunden
 
 § 466Örtliche Zuständigkeit§ 467Antragsberechtigter§ 468Antragsbegründung§ 469Inhalt des Aufgebots§ 470Ergänzende Bekanntmachung in besonderen Fällen§ 471Wertpapiere mit Zinsscheinen§ 472Zinsscheine für mehr als vier Jahre§ 473Vorlegung der Zinsscheine§ 474Abgelaufene Ausgabe der Zinsscheine§ 475Anmeldezeitpunkt bei bestimmter Fälligkeit§ 476Aufgebotsfrist§ 477Anmeldung der Rechte§ 478Ausschließungsbeschluss§ 479Wirkung des Ausschließungsbeschlusses§ 480Zahlungssperre§ 481Entbehrlichkeit des Zeugnisses nach § 471 Abs. 2§ 482Aufhebung der Zahlungssperre§ 483Hinkende Inhaberpapiere§ 484Vorbehalt für die Landesgesetzgebung
 Buch 9
@@ -2248,7 +2248,8 @@ Für die Vorführung zur Untersuchung und die Unterbringung zur Begutachtung gel
 (1) Von der Bekanntgabe der Gründe eines Beschlusses an den Betroffenen kann abgesehen werden, wenn dies nach ärztlichem Zeugnis erforderlich ist, um erhebliche Nachteile für seine Gesundheit zu vermeiden.
 (2) Der Beschluss, durch den eine Unterbringungsmaßnahme genehmigt oder angeordnet wird, ist auch dem Leiter der Einrichtung, in der der Betroffene untergebracht werden soll, bekannt zu geben. Das Gericht hat der zuständigen Behörde die Entscheidung, durch die eine Unterbringungsmaßnahme genehmigt, angeordnet oder aufgehoben wird, bekannt zu geben.
 
-## § 326 — Zuführung zur Unterbringung; 
+## § 326 — Zuführung zur Unterbringung;
+
 Verbringung zu einem stationären Aufenthalt
 
 (1) Die zuständige Behörde hat den Betreuer oder den Bevollmächtigten im Sinne des § 1814 Absatz 3 Satz 2 Nummer 1 des Bürgerlichen Gesetzbuchs auf deren Wunsch bei der Zuführung zur Unterbringung nach § 312 Nr. 1 oder bei der Verbringung nach § 312 Nummer 3 zu unterstützen.

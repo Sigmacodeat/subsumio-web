@@ -39,7 +39,7 @@ export const PRODUCTS: Record<Lang, Record<ProductSlug, ProductContent>> = {
       poweredBy: "Kanzleisoftware für Österreich & Deutschland",
       metaTitle: "Subsumio — Kanzleisoftware Österreich & Deutschland",
       metaDesc:
-        "KI-Kanzleisoftware für Rechtsanwälte: Akten verwalten, Fristen nach ZPO/ABGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder self-hosted.",
+        "KI-Kanzleisoftware für Rechtsanwälte: Akten verwalten, Fristen nach ZPO/ABGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder On-Premise.",
     },
   },
 };

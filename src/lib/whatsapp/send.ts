@@ -14,21 +14,29 @@ function getCredentials(): { token: string; phoneNumberId: string } | null {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneNumberId) {
-    console.warn("[whatsapp] outbound skipped: WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID missing");
+    console.warn(
+      "[whatsapp] outbound skipped: WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID missing"
+    );
     return null;
   }
   return { token, phoneNumberId };
 }
 
-async function postToGraph(endpoint: string, body: Record<string, unknown>, token: string): Promise<Response> {
-  return withRetry(() => fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  }));
+async function postToGraph(
+  endpoint: string,
+  body: Record<string, unknown>,
+  token: string
+): Promise<Response> {
+  return withRetry(() =>
+    fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+  );
 }
 
 /** Send a plain text message. */
@@ -45,7 +53,7 @@ export async function sendWhatsAppText(to: string, body: string): Promise<void> 
       type: "text",
       text: { preview_url: false, body: body.slice(0, 3900) },
     },
-    creds.token,
+    creds.token
   );
 
   if (!res.ok) {
@@ -57,7 +65,7 @@ export async function sendWhatsAppText(to: string, body: string): Promise<void> 
 /** Send a pre-approved template message. */
 export async function sendWhatsAppTemplate(
   to: string,
-  template: WhatsAppTemplateMessage,
+  template: WhatsAppTemplateMessage
 ): Promise<{ messageId: string }> {
   const creds = getCredentials();
   if (!creds) throw new Error("WhatsApp not configured");
@@ -71,21 +79,21 @@ export async function sendWhatsAppTemplate(
       type: "template",
       template,
     },
-    creds.token,
+    creds.token
   );
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp template send failed: HTTP ${res.status}`);
   }
-  const data = await res.json() as { messages?: Array<{ id?: string }> };
+  const data = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }> };
   return { messageId: data.messages?.[0]?.id ?? "" };
 }
 
 /** Send an interactive message (buttons or list). */
 export async function sendWhatsAppInteractive(
   to: string,
-  interactive: WhatsAppInteractiveMessage,
+  interactive: WhatsAppInteractiveMessage
 ): Promise<{ messageId: string }> {
   const creds = getCredentials();
   if (!creds) throw new Error("WhatsApp not configured");
@@ -99,21 +107,21 @@ export async function sendWhatsAppInteractive(
       type: "interactive",
       interactive,
     },
-    creds.token,
+    creds.token
   );
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp interactive send failed: HTTP ${res.status}`);
   }
-  const data = await res.json() as { messages?: Array<{ id?: string }> };
+  const data = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }> };
   return { messageId: data.messages?.[0]?.id ?? "" };
 }
 
 /** Send a media message (image, document, audio, video, sticker) by media ID or public URL. */
 export async function sendWhatsAppMedia(
   to: string,
-  media: WhatsAppMediaSendOptions,
+  media: WhatsAppMediaSendOptions
 ): Promise<{ messageId: string }> {
   const creds = getCredentials();
   if (!creds) throw new Error("WhatsApp not configured");
@@ -125,7 +133,10 @@ export async function sendWhatsAppMedia(
   const mediaPayload: Record<string, unknown> = {};
   if (media.mediaId) mediaPayload.id = media.mediaId;
   if (media.link) mediaPayload.link = media.link;
-  if (media.caption && (media.type === "image" || media.type === "video" || media.type === "document")) {
+  if (
+    media.caption &&
+    (media.type === "image" || media.type === "video" || media.type === "document")
+  ) {
     mediaPayload.caption = media.caption;
   }
   if (media.filename && media.type === "document") {
@@ -141,14 +152,14 @@ export async function sendWhatsAppMedia(
       type: media.type,
       [media.type]: mediaPayload,
     },
-    creds.token,
+    creds.token
   );
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp media send failed: HTTP ${res.status}`);
   }
-  const data = await res.json() as { messages?: Array<{ id?: string }> };
+  const data = (await res.json().catch(() => ({}))) as { messages?: Array<{ id?: string }> };
   return { messageId: data.messages?.[0]?.id ?? "" };
 }
 
@@ -156,7 +167,7 @@ export async function sendWhatsAppMedia(
 export async function uploadWhatsAppMedia(
   bytes: Buffer,
   mimeType: string,
-  filename: string,
+  filename: string
 ): Promise<string> {
   const creds = getCredentials();
   if (!creds) throw new Error("WhatsApp not configured");
@@ -166,22 +177,24 @@ export async function uploadWhatsAppMedia(
   formData.append("type", mimeType);
   formData.append("file", new Blob([new Uint8Array(bytes)], { type: mimeType }), filename);
 
-  const res = await withRetry(() => fetch(
-    `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(creds.phoneNumberId)}/media`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${creds.token}`,
-      },
-      body: formData,
-    },
-  ));
+  const res = await withRetry(() =>
+    fetch(
+      `https://graph.facebook.com/${graphVersion()}/${encodeURIComponent(creds.phoneNumberId)}/media`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${creds.token}`,
+        },
+        body: formData,
+      }
+    )
+  );
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
     throw new Error(error || `WhatsApp media upload failed: HTTP ${res.status}`);
   }
-  const data = await res.json() as { id?: string };
+  const data = (await res.json().catch(() => ({}))) as { id?: string };
   if (!data.id) throw new Error("WhatsApp media upload returned no media ID");
   return data.id;
 }
@@ -189,7 +202,7 @@ export async function uploadWhatsAppMedia(
 /** Generic dispatcher for any outbound WhatsApp message type. */
 export async function sendWhatsAppMessage(
   to: string,
-  message: WhatsAppOutboundMessage,
+  message: WhatsAppOutboundMessage
 ): Promise<{ messageId: string }> {
   switch (message.type) {
     case "text":
@@ -203,4 +216,3 @@ export async function sendWhatsAppMessage(
       return sendWhatsAppMedia(to, message.media);
   }
 }
-

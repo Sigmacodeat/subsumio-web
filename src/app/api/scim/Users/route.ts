@@ -14,8 +14,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
 
 /**
  * GET /api/scim/Users
@@ -23,8 +22,9 @@ const BASE_URL =
  * Query params: startIndex, count, filter
  */
 export async function GET(req: NextRequest) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { searchParams } = new URL(req.url);
   const startIndex = Math.max(1, parseInt(searchParams.get("startIndex") || "1", 10));
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const filter = searchParams.get("filter") || undefined;
 
   const store = getStore();
-  const allUsers = await store.list();
+  const allUsers = (await store.list()).filter((u) => u.orgId === orgId);
 
   // Map to SCIM and filter out non-SCIM users if no filter is given
   // (SCIM endpoints should return all users when queried by IdP)
@@ -56,8 +56,9 @@ export async function GET(req: NextRequest) {
  * Create a new user (auto-provisioning from IdP).
  */
 export async function POST(req: NextRequest) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   let body: unknown;
   try {
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
     return scimError(400, "userName or emails is required", "invalidValue");
   }
 
-  // Check for duplicate by externalId
+  // Check for duplicate by externalId — scoped to this org so a different
+  // tenant's IdP can never collide with or take over this org's users.
   const store = getStore();
   const { email, externalId } = scimUser.emails?.[0]
     ? {
@@ -89,14 +91,14 @@ export async function POST(req: NextRequest) {
 
   if (externalId) {
     const existing = await store.getByScimExternalId(externalId);
-    if (existing) {
+    if (existing && existing.orgId === orgId) {
       // Per SCIM spec, return 409 Conflict
       return scimError(409, `User with externalId "${externalId}" already exists`, "uniqueness");
     }
   }
 
   const existingByEmail = await store.getByEmail(email);
-  if (existingByEmail) {
+  if (existingByEmail && existingByEmail.orgId === orgId) {
     // If email exists but no SCIM link, link it
     if (externalId) {
       await store.update(existingByEmail.id, {
@@ -109,7 +111,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { user, created } = await provisionOrUpdateUser(scimUser);
+    const { user, created } = await provisionOrUpdateUser(scimUser, orgId);
     return scimResponse(userToScim(user, BASE_URL), created ? 201 : 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

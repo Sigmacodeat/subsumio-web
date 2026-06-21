@@ -10,7 +10,10 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { RotateCcw } from "lucide-react";
+
+const CASES_LIMIT = 200;
 
 interface OpponentStats {
   name: string;
@@ -31,13 +34,15 @@ export default function OpponentsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedOpponent, setSelectedOpponent] = useState<OpponentStats | null>(null);
+  const [capped, setCapped] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+        const pages = await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
         if (cancelled) return;
+        setCapped(pages.length >= CASES_LIMIT);
 
         // Aggregate opponent data from cases
         const opponentMap: Record<string, OpponentStats> = {};
@@ -106,6 +111,8 @@ export default function OpponentsPage() {
     <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader title="Gegner-Analyse" description="Intelligence über Gegner aus allen Akten" />
 
+      {capped && <CappedResultsNotice limit={CASES_LIMIT} />}
+
       {/* Stats summary */}
       {opponents.length > 0 && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -145,7 +152,7 @@ export default function OpponentsPage() {
               setLoadError(null);
               void (async () => {
                 try {
-                  await api.brain.listPages({ type: "legal_case", limit: 200 });
+                  await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
                   setOpponents([]);
                 } catch (e) {
                   setLoadError(e instanceof Error ? e.message : "Fehler");

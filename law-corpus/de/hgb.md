@@ -4,7 +4,7 @@ type: "law"
 jurisdiction: "de"
 abbreviation: "HGB"
 version_date: "2026-05-06"
-retrieved_at: "2026-06-12"
+retrieved_at: "2026-06-21"
 source_url: "https://www.gesetze-im-internet.de/hgb/xml.zip"
 license: "Amtliches Werk, § 5 UrhG (gemeinfrei). Quelle: gesetze-im-internet.de, Bundesamt für Justiz."
 ---
@@ -99,7 +99,8 @@ Durch die Vorschriften des öffentlichen Rechtes, nach welchen die Befugnis zum 
 (2) Hinsichtlich der im Handelsregister, in Registerbekanntmachungen oder in zum Handelsregister einzureichenden Dokumenten enthaltenen personenbezogenen Daten kann das Recht auf Berichtigung nach Artikel 16 der Verordnung (EU) 2016/679 nur unter den Voraussetzungen ausgeübt werden, die in den §§ 393 bis 395 und §§ 397 bis 399 des Gesetzes über das Verfahren in Familiensachen und in den Angelegenheiten der Freiwilligen Gerichtsbarkeit sowie der Rechtsverordnung nach § 387 Absatz 2 des Gesetzes über das Verfahren in Familiensachen und in den Angelegenheiten der Freiwilligen Gerichtsbarkeit für eine Löschung oder Berichtigung vorgesehen sind.
 (3) Das Widerspruchsrecht gemäß Artikel 21 der Verordnung (EU) 2016/679 findet in Bezug auf die im Handelsregister, in Registerbekanntmachungen oder in zum Handelsregister einzureichenden Dokumenten enthaltenen personenbezogenen Daten keine Anwendung.
 
-## § 11 — Offenlegung in der Amtssprache eines Mitgliedstaats der Europäischen 
+## § 11 — Offenlegung in der Amtssprache eines Mitgliedstaats der Europäischen
+
 Union
 
 (1) Die zum Handelsregister einzureichenden Dokumente sowie der Inhalt einer Eintragung können zusätzlich in jeder Amtssprache eines Mitgliedstaats der Europäischen Union übermittelt werden. Auf die Übersetzungen ist in geeigneter Weise hinzuweisen. § 9 ist entsprechend anwendbar.
@@ -197,7 +198,7 @@ Ist bei einer juristischen Person, die zur Anmeldung einer inländischen Geschä
 
 ## § 19
 
-(1) Die Firma muß, auch wenn sie nach den §§ 21, 22, 24 oder nach anderen gesetzlichen Vorschriften fortgeführt wird, enthalten: 1.bei Einzelkaufleuten die Bezeichnung "eingetragener Kaufmann", "eingetragene Kauffrau" oder eine allgemein verständliche Abkürzung dieser Bezeichnung, insbesondere "e.K.", "e.Kfm." oder "e.Kfr."; 2.bei einer offenen Handelsgesellschaft die Bezeichnung "offene Handelsgesellschaft" oder eine allgemein verständliche Abkürzung dieser Bezeichnung; 3.bei einer Kommanditgesellschaft die Bezeichnung "Kommanditgesellschaft" oder eine allgemein verständliche Abkürzung dieser Bezeichnung. 
+(1) Die Firma muß, auch wenn sie nach den §§ 21, 22, 24 oder nach anderen gesetzlichen Vorschriften fortgeführt wird, enthalten: 1.bei Einzelkaufleuten die Bezeichnung "eingetragener Kaufmann", "eingetragene Kauffrau" oder eine allgemein verständliche Abkürzung dieser Bezeichnung, insbesondere "e.K.", "e.Kfm." oder "e.Kfr."; 2.bei einer offenen Handelsgesellschaft die Bezeichnung "offene Handelsgesellschaft" oder eine allgemein verständliche Abkürzung dieser Bezeichnung; 3.bei einer Kommanditgesellschaft die Bezeichnung "Kommanditgesellschaft" oder eine allgemein verständliche Abkürzung dieser Bezeichnung.
 (2) Wenn in einer offenen Handelsgesellschaft oder Kommanditgesellschaft keine natürliche Person persönlich haftet, muß die Firma, auch wenn sie nach den §§ 21, 22, 24 oder nach anderen gesetzlichen Vorschriften fortgeführt wird, eine Bezeichnung enthalten, welche die Haftungsbeschränkung kennzeichnet.
 
 ## § 21
@@ -621,7 +622,7 @@ Im Laufe eines Rechtsstreits kann das Gericht auch ohne Antrag einer Partei die 
 
 ## § 103
 
-(1) Ordnungswidrig handelt, wer als Handelsmakler 1.vorsätzlich oder fahrlässig ein Tagebuch über die abgeschlossenen Geschäfte zu führen unterläßt oder das Tagebuch in einer Weise führt, die dem § 100 Abs. 1 widerspricht oder 2.ein solches Tagebuch vor Ablauf der gesetzlichen Aufbewahrungsfrist vernichtet. 
+(1) Ordnungswidrig handelt, wer als Handelsmakler 1.vorsätzlich oder fahrlässig ein Tagebuch über die abgeschlossenen Geschäfte zu führen unterläßt oder das Tagebuch in einer Weise führt, die dem § 100 Abs. 1 widerspricht oder 2.ein solches Tagebuch vor Ablauf der gesetzlichen Aufbewahrungsfrist vernichtet.
 (2) Die Ordnungswidrigkeit kann mit einer Geldbuße bis zu fünftausend Euro geahndet werden.
 
 ## § 104
@@ -1153,6 +1154,7 @@ Soweit es den Grundsätzen ordnungsmäßiger Buchführung entspricht, kann für 
 Auf fremde Währung lautende Vermögensgegenstände und Verbindlichkeiten sind zum Devisenkassamittelkurs am Abschlussstichtag umzurechnen. Bei einer Restlaufzeit von einem Jahr oder weniger sind § 253 Abs. 1 Satz 1 und § 252 Abs. 1 Nr. 4 Halbsatz 2 nicht anzuwenden.
 
 ## § 257 — Aufbewahrung von Unterlagen
+
 Aufbewahrungsfristen
 
 (1) Jeder Kaufmann ist verpflichtet, die folgenden Unterlagen geordnet aufzubewahren: 1.Handelsbücher, Inventare, Eröffnungsbilanzen, Jahresabschlüsse, Einzelabschlüsse nach § 325 Abs. 2a, Lageberichte, Konzernabschlüsse, Konzernlageberichte sowie die zu ihrem Verständnis erforderlichen Arbeitsanweisungen und sonstigen Organisationsunterlagen,2.die empfangenen Handelsbriefe,3.Wiedergaben der abgesandten Handelsbriefe,4.Belege für Buchungen in den von ihm nach § 238 Abs. 1 zu führenden Büchern (Buchungsbelege).
@@ -1191,6 +1193,7 @@ Unberührt bleiben bei Unternehmen ohne eigene Rechtspersönlichkeit einer Gemei
 (4) Absatz 3 ist nicht anzuwenden, wenn eine Kapitalgesellschaft das Tochterunternehmen eines Mutterunternehmens ist, das einen Konzernabschluss nach den Vorschriften des Publizitätsgesetzes aufgestellt hat, und wenn in diesem Konzernabschluss von dem Wahlrecht des § 13 Absatz 3 Satz 1 des Publizitätsgesetzes Gebrauch gemacht worden ist; § 314 Absatz 3 bleibt unberührt.
 
 ## § 264a — Anwendung auf bestimmte offene Handelsgesellschaften und
+
 Kommanditgesellschaften
 
 (1) Die Vorschriften des Ersten bis Fünften Unterabschnitts des Zweiten Abschnitts sind auch anzuwenden auf offene Handelsgesellschaften und Kommanditgesellschaften, bei denen nicht wenigstens ein persönlich haftender Gesellschafter 1.eine natürliche Person oder2.eine offene Handelsgesellschaft, Kommanditgesellschaft oder andere Personengesellschaft mit einer natürlichen Person als persönlich haftendem Gesellschafterist oder sich die Verbindung von Gesellschaften in dieser Art fortsetzt.
@@ -1246,6 +1249,7 @@ Eine Kapitalgesellschaft ist kapitalmarktorientiert, wenn sie einen organisierte
 (3) Keine Kleinstkapitalgesellschaften sind: 1.Investmentgesellschaften im Sinne des § 1 Absatz 11 des Kapitalanlagegesetzbuchs,2.Unternehmensbeteiligungsgesellschaften im Sinne des § 1a Absatz 1 des Gesetzes über Unternehmensbeteiligungsgesellschaften oder3.Unternehmen, deren einziger Zweck darin besteht, Beteiligungen an anderen Unternehmen zu erwerben sowie die Verwaltung und Verwertung dieser Beteiligungen wahrzunehmen, ohne dass sie unmittelbar oder mittelbar in die Verwaltung dieser Unternehmen eingreifen, wobei die Ausübung der ihnen als Aktionär oder Gesellschafter zustehenden Rechte außer Betracht bleibt.
 
 ## § 268 — Vorschriften zu einzelnen Posten der Bilanz
+
 Bilanzvermerke
 
 (1) Die Bilanz darf auch unter Berücksichtigung der vollständigen oder teilweisen Verwendung des Jahresergebnisses aufgestellt werden. Wird die Bilanz unter Berücksichtigung der teilweisen Verwendung des Jahresergebnisses aufgestellt, so tritt an die Stelle der Posten "Jahresüberschuß/Jahresfehlbetrag" und "Gewinnvortrag/Verlustvortrag" der Posten "Bilanzgewinn/Bilanzverlust"; ein vorhandener Gewinn- oder Verlustvortrag ist in den Posten "Bilanzgewinn/Bilanzverlust" einzubeziehen und in der Bilanz gesondert anzugeben. Die Angabe kann auch im Anhang gemacht werden.
@@ -1420,6 +1424,7 @@ Die Kapitalgesellschaft kann für die Erstellung der nichtfinanziellen Erklärun
 (3) Im Konzernabschluß ist die Vermögens-, Finanz- und Ertragslage der einbezogenen Unternehmen so darzustellen, als ob diese Unternehmen insgesamt ein einziges Unternehmen wären. Die auf den vorhergehenden Konzernabschluß angewandten Konsolidierungsmethoden sind beizubehalten. Abweichungen von Satz 2 sind in Ausnahmefällen zulässig. Sie sind im Konzernanhang anzugeben und zu begründen. Ihr Einfluß auf die Vermögens-, Finanz- und Ertragslage des Konzerns ist anzugeben.
 
 ## § 298 — Anzuwendende Vorschriften
+
 Erleichterungen
 
 (1) Auf den Konzernabschluß sind, soweit seine Eigenart keine Abweichung bedingt oder in den folgenden Vorschriften nichts anderes bestimmt ist, die §§ 244 bis 256a, 264c, 265, 266, 268 Absatz 1 bis 7, die §§ 270, 271, 272 Absatz 1 bis 4, die §§ 274, 275 und 277 über den Jahresabschluß und die für die Rechtsform und den Geschäftszweig der in den Konzernabschluß einbezogenen Unternehmen mit Sitz im Geltungsbereich dieses Gesetzes geltenden Vorschriften, soweit sie für große Kapitalgesellschaften gelten, entsprechend anzuwenden.
@@ -1432,6 +1437,7 @@ Erleichterungen
 (3) Wird bei abweichenden Abschlußstichtagen ein Unternehmen nicht auf der Grundlage eines auf den Stichtag und den Zeitraum des Konzernabschlusses aufgestellten Zwischenabschlusses in den Konzernabschluß einbezogen, so sind Vorgänge von besonderer Bedeutung für die Vermögens-, Finanz- und Ertragslage eines in den Konzernabschluß einbezogenen Unternehmens, die zwischen dem Abschlußstichtag dieses Unternehmens und dem Abschlußstichtag des Konzernabschlusses eingetreten sind, in der Konzernbilanz und der Konzern-Gewinn- und Verlustrechnung zu berücksichtigen oder im Konzernanhang anzugeben.
 
 ## § 300 — Konsolidierungsgrundsätze
+
 Vollständigkeitsgebot
 
 (1) In dem Konzernabschluß ist der Jahresabschluß des Mutterunternehmens mit den Jahresabschlüssen der Tochterunternehmen zusammenzufassen. An die Stelle der dem Mutterunternehmen gehörenden Anteile an den einbezogenen Tochterunternehmen treten die Vermögensgegenstände, Schulden, Rechnungsabgrenzungsposten und Sonderposten der Tochterunternehmen, soweit sie nach dem Recht des Mutterunternehmens bilanzierungsfähig sind und die Eigenart des Konzernabschlusses keine Abweichungen bedingt oder in den folgenden Vorschriften nichts anderes bestimmt ist.
@@ -1975,7 +1981,7 @@ Kapitalanlagen für Rechnung und Risiko von Inhabern von Lebensversicherungsvert
 
 ## § 341h — Schwankungsrückstellung und ähnliche Rückstellungen
 
-(1) Schwankungsrückstellungen sind zum Ausgleich der Schwankungen im Schadenverlauf künftiger Jahre zu bilden, wenn insbesondere 1.nach den Erfahrungen in dem betreffenden Versicherungszweig mit erheblichen Schwankungen der jährlichen Aufwendungen für Versicherungsfälle zu rechnen ist, 2.die Schwankungen nicht jeweils durch Beiträge ausgeglichen werden und 3.die Schwankungen nicht durch Rückversicherungen gedeckt sind. 
+(1) Schwankungsrückstellungen sind zum Ausgleich der Schwankungen im Schadenverlauf künftiger Jahre zu bilden, wenn insbesondere 1.nach den Erfahrungen in dem betreffenden Versicherungszweig mit erheblichen Schwankungen der jährlichen Aufwendungen für Versicherungsfälle zu rechnen ist, 2.die Schwankungen nicht jeweils durch Beiträge ausgeglichen werden und 3.die Schwankungen nicht durch Rückversicherungen gedeckt sind.
 (2) Für Risiken gleicher Art, bei denen der Ausgleich von Leistung und Gegenleistung wegen des hohen Schadenrisikos im Einzelfall nach versicherungsmathematischen Grundsätzen nicht im Geschäftsjahr, sondern nur in einem am Abschlußstichtag nicht bestimmbaren Zeitraum gefunden werden kann, ist eine Rückstellung zu bilden und in der Bilanz als "ähnliche Rückstellung" unter den Schwankungsrückstellungen auszuweisen.
 
 ## § 341i — Aufstellung, Fristen
@@ -2640,7 +2646,7 @@ Der Frachtführer ist von der Haftung befreit, soweit der Verlust, die Beschädi
 
 ## § 427 — Besondere Haftungsausschlußgründe
 
-(1) Der Frachtführer ist von seiner Haftung befreit, soweit der Verlust, die Beschädigung oder die Überschreitung der Lieferfrist auf eine der folgenden Gefahren zurückzuführen ist: 1.vereinbarte oder der Übung entsprechende Verwendung von offenen, nicht mit Planen gedeckten Fahrzeugen oder Verladung auf Deck; 2.ungenügende Verpackung durch den Absender; 3.Behandeln, Verladen oder Entladen des Gutes durch den Absender oder den Empfänger; 4.natürliche Beschaffenheit des Gutes, die besonders leicht zu Schäden, insbesondere durch Bruch, Rost, inneren Verderb, Austrocknen, Auslaufen, normalen Schwund, führt; 5.ungenügende Kennzeichnung der Frachtstücke durch den Absender; 6.Beförderung lebender Tiere. 
+(1) Der Frachtführer ist von seiner Haftung befreit, soweit der Verlust, die Beschädigung oder die Überschreitung der Lieferfrist auf eine der folgenden Gefahren zurückzuführen ist: 1.vereinbarte oder der Übung entsprechende Verwendung von offenen, nicht mit Planen gedeckten Fahrzeugen oder Verladung auf Deck; 2.ungenügende Verpackung durch den Absender; 3.Behandeln, Verladen oder Entladen des Gutes durch den Absender oder den Empfänger; 4.natürliche Beschaffenheit des Gutes, die besonders leicht zu Schäden, insbesondere durch Bruch, Rost, inneren Verderb, Austrocknen, Auslaufen, normalen Schwund, führt; 5.ungenügende Kennzeichnung der Frachtstücke durch den Absender; 6.Beförderung lebender Tiere.
 (2) Ist ein Schaden eingetreten, der nach den Umständen des Falles aus einer der in Absatz 1 bezeichneten Gefahren entstehen konnte, so wird vermutet, daß der Schaden aus dieser Gefahr entstanden ist. Diese Vermutung gilt im Falle des Absatzes 1 Nr. 1 nicht bei außergewöhnlich großem Verlust.
 (3) Der Frachtführer kann sich auf Absatz 1 Nr. 1 nur berufen, soweit der Verlust, die Beschädigung oder die Überschreitung der Lieferfrist nicht darauf zurückzuführen ist, daß der Frachtführer besondere Weisungen des Absenders im Hinblick auf die Beförderung des Gutes nicht beachtet hat.
 (4) Ist der Frachtführer nach dem Frachtvertrag verpflichtet, das Gut gegen die Einwirkung von Hitze, Kälte, Temperaturschwankungen, Luftfeuchtigkeit, Erschütterungen oder ähnlichen Einflüssen besonders zu schützen, so kann er sich auf Absatz 1 Nr. 4 nur berufen, wenn er alle ihm nach den Umständen obliegenden Maßnahmen, insbesondere hinsichtlich der Auswahl, Instandhaltung und Verwendung besonderer Einrichtungen, getroffen und besondere Weisungen beachtet hat.
@@ -2781,6 +2787,7 @@ Hat der Frachtvertrag die Beförderung von Umzugsgut zum Gegenstand, so sind auf
 (2) Ist der Absender ein Verbraucher, so zählt zu den Pflichten des Frachtführers ferner die Ausführung sonstiger auf den Umzug bezogener Leistungen wie die Verpackung und Kennzeichnung des Umzugsgutes.
 
 ## § 451b — Frachtbrief. Gefährliches Gut. Begleitpapiere.
+
 Mitteilungs- und Auskunftspflichten
 
 (1) Abweichend von § 408 ist der Absender nicht verpflichtet, einen Frachtbrief auszustellen.
@@ -2789,7 +2796,7 @@ Mitteilungs- und Auskunftspflichten
 
 ## § 451d — Besondere Haftungsausschlußgründe
 
-(1) Abweichend von § 427 ist der Frachtführer von seiner Haftung befreit, soweit der Verlust oder die Beschädigung auf eine der folgenden Gefahren zurückzuführen ist: 1.Beförderung von Edelmetallen, Juwelen, Edelsteinen, Geld, Briefmarken, Münzen, Wertpapieren oder Urkunden; 2.ungenügende Verpackung oder Kennzeichnung durch den Absender; 3.Behandeln, Verladen oder Entladen des Gutes durch den Absender; 4.Beförderung von nicht vom Frachtführer verpacktem Gut in Behältern; 5.Verladen oder Entladen von Gut, dessen Größe oder Gewicht den Raumverhältnissen an der Ladestelle oder Entladestelle nicht entspricht, sofern der Frachtführer den Absender auf die Gefahr einer Beschädigung vorher hingewiesen und der Absender auf der Durchführung der Leistung bestanden hat; 6.Beförderung lebender Tiere oder von Pflanzen; 7.natürliche oder mangelhafte Beschaffenheit des Gutes, der zufolge es besonders leicht Schäden, insbesondere durch Bruch, Funktionsstörungen, Rost, inneren Verderb oder Auslaufen, erleidet. 
+(1) Abweichend von § 427 ist der Frachtführer von seiner Haftung befreit, soweit der Verlust oder die Beschädigung auf eine der folgenden Gefahren zurückzuführen ist: 1.Beförderung von Edelmetallen, Juwelen, Edelsteinen, Geld, Briefmarken, Münzen, Wertpapieren oder Urkunden; 2.ungenügende Verpackung oder Kennzeichnung durch den Absender; 3.Behandeln, Verladen oder Entladen des Gutes durch den Absender; 4.Beförderung von nicht vom Frachtführer verpacktem Gut in Behältern; 5.Verladen oder Entladen von Gut, dessen Größe oder Gewicht den Raumverhältnissen an der Ladestelle oder Entladestelle nicht entspricht, sofern der Frachtführer den Absender auf die Gefahr einer Beschädigung vorher hingewiesen und der Absender auf der Durchführung der Leistung bestanden hat; 6.Beförderung lebender Tiere oder von Pflanzen; 7.natürliche oder mangelhafte Beschaffenheit des Gutes, der zufolge es besonders leicht Schäden, insbesondere durch Bruch, Funktionsstörungen, Rost, inneren Verderb oder Auslaufen, erleidet.
 (2) Ist ein Schaden eingetreten, der nach den Umständen des Falles aus einer der in Absatz 1 bezeichneten Gefahren entstehen konnte, so wird vermutet, daß der Schaden aus dieser Gefahr entstanden ist.
 (3) Der Frachtführer kann sich auf Absatz 1 nur berufen, wenn er alle ihm nach den Umständen obliegenden Maßnahmen getroffen und besondere Weisungen beachtet hat.
 
@@ -2825,6 +2832,7 @@ Steht fest, daß der Verlust, die Beschädigung oder das Ereignis, das zu einer 
 (2) Für den Beginn der Verjährung des Anspruchs wegen Verlust, Beschädigung oder Überschreitung der Lieferfrist ist, wenn auf den Ablieferungszeitpunkt abzustellen ist, der Zeitpunkt der Ablieferung an den Empfänger maßgebend. Der Anspruch verjährt auch bei bekanntem Schadensort frühestens nach Maßgabe des § 439.
 
 ## § 452c — Umzugsvertrag über eine Beförderung mit verschiedenartigen
+
 Beförderungsmitteln
 
 Hat der Frachtvertrag die Beförderung von Umzugsgut mit verschiedenartigen Beförderungsmitteln zum Gegenstand, so sind auf den Vertrag die Vorschriften des Zweiten Unterabschnitts anzuwenden. § 452a ist nur anzuwenden, soweit für die Teilstrecke, auf der der Schaden eingetreten ist, Bestimmungen eines für die Bundesrepublik Deutschland verbindlichen internationalen Übereinkommens gelten.

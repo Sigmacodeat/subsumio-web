@@ -67,26 +67,26 @@ export default function AnalyticsConsentBanner() {
       role="dialog"
       aria-live="polite"
       aria-label={isGerman ? "Analytics-Einwilligung" : "Analytics consent"}
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-md z-[99] p-5 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/60"
+      className="fixed right-3 bottom-3 left-3 z-[99] rounded-xl border [border-color:var(--mk-border)] p-3 shadow-xl shadow-black/35 [background:var(--mk-surface)] sm:left-auto sm:max-w-sm sm:p-4"
     >
-      <p className="text-sm font-semibold [color:var(--mk-text)] mb-1.5">
+      <p className="mb-1 text-xs font-semibold [color:var(--mk-text)] sm:text-sm">
         {isGerman ? "Analytics-Cookies" : "Analytics cookies"}
       </p>
-      <p className="text-xs [color:var(--mk-text-muted)] leading-relaxed mb-4">
+      <p className="mb-3 text-[11px] leading-relaxed [color:var(--mk-text-muted)] sm:text-xs">
         {isGerman
-          ? "Wir nutzen PostHog und Vercel Analytics, um die Nutzung der Website anonym zu verstehen und das Produkt zu verbessern. Darf ich ein Cookie dafür setzen? Du kannst jederzeit widerrufen."
-          : "We use PostHog and Vercel Analytics to understand website usage anonymously and improve the product. May we set a cookie for that? You can revoke at any time."}
+          ? "Wir nutzen PostHog und Vercel Analytics, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen."
+          : "We use PostHog and Vercel Analytics to improve the site anonymously. You can revoke consent at any time."}
       </p>
       <div className="flex gap-2">
         <button
           onClick={accept}
-          className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white text-xs font-semibold transition-colors"
+          className="rounded-md bg-[var(--brand-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-primary-hover)]"
         >
           {isGerman ? "Einverstanden" : "Accept"}
         </button>
         <button
           onClick={decline}
-          className="px-4 py-2 rounded-lg border [border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)] text-xs font-medium transition-colors"
+          className="rounded-md border [border-color:var(--mk-border)] px-3 py-1.5 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[border-color:var(--mk-border-strong)]"
         >
           {isGerman ? "Ablehnen" : "Decline"}
         </button>

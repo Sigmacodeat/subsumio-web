@@ -96,3 +96,12 @@ export function isBillingConfigured(): boolean {
 export function stripePriceId(plan: "pro" | "team"): string | null {
   return process.env[BILLABLE_PLANS[plan].stripePriceEnv] ?? null;
 }
+
+/** Reverse lookup: given a Stripe price ID, which plan does it belong to? */
+export function planForPriceId(priceId: string | null | undefined): "pro" | "team" | null {
+  if (!priceId) return null;
+  for (const plan of Object.keys(BILLABLE_PLANS) as Array<"pro" | "team">) {
+    if (stripePriceId(plan) === priceId) return plan;
+  }
+  return null;
+}

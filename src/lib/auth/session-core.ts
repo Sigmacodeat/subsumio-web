@@ -44,26 +44,44 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
   // In edge runtime this is a simple fetch to the origin.
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-    const res = await fetch(`${baseUrl}/api/internal/revocation-check?uid=${encodeURIComponent(userId)}`, {
-      signal: AbortSignal.timeout(2_000),
-    });
+    const res = await fetch(
+      `${baseUrl}/api/internal/revocation-check?uid=${encodeURIComponent(userId)}`,
+      {
+        signal: AbortSignal.timeout(2_000),
+      }
+    );
     if (res.ok) {
-      const data = await res.json() as { minVersion: number };
+      const data = (await res.json()) as { minVersion: number };
       revocationCache.set(userId, { minVersion: data.minVersion ?? 0, fetchedAt: now });
       return data.minVersion ?? 0;
     }
   } catch {
-    // Network error — assume valid (fail-open for availability)
+    // Network error or timeout below.
   }
+  // The revocation endpoint is unreachable. Fall back to the last known
+  // value instead of blindly returning 0 ("nothing is revoked") — a stale
+  // cache entry still correctly rejects a session that was revoked before
+  // the outage started. Only truly unknown users (never cached) fail open,
+  // which is an acceptable availability tradeoff for first-ever lookups.
+  if (cached) return cached.minVersion;
   return 0;
 }
 
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
   if (secret) return secret;
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") {
-    throw new Error("AUTH_SECRET must be set in production.");
+  // Any deployed environment (production OR preview) must have AUTH_SECRET set —
+  // only a strictly local `next dev` with no VERCEL_ENV at all gets the
+  // forgeable dev fallback. This closes the gap where a self-hosted staging
+  // box (NODE_ENV unset/non-production, but internet-reachable) silently
+  // accepted a hardcoded, publicly-known signing secret.
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
+    throw new Error("AUTH_SECRET must be set in this environment.");
   }
+  console.warn(
+    "[auth] AUTH_SECRET not set — using an insecure local-dev fallback. " +
+      "This must never happen outside `next dev` on your own machine."
+  );
   return "subsumio-dev-secret-change-me";
 }
 
@@ -94,7 +112,7 @@ export async function hmacKey(secret: string): Promise<CryptoKey> {
     encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign", "verify"],
+    ["sign", "verify"]
   );
 }
 
@@ -102,9 +120,13 @@ export async function signSession(
   payload: Omit<SessionPayload, "exp" | "v">,
   secret: string = getAuthSecret(),
   ttlSeconds: number = SESSION_TTL_SECONDS,
-  version: number = 1,
+  version: number = 1
 ): Promise<string> {
-  const full: SessionPayload = { ...payload, v: version, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
+  const full: SessionPayload = {
+    ...payload,
+    v: version,
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
+  };
   const body = b64url(JSON.stringify(full));
   const key = await hmacKey(secret);
   const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
@@ -118,7 +140,7 @@ export async function signSession(
  */
 export async function verifySessionCore(
   token: string | undefined | null,
-  secret?: string,
+  secret?: string
 ): Promise<SessionPayload | null> {
   if (!token) return null;
   const authSecret = secret ?? getAuthSecret();

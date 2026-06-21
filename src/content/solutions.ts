@@ -380,11 +380,11 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       slug: "law-firms",
       metaTitle: "Subsumio für Kanzleien — KI-Kanzleisoftware für etablierte Praxen",
       metaDesc:
-        "Gib deiner Kanzlei ein gemeinsames Brain: Akten, Fristen, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot. EU-gehostet oder self-hosted.",
+        "Geben Sie Ihrer Kanzlei ein gemeinsames Brain: Akten, Fristen, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot. EU-gehostet oder self-hosted.",
       badge: "Für etablierte Kanzleien",
-      h1a: "Das Wissen deiner Kanzlei,",
+      h1a: "Das Wissen Ihrer Kanzlei,",
       h1b: "endlich abfragbar.",
-      sub: "Subsumio macht Jahrzehnte an Akten, Schriftsätzen und Fristen zu einem belegten Workspace, den dein gesamtes Team befragen kann — mit Vertraulichkeit per Architektur.",
+      sub: "Subsumio macht Jahrzehnte an Akten, Schriftsätzen und Fristen zu einem belegten Workspace, den Ihr gesamtes Team befragen kann — mit Vertraulichkeit per Architektur.",
       painsTitle: "Was Kanzleipartner nachts wach hält",
       pains: [
         {
@@ -434,8 +434,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           icon: "ShieldCheck",
-          title: "Dein Server, deine Jurisdiktion",
-          desc: "Self-hosted auf Kanzlei-Hardware oder EU-Cloud mit AVV. Mandantendaten verlassen nie deine Kontrolle.",
+          title: "Ihr Server, Ihre Jurisdiktion",
+          desc: "Self-hosted auf Kanzlei-Hardware oder EU-Cloud mit AVV. Mandantendaten verlassen nie Ihre Kontrolle.",
         },
         {
           icon: "Search",
@@ -445,11 +445,11 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
       proof:
-        "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — auf Infrastruktur, die deine IT komplett steuert.",
+        "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — auf Infrastruktur, die Ihre IT komplett steuert.",
       faq: [
         {
           q: "Wie lange dauert die Einführung?",
-          a: "Ein Pilot mit einer abgeschlossenen Akte dauert unter einer Stunde. Die volle Kanzlei-Rollout dauert typischerweise eine Woche — dein Team indiziert bestehende Akten im eigenen Tempo.",
+          a: "Ein Pilot mit einer abgeschlossenen Akte dauert unter einer Stunde. Die volle Kanzlei-Rollout dauert typischerweise eine Woche — Ihr Team indiziert bestehende Akten im eigenen Tempo.",
         },
         {
           q: "Können wir auf eigenen Servern laufen?",
@@ -457,14 +457,14 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           q: "Was ist mit DSGVO und Berufsrecht?",
-          a: "Self-hosted heißt: Daten verlassen deine Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Wir sprechen die Sprache deines Datenschutzbeauftragten.",
+          a: "Self-hosted heißt: Daten verlassen Ihre Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Wir sprechen die Sprache Ihres Datenschutzbeauftragten.",
         },
         {
           q: "Was unterscheidet das von Harvey?",
-          a: "Harvey ist exzellent — und läuft auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die DU kontrollierst, mit einem WhatsApp-Copilot, den deine Anwälte täglich nutzen.",
+          a: "Harvey ist exzellent — und läuft auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die SIE kontrollieren, mit einem WhatsApp-Copilot, den Ihre Anwälte täglich nutzen.",
         },
       ],
-      ctaTitle: "Starte mit einer abgeschlossenen Akte als Pilot.",
+      ctaTitle: "Starten Sie mit einer abgeschlossenen Akte als Pilot.",
       ctaSub:
         "Keine Mandantendaten müssen das Haus verlassen. Drei Minuten bis zur ersten Antwort.",
       ctaButton: "Kostenlos testen",
@@ -475,21 +475,21 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       metaDesc:
         "KI-Kanzleisoftware für Einzelanwälte: Akten, Fristen, KI-Analysen mit Zitaten, WhatsApp-Copilot. EU-gehostet, kein Server nötig.",
       badge: "Für Einzelanwälte",
-      h1a: "Deine gesamte Praxis,",
+      h1a: "Ihre gesamte Praxis,",
       h1b: "eine Frage entfernt.",
-      sub: "Subsumio gibt einem Einzelanwalt, was das Wissens-Team einer Großkanzlei hätte: jedes Dokument, jede Frist und Notiz indiziert und abfragbar — mit Zitaten, die du überprüfen kannst.",
+      sub: "Subsumio gibt einem Einzelanwalt, was das Wissens-Team einer Großkanzlei hätte: jedes Dokument, jede Frist und Notiz indiziert und abfragbar — mit Zitaten, die Sie überprüfen können.",
       painsTitle: "Der Alltag des Einzelanwalts",
       pains: [
         {
-          title: "Du bist das Wissens-Team",
+          title: "Sie sind das Wissens-Team",
           desc: "Keine Associates für Recherche, keine IT-Abteilung für Infrastruktur. Jede gesparte Admin-Minute ist eine Minute für Mandanten.",
         },
         {
           title: "Fristen sind existentiell",
-          desc: "Eine versäumte Notfrist und der Haftpflichtfall ist real. Du brauchst Fristenberechnung, die nach Gesetz korrekt ist, nicht nach Bauchgefühl.",
+          desc: "Eine versäumte Notfrist und der Haftpflichtfall ist real. Sie brauchen Fristenberechnung, die nach Gesetz korrekt ist, nicht nach Bauchgefühl.",
         },
         {
-          title: "Admin frisst deinen Tag",
+          title: "Admin frisst Ihren Tag",
           desc: "Zeitbuchung, Rechnungen, Dokumentenablage — der Overhead der Praxisführung stiehlt abrechenbare Stunden.",
         },
       ],
@@ -497,7 +497,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       features: [
         {
           icon: "Brain",
-          title: "Dein Akten-Brain",
+          title: "Ihr Akten-Brain",
           desc: "Akten, Mails, PDFs, Sprachnotizen hochladen. Subsumio indiziert alles und antwortet in normaler Sprache — mit seitengenauen Zitaten.",
         },
         {
@@ -518,12 +518,12 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         {
           icon: "Zap",
           title: "Kein Server, keine IT",
-          desc: "Anmelden, Brain läuft — voll verwaltet, keine API-Keys, keine Infrastruktur. Du fokussierst dich auf Recht, nicht auf Sysadmin.",
+          desc: "Anmelden, Brain läuft — voll verwaltet, keine API-Keys, keine Infrastruktur. Sie fokussieren sich auf Recht, nicht auf Sysadmin.",
         },
         {
           icon: "ShieldCheck",
           title: "Vertraulichkeit by Design",
-          desc: "EU-gehostet mit Verschlüsselung pro Kunde. Deine Mandantendaten werden nie zum Training geteilter Modelle genutzt. Self-Hosting optional.",
+          desc: "EU-gehostet mit Verschlüsselung pro Kunde. Ihre Mandantendaten werden nie zum Training geteilter Modelle genutzt. Self-Hosting optional.",
         },
       ],
       proofTitle: "Großkanzlei-Fähigkeit, Einzelanwalt-Preis",
@@ -532,18 +532,18 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       faq: [
         {
           q: "Muss ich technisch versiert sein?",
-          a: "Nein. Anmelden, Dokumente hochladen, Fragen stellen. Wenn du WhatsApp und einen Browser bedienen kannst, kannst du Subsumio nutzen.",
+          a: "Nein. Anmelden, Dokumente hochladen, Fragen stellen. Wenn Sie WhatsApp und einen Browser bedienen können, können Sie Subsumio nutzen.",
         },
         {
           q: "Kann ich mir das als Einzelanwalt leisten?",
-          a: "Der Pro-Plan kostet 890 €/Seat/Monat — weniger als zwei abrechenbare Stunden. Der 14-Tage-Reverse-Trial bedeutet: du siehst den echten Wert, bevor du zahlst.",
+          a: "Der Pro-Plan kostet 890 €/Seat/Monat — weniger als zwei abrechenbare Stunden. Der 14-Tage-Reverse-Trial bedeutet: Sie sehen den echten Wert, bevor Sie zahlen.",
         },
         {
           q: "Was, wenn ich später wachse?",
-          a: "Upgraden auf Team jederzeit möglich. Dein Brain und alle indizierten Daten bleiben — keine Migration, kein Downtime.",
+          a: "Upgraden auf Team jederzeit möglich. Ihr Brain und alle indizierten Daten bleiben — keine Migration, kein Downtime.",
         },
       ],
-      ctaTitle: "Dein Brain wartet.",
+      ctaTitle: "Ihr Brain wartet.",
       ctaSub: "Drei Minuten bis zur ersten Antwort. Keine Kreditkarte, kein Server, keine IT.",
       ctaButton: "Jetzt starten",
     },
@@ -553,7 +553,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       metaDesc:
         "KI-Kanzleisoftware für Justiziariate: Vertragsanalyse, Compliance-Tracking, Wissensmanagement mit Zitaten. EU-gehostet oder self-hosted.",
       badge: "Für Justiziariate und Rechtsabteilungen",
-      h1a: "Deine Rechtsabteilung,",
+      h1a: "Ihre Rechtsabteilung,",
       h1b: "mit Gedächtnis.",
       sub: "Subsumio gibt Justiziariaten, was sie nie hatten: jeden Vertrag, jedes Compliance-Dokument und jede Rechtsmeinung indiziert, abfragbar und audit-ready — mit seitengenauen Zitaten.",
       painsTitle: "Der Justiziariats-Alltag",
@@ -568,7 +568,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           title: "Externe Anwaltskosten",
-          desc: "Jede externe Rechtsfrage kostet Tausende. Dein Team muss die routinemäßigen intern beantworten, bevor sie externe Rechnungen werden.",
+          desc: "Jede externe Rechtsfrage kostet Tausende. Ihr Team muss die routinemäßigen intern beantworten, bevor sie externe Rechnungen werden.",
         },
       ],
       featuresTitle: "Für Legal Operations gebaut",
@@ -591,7 +591,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         {
           icon: "Search",
           title: "Antwort vor externer Anfrage",
-          desc: "Erst Subsumio fragen — wenn die Antwort in deinen Dokumenten liegt, sparst du die externe Anwaltsrechnung. Wenn nicht, weißt du genau, was fehlt.",
+          desc: "Erst Subsumio fragen — wenn die Antwort in Ihren Dokumenten liegt, sparen Sie die externe Anwaltsrechnung. Wenn nicht, wissen Sie genau, was fehlt.",
         },
         {
           icon: "Layers",
@@ -606,7 +606,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       ],
       proofTitle: "Von reaktiv zu proaktiv",
       proof:
-        "Der Retrieval-Kern erreicht 97,9 % Recall@5 — wenn du fragst 'welche Verträge haben automatische Verlängerung im Q3?', bekommst du die komplette Antwort, keine Teilmenge.",
+        "Der Retrieval-Kern erreicht 97,9 % Recall@5 — wenn Sie fragen 'welche Verträge haben automatische Verlängerung im Q3?', bekommen Sie die komplette Antwort, keine Teilmenge.",
       faq: [
         {
           q: "Wie integriert das in unser DMS?",
@@ -621,10 +621,10 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           a: "Subsumio liefert Quellzitate für jede Antwort, Gap-Analyse für Transparenz und vollständige Audit-Logs. Das aligniert mit AI-Act-Transparenzanforderungen für interne Tools.",
         },
       ],
-      ctaTitle: "Gib deinem Rechts-Team ein Brain.",
+      ctaTitle: "Geben Sie Ihrem Rechts-Team ein Brain.",
       ctaSub:
-        "Starte mit einem Vertragsportfolio als Pilot. Keine Daten müssen deine Infrastruktur verlassen.",
-      ctaButton: "Sprich mit uns",
+        "Starten Sie mit einem Vertragsportfolio als Pilot. Keine Daten müssen Ihre Infrastruktur verlassen.",
+      ctaButton: "Sprechen Sie mit uns",
     },
     "mid-sized": {
       slug: "mid-sized",
@@ -639,7 +639,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       pains: [
         {
           title: "Mehr mit weniger",
-          desc: "Du konkurrierst mit Großkanzleien um dieselben Mandanten, hast aber einen Bruchteil der Köpfe. Jeder Effizienzgewinn ist ein Wettbewerbsvorteil.",
+          desc: "Sie konkurrieren mit Großkanzleien um dieselben Mandanten, haben aber einen Bruchteil der Köpfe. Jeder Effizienzgewinn ist ein Wettbewerbsvorteil.",
         },
         {
           title: "Wissen ist fragmentiert",
@@ -647,7 +647,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           title: "IT ist ein Limit, kein Enabler",
-          desc: "Keine dedizierte IT-Abteilung für Legal Tech. Du brauchst Tools, die out-of-the-box funktionieren, keine Projekte mit sechswöchiger Implementierung.",
+          desc: "Keine dedizierte IT-Abteilung für Legal Tech. Sie brauchen Tools, die out-of-the-box funktionieren, keine Projekte mit sechswöchiger Implementierung.",
         },
       ],
       featuresTitle: "Überproportionale Wirkung für schlanke Teams",
@@ -670,7 +670,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         {
           icon: "MessageSquare",
           title: "WhatsApp-Copilot für jeden Anwalt",
-          desc: "Zeitbuchung, Dokumentenablage, Sprachnotizen vom Handy. Das Tool, das deine Anwälte täglich nutzen, nicht ein weiteres System, das sie meiden.",
+          desc: "Zeitbuchung, Dokumentenablage, Sprachnotizen vom Handy. Das Tool, das Ihre Anwälte täglich nutzen, nicht ein weiteres System, das sie meiden.",
         },
         {
           icon: "Calculator",
@@ -683,25 +683,25 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           desc: "Keine US-Cloud, kein US-Modell. EU-Hosting mit AVV oder self-hosted auf eigener Hardware mit eigenen Keys.",
         },
       ],
-      proofTitle: "Der Kraft-Multiplikator für dein Team",
+      proofTitle: "Der Kraft-Multiplikator für Ihr Team",
       proof:
-        "97,9 % Recall@5 bedeutet: dein Team findet, was zählt — jedes Mal. Wenn eine 15-Anwalt-Kanzlei das entscheidende Präjudiz in Sekunden findet, performt sie wie eine 50-Anwalt-Kanzlei.",
+        "97,9 % Recall@5 bedeutet: Ihr Team findet, was zählt — jedes Mal. Wenn eine 15-Anwalt-Kanzlei das entscheidende Präjudiz in Sekunden findet, performt sie wie eine 50-Anwalt-Kanzlei.",
       faq: [
         {
           q: "Wie schnell können wir das einführen?",
-          a: "Ein Pilot mit 2-3 Anwälten dauert einen Tag. Das volle Rollout typischerweise eine Woche — dein Team indiziert bestehende Akten im eigenen Tempo.",
+          a: "Ein Pilot mit 2-3 Anwälten dauert einen Tag. Das volle Rollout typischerweise eine Woche — Ihr Team indiziert bestehende Akten im eigenen Tempo.",
         },
         {
           q: "Was kostet das für eine mittelständische Kanzlei?",
-          a: "Team-Plan ab 1.290 €/Seat/Monat ab 5 Seats. Jahreszahlung spart 20 %. Transparente Mehrkosten — du siehst den Verbrauch live, keine Überraschungen.",
+          a: "Team-Plan ab 1.290 €/Seat/Monat ab 5 Seats. Jahreszahlung spart 20 %. Transparente Mehrkosten — Sie sehen den Verbrauch live, keine Überraschungen.",
         },
         {
           q: "Können wir klein anfangen und wachsen?",
-          a: "Absolut. Starte mit Pro für einen Anwalt, upgraden auf Team, wenn bereit. Alle Daten bleiben — keine Migration, kein Downtime.",
+          a: "Absolut. Starten Sie mit Pro für einen Anwalt, und upgraden Sie auf Team, wenn Sie bereit sind. Alle Daten bleiben — keine Migration, kein Downtime.",
         },
       ],
-      ctaTitle: "Konkurriere mit den Großkanzleien.",
-      ctaSub: "Starte mit einem Team als Pilot. Sieh die Wirkung in einer Woche.",
+      ctaTitle: "Konkurrieren Sie mit den Großkanzleien.",
+      ctaSub: "Starten Sie mit einem Team als Pilot. Sehen Sie die Wirkung in einer Woche.",
       ctaButton: "Jetzt starten",
     },
   },

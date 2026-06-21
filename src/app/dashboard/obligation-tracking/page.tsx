@@ -66,49 +66,90 @@ export default function ObligationTrackingPage() {
   const canRun = mode === "slug" ? slug.trim().length > 0 : text.trim().length > 0;
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
-        title="Obligation Tracking"
-        description="Extrahiert Vertragsverpflichtungen, Kündigungsfristen, Zahlungstermine und Renewal-Daten aus Verträgen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Obligation Tracking" }]}
+        title="Pflichten-Tracking"
+        description="Extrahiert Vertragsverpflichtungen, Kündigungsfristen, Zahlungstermine und Verlängerungsdaten aus Verträgen"
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Pflichten-Tracking" }]}
       />
 
       {/* Input */}
-      <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex gap-2">
-          <button onClick={() => setMode("slug")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", mode === "slug" ? "brand-soft brand-text border brand-border" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] border border-transparent")}>
+          <button
+            onClick={() => setMode("slug")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+              mode === "slug"
+                ? "brand-soft brand-text brand-border border"
+                : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+            )}
+          >
             Aus Vault (Slug)
           </button>
-          <button onClick={() => setMode("text")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", mode === "text" ? "brand-soft brand-text border brand-border" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] border border-transparent")}>
+          <button
+            onClick={() => setMode("text")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+              mode === "text"
+                ? "brand-soft brand-text brand-border border"
+                : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+            )}
+          >
             Direkter Text
           </button>
         </div>
 
         {mode === "slug" ? (
-          <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="Vertrags-Slug aus dem Brain" className="bg-[color:var(--ds-surface)] border-[color:var(--ds-border)] text-[color:var(--ds-text)]" />
+          <Input
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="Vertrags-Slug aus dem Brain"
+            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
+          />
         ) : (
-          <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Vertragstext hier einfügen…" className="w-full h-40 bg-[color:var(--ds-surface)] border border-[color:var(--ds-border)] rounded-lg px-4 py-3 text-sm text-[color:var(--ds-text)] font-mono leading-relaxed focus:outline-none focus:border-emerald-500/50 resize-none" />
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Vertragstext hier einfügen…"
+            className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
+          />
         )}
 
         <div className="flex items-center gap-3">
-          <label className="text-xs text-[color:var(--ds-text-muted)] font-medium">Rechtsordnung:</label>
+          <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+            Rechtsordnung:
+          </label>
           <div className="flex gap-1">
             {(["all", "at", "de", "ch"] as const).map((j) => (
-              <button key={j} onClick={() => setJurisdiction(j)} className={cn("px-2.5 py-1 rounded-md text-xs font-medium transition-colors", jurisdiction === j ? "brand-soft brand-text border brand-border" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] border border-transparent")}>
+              <button
+                key={j}
+                onClick={() => setJurisdiction(j)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  jurisdiction === j
+                    ? "brand-soft brand-text brand-border border"
+                    : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                )}
+              >
                 {j === "all" ? "Alle" : j.toUpperCase()}
               </button>
             ))}
           </div>
         </div>
 
-        <Button onClick={run} disabled={loading || !canRun} className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white">
+        <Button
+          onClick={run}
+          disabled={loading || !canRun}
+          className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
+        >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <ClipboardList size={15} />}
           Obligationen extrahieren
         </Button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border border-red-500/20 bg-red-500/5 text-sm text-red-600">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           <AlertTriangle size={16} /> {error}
         </div>
       )}
@@ -125,7 +166,7 @@ export default function ObligationTrackingPage() {
           {/* Obligations */}
           {result.obligations.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <ClipboardList size={14} /> Verpflichtungen ({result.obligations.length})
               </h3>
               <div className="space-y-3">
@@ -133,23 +174,49 @@ export default function ObligationTrackingPage() {
                   const Icon = TYPE_ICONS[o.type] ?? ClipboardList;
                   return (
                     <div key={i} className="border-l-2 border-[color:var(--ds-border)] pl-4">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <Icon size={13} className="text-[color:var(--ds-text-muted)]" />
-                        <Badge variant="default" className={cn("text-xs border", URGENCY_STYLES[o.urgency])}>{o.urgency}</Badge>
-                        <Badge variant="default" className="text-xs bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">{o.type}</Badge>
+                        <Badge
+                          variant="default"
+                          className={cn("border text-xs", URGENCY_STYLES[o.urgency])}
+                        >
+                          {o.urgency}
+                        </Badge>
+                        <Badge
+                          variant="default"
+                          className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+                        >
+                          {o.type}
+                        </Badge>
                         {o.trigger_date && (
-                          <span className="text-xs font-mono text-[color:var(--ds-text-muted)]">{o.trigger_date}</span>
+                          <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
+                            {o.trigger_date}
+                          </span>
                         )}
                         {o.recurring && o.recurring !== "one-time" && (
-                          <Badge variant="default" className="text-xs bg-blue-500/10 border-blue-500/20 text-blue-600">{o.recurring}</Badge>
+                          <Badge
+                            variant="default"
+                            className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                          >
+                            {o.recurring}
+                          </Badge>
                         )}
                       </div>
                       <p className="text-sm text-[color:var(--ds-text)]">{o.description}</p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                        <span><strong className="text-[color:var(--ds-text)]">{o.obligated_party}</strong> → {o.counterparty}</span>
+                      <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
+                        <span>
+                          <strong className="text-[color:var(--ds-text)]">
+                            {o.obligated_party}
+                          </strong>{" "}
+                          → {o.counterparty}
+                        </span>
                         {o.clause_reference && <span>§ {o.clause_reference}</span>}
                       </div>
-                      {o.notes && <p className="text-xs text-[color:var(--ds-text-muted)] italic mt-1">{o.notes}</p>}
+                      {o.notes && (
+                        <p className="mt-1 text-xs text-[color:var(--ds-text-muted)] italic">
+                          {o.notes}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -160,15 +227,24 @@ export default function ObligationTrackingPage() {
           {/* Renewal Dates */}
           {result.renewal_dates.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold mb-3 flex items-center gap-2">
-                <CalendarClock size={14} /> Renewal-Daten ({result.renewal_dates.length})
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                <CalendarClock size={14} /> Verlängerungsdaten ({result.renewal_dates.length})
               </h3>
               <div className="space-y-2">
                 {result.renewal_dates.map((r, i) => (
                   <div key={i} className="flex items-center gap-3 text-sm">
-                    <span className="font-mono text-[color:var(--ds-text)] whitespace-nowrap">{r.date}</span>
+                    <span className="font-mono whitespace-nowrap text-[color:var(--ds-text)]">
+                      {r.date}
+                    </span>
                     <span className="text-[color:var(--ds-text-muted)]">{r.description}</span>
-                    {r.auto_renew && <Badge variant="default" className="text-xs bg-amber-500/10 border-amber-500/20 text-amber-600">Auto-Renewal</Badge>}
+                    {r.auto_renew && (
+                      <Badge
+                        variant="default"
+                        className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+                      >
+                        Auto-Renewal
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
@@ -178,14 +254,23 @@ export default function ObligationTrackingPage() {
           {/* Payment Terms */}
           {result.payment_terms.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <Euro size={14} /> Zahlungstermine ({result.payment_terms.length})
               </h3>
               <div className="space-y-2">
                 {result.payment_terms.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 text-sm">
-                    <span className="font-mono text-[color:var(--ds-text)] whitespace-nowrap">{p.due_date}</span>
-                    {p.amount && <Badge variant="default" className="text-xs bg-emerald-500/10 border-emerald-500/20 text-emerald-600">{p.amount}</Badge>}
+                    <span className="font-mono whitespace-nowrap text-[color:var(--ds-text)]">
+                      {p.due_date}
+                    </span>
+                    {p.amount && (
+                      <Badge
+                        variant="default"
+                        className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+                      >
+                        {p.amount}
+                      </Badge>
+                    )}
                     <span className="text-[color:var(--ds-text-muted)]">{p.description}</span>
                   </div>
                 ))}
@@ -196,7 +281,7 @@ export default function ObligationTrackingPage() {
           {/* Notice Periods */}
           {result.notice_periods.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-xs uppercase tracking-wider text-[color:var(--ds-text-muted)] font-semibold mb-3 flex items-center gap-2">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
                 <Clock size={14} /> Kündigungsfristen ({result.notice_periods.length})
               </h3>
               <div className="space-y-2">
@@ -204,7 +289,12 @@ export default function ObligationTrackingPage() {
                   <div key={i} className="flex items-center gap-3 text-sm">
                     <span className="text-[color:var(--ds-text)]">{n.event}</span>
                     <span className="text-[color:var(--ds-text-muted)]">{n.notice_period}</span>
-                    <Badge variant="default" className="text-xs bg-blue-500/10 border-blue-500/20 text-blue-600">{n.days} Tage</Badge>
+                    <Badge
+                      variant="default"
+                      className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                    >
+                      {n.days} Tage
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -214,7 +304,11 @@ export default function ObligationTrackingPage() {
           {/* Warnings */}
           {result.warnings.length > 0 && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              {result.warnings.map((w, i) => <p key={i} className="text-xs text-amber-600">{w}</p>)}
+              {result.warnings.map((w, i) => (
+                <p key={i} className="text-xs text-amber-600">
+                  {w}
+                </p>
+              ))}
             </div>
           )}
         </div>

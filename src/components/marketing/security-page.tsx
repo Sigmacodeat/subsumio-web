@@ -30,8 +30,9 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
           <span className="brand-text mb-6 inline-block rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1 text-xs font-medium">
             {t.badge}
           </span>
-          <h1 className="mb-6 text-4xl leading-tight font-bold [color:var(--mk-text)] md:text-5xl">
+          <h1 className="mb-6 text-[clamp(2.25rem,9.5vw,3rem)] leading-tight font-bold text-balance [color:var(--mk-text)] md:text-5xl">
             {t.h1a}
+            <span className="sr-only"> </span>
             <br />
             <span className="brand-text">{t.h1b}</span>
           </h1>
@@ -183,7 +184,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <section className="relative z-10 px-6 py-24">
         <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-8 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>

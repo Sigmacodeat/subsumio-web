@@ -615,10 +615,34 @@ export async function buildNewUser(opts: {
   };
 }
 
-/** Public projection — never leaks the password hash. */
-export type PublicUser = Omit<User, "passwordHash">;
+/** Public projection — never leaks secrets (password hash, 2FA secrets, OAuth tokens, backup codes). */
+export type PublicUser = Omit<
+  User,
+  | "passwordHash"
+  | "twoFactorSecret"
+  | "pendingTwoFactorSecret"
+  | "twoFactorBackupCodes"
+  | "docusignAccessToken"
+  | "docusignRefreshToken"
+  | "docusignTokenExpiresAt"
+>;
 export function toPublic(user: User): PublicUser {
-  const { passwordHash: _omit, ...pub } = user;
-  void _omit;
+  const {
+    passwordHash: _ph,
+    twoFactorSecret: _tfs,
+    pendingTwoFactorSecret: _ptfs,
+    twoFactorBackupCodes: _tbc,
+    docusignAccessToken: _dat,
+    docusignRefreshToken: _drt,
+    docusignTokenExpiresAt: _dte,
+    ...pub
+  } = user;
+  void _ph;
+  void _tfs;
+  void _ptfs;
+  void _tbc;
+  void _dat;
+  void _drt;
+  void _dte;
   return pub;
 }

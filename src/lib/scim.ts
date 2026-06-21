@@ -8,7 +8,16 @@
  *   4. WorkOS Directory Sync API client (for manual pull sync)
  *
  * Environment variables:
- *   SCIM_BEARER_TOKEN    — shared secret for inbound SCIM requests
+ *   SCIM_BEARER_TOKENS   — org-scoped secrets for inbound SCIM requests,
+ *                          format "orgId1:token1,orgId2:token2". Each IdP
+ *                          tenant connection gets its own token, and every
+ *                          provisioning request is scoped to that org.
+ *   SCIM_BEARER_TOKEN    — legacy single-tenant secret. Only honored when
+ *                          SCIM_SINGLE_TENANT_ORG_ID is also set, so a
+ *                          deployment can't accidentally run multi-tenant
+ *                          SCIM with no org isolation.
+ *   SCIM_SINGLE_TENANT_ORG_ID — org id every legacy SCIM_BEARER_TOKEN
+ *                          request is scoped to.
  *   WORKOS_API_KEY       — existing WorkOS API key (reused from SSO)
  *   WORKOS_DIRECTORY_ID  — WorkOS directory ID for Directory Sync
  */
@@ -167,35 +176,69 @@ export function scimListResponse<T>(
 
 // ── Bearer Token Authentication ───────────────────────────────────────
 
-/**
- * Validate the Authorization header for inbound SCIM requests.
- * SCIM requests use a bearer token, not session cookies.
- * Returns true if authorized, false otherwise.
- */
-export function validateScimAuth(req: Request): boolean {
-  const scimToken = process.env.SCIM_BEARER_TOKEN || "";
-  if (!scimToken) return false;
-  const auth = req.headers.get("authorization") || "";
-  if (!auth.startsWith("Bearer ")) return false;
-  const token = auth.slice(7);
-  // Timing-safe comparison
-  if (token.length !== scimToken.length) return false;
+/** Timing-safe string comparison (equal-length check first, then constant-time diff). */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
   let diff = 0;
-  for (let i = 0; i < token.length; i++) {
-    diff |= token.charCodeAt(i) ^ scimToken.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
   return diff === 0;
 }
 
+/** Parses `SCIM_BEARER_TOKENS="orgId1:token1,orgId2:token2"` into a Map<token, orgId>. */
+function parseScimTokenMap(): Map<string, string> {
+  const raw = process.env.SCIM_BEARER_TOKENS || "";
+  const map = new Map<string, string>();
+  for (const pair of raw.split(",")) {
+    const idx = pair.indexOf(":");
+    if (idx <= 0) continue;
+    const orgId = pair.slice(0, idx).trim();
+    const token = pair.slice(idx + 1).trim();
+    if (orgId && token) map.set(token, orgId);
+  }
+  return map;
+}
+
+/**
+ * Resolve the Authorization header for inbound SCIM requests to the org it
+ * is scoped to. SCIM requests use a bearer token, not session cookies.
+ *
+ * Every token is tied to exactly one org — there is no "global" SCIM token
+ * that can see across tenants. Returns the orgId on success, or null if the
+ * token is missing/invalid/unscoped.
+ */
+export function resolveScimOrgId(req: Request): string | null {
+  const auth = req.headers.get("authorization") || "";
+  if (!auth.startsWith("Bearer ")) return null;
+  const token = auth.slice(7);
+
+  const tokenMap = parseScimTokenMap();
+  for (const [candidateToken, orgId] of tokenMap) {
+    if (timingSafeEqual(token, candidateToken)) return orgId;
+  }
+
+  // Legacy single-tenant fallback: only honored when explicitly scoped to
+  // one org, so a deployment can't run multi-tenant SCIM with no isolation.
+  const legacyToken = process.env.SCIM_BEARER_TOKEN || "";
+  const legacyOrgId = process.env.SCIM_SINGLE_TENANT_ORG_ID || "";
+  if (legacyToken && legacyOrgId && timingSafeEqual(token, legacyToken)) {
+    return legacyOrgId;
+  }
+
+  return null;
+}
+
 /**
  * Middleware-like guard for SCIM routes.
- * Returns null if authorized, or a 401 Response if not.
+ * Returns the resolved orgId if authorized, or a 401 Response if not.
  */
-export function requireScimAuth(req: Request): Response | null {
-  if (!validateScimAuth(req)) {
+export function requireScimAuth(req: Request): { orgId: string } | Response {
+  const orgId = resolveScimOrgId(req);
+  if (!orgId) {
     return scimError(401, "Invalid or missing bearer token");
   }
-  return null;
+  return { orgId };
 }
 
 // ── User ↔ SCIM Mapping ───────────────────────────────────────────────
@@ -274,18 +317,22 @@ export function scimToUserData(scimUser: SCIMUser): {
  * - If active=false, deactivate (deprovisioning)
  */
 export async function provisionOrUpdateUser(
-  scimUser: SCIMUser
+  scimUser: SCIMUser,
+  orgId: string
 ): Promise<{ user: User; created: boolean }> {
   const store = getStore();
   const { email, name, externalId, active } = scimToUserData(scimUser);
 
-  // Try to find by SCIM external ID first, then by email
+  // Try to find by SCIM external ID first, then by email — scoped to this
+  // org's tenant so one IdP connection can never see/link another tenant's user.
   let user: User | null = null;
   if (externalId) {
-    user = await store.getByScimExternalId(externalId);
+    const candidate = await store.getByScimExternalId(externalId);
+    if (candidate && candidate.orgId === orgId) user = candidate;
   }
   if (!user) {
-    user = await store.getByEmail(email);
+    const candidate = await store.getByEmail(email);
+    if (candidate && candidate.orgId === orgId) user = candidate;
   }
 
   if (!user) {
@@ -296,6 +343,7 @@ export async function provisionOrUpdateUser(
       passwordHash: "", // SCIM users have no local password
       locale: "de",
     });
+    newUser.orgId = orgId;
     newUser.scimExternalId = externalId || null;
     newUser.ssoProvider = "scim";
     newUser.emailVerifiedAt = new Date().toISOString();
@@ -343,10 +391,11 @@ export async function provisionOrUpdateUser(
 /**
  * Deprovision a user (deactivate, not delete — for audit trail).
  */
-export async function deprovisionUser(userId: string): Promise<User | null> {
+export async function deprovisionUser(userId: string, orgId?: string): Promise<User | null> {
   const store = getStore();
   const user = await store.getById(userId);
   if (!user) return null;
+  if (orgId && user.orgId !== orgId) return null;
 
   const updated = await store.update(userId, {
     deactivatedAt: new Date().toISOString(),
@@ -436,7 +485,9 @@ export async function listWorkOSDirectoryUsers(): Promise<WorkOSDirectoryUser[]>
   const perPage = 100;
 
   do {
-    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/users`);
+    const url = new URL(
+      `${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/users`
+    );
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
@@ -475,7 +526,9 @@ export async function listWorkOSDirectoryGroups(): Promise<WorkOSDirectoryGroup[
   const perPage = 100;
 
   do {
-    const url = new URL(`${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/groups`);
+    const url = new URL(
+      `${WORKOS_API_BASE}/directory_sync/${process.env.WORKOS_DIRECTORY_ID}/groups`
+    );
     url.searchParams.set("limit", String(perPage));
     if (cursor) url.searchParams.set("after", cursor);
 
@@ -559,7 +612,7 @@ export interface SyncResult {
  * Pull all users from WorkOS Directory Sync and provision/update them locally.
  * This is the "manual sync" triggered from the dashboard.
  */
-export async function syncFromWorkOS(): Promise<SyncResult> {
+export async function syncFromWorkOS(orgId: string): Promise<SyncResult> {
   const startedAt = new Date().toISOString();
   const errors: string[] = [];
   let usersCreated = 0;
@@ -571,8 +624,8 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
     const dirUsers = await listWorkOSDirectoryUsers();
     const store = getStore();
 
-    // Get all existing SCIM users to detect deprovisioning
-    const allUsers = await store.list();
+    // Get all existing SCIM users (this org only) to detect deprovisioning
+    const allUsers = (await store.list()).filter((u) => u.orgId === orgId);
     const scimUserExternalIds = new Set(
       allUsers.filter((u) => u.scimExternalId).map((u) => u.scimExternalId as string)
     );
@@ -581,7 +634,7 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
     for (const dirUser of dirUsers) {
       try {
         const scimUser = workOSUserToScim(dirUser);
-        const { created } = await provisionOrUpdateUser(scimUser);
+        const { created } = await provisionOrUpdateUser(scimUser, orgId);
         if (created) {
           usersCreated++;
         } else {
@@ -597,8 +650,8 @@ export async function syncFromWorkOS(): Promise<SyncResult> {
     // Any remaining external IDs were not in the directory → deactivate
     for (const missingExternalId of scimUserExternalIds) {
       const user = await store.getByScimExternalId(missingExternalId);
-      if (user && !user.deactivatedAt) {
-        await deprovisionUser(user.id);
+      if (user && user.orgId === orgId && !user.deactivatedAt) {
+        await deprovisionUser(user.id, orgId);
         usersDeactivated++;
       }
     }

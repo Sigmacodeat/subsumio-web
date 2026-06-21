@@ -11,6 +11,7 @@ export const GET = createHandler(
   async (ctx, _body, _query, req) => {
     const brainId = ctx.brainId;
     const encoder = new TextEncoder();
+    let cleanupRef: (() => void) | null = null;
 
     const stream = new ReadableStream({
       start(controller) {
@@ -56,12 +57,13 @@ export const GET = createHandler(
 
         req.signal.addEventListener("abort", cleanup);
 
-        // Store cleanup on the controller for manual close
-        (controller as unknown as { _cleanup?: () => void })._cleanup = cleanup;
+        // Store cleanup for cancel callback
+        cleanupRef = cleanup;
       },
       cancel(reason) {
-        // Stream cancelled by consumer
+        // Stream cancelled by consumer — cleanup to prevent resource leak
         void reason;
+        cleanupRef?.();
       },
     });
 
@@ -73,5 +75,5 @@ export const GET = createHandler(
         "X-Accel-Buffering": "no",
       },
     });
-  },
+  }
 );

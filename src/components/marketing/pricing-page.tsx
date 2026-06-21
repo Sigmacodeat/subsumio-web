@@ -18,11 +18,11 @@ const VALUE_PROPS = {
   de: [
     {
       title: "Keine versteckten Kosten",
-      desc: "Was auf der Preisliste steht, zahlst du. Keine Überraschungen bei der Rechnung.",
+      desc: "Was auf der Preisliste steht, zahlen Sie. Keine Überraschungen bei der Rechnung.",
     },
     {
       title: "Self-hosted oder Cloud",
-      desc: "Du entscheidest, wo deine Daten liegen. EU-Cloud oder auf eigener Hardware.",
+      desc: "Sie entscheiden, wo Ihre Daten liegen. EU-Cloud oder auf eigener Hardware.",
     },
     {
       title: "Open-Source Engine",

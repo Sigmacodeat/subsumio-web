@@ -20,6 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { frontmatterOf, type NormFrontmatter } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
+
+const LAW_PAGES_LIMIT = 300;
 
 interface NormItem {
   slug: string;
@@ -96,6 +99,7 @@ function NormsPageInner() {
   const [copied, setCopied] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [fullContent, setFullContent] = useState<string | null>(null);
+  const [capped, setCapped] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +136,8 @@ function NormsPageInner() {
         }
 
         // Also check all pages for statutes
-        const lawPages = await api.brain.listPages({ limit: 300 });
+        const lawPages = await api.brain.listPages({ limit: LAW_PAGES_LIMIT });
+        setCapped(lawPages.length >= LAW_PAGES_LIMIT);
         for (const page of lawPages) {
           const isLawPage =
             page.slug.startsWith("law-corpus/") ||
@@ -220,6 +225,8 @@ function NormsPageInner() {
         description="Gesetze und Rechtsvorschriften durchsuchen"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Normen" }]}
       />
+
+      {capped && <CappedResultsNotice limit={LAW_PAGES_LIMIT} />}
 
       {/* Search */}
       <div className="flex gap-2">

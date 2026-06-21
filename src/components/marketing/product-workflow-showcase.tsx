@@ -16,6 +16,7 @@ import {
 import { type Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
+import { GuidedCursor } from "./motion-system";
 
 const copy = {
   en: {
@@ -36,7 +37,7 @@ const copy = {
   de: {
     eyebrow: "Workflow-Ansicht",
     title: "Aus verstreuter Arbeit wird eine belegte Antwort.",
-    sub: "Meetings, E-Mails, PDFs und Aufgaben laufen in ein rechtebewusstes Brain. {brand} verbindet den Kontext, hält die Quellen sichtbar und routet den nächsten Schritt in den richtigen Workspace.",
+    sub: "Meetings, E-Mails, PDFs und Aufgaben laufen in eine berechtigungsbewusste Wissensbasis. {brand} verbindet den Kontext, hält die Quellen sichtbar und routet den nächsten Schritt in den richtigen Workspace.",
     query: "Was hat sich seit dem letzten Termin geändert?",
     answer:
       "3 relevante Änderungen gefunden. Zwei sind unkritisch, eine sollte vor der nächsten Frist geprüft werden.",
@@ -122,6 +123,13 @@ export default function ProductWorkflowShowcase({
             data-tone="slate"
             className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border-strong)] shadow-2xl shadow-black/20 [background:var(--mk-bg)]"
           >
+            <GuidedCursor
+              x={["63%", "35%", "74%", "58%"]}
+              y={["24%", "45%", "53%", "82%"]}
+              label={lang === "de" ? "Kontext folgen" : "Follow context"}
+              className="hidden md:flex"
+              duration={7.2}
+            />
             <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
               <div className="terminal-dots flex items-center gap-2">
                 <span className="terminal-dot-red" />
@@ -150,11 +158,15 @@ export default function ProductWorkflowShowcase({
               </div>
 
               <div className="relative p-4 md:p-6">
-                <div className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
+                <motion.div
+                  animate={reduced ? undefined : { scale: [1, 1.012, 1] }}
+                  transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+                  className="mb-5 flex items-center gap-3 rounded-xl border [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]"
+                >
                   <Search size={16} className="brand-text" />
                   <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
                   <Sparkles size={16} className="ml-auto [color:var(--brand-secondary)]" />
-                </div>
+                </motion.div>
 
                 <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">
                   <motion.div style={{ y: yCards }} className="space-y-3">
@@ -244,8 +256,13 @@ export default function ProductWorkflowShowcase({
                 <motion.div
                   initial={{ opacity: 0, y: 14 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  animate={reduced ? undefined : { scale: [1, 1.014, 1] }}
                   viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.45, delay: 0.25 }}
+                  transition={{
+                    opacity: { duration: 0.45, delay: 0.25 },
+                    y: { duration: 0.45, delay: 0.25 },
+                    scale: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+                  }}
                   className="brand-border mt-4 rounded-xl border p-4 [background:var(--mk-surface)]"
                 >
                   <div className="flex items-start gap-3">

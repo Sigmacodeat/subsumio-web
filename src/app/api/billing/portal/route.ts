@@ -33,10 +33,13 @@ export const POST = createHandler(
       body: params.toString(),
     });
 
-    const data = await resp.json();
+    const data = (await resp.json().catch(() => ({}))) as {
+      error?: { message?: string };
+      url?: string;
+    };
     if (!resp.ok) {
       return apiError("stripe_error", data?.error?.message ?? "Stripe request failed", 502);
     }
     return Response.json({ url: data.url });
-  },
+  }
 );

@@ -6,7 +6,7 @@
 import type { ChatMessage, ChatSession } from "@/components/chat/chat-types";
 
 const DB_NAME = "subsumio-chat";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const SESSIONS_STORE = "sessions";
 const MESSAGES_STORE = "messages";
 
@@ -17,13 +17,28 @@ function openDb(): Promise<IDBDatabase> {
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onerror = () => reject(req.error);
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      // Reset cache if the connection is closed (e.g. version change in another tab)
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(SESSIONS_STORE)) {
         const store = db.createObjectStore(SESSIONS_STORE, { keyPath: "id" });
         store.createIndex("updatedAt", "updatedAt", { unique: false });
         store.createIndex("contextType", "contextType", { unique: false });
+        store.createIndex("caseSlug", "caseSlug", { unique: false });
+      } else if (db.version >= 2) {
+        // Upgrade from v1: add caseSlug index for matter isolation
+        const store = req.transaction!.objectStore(SESSIONS_STORE);
+        if (!store.indexNames.contains("caseSlug")) {
+          store.createIndex("caseSlug", "caseSlug", { unique: false });
+        }
       }
       if (!db.objectStoreNames.contains(MESSAGES_STORE)) {
         const store = db.createObjectStore(MESSAGES_STORE, { keyPath: "id" });
@@ -98,7 +113,10 @@ export async function deleteSession(id: string): Promise<void> {
   }
 }
 
-export async function listSessions(): Promise<ChatSession[]> {
+export async function listSessions(filter?: {
+  caseSlug?: string;
+  contextType?: string;
+}): Promise<ChatSession[]> {
   try {
     const db = await openDb();
     const tx = db.transaction(SESSIONS_STORE, "readonly");
@@ -107,7 +125,20 @@ export async function listSessions(): Promise<ChatSession[]> {
       req.onsuccess = () => resolve(req.result || []);
       req.onerror = () => resolve([]);
     });
-    return sessions.sort((a, b) => {
+
+    // Per-Matter Isolation: filter sessions by caseSlug if provided
+    // When caseSlug is provided, only show sessions for that matter + global sessions
+    // When no caseSlug, show all sessions (global context)
+    let filtered = sessions;
+    if (filter?.caseSlug) {
+      filtered = sessions.filter(
+        (s) => s.caseSlug === filter.caseSlug || (!s.caseSlug && s.contextType === "global")
+      );
+    } else if (filter?.contextType) {
+      filtered = sessions.filter((s) => s.contextType === filter.contextType);
+    }
+
+    return filtered.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();

@@ -16,7 +16,12 @@
  *   - Dashboard Topbar → NotificationBellManager (UI-Binding)
  */
 
-import type { NotificationRecord, NotificationStore, NotificationType, NotificationPriority } from "@/lib/notification-model";
+import type {
+  NotificationRecord,
+  NotificationStore,
+  NotificationType,
+  NotificationPriority,
+} from "@/lib/notification-model";
 
 // ── Bell State ────────────────────────────────────────────────────────
 
@@ -68,7 +73,7 @@ export class NotificationBellManager {
     store: NotificationStore,
     userId: string,
     brainId: string,
-    config?: Partial<NotificationBellConfig>,
+    config?: Partial<NotificationBellConfig>
   ) {
     this.store = store;
     this.userId = userId;
@@ -174,7 +179,7 @@ export class NotificationBellManager {
   }
 
   async markRead(id: string): Promise<void> {
-    await this.store.markRead(id);
+    await this.store.markRead(id, this.userId, this.brainId);
     await this.refresh();
   }
 
@@ -184,7 +189,7 @@ export class NotificationBellManager {
   }
 
   async archive(id: string): Promise<void> {
-    await this.store.archive(id);
+    await this.store.archive(id, this.userId, this.brainId);
     await this.refresh();
   }
 
@@ -218,7 +223,7 @@ export class NotificationBellManager {
 
   hasUrgentUnread(): boolean {
     return this.state.notifications.some(
-      (n) => n.priority === "urgent" && n.read_at === null && !n.archived,
+      (n) => n.priority === "urgent" && n.read_at === null && !n.archived
     );
   }
 }
@@ -239,7 +244,9 @@ export class SSEConnectionManager {
     if (this.connected) return;
     try {
       this.eventSource = new EventSource(this.url);
-      this.eventSource.onopen = () => { this.connected = true; };
+      this.eventSource.onopen = () => {
+        this.connected = true;
+      };
       this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as NotificationRecord;
@@ -294,7 +301,7 @@ export interface PushSubscriptionData {
 }
 
 export async function createPushSubscription(
-  config: PushBridgeConfig,
+  config: PushBridgeConfig
 ): Promise<PushSubscriptionData | null> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     return null;
@@ -308,8 +315,12 @@ export async function createPushSubscription(
     return {
       endpoint: sub.endpoint,
       keys: {
-        p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey("p256dh") ?? new ArrayBuffer(0)))),
-        auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey("auth") ?? new ArrayBuffer(0)))),
+        p256dh: btoa(
+          String.fromCharCode(...new Uint8Array(sub.getKey("p256dh") ?? new ArrayBuffer(0)))
+        ),
+        auth: btoa(
+          String.fromCharCode(...new Uint8Array(sub.getKey("auth") ?? new ArrayBuffer(0)))
+        ),
       },
       expiration_time: sub.expirationTime,
     };
@@ -353,7 +364,8 @@ export function buildPushPayload(notification: NotificationRecord): PushPayload 
 
 export function buildBellAriaLabel(unreadCount: number, hasUrgent: boolean): string {
   if (unreadCount === 0) return "Benachrichtigungen — keine ungelesenen";
-  if (hasUrgent) return `Benachrichtigungen — ${unreadCount} ungelesen, dringende Benachrichtigung vorhanden`;
+  if (hasUrgent)
+    return `Benachrichtigungen — ${unreadCount} ungelesen, dringende Benachrichtigung vorhanden`;
   return `Benachrichtigungen — ${unreadCount} ungelesen`;
 }
 
@@ -367,9 +379,12 @@ export function getBellIconState(unreadCount: number, hasUrgent: boolean): BellI
 
 export function getBellBadgeColor(state: BellIconState): string {
   switch (state) {
-    case "urgent": return "bg-red-500 text-white";
-    case "unread": return "bg-blue-500 text-white";
-    default: return "";
+    case "urgent":
+      return "bg-red-500 text-white";
+    case "unread":
+      return "bg-blue-500 text-white";
+    default:
+      return "";
   }
 }
 
@@ -381,13 +396,20 @@ export function getBellBadgeText(unreadCount: number): string {
 
 // ── Keyboard Navigation ───────────────────────────────────────────────
 
-export type KeyboardAction = "open" | "close" | "next" | "previous" | "mark_read" | "mark_all_read" | "archive";
+export type KeyboardAction =
+  | "open"
+  | "close"
+  | "next"
+  | "previous"
+  | "mark_read"
+  | "mark_all_read"
+  | "archive";
 
 export function handleBellKeyboard(
   event: KeyboardEvent,
   dropdownOpen: boolean,
   notificationCount: number,
-  selectedIndex: number,
+  selectedIndex: number
 ): { action: KeyboardAction; newSelectedIndex: number } | null {
   if (!dropdownOpen) {
     if (event.key === "Enter" || event.key === " ") {
@@ -403,7 +425,10 @@ export function handleBellKeyboard(
     case "Escape":
       return { action: "close", newSelectedIndex: -1 };
     case "ArrowDown":
-      return { action: "next", newSelectedIndex: Math.min(selectedIndex + 1, notificationCount - 1) };
+      return {
+        action: "next",
+        newSelectedIndex: Math.min(selectedIndex + 1, notificationCount - 1),
+      };
     case "ArrowUp":
       return { action: "previous", newSelectedIndex: Math.max(selectedIndex - 1, 0) };
     case "r":

@@ -206,6 +206,16 @@ export async function recordModelUsage(
       const brain = (db[brainId] ??= {});
       const slot = (brain[month] ??= { queries: 0, pages: 0, uploads: 0 });
       slot.queries += 1;
+      // Track model-level tokens in a separate structure on the brain entry
+      const models = (brain as Record<string, unknown>)["__models__"] as
+        | Record<string, { queries: number; inputTokens: number; outputTokens: number }>
+        | undefined;
+      const m = models ?? {};
+      m[modelId] ??= { queries: 0, inputTokens: 0, outputTokens: 0 };
+      m[modelId].queries += 1;
+      m[modelId].inputTokens += inputTokens;
+      m[modelId].outputTokens += outputTokens;
+      (brain as Record<string, unknown>)["__models__"] = m;
       await persistQuotaFile();
     }
   } catch (err) {

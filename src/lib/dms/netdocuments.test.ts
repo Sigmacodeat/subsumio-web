@@ -13,6 +13,11 @@ vi.mock("./index", () => ({
     Authorization: "Bearer test-key",
     "Content-Type": "application/json",
   })),
+  dmsFetchJson: vi.fn(async (url: string, init?: RequestInit) => {
+    const res = await fetch(url, init);
+    if (!res.ok) throw new Error(`DMS request to ${url} returned ${res.status}`);
+    return res.json();
+  }),
   isDmsConfigured: vi.fn(() => true),
   importToBrainCommon: vi.fn(async () => ({ slug: "dms/doc-1", success: true })),
 }));
@@ -37,13 +42,29 @@ describe("netDocumentsConnector", () => {
   test("search returns mapped documents", async () => {
     const mockResponse = {
       results: [
-        { id: "d1", name: "Contract.pdf", extension: "pdf", author: { name: "Max" }, lastModified: "2024-01-01", size: 1024, version: "2", checkedOut: false },
-        { id: "d2", name: "Letter.docx", author: {}, lastModified: "2024-02-01", size: 2048, checkedOut: true },
+        {
+          id: "d1",
+          name: "Contract.pdf",
+          extension: "pdf",
+          author: { name: "Max" },
+          lastModified: "2024-01-01",
+          size: 1024,
+          version: "2",
+          checkedOut: false,
+        },
+        {
+          id: "d2",
+          name: "Letter.docx",
+          author: {},
+          lastModified: "2024-02-01",
+          size: 2048,
+          checkedOut: true,
+        },
       ],
       totalCount: 2,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify(mockResponse), { status: 200 })
     );
 
     const result = await netDocumentsConnector.search("contract", { limit: 5 });
@@ -59,7 +80,7 @@ describe("netDocumentsConnector", () => {
 
   test("search with limit sets count param", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ results: [], totalCount: 0 }), { status: 200 }),
+      new Response(JSON.stringify({ results: [], totalCount: 0 }), { status: 200 })
     );
     await netDocumentsConnector.search("test", { limit: 20 });
     const url = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
@@ -68,7 +89,7 @@ describe("netDocumentsConnector", () => {
 
   test("search handles empty results", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({}), { status: 200 }),
+      new Response(JSON.stringify({}), { status: 200 })
     );
     const result = await netDocumentsConnector.search("empty");
     expect(result.documents).toEqual([]);
@@ -77,11 +98,15 @@ describe("netDocumentsConnector", () => {
 
   test("getDocument returns mapped document", async () => {
     const mockDoc = {
-      id: "d1", name: "Contract.pdf", extension: "pdf",
-      author: { name: "Max" }, lastModified: "2024-01-01", size: 1024,
+      id: "d1",
+      name: "Contract.pdf",
+      extension: "pdf",
+      author: { name: "Max" },
+      lastModified: "2024-01-01",
+      size: 1024,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockDoc), { status: 200 }),
+      new Response(JSON.stringify(mockDoc), { status: 200 })
     );
     const doc = await netDocumentsConnector.getDocument("d1");
     expect(doc).not.toBeNull();
@@ -90,9 +115,7 @@ describe("netDocumentsConnector", () => {
   });
 
   test("getDocument returns null on 404", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Not found", { status: 404 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("Not found", { status: 404 }));
     const doc = await netDocumentsConnector.getDocument("unknown");
     expect(doc).toBeNull();
   });
@@ -103,7 +126,7 @@ describe("netDocumentsConnector", () => {
       totalCount: 1,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify(mockResponse), { status: 200 })
     );
     const result = await netDocumentsConnector.getFolderContents("folder-1");
     expect(result.documents).toHaveLength(1);
@@ -112,7 +135,11 @@ describe("netDocumentsConnector", () => {
 
   test("importToBrain delegates to importToBrainCommon", async () => {
     const doc = { id: "d1", name: "Test", type: "pdf", author: "Max", modifiedDate: "2024-01-01" };
-    const result = await netDocumentsConnector.importToBrain(doc as unknown as Parameters<typeof netDocumentsConnector.importToBrain>[0], "brain-1", {});
+    const result = await netDocumentsConnector.importToBrain(
+      doc as unknown as Parameters<typeof netDocumentsConnector.importToBrain>[0],
+      "brain-1",
+      {}
+    );
     expect(result.slug).toBe("dms/doc-1");
     expect(result.success).toBe(true);
   });

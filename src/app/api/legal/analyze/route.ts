@@ -4,6 +4,7 @@ import { createHandler } from "@/lib/api-handler";
 import { apiError } from "@/lib/api-response";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { groundCitations } from "@/lib/legal-grounding";
+import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import type { RawCitation } from "@/lib/types";
 
 export const maxDuration = 120;
@@ -87,6 +88,8 @@ Extrahiere:
 8. summary: 2-3 pr\u00e4zise S\u00e4tze
 9. language: de | en | other
 
+Hinweis: Nach deiner Analyse wird automatisch nach relevanten Gerichtsentscheidungen (OGH, BGH, BFH, EuGH) gesucht. Deine zitierten Normen und Risiko-Beschreibungen werden als Suchkriterien verwendet — formuliere sie präzise.
+
 Antworte JETZT mit reinem JSON:
 {
   "document_type": "string",
@@ -115,113 +118,257 @@ export const POST = createHandler(
     const isInternal = ctx.brainId === "internal";
     let engineHeaders: Record<string, string> = ctx.headers;
 
-  const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
-  const jurisdiction =
-    typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "all";
+    const documentSlug = typeof body.document_slug === "string" ? body.document_slug.trim() : "";
+    const jurisdiction =
+      typeof body.jurisdiction === "string" ? body.jurisdiction.toLowerCase() : "all";
 
-  // Only internal service callers may specify a brain_id; authenticated user
-  // sessions always use the server-resolved brainId from engineContext to
-  // prevent IDOR (cross-tenant brain access).
-  if (isInternal) {
-    const brainId = typeof body.brain_id === "string" ? body.brain_id : "";
-    if (brainId) {
-      engineHeaders = { ...engineHeaders, "x-subsumio-source": brainId };
-    }
-  }
-
-  // 1. Fetch document text from Brain engine
-  let text = "";
-  if (documentSlug) {
-    try {
-      const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
-        headers: engineHeaders,
-      });
-      if (pageRes.ok) {
-        const page = (await pageRes.json()) as { content?: string; title?: string };
-        text = [page.title, page.content].filter(Boolean).join("\n\n");
+    // Only internal service callers may specify a brain_id; authenticated user
+    // sessions always use the server-resolved brainId from engineContext to
+    // prevent IDOR (cross-tenant brain access).
+    if (isInternal) {
+      const brainId = typeof body.brain_id === "string" ? body.brain_id : "";
+      if (brainId) {
+        engineHeaders = { ...engineHeaders, "x-subsumio-source": brainId };
       }
-    } catch {
-      /* best-effort */
-    }
-  }
-
-  if (!text && typeof body.text === "string") {
-    text = body.text;
-  }
-
-  if (!text.trim()) {
-    return apiError("document_not_found_or_empty", "Document not found or empty", 404);
-  }
-
-  // 2. Truncate to ~80k chars
-  const MAX_CHARS = 80_000;
-  if (text.length > MAX_CHARS) {
-    text = text.slice(0, MAX_CHARS) + "\n\n[... document truncated for analysis]";
-  }
-
-  // 3. AI analysis via engine /api/think
-  let parsed: Record<string, unknown>;
-  try {
-    const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...engineHeaders },
-      body: JSON.stringify({
-        prompt: buildAnalysisPrompt(text, jurisdiction),
-        mode: "json",
-        max_tokens: 4000,
-      }),
-    });
-
-    if (!thinkRes.ok) {
-      throw new Error(`Engine think ${thinkRes.status}`);
     }
 
-    const thinkData = (await thinkRes.json()) as { answer?: string };
-    parsed = safeParseJson(thinkData.answer || "{}");
-  } catch (err) {
-    console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
-    return Response.json(
-      buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.")
-    );
-  }
-
-  // 4. Ground cited_statutes against actual corpus (anti-hallucination)
-  const rawCitations = Array.isArray(parsed.cited_statutes)
-    ? (parsed.cited_statutes as RawCitation[])
-    : [];
-
-  const groundedCitations = await groundCitations(rawCitations);
-  parsed.cited_statutes = groundedCitations;
-
-  const verified = groundedCitations.filter((c) => c.verified).length;
-  const unverified = groundedCitations.filter((c) => !c.verified).length;
-  parsed._grounding = {
-    citations_verified: verified,
-    citations_unverified: unverified,
-    corpus_checked: true,
-    analyzed_at: new Date().toISOString(),
-  };
-
-  // 5. Store analysis as page metadata (best-effort, non-blocking)
-  if (documentSlug) {
-    void (async () => {
+    // 1. Fetch document text from Brain engine
+    const warnings: string[] = [];
+    let text = "";
+    if (documentSlug) {
       try {
-        await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...engineHeaders },
-          body: JSON.stringify({
-            meta: {
-              auto_analysis: parsed,
-              analyzed_at: new Date().toISOString(),
-            },
-          }),
+        const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+          headers: engineHeaders,
         });
-      } catch {
-        /* best-effort */
+        if (pageRes.ok) {
+          const page = (await pageRes.json()) as { content?: string; title?: string };
+          text = [page.title, page.content].filter(Boolean).join("\n\n");
+        } else {
+          console.error(`[analyze] page fetch for ${documentSlug} returned ${pageRes.status}`);
+          warnings.push("document_fetch_failed");
+        }
+      } catch (err) {
+        console.error(
+          `[analyze] page fetch for ${documentSlug} failed:`,
+          err instanceof Error ? err.message : String(err)
+        );
+        warnings.push("document_fetch_failed");
       }
-    })();
-  }
+    }
+
+    if (!text && typeof body.text === "string") {
+      text = body.text;
+    }
+
+    if (!text.trim()) {
+      return apiError("document_not_found_or_empty", "Document not found or empty", 404);
+    }
+
+    // 2. Truncate to ~80k chars
+    const MAX_CHARS = 80_000;
+    if (text.length > MAX_CHARS) {
+      text = text.slice(0, MAX_CHARS) + "\n\n[... document truncated for analysis]";
+    }
+
+    // 3. AI analysis via engine /api/think
+    let parsed: Record<string, unknown>;
+    try {
+      const thinkRes = await fetch(`${ENGINE_URL}/api/think`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...engineHeaders },
+        body: JSON.stringify({
+          prompt: buildAnalysisPrompt(text, jurisdiction),
+          mode: "json",
+          max_tokens: 4000,
+        }),
+      });
+
+      if (!thinkRes.ok) {
+        throw new Error(`Engine think ${thinkRes.status}`);
+      }
+
+      const thinkData = (await thinkRes.json()) as { answer?: string };
+      parsed = safeParseJson(thinkData.answer || "{}");
+    } catch (err) {
+      console.error("[analyze] AI step failed:", err instanceof Error ? err.message : String(err));
+      const empty = buildEmptyResult("Analyse fehlgeschlagen \u2014 Engine nicht verf\u00fcgbar.");
+      empty._warnings = [...warnings, "ai_analysis_failed"];
+      empty._degraded = true;
+      return Response.json(empty, { status: 502 });
+    }
+
+    // 4. Ground cited_statutes against actual corpus (anti-hallucination)
+    const rawCitations = Array.isArray(parsed.cited_statutes)
+      ? (parsed.cited_statutes as RawCitation[])
+      : [];
+
+    const groundedCitations = await groundCitations(rawCitations);
+    parsed.cited_statutes = groundedCitations;
+
+    const verified = groundedCitations.filter((c) => c.verified).length;
+    const unverified = groundedCitations.filter((c) => !c.verified).length;
+    parsed._grounding = {
+      citations_verified: verified,
+      citations_unverified: unverified,
+      corpus_checked: true,
+      analyzed_at: new Date().toISOString(),
+    };
+
+    // 5. Auto-search for relevant court decisions (precedent suggestions)
+    const suggestedPrecedents = await findRelevantPrecedents(parsed, jurisdiction);
+    if (suggestedPrecedents.length > 0) {
+      parsed.suggested_precedents = suggestedPrecedents;
+    }
+
+    // 6. Store analysis as page metadata (best-effort, non-blocking)
+    if (documentSlug) {
+      void (async () => {
+        try {
+          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", ...engineHeaders },
+            body: JSON.stringify({
+              meta: {
+                auto_analysis: parsed,
+                analyzed_at: new Date().toISOString(),
+              },
+            }),
+          });
+        } catch (err) {
+          console.error(
+            `[analyze] failed to persist auto_analysis for ${documentSlug}:`,
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+      })();
+    }
+
+    if (warnings.length > 0) {
+      parsed._warnings = warnings;
+    }
 
     return Response.json(parsed);
-  },
+  }
 );
+
+// ── Precedent discovery ───────────────────────────────────────────────
+
+interface SuggestedPrecedent {
+  id: string;
+  title: string;
+  court: string;
+  date: string;
+  case_number: string;
+  ecli: string;
+  legal_area: string;
+  url: string;
+  snippet: string;
+  source: string;
+  relevance_reason: string;
+}
+
+/**
+ * Extract search keywords from the AI analysis result and query
+ * external judgement databases for relevant court decisions.
+ *
+ * Strategy:
+ *   1. Build a search query from cited statutes + document type + risk keywords
+ *   2. Search RIS-OGD (AT), openlegaldata (DE), OpenCaseLaw (CH) in parallel
+ *   3. Map hits to SuggestedPrecedent with a relevance reason
+ *   4. Return top 10 results sorted by relevance
+ */
+async function findRelevantPrecedents(
+  parsed: Record<string, unknown>,
+  jurisdiction: string
+): Promise<SuggestedPrecedent[]> {
+  const searchTerms: string[] = [];
+
+  // Extract statute codes from cited_statutes (e.g. "§ 433 BGB" → "433 BGB")
+  const citedStatutes = Array.isArray(parsed.cited_statutes)
+    ? (parsed.cited_statutes as Array<Record<string, unknown>>)
+    : [];
+  for (const cite of citedStatutes.slice(0, 5)) {
+    const code = String(cite.code ?? "").trim();
+    const paragraph = String(cite.paragraph ?? "")
+      .replace(/^§\s*/, "")
+      .trim();
+    if (code && paragraph) {
+      searchTerms.push(`${paragraph} ${code}`);
+    }
+  }
+
+  // Add document type as a search term
+  const docType = String(parsed.document_type ?? "").trim();
+  if (docType && docType !== "sonstiges" && docType !== "unknown") {
+    searchTerms.push(docType);
+  }
+
+  // Add key risk descriptions (first 3 words of each risk)
+  const risks = Array.isArray(parsed.risks) ? (parsed.risks as Array<Record<string, unknown>>) : [];
+  for (const risk of risks.slice(0, 3)) {
+    const desc = String(risk.description ?? "").trim();
+    if (desc) {
+      const keywords = desc.split(/\s+/).slice(0, 4).join(" ");
+      if (keywords.length > 3) searchTerms.push(keywords);
+    }
+  }
+
+  if (searchTerms.length === 0) return [];
+
+  // Determine which jurisdictions to search
+  const jur =
+    jurisdiction === "at"
+      ? "at"
+      : jurisdiction === "de"
+        ? "de"
+        : jurisdiction === "ch"
+          ? "ch"
+          : "all";
+
+  // Search with the most specific terms first, dedup by hit ID
+  const seenIds = new Set<string>();
+  const allHits: Array<{ hit: JudgementHit; reason: string }> = [];
+
+  for (const term of searchTerms.slice(0, 6)) {
+    try {
+      const { results } = await searchJudgements({
+        q: term,
+        jurisdiction: jur as "at" | "de" | "ch" | "all",
+        limit: 10,
+      });
+      for (const hit of results) {
+        if (seenIds.has(hit.id)) continue;
+        seenIds.add(hit.id);
+        allHits.push({
+          hit,
+          reason:
+            term.includes(" ") && /\d+/.test(term)
+              ? `Relevant zitierte Norm: ${term}`
+              : `Relevant für Dokumenttyp: ${docType}`,
+        });
+      }
+    } catch (err) {
+      // External judgement APIs may be down — continue with other terms,
+      // but log so a systemic outage shows up in monitoring.
+      console.error(
+        `[analyze] precedent search for "${term}" failed:`,
+        err instanceof Error ? err.message : String(err)
+      );
+    }
+    if (allHits.length >= 15) break;
+  }
+
+  return allHits.slice(0, 10).map(({ hit, reason }) => ({
+    id: hit.id,
+    title: hit.title,
+    court: hit.court,
+    date: hit.date,
+    case_number: hit.caseNumber,
+    ecli: hit.ecli,
+    legal_area: hit.legalArea || hit.type || "Allgemein",
+    url: hit.url,
+    snippet: hit.snippet || hit.summary || "",
+    source: hit.source,
+    relevance_reason: reason,
+  }));
+}

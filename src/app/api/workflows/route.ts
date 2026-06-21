@@ -28,17 +28,19 @@ export const GET = createHandler(
   },
   async (ctx, _body, _query, _req) => {
     try {
-      const res = await fetch(
-        `${ENGINE_URL}/api/pages?type=workflow&limit=200`,
-        { headers: engineHeadersForBrain(ctx.brainId) },
-      );
+      const res = await fetch(`${ENGINE_URL}/api/pages?type=workflow&limit=200`, {
+        headers: engineHeadersForBrain(ctx.brainId),
+      });
 
       let workflows: WorkflowInstance[] = [];
       if (res.ok) {
-        const data = (await res.json()) as {
-          pages?: Array<{ slug: string; title: string; frontmatter?: Record<string, unknown> }>;
-        };
-        workflows = (data.pages || [])
+        const raw = await res.json();
+        const pages = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as Record<string, unknown>)?.pages)
+            ? (raw as Record<string, unknown[]>).pages
+            : [];
+        workflows = pages
           .map((p) => fmToWorkflowInstance(p))
           .filter((w): w is WorkflowInstance => w !== null);
       }
@@ -52,10 +54,10 @@ export const GET = createHandler(
       return apiError(
         "workflows_list_failed",
         err instanceof Error ? err.message : "workflows_list_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );
 
 // ── POST: Start a new workflow ─────────────────────────────────────────
@@ -79,7 +81,7 @@ export const POST = createHandler(
         return apiError(
           "template_not_found",
           `Workflow-Template '${body.template_id}' nicht gefunden.`,
-          404,
+          404
         );
       }
 
@@ -111,14 +113,14 @@ export const POST = createHandler(
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        return apiError(
-          "workflow_create_failed",
-          `Engine returned ${res.status}: ${text}`,
-          502,
-        );
+        return apiError("workflow_create_failed", `Engine returned ${res.status}: ${text}`, 502);
       }
 
-      broadcastSseEvent(ctx.brainId, "workflow.started", buildWorkflowEvent("started", { slug, title, frontmatter }));
+      broadcastSseEvent(
+        ctx.brainId,
+        "workflow.started",
+        buildWorkflowEvent("started", { slug, title, frontmatter })
+      );
 
       return apiSuccess({
         slug,
@@ -130,10 +132,10 @@ export const POST = createHandler(
       return apiError(
         "workflow_start_failed",
         err instanceof Error ? err.message : "workflow_start_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );
 
 // ── PATCH: Advance a workflow step ─────────────────────────────────────
@@ -161,11 +163,7 @@ export const PATCH = createHandler(
       });
 
       if (!res.ok) {
-        return apiError(
-          "workflow_not_found",
-          `Workflow '${body.slug}' nicht gefunden.`,
-          404,
-        );
+        return apiError("workflow_not_found", `Workflow '${body.slug}' nicht gefunden.`, 404);
       }
 
       const page = (await res.json()) as {
@@ -187,7 +185,7 @@ export const PATCH = createHandler(
         {
           agent_action_slug: body.agent_action_slug,
           error: body.error,
-        },
+        }
       );
       if (!idemResult.ok) {
         return apiError("step_idempotency_violation", idemResult.reason, 409);
@@ -224,17 +222,21 @@ export const PATCH = createHandler(
         return apiError(
           "workflow_update_failed",
           `Engine returned ${updateRes.status}: ${text}`,
-          502,
+          502
         );
       }
 
-      broadcastSseEvent(ctx.brainId, "workflow.step_changed", buildWorkflowEvent("step_changed", {
-        slug: body.slug,
-        step_id: body.step_id,
-        new_status: body.new_status,
-        workflow_status: updatedStatus,
-        frontmatter: updatedFrontmatter,
-      }));
+      broadcastSseEvent(
+        ctx.brainId,
+        "workflow.step_changed",
+        buildWorkflowEvent("step_changed", {
+          slug: body.slug,
+          step_id: body.step_id,
+          new_status: body.new_status,
+          workflow_status: updatedStatus,
+          frontmatter: updatedFrontmatter,
+        })
+      );
 
       return apiSuccess({
         slug: body.slug,
@@ -245,8 +247,8 @@ export const PATCH = createHandler(
       return apiError(
         "workflow_advance_failed",
         err instanceof Error ? err.message : "workflow_advance_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );

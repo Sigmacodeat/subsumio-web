@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
+import { GuidedCursor } from "./motion-system";
 
 interface ViewContent {
   matters: { id: string; title: string; client: string; status: string; statusColor: string }[];
@@ -216,11 +217,30 @@ export default function DashboardReel({
     lang === "de"
       ? ["Brain", "Akten", "Fristen", "Schriftsätze"]
       : ["Brain", "Matters", "Deadlines", "Filings"];
+  const cursorTarget =
+    view === 0
+      ? {
+          x: "72%",
+          y: "42%",
+          label: lang === "de" ? "Akte öffnen" : "Open matter",
+        }
+      : view === 1
+        ? {
+            x: "74%",
+            y: "87%",
+            label: lang === "de" ? "Frage senden" : "Send question",
+          }
+        : {
+            x: "70%",
+            y: "52%",
+            label: lang === "de" ? "Frist prüfen" : "Check deadline",
+          };
 
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/20 [background:var(--mk-bg)] ${className}`}
     >
+      <GuidedCursor {...cursorTarget} className="hidden sm:flex" />
       {/* window bar */}
       <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
         <div className="terminal-dots flex items-center gap-2">

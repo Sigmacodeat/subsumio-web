@@ -7,7 +7,7 @@ import {
   SCIM_SCHEMA_GROUP,
   type SCIMGroup,
 } from "@/lib/scim";
-import { groups } from "@/lib/scim-groups";
+import { groups, listGroupsForOrg, type StoredScimGroup } from "@/lib/scim-groups";
 
 export const dynamic = "force-dynamic";
 
@@ -16,20 +16,15 @@ export const dynamic = "force-dynamic";
  * List groups with optional pagination.
  */
 export async function GET(req: NextRequest) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   const { searchParams } = new URL(req.url);
-  const startIndex = Math.max(
-    1,
-    parseInt(searchParams.get("startIndex") || "1", 10),
-  );
-  const count = Math.min(
-    200,
-    Math.max(1, parseInt(searchParams.get("count") || "100", 10)),
-  );
+  const startIndex = Math.max(1, parseInt(searchParams.get("startIndex") || "1", 10));
+  const count = Math.min(200, Math.max(1, parseInt(searchParams.get("count") || "100", 10)));
 
-  const allGroups = Array.from(groups.values());
+  const allGroups = listGroupsForOrg(orgId);
   const total = allGroups.length;
   const paged = allGroups.slice(startIndex - 1, startIndex - 1 + count);
 
@@ -41,8 +36,9 @@ export async function GET(req: NextRequest) {
  * Create a new group.
  */
 export async function POST(req: NextRequest) {
-  const authError = requireScimAuth(req);
-  if (authError) return authError;
+  const auth = requireScimAuth(req);
+  if (auth instanceof Response) return auth;
+  const { orgId } = auth;
 
   let body: unknown;
   try {
@@ -61,19 +57,15 @@ export async function POST(req: NextRequest) {
     return scimError(400, "displayName is required", "invalidValue");
   }
 
-  // Check for duplicate
-  for (const g of groups.values()) {
+  // Check for duplicate — scoped to this org only
+  for (const g of listGroupsForOrg(orgId)) {
     if (g.displayName === scimGroup.displayName) {
-      return scimError(
-        409,
-        `Group "${scimGroup.displayName}" already exists`,
-        "uniqueness",
-      );
+      return scimError(409, `Group "${scimGroup.displayName}" already exists`, "uniqueness");
     }
   }
 
   const groupId = scimGroup.id || crypto.randomUUID();
-  const created: SCIMGroup = {
+  const created: StoredScimGroup = {
     ...scimGroup,
     id: groupId,
     schemas: [SCIM_SCHEMA_GROUP],
@@ -82,6 +74,7 @@ export async function POST(req: NextRequest) {
       created: new Date().toISOString(),
       lastModified: new Date().toISOString(),
     },
+    _orgId: orgId,
   };
 
   groups.set(groupId, created);

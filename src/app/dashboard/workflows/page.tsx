@@ -190,7 +190,7 @@ export default function WorkflowsPage() {
     <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Workflows"
-        description="Kanzlei-Workflows — verkettete Agenten-Aktionen mit Vier-Augen-Freigabe"
+        description="Kanzlei-Workflows mit verketteten Aktionen und Vier-Augen-Freigabe"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workflows" }]}
         actions={
           <button

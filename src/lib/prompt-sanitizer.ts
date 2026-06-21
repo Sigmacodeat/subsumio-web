@@ -8,6 +8,7 @@
  */
 
 const INJECTION_PATTERNS = [
+  // English patterns
   /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
   /disregard\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
   /forget\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
@@ -17,6 +18,16 @@ const INJECTION_PATTERNS = [
   /\<\/?system\>/gi,
   /\<\/?instruction\>/gi,
   /override\s+(system|safety|content)\s+/gi,
+  // German patterns (DACH legal context)
+  /ignorier(?:e|en)\s+(?:alle\s+)?(?:vorherigen|bisherigen|obigen)\s+anweisungen?/gi,
+  /missacht(?:e|en)\s+(?:alle\s+)?(?:vorherigen|bisherigen|obigen)\s+anweisungen?/gi,
+  /vergiss\s+(?:alle\s+)?(?:vorherigen|bisherigen|obigen)\s+anweisungen?/gi,
+  /du\s+bist\s+jetzt\s+(?:ein|eine)\s+/gi,
+  /system\s*:\s*/gi,
+  /\[SYSTEM\]/gi,
+  /\<\/?system\>/gi,
+  /\<\/?anweisung\>/gi,
+  /überschreib(?:e|en)\s+(?:system|sicherheit|inhalt)\s+/gi,
 ];
 
 const MAX_INPUT_LENGTH = 50_000;
@@ -42,11 +53,7 @@ export function sanitizeUserInput(input: string): string {
  * Build a safe prompt that wraps user input in delimiters and adds
  * a system instruction to ignore embedded commands.
  */
-export function buildSafePrompt(
-  systemPrompt: string,
-  userInput: string,
-  suffix?: string,
-): string {
+export function buildSafePrompt(systemPrompt: string, userInput: string, suffix?: string): string {
   const sanitized = sanitizeUserInput(userInput);
   const delimiter = "===USER_INPUT_START===";
   const endDelimiter = "===USER_INPUT_END===";

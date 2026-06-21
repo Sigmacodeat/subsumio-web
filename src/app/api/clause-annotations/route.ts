@@ -32,17 +32,19 @@ export const GET = createHandler(
   },
   async (ctx, _body, query, _req) => {
     try {
-      const res = await fetch(
-        `${ENGINE_URL}/api/pages?type=clause_annotation&limit=500`,
-        { headers: engineHeadersForBrain(ctx.brainId) },
-      );
+      const res = await fetch(`${ENGINE_URL}/api/pages?type=clause_annotation&limit=500`, {
+        headers: engineHeadersForBrain(ctx.brainId),
+      });
 
       let annotations: ClauseAnnotation[] = [];
       if (res.ok) {
-        const data = (await res.json()) as {
-          pages?: Array<{ slug: string; title: string; frontmatter?: Record<string, unknown> }>;
-        };
-        annotations = (data.pages || [])
+        const raw = await res.json();
+        const pages = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as Record<string, unknown>)?.pages)
+            ? (raw as Record<string, unknown[]>).pages
+            : [];
+        annotations = pages
           .map((p) => fmToAnnotation(p))
           .filter((a): a is ClauseAnnotation => a !== null);
       }
@@ -60,10 +62,10 @@ export const GET = createHandler(
       return apiError(
         "annotations_list_failed",
         err instanceof Error ? err.message : "annotations_list_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );
 
 // ── POST: Create a new clause annotation ──────────────────────────────
@@ -71,10 +73,21 @@ export const GET = createHandler(
 const postSchema = z.object({
   contract_slug: z.string().min(1),
   clause_type: z.enum([
-    "nda", "employment", "service", "sale", "lease",
-    "partnership", "licensing", "settlement", "liability",
-    "payment", "termination", "ip", "data_protection",
-    "warranty", "general",
+    "nda",
+    "employment",
+    "service",
+    "sale",
+    "lease",
+    "partnership",
+    "licensing",
+    "settlement",
+    "liability",
+    "payment",
+    "termination",
+    "ip",
+    "data_protection",
+    "warranty",
+    "general",
   ]),
   clause_title: z.string().min(1).max(200),
   clause_excerpt: z.string().max(5000),
@@ -127,14 +140,13 @@ export const POST = createHandler(
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        return apiError(
-          "annotation_create_failed",
-          `Engine returned ${res.status}: ${text}`,
-          502,
-        );
+        return apiError("annotation_create_failed", `Engine returned ${res.status}: ${text}`, 502);
       }
 
-      broadcastSseEvent(ctx.brainId, "annotation.created", { slug, contract_slug: body.contract_slug });
+      broadcastSseEvent(ctx.brainId, "annotation.created", {
+        slug,
+        contract_slug: body.contract_slug,
+      });
 
       return apiSuccess({
         slug,
@@ -146,10 +158,10 @@ export const POST = createHandler(
       return apiError(
         "annotation_create_failed",
         err instanceof Error ? err.message : "annotation_create_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );
 
 // ── PATCH: Update review status ───────────────────────────────────────
@@ -174,11 +186,7 @@ export const PATCH = createHandler(
       });
 
       if (!res.ok) {
-        return apiError(
-          "annotation_not_found",
-          `Annotation '${body.slug}' nicht gefunden.`,
-          404,
-        );
+        return apiError("annotation_not_found", `Annotation '${body.slug}' nicht gefunden.`, 404);
       }
 
       const page = (await res.json()) as {
@@ -221,7 +229,7 @@ export const PATCH = createHandler(
         return apiError(
           "annotation_update_failed",
           `Engine returned ${updateRes.status}: ${text}`,
-          502,
+          502
         );
       }
 
@@ -240,8 +248,8 @@ export const PATCH = createHandler(
       return apiError(
         "annotation_update_failed",
         err instanceof Error ? err.message : "annotation_update_failed",
-        500,
+        500
       );
     }
-  },
+  }
 );

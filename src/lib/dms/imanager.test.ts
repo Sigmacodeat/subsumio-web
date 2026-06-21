@@ -13,6 +13,11 @@ vi.mock("./index", () => ({
     Authorization: "Bearer test-key",
     "Content-Type": "application/json",
   })),
+  dmsFetchJson: vi.fn(async (url: string, init?: RequestInit) => {
+    const res = await fetch(url, init);
+    if (!res.ok) throw new Error(`DMS request to ${url} returned ${res.status}`);
+    return res.json();
+  }),
   isDmsConfigured: vi.fn(() => true),
   importToBrainCommon: vi.fn(async () => ({ slug: "dms/doc-1", success: true })),
 }));
@@ -37,14 +42,23 @@ describe("iManageConnector", () => {
   test("search returns mapped documents", async () => {
     const mockResponse = {
       documents: [
-        { id: "d1", name: "Contract.pdf", document_type: "pdf", author: "Max", last_modified: "2024-01-01", size: 1024, version: "1.0", checkout_status: "available" },
+        {
+          id: "d1",
+          name: "Contract.pdf",
+          document_type: "pdf",
+          author: "Max",
+          last_modified: "2024-01-01",
+          size: 1024,
+          version: "1.0",
+          checkout_status: "available",
+        },
         { id: "d2", name: "Letter.docx", author: "Anna", last_modified: "2024-02-01", size: 2048 },
       ],
       folders: [{ id: "f1", name: "Folder 1", path: "/folder1", document_count: 5 }],
       total_count: 2,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify(mockResponse), { status: 200 })
     );
 
     const result = await iManageConnector.search("contract", { limit: 10 });
@@ -60,7 +74,7 @@ describe("iManageConnector", () => {
 
   test("search with folderId", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ documents: [], folders: [], total_count: 0 }), { status: 200 }),
+      new Response(JSON.stringify({ documents: [], folders: [], total_count: 0 }), { status: 200 })
     );
     await iManageConnector.search("test", { folderId: "folder-1" });
     const url = vi.mocked(globalThis.fetch).mock.calls[0][0] as string;
@@ -69,7 +83,7 @@ describe("iManageConnector", () => {
 
   test("search handles empty results", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({}), { status: 200 }),
+      new Response(JSON.stringify({}), { status: 200 })
     );
     const result = await iManageConnector.search("empty");
     expect(result.documents).toEqual([]);
@@ -79,11 +93,15 @@ describe("iManageConnector", () => {
 
   test("getDocument returns mapped document", async () => {
     const mockDoc = {
-      id: "d1", name: "Contract.pdf", document_type: "pdf",
-      author: "Max", last_modified: "2024-01-01", size: 1024,
+      id: "d1",
+      name: "Contract.pdf",
+      document_type: "pdf",
+      author: "Max",
+      last_modified: "2024-01-01",
+      size: 1024,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockDoc), { status: 200 }),
+      new Response(JSON.stringify(mockDoc), { status: 200 })
     );
     const doc = await iManageConnector.getDocument("d1");
     expect(doc).not.toBeNull();
@@ -92,9 +110,7 @@ describe("iManageConnector", () => {
   });
 
   test("getDocument returns null on 404", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Not found", { status: 404 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("Not found", { status: 404 }));
     const doc = await iManageConnector.getDocument("unknown");
     expect(doc).toBeNull();
   });
@@ -106,7 +122,7 @@ describe("iManageConnector", () => {
       total_count: 1,
     };
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify(mockResponse), { status: 200 })
     );
     const result = await iManageConnector.getFolderContents("folder-1");
     expect(result.documents).toHaveLength(1);
@@ -115,7 +131,11 @@ describe("iManageConnector", () => {
 
   test("importToBrain delegates to importToBrainCommon", async () => {
     const doc = { id: "d1", name: "Test", type: "pdf", author: "Max", modifiedDate: "2024-01-01" };
-    const result = await iManageConnector.importToBrain(doc as unknown as Parameters<typeof iManageConnector.importToBrain>[0], "brain-1", { "x-test": "1" });
+    const result = await iManageConnector.importToBrain(
+      doc as unknown as Parameters<typeof iManageConnector.importToBrain>[0],
+      "brain-1",
+      { "x-test": "1" }
+    );
     expect(result.slug).toBe("dms/doc-1");
     expect(result.success).toBe(true);
   });

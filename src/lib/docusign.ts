@@ -97,7 +97,7 @@ async function getServiceAccessToken(): Promise<string> {
       }),
     { maxRetries: 2, baseDelayMs: 1000 }
   );
-  const data = (await res.json()) as TokenResponse;
+  const data = (await res.json().catch(() => ({}))) as TokenResponse;
   if (!res.ok)
     throw new DocusignError(`Docusign Auth fehlgeschlagen: ${JSON.stringify(data)}`, {
       code: "DOCUSIGN_AUTH_FAILED",
@@ -195,7 +195,7 @@ async function refreshUserToken(refreshToken: string): Promise<TokenResponse> {
       client_secret: SECRET,
     }),
   });
-  const data = (await res.json()) as TokenResponse & { error?: string };
+  const data = (await res.json().catch(() => ({}))) as TokenResponse & { error?: string };
   if (!res.ok)
     throw new DocusignError(data.error || `Docusign refresh failed: ${JSON.stringify(data)}`, {
       code: "DOCUSIGN_REFRESH_FAILED",
@@ -271,7 +271,7 @@ export async function createEnvelope(
       body: JSON.stringify(req),
     })
   );
-  const data = (await res.json()) as {
+  const data = (await res.json().catch(() => ({}))) as {
     envelopeId: string;
     status: string;
     errorCode?: string;
@@ -294,7 +294,7 @@ export async function createEnvelopeAsUser(
       body: JSON.stringify(req),
     })
   );
-  const data = (await res.json()) as {
+  const data = (await res.json().catch(() => ({}))) as {
     envelopeId: string;
     status: string;
     errorCode?: string;
@@ -314,7 +314,7 @@ export async function getEnvelopeStatus(
       headers: { Authorization: `Bearer ${token}` },
     })
   );
-  const data = (await res.json()) as {
+  const data = (await res.json().catch(() => ({}))) as {
     status: string;
     recipients?: { signers: Array<{ status: string; signedDateTime?: string }> };
   };
@@ -339,7 +339,7 @@ export async function listEnvelopes(
       headers: { Authorization: `Bearer ${token}` },
     })
   );
-  const data = (await res.json()) as {
+  const data = (await res.json().catch(() => ({}))) as {
     envelopes?: EnvelopeSummary[];
     errorCode?: string;
     message?: string;

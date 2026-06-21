@@ -18,17 +18,20 @@ export const POST = createHandler(
     }),
     maxDuration: 60,
   },
-  async (_ctx, _body, _query, _req) => {
+  async (ctx, _body, _query, _req) => {
     if (!isWorkosDirectorySyncConfigured()) {
       return apiError(
         "workos_not_configured",
         "WorkOS Directory Sync is not configured. Set WORKOS_API_KEY and WORKOS_DIRECTORY_ID.",
-        503,
+        503
       );
+    }
+    if (!ctx.user.orgId) {
+      return apiError("no_org", "You must belong to an org to run a Directory Sync.", 400);
     }
 
     try {
-      const result = await syncFromWorkOS();
+      const result = await syncFromWorkOS(ctx.user.orgId);
       await saveSyncStatus(result);
       return apiSuccess(result);
     } catch (err) {
@@ -36,5 +39,5 @@ export const POST = createHandler(
       console.error("[scim/sync] error:", msg);
       return apiError("sync_failed", `Sync failed: ${msg}`, 500);
     }
-  },
+  }
 );

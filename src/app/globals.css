@@ -37,6 +37,16 @@
   --signal-green: #047857;
   --signal-amber: #92400e;
   --signal-rose: #be123c;
+  /* Categorical palette for the knowledge-graph view (one color per
+     entity type). Single source of truth so a theme/rebrand pass doesn't
+     have to chase hex literals through canvas drawing code. */
+  --graph-person: #60a5fa;
+  --graph-company: #34d399;
+  --graph-idea: #a78bfa;
+  --graph-document: #fbbf24;
+  --graph-event: #f97316;
+  --graph-place: #2dd4bf;
+  --graph-fallback: #585866;
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "Fira Code", monospace;
@@ -794,12 +804,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--brand-gradient-from) 0%,
-    var(--brand-gradient-via) 50%,
-    var(--brand-gradient-to) 100%
-  );
+  background: linear-gradient(135deg, #5eead4 0%, #93c5fd 52%, #c4b5fd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -809,12 +814,7 @@ body {
    Default --brand-gradient-from (#20d3c2) is ~1.5:1 on #eef0f4 — fail.
    Override to --signal-blue shades which achieve 7:1+ on light. */
 [data-tone="light"] .gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--signal-blue, #1e40af) 0%,
-    var(--brand-primary, #2f6bff) 50%,
-    var(--signal-blue, #1e40af) 100%
-  );
+  background: linear-gradient(135deg, var(--signal-blue, #1e40af) 0%, #1e3a5f 52%, #0f766e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -979,12 +979,7 @@ pre {
 
 /* Animated gradient text — for hero taglines */
 .gradient-text-animated {
-  background: linear-gradient(
-    135deg,
-    var(--brand-gradient-from) 0%,
-    var(--brand-gradient-via) 50%,
-    var(--brand-gradient-to) 100%
-  );
+  background: linear-gradient(135deg, #5eead4 0%, #93c5fd 52%, #c4b5fd 100%);
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;
@@ -993,12 +988,7 @@ pre {
 }
 
 .hero-gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--signal-blue, #1e40af) 0%,
-    var(--brand-primary, #2f6bff) 50%,
-    var(--signal-blue, #1e40af) 100%
-  );
+  background: linear-gradient(135deg, var(--signal-blue, #1e40af) 0%, #1e3a5f 52%, #0f766e 100%);
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;

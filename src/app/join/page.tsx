@@ -5,6 +5,7 @@ import JoinForm from "@/components/auth/join-form";
 
 export const metadata: Metadata = {
   title: "Join team",
+  description: "Accept your Subsumio team invitation and join your firm's secure legal workspace.",
   robots: { index: false },
   alternates: { canonical: "/join", languages: { en: "/join", de: "/de/join" } },
 };

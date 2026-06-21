@@ -7,7 +7,7 @@ import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
-import { ChatDrawer } from "@/components/chat/chat-drawer";
+import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -42,6 +42,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const meQuery = useMe();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(true);
+
+  // Persist copilot panel state
+  useEffect(() => {
+    const stored = localStorage.getItem("subsumio-copilot-open");
+    if (stored !== null) setCopilotOpen(stored === "true");
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("subsumio-copilot-open", String(copilotOpen));
+    } catch {}
+  }, [copilotOpen]);
   const drawerRef = useRef<HTMLElement>(null);
   const { t } = useLang();
   const pathname = usePathname();
@@ -176,9 +188,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onMobileMenuOpen={() => setMobileOpen(true)}
           onMobileMenuClose={() => setMobileOpen(false)}
           onGuideOpen={() => setGuideOpen(true)}
+          copilotOpen={copilotOpen}
+          onCopilotToggle={() => setCopilotOpen((v) => !v)}
         />
 
-        <main id="main-content" role="main" className="flex-1 overflow-y-auto">
+        <main
+          id="main-content"
+          role="main"
+          className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
+        >
           {children}
         </main>
       </div>
@@ -190,7 +208,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onToggleSidebar={() => setCollapsed((c) => !c)}
       />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
-      <ChatDrawer />
+      <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
     </div>
   );
 }

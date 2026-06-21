@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getStore } from "@/lib/auth/store";
 import { createHandler, apiError } from "@/lib/api-handler";
@@ -41,7 +40,7 @@ export const GET = createHandler(
         redirect_uri: redirectUri,
       }),
     });
-    const data = (await tokenRes.json()) as {
+    const data = (await tokenRes.json().catch(() => ({}))) as {
       access_token?: string;
       refresh_token?: string;
       expires_in?: number;
@@ -50,7 +49,11 @@ export const GET = createHandler(
       base_uri?: string;
     };
     if (!tokenRes.ok) {
-      return apiError(data.error || "token_exchange_failed", data.error || "Token exchange failed", 400);
+      return apiError(
+        data.error || "token_exchange_failed",
+        data.error || "Token exchange failed",
+        400
+      );
     }
 
     if (!data.access_token || !data.expires_in) {
@@ -65,5 +68,5 @@ export const GET = createHandler(
     });
 
     return Response.json({ ok: true, connected: true });
-  },
+  }
 );

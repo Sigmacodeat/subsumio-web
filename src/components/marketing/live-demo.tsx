@@ -208,7 +208,7 @@ export default function LiveDemo({
           <span className="text-xs [color:var(--mk-text-subtle)]">
             {lang === "en"
               ? "Read-only demo brain · your data stays yours"
-              : "Read-only Demo-Brain · deine Daten bleiben deine"}
+              : "Read-only Demo-Brain · Ihre Daten bleiben Ihre"}
           </span>
         )}
       </div>

@@ -180,7 +180,7 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       h1a: "500 Seiten Akte.",
       h1b: "Eine Frage entfernt.",
       sub: "Subsumio ist Kanzleisoftware für Österreich und Deutschland: Akten verwalten, Fristen nach ZPO/BGB/ABGB automatisieren, KI-Analysen mit Zitaten erhalten — DSGVO-konform, EU-gehostet oder self-hosted.",
-      painsTitle: "Kommt dir bekannt vor?",
+      painsTitle: "Kommt Ihnen bekannt vor?",
       pains: [
         {
           title: "Aktenwissen begraben in PDFs",
@@ -248,8 +248,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
         },
         {
           icon: "Shield",
-          title: "Dein Server, deine Jurisdiktion",
-          desc: "Volle Engine self-hosted auf Kanzlei-Hardware mit lokalem Speicher — oder EU-Cloud mit AVV und dauerhaftem Objektspeicher. Mandantendaten verlassen nie deine Kontrolle.",
+          title: "Ihr Server, Ihre Jurisdiktion",
+          desc: "Volle Engine self-hosted auf Kanzlei-Hardware mit lokalem Speicher — oder EU-Cloud mit AVV und dauerhaftem Objektspeicher. Mandantendaten verlassen nie Ihre Kontrolle.",
         },
         {
           icon: "Zap",
@@ -274,32 +274,32 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       ],
       proofTitle: "Engine-Klasse Retrieval, kein Chat-Wrapper",
       proof:
-        "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die du kontrollierst, steuert deine IT jedes System, das Mandantendaten berührt.",
+        "Der Retrieval-Kern erreicht 97,9 % Recall@5 mit Hybrid-Suche und Wissensgraph — und weil er auf Infrastruktur läuft, die Sie kontrollieren, steuert Ihre IT jedes System, das Mandantendaten berührt.",
       faq: [
         {
           q: "Ist das Rechtsberatungs-Software?",
-          a: "Nein. Subsumio organisiert und synthetisiert deine Dokumente und Notizen. Die juristische Bewertung bleibt bei den Anwälten — das Brain stellt sicher, dass ihnen nichts aus der Akte entgeht.",
+          a: "Nein. Subsumio organisiert und synthetisiert Ihre Dokumente und Notizen. Die juristische Bewertung bleibt bei den Anwälten — das Brain stellt sicher, dass ihnen nichts aus der Akte entgeht.",
         },
         {
           q: "Kann ich komplett offline arbeiten?",
-          a: "Die Engine läuft self-hosted auf deiner Hardware und das Dashboard hält lokale Caches plus Änderungs-Warteschlange für die wichtigsten Kanzlei-Workflows. Die Synthese nutzt LLM-APIs deiner Wahl; Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+          a: "Die Engine läuft self-hosted auf Ihrer Hardware und das Dashboard hält lokale Caches plus Änderungs-Warteschlange für die wichtigsten Kanzlei-Workflows. Die Synthese nutzt LLM-APIs Ihrer Wahl; Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
         },
         {
           q: "Wie viel Daten kann ich speichern?",
-          a: "Self-hosted nutzt deinen eigenen Speicher oder S3-kompatiblen Objektspeicher. Hosted-Pakete enthalten Cloud-Dateispeicher je Paket; Enterprise bekommt individuelle Speichermengen und Aufbewahrungsregeln.",
+          a: "Self-hosted nutzt Ihren eigenen Speicher oder S3-kompatiblen Objektspeicher. Hosted-Pakete enthalten Cloud-Dateispeicher je Paket; Enterprise bekommt individuelle Speichermengen und Aufbewahrungsregeln.",
         },
         {
           q: "Was ist mit DSGVO und Berufsrecht?",
-          a: "Self-hosted heißt: Daten verlassen deine Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Lass deinen Datenschutzbeauftragten mit uns sprechen — wir sprechen seine Sprache.",
+          a: "Self-hosted heißt: Daten verlassen Ihre Infrastruktur nicht. Gehostete Pläne kommen mit EU-Hosting und AVV. Lassen Sie Ihren Datenschutzbeauftragten mit uns sprechen — wir sprechen seine Sprache.",
         },
         {
           q: "Was unterscheidet das von Harvey, Legora oder Noxtua?",
-          a: "Das sind exzellente Enterprise-Legal-AI-Workspaces — und sie laufen auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die DU kontrollierst: self-hosted oder EU-Cloud, deine eigenen Akten abfragbar gemacht, mit einem WhatsApp-Copilot, den deine Anwälte täglich nutzen. Es ist keine Rechtsrecherche — es sind die eigenen Mandate deiner Kanzlei, mit seitengenauen Zitaten und Vertraulichkeit per Architektur.",
+          a: "Das sind exzellente Enterprise-Legal-AI-Workspaces — und sie laufen auf fremder Cloud und fremdem Modell. Subsumio liefert dieselbe Synthese-Qualität auf Infrastruktur, die SIE kontrollieren: self-hosted oder EU-Cloud, Ihre eigenen Akten abfragbar gemacht, mit einem WhatsApp-Copilot, den Ihre Anwälte täglich nutzen. Es ist keine Rechtsrecherche — es sind die eigenen Mandate Ihrer Kanzlei, mit seitengenauen Zitaten und Vertraulichkeit per Architektur.",
         },
       ],
-      ctaTitle: "Die Akte kennt die Antwort. Jetzt du auch.",
+      ctaTitle: "Die Akte kennt die Antwort. Jetzt auch Sie.",
       ctaSub:
-        "Starte mit einem abgeschlossenen Mandat als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
+        "Starten Sie mit einem abgeschlossenen Mandat als Pilot. Keine Mandantendaten müssen das Haus verlassen.",
       ctaButton: "Kostenlos testen",
     },
   },

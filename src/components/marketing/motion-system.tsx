@@ -5,8 +5,25 @@
 // State-of-the-art: staggerChildren, spring physics, reduced-motion fallback,
 // GPU-optimized transforms, clip-path reveals, glow cards, magnetic hover.
 
-import { motion, useInView, useReducedMotion, useMotionValue, useSpring, useScroll, Variants } from "framer-motion";
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  motion,
+  useInView,
+  useReducedMotion,
+  useMotionValue,
+  useSpring,
+  useScroll,
+  Variants,
+} from "framer-motion";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // ---------------------------------------------------------------------------
 // Viewport presets
@@ -14,8 +31,8 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 export const VIEWPORT = {
   gentle: { once: true, margin: "0px 0px 80px 0px", amount: 0.12 },
-  tight:  { once: true, margin: "-60px" },
-  hero:   { once: true, margin: "0px" },
+  tight: { once: true, margin: "-60px" },
+  hero: { once: true, margin: "0px" },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -24,9 +41,9 @@ export const VIEWPORT = {
 
 export const EASE = {
   // Smooth deceleration — the default for scroll-reveals
-  out:      [0.22, 1, 0.36, 1] as const,
+  out: [0.22, 1, 0.36, 1] as const,
   // Snappy spring-like
-  spring:   [0.21, 0.5, 0.27, 1] as const,
+  spring: [0.21, 0.5, 0.27, 1] as const,
   // Dramatic entrance
   dramatic: [0.16, 1, 0.3, 1] as const,
 } as const;
@@ -62,19 +79,19 @@ function makeVariants(opts: {
 
 export const REVEAL = {
   /** Default scroll-reveal: fade up 24px, 0.5s */
-  up:    (delay = 0) => makeVariants({ y: 24, duration: 0.5, delay }),
+  up: (delay = 0) => makeVariants({ y: 24, duration: 0.5, delay }),
   /** Tighter fade up: 16px, 0.45s */
-  upSm:  (delay = 0) => makeVariants({ y: 16, duration: 0.45, delay }),
+  upSm: (delay = 0) => makeVariants({ y: 16, duration: 0.45, delay }),
   /** Dramatic fade up: 32px, 0.6s */
-  upLg:  (delay = 0) => makeVariants({ y: 32, duration: 0.6, ease: EASE.dramatic, delay }),
+  upLg: (delay = 0) => makeVariants({ y: 32, duration: 0.6, ease: EASE.dramatic, delay }),
   /** Fade from left: -20px x, 0.45s */
-  left:  (delay = 0) => makeVariants({ x: -20, duration: 0.45, delay }),
+  left: (delay = 0) => makeVariants({ x: -20, duration: 0.45, delay }),
   /** Fade from right: +20px x, 0.45s */
-  right: (delay = 0) => makeVariants({ x: 20,  duration: 0.45, delay }),
+  right: (delay = 0) => makeVariants({ x: 20, duration: 0.45, delay }),
   /** Scale-in: 0.96 -> 1, 0.5s */
   scale: (delay = 0) => makeVariants({ scale: 0.96, duration: 0.5, delay }),
   /** Subtle: 8px up, 0.4s — good for dense grids */
-  subtle:(delay = 0) => makeVariants({ y: 8,  duration: 0.4, delay }),
+  subtle: (delay = 0) => makeVariants({ y: 8, duration: 0.4, delay }),
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -84,10 +101,10 @@ export const REVEAL = {
 interface StaggerContainerProps {
   children: ReactNode;
   className?: string;
-  stagger?: number;      // delay between children (default 0.08)
-  duration?: number;     // base duration (default 0.45)
+  stagger?: number; // delay between children (default 0.08)
+  duration?: number; // base duration (default 0.45)
   viewport?: { once?: boolean; margin?: string; amount?: number };
-  y?: number;            // initial y offset
+  y?: number; // initial y offset
   as?: "div" | "section" | "ul" | "ol";
 }
 
@@ -102,21 +119,27 @@ export function StaggerContainer({
 }: StaggerContainerProps) {
   const reduce = useReducedMotion();
 
-  const container: Variants = useMemo(() => ({
-    hidden: {},
-    visible: {
-      transition: { staggerChildren: reduce ? 0 : stagger },
-    },
-  }), [reduce, stagger]);
+  const container: Variants = useMemo(
+    () => ({
+      hidden: {},
+      visible: {
+        transition: { staggerChildren: reduce ? 0 : stagger },
+      },
+    }),
+    [reduce, stagger]
+  );
 
-  const child: Variants = useMemo(() => ({
-    hidden: { opacity: 0, y: reduce ? 0 : y },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration, ease: EASE.out },
-    },
-  }), [reduce, y, duration]);
+  const child: Variants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: reduce ? 0 : y },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration, ease: EASE.out },
+      },
+    }),
+    [reduce, y, duration]
+  );
 
   // The grid/flex className MUST sit on the element that DIRECTLY contains the
   // StaggerItems, otherwise the items aren't grid children and collapse into a
@@ -271,7 +294,9 @@ export function AnimatedCounter({
 
   return (
     <span ref={ref} className={className}>
-      {prefix}{val.toFixed(decimals)}{suffix}
+      {prefix}
+      {val.toFixed(decimals)}
+      {suffix}
     </span>
   );
 }
@@ -298,13 +323,15 @@ export function ClipReveal({
 }: ClipRevealProps) {
   const reduce = useReducedMotion();
 
-  const initial = direction === "up"
-    ? { clipPath: "inset(100% 0% 0% 0%)", y: 8, opacity: 0 }
-    : { clipPath: "inset(0% 100% 0% 0%)", x: 8, opacity: 0 };
+  const initial =
+    direction === "up"
+      ? { clipPath: "inset(100% 0% 0% 0%)", y: 8, opacity: 0 }
+      : { clipPath: "inset(0% 100% 0% 0%)", x: 8, opacity: 0 };
 
-  const animate = direction === "up"
-    ? { clipPath: "inset(0% 0% 0% 0%)", y: 0, opacity: 1 }
-    : { clipPath: "inset(0% 0% 0% 0%)", x: 0, opacity: 1 };
+  const animate =
+    direction === "up"
+      ? { clipPath: "inset(0% 0% 0% 0%)", y: 0, opacity: 1 }
+      : { clipPath: "inset(0% 0% 0% 0%)", x: 0, opacity: 1 };
 
   if (reduce) {
     return <div className={className}>{children}</div>;
@@ -353,15 +380,18 @@ export function GlowCard({
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (reduce || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    ref.current.style.setProperty("--glow-x", `${x}%`);
-    ref.current.style.setProperty("--glow-y", `${y}%`);
-    ref.current.style.setProperty("--glow-opacity", `${intensity}`);
-  }, [reduce, intensity]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (reduce || !ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      ref.current.style.setProperty("--glow-x", `${x}%`);
+      ref.current.style.setProperty("--glow-y", `${y}%`);
+      ref.current.style.setProperty("--glow-opacity", `${intensity}`);
+    },
+    [reduce, intensity]
+  );
 
   const handleMouseLeave = useCallback(() => {
     if (!ref.current) return;
@@ -374,12 +404,14 @@ export function GlowCard({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`relative overflow-hidden ${className}`}
-      style={{
-        "--glow-x": "50%",
-        "--glow-y": "50%",
-        "--glow-opacity": "0",
-        ...style,
-      } as React.CSSProperties}
+      style={
+        {
+          "--glow-x": "50%",
+          "--glow-y": "50%",
+          "--glow-opacity": "0",
+          ...style,
+        } as React.CSSProperties
+      }
     >
       {/* Radial glow that follows the cursor */}
       <div
@@ -395,22 +427,78 @@ export function GlowCard({
 }
 
 // ---------------------------------------------------------------------------
+// GuidedCursor — scripted product-demo cursor for marketing UI mockups
+// ---------------------------------------------------------------------------
+
+interface GuidedCursorProps {
+  x: string | string[];
+  y: string | string[];
+  label?: string;
+  className?: string;
+  duration?: number;
+}
+
+export function GuidedCursor({ x, y, label, className = "", duration = 6.5 }: GuidedCursorProps) {
+  const reduce = useReducedMotion();
+
+  if (reduce) return null;
+
+  const isPath = Array.isArray(x) || Array.isArray(y);
+
+  return (
+    <motion.div
+      aria-hidden
+      className={`pointer-events-none absolute z-30 flex items-start gap-2 ${className}`}
+      style={{
+        left: Array.isArray(x) ? x[0] : x,
+        top: Array.isArray(y) ? y[0] : y,
+        filter: "drop-shadow(0 12px 22px rgba(0,0,0,0.28))",
+      }}
+      animate={{
+        left: x,
+        top: y,
+        scale: isPath ? [1, 0.98, 1.04, 1] : [1, 0.94, 1],
+      }}
+      transition={
+        isPath
+          ? { duration, repeat: Infinity, repeatDelay: 0.7, ease: "easeInOut" }
+          : {
+              left: { type: "spring", stiffness: 120, damping: 22 },
+              top: { type: "spring", stiffness: 120, damping: 22 },
+              scale: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
+            }
+      }
+    >
+      <span
+        className="relative mt-0.5 block h-5 w-4"
+        style={{
+          background: "linear-gradient(145deg, #ffffff, #dbeafe)",
+          clipPath: "polygon(0 0, 100% 48%, 58% 58%, 78% 100%, 55% 100%, 38% 64%, 0 84%)",
+        }}
+      >
+        <span className="absolute inset-0 rounded-sm border border-white/70" />
+      </span>
+      {label && (
+        <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-white backdrop-blur-md [background:rgba(15,23,42,0.78)]">
+          {label}
+        </span>
+      )}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // MagneticCard — card with spring-based hover lift + tilt
 // ---------------------------------------------------------------------------
 
 interface MagneticCardProps {
   children: ReactNode;
   className?: string;
-  lift?: number;   // px to lift on hover (default 6)
-  tilt?: number;   // max deg tilt (default 3)
+  lift?: number; // px to lift on hover (default 6)
+  tilt?: number; // max deg tilt (default 3)
 }
 
-export function MagneticCard({
-  children,
-  className = "",
-  lift = 6,
-  tilt = 3,
-}: MagneticCardProps) {
+export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: MagneticCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
 
@@ -420,19 +508,22 @@ export function MagneticCard({
   const rotateY = useSpring(useMotionValue(0), { stiffness: 300, damping: 30 });
   const translateY = useSpring(useMotionValue(0), { stiffness: 250, damping: 20 });
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (reduce || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dx = (e.clientX - cx) / (rect.width / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    rotateY.set(dx * tilt);
-    rotateX.set(-dy * tilt);
-    translateY.set(-lift);
-    x.set(dx);
-    y.set(dy);
-  }, [reduce, tilt, lift, rotateX, rotateY, translateY, x, y]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (reduce || !ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / (rect.width / 2);
+      const dy = (e.clientY - cy) / (rect.height / 2);
+      rotateY.set(dx * tilt);
+      rotateX.set(-dy * tilt);
+      translateY.set(-lift);
+      x.set(dx);
+      y.set(dy);
+    },
+    [reduce, tilt, lift, rotateX, rotateY, translateY, x, y]
+  );
 
   const handleMouseLeave = useCallback(() => {
     rotateX.set(0);
@@ -510,7 +601,8 @@ export function TextReveal({
     >
       {words.map((w, i) => (
         <motion.span key={i} variants={word} className={`inline-block ${wordClassName}`}>
-          {w}{i < words.length - 1 ? " " : ""}
+          {w}
+          {i < words.length - 1 ? " " : ""}
         </motion.span>
       ))}
     </MotionTag>
@@ -527,10 +619,11 @@ export function ScrollProgress() {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 z-[9999] h-[2px] origin-left pointer-events-none"
+      className="pointer-events-none fixed top-0 right-0 left-0 z-[9999] h-[2px] origin-left"
       style={{
         scaleX,
-        background: "linear-gradient(90deg, var(--brand-gradient-from), var(--brand-gradient-via), var(--brand-gradient-to))",
+        background:
+          "linear-gradient(90deg, var(--brand-gradient-from), var(--brand-gradient-via), var(--brand-gradient-to))",
       }}
     />
   );

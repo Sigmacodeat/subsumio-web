@@ -20,6 +20,7 @@ import {
   Loader2,
   CornerDownLeft,
   HelpCircle,
+  Sparkles,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
@@ -28,6 +29,7 @@ import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
 import { useRealtime } from "@/lib/realtime";
 import { csrfFetch } from "@/lib/csrf";
+import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
 
@@ -40,6 +42,8 @@ interface TopbarProps {
   onMobileMenuOpen: () => void;
   onMobileMenuClose: () => void;
   onGuideOpen: () => void;
+  copilotOpen: boolean;
+  onCopilotToggle: () => void;
 }
 
 export function Topbar({
@@ -51,6 +55,8 @@ export function Topbar({
   onMobileMenuOpen,
   onMobileMenuClose,
   onGuideOpen,
+  copilotOpen,
+  onCopilotToggle,
 }: TopbarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,7 +115,7 @@ export function Topbar({
   const deadlinesQuery = usePages({ type: "legal_deadline", limit: 20 });
   const logoutMutation = useLogout();
 
-  // API-based notifications (mentions, replies, system)
+  // API-based notifications (mentions, replies, system, deadline)
   const [apiNotifications, setApiNotifications] = useState<
     Array<{
       id: string;
@@ -117,9 +123,11 @@ export function Topbar({
       message: string;
       type: "deadline" | "dream" | "system" | "mention" | "reply";
       read: boolean;
+      caseSlug?: string;
     }>
   >([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [readInlineIds, setReadInlineIds] = useState<Set<string>>(new Set());
 
   const fetchNotifications = async () => {
     try {
@@ -127,16 +135,33 @@ export function Topbar({
       if (res.ok) {
         const data = await res.json();
         const mapped = (data.notifications || []).map(
-          (n: { id: string; type: string; data: Record<string, unknown>; createdAt: string }) => ({
-            id: n.id,
-            title: n.type === "mention" ? "Erwähnung" : n.type === "reply" ? "Antwort" : "System",
-            message: String(n.data?.message ?? ""),
-            type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as
-              | "mention"
-              | "reply"
-              | "system",
-            read: false,
-          })
+          (n: { id: string; type: string; data: Record<string, unknown>; createdAt: string }) => {
+            if (n.type === "deadline") {
+              const title = (n.data?.title as string) ?? "Frist";
+              const days = n.data?.daysRemaining as number | undefined;
+              const isOverdue = (n.data?.isOverdue as boolean) ?? false;
+              const caseSlug = n.data?.caseSlug as string | undefined;
+              return {
+                id: n.id,
+                title: isOverdue ? "Frist abgelaufen" : "Fristenwarnung",
+                message: `${title}${days !== undefined ? (isOverdue ? ` — ${Math.abs(days)}T überfällig` : ` — in ${days}T`) : ""}`,
+                type: "deadline" as const,
+                read: false,
+                caseSlug,
+              };
+            }
+            return {
+              id: n.id,
+              title: n.type === "mention" ? "Erwähnung" : n.type === "reply" ? "Antwort" : "System",
+              message: String(n.data?.message ?? ""),
+              type: (n.type === "mention" || n.type === "reply" ? n.type : "system") as
+                | "mention"
+                | "reply"
+                | "system",
+              read: false,
+              caseSlug: undefined as string | undefined,
+            };
+          }
         );
         setApiNotifications(mapped);
       }
@@ -151,9 +176,17 @@ export function Topbar({
       await csrfFetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ markAll: true }),
+        body: JSON.stringify({}),
       });
       setApiNotifications([]);
+      // Also mark all inline deadline notifications as read
+      setReadInlineIds((prev) => {
+        const next = new Set(prev);
+        for (const n of notifications) {
+          if (n.id.startsWith("dl-")) next.add(n.id);
+        }
+        return next;
+      });
     } catch {
       // non-critical
     } finally {
@@ -171,11 +204,59 @@ export function Topbar({
   useRealtime("notification.created", () => void fetchNotifications());
   useRealtime("comment.added", () => void fetchNotifications());
 
+  // ── Sync: persist detected deadline alerts to /api/notifications ──
+  // This ensures both the Topbar bell AND the Copilot Sidebar see the same alerts
+  const lastSyncSignature = useRef("");
+  useEffect(() => {
+    if (!deadlinesQuery.data || !Array.isArray(deadlinesQuery.data)) return;
+    const now = new Date();
+    const deadlines: Array<{
+      caseSlug: string;
+      caseTitle: string;
+      deadlineDate: string;
+      daysRemaining: number;
+      isOverdue: boolean;
+    }> = [];
+    for (const p of deadlinesQuery.data) {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      const dueStr = (fm.due_date || fm.date || p.created_at) as string | number | undefined;
+      if (!dueStr || fm.status === "done") continue;
+      const due = new Date(dueStr);
+      const days = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Only persist if deadline is within 3 days or overdue
+      if (days > 3 && days >= 0) continue;
+      const isOverdue = days < 0;
+      deadlines.push({
+        caseSlug: p.slug,
+        caseTitle: p.title,
+        deadlineDate: String(dueStr),
+        daysRemaining: days,
+        isOverdue,
+      });
+    }
+    // Skip if nothing changed since last sync
+    const signature = deadlines.map((d) => `${d.caseSlug}:${d.deadlineDate}`).join("|");
+    if (signature === lastSyncSignature.current) return;
+    lastSyncSignature.current = signature;
+    // Single batch request instead of N individual requests
+    if (deadlines.length > 0) {
+      void csrfFetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deadlines }),
+      }).catch(() => {});
+    }
+  }, [deadlinesQuery.data]);
+
   const notifications = useMemo(() => {
     const pages = deadlinesQuery.data;
     const stats = statsQuery.data;
     if (!Array.isArray(pages)) return apiNotifications;
     const now = new Date();
+    // Collect case slugs already covered by API deadline notifications to avoid duplicates
+    const apiDeadlineSlugs = new Set(
+      apiNotifications.filter((n) => n.type === "deadline" && n.caseSlug).map((n) => n.caseSlug!)
+    );
     const notifs: Array<{
       id: string;
       title: string;
@@ -184,6 +265,8 @@ export function Topbar({
       read: boolean;
     }> = [...apiNotifications];
     for (const p of pages) {
+      // Skip if already covered by API notification
+      if (apiDeadlineSlugs.has(p.slug)) continue;
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
       const dueStr = (fm.due_date || fm.date || p.created_at) as string | number | undefined;
       const due = dueStr ? new Date(dueStr) : new Date();
@@ -194,7 +277,7 @@ export function Topbar({
           title: t("topbar.notif_deadline_soon"),
           message: `${p.title} — ${days} ${t("topbar.notif_days")}`,
           type: "deadline",
-          read: false,
+          read: readInlineIds.has(`dl-${p.slug}`),
         });
       } else if (days < 0 && fm.status !== "done") {
         notifs.push({
@@ -202,7 +285,7 @@ export function Topbar({
           title: t("topbar.notif_deadline_overdue"),
           message: `${p.title} — ${Math.abs(days)} ${t("topbar.notif_days_overdue")}`,
           type: "deadline",
-          read: false,
+          read: readInlineIds.has(`dl-${p.slug}`),
         });
       }
     }
@@ -221,7 +304,7 @@ export function Topbar({
       }
     }
     return notifs;
-  }, [deadlinesQuery.data, statsQuery.data, t, apiNotifications]);
+  }, [deadlinesQuery.data, statsQuery.data, t, apiNotifications, readInlineIds]);
 
   function logout() {
     logoutMutation.mutate();
@@ -433,6 +516,21 @@ export function Topbar({
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {/* Brain Copilot toggle */}
+        <button
+          onClick={onCopilotToggle}
+          aria-label={copilotOpen ? "Brain Copilot schließen" : "Brain Copilot öffnen"}
+          title={copilotOpen ? "Brain Copilot schließen (Cmd+J)" : "Brain Copilot öffnen (Cmd+J)"}
+          aria-pressed={copilotOpen}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+            copilotOpen
+              ? "brand-bg brand-text-on-primary"
+              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          )}
+        >
+          <Sparkles size={16} />
+        </button>
         <button
           onClick={onGuideOpen}
           aria-label={t("guide.open")}
@@ -533,6 +631,11 @@ export function Topbar({
                           <button
                             onClick={async (e) => {
                               e.stopPropagation();
+                              if (n.id.startsWith("dl-")) {
+                                // Inline deadline notification — mark locally
+                                setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                return;
+                              }
                               try {
                                 await csrfFetch("/api/notifications", {
                                   method: "PATCH",

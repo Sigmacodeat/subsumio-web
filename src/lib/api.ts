@@ -59,11 +59,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const error = await res.text();
+    const error = await res.text().catch(() => "");
     throw new Error(error || `HTTP ${res.status}`);
   }
 
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  if (!text) return undefined as unknown as T;
+  return JSON.parse(text) as T;
 }
 
 export const api = {
@@ -177,7 +179,13 @@ export const api = {
 
       const contentType = res.headers.get("Content-Type") || "";
       if (!contentType.includes("text/event-stream")) {
-        return res.json() as Promise<QueryResponse>;
+        const text = await res.text();
+        if (!text) return { answer: "", citations: [], gaps: [], mode };
+        try {
+          return JSON.parse(text) as QueryResponse;
+        } catch {
+          return { answer: text, citations: [], gaps: [], mode };
+        }
       }
 
       const result: QueryResponse = { answer: "", citations: [], gaps: [], mode };
@@ -199,21 +207,29 @@ export const api = {
           if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
           if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
           if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
-        } catch {}
+        } catch (e) {
+          console.debug("[api.think] malformed SSE data:", data.slice(0, 100), e);
+        }
       };
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
 
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (line.startsWith("data: ")) handleEvent(line.slice(6));
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (line.startsWith("data: ")) handleEvent(line.slice(6));
+          }
         }
+        if (buffer.startsWith("data: ")) handleEvent(buffer.slice(6));
+      } catch (err) {
+        // AbortError or read failure — cancel the reader to release the stream
+        await reader.cancel().catch(() => {});
+        throw err;
       }
-      if (buffer.startsWith("data: ")) handleEvent(buffer.slice(6));
 
       return result;
     },
@@ -287,7 +303,7 @@ export const api = {
     },
 
     judgementsSync(options?: {
-      jurisdiction?: "at" | "de" | "all";
+      jurisdiction?: "at" | "de" | "ch" | "all";
       query?: string;
     }): Promise<JudgementsSyncResponse> {
       return request("/api/legal/judgements-sync", {
@@ -298,7 +314,7 @@ export const api = {
 
     judgementsSearch(options: {
       q: string;
-      jurisdiction?: "at" | "de" | "all";
+      jurisdiction?: "at" | "de" | "ch" | "all";
       limit?: number;
     }): Promise<{ results?: Array<Record<string, string>> }> {
       const params = new URLSearchParams();
@@ -364,7 +380,13 @@ export const api = {
       }
 
       if (contentType.includes("application/json")) {
-        return { redline: JSON.stringify(await res.json()) };
+        const text = await res.text();
+        if (!text) return { redline: "" };
+        try {
+          return { redline: JSON.stringify(await Promise.resolve(JSON.parse(text))) };
+        } catch {
+          return { redline: text };
+        }
       }
 
       // SSE streaming
@@ -849,6 +871,29 @@ export const api = {
 
         xhr.onerror = () => reject(new Error("Upload failed"));
         xhr.send(formData);
+      });
+    },
+  },
+
+  copilot: {
+    executeTool(
+      tool: string,
+      params: Record<string, unknown>
+    ): Promise<{
+      success: boolean;
+      data?: unknown;
+      error?: string;
+      display: {
+        kind: "navigation" | "list" | "summary" | "confirmation";
+        title: string;
+        items?: Array<{ label: string; value?: string; href?: string }>;
+        href?: string;
+        message?: string;
+      };
+    }> {
+      return request("/api/copilot/tools", {
+        method: "POST",
+        body: JSON.stringify({ tool, params }),
       });
     },
   },

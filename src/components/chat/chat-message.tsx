@@ -19,6 +19,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { AIBadge, GroundingStatus } from "@/components/legal/CitationLink";
 import { CitationBadgesInline } from "@/components/legal/CitationPanel";
 import { GAP_ICONS, GAP_LABELS, type ChatMessage } from "@/components/chat/chat-types";
+import { ToolCallBubble } from "@/components/chat/tool-call-bubble";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -27,10 +28,13 @@ interface ChatMessageBubbleProps {
     messageActions?: boolean;
     tokenWidget?: boolean;
   };
-  onRegenerate?: () => void;
-  onEdit?: () => void;
+  onRegenerate?: (messageId: string) => void;
+  onEdit?: (messageId: string) => void;
   onExport?: () => void;
-  onReply?: () => void;
+  onReply?: (messageId: string) => void;
+  onToolConfirm?: (toolCallId: string) => void;
+  onToolCancel?: (toolCallId: string) => void;
+  onToolRetry?: (toolCallId: string) => void;
 }
 
 function parseGapType(gap: string): string | null {
@@ -48,6 +52,9 @@ function ChatMessageBubbleInner({
   onEdit,
   onExport,
   onReply,
+  onToolConfirm,
+  onToolCancel,
+  onToolRetry,
 }: ChatMessageBubbleProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
@@ -55,10 +62,14 @@ function ChatMessageBubbleInner({
   const hasGaps = (message.gaps?.length ?? 0) > 0;
   const hasAttachments = (message.attachments?.length ?? 0) > 0;
 
-  function handleCopy() {
-    navigator.clipboard.writeText(message.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API may be unavailable (non-HTTPS, permissions denied)
+    }
   }
 
   const rendered =
@@ -116,6 +127,21 @@ function ChatMessageBubbleInner({
           )}
         </div>
 
+        {/* Tool calls (assistant only) */}
+        {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
+          <div className="space-y-2">
+            {message.toolCalls.map((tc) => (
+              <ToolCallBubble
+                key={tc.id}
+                toolCall={tc}
+                onConfirm={onToolConfirm}
+                onCancel={onToolCancel}
+                onRetry={onToolRetry}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Citations + Gaps (assistant only) */}
         {!isUser && !message.isStreaming && (hasCitations || hasGaps) && (
           <div className="space-y-2">
@@ -141,12 +167,16 @@ function ChatMessageBubbleInner({
                       {c.title}
                     </a>
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
-                        navigator.clipboard.writeText(c.slug);
-                        const btn = e.currentTarget;
-                        btn.classList.add("text-emerald-500");
-                        setTimeout(() => btn.classList.remove("text-emerald-500"), 1500);
+                        try {
+                          await navigator.clipboard.writeText(c.slug);
+                          const btn = e.currentTarget;
+                          btn.classList.add("text-emerald-500");
+                          setTimeout(() => btn.classList.remove("text-emerald-500"), 1500);
+                        } catch {
+                          // Clipboard API may be unavailable
+                        }
                       }}
                       className="ml-0.5 inline-flex items-center justify-center text-[color:var(--ds-text-subtle)] opacity-0 transition-all group-hover/citation:opacity-100 hover:text-[color:var(--ds-text)]"
                       aria-label={`Zitat-Slug kopieren: ${c.slug}`}
@@ -227,7 +257,7 @@ function ChatMessageBubbleInner({
             </button>
             {!isUser && onRegenerate && (
               <button
-                onClick={onRegenerate}
+                onClick={() => onRegenerate(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label="Neu generieren"
               >
@@ -236,7 +266,7 @@ function ChatMessageBubbleInner({
             )}
             {isUser && onEdit && (
               <button
-                onClick={onEdit}
+                onClick={() => onEdit(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label="Bearbeiten"
               >
@@ -245,7 +275,7 @@ function ChatMessageBubbleInner({
             )}
             {onReply && (
               <button
-                onClick={onReply}
+                onClick={() => onReply(message.id)}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label="Antworten"
                 title="Auf diese Nachricht antworten"

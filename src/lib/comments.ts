@@ -30,6 +30,25 @@ import { createSchemaInit } from "@/lib/schema-init";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+// Simple serialization queue for file-based notification writes (dev mode)
+class AsyncQueue {
+  private tail: Promise<void> = Promise.resolve();
+  async run<T>(task: () => Promise<T>): Promise<T> {
+    let resolve!: (v: T) => void;
+    let reject!: (e: unknown) => void;
+    const next = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    this.tail = this.tail.then(
+      () => task().then(resolve, reject),
+      () => task().then(resolve, reject)
+    );
+    return next;
+  }
+}
+const fileWriteQueue = new AsyncQueue();
+
 export interface Comment {
   id: string;
   parentSlug: string;
@@ -182,13 +201,14 @@ export interface Notification {
 
 const ensureNotifSchema = createSchemaInit(`
   CREATE TABLE IF NOT EXISTS subsumio_notifications (
-    id text PRIMARY KEY,
+    id text NOT NULL,
     user_id text NOT NULL,
     brain_id text NOT NULL,
     type text NOT NULL DEFAULT 'system',
     data jsonb NOT NULL DEFAULT '{}',
     read_at timestamptz,
-    created_at timestamptz NOT NULL DEFAULT now()
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (id, user_id, brain_id)
   );
   CREATE INDEX IF NOT EXISTS idx_notif_user_brain
     ON subsumio_notifications (user_id, brain_id, read_at);
@@ -229,7 +249,8 @@ async function persistNotification(notif: Notification): Promise<void> {
       await ensureNotifSchema();
       await pool.query(
         `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO NOTHING`,
         [
           notif.id,
           notif.userId,
@@ -247,24 +268,91 @@ async function persistNotification(notif: Notification): Promise<void> {
     }
     return;
   }
-  // File-based fallback for dev
-  try {
-    await fs.mkdir(path.dirname(NOTIF_FILE), { recursive: true });
-    let all: Notification[] = [];
+  // File-based fallback for dev — serialize writes
+  await fileWriteQueue.run(async () => {
     try {
-      const raw = await fs.readFile(NOTIF_FILE, "utf-8");
-      all = JSON.parse(raw);
-    } catch {}
-    all.unshift(notif);
-    if (all.length > 500) all = all.slice(0, 500);
-    const tmp = `${NOTIF_FILE}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(all, null, 2));
-    await fs.rename(tmp, NOTIF_FILE);
-  } catch (err) {
-    console.error(
-      `[notifications] file persist failed: ${err instanceof Error ? err.message : String(err)}`
-    );
+      await fs.mkdir(path.dirname(NOTIF_FILE), { recursive: true });
+      let all: Notification[] = [];
+      try {
+        const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+        all = JSON.parse(raw);
+      } catch {}
+      // Skip if already exists (dedup)
+      if (all.some((n) => n.id === notif.id)) return;
+      all.unshift(notif);
+      if (all.length > 500) all = all.slice(0, 500);
+      const tmp = `${NOTIF_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(all, null, 2));
+      await fs.rename(tmp, NOTIF_FILE);
+    } catch (err) {
+      console.error(
+        `[notifications] file persist failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  });
+}
+
+async function persistNotificationUpsert(notif: Notification): Promise<void> {
+  const pool = getSharedPgPool();
+  if (pool) {
+    try {
+      await ensureNotifSchema();
+      // ON CONFLICT: update data but don't reset read_at if already read
+      await pool.query(
+        `INSERT INTO subsumio_notifications (id, user_id, brain_id, type, data, read_at, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (id) DO UPDATE SET
+           data = EXCLUDED.data,
+           type = EXCLUDED.type
+           WHERE subsumio_notifications.read_at IS NULL`,
+        [
+          notif.id,
+          notif.userId,
+          notif.brainId,
+          notif.type,
+          JSON.stringify(notif.data),
+          notif.readAt,
+          notif.createdAt,
+        ]
+      );
+    } catch (err) {
+      console.error(
+        `[notifications] upsert failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+    return;
   }
+  // File-based fallback: serialize writes to prevent race conditions
+  await fileWriteQueue.run(async () => {
+    try {
+      await fs.mkdir(path.dirname(NOTIF_FILE), { recursive: true });
+      let all: Notification[] = [];
+      try {
+        const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+        all = JSON.parse(raw);
+      } catch {}
+      const idx = all.findIndex(
+        (n) => n.id === notif.id && n.userId === notif.userId && n.brainId === notif.brainId
+      );
+      if (idx !== -1) {
+        // Only update data if not yet read
+        if (all[idx].readAt === null) {
+          all[idx].data = notif.data;
+          all[idx].type = notif.type;
+        }
+      } else {
+        all.unshift(notif);
+        if (all.length > 500) all = all.slice(0, 500);
+      }
+      const tmp = `${NOTIF_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(all, null, 2));
+      await fs.rename(tmp, NOTIF_FILE);
+    } catch (err) {
+      console.error(
+        `[notifications] file upsert failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  });
 }
 
 export async function listNotifications(opts: {
@@ -282,12 +370,25 @@ export async function listNotifications(opts: {
       if (opts.unreadOnly) {
         conditions.push("read_at IS NULL");
       }
-      const limit = opts.limit ?? 50;
+      const limit = Math.min(Number.isFinite(opts.limit) ? opts.limit! : 50, 200);
       const result = await pool.query(
-        `SELECT * FROM subsumio_notifications WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT ${limit}`,
-        params
+        `SELECT * FROM subsumio_notifications WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT $${params.length + 1}`,
+        [...params, limit]
       );
-      return result.rows as Notification[];
+      // Map Postgres rows to Notification — pg returns timestamptz as Date, not string
+      return result.rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        userId: row.user_id as string,
+        brainId: row.brain_id as string,
+        type: row.type as Notification["type"],
+        data: row.data as Record<string, unknown>,
+        readAt:
+          row.read_at instanceof Date ? row.read_at.toISOString() : (row.read_at as string | null),
+        createdAt:
+          row.created_at instanceof Date
+            ? row.created_at.toISOString()
+            : (row.created_at as string),
+      }));
     } catch {
       return [];
     }
@@ -296,33 +397,87 @@ export async function listNotifications(opts: {
   try {
     const raw = await fs.readFile(NOTIF_FILE, "utf-8");
     let all = JSON.parse(raw) as Notification[];
+    // Security: filter by userId + brainId (same as Postgres WHERE clause)
+    all = all.filter((n) => n.userId === opts.userId && n.brainId === opts.brainId);
     if (opts.unreadOnly) all = all.filter((n) => !n.readAt);
-    return all.slice(0, opts.limit ?? 50);
+    const limit = Number.isFinite(opts.limit) ? opts.limit! : 50;
+    return all.slice(0, Math.min(limit, 200));
   } catch {
     return [];
   }
 }
 
-export async function markNotificationRead(id: string): Promise<void> {
+/**
+ * Mark a single notification read. Scoped to (userId, brainId) — without
+ * this, any authenticated caller could mark (and confirm the existence of)
+ * another user's notification just by knowing or guessing its ID. Deadline
+ * notification IDs in particular are deterministic
+ * (`notif_dl_<slug>_<date>`), so this isn't a theoretical concern.
+ */
+export async function markNotificationRead(
+  id: string,
+  owner: { userId: string; brainId: string }
+): Promise<void> {
   const pool = getSharedPgPool();
   if (pool) {
     try {
       await ensureNotifSchema();
-      await pool.query("UPDATE subsumio_notifications SET read_at = now() WHERE id = $1", [id]);
+      await pool.query(
+        "UPDATE subsumio_notifications SET read_at = now() WHERE id = $1 AND user_id = $2 AND brain_id = $3",
+        [id, owner.userId, owner.brainId]
+      );
     } catch {}
     return;
   }
-  try {
-    const raw = await fs.readFile(NOTIF_FILE, "utf-8");
-    const all = JSON.parse(raw) as Notification[];
-    const idx = all.findIndex((n) => n.id === id);
-    if (idx !== -1) {
-      all[idx].readAt = new Date().toISOString();
-      const tmp = `${NOTIF_FILE}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(all, null, 2));
-      await fs.rename(tmp, NOTIF_FILE);
-    }
-  } catch {}
+  await fileWriteQueue.run(async () => {
+    try {
+      const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+      const all = JSON.parse(raw) as Notification[];
+      const idx = all.findIndex(
+        (n) => n.id === id && n.userId === owner.userId && n.brainId === owner.brainId
+      );
+      if (idx !== -1) {
+        all[idx].readAt = new Date().toISOString();
+        const tmp = `${NOTIF_FILE}.tmp`;
+        await fs.writeFile(tmp, JSON.stringify(all, null, 2));
+        await fs.rename(tmp, NOTIF_FILE);
+      }
+    } catch {}
+  });
+}
+
+export async function createDeadlineNotification(opts: {
+  userId: string;
+  brainId: string;
+  caseSlug?: string;
+  caseTitle: string;
+  deadlineDate: string;
+  daysRemaining: number;
+  isOverdue: boolean;
+}): Promise<void> {
+  // Deterministic ID based on caseSlug + deadlineDate to prevent duplicates
+  const slugPart = opts.caseSlug ?? opts.caseTitle.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+  const datePart = String(opts.deadlineDate)
+    .replace(/[^a-zA-Z0-9]/g, "_")
+    .slice(0, 20);
+  const notifId = `notif_dl_${slugPart}_${datePart}`;
+
+  const notif: Notification = {
+    id: notifId,
+    userId: opts.userId,
+    brainId: opts.brainId,
+    type: "deadline",
+    data: {
+      title: opts.caseTitle,
+      caseSlug: opts.caseSlug,
+      deadlineDate: opts.deadlineDate,
+      daysRemaining: opts.daysRemaining,
+      isOverdue: opts.isOverdue,
+    },
+    readAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  await persistNotificationUpsert(notif);
 }
 
 export async function markAllNotificationsRead(opts: {
@@ -340,14 +495,19 @@ export async function markAllNotificationsRead(opts: {
     } catch {}
     return;
   }
-  try {
-    const raw = await fs.readFile(NOTIF_FILE, "utf-8");
-    const all = JSON.parse(raw) as Notification[];
-    for (const n of all) {
-      if (!n.readAt) n.readAt = new Date().toISOString();
-    }
-    const tmp = `${NOTIF_FILE}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(all, null, 2));
-    await fs.rename(tmp, NOTIF_FILE);
-  } catch {}
+  await fileWriteQueue.run(async () => {
+    try {
+      const raw = await fs.readFile(NOTIF_FILE, "utf-8");
+      const all = JSON.parse(raw) as Notification[];
+      for (const n of all) {
+        // Security: only mark notifications owned by this user+brain
+        if (n.userId === opts.userId && n.brainId === opts.brainId && !n.readAt) {
+          n.readAt = new Date().toISOString();
+        }
+      }
+      const tmp = `${NOTIF_FILE}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(all, null, 2));
+      await fs.rename(tmp, NOTIF_FILE);
+    } catch {}
+  });
 }

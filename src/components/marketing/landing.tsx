@@ -139,7 +139,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </motion.div>
               <motion.div variants={heroItem}>
                 <motion.h1
-                  className="mb-8 text-5xl leading-[1.05] font-bold tracking-tight [color:var(--mk-text)] md:text-7xl"
+                  className="mb-8 text-[clamp(2.75rem,12vw,4.5rem)] leading-[1.05] font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-7xl"
                   variants={h1Container}
                 >
                   {reduce ? (
@@ -156,11 +156,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                           {i < t.h1a.split(" ").length - 1 ? " " : ""}
                         </motion.span>
                       ))}
+                      <span className="sr-only"> </span>
                       <br />
-                      <motion.span
-                        className="hero-gradient-text inline-block whitespace-nowrap"
-                        variants={h1Word}
-                      >
+                      <motion.span className="hero-gradient-text inline-block" variants={h1Word}>
                         {t.h1b}
                       </motion.span>
                     </>
@@ -204,7 +202,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   {[
                     lang === "de" ? "Keine Kreditkarte" : "No credit card",
                     lang === "de" ? "3 Min. zur ersten Antwort" : "3 min to first answer",
-                    lang === "de" ? "EU-gehostet oder self-hosted" : "EU-hosted or self-hosted",
+                    lang === "de" ? "EU-gehostet oder On-Premise" : "EU-hosted or self-hosted",
                   ].map((label) => (
                     <motion.span
                       key={label}
@@ -278,7 +276,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               }
               sub={
                 lang === "de"
-                  ? "Dateien per Upload, Google Drive oder Anwaltssoftware ins Brain — dann im Chat fragen, mit seitengenauen Quellen."
+                  ? "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Quellen."
                   : "Bring files in via upload, Google Drive or your practice software — then ask in chat, with page-level sources."
               }
             />

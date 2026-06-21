@@ -29,7 +29,10 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { usePaginatedList } from "@/lib/hooks/use-pagination";
 import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 import { RotateCcw } from "lucide-react";
+
+const DOCS_LIMIT = 200;
 
 interface VaultDoc {
   slug: string;
@@ -87,7 +90,14 @@ export default function VaultPage() {
   const [docs, setDocs] = useState<VaultDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [capped, setCapped] = useState(false);
   const [query, setQuery] = useState("");
+  // Server-side search results for the current query, fetched against the
+  // full corpus — `docs` only ever holds the first DOCS_LIMIT pages, so
+  // filtering client-side on `docs` alone would silently miss matches once
+  // the brain has more than DOCS_LIMIT documents.
+  const [searchResults, setSearchResults] = useState<VaultDoc[] | null>(null);
+  const [searching, setSearching] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [tagFilter, setTagFilter] = useState<string>("");
 
@@ -134,7 +144,8 @@ export default function VaultPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ limit: 200 });
+      const pages = await api.brain.listPages({ limit: DOCS_LIMIT });
+      setCapped(pages.length >= DOCS_LIMIT);
       const nextDocs = pages.map(parseDoc);
       setDocs(nextDocs);
       await setCache(OFFLINE_KEYS.vault, nextDocs);
@@ -167,10 +178,38 @@ export default function VaultPage() {
     return Array.from(types).sort();
   }, [docs]);
 
+  // Debounced server-side search so matches beyond the first DOCS_LIMIT
+  // loaded documents are still found, instead of only filtering the
+  // capped client-side `docs` list.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const pages = await api.brain.listPages({ q, limit: DOCS_LIMIT });
+        if (!cancelled) setSearchResults(pages.map(parseDoc));
+      } catch {
+        // Fall back to filtering the already-loaded docs client-side below.
+        if (!cancelled) setSearchResults(null);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
   const filtered = useMemo(() => {
-    let result = docs;
-    if (query.trim()) {
-      const q = query.toLowerCase();
+    const q = query.trim().toLowerCase();
+    let result = q && searchResults ? searchResults : docs;
+    if (q && !searchResults) {
       result = result.filter(
         (d) => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q)
       );
@@ -178,7 +217,7 @@ export default function VaultPage() {
     if (typeFilter) result = result.filter((d) => d.type === typeFilter);
     if (tagFilter) result = result.filter((d) => d.tags.includes(tagFilter));
     return result;
-  }, [docs, query, typeFilter, tagFilter]);
+  }, [docs, searchResults, query, typeFilter, tagFilter]);
 
   const reviewLoading = reviewForm.status === "submitting";
 
@@ -239,7 +278,7 @@ export default function VaultPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
       <PageHeader
         title="Dokumenten-Vault"
-        description="Zentraler Dokumentenspeicher mit Bulk-Analyse und Review Tables"
+        description="Zentraler Dokumentenspeicher mit Massenanalyse und strukturierter Prüftabelle"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokumenten-Vault" }]}
         actions={
           selectedSlugs.size > 0 ? (
@@ -253,6 +292,8 @@ export default function VaultPage() {
           ) : undefined
         }
       />
+
+      {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
 
       {showReview && (
         <form
@@ -399,6 +440,12 @@ export default function VaultPage() {
             aria-label={t("aria.search_docs")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
+          {searching && (
+            <Loader2
+              size={14}
+              className="absolute top-1/2 right-3 -translate-y-1/2 animate-spin text-[color:var(--ds-text-subtle)]"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-[color:var(--ds-text-subtle)]" />

@@ -9,6 +9,7 @@ import {
   type DMSSearchResult,
   DMS_BASE,
   dmsAuthHeaders,
+  dmsFetchJson,
   isDmsConfigured,
   importToBrainCommon,
 } from "./index";
@@ -28,8 +29,7 @@ export const netDocumentsConnector: DMSConnector = {
     url.searchParams.set("search", query);
     if (opts?.limit) url.searchParams.set("count", String(opts.limit));
 
-    const res = await fetch(url.toString(), { headers: dmsAuthHeaders() });
-    const data = (await res.json()) as {
+    const data = await dmsFetchJson<{
       results?: Array<{
         id: string;
         name: string;
@@ -41,7 +41,7 @@ export const netDocumentsConnector: DMSConnector = {
         checkedOut?: boolean;
       }>;
       totalCount?: number;
-    };
+    }>(url.toString(), { headers: dmsAuthHeaders() });
 
     return {
       documents: (data.results ?? []).map((d) => ({
@@ -60,9 +60,7 @@ export const netDocumentsConnector: DMSConnector = {
   },
 
   async getDocument(docId: string): Promise<DMSDocument | null> {
-    const res = await fetch(`${DMS_BASE}/v1/Documents/${docId}`, { headers: dmsAuthHeaders() });
-    if (!res.ok) return null;
-    const d = (await res.json()) as {
+    let d: {
       id: string;
       name: string;
       extension?: string;
@@ -72,6 +70,11 @@ export const netDocumentsConnector: DMSConnector = {
       version?: string;
       checkedOut?: boolean;
     };
+    try {
+      d = await dmsFetchJson(`${DMS_BASE}/v1/Documents/${docId}`, { headers: dmsAuthHeaders() });
+    } catch {
+      return null;
+    }
     return {
       id: d.id,
       name: d.name,
@@ -85,10 +88,7 @@ export const netDocumentsConnector: DMSConnector = {
   },
 
   async getFolderContents(folderId: string): Promise<DMSSearchResult> {
-    const res = await fetch(`${DMS_BASE}/v1/Cabinets/${folderId}/documents`, {
-      headers: dmsAuthHeaders(),
-    });
-    const data = (await res.json()) as {
+    const data = await dmsFetchJson<{
       results?: Array<{
         id: string;
         name: string;
@@ -99,7 +99,7 @@ export const netDocumentsConnector: DMSConnector = {
         version?: string;
         checkedOut?: boolean;
       }>;
-    };
+    }>(`${DMS_BASE}/v1/Cabinets/${folderId}/documents`, { headers: dmsAuthHeaders() });
     return {
       documents: (data.results ?? []).map((d) => ({
         id: d.id,

@@ -30,7 +30,7 @@ export default function RechtsprechungPage() {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
-  const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "all">("at");
+  const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("at");
   const [searched, setSearched] = useState(false);
 
   async function handleSearch() {
@@ -88,7 +88,7 @@ export default function RechtsprechungPage() {
       // 3. AI fallback if no results at all
       if (judgements.length === 0) {
         const thinkResult = await api.query.think(
-          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : "Deutschland und Österreich"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`,
+          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : jurisdiction === "ch" ? "der Schweiz" : "Deutschland, Österreich und der Schweiz"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`,
           {
             mode: "balanced",
             queryMode: "external_law",
@@ -168,7 +168,7 @@ export default function RechtsprechungPage() {
       {/* Search */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div className="flex gap-2">
-          {(["at", "de", "all"] as const).map((j) => (
+          {(["at", "de", "ch", "all"] as const).map((j) => (
             <button
               key={j}
               onClick={() => setJurisdiction(j)}
@@ -179,7 +179,13 @@ export default function RechtsprechungPage() {
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
               )}
             >
-              {j === "at" ? "🇦🇹 Österreich" : j === "de" ? "🇩🇪 Deutschland" : "🌍 Beide"}
+              {j === "at"
+                ? "🇦🇹 Österreich"
+                : j === "de"
+                  ? "🇩🇪 Deutschland"
+                  : j === "ch"
+                    ? "🇨� Schweiz"
+                    : "🌍 Alle"}
             </button>
           ))}
         </div>
@@ -252,7 +258,17 @@ export default function RechtsprechungPage() {
                             : "border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text-muted)]"
                       )}
                     >
-                      {r.source === "brain" ? "Brain" : r.source === "ris-ogd" ? "RIS-OGD" : "KI"}
+                      {r.source === "brain"
+                        ? "Brain"
+                        : r.source === "ris-ogd"
+                          ? "RIS-OGD"
+                          : r.source === "opencaselaw"
+                            ? "OpenCaseLaw"
+                            : r.source === "openlegaldata"
+                              ? "OpenLegalData"
+                              : r.source === "ai"
+                                ? "KI"
+                                : r.source}
                     </Badge>
                   </div>
                   <div className="mb-2 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">

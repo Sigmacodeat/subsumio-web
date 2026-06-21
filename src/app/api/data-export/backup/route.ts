@@ -1,4 +1,3 @@
-
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -15,11 +14,19 @@ export const GET = createHandler(
       let hasMore = true;
 
       while (hasMore && page < 50) {
-        const res = await fetch(`${ENGINE_URL}/api/pages?limit=${perPage}&offset=${page * perPage}`, {
-          headers: ctx.headers,
-        });
+        const res = await fetch(
+          `${ENGINE_URL}/api/pages?limit=${perPage}&offset=${page * perPage}`,
+          {
+            headers: ctx.headers,
+          }
+        );
         if (!res.ok) break;
-        const pages = (await res.json()) as Array<Record<string, unknown>>;
+        const raw = await res.json();
+        const pages = Array.isArray(raw)
+          ? raw
+          : Array.isArray((raw as Record<string, unknown>)?.pages)
+            ? (raw as Record<string, unknown[]>).pages
+            : [];
         if (pages.length === 0) {
           hasMore = false;
         } else {
@@ -43,7 +50,8 @@ export const GET = createHandler(
 
       return Response.json(exportData);
     } catch (err) {
-      return apiError("backup_failed", err instanceof Error ? err.message : "backup_failed", 500);
+      console.error("[backup] failed:", err instanceof Error ? err.message : String(err));
+      return apiError("backup_failed", "Backup konnte nicht erstellt werden", 500);
     }
-  },
+  }
 );

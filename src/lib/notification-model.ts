@@ -19,17 +19,17 @@
 // ── Types ─────────────────────────────────────────────────────────────
 
 export type NotificationType =
-  | "mention"           // @-Erwähnung in Kommentar
-  | "deadline_alert"    // Fristenwarnung
-  | "deadline_overdue"  // Frist abgelaufen
-  | "approval_request"  // Freigabe angefordert
+  | "mention" // @-Erwähnung in Kommentar
+  | "deadline_alert" // Fristenwarnung
+  | "deadline_overdue" // Frist abgelaufen
+  | "approval_request" // Freigabe angefordert
   | "approval_decision" // Freigabe entschieden
-  | "conflict_alert"    // Mandantenkonflikt
-  | "new_document"      // Neues Dokument
-  | "case_update"       // Akten-Update
-  | "client_message"    // Mandantennachricht
-  | "system"            // System-Benachrichtigung
-  | "whatsapp_inbound"  // WhatsApp-Nachricht empfangen
+  | "conflict_alert" // Mandantenkonflikt
+  | "new_document" // Neues Dokument
+  | "case_update" // Akten-Update
+  | "client_message" // Mandantennachricht
+  | "system" // System-Benachrichtigung
+  | "whatsapp_inbound" // WhatsApp-Nachricht empfangen
   | "fristen_briefing"; // Tagesbriefing
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
@@ -93,10 +93,10 @@ export interface NotificationStore {
   create(notification: NotificationRecord): Promise<NotificationRecord>;
   getById(id: string): Promise<NotificationRecord | null>;
   list(opts: ListNotificationsOpts): Promise<NotificationRecord[]>;
-  markRead(id: string): Promise<boolean>;
+  markRead(id: string, userId: string, brainId: string): Promise<boolean>;
   markAllRead(userId: string, brainId: string): Promise<number>;
-  archive(id: string): Promise<boolean>;
-  delete(id: string): Promise<boolean>;
+  archive(id: string, userId: string, brainId: string): Promise<boolean>;
+  delete(id: string, userId: string, brainId: string): Promise<boolean>;
   getUnreadCount(userId: string, brainId: string): Promise<number>;
   getStats(userId: string, brainId: string): Promise<NotificationStats>;
 }
@@ -139,7 +139,7 @@ export class InMemoryNotificationStore implements NotificationStore {
 
   async list(opts: ListNotificationsOpts): Promise<NotificationRecord[]> {
     let results = [...this.notifications.values()].filter(
-      (n) => n.user_id === opts.user_id && n.brain_id === opts.brain_id,
+      (n) => n.user_id === opts.user_id && n.brain_id === opts.brain_id
     );
 
     if (opts.unread_only) {
@@ -164,9 +164,9 @@ export class InMemoryNotificationStore implements NotificationStore {
     return results.slice(offset, offset + limit);
   }
 
-  async markRead(id: string): Promise<boolean> {
+  async markRead(id: string, userId: string, brainId: string): Promise<boolean> {
     const notif = this.notifications.get(id);
-    if (!notif) return false;
+    if (!notif || notif.user_id !== userId || notif.brain_id !== brainId) return false;
     notif.read_at = new Date().toISOString();
     return true;
   }
@@ -182,26 +182,28 @@ export class InMemoryNotificationStore implements NotificationStore {
     return count;
   }
 
-  async archive(id: string): Promise<boolean> {
+  async archive(id: string, userId: string, brainId: string): Promise<boolean> {
     const notif = this.notifications.get(id);
-    if (!notif) return false;
+    if (!notif || notif.user_id !== userId || notif.brain_id !== brainId) return false;
     notif.archived = true;
     return true;
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, userId: string, brainId: string): Promise<boolean> {
+    const notif = this.notifications.get(id);
+    if (!notif || notif.user_id !== userId || notif.brain_id !== brainId) return false;
     return this.notifications.delete(id);
   }
 
   async getUnreadCount(userId: string, brainId: string): Promise<number> {
     return [...this.notifications.values()].filter(
-      (n) => n.user_id === userId && n.brain_id === brainId && n.read_at === null && !n.archived,
+      (n) => n.user_id === userId && n.brain_id === brainId && n.read_at === null && !n.archived
     ).length;
   }
 
   async getStats(userId: string, brainId: string): Promise<NotificationStats> {
     const userNotifs = [...this.notifications.values()].filter(
-      (n) => n.user_id === userId && n.brain_id === brainId,
+      (n) => n.user_id === userId && n.brain_id === brainId
     );
 
     const unread = userNotifs.filter((n) => n.read_at === null && !n.archived);
@@ -316,8 +318,14 @@ export function validateNotificationRecord(record: NotificationRecord): Notifica
   if (!record.title) errors.push("title is required");
   if (!record.created_at) errors.push("created_at is required");
 
-  if (record.priority === "urgent" && record.type !== "deadline_overdue" && record.type !== "conflict_alert") {
-    warnings.push("Urgent priority is typically reserved for overdue deadlines and conflict alerts");
+  if (
+    record.priority === "urgent" &&
+    record.type !== "deadline_overdue" &&
+    record.type !== "conflict_alert"
+  ) {
+    warnings.push(
+      "Urgent priority is typically reserved for overdue deadlines and conflict alerts"
+    );
   }
 
   if (record.channels.length === 0) {
@@ -339,7 +347,8 @@ export function validateNotificationRecord(record: NotificationRecord): Notifica
 
 export function sortByPriorityAndDate(notifications: NotificationRecord[]): NotificationRecord[] {
   return [...notifications].sort((a, b) => {
-    const priorityDiff = NOTIFICATION_PRIORITY_ORDER[a.priority] - NOTIFICATION_PRIORITY_ORDER[b.priority];
+    const priorityDiff =
+      NOTIFICATION_PRIORITY_ORDER[a.priority] - NOTIFICATION_PRIORITY_ORDER[b.priority];
     if (priorityDiff !== 0) return priorityDiff;
     return b.created_at.localeCompare(a.created_at);
   });
@@ -347,7 +356,7 @@ export function sortByPriorityAndDate(notifications: NotificationRecord[]): Noti
 
 export function filterByType(
   notifications: NotificationRecord[],
-  types: NotificationType[],
+  types: NotificationType[]
 ): NotificationRecord[] {
   return notifications.filter((n) => types.includes(n.type));
 }

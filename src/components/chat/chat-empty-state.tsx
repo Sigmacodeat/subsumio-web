@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, Sparkles, FileText, Scale, Search } from "lucide-react";
+import { Sparkles, Search, FileText, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { DEFAULT_EXAMPLE_QUERIES } from "@/components/chat/chat-types";
@@ -26,7 +26,7 @@ export function ChatEmptyState({
       className={cn("flex flex-col items-center justify-center px-6 py-12 text-center", className)}
     >
       <div className="brand-soft brand-border mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border">
-        <Brain size={28} className="brand-text" />
+        <Sparkles size={28} className="brand-text" />
       </div>
       <h3 className="text-lg font-semibold text-[color:var(--ds-text)]">{t("chat.empty_title")}</h3>
       <p className="mt-1 max-w-md text-sm text-[color:var(--ds-text-muted)]">

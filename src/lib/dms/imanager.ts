@@ -9,6 +9,7 @@ import {
   type DMSSearchResult,
   DMS_BASE,
   dmsAuthHeaders,
+  dmsFetchJson,
   isDmsConfigured,
   importToBrainCommon,
 } from "./index";
@@ -29,8 +30,7 @@ export const iManageConnector: DMSConnector = {
     if (opts?.limit) url.searchParams.set("limit", String(opts.limit));
     if (opts?.folderId) url.searchParams.set("folder_id", opts.folderId);
 
-    const res = await fetch(url.toString(), { headers: dmsAuthHeaders() });
-    const data = (await res.json()) as {
+    const data = await dmsFetchJson<{
       documents?: Array<{
         id: string;
         name: string;
@@ -43,7 +43,7 @@ export const iManageConnector: DMSConnector = {
       }>;
       folders?: Array<{ id: string; name: string; path?: string; document_count?: number }>;
       total_count?: number;
-    };
+    }>(url.toString(), { headers: dmsAuthHeaders() });
 
     return {
       documents: (data.documents ?? []).map((d) => ({
@@ -67,9 +67,7 @@ export const iManageConnector: DMSConnector = {
   },
 
   async getDocument(docId: string): Promise<DMSDocument | null> {
-    const res = await fetch(`${DMS_BASE}/api/v2/documents/${docId}`, { headers: dmsAuthHeaders() });
-    if (!res.ok) return null;
-    const d = (await res.json()) as {
+    let d: {
       id: string;
       name: string;
       document_type?: string;
@@ -79,6 +77,13 @@ export const iManageConnector: DMSConnector = {
       version?: string;
       checkout_status?: string;
     };
+    try {
+      d = await dmsFetchJson(`${DMS_BASE}/api/v2/documents/${docId}`, {
+        headers: dmsAuthHeaders(),
+      });
+    } catch {
+      return null;
+    }
     return {
       id: d.id,
       name: d.name,

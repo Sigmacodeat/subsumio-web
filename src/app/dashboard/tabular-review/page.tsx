@@ -79,7 +79,7 @@ export default function TabularReviewPage() {
     <div className="max-w-full space-y-6 p-6 md:p-8">
       <PageHeader
         title="Massen-Review"
-        description="Eine Frage gegen viele Dokumente — Antworten im Raster, jede Zelle mit Quelle"
+        description="Eine Prüffrage gegen viele Dokumente — Antworten im Raster, jede Zelle mit Quelle"
         breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Massen-Review" }]}
       />
 

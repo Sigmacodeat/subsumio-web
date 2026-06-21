@@ -18,6 +18,8 @@ import { p, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
 import { ICONS, useSiteBrand } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
+import { GuidedCursor } from "./motion-system";
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -25,15 +27,23 @@ const viewport = { once: true, margin: "-60px" } as const;
 
 type GNode = { x: number; y: number; label?: string; r: number; pulse?: boolean };
 
-const NODES: GNode[] = [
-  { x: 240, y: 56, label: "Akte", r: 7, pulse: true },
-  { x: 110, y: 134, label: "Mandant", r: 6 },
-  { x: 372, y: 130, label: "Gegner", r: 6 },
-  { x: 70, y: 250, label: "Frist", r: 5 },
-  { x: 240, y: 210, label: "Schriftsatz", r: 7, pulse: true },
-  { x: 408, y: 248, label: "Urteil", r: 6 },
-  { x: 196, y: 320, label: "Honorar", r: 5 },
-];
+const NODE_LABELS: Record<Lang, string[]> = {
+  de: ["Akte", "Mandant", "Gegner", "Frist", "Schriftsatz", "Urteil", "Honorar"],
+  en: ["Matter", "Client", "Opposing party", "Deadline", "Brief", "Ruling", "Invoice"],
+};
+
+function buildNodes(lang: Lang): GNode[] {
+  const labels = NODE_LABELS[lang];
+  return [
+    { x: 240, y: 56, label: labels[0], r: 7, pulse: true },
+    { x: 110, y: 134, label: labels[1], r: 6 },
+    { x: 372, y: 130, label: labels[2], r: 6 },
+    { x: 70, y: 250, label: labels[3], r: 5 },
+    { x: 240, y: 210, label: labels[4], r: 7, pulse: true },
+    { x: 408, y: 248, label: labels[5], r: 6 },
+    { x: 196, y: 320, label: labels[6], r: 5 },
+  ];
+}
 
 const EDGES: [number, number][] = [
   [0, 1],
@@ -47,7 +57,8 @@ const EDGES: [number, number][] = [
   [4, 5],
 ];
 
-function GraphHero() {
+function GraphHero({ lang }: { lang: Lang }) {
+  const NODES = buildNodes(lang);
   return (
     <div className="relative mx-auto aspect-[460/360] w-full max-w-[460px]">
       <svg viewBox="0 0 460 360" className="h-full w-full" aria-hidden>
@@ -57,8 +68,8 @@ function GraphHero() {
             <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0.7" />
           </radialGradient>
           <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="var(--mk-border-strong)" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0.72" />
+            <stop offset="100%" stopColor="#0f766e" stopOpacity="0.46" />
           </linearGradient>
         </defs>
 
@@ -71,8 +82,8 @@ function GraphHero() {
             x2={NODES[b].x}
             y2={NODES[b].y}
             stroke="url(#edgeGrad)"
-            strokeWidth={1.4}
-            initial={{ pathLength: 0, opacity: 0 }}
+            strokeWidth={1.8}
+            initial={{ pathLength: 0.18, opacity: 0.28 }}
             animate={{ pathLength: 1, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 + i * 0.08, ease: "easeOut" }}
           />
@@ -86,9 +97,9 @@ function GraphHero() {
               cy={n.y}
               r={n.r}
               fill="url(#nodeGlow)"
-              stroke="var(--brand-secondary)"
-              strokeWidth={1}
-              initial={{ scale: 0, opacity: 0 }}
+              stroke="#1d4ed8"
+              strokeWidth={1.4}
+              initial={{ scale: 0.72, opacity: 0.42 }}
               animate={n.pulse ? { scale: [1, 1.18, 1], opacity: 1 } : { scale: 1, opacity: 1 }}
               transition={
                 n.pulse
@@ -110,9 +121,9 @@ function GraphHero() {
                 x={n.x}
                 y={n.y - n.r - 7}
                 textAnchor="middle"
-                className="fill-[#a8a8be]"
+                className="fill-[#334155]"
                 style={{ fontSize: 10, fontFamily: "var(--font-jetbrains), monospace" }}
-                initial={{ opacity: 0 }}
+                initial={{ opacity: 0.35 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.9 + i * 0.07 }}
               >
@@ -161,7 +172,7 @@ function CountUp({ to, decimals = 0 }: { to: number; decimals?: number }) {
 const HOW = {
   de: {
     title: "So funktioniert's — vom Dokument zur belegten Antwort",
-    sub: "Vier Schritte. Kein Tagging, keine Datenpflege — das Brain verdrahtet sich selbst.",
+    sub: "Vier Schritte. Kein Tagging, keine Datenpflege — die Wissensbasis strukturiert sich automatisch.",
     steps: [
       {
         icon: "Database",
@@ -172,7 +183,7 @@ const HOW = {
       {
         icon: "Network",
         title: "Verstehen",
-        desc: "Bei jedem Write extrahiert die Engine typisierte Kanten — Personen, Fristen, Beziehungen — als juristischer Wissensgraph.",
+        desc: "Bei jedem Speichervorgang erkennt die Engine Personen, Fristen und Beziehungen als juristischen Wissensgraph.",
         tag: "Entitäten · Graph · Embeddings",
       },
       {
@@ -283,6 +294,233 @@ function HowItWorks({ lang }: { lang: Lang }) {
   );
 }
 
+function FeatureCommandCenter({ lang }: { lang: Lang }) {
+  const [step, setStep] = useState(0);
+  const reduce = useReducedMotion();
+  const panels =
+    lang === "de"
+      ? [
+          {
+            icon: "FolderOpen",
+            label: "Akte",
+            title: "Bauer ./. Hofer GmbH",
+            sub: "7 Dokumente · 3 offene Punkte · Frist in 6 Tagen",
+            tone: "amber",
+          },
+          {
+            icon: "MessageSquare",
+            label: "Copilot",
+            title: "Was fehlt vor der Replik?",
+            sub: "Antwort mit 4 Fundstellen und einer Lücke vorbereitet",
+            tone: "blue",
+          },
+          {
+            icon: "Shield",
+            label: "Freigabe",
+            title: "Partner-Review erforderlich",
+            sub: "Schriftsatz-Entwurf wartet mit Audit-Trail",
+            tone: "green",
+          },
+        ]
+      : [
+          {
+            icon: "FolderOpen",
+            label: "Matter",
+            title: "Bauer v. Hofer GmbH",
+            sub: "7 documents · 3 open items · deadline in 6 days",
+            tone: "amber",
+          },
+          {
+            icon: "MessageSquare",
+            label: "Copilot",
+            title: "What is missing before reply?",
+            sub: "Answer prepared with 4 sources and one gap",
+            tone: "blue",
+          },
+          {
+            icon: "Shield",
+            label: "Review",
+            title: "Partner approval required",
+            sub: "Draft waiting with full audit trail",
+            tone: "green",
+          },
+        ];
+
+  useEffect(() => {
+    if (reduce) return;
+    const id = setInterval(() => setStep((s) => (s + 1) % panels.length), 2400);
+    return () => clearInterval(id);
+  }, [panels.length, reduce]);
+
+  const toneClass: Record<string, string> = {
+    amber: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+    blue: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+    green: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+  };
+  const cursorTargets = [
+    {
+      x: "22%",
+      y: "31%",
+      label: lang === "de" ? "Akte" : "Matter",
+    },
+    {
+      x: "24%",
+      y: "48%",
+      label: lang === "de" ? "Copilot" : "Copilot",
+    },
+    {
+      x: "24%",
+      y: "64%",
+      label: lang === "de" ? "Freigabe" : "Review",
+    },
+  ];
+
+  return (
+    <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+      <div className="grid items-center gap-9 lg:grid-cols-[0.85fr_1.15fr]">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={{ duration: 0.4 }}
+        >
+          <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
+            {lang === "de" ? "Wie im Dashboard" : "Dashboard-native"}
+          </p>
+          <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
+            {lang === "de"
+              ? "Features laufen als Kanzlei-Workflow."
+              : "Features run as a legal workflow."}
+          </h2>
+          <p className="max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+            {lang === "de"
+              ? "Akte, Copilot, Frist, Quelle und Freigabe greifen ineinander. Deshalb beschreibt Subsumio jede Funktion im Kontext der Oberfläche, in der Anwälte sie wirklich benutzen."
+              : "Matter, copilot, deadline, source and approval work together. That is why Subsumio describes every capability in the dashboard context lawyers actually use."}
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={viewport}
+          transition={{ duration: 0.45 }}
+          className="relative overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/15 [background:var(--mk-bg)]"
+        >
+          <GuidedCursor {...cursorTargets[step]} className="hidden md:flex" />
+          <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
+            <div>
+              <p className="text-xs font-semibold [color:var(--mk-text)]">
+                {lang === "de" ? "Command Center" : "Command center"}
+              </p>
+              <p className="text-xs [color:var(--mk-text-subtle)]">
+                {lang === "de" ? "Live-Aktenkontext" : "Live matter context"}
+              </p>
+            </div>
+            <span className="brand-text brand-soft rounded-full px-2 py-1 text-xs font-medium">
+              {lang === "de" ? "prüfbar" : "verifiable"}
+            </span>
+          </div>
+          <div className="grid gap-4 p-4 md:grid-cols-[1fr_1.15fr]">
+            <div className="space-y-2">
+              {panels.map((panel, i) => {
+                const Icon = ICONS[panel.icon];
+                const active = i === step;
+                return (
+                  <motion.button
+                    key={panel.label}
+                    onClick={() => setStep(i)}
+                    animate={
+                      active && !reduce
+                        ? {
+                            scale: [1, 1.025, 1],
+                            borderColor:
+                              "color-mix(in srgb, var(--brand-primary) 46%, transparent)",
+                          }
+                        : { scale: 1 }
+                    }
+                    transition={
+                      active
+                        ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
+                        : { duration: 0.2 }
+                    }
+                    className={`w-full rounded-lg border p-3 text-left transition-all ${
+                      active
+                        ? "brand-border [background:var(--mk-surface)]"
+                        : "[border-color:var(--mk-border)] [background:var(--mk-surface-2)]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${toneClass[panel.tone]}`}
+                      >
+                        {Icon && <Icon size={16} />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-semibold [color:var(--mk-text)]">
+                          {panel.label}
+                        </span>
+                        <span className="block truncate text-xs [color:var(--mk-text-muted)]">
+                          {panel.title}
+                        </span>
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+            <div className="relative overflow-hidden rounded-xl border [border-color:var(--mk-border)] p-4 [background:var(--mk-surface)]">
+              {!reduce && (
+                <motion.div
+                  key={`focus-${step}`}
+                  aria-hidden
+                  className="pointer-events-none absolute inset-2 rounded-lg border border-[var(--brand-secondary)]/35"
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: [0, 0.65, 0], scale: [0.94, 1.02, 1.06] }}
+                  transition={{ duration: 1.8, ease: "easeOut" }}
+                />
+              )}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <p className="brand-text mb-2 text-xs font-semibold">{panels[step].label}</p>
+                  <h3 className="mb-2 text-lg font-bold [color:var(--mk-text)]">
+                    {panels[step].title}
+                  </h3>
+                  <p className="mb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {panels[step].sub}
+                  </p>
+                  <div className="space-y-2">
+                    {(lang === "de"
+                      ? ["Quelle geprüft", "Berechtigung aktiv", "Nächster Schritt vorbereitet"]
+                      : ["Source verified", "Permission active", "Next step prepared"]
+                    ).map((line, i) => (
+                      <motion.div
+                        key={line}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 [background:var(--mk-surface-2)]"
+                      >
+                        <CheckCircle2 size={14} className="brand-text" />
+                        <span className="text-xs [color:var(--mk-text-muted)]">{line}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 export default function FeaturesPage({ lang }: { lang: Lang }) {
   const t = FEATURES_PAGE[lang];
   const brand = useSiteBrand();
@@ -325,8 +563,9 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
               {t.badge}
             </div>
-            <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+            <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
               {t.h1a}
+              <span className="sr-only"> </span>
               <br />
               <span className="gradient-text glow-text">{t.h1b}</span>
             </h1>
@@ -350,11 +589,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
           >
             <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
             <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
-              <GraphHero />
+              <GraphHero lang={lang} />
               <p className="mt-2 text-center font-mono text-xs [color:var(--mk-text-subtle)]">
                 {lang === "en"
                   ? "typed edges, extracted on every write"
-                  : "typisierte Kanten, bei jedem Write extrahiert"}
+                  : "typisierte Kanten, bei jedem Speichern erkannt"}
               </p>
             </div>
           </motion.div>
@@ -386,6 +625,8 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
 
       {/* How it works — sequential pipeline */}
       <HowItWorks lang={lang} />
+
+      <FeatureCommandCenter lang={lang} />
 
       {/* On the Subsumio brand: the comprehensive law-firm feature set
             (WhatsApp copilot spotlight + the full capability bento). */}
@@ -547,8 +788,8 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </h2>
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
               {lang === "en"
-                ? "Self-hosting, fuzz-tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
-                : "Self-Hosting, fuzz-getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Security- und Datenschutz-Story hat eine eigene Seite."}
+                ? "Self-hosting, tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
+                : "On-Premise-Betrieb, getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Sicherheits- und Datenschutzdarstellung hat eine eigene Seite."}
             </p>
             <Link href={p(lang, "/security")}>
               <Button size="lg" variant="secondary">
@@ -596,6 +837,22 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               </motion.button>
             );
           })}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+        <div className="mx-auto max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.4 }}
+            className="mb-10 text-center"
+          >
+            <h2 className="text-2xl font-black [color:var(--mk-text)] md:text-3xl">{t.faqTitle}</h2>
+          </motion.div>
+          <AnimatedFaqList items={t.faq} tone="light" />
         </div>
       </section>
 

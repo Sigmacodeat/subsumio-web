@@ -56,26 +56,26 @@ export default function RefConsentBanner() {
     <div
       role="dialog"
       aria-live="polite"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:max-w-md z-[100] p-5 rounded-2xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] shadow-2xl shadow-black/60"
+      className="fixed right-4 bottom-4 left-4 z-[100] rounded-2xl border [border-color:var(--mk-border)] p-5 shadow-2xl shadow-black/60 [background:var(--mk-surface)] sm:left-auto sm:max-w-md"
     >
-      <p className="text-sm font-semibold [color:var(--mk-text)] mb-1.5">
+      <p className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
         {isGerman ? "Empfehlungslink erkannt" : "Referral link detected"}
       </p>
-      <p className="text-xs [color:var(--mk-text-muted)] leading-relaxed mb-4">
+      <p className="mb-4 text-xs leading-relaxed [color:var(--mk-text-muted)]">
         {isGerman
-          ? "Du bist über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie speichern, damit dein Werber seine Provision bekommt und du deinen Gratismonat? Sonst passiert nichts — die Seite funktioniert auch ohne."
+          ? "Sie sind über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie speichern, damit Ihr Werber seine Provision bekommt und Sie Ihren Gratismonat? Sonst passiert nichts — die Seite funktioniert auch ohne."
           : "You arrived via a referral. May we store the referral code as a cookie for 90 days so your referrer gets their commission and you get your free month? Nothing else happens — the site works fine without it."}
       </p>
       <div className="flex gap-2">
         <button
           onClick={accept}
-          className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] text-white text-xs font-semibold transition-colors"
+          className="rounded-lg bg-[var(--brand-primary)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-primary-hover)]"
         >
           {isGerman ? "Einverstanden" : "Accept"}
         </button>
         <button
           onClick={decline}
-          className="px-4 py-2 rounded-lg border [border-color:var(--mk-border)] hover:[border-color:var(--mk-border-strong)] [color:var(--mk-text-muted)] text-xs font-medium transition-colors"
+          className="rounded-lg border [border-color:var(--mk-border)] px-4 py-2 text-xs font-medium [color:var(--mk-text-muted)] transition-colors hover:[border-color:var(--mk-border-strong)]"
         >
           {isGerman ? "Ablehnen" : "Decline"}
         </button>

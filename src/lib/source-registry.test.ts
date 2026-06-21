@@ -152,13 +152,14 @@ describe("computeCorpusDiff", () => {
 // ── buildJudgementApiEntries ──────────────────────────────────────────
 
 describe("buildJudgementApiEntries", () => {
-  it("returns 3 API entries (AT, DE, CH)", () => {
+  it("returns 4 API entries (AT, DE, CH, EU)", () => {
     const entries = buildJudgementApiEntries();
-    expect(entries).toHaveLength(3);
+    expect(entries).toHaveLength(4);
     const ids = entries.map((e) => e.id);
     expect(ids).toContain("ris-ogd-at");
     expect(ids).toContain("openlegaldata-de");
     expect(ids).toContain("opencaselaw-ch");
+    expect(ids).toContain("eur-lex-eu");
   });
 
   it("returns 'unknown' status when no sync status provided", () => {
@@ -249,7 +250,9 @@ describe("buildSourceRegistry", () => {
     const registry = await buildSourceRegistry();
     expect(registry.sources.length).toBeGreaterThan(0);
     expect(registry.total).toBe(registry.sources.length);
-    expect(registry.fresh + registry.stale + registry.error + registry.unknown).toBeLessThanOrEqual(registry.total);
+    expect(registry.fresh + registry.stale + registry.error + registry.unknown).toBeLessThanOrEqual(
+      registry.total
+    );
     expect(registry.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 

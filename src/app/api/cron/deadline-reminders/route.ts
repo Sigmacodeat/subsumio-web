@@ -114,15 +114,20 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
 
       if (due.length === 0) continue;
 
-      const subject = `Fristen-Erinnerung — Akte ${String(fm.case_number ?? page.slug)}`;
+      const esc = (s: unknown) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!
+        );
+      const subject = `Fristen-Erinnerung — Akte ${esc(fm.case_number ?? page.slug)}`;
       const stageLabel = (stage: number) =>
         stage === 0 ? "HEUTE fällig" : stage === 1 ? "morgen fällig" : `in ${stage} Tagen fällig`;
-      const html = `<p>Sehr geehrte/r ${settings.anwaltName || "Anwalt"},</p>
+      const html = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
-${due.map(({ d, dd, stage }) => `<li><strong>${String(d.title ?? "Frist")}</strong> — ${dd} (${stageLabel(stage)})</li>`).join("\n")}
+${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong> — ${esc(dd)} (${stageLabel(stage)})</li>`).join("\n")}
 </ul>
-<p>Akte: ${String(fm.case_number ?? page.slug)} — ${String(fm.title ?? page.title ?? "")}</p>
+<p>Akte: ${esc(fm.case_number ?? page.slug)} — ${esc(fm.title ?? page.title ?? "")}</p>
 <p>Subsumio Kanzlei-OS</p>`;
 
       try {
