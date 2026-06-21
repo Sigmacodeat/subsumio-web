@@ -25,14 +25,14 @@ export const GET = createHandler(
       return apiError("dms_not_configured", "DMS nicht konfiguriert", 503);
     }
 
-    const limit = query.limit ? parseInt(query.limit, 10) : 20;
+    const limit = typeof query.limit === "string" ? parseInt(query.limit, 10) : (query.limit ?? 20);
     try {
       const results = await connector.search(query.q, { limit, folderId: query.folderId });
       return Response.json(results);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[dms search] error:", msg);
-      return apiError("search_failed", msg, 500);
+      return apiError("search_failed", "Suche fehlgeschlagen", 500);
     }
   }
 );
