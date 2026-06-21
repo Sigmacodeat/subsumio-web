@@ -12,7 +12,8 @@ import {
   Trash2,
   Pencil,
   Save,
-  Sparkles,
+  FileSearch,
+  PenTool,
   Table2,
   Download,
   AlertTriangle,
@@ -501,7 +502,7 @@ export default function ContractsPage() {
               {reviewLoading ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
-                <Sparkles size={14} />
+                <FileSearch size={14} />
               )}
               {reviewLoading ? "Wird analysiert…" : "Massen-Review starten"}
             </Button>
@@ -826,12 +827,12 @@ export default function ContractsPage() {
                       onClick={() => analyzeContract(contract)}
                       disabled={isAnalyzing}
                       className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                      title="KI-Analyse"
+                      title="Analyse"
                     >
                       {isAnalyzing ? (
                         <Loader2 size={14} className="animate-spin" />
                       ) : (
-                        <Sparkles size={14} />
+                        <PenTool size={14} />
                       )}
                     </button>
                     <button

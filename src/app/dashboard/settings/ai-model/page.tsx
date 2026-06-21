@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Cpu, Check, Zap, DollarSign, Gauge, Shield, Loader2, Sparkles, Globe } from "lucide-react";
+import { Cpu, Check, Zap, DollarSign, Gauge, Shield, Loader2, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import {
@@ -113,7 +113,7 @@ export default function AIModelSettingsPage() {
                   : "border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
               )}
             >
-              <Sparkles
+              <Cpu
                 size={20}
                 className={activeId === "auto" ? "text-white" : "text-[color:var(--ds-text-muted)]"}
               />
@@ -131,7 +131,7 @@ export default function AIModelSettingsPage() {
               </div>
               <p className="mt-1 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
                 Die Subsumio Engine wählt automatisch das optimale Modell basierend auf
-                Query-Komplexität und Brain-Größe.
+                Query-Komplexität und Größe der Wissensbasis.
               </p>
             </div>
           </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Sparkles,
   Loader2,
   AlertTriangle,
   CheckCircle2,
@@ -16,6 +15,7 @@ import {
   Briefcase,
   Lightbulb,
   Gavel,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -710,7 +710,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                   href={`/dashboard/drafting`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
                 >
-                  <Sparkles size={12} />
+                  <Pencil size={12} />
                   Im Drafting-Editor öffnen
                 </Link>
               </div>

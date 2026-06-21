@@ -7,7 +7,6 @@ import {
   Landmark,
   Save,
   Trash2,
-  Sparkles,
   Scale,
   Clock,
   ChevronRight,
@@ -237,7 +236,7 @@ export default function ResearchPage() {
             disabled={loading || !query.trim()}
             className="brand-bg brand-bg gap-2 text-white"
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
             {loading ? "Recherchiert…" : "Recherchieren"}
           </Button>
           <Button
@@ -305,7 +304,7 @@ export default function ResearchPage() {
           }`}
         >
           <span className="flex items-center gap-1.5">
-            <Sparkles size={14} /> Neue Recherche
+            <Search size={14} /> Neue Recherche
           </span>
         </button>
         <button
