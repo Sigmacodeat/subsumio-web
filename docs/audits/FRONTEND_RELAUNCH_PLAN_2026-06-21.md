@@ -64,6 +64,8 @@ Umgesetzt:
 - Kompakte KPI-Leiste statt grosser generischer Statistik-Karten.
 - Quick Actions als schlanke Aktionsleiste statt Marketing-Kacheln.
 - Aktive Route oeffnet automatisch den fachlich passenden Workspace.
+- Manuelles Auf-/Zuklappen des offenen Workspace-Bereichs, ohne dass mehrere Bereiche gleichzeitig offen bleiben.
+- Kanzlei-spezifische Markenpalette geschaerft: Navy/Ink als Grundton, Teal als Subsumio-Wiedererkennung, Gold nur fuer Prioritaet.
 
 ### Phase 2: Operative Tabellen statt Card-Sammlung
 
@@ -75,6 +77,7 @@ Umsetzen:
 - "Fristen" als echte Deadline-Liste mit Risiko, Datum und Status. Erste Queue-Version umgesetzt.
 - "Aktive Akten" als kompakte Matter-Liste mit Rechtsgebiet und Status. Erste Queue-Version umgesetzt.
 - "Eingang" als Triage-Inbox mit Kanal und Datum. Erste Queue-Version umgesetzt.
+- "Sofortaktionen" als priorisierte Aktionsleiste umgesetzt: Neue Akte, Frist, Eingang, Drafting, Upload, KI.
 - Naechster Ausbau: Verantwortlichkeit, SLA, Aktenzeichen, Gegner und Review-Status aus einem Dashboard-Aggregat statt aus generischen Pages ableiten.
 
 ### Phase 3: Role-Based Cockpits

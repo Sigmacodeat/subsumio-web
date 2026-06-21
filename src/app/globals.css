@@ -291,13 +291,13 @@
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
   --brand-primary: #1e3a5f;
-  --brand-primary-hover: #2a4a7f;
-  --brand-secondary: #475569;
+  --brand-primary-hover: #2f4f78;
+  --brand-secondary: #0f766e;
   --brand-tertiary: #1e3a5f;
-  --brand-glow: rgba(30, 58, 95, 0.12);
-  --brand-gradient-from: #1e3a5f;
-  --brand-gradient-via: #2a4a7f;
-  --brand-gradient-to: #3b5f8f;
+  --brand-glow: rgba(15, 118, 110, 0.12);
+  --brand-gradient-from: #0f766e;
+  --brand-gradient-via: #1e3a5f;
+  --brand-gradient-to: #111827;
   --brand-text: var(--brand-primary);
   --accent-gold: #a67c00;
   --accent-gold-soft: rgba(166, 124, 0, 0.06);
@@ -322,25 +322,25 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: #0a0e17;
-  --ds-surface: #111827;
-  --ds-surface-2: #1a2332;
-  --ds-hover: #1e293b;
-  --ds-border: #1e293b;
-  --ds-border-strong: #334155;
-  --ds-text: #e2e8f0;
-  --ds-text-muted: #94a3b8; /* 6.1:1 on #111827 — AA       */
-  --ds-text-subtle: #64748b; /* 4.6:1 — AA                  */
+  --ds-bg: #080b10;
+  --ds-surface: #101722;
+  --ds-surface-2: #172131;
+  --ds-hover: #1c293a;
+  --ds-border: #223047;
+  --ds-border-strong: #34445f;
+  --ds-text: #edf2f7;
+  --ds-text-muted: #a4b1c3; /* AA on #101722 */
+  --ds-text-subtle: #7f8da3; /* AA on #101722 */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
-  --brand-primary: #3b82f6;
-  --brand-primary-hover: #60a5fa;
-  --brand-secondary: #94a3b8;
-  --brand-tertiary: #3b82f6;
-  --brand-glow: rgba(59, 130, 246, 0.12);
-  --brand-gradient-from: #1e3a5f;
-  --brand-gradient-via: #2a4a7f;
-  --brand-gradient-to: #3b5f8f;
+  --brand-primary: #2f4f78;
+  --brand-primary-hover: #3f6594;
+  --brand-secondary: #5eead4;
+  --brand-tertiary: #d4a843;
+  --brand-glow: rgba(94, 234, 212, 0.12);
+  --brand-gradient-from: #5eead4;
+  --brand-gradient-via: #2f4f78;
+  --brand-gradient-to: #080b10;
   --brand-text: var(--brand-secondary);
   --accent-gold: #d4a843;
   --accent-gold-soft: rgba(212, 168, 67, 0.08);

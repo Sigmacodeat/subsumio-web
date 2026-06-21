@@ -416,30 +416,75 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
 function QuickActions() {
   const { t } = useLang();
   const actions = [
-    { href: "/dashboard/cases/new", icon: Briefcase, label: t("cockpit.action_case") },
-    { href: "/dashboard/deadlines", icon: CalendarClock, label: t("cockpit.action_deadline") },
-    { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake") },
+    {
+      href: "/dashboard/cases/new",
+      icon: Briefcase,
+      label: t("cockpit.action_case"),
+      tone: "primary",
+    },
+    {
+      href: "/dashboard/deadlines",
+      icon: CalendarClock,
+      label: t("cockpit.action_deadline"),
+      tone: "urgent",
+    },
+    { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake"), tone: "urgent" },
     { href: "/dashboard/drafting", icon: PenTool, label: t("cockpit.action_draft") },
     { href: "/dashboard/upload", icon: Upload, label: t("cockpit.action_upload") },
     { href: "/dashboard/query", icon: MessageSquare, label: t("cockpit.action_ai") },
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2">
-      {actions.map((action) => {
-        const Icon = action.icon;
-        return (
-          <Link
-            key={action.href}
-            href={action.href}
-            className="group inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-          >
-            <Icon size={15} className="group-hover:brand-text shrink-0" />
-            <span>{action.label}</span>
-          </Link>
-        );
-      })}
-    </div>
+    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-2.5">
+        <div>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            {t("cockpit.quick_title")}
+          </h2>
+          <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+            {t("cockpit.quick_desc")}
+          </p>
+        </div>
+        <Link
+          href="/dashboard/workflows"
+          className="brand-text inline-flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
+        >
+          {t("cockpit.plan")}
+          <ArrowRight size={13} />
+        </Link>
+      </div>
+      <div className="grid gap-px bg-[color:var(--ds-border)] sm:grid-cols-2 xl:grid-cols-6">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link
+              key={action.href}
+              href={action.href}
+              className={`group flex h-12 items-center gap-2 bg-[color:var(--ds-surface)] px-3 text-sm font-medium transition-colors hover:bg-[color:var(--ds-hover)] ${
+                action.tone === "primary"
+                  ? "text-[color:var(--ds-text)]"
+                  : action.tone === "urgent"
+                    ? "text-[color:var(--accent-gold)]"
+                    : "text-[color:var(--ds-text-muted)]"
+              }`}
+            >
+              <span
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${
+                  action.tone === "primary"
+                    ? "brand-border brand-soft"
+                    : action.tone === "urgent"
+                      ? "border-[color:var(--accent-gold-border)] bg-[color:var(--accent-gold-soft)]"
+                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
+                }`}
+              >
+                <Icon size={14} className="shrink-0" />
+              </span>
+              <span className="min-w-0 truncate">{action.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

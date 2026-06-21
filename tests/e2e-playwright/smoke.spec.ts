@@ -222,6 +222,15 @@ test.describe("Smoke: Dashboard Pages Render", () => {
       nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i })
     ).toHaveAttribute("aria-expanded", "true");
 
+    await nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i }).click();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(0);
+
+    await nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i }).click();
+    await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
+    await expect(
+      nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i })
+    ).toHaveAttribute("aria-expanded", "true");
+
     await page.goto("/dashboard/deadlines", { waitUntil: "domcontentloaded" });
     await expect(
       nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i })

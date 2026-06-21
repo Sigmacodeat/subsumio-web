@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, forwardRef } from "react";
+import { useState, useMemo, useEffect, useRef, forwardRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -325,7 +325,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const [openSection, setOpenSection] = useState<DashboardKey>("nav.section.cockpit");
+  const [openSection, setOpenSection] = useState<DashboardKey | null>("nav.section.cockpit");
+  const previousPathnameRef = useRef<string | null>(null);
   const { t } = useLang();
 
   const filteredSections = useMemo(() => {
@@ -355,8 +356,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   }, [filteredSections, filteredBottomItems]);
 
   useEffect(() => {
+    const pathChanged = previousPathnameRef.current !== pathname;
+    previousPathnameRef.current = pathname;
     const activeSection = findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]);
-    if (activeSection) {
+    if (activeSection && pathChanged) {
       setOpenSection(activeSection);
       try {
         localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, activeSection);
@@ -392,9 +395,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   };
 
   const toggleSection = (titleKey: DashboardKey) => {
-    setOpenSection(titleKey);
+    const nextSection = openSection === titleKey ? null : titleKey;
+    setOpenSection(nextSection);
     try {
-      localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, titleKey);
+      if (nextSection) {
+        localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, nextSection);
+      } else {
+        localStorage.removeItem(SIDEBAR_OPEN_SECTION_KEY);
+      }
     } catch {}
   };
 
@@ -546,10 +554,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   onClick={() => setMobileOpen(false)}
                   title={collapsed ? t(item.labelKey) : undefined}
                   className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                    "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                     collapsed && "justify-center px-0",
                     active
-                      ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                      ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                       : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                   )}
                 >
@@ -581,9 +589,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       onClick={() => setMobileOpen(false)}
                       title={t(item.labelKey)}
                       className={cn(
-                        "flex items-center justify-center rounded-lg py-2.5 text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                         active
-                          ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                          ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                       )}
                     >
@@ -605,32 +613,45 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   <div
                     key={section.titleKey}
                     className={cn(
-                      "rounded-xl border transition-colors duration-150",
+                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-out",
                       section.titleKey === "nav.section.admin"
                         ? "border-[color:var(--ds-border)] bg-transparent"
                         : "border-transparent",
-                      isOpen || sectionActive
-                        ? "bg-[color:var(--ds-surface-2)]"
-                        : "hover:bg-[color:var(--ds-hover)]"
+                      isOpen
+                        ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm"
+                        : sectionActive
+                          ? "brand-border bg-[color:var(--ds-surface)] shadow-[inset_2px_0_0_var(--brand-primary)]"
+                          : "hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => toggleSection(section.titleKey)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                      className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                     >
                       <SectionIcon
                         size={16}
                         className={cn(
-                          "shrink-0",
-                          sectionActive ? "brand-text" : "text-[color:var(--ds-text-muted)]"
+                          "shrink-0 transition-colors",
+                          sectionActive || isOpen
+                            ? "brand-text"
+                            : "text-[color:var(--ds-text-muted)]"
                         )}
                       />
-                      <span className="min-w-0 flex-1 truncate">{t(section.titleKey)}</span>
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 truncate",
+                          sectionActive || isOpen
+                            ? "text-[color:var(--ds-text)]"
+                            : "text-[color:var(--ds-text-muted)]"
+                        )}
+                      >
+                        {t(section.titleKey)}
+                      </span>
                       {sectionActive && (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-primary)]" />
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--accent-gold)]" />
                       )}
                       <ChevronDown
                         size={14}
@@ -644,7 +665,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       id={panelId}
                       className={cn(
                         "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-                        isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                        isOpen
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "pointer-events-none grid-rows-[0fr] opacity-0"
                       )}
                     >
                       <div className="overflow-hidden">
@@ -677,9 +700,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 aria-current={active ? "page" : undefined}
                                 onClick={() => setMobileOpen(false)}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-all duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                                   active
-                                    ? "brand-soft brand-text border-l-2 border-[var(--brand-primary)]"
+                                    ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                                 )}
                               >

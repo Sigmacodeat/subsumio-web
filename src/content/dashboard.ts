@@ -274,6 +274,11 @@ export const D = {
   "cockpit.action_draft": { de: "Schriftsatz", en: "Draft" },
   "cockpit.action_upload": { de: "Dokument hochladen", en: "Upload Document" },
   "cockpit.action_ai": { de: "KI fragen", en: "Ask AI" },
+  "cockpit.quick_title": { de: "Sofortaktionen", en: "Quick Actions" },
+  "cockpit.quick_desc": {
+    de: "Die häufigsten Kanzlei-Schritte ohne Umweg.",
+    en: "The most common firm actions without detours.",
+  },
   "cockpit.today_title": { de: "Heute zu steuern", en: "Today to Manage" },
   "cockpit.deadlines_title": { de: "Fristen & Termine", en: "Deadlines & Events" },
   "cockpit.inbox_title": { de: "Eingang", en: "Inbox" },
