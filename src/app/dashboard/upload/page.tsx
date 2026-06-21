@@ -85,8 +85,7 @@ export default function UploadPage() {
         file: f,
         status: "error" as const,
         progress: 0,
-        error:
-          "Offline — Datei-Upload erfordert Internetverbindung. Datei wurde nicht gespeichert.",
+        error: t("upload.error_offline"),
       }));
       setFiles((prev) => [...prev, ...offlineFiles]);
       return;
@@ -207,7 +206,7 @@ export default function UploadPage() {
           )
         );
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Upload fehlgeschlagen";
+        const msg = e instanceof Error ? e.message : t("upload.err_failed");
         setFiles((prev) =>
           prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "error", error: msg } : f))
         );
@@ -221,9 +220,12 @@ export default function UploadPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Dokument hochladen"
-        description="Markdown, PDF oder Text — Subsumio chunked, embeddet und indiziert automatisch."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Upload" }]}
+        title={t("upload.title")}
+        description={t("upload.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("upload.breadcrumb") },
+        ]}
       />
 
       {/* Options */}
@@ -261,7 +263,7 @@ export default function UploadPage() {
             type="text"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="z.B. fintech, q2-2026, alice"
+            placeholder={t("upload.tags_placeholder")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
         </div>
@@ -278,15 +280,10 @@ export default function UploadPage() {
         <span className="flex items-start gap-2.5 text-sm">
           <Archive size={15} className="brand-text mt-0.5 shrink-0" />
           <span className="leading-relaxed text-[color:var(--ds-text-muted)]">
-            <strong className="text-[color:var(--ds-text)]">
-              Steuerlich relevanter Beleg (GoBD-Bausteine)
-            </strong>{" "}
-            — Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden eine
-            10-Jahre-Aufbewahrungsfrist (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§
-            146 Abs. 4 AO) ins Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.
+            <strong className="text-[color:var(--ds-text)]">{t("upload.gobd_label")}</strong>{" "}
+            {t("upload.gobd_desc")}
             <span className="mt-1 block text-xs text-[color:var(--ds-text-muted)]">
-              Technischer Baustein — volle GoBD-Konformität verlangt zusätzlich
-              Verfahrensdokumentation und Prüfer-Abnahme.
+              {t("upload.gobd_note")}
             </span>
           </span>
         </span>
@@ -296,7 +293,7 @@ export default function UploadPage() {
       {!isOnline() && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-600">
           <CloudUpload size={16} />
-          <span>Offline-Modus aktiv — Datei-Upload erfordert Internetverbindung.</span>
+          <span>{t("upload.offline_msg")}</span>
         </div>
       )}
 
@@ -326,10 +323,10 @@ export default function UploadPage() {
           </div>
           <div>
             <p className="mb-1 text-base font-semibold text-[color:var(--ds-text)]">
-              {isDragActive ? "Loslassen zum Hochladen" : "Dateien hierher ziehen"}
+              {isDragActive ? t("upload.drop_release") : t("upload.drop_text")}
             </p>
             <p className="text-sm text-[color:var(--ds-text-muted)]">
-              oder <span className="brand-text hover:underline">Dateien auswählen</span>
+              oder <span className="brand-text hover:underline">{t("upload.browse_link")}</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -338,7 +335,9 @@ export default function UploadPage() {
                 {ext}
               </Badge>
             ))}
-            <span className="text-xs text-[color:var(--ds-text-muted)]">· max 50 MB</span>
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              · {t("upload.max_size")}
+            </span>
           </div>
         </div>
       </div>
@@ -353,12 +352,9 @@ export default function UploadPage() {
             className="gap-2"
           >
             <FolderOpen size={15} />
-            {scanning ? "Ordner wird gelesen…" : "Ganzen Ordner einlesen"}
+            {scanning ? t("upload.folder_scanning") : t("upload.folder_scan")}
           </Button>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien (auch in
-            Unterordnern) ins Brain ein — nichts wird hochgeladen, bis du auf „Upload“ klickst.
-          </p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">{t("upload.folder_desc")}</p>
         </div>
       )}
 
@@ -366,13 +362,11 @@ export default function UploadPage() {
       <div className="flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
         <Info size={15} className="mt-0.5 shrink-0 text-blue-600" />
         <div className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-          <strong className="text-[color:var(--ds-text)]">Wie funktioniert es?</strong> Subsumio
-          chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph.
-          Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du
-          das Dokument über die Query-Seite abfragen.
+          <strong className="text-[color:var(--ds-text)]">{t("upload.how_title")}</strong>{" "}
+          {t("upload.how_desc")}
           <br />
-          <strong className="mt-1 block text-blue-600">Hinweis:</strong> Die Subsumio Engine muss
-          laufen ({`subsumio serve`}).
+          <strong className="mt-1 block text-blue-600">{t("upload.hint_label")}</strong>{" "}
+          {t("upload.hint_desc")}
         </div>
       </div>
 
@@ -381,18 +375,23 @@ export default function UploadPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {files.length} Datei{files.length !== 1 ? "en" : ""}
-              {doneCount > 0 && <span className="ml-2 text-emerald-600">· {doneCount} fertig</span>}
+              {files.length}{" "}
+              {files.length !== 1 ? t("upload.files_count_plural") : t("upload.files_count")}
+              {doneCount > 0 && (
+                <span className="ml-2 text-emerald-600">
+                  · {doneCount} {t("upload.done_count")}
+                </span>
+              )}
             </h3>
             <div className="flex items-center gap-2">
               {pendingCount > 0 && (
                 <Button size="sm" variant="glow" onClick={uploadAll}>
                   <Upload size={13} />
-                  {pendingCount} hochladen
+                  {pendingCount} {t("upload.upload_btn")}
                 </Button>
               )}
               <Button size="sm" variant="ghost" onClick={() => setFiles([])}>
-                Alle löschen
+                {t("upload.clear_all")}
               </Button>
             </div>
           </div>
@@ -429,7 +428,7 @@ export default function UploadPage() {
                           variant="default"
                           className="brand-soft brand-text brand-border gap-1 text-xs"
                         >
-                          <Archive size={10} /> GoBD gestempelt
+                          <Archive size={10} /> {t("upload.gobd_stamped")}
                         </Badge>
                       )}
                     </span>
@@ -437,7 +436,7 @@ export default function UploadPage() {
                   {f.status === "error" && <span className="text-xs text-red-600">{f.error}</span>}
                   {f.status === "pending" && (
                     <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      Bereit zum Hochladen
+                      {t("upload.pending")}
                     </span>
                   )}
                 </div>
@@ -468,19 +467,18 @@ export default function UploadPage() {
           <div className="mb-3 flex items-center gap-2">
             <CheckCircle size={16} className="text-emerald-600" />
             <span className="text-sm font-semibold text-emerald-600">
-              {doneCount} Datei{doneCount !== 1 ? "en" : ""} hochgeladen
+              {doneCount}{" "}
+              {doneCount !== 1 ? t("upload.files_count_plural") : t("upload.files_count")}{" "}
+              {t("upload.uploaded")}
             </span>
           </div>
-          <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">
-            Dein Brain wird indexiert. Sobald Subsumio die Embeddings erstellt hat, kannst du die
-            Dokumente abfragen.
-          </p>
+          <p className="mb-4 text-sm text-[color:var(--ds-text-muted)]">{t("upload.indexing")}</p>
           <div className="flex gap-3">
             <Button size="sm" variant="success" onClick={() => router.push("/dashboard/query")}>
-              Brain jetzt fragen
+              {t("upload.ask_brain")}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => router.push("/dashboard/brain")}>
-              Brain erkunden
+              {t("upload.explore_brain")}
             </Button>
           </div>
         </div>

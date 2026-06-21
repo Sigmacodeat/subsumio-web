@@ -25,6 +25,7 @@ import { scoreGrade, type EvalSummary, type EvalResult } from "@/lib/rag-eval";
 import type { ReleaseGateResult, GateCheck } from "@/lib/release-gate";
 import type { ReviewFeedbackSummary } from "@/lib/human-review";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface EvalHistoryResponse {
   history: EvalSummary[];
@@ -33,6 +34,7 @@ interface EvalHistoryResponse {
 }
 
 export default function RagEvalPage() {
+  const { t } = useLang();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EvalSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -125,9 +127,12 @@ export default function RagEvalPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Retrieval-Qualität"
-        description="Benchmark, Freigabeprüfung und menschliche Review für KI-Antworten"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Retrieval-Qualität" }]}
+        title={t("rag_eval.title")}
+        description={t("rag_eval.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("rag_eval.breadcrumb") },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             {history.length > 0 && (
@@ -137,7 +142,7 @@ export default function RagEvalPage() {
                 onClick={() => setShowHistory(!showHistory)}
               >
                 <History size={14} />
-                Historie ({history.length})
+                {t("rag_eval.history")} ({history.length})
               </Button>
             )}
             <Button
@@ -147,7 +152,7 @@ export default function RagEvalPage() {
               disabled={loading}
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-              {loading ? "Laufe…" : "Eval starten"}
+              {loading ? t("rag_eval.running") : t("rag_eval.run_eval")}
             </Button>
           </div>
         }
@@ -173,7 +178,7 @@ export default function RagEvalPage() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Release-Gate
+                {t("rag_eval.release_gate")}
               </span>
               <Badge
                 variant="default"
@@ -188,10 +193,10 @@ export default function RagEvalPage() {
                 )}
               >
                 {gateResult.status === "pass"
-                  ? "Freigegeben"
+                  ? t("rag_eval.gate_pass")
                   : gateResult.status === "warn"
-                    ? "Warnung"
-                    : "Blockiert"}
+                    ? t("rag_eval.gate_warn")
+                    : t("rag_eval.gate_block")}
               </Badge>
             </div>
             <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">{gateResult.summary}</p>
@@ -226,10 +231,11 @@ export default function RagEvalPage() {
                   ) : (
                     <Star size={12} />
                   )}
-                  Aktuellen Run als Baseline setzen
+                  {t("rag_eval.set_baseline")}
                 </Button>
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  Baseline: {new Date(baseline.timestamp).toLocaleString("de-DE")}
+                  {t("rag_eval.baseline_label")}{" "}
+                  {new Date(baseline.timestamp).toLocaleString("de-DE")}
                 </span>
               </div>
             )}
@@ -243,7 +249,7 @@ export default function RagEvalPage() {
           <div className="mb-3 flex items-center gap-2">
             <Users size={14} className="text-[color:var(--ds-text-muted)]" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Human Review Feedback
+              {t("rag_eval.human_review")}
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -251,25 +257,35 @@ export default function RagEvalPage() {
               <div className="text-xl font-bold text-[color:var(--ds-text)]">
                 {reviewSummary.total}
               </div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Reviews gesamt</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("rag_eval.reviews_total")}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-xl font-bold text-emerald-600">{reviewSummary.correct}</div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Korrekt</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("rag_eval.correct")}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-xl font-bold text-red-600">{reviewSummary.incorrect}</div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Falsch</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("rag_eval.incorrect")}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-xl font-bold text-amber-600">{reviewSummary.incomplete}</div>
-              <div className="text-xs text-[color:var(--ds-text-muted)]">Unvollständig</div>
+              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                {t("rag_eval.incomplete")}
+              </div>
             </div>
           </div>
           {reviewSummary.total > 0 && (
             <div className="mt-3">
               <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-[color:var(--ds-text-muted)]">Accuracy Rate</span>
+                <span className="text-[color:var(--ds-text-muted)]">
+                  {t("rag_eval.accuracy_rate")}
+                </span>
                 <span className="text-[color:var(--ds-text)]">
                   {(reviewSummary.accuracy_rate * 100).toFixed(1)}%
                 </span>
@@ -290,7 +306,9 @@ export default function RagEvalPage() {
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="mb-3 flex items-center gap-2">
             <History size={14} className="text-[color:var(--ds-text-muted)]" />
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Eval-Historie</h2>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("rag_eval.eval_history")}
+            </h2>
           </div>
           <div className="space-y-2">
             {history.slice(0, 10).map((run, i) => {
@@ -325,7 +343,7 @@ export default function RagEvalPage() {
                     <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                       P={(run.overallPrecision * 100).toFixed(1)}% · R=
                       {(run.overallRecall * 100).toFixed(1)}% · MRR={run.overallMrr.toFixed(3)} ·{" "}
-                      {run.totalQueries} Queries
+                      {run.totalQueries} {t("rag_eval.queries")}
                     </div>
                   </div>
                   {prevRun && (
@@ -366,7 +384,9 @@ export default function RagEvalPage() {
               <div className={cn("text-2xl font-bold", `text-${grade.color}-400`)}>
                 {grade.label}
               </div>
-              <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">Gesamtbewertung</div>
+              <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                {t("rag_eval.overall_score")}
+              </div>
             </div>
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">
@@ -391,7 +411,7 @@ export default function RagEvalPage() {
           {/* Category Breakdown */}
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-              Nach Kategorie
+              {t("rag_eval.by_category")}
             </h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {Object.entries(result.byCategory).map(([cat, stats]) => (
@@ -428,7 +448,7 @@ export default function RagEvalPage() {
           {/* Per-Query Results */}
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-              Einzelergebnisse
+              {t("rag_eval.per_query")}
             </h2>
             <div className="space-y-2">
               {result.results.map((r: EvalResult) => {
@@ -464,7 +484,7 @@ export default function RagEvalPage() {
                       </div>
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
                         P={(r.precision * 100).toFixed(0)}% · R={(r.recall * 100).toFixed(0)}% ·
-                        MRR={r.mrr.toFixed(2)} · {r.retrievedSlugs.length} Treffer
+                        MRR={r.mrr.toFixed(2)} · {r.retrievedSlugs.length} {t("rag_eval.hits")}
                       </div>
                     </div>
                   </div>
@@ -474,8 +494,9 @@ export default function RagEvalPage() {
           </div>
 
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            Eval-Lauf: {new Date(result.timestamp).toLocaleString("de-DE")} · Fixture v
-            {result.fixtureVersion} · {result.totalQueries} Queries
+            {t("rag_eval.eval_run")} {new Date(result.timestamp).toLocaleString("de-DE")} ·{" "}
+            {t("rag_eval.fixture_v")}
+            {result.fixtureVersion} · {result.totalQueries} {t("rag_eval.queries")}
           </p>
         </>
       )}
@@ -484,9 +505,9 @@ export default function RagEvalPage() {
         <div className="space-y-4 py-20 text-center">
           <Target size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
-            <p className="text-[color:var(--ds-text-muted)]">Noch kein Eval durchgeführt.</p>
+            <p className="text-[color:var(--ds-text-muted)]">{t("rag_eval.no_eval")}</p>
             <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-              Klicke „Eval starten&ldquo;, um die Retrieval-Qualität Ihres Brains zu benchmarken.
+              {t("rag_eval.start_hint")}
             </p>
           </div>
         </div>

@@ -46,6 +46,7 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
+import { usePresence } from "@/lib/use-presence";
 import type { BrainPage } from "@/lib/types";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
@@ -433,6 +434,12 @@ export default function CaseDetailPage() {
     if (meQuery.data?.user?.id) setCurrentUserId(meQuery.data.user.id);
   }, [meQuery.data]);
 
+  // Live presence — who else is viewing this case?
+  const presenceUser = meQuery.data?.user
+    ? { id: meQuery.data.user.id, email: meQuery.data.user.email || "" }
+    : null;
+  const activeUsers = usePresence(slug, presenceUser);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -765,6 +772,24 @@ export default function CaseDetailPage() {
             >
               {statusCfg.label}
             </Badge>
+            {activeUsers.length > 0 && (
+              <div className="mt-1.5 flex items-center justify-end gap-1">
+                {activeUsers.slice(0, 4).map((u) => (
+                  <div
+                    key={u.userId}
+                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)] bg-emerald-500/20 text-[10px] font-medium text-emerald-600"
+                    title={`${u.email} ist gerade hier aktiv`}
+                  >
+                    {u.email.slice(0, 2).toUpperCase()}
+                  </div>
+                ))}
+                {activeUsers.length > 4 && (
+                  <span className="text-[10px] text-[color:var(--ds-text-muted)]">
+                    +{activeUsers.length - 4}
+                  </span>
+                )}
+              </div>
+            )}
             {caseData.estimatedValue && (
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                 Streitwert: {caseData.estimatedValue.min.toLocaleString()}–

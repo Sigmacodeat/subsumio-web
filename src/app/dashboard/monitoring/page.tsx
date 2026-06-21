@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import {
   type RegulatoryMonitor,
   type RegulatoryAlert,
@@ -568,6 +569,7 @@ function AlertItem({ alert, onMarkRead }: { alert: RegulatoryAlert; onMarkRead: 
 // ─── Main Page ─────────────────────────────────────────────────────
 
 export default function MonitoringPage() {
+  const { t } = useLang();
   const [monitors, setMonitors] = useState<RegulatoryMonitor[]>([]);
   const [alerts, setAlerts] = useState<RegulatoryAlert[]>([]);
   const [alertSlugs, setAlertSlugs] = useState<string[]>([]);
@@ -736,9 +738,12 @@ export default function MonitoringPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Regulatory Monitoring"
-        description="Themen und Rechtsgebiete beobachten — neue Urteile, Verordnungen und Änderungen automatisch erfassen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Monitoring" }]}
+        title={t("monitoring.title")}
+        description={t("monitoring.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("monitoring.breadcrumb") },
+        ]}
         actions={
           <Button
             onClick={() => {
@@ -747,7 +752,7 @@ export default function MonitoringPage() {
             }}
             className="brand-bg gap-1.5 text-white"
           >
-            <Plus size={15} /> Neuer Monitor
+            <Plus size={15} /> {t("monitoring.new_monitor")}
           </Button>
         }
       />
@@ -756,15 +761,19 @@ export default function MonitoringPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <p className="text-2xl font-bold text-[color:var(--ds-text)]">{monitors.length}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">{activeMonitors} aktiv</p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            {activeMonitors} {t("monitoring.active")}
+          </p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <p className="text-2xl font-bold text-[color:var(--ds-text)]">{alerts.length}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">Alerts gesamt</p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">
+            {t("monitoring.alerts_total")}
+          </p>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
           <p className="brand-text text-2xl font-bold">{unreadCount}</p>
-          <p className="text-xs text-[color:var(--ds-text-muted)]">Ungelesen</p>
+          <p className="text-xs text-[color:var(--ds-text-muted)]">{t("monitoring.unread")}</p>
         </div>
       </div>
 
@@ -776,21 +785,21 @@ export default function MonitoringPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16 text-sm text-[color:var(--ds-text-muted)]">
-          <Loader2 size={18} className="mr-2 animate-spin" /> Lade Monitoring-Daten…
+          <Loader2 size={18} className="mr-2 animate-spin" /> {t("monitoring.loading")}
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
             <TabsTrigger value="monitors" className="gap-1.5">
-              <Radar size={14} /> Monitore ({monitors.length})
+              <Radar size={14} /> {t("monitoring.tab_monitors")} ({monitors.length})
             </TabsTrigger>
             <TabsTrigger value="alerts" className="gap-1.5">
-              <Bell size={14} /> Alerts (
+              <Bell size={14} /> {t("monitoring.tab_alerts")} (
               {unreadCount > 0 && <span className="brand-text font-bold">{unreadCount}</span>}{" "}
               {alerts.length})
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5">
-              <Settings size={14} /> Einstellungen
+              <Settings size={14} /> {t("monitoring.tab_settings")}
             </TabsTrigger>
           </TabsList>
 
@@ -799,9 +808,9 @@ export default function MonitoringPage() {
             {monitors.length === 0 && legacyKeywords.length === 0 ? (
               <div className="py-16 text-center text-[color:var(--ds-text-muted)]">
                 <Radar size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="mb-2 text-sm">Noch keine Monitore definiert.</p>
+                <p className="mb-2 text-sm">{t("monitoring.empty_title")}</p>
                 <p className="mb-4 text-xs text-[color:var(--ds-text-subtle)]">
-                  Erstelle deinen ersten Monitor, um Themen und Rechtsgebiete zu beobachten.
+                  {t("monitoring.empty_hint")}
                 </p>
                 <Button
                   onClick={() => {
@@ -810,7 +819,7 @@ export default function MonitoringPage() {
                   }}
                   className="brand-bg gap-1.5 text-white"
                 >
-                  <Plus size={15} /> Monitor anlegen
+                  <Plus size={15} /> {t("monitoring.create_monitor")}
                 </Button>
               </div>
             ) : (

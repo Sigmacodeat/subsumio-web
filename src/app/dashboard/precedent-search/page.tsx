@@ -17,8 +17,10 @@ import { api } from "@/lib/api";
 import type { PrecedentSearchResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function PrecedentSearchPage() {
+  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [jurisdiction, setJurisdiction] = useState<"at" | "de" | "ch" | "all">("all");
   const [legalArea, setLegalArea] = useState("");
@@ -41,7 +43,7 @@ export default function PrecedentSearchPage() {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Präzedenzsuche fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("precedent.err_failed"));
     } finally {
       setLoading(false);
     }
@@ -50,9 +52,12 @@ export default function PrecedentSearchPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Präzedenzsuche"
-        description="Durchsucht interne Fallakten mit Stichwort- und Vektorsuche und bewertet Relevanz nach Rechtsgebiet, Datum und Ausgang"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Präzedenzsuche" }]}
+        title={t("precedent.title")}
+        description={t("precedent.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("precedent.breadcrumb") },
+        ]}
       />
 
       {/* Search form */}
@@ -66,7 +71,7 @@ export default function PrecedentSearchPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechtsfrage, Sachverhalt oder Stichwort…"
+              placeholder={t("precedent.search_placeholder")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") void run();
@@ -79,7 +84,7 @@ export default function PrecedentSearchPage() {
             className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
-            Suchen
+            {t("precedent.search_btn")}
           </Button>
         </div>
 
@@ -87,7 +92,7 @@ export default function PrecedentSearchPage() {
           {/* Jurisdiction */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-              Rechtsordnung:
+              {t("precedent.jurisdiction")}
             </label>
             <div className="flex gap-1">
               {(["all", "at", "de", "ch"] as const).map((j) => (
@@ -101,7 +106,7 @@ export default function PrecedentSearchPage() {
                       : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
                   )}
                 >
-                  {j === "all" ? "Alle" : j.toUpperCase()}
+                  {j === "all" ? t("precedent.jurisdiction_all") : j.toUpperCase()}
                 </button>
               ))}
             </div>
@@ -110,12 +115,12 @@ export default function PrecedentSearchPage() {
           {/* Legal area */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-              Rechtsgebiet:
+              {t("precedent.legal_area")}
             </label>
             <Input
               value={legalArea}
               onChange={(e) => setLegalArea(e.target.value)}
-              placeholder="z. B. Mietrecht"
+              placeholder={t("precedent.legal_area_placeholder")}
               className="h-7 w-32 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text)]"
             />
           </div>
@@ -123,7 +128,7 @@ export default function PrecedentSearchPage() {
           {/* Limit */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-              Max. Ergebnisse:
+              {t("precedent.max_results")}
             </label>
             <select
               value={limit}
@@ -152,7 +157,7 @@ export default function PrecedentSearchPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[color:var(--ds-text-muted)]">
-              {result.total} Ergebnisse
+              {result.total} {t("precedent.results_count")}
             </span>
             {result.warnings && result.warnings.length > 0 && (
               <span className="text-xs text-amber-600">{result.warnings.join(", ")}</span>
@@ -163,10 +168,10 @@ export default function PrecedentSearchPage() {
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center">
               <Landmark size={32} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
               <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Keine Präzedenzfälle gefunden.
+                {t("precedent.empty_title")}
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                Es wurden keine passenden Fallakten in der Wissensbasis gefunden.
+                {t("precedent.empty_desc")}
               </p>
             </div>
           ) : (
@@ -215,7 +220,9 @@ export default function PrecedentSearchPage() {
                             : "border-blue-500/20 bg-blue-500/10 text-blue-600"
                         )}
                       >
-                        {r.source === "internal" ? "Intern" : "Extern"}
+                        {r.source === "internal"
+                          ? t("precedent.source_internal")
+                          : t("precedent.source_external")}
                       </Badge>
                     </div>
                   </div>
@@ -227,7 +234,7 @@ export default function PrecedentSearchPage() {
                       href={`/dashboard/cases/${r.caseRef}`}
                       className="brand-text mt-2 inline-flex items-center gap-1 text-xs hover:underline"
                     >
-                      <CheckCircle2 size={12} /> Zur Akte
+                      <CheckCircle2 size={12} /> {t("precedent.to_case")}
                     </a>
                   )}
                 </div>

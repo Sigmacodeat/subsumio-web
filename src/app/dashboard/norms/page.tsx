@@ -162,8 +162,7 @@ function NormsPageInner() {
 
         setNorms(items);
       } catch (e) {
-        if (!cancelled)
-          setLoadError(e instanceof Error ? e.message : "Normen konnten nicht geladen werden.");
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("norms.error_load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -221,9 +220,12 @@ function NormsPageInner() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Normen"
-        description="Gesetze und Rechtsvorschriften durchsuchen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Normen" }]}
+        title={t("norms.title")}
+        description={t("norms.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("norms.breadcrumb") },
+        ]}
       />
 
       {capped && <CappedResultsNotice limit={LAW_PAGES_LIMIT} />}
@@ -238,7 +240,7 @@ function NormsPageInner() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Norm suchen… z.B. § 823 BGB, Art. 5 GG"
+            placeholder={t("norms.search_placeholder")}
             aria-label={t("aria.search_norms")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
@@ -259,7 +261,7 @@ function NormsPageInner() {
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
               }`}
             >
-              {j === "all" ? "Alle" : j === "at" ? "🇦🇹 AT" : j === "de" ? "🇩🇪 DE" : "🇨🇭 CH"}
+              {j === "all" ? t("norms.all") : j === "at" ? "🇦🇹 AT" : j === "de" ? "🇩🇪 DE" : "🇨🇭 CH"}
               {j !== "all" && counts > 0 && (
                 <span className="ml-1.5 rounded bg-[color:var(--ds-border)] px-1 py-0.5 text-xs">
                   {counts}
@@ -305,10 +307,10 @@ function NormsPageInner() {
                     }`}
                   >
                     {selectedNorm.jurisdiction === "at"
-                      ? "🇦🇹 Österreich"
+                      ? t("norms.jurisdiction_at")
                       : selectedNorm.jurisdiction === "ch"
-                        ? "🇨🇭 Schweiz"
-                        : "🇩🇪 Deutschland"}
+                        ? t("norms.jurisdiction_ch")
+                        : t("norms.jurisdiction_de")}
                   </Badge>
                 </div>
               </div>
@@ -320,10 +322,10 @@ function NormsPageInner() {
                 setTimeout(() => setCopied(false), 2000);
               }}
               className="hover:brand-text hover:brand-border flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-              title="Text kopieren"
+              title={t("norms.copy_title")}
             >
               {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-              {copied ? "Kopiert" : "Kopieren"}
+              {copied ? t("norms.copied") : t("norms.copy")}
             </button>
           </div>
           <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
@@ -331,7 +333,7 @@ function NormsPageInner() {
               <div className="flex items-center gap-2 py-4">
                 <Loader2 size={14} className="brand-text animate-spin" />
                 <span className="text-xs text-[color:var(--ds-text-muted)]">
-                  Gesetzestext wird geladen…
+                  {t("norms.loading_detail")}
                 </span>
               </div>
             ) : (
@@ -352,7 +354,8 @@ function NormsPageInner() {
         <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
             <Scale size={12} />{" "}
-            <strong className="text-[color:var(--ds-text)]">{norms.length}</strong> Gesetze
+            <strong className="text-[color:var(--ds-text)]">{norms.length}</strong>{" "}
+            {t("norms.laws_count")}
           </span>
           <span className="flex items-center gap-1">
             <Globe size={12} /> AT: {norms.filter((n) => n.jurisdiction === "at").length}
@@ -378,11 +381,9 @@ function NormsPageInner() {
       ) : filtered.length === 0 ? (
         <div className="space-y-3 py-16 text-center">
           <BookOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">Keine Gesetze gefunden.</p>
+          <p className="text-sm text-[color:var(--ds-text-muted)]">{t("norms.empty")}</p>
           <p className="text-xs text-[color:var(--ds-text-muted)]">
-            {norms.length > 0
-              ? "Passe den Filter oder die Suche an."
-              : "Importiere Gesetze über das CLI."}
+            {norms.length > 0 ? t("norms.empty_filter") : t("norms.empty_import")}
           </p>
         </div>
       ) : (

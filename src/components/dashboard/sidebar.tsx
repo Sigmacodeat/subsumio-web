@@ -107,6 +107,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/contracts", icon: ShieldCheck, labelKey: "nav.contracts" },
       { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
       { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
+      { href: "/dashboard/process-strategy", icon: Scale, labelKey: "nav.process_strategy" },
     ],
   },
   {
@@ -415,7 +416,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "sidebar-shadow z-50 flex shrink-0 flex-col border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform]",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -664,7 +665,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-200",
+                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
                           isOpen && "rotate-180"
                         )}
                       />
@@ -672,7 +673,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       id={panelId}
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                        "grid transition-[grid-template-rows,opacity] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[grid-template-rows]",
                         isOpen
                           ? "grid-rows-[1fr] opacity-100"
                           : "pointer-events-none grid-rows-[0fr] opacity-0"

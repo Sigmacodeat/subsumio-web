@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { caseFrontmatter, type DeadlineEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface ClientCase {
   slug: string;
@@ -29,6 +30,7 @@ interface ClientCase {
 }
 
 export default function ClientPortalPage() {
+  const { t } = useLang();
   // Vorschau-Modus: Diese Seite zeigt dem ANWALT, wie das Mandanten-Portal
   // aussehen wird. Ein echtes Mandanten-Portal braucht eine eigene,
   // pro Mandant authentifizierte Deployment-Oberfläche (Phase 5) —
@@ -69,19 +71,19 @@ export default function ClientPortalPage() {
           return {
             slug: p.slug,
             id: fm.case_number || p.slug,
-            title: p.title || "Unbenannte Akte",
+            title: p.title || t("client_portal.unnamed_case"),
             status: fm.status || "open",
             lastUpdate: p.updated_at || p.created_at,
             nextStep: nextDl
-              ? `${nextDl.title ?? "Frist"} bis ${new Date(nextDl.due_date || nextDl.date || Date.now()).toLocaleDateString("de-DE")}`
-              : "Keine anstehenden Fristen",
+              ? `${nextDl.title ?? t("client_portal.deadline_label")} ${t("client_portal.deadline_until")} ${new Date(nextDl.due_date || nextDl.date || Date.now()).toLocaleDateString("de-DE")}`
+              : t("client_portal.no_deadline"),
             documents: Array.isArray(docs) ? docs.length : 0,
             messages: 0,
           };
         });
       setCases(loaded);
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Akten konnten nicht geladen werden.");
+      setLoadError(e instanceof Error ? e.message : t("client_portal.error_load"));
       setCases([]);
     } finally {
       setLoading(false);
@@ -105,10 +107,10 @@ export default function ClientPortalPage() {
               <Eye size={28} className="brand-text" />
             </div>
             <h1 className="text-xl font-bold text-[color:var(--ds-text)]">
-              Mandanten-Portal — Vorschau
+              {t("client_portal.preview_title")}
             </h1>
             <p className="text-sm text-[color:var(--ds-text-muted)]">
-              So sehen Ihre Mandanten künftig den Stand ihrer Akte.
+              {t("client_portal.preview_desc")}
             </p>
           </div>
 
@@ -120,10 +122,7 @@ export default function ClientPortalPage() {
                 aria-hidden="true"
               />
               <p className="text-xs leading-relaxed text-amber-600">
-                Dies ist eine <strong>Vorschau für die Kanzlei</strong> — sie zeigt alle Akten der
-                explizit freigegebenen Akten. Das echte Mandanten-Portal mit eigenem Login pro
-                Mandant und Akten-Filterung ist ein separates Deployment und noch nicht Teil dieses
-                Dashboards.
+                {t("client_portal.preview_warning")}
               </p>
             </div>
           </div>
@@ -134,7 +133,7 @@ export default function ClientPortalPage() {
             onClick={startPreview}
           >
             <Eye size={16} className="mr-2" aria-hidden="true" />
-            Vorschau öffnen (Anwaltsansicht)
+            {t("client_portal.open_preview")}
           </Button>
         </div>
       </div>
@@ -144,9 +143,12 @@ export default function ClientPortalPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Meine Akten"
-        description="Übersicht über alle laufenden Mandate"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Mandanten-Portal" }]}
+        title={t("client_portal.title")}
+        description={t("client_portal.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("client_portal.breadcrumb") },
+        ]}
         actions={
           <Button
             variant="ghost"
@@ -154,7 +156,7 @@ export default function ClientPortalPage() {
             onClick={() => setPreviewing(false)}
             className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
           >
-            Vorschau beenden
+            {t("client_portal.end_preview")}
           </Button>
         }
       />
@@ -169,14 +171,14 @@ export default function ClientPortalPage() {
       {loading ? (
         <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
           <Loader2 size={24} className="mx-auto mb-3 animate-spin" />
-          Akten werden geladen…
+          {t("client_portal.loading")}
         </div>
       ) : cases.length === 0 ? (
         <div className="space-y-4 py-20 text-center">
           <FileText size={48} className="mx-auto text-[color:var(--ds-border)]" />
-          <p className="text-[color:var(--ds-text-muted)]">Keine Akten gefunden.</p>
+          <p className="text-[color:var(--ds-text-muted)]">{t("client_portal.empty")}</p>
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Akten erscheinen hier, sobald sie in der Akte für die Portal-Vorschau freigegeben sind.
+            {t("client_portal.empty_hint")}
           </p>
         </div>
       ) : (
@@ -202,17 +204,17 @@ export default function ClientPortalPage() {
                   }`}
                 >
                   {c.status === "closed"
-                    ? "Geschlossen"
+                    ? t("client_portal.status_closed")
                     : c.status === "won"
-                      ? "Gewonnen"
-                      : "Offen"}
+                      ? t("client_portal.status_won")
+                      : t("client_portal.status_open")}
                 </Badge>
               </div>
 
               <div className="flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
                 <span className="flex items-center gap-1">
                   <FileText size={10} />
-                  {c.documents} Dokumente
+                  {c.documents} {t("client_portal.documents")}
                 </span>
                 <span className="flex items-center gap-1">
                   <CalendarClock size={10} />
@@ -224,7 +226,9 @@ export default function ClientPortalPage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-amber-600" />
                   <div>
-                    <p className="text-xs font-medium text-amber-600">Nächster Schritt</p>
+                    <p className="text-xs font-medium text-amber-600">
+                      {t("client_portal.next_step")}
+                    </p>
                     <p className="text-xs text-[color:var(--ds-text-muted)]">{c.nextStep}</p>
                   </div>
                 </div>
@@ -237,17 +241,17 @@ export default function ClientPortalPage() {
                     className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                   >
                     <FileText size={12} className="mr-1.5" />
-                    Dokumente
+                    {t("client_portal.documents")}
                   </Button>
                 </Link>
                 <Button
                   variant="secondary"
                   disabled
-                  title="Nachrichten sind erst im echten Mandantenportal verfügbar."
+                  title={t("client_portal.msg_disabled")}
                   className="flex-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)] disabled:opacity-60"
                 >
                   <MessageSquare size={12} className="mr-1.5" />
-                  Nachricht
+                  {t("client_portal.message")}
                 </Button>
               </div>
             </div>

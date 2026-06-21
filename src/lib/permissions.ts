@@ -73,6 +73,10 @@ export type RouteAction =
   | "scim.write" // POST/PUT/PATCH/DELETE /api/scim/*
   | "onboarding.complete" // POST /api/onboarding — all roles
   | "copilot.tool" // POST /api/copilot/tools — all authenticated roles
+  | "push.register" // POST /api/push/register — all authenticated roles
+  | "push.unregister" // DELETE /api/push/register — all authenticated roles
+  | "presence.update" // POST /api/realtime/presence — all authenticated roles
+  | "presence.list" // GET /api/realtime/presence — all authenticated roles
   | "admin.*"; // nur admin
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
@@ -110,6 +114,10 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "scim.write": ["admin"],
   "onboarding.complete": ["admin", "lawyer", "assistant", "client_viewer"],
   "copilot.tool": ["admin", "lawyer", "assistant"],
+  "push.register": ["admin", "lawyer", "assistant", "client_viewer"],
+  "push.unregister": ["admin", "lawyer", "assistant", "client_viewer"],
+  "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
+  "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
   "admin.*": ["admin"],
 };
 
@@ -168,6 +176,10 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "scim.write": "settings.update",
     "onboarding.complete": "settings.update",
     "copilot.tool": "query.submit",
+    "push.register": "settings.update",
+    "push.unregister": "settings.update",
+    "presence.update": "case.view",
+    "presence.list": "case.view",
     "admin.*": "settings.update",
   };
   return map[routeAction] ?? "settings.update";

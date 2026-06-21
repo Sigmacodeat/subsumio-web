@@ -45,16 +45,18 @@ interface VaultDoc {
   content: string;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  legal_case: "Akte",
-  legal_contract: "Vertrag",
-  legal_document: "Dokument",
-  bea_message: "beA-Nachricht",
-  court_decision: "Urteil",
-  invoice: "Rechnung",
-  contact: "Kontakt",
-  evidence: "Beweismittel",
-};
+function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
+  return {
+    legal_case: t("vault.type_legal_case"),
+    legal_contract: t("vault.type_legal_contract"),
+    legal_document: t("vault.type_legal_document"),
+    bea_message: t("vault.type_bea_message"),
+    court_decision: t("vault.type_court_decision"),
+    invoice: t("vault.type_invoice"),
+    contact: t("vault.type_contact"),
+    evidence: t("vault.type_evidence"),
+  };
+}
 
 const TYPE_COLORS: Record<string, string> = {
   legal_case: "brand-soft brand-border brand-text",
@@ -86,6 +88,7 @@ function parseDoc(page: BrainPage): VaultDoc {
 
 export default function VaultPage() {
   const { t } = useLang();
+  const TYPE_LABELS = useTypeLabels(t);
   const confirm = useConfirm();
   const [docs, setDocs] = useState<VaultDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,15 +111,11 @@ export default function VaultPage() {
   const reviewForm = useDashboardForm({
     schema: vaultReviewSchema,
     defaultValues: {
-      questions: [
-        "Welche Fristen werden genannt?",
-        "Welche Parteien sind beteiligt?",
-        "Gibt es Haftungsklauseln?",
-      ],
+      questions: [t("vault.q_deadlines"), t("vault.q_parties"), t("vault.q_liability")],
     },
     onSubmit: async (data) => {
       if (selectedSlugs.size === 0) {
-        throw new Error("Mindestens ein Dokument auswählen.");
+        throw new Error(t("vault.err_min_select"));
       }
       const qs = data.questions.map((q) => q.trim()).filter(Boolean);
       const res = await api.legal.tabularReview({
@@ -125,7 +124,7 @@ export default function VaultPage() {
       });
       setReviewResult(res);
       if (res.rows.length === 0) {
-        throw new Error("Keine Ergebnisse.");
+        throw new Error(t("vault.err_no_results"));
       }
     },
   });
@@ -153,13 +152,9 @@ export default function VaultPage() {
       const cached = await getCache<VaultDoc[]>(OFFLINE_KEYS.vault);
       if (cached) {
         setDocs(cached);
-        setLoadError(
-          "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt."
-        );
+        setLoadError(t("vault.err_cloud_unreachable"));
       } else {
-        setLoadError(
-          err instanceof Error ? err.message : "Dokumente konnten nicht geladen werden."
-        );
+        setLoadError(err instanceof Error ? err.message : t("vault.err_load_failed"));
       }
     } finally {
       setLoading(false);
@@ -232,9 +227,9 @@ export default function VaultPage() {
 
   async function deleteDoc(slug: string) {
     const ok = await confirm({
-      title: "Dokument löschen",
-      message: "Möchten Sie dieses Dokument wirklich löschen?",
-      confirmLabel: "Löschen",
+      title: t("vault.confirm_delete_title"),
+      message: t("vault.confirm_delete_msg"),
+      confirmLabel: t("vault.confirm_delete_btn"),
       variant: "danger",
     });
     if (!ok) return;
@@ -253,7 +248,7 @@ export default function VaultPage() {
         return ns;
       });
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
+      setLoadError(err instanceof Error ? err.message : t("vault.err_delete_failed"));
     }
   }
 
@@ -277,9 +272,12 @@ export default function VaultPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Dokumenten-Vault"
-        description="Zentraler Dokumentenspeicher mit Massenanalyse und strukturierter Prüftabelle"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokumenten-Vault" }]}
+        title={t("vault.title")}
+        description={t("vault.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("vault.breadcrumb") },
+        ]}
         actions={
           selectedSlugs.size > 0 ? (
             <Button
@@ -287,7 +285,7 @@ export default function VaultPage() {
               className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
               onClick={() => setShowReview(!showReview)}
             >
-              <Table2 size={14} /> Bulk-Review ({selectedSlugs.size})
+              <Table2 size={14} /> {t("vault.bulk_review_count")} ({selectedSlugs.size})
             </Button>
           ) : undefined
         }
@@ -302,7 +300,7 @@ export default function VaultPage() {
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Bulk-Analyse über {selectedSlugs.size} ausgewählte Dokumente
+              {t("vault.bulk_analysis")} {selectedSlugs.size} {t("vault.selected_docs")}
             </h3>
             <button
               type="button"
@@ -322,7 +320,7 @@ export default function VaultPage() {
               <div key={field.id} className="flex items-center gap-2">
                 <Input
                   {...reviewForm.form.register(`questions.${i}`)}
-                  placeholder={`Frage ${i + 1}`}
+                  placeholder={`${t("vault.question_placeholder")} ${i + 1}`}
                   className="flex-1 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
                 />
                 <button
@@ -340,7 +338,7 @@ export default function VaultPage() {
                 onClick={() => append("")}
                 className="brand-text text-xs hover:underline"
               >
-                + Frage hinzufügen
+                {t("vault.add_question")}
               </button>
             )}
           </div>
@@ -355,7 +353,7 @@ export default function VaultPage() {
               ) : (
                 <Sparkles size={14} />
               )}
-              {reviewLoading ? "Wird analysiert…" : "Bulk-Review starten"}
+              {reviewLoading ? t("vault.analyzing") : t("vault.start_bulk")}
             </Button>
             {reviewResult && reviewResult.rows.length > 0 && (
               <Button
@@ -378,7 +376,7 @@ export default function VaultPage() {
                   URL.revokeObjectURL(url);
                 }}
               >
-                <Download size={14} /> CSV Export
+                <Download size={14} /> {t("vault.csv_export")}
               </Button>
             )}
           </div>
@@ -388,7 +386,7 @@ export default function VaultPage() {
                 <thead>
                   <tr className="border-b border-[color:var(--ds-border)]">
                     <th className="px-3 py-2 text-left font-medium text-[color:var(--ds-text-muted)]">
-                      Dokument
+                      {t("vault.col_document")}
                     </th>
                     {reviewResult.questions.map((q, i) => (
                       <th
@@ -436,7 +434,7 @@ export default function VaultPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Dokumente durchsuchen…"
+            placeholder={t("vault.search_placeholder")}
             aria-label={t("aria.search_docs")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
@@ -454,7 +452,7 @@ export default function VaultPage() {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           >
-            <option value="">Alle Typen</option>
+            <option value="">{t("vault.all_types")}</option>
             {allTypes.map((t) => (
               <option key={t} value={t}>
                 {TYPE_LABELS[t] || t}
@@ -466,7 +464,7 @@ export default function VaultPage() {
             onChange={(e) => setTagFilter(e.target.value)}
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           >
-            <option value="">Alle Tags</option>
+            <option value="">{t("vault.all_tags")}</option>
             {allTags.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -478,12 +476,14 @@ export default function VaultPage() {
 
       {selectedSlugs.size > 0 && (
         <div className="flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-          <span>{selectedSlugs.size} ausgewählt</span>
+          <span>
+            {selectedSlugs.size} {t("vault.selected_count")}
+          </span>
           <button onClick={selectAll} className="brand-text hover:underline">
-            Alle auswählen
+            {t("vault.select_all")}
           </button>
           <button onClick={deselectAll} className="brand-text hover:underline">
-            Alle abwählen
+            {t("vault.deselect_all")}
           </button>
         </div>
       )}
@@ -497,7 +497,7 @@ export default function VaultPage() {
             onClick={() => void loadDocs()}
             className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
           >
-            <RotateCcw size={13} /> Erneut versuchen
+            <RotateCcw size={13} /> {t("vault.retry")}
           </Button>
         </div>
       )}
@@ -516,12 +516,10 @@ export default function VaultPage() {
             <FileText size={26} className="text-[color:var(--ds-text-subtle)]" />
           </div>
           <h3 className="text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-            Keine Dokumente gefunden
+            {t("vault.empty_title")}
           </h3>
           <p className="mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-            {docs.length === 0
-              ? "Lade Dokumente über den Upload-Bereich hoch."
-              : "Passe deine Suche oder Filter an."}
+            {docs.length === 0 ? t("vault.empty_upload") : t("vault.empty_filter")}
           </p>
         </div>
       ) : (
@@ -550,7 +548,7 @@ export default function VaultPage() {
                   <button
                     onClick={() => deleteDoc(doc.slug)}
                     className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
-                    title="Löschen"
+                    title={t("vault.delete")}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -590,7 +588,7 @@ export default function VaultPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between gap-4 px-1 py-3 text-sm">
               <span className="text-[color:var(--ds-text-muted)]">
-                {startIndex + 1}–{endIndex} von {filtered.length}
+                {startIndex + 1}–{endIndex} {t("vault.pagination_of")} {filtered.length}
               </span>
               <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
             </div>

@@ -394,7 +394,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* Mobile overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
           mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => {
@@ -408,7 +408,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <div
         ref={drawerRef}
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform md:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
@@ -517,7 +517,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <aside
         className={cn(
-          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
+          "relative hidden min-w-0 shrink-0 flex-col overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width] md:flex",
           open ? "w-[380px] xl:w-[420px]" : "w-0",
           className
         )}

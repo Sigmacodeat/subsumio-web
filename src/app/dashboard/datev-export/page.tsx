@@ -9,8 +9,10 @@ import { caseFrontmatter } from "@/lib/legal-types";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { generateDatevCsv, type ExportEntry } from "@/lib/datev-export";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function DatevExportPage() {
+  const { t } = useLang();
   const now = new Date();
   const defaultFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const defaultTo = now.toISOString().split("T")[0];
@@ -42,8 +44,8 @@ export default function DatevExportPage() {
         const te = fm.time_entries || [];
         const expenses = fm.expenses || [];
         const caseNum = fm.case_number || page.slug;
-        const client = fm.client_name || "Unbekannt";
-        const area = fm.legal_area || "Allgemein";
+        const client = fm.client_name || t("datev.unknown_client");
+        const area = fm.legal_area || t("datev.general_area");
         for (const e of te) {
           if (e.billable === false || e.billed !== true) continue;
           const rate = e.rate || parseInt(loadedSettings.stundensatz || "200", 10);
@@ -68,7 +70,7 @@ export default function DatevExportPage() {
             id: `${page.slug}-expense-${e.id}`,
             date: e.date ? e.date.split("T")[0] : new Date().toISOString().split("T")[0],
             caseNumber: caseNum,
-            description: e.description || "Auslage",
+            description: e.description || t("datev.expense"),
             rate: 0,
             amount: e.amount || 0,
             client,
@@ -81,7 +83,7 @@ export default function DatevExportPage() {
       setEntries(loaded);
     } catch (err) {
       setEntries([]);
-      setLoadError(err instanceof Error ? err.message : "Buchungen konnten nicht geladen werden.");
+      setLoadError(err instanceof Error ? err.message : t("datev.error_load"));
     } finally {
       setLoading(false);
     }
@@ -110,17 +112,22 @@ export default function DatevExportPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="DATEV Export"
-        description="Abgerechnete Honorare und Auslagen für DATEV Unternehmen Online"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "DATEV-Export" }]}
+        title={t("datev.title")}
+        description={t("datev.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("datev.breadcrumb") },
+        ]}
       />
 
       {/* DATEV Einstellungen */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Export-Einstellungen</h3>
+        <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("datev.settings_title")}
+        </h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">Von</label>
+            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.from")}</label>
             <input
               type="date"
               value={periodFrom}
@@ -129,7 +136,7 @@ export default function DatevExportPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">Bis</label>
+            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.to")}</label>
             <input
               type="date"
               value={periodTo}
@@ -138,7 +145,7 @@ export default function DatevExportPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">Kontenrahmen</label>
+            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.chart")}</label>
             <select
               value={settings?.datevKontenrahmen || "SKR03"}
               onChange={(e) => {
@@ -156,7 +163,9 @@ export default function DatevExportPage() {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">Berater-Nr.</label>
+            <label className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("datev.consultant_nr")}
+            </label>
             <input
               type="text"
               value={settings?.datevBeraterNr || ""}
@@ -173,11 +182,7 @@ export default function DatevExportPage() {
       {/* Info */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
         <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <p className="text-sm text-amber-600">
-          Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten.
-          Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihren
-          Steuerberater verifizieren.
-        </p>
+        <p className="text-sm text-amber-600">{t("datev.info")}</p>
       </div>
 
       {loadError && (
@@ -190,17 +195,17 @@ export default function DatevExportPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Einträge</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.entries")}</div>
           <div className="text-xl font-bold text-[color:var(--ds-text)]">{entries.length}</div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Gesamtstunden</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.total_hours")}</div>
           <div className="text-xl font-bold text-[color:var(--ds-text)]">
             {totalHours.toFixed(1)}h
           </div>
         </div>
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 text-center">
-          <div className="text-xs text-[color:var(--ds-text-muted)]">Netto-Betrag</div>
+          <div className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.net_amount")}</div>
           <div className="text-xl font-bold text-emerald-600">
             {totalAmount.toLocaleString("de-DE")} €
           </div>
@@ -209,22 +214,17 @@ export default function DatevExportPage() {
 
       {/* Entries */}
       <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Buchungen</h2>
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("datev.bookings")}</h2>
         {loading ? (
           <div className="py-10 text-center text-[color:var(--ds-text-muted)]">
             <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
-            Lade Buchungen…
+            {t("datev.loading")}
           </div>
         ) : entries.length === 0 ? (
           <div className="space-y-3 py-10 text-center">
             <Clock size={32} className="mx-auto text-[color:var(--ds-border)]" />
-            <p className="text-[color:var(--ds-text-muted)]">
-              Keine abgerechneten Buchungen gefunden.
-            </p>
-            <p className="text-sm text-[color:var(--ds-text-muted)]">
-              Erstellen Sie zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den
-              DATEV-Export wandern.
-            </p>
+            <p className="text-[color:var(--ds-text-muted)]">{t("datev.empty")}</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("datev.empty_hint")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -249,7 +249,9 @@ export default function DatevExportPage() {
                 </Badge>
                 <div className="shrink-0 text-right">
                   <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                    {entry.kind === "time" ? `${(entry.hours ?? 0).toFixed(1)}h` : "Auslage"}
+                    {entry.kind === "time"
+                      ? `${(entry.hours ?? 0).toFixed(1)}h`
+                      : t("datev.expense")}
                   </div>
                   <div className="font-mono text-xs text-emerald-600">
                     {entry.amount.toFixed(0)} €
@@ -273,7 +275,7 @@ export default function DatevExportPage() {
               className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-              Kopieren
+              {t("datev.copy")}
             </Button>
             <Button
               variant="primary"
@@ -282,7 +284,7 @@ export default function DatevExportPage() {
               className="gap-1.5 bg-green-600 text-xs text-white hover:bg-green-500"
             >
               <Download size={14} />
-              Herunterladen
+              {t("datev.download")}
             </Button>
           </div>
         </div>

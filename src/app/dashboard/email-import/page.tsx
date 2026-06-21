@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { parseEml, type ParsedEmail } from "@/lib/email-parser";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface ImportResult {
   success: boolean;
@@ -16,6 +17,7 @@ interface ImportResult {
 }
 
 export default function EmailImportPage() {
+  const { t } = useLang();
   const [parsed, setParsed] = useState<ParsedEmail[]>([]);
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<Record<number, ImportResult>>({});
@@ -46,7 +48,7 @@ export default function EmailImportPage() {
         });
         next[i] = res;
       } catch (err) {
-        setImportError(err instanceof Error ? err.message : "Import fehlgeschlagen.");
+        setImportError(err instanceof Error ? err.message : t("email_import.error_failed"));
       }
     }
     setResults(next);
@@ -59,9 +61,12 @@ export default function EmailImportPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="E-Mail-Import"
-        description="Mandanten-E-Mails automatisch Akten zuordnen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "E-Mail-Import" }]}
+        title={t("email_import.title")}
+        description={t("email_import.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("email_import.breadcrumb") },
+        ]}
       />
 
       <div
@@ -77,9 +82,7 @@ export default function EmailImportPage() {
         onClick={() => document.getElementById("email-file-input")?.click()}
       >
         <Upload size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />
-        <p className="text-sm text-[color:var(--ds-text-muted)]">
-          .eml-Dateien hierher ziehen oder klicken
-        </p>
+        <p className="text-sm text-[color:var(--ds-text-muted)]">{t("email_import.drop_text")}</p>
         <input
           id="email-file-input"
           type="file"
@@ -103,7 +106,7 @@ export default function EmailImportPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {parsed.length} E-Mail(s) erkannt
+              {parsed.length} {t("email_import.recognized")}
             </h2>
             <Button
               variant="primary"
@@ -112,18 +115,18 @@ export default function EmailImportPage() {
               disabled={importing}
             >
               {importing ? <Loader2 size={14} className="animate-spin" /> : <Link size={14} />}
-              {importing ? "Importiere…" : "Akten zuordnen"}
+              {importing ? t("email_import.importing") : t("email_import.assign")}
             </Button>
           </div>
 
           {Object.keys(results).length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm">
               <CheckCircle2 size={14} className="mr-1 inline text-emerald-600" />
-              {matchedCount} E-Mail(s) erfolgreich zugeordnet.
+              {matchedCount} {t("email_import.matched")}
               {unmatchedCount > 0 && (
                 <span className="ml-2 text-amber-700">
                   <AlertTriangle size={14} className="mr-1 inline" />
-                  {unmatchedCount} ohne automatischen Treffer — bitte unten prüfen.
+                  {unmatchedCount} {t("email_import.unmatched")}
                 </span>
               )}
             </div>
@@ -143,11 +146,11 @@ export default function EmailImportPage() {
                     </span>
                     {email.confidence === "high" ? (
                       <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-600">
-                        Hoch
+                        {t("email_import.confidence_high")}
                       </span>
                     ) : (
                       <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
-                        Unsicher
+                        {t("email_import.confidence_low")}
                       </span>
                     )}
                   </div>
@@ -156,21 +159,23 @@ export default function EmailImportPage() {
                   </div>
                   {email.attachments.length > 0 && (
                     <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {email.attachments.length} Anhänge
+                      {email.attachments.length} {t("email_import.attachments")}
                     </div>
                   )}
 
                   {!result && email.suggestedCaseSlug && (
                     <div className="flex items-center gap-1 text-xs text-blue-600">
                       <Link size={12} />
-                      Vorgeschlagene Akte: {email.suggestedCaseSlug}
+                      {t("email_import.suggested")} {email.suggestedCaseSlug}
                     </div>
                   )}
 
                   {result?.success && result.matchedCase && (
                     <div className="flex items-center gap-1 text-xs text-emerald-600">
                       <Link size={12} />
-                      {result.duplicate ? "Bereits in Akte: " : "Zugeordnet zu Akte: "}
+                      {result.duplicate
+                        ? t("email_import.assigned_dup") + " "
+                        : t("email_import.assigned_to") + " "}
                       {result.matchedCase.caseNumber ?? result.matchedCase.slug} —{" "}
                       {result.matchedCase.title}
                     </div>
@@ -180,11 +185,11 @@ export default function EmailImportPage() {
                     <div className="space-y-1 text-xs text-amber-700">
                       <div className="flex items-center gap-1">
                         <AlertTriangle size={12} />
-                        {result.message ?? "Keine passende Akte gefunden."}
+                        {result.message ?? t("email_import.no_match")}
                       </div>
                       {result.suggestions && result.suggestions.length > 0 && (
                         <div className="text-[color:var(--ds-text-muted)]">
-                          Mögliche Akten:{" "}
+                          {t("email_import.possible")}{" "}
                           {result.suggestions
                             .map((s) => `${s.caseNumber ?? s.slug} (${s.title})`)
                             .join(", ")}

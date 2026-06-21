@@ -17,6 +17,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-500/10 border-amber-500/20 text-amber-600",
@@ -26,17 +27,21 @@ const STATUS_STYLES: Record<string, string> = {
   changes_requested: "bg-orange-500/10 border-orange-500/20 text-orange-600",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Ausstehend",
-  in_review: "In Prüfung",
-  approved: "Freigegeben",
-  rejected: "Abgelehnt",
-  changes_requested: "Überarbeitung",
-};
+function useStatusLabels(t: ReturnType<typeof useLang>["t"]): Record<string, string> {
+  return {
+    pending: t("review_queue.status_pending"),
+    in_review: t("review_queue.status_in_review"),
+    approved: t("review_queue.status_approved"),
+    rejected: t("review_queue.status_rejected"),
+    changes_requested: t("review_queue.status_changes_requested"),
+  };
+}
 
 const REVIEWABLE_TYPES = ["document_draft", "contract", "legal_case", "letter", "memo"];
 
 export default function ReviewQueuePage() {
+  const { t } = useLang();
+  const STATUS_LABELS = useStatusLabels(t);
   const [pages, setPages] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,9 +145,12 @@ export default function ReviewQueuePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Prüfwarteschlange"
-        description="Kollaborative Dokumentenprüfung mit Status, Zuständigkeiten und nachvollziehbarer Freigabe"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Prüfwarteschlange" }]}
+        title={t("review_queue.title")}
+        description={t("review_queue.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("review_queue.breadcrumb") },
+        ]}
       />
 
       {/* Filters */}
@@ -154,7 +162,7 @@ export default function ReviewQueuePage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
           >
-            <option value="all">Alle Status</option>
+            <option value="all">{t("review_queue.all_status")}</option>
             {Object.entries(STATUS_LABELS).map(([k, v]) => (
               <option key={k} value={k}>
                 {v}
@@ -168,7 +176,7 @@ export default function ReviewQueuePage() {
             onChange={(e) => setAssigneeFilter(e.target.value)}
             className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
           >
-            <option value="all">Alle Bearbeiter</option>
+            <option value="all">{t("review_queue.all_assignees")}</option>
             {assignees.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -180,7 +188,7 @@ export default function ReviewQueuePage() {
           variant="default"
           className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
         >
-          {reviewItems.length} Dokumente
+          {reviewItems.length} {t("review_queue.docs_count")}
         </Badge>
       </div>
 
@@ -254,7 +262,7 @@ export default function ReviewQueuePage() {
               <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
                 <input
                   type="text"
-                  placeholder="Bearbeiter zuweisen…"
+                  placeholder={t("review_queue.assign_placeholder")}
                   defaultValue={assignee ?? ""}
                   onBlur={(e) => {
                     if (e.target.value.trim() && e.target.value.trim() !== assignee)
@@ -273,7 +281,7 @@ export default function ReviewQueuePage() {
                         onClick={() => updateStatus(page.slug, "approved")}
                         className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
                       >
-                        <CheckSquare size={12} /> Freigeben
+                        <CheckSquare size={12} /> {t("review_queue.approve")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -281,7 +289,7 @@ export default function ReviewQueuePage() {
                         onClick={() => updateStatus(page.slug, "changes_requested")}
                         className="text-xs text-orange-600 hover:bg-orange-500/10"
                       >
-                        Überarbeiten
+                        {t("review_queue.revise")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -289,7 +297,7 @@ export default function ReviewQueuePage() {
                         onClick={() => updateStatus(page.slug, "rejected")}
                         className="text-xs text-red-600 hover:bg-red-500/10"
                       >
-                        Ablehnen
+                        {t("review_queue.reject")}
                       </Button>
                     </>
                   )}
@@ -304,9 +312,9 @@ export default function ReviewQueuePage() {
         <div className="py-16 text-center">
           <Inbox size={40} className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40" />
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            Keine Dokumente in der Review-Queue. Dokumente mit Frontmatter-Feld{" "}
+            {t("review_queue.empty")}{" "}
             <code className="rounded bg-[color:var(--ds-hover)] px-1 text-xs">review_status</code>{" "}
-            erscheinen hier.
+            {t("review_queue.empty_hint")}
           </p>
         </div>
       )}

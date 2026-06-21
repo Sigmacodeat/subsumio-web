@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface WhatsAppStatus {
   configured: boolean;
@@ -60,6 +61,7 @@ function text(value: unknown): string {
 }
 
 export default function WhatsAppDashboardPage() {
+  const { t } = useLang();
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [events, setEvents] = useState<BrainPage[]>([]);
   const [approvals, setApprovals] = useState<BrainPage[]>([]);
@@ -107,7 +109,7 @@ export default function WhatsAppDashboardPage() {
         )
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "WhatsApp-Status konnte nicht geladen werden.");
+      setError(err instanceof Error ? err.message : t("whatsapp.err_load"));
     } finally {
       setLoading(false);
     }
@@ -141,9 +143,7 @@ export default function WhatsAppDashboardPage() {
       setIdentityRole("lawyer");
       await reload();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "WhatsApp-Nummer konnte nicht gespeichert werden."
-      );
+      setError(err instanceof Error ? err.message : t("whatsapp.err_save_identity"));
     } finally {
       setSavingIdentity(false);
     }
@@ -170,9 +170,12 @@ export default function WhatsAppDashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="WhatsApp Copilot"
-        description="Interner Kanzlei-Assistent für Superbrain-Erfassung und Abfragen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "WhatsApp" }]}
+        title={t("whatsapp.title")}
+        description={t("whatsapp.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("whatsapp.breadcrumb") },
+        ]}
       />
 
       {error && (
@@ -183,24 +186,28 @@ export default function WhatsAppDashboardPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-[color:var(--ds-text-muted)]">
-          <Loader2 size={20} className="mr-2 animate-spin" /> Lade WhatsApp Copilot…
+          <Loader2 size={20} className="mr-2 animate-spin" /> {t("whatsapp.loading")}
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
             <Metric
-              label="Konfiguration"
-              value={status?.configured ? "bereit" : "offen"}
+              label={t("whatsapp.metric_config")}
+              value={status?.configured ? t("whatsapp.metric_ready") : t("whatsapp.metric_open")}
               ok={Boolean(status?.configured)}
             />
             <Metric
-              label="Pending Freigaben"
+              label={t("whatsapp.metric_pending_approvals")}
               value={String(pendingApprovals)}
               warn={pendingApprovals > 0}
             />
-            <Metric label="Offene Intakes" value={String(openIntakes)} warn={openIntakes > 0} />
             <Metric
-              label="Dokumente offen"
+              label={t("whatsapp.metric_open_intakes")}
+              value={String(openIntakes)}
+              warn={openIntakes > 0}
+            />
+            <Metric
+              label={t("whatsapp.metric_open_docs")}
               value={String(openDocumentRequests)}
               warn={openDocumentRequests > 0}
             />
@@ -210,23 +217,23 @@ export default function WhatsAppDashboardPage() {
             <WorkflowLink
               href="/dashboard/intake"
               icon={Inbox}
-              title="Intake"
+              title={t("whatsapp.intake")}
               value={String(openIntakes)}
-              text="WhatsApp-Anfragen triagieren und in Akten überführen"
+              text={t("whatsapp.intake_desc")}
             />
             <WorkflowLink
               href="/dashboard/document-requests"
               icon={FileClock}
-              title="Dokumentenanfragen"
+              title={t("whatsapp.doc_requests")}
               value={String(openDocumentRequests)}
-              text="Unterlagenanforderungen verfolgen und erfüllen"
+              text={t("whatsapp.doc_requests_desc")}
             />
             <WorkflowLink
               href="/dashboard/approvals"
               icon={Gavel}
-              title="Freigaben"
+              title={t("whatsapp.approvals")}
               value={String(pendingApprovals)}
-              text="Mandantenkommunikation und Aktionen sicher ausführen"
+              text={t("whatsapp.approvals_desc")}
             />
           </div>
 
@@ -234,20 +241,20 @@ export default function WhatsAppDashboardPage() {
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-emerald-600" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                WhatsApp-Nummern
+                {t("whatsapp.phone_numbers")}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1fr_160px_auto]">
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+49 170 1234567"
+                placeholder={t("whatsapp.phone_placeholder")}
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
               />
               <input
                 value={identityName}
                 onChange={(e) => setIdentityName(e.target.value)}
-                placeholder="Name"
+                placeholder={t("whatsapp.name_placeholder")}
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
               />
               <select
@@ -255,10 +262,10 @@ export default function WhatsAppDashboardPage() {
                 onChange={(e) => setIdentityRole(e.target.value as typeof identityRole)}
                 className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
               >
-                <option value="lawyer">Anwalt</option>
-                <option value="assistant">Assistenz</option>
-                <option value="client">Mandant</option>
-                <option value="intake">Intake</option>
+                <option value="lawyer">{t("whatsapp.role_lawyer")}</option>
+                <option value="assistant">{t("whatsapp.role_assistant")}</option>
+                <option value="client">{t("whatsapp.role_client")}</option>
+                <option value="intake">{t("whatsapp.role_intake")}</option>
               </select>
               <button
                 onClick={() => void addIdentity()}
@@ -270,7 +277,7 @@ export default function WhatsAppDashboardPage() {
                 ) : (
                   <CheckCircle2 size={14} />
                 )}
-                Aktivieren
+                {t("whatsapp.activate")}
               </button>
             </div>
             {status?.identities?.length ? (
@@ -282,14 +289,14 @@ export default function WhatsAppDashboardPage() {
                   >
                     <div className="min-w-0">
                       <div className="truncate font-medium text-[color:var(--ds-text)]">
-                        {identity.name || "WhatsApp Identity"} ·{" "}
+                        {identity.name || t("whatsapp.identity_default")} ·{" "}
                         {identity.phoneLast4
                           ? `****${identity.phoneLast4}`
                           : identity.phoneHash.slice(0, 10)}
                       </div>
                       <div className="text-[color:var(--ds-text-muted)]">
                         {identity.role} · {identity.status} ·{" "}
-                        {identity.verifiedAt ? "verifiziert" : "nicht verifiziert"}
+                        {identity.verifiedAt ? t("whatsapp.verified") : t("whatsapp.not_verified")}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -304,7 +311,9 @@ export default function WhatsAppDashboardPage() {
                         }
                         className="rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                       >
-                        {identity.status === "active" ? "Sperren" : "Aktivieren"}
+                        {identity.status === "active"
+                          ? t("whatsapp.suspend")
+                          : t("whatsapp.activate")}
                       </button>
                       <button
                         onClick={() =>
@@ -312,23 +321,23 @@ export default function WhatsAppDashboardPage() {
                         }
                         className="rounded-md border border-red-500/20 px-2 py-1 text-red-700"
                       >
-                        Löschen
+                        {t("whatsapp.delete")}
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-amber-600">
-                Noch keine WhatsApp-Nummern im sicheren Identity Store.
-              </p>
+              <p className="text-xs text-amber-600">{t("whatsapp.no_identities")}</p>
             )}
           </div>
 
           <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-emerald-600" />
-              <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Setup</h2>
+              <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("whatsapp.setup")}
+              </h2>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
               <SetupFlag label="Verify Token" ok={Boolean(status?.verifyToken)} />
@@ -339,25 +348,31 @@ export default function WhatsAppDashboardPage() {
             </div>
             <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-3">
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
-                <span className="text-[color:var(--ds-text-muted)]">Storage Provider</span>
+                <span className="text-[color:var(--ds-text-muted)]">
+                  {t("whatsapp.storage_provider")}
+                </span>
                 <div className="mt-1 text-[color:var(--ds-text)]">
                   {status?.mediaStorageProvider || "local"}
                 </div>
               </div>
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
-                <span className="text-[color:var(--ds-text-muted)]">Media Storage</span>
+                <span className="text-[color:var(--ds-text-muted)]">
+                  {t("whatsapp.media_storage")}
+                </span>
                 <div className="mt-1 font-mono break-all text-[color:var(--ds-text)]">
                   {status?.mediaStorageProvider === "vercel-blob"
                     ? status.blobConfigured
                       ? "Vercel Blob"
-                      : "Blob Token fehlt"
+                      : t("whatsapp.blob_missing")
                     : status?.mediaStorageDir || ".data/whatsapp-media"}
                 </div>
               </div>
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
-                <span className="text-[color:var(--ds-text-muted)]">Media Limit</span>
+                <span className="text-[color:var(--ds-text-muted)]">
+                  {t("whatsapp.media_limit")}
+                </span>
                 <div className="mt-1 text-[color:var(--ds-text)]">
-                  {Math.round((status?.mediaMaxBytes || 0) / 1024 / 1024)} MB pro Datei
+                  {Math.round((status?.mediaMaxBytes || 0) / 1024 / 1024)} {t("whatsapp.per_file")}
                 </div>
               </div>
             </div>
@@ -372,21 +387,19 @@ export default function WhatsAppDashboardPage() {
                     className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs"
                   >
                     <span className="text-[color:var(--ds-text)]">
-                      {sender.name || "Erlaubter Sender"} · ****{sender.phoneLast4}
+                      {sender.name || t("whatsapp.allowed_sender")} · ****{sender.phoneLast4}
                     </span>
                     <span className="text-[color:var(--ds-text-muted)]">{sender.brainId}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-amber-600">
-                Keine erlaubten WhatsApp-Sender konfiguriert.
-              </p>
+              <p className="text-xs text-amber-600">{t("whatsapp.no_senders")}</p>
             )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <LogPanel title="WhatsApp Events" pages={events} />
+            <LogPanel title={t("whatsapp.events_log")} pages={events} />
             <WorkflowPanel
               approvals={approvals}
               intakes={intakes}
@@ -481,12 +494,21 @@ function WorkflowPanel({
   intakes: BrainPage[];
   documentRequests: BrainPage[];
 }) {
+  const { t } = useLang();
   const rows = [
-    ...approvals.map((page) => ({ page, kind: "Freigabe", href: "/dashboard/approvals" })),
-    ...intakes.map((page) => ({ page, kind: "Intake", href: "/dashboard/intake" })),
+    ...approvals.map((page) => ({
+      page,
+      kind: t("whatsapp.kind_approval"),
+      href: "/dashboard/approvals",
+    })),
+    ...intakes.map((page) => ({
+      page,
+      kind: t("whatsapp.kind_intake"),
+      href: "/dashboard/intake",
+    })),
     ...documentRequests.map((page) => ({
       page,
-      kind: "Dokumente",
+      kind: t("whatsapp.kind_docs"),
       href: "/dashboard/document-requests",
     })),
   ]
@@ -495,10 +517,12 @@ function WorkflowPanel({
 
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-      <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Workflow Objekte</h2>
+      <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+        {t("whatsapp.workflow_objects")}
+      </h2>
       {rows.length === 0 ? (
         <p className="py-6 text-sm text-[color:var(--ds-text-muted)]">
-          Noch keine Workflow-Objekte.
+          {t("whatsapp.no_workflow")}
         </p>
       ) : (
         <div className="space-y-2">
@@ -528,7 +552,10 @@ function WorkflowPanel({
                   </Badge>
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                  {text(fm.status) || text(fm.action_type) || text(fm.channel) || "offen"}
+                  {text(fm.status) ||
+                    text(fm.action_type) ||
+                    text(fm.channel) ||
+                    t("whatsapp.status_open")}
                   {text(fm.source_event_slug) && <span> · {text(fm.source_event_slug)}</span>}
                 </div>
               </Link>
@@ -541,6 +568,7 @@ function WorkflowPanel({
 }
 
 function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
+  const { t } = useLang();
   const sorted = [...pages]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20);
@@ -548,7 +576,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
       <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
       {sorted.length === 0 ? (
-        <p className="py-6 text-sm text-[color:var(--ds-text-muted)]">Noch keine Einträge.</p>
+        <p className="py-6 text-sm text-[color:var(--ds-text-muted)]">{t("whatsapp.no_entries")}</p>
       ) : (
         <div className="space-y-2">
           {sorted.map((page) => {

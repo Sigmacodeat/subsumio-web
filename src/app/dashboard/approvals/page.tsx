@@ -73,13 +73,13 @@ export default function ApprovalsPage() {
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || "Freigabe fehlgeschlagen");
+        throw new Error(text || t("approvals.error_failed"));
       }
       await pagesQuery.refetch();
       setRejecting(null);
       setReason("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Aktion fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("approvals.error_action"));
     } finally {
       setBusy(null);
     }
@@ -91,9 +91,12 @@ export default function ApprovalsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Freigaben"
-        description="Vier-Augen-Prinzip — KI-/Agenten-Vorschläge werden erst durch eine zweite Person wirksam"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Freigaben" }]}
+        title={t("approvals.title")}
+        description={t("approvals.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("approvals.breadcrumb") },
+        ]}
       />
 
       {/* Honest framing */}
@@ -102,12 +105,7 @@ export default function ApprovalsPage() {
         role="note"
       >
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">
-          Risikoreiche Aktionen (Schriftsatz freigeben, Frist notieren, Buchung, Versand) werden
-          <strong> nicht autonom </strong> wirksam. Sie landen hier und brauchen die Freigabe einer
-          zweiten Person — berufsrechtliche Letztverantwortung + EU-AI-Act-Aufsichtspflicht
-          (Annex&nbsp;III).
-        </p>
+        <p className="brand-text/90 text-xs leading-relaxed">{t("approvals.notice")}</p>
       </div>
 
       {error && (
@@ -131,12 +129,12 @@ export default function ApprovalsPage() {
             <div className="flex items-center gap-2">
               <Clock size={14} className="text-amber-600" aria-hidden="true" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Offen ({pending.length})
+                {t("approvals.pending_title")} ({pending.length})
               </h2>
             </div>
             {pending.length === 0 ? (
               <p className="py-6 text-center text-sm text-[color:var(--ds-text-muted)]">
-                Keine offenen Freigaben.
+                {t("approvals.empty")}
               </p>
             ) : (
               pending.map((item) => (
@@ -158,7 +156,7 @@ export default function ApprovalsPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                        Eingereicht von {item.proposed_by}
+                        {t("approvals.proposed_by")} {item.proposed_by}
                         {item.proposed_at
                           ? ` · ${new Date(item.proposed_at).toLocaleString("de-DE")}`
                           : ""}
@@ -180,7 +178,7 @@ export default function ApprovalsPage() {
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         rows={2}
-                        placeholder="Grund der Ablehnung (für die Akte dokumentiert)…"
+                        placeholder={t("approvals.reject_placeholder")}
                         aria-label={t("approvals.reject_reason")}
                         className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-red-500/50 focus:outline-none"
                       />
@@ -195,7 +193,7 @@ export default function ApprovalsPage() {
                           ) : (
                             <XCircle size={13} />
                           )}
-                          Ablehnung bestätigen
+                          {t("approvals.reject_confirm")}
                         </button>
                         <button
                           onClick={() => {
@@ -204,7 +202,7 @@ export default function ApprovalsPage() {
                           }}
                           className="rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                         >
-                          Abbrechen
+                          {t("approvals.cancel")}
                         </button>
                       </div>
                     </div>
@@ -220,7 +218,7 @@ export default function ApprovalsPage() {
                         ) : (
                           <CheckCircle2 size={13} />
                         )}
-                        Freigeben & ausführen
+                        {t("approvals.approve_execute")}
                       </button>
                       <button
                         onClick={() => {
@@ -231,7 +229,7 @@ export default function ApprovalsPage() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] hover:border-red-500/30 hover:text-red-600 disabled:opacity-60"
                       >
                         <XCircle size={13} />
-                        Ablehnen
+                        {t("approvals.reject")}
                       </button>
                     </div>
                   )}
@@ -250,7 +248,7 @@ export default function ApprovalsPage() {
                   aria-hidden="true"
                 />
                 <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  Entschieden ({decided.length})
+                  {t("approvals.decided_title")} ({decided.length})
                 </h2>
               </div>
               {decided.map((item) => (
@@ -264,14 +262,14 @@ export default function ApprovalsPage() {
                         variant="default"
                         className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
                       >
-                        Freigegeben
+                        {t("approvals.status_approved")}
                       </Badge>
                     ) : (
                       <Badge
                         variant="default"
                         className="border border-red-500/20 bg-red-500/10 text-xs text-red-600"
                       >
-                        Abgelehnt
+                        {t("approvals.status_rejected")}
                       </Badge>
                     )}
                     <span className="truncate text-sm text-[color:var(--ds-text)]">
@@ -281,15 +279,19 @@ export default function ApprovalsPage() {
                   <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
                     {item.decided_by ? `${item.decided_by} · ` : ""}
                     {item.decided_at ? new Date(item.decided_at).toLocaleString("de-DE") : ""}
-                    {item.execution_status ? ` · Ausführung: ${item.execution_status}` : ""}
+                    {item.execution_status
+                      ? ` · ${t("approvals.execution")}: ${item.execution_status}`
+                      : ""}
                   </p>
                   {item.execution_error && (
                     <p className="mt-1 text-xs text-red-600/80">
-                      Ausführungsfehler: {item.execution_error}
+                      {t("approvals.execution_error")}: {item.execution_error}
                     </p>
                   )}
                   {item.reject_reason && (
-                    <p className="mt-1 text-xs text-red-600/80">Grund: {item.reject_reason}</p>
+                    <p className="mt-1 text-xs text-red-600/80">
+                      {t("approvals.reason_label")}: {item.reject_reason}
+                    </p>
                   )}
                 </div>
               ))}

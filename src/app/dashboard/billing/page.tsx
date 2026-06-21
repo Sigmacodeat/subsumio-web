@@ -25,6 +25,7 @@ import { useMe } from "@/lib/queries/auth";
 import { useUsage, useCheckout } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { getModelById, formatCost } from "@/lib/model-config";
 import { csrfFetch } from "@/lib/csrf";
 
@@ -46,6 +47,7 @@ interface Usage {
 
 /** Fair-use meter — the "live usage display" the pricing page promises. */
 function UsageCard() {
+  const { t } = useLang();
   const usageQuery = useUsage();
   const statsQuery = useBrainStats();
 
@@ -57,7 +59,7 @@ function UsageCard() {
   const rows = [
     { label: `Queries (${usage.month})`, used: usage.queries, max: usage.limits.queriesPerMonth },
     ...(stats
-      ? [{ label: "Seiten im Brain", used: stats.total_pages, max: usage.limits.pages }]
+      ? [{ label: t("billing.pages_in_brain"), used: stats.total_pages, max: usage.limits.pages }]
       : []),
   ];
 
@@ -68,10 +70,10 @@ function UsageCard() {
           <div className="flex items-center gap-2.5">
             <Gauge size={16} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Verbrauch (Fair Use)
+              {t("billing.usage_title")}
             </h2>
           </div>
-          {usage.shared && <Badge>Team-Pool</Badge>}
+          {usage.shared && <Badge>{t("billing.team_pool")}</Badge>}
         </div>
         {rows.map((row) => {
           const pct = Math.min(100, Math.round((row.used / row.max) * 100));
@@ -103,8 +105,7 @@ function UsageCard() {
           );
         })}
         <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-          Fair Use heißt: Beim Erreichen des Limits drosseln wir nicht still und es gibt keine
-          Überraschungsrechnung — wir melden uns und besprechen das passende Paket.
+          {t("billing.fair_use_note")}
         </p>
       </div>
     </Card>
@@ -113,6 +114,7 @@ function UsageCard() {
 
 /** Per-model usage breakdown — shows which models the brain used this month. */
 function ModelBreakdownCard() {
+  const { t } = useLang();
   const usageQuery = useUsage();
   const usage = (usageQuery.data ?? null) as Usage | null;
   if (!usage?.modelBreakdown?.length) return null;
@@ -126,11 +128,11 @@ function ModelBreakdownCard() {
           <div className="flex items-center gap-2.5">
             <Cpu size={16} className="brand-text" aria-hidden />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Modell-Verbrauch ({usage.month})
+              {t("billing.model_usage")} ({usage.month})
             </h2>
           </div>
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {totalQueries.toLocaleString("de-DE")} Anfragen gesamt
+            {totalQueries.toLocaleString("de-DE")} {t("billing.queries_total")}
           </span>
         </div>
         <div className="space-y-3">
@@ -158,9 +160,11 @@ function ModelBreakdownCard() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 font-mono text-xs text-[color:var(--ds-text-muted)]">
-                    <span>{row.queries.toLocaleString("de-DE")} Anfragen</span>
+                    <span>
+                      {row.queries.toLocaleString("de-DE")} {t("billing.queries")}
+                    </span>
                     {estCostUsd > 0 && (
-                      <span className="flex items-center gap-1" title="Geschätzte Token-Kosten">
+                      <span className="flex items-center gap-1" title={t("billing.token_cost_est")}>
                         <TrendingUp size={9} />~{formatCost(estCostUsd)}
                       </span>
                     )}
@@ -188,9 +192,7 @@ function ModelBreakdownCard() {
           })}
         </div>
         <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-          Token-Kosten sind Schätzwerte basierend auf veröffentlichten Provider-Preisen.
-          Tatsächliche Abrechnung erfolgt über deinen Plan-Preis (inklusive Kontingent +
-          Mehrverbrauch).
+          {t("billing.token_note")}
         </p>
       </div>
     </Card>
@@ -210,6 +212,7 @@ interface Me {
 }
 
 function BillingInner() {
+  const { t } = useLang();
   const params = useSearchParams();
   const status = params.get("status");
   const meQuery = useMe();
@@ -241,9 +244,9 @@ function BillingInner() {
         window.location.assign(data.url);
         return;
       }
-      setNotice(data?.message ?? "Checkout fehlgeschlagen. Bitte erneut versuchen.");
+      setNotice(data?.message ?? t("billing.checkout_failed"));
     } catch {
-      setNotice("Netzwerkfehler. Bitte erneut versuchen.");
+      setNotice(t("billing.network_error"));
     }
     setBusy(null);
   }
@@ -261,9 +264,9 @@ function BillingInner() {
         window.location.assign(data.url);
         return;
       }
-      setNotice(data?.error ?? "Portal konnte nicht geöffnet werden.");
+      setNotice(data?.error ?? t("billing.portal_failed"));
     } catch {
-      setNotice("Netzwerkfehler. Bitte erneut versuchen.");
+      setNotice(t("billing.network_error"));
     }
     setBusy(null);
   }
@@ -273,25 +276,24 @@ function BillingInner() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Abrechnung"
-        description="Plan, Zahlung und Empfehlungs-Guthaben"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Abrechnung" }]}
+        title={t("billing.title")}
+        description={t("billing.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("billing.breadcrumb") },
+        ]}
       />
 
       {status === "success" && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
           <Sparkles size={16} className="text-emerald-600" />
-          <p className="text-sm text-emerald-700">
-            Zahlung erfolgreich — dein Plan wird in Kürze aktualisiert.
-          </p>
+          <p className="text-sm text-emerald-700">{t("billing.success")}</p>
         </div>
       )}
       {status === "cancelled" && (
         <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
           <AlertTriangle size={16} className="text-amber-600" />
-          <p className="text-sm text-amber-700">
-            Checkout abgebrochen — dein bisheriger Plan bleibt aktiv.
-          </p>
+          <p className="text-sm text-amber-700">{t("billing.cancelled")}</p>
         </div>
       )}
       {notice && (
@@ -309,14 +311,14 @@ function BillingInner() {
         <div className="flex flex-wrap items-center justify-between gap-4 p-6">
           <div>
             <p className="mb-1 text-xs tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Aktueller Plan
+              {t("billing.current_plan")}
             </p>
             <div className="flex items-center gap-3">
               <span className="text-xl font-bold text-[color:var(--ds-text)] capitalize">
                 {currentPlan}
               </span>
               <Badge variant={currentPlan === "free" ? "default" : "accent"}>
-                {currentPlan === "free" ? "Kostenlos" : "Aktiv"}
+                {currentPlan === "free" ? t("billing.free") : t("billing.active")}
               </Badge>
             </div>
             {me?.user && (
@@ -330,7 +332,7 @@ function BillingInner() {
                 loading={busy === "portal"}
                 onClick={openPortal}
               >
-                <Settings size={14} /> Plan verwalten
+                <Settings size={14} /> {t("billing.manage_plan")}
               </Button>
             )}
           </div>
@@ -339,10 +341,13 @@ function BillingInner() {
               <Gift size={16} className="text-amber-600" />
               <div>
                 <p className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {me.referrals} Empfehlung{me.referrals === 1 ? "" : "en"}
+                  {me.referrals}{" "}
+                  {me.referrals === 1 ? t("billing.referrals") : t("billing.referrals_plural")}
                 </p>
                 <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  = {me.referrals} Gratismonat{me.referrals === 1 ? "" : "e"} verdient
+                  = {me.referrals}{" "}
+                  {me.referrals === 1 ? t("billing.free_months") : t("billing.free_months_plural")}{" "}
+                  {t("billing.free_months_earned")}
                 </p>
               </div>
             </div>
@@ -365,7 +370,7 @@ function BillingInner() {
             >
               <div className="mb-1 flex items-center justify-between">
                 <p className="text-sm font-medium text-[color:var(--ds-text-muted)]">{plan.name}</p>
-                {isCurrent && <Badge variant="success">Aktiv</Badge>}
+                {isCurrent && <Badge variant="success">{t("billing.active")}</Badge>}
               </div>
               <p className="mb-4 text-2xl font-bold text-[color:var(--ds-text)]">{plan.price}</p>
               <ul className="mb-6 flex-1 space-y-2">
@@ -387,7 +392,7 @@ function BillingInner() {
                   loading={busy === plan.id}
                   onClick={() => upgrade(plan.id)}
                 >
-                  Upgrade <ArrowRight size={13} />
+                  {t("billing.upgrade")} <ArrowRight size={13} />
                 </Button>
               )}
             </div>
@@ -396,11 +401,11 @@ function BillingInner() {
       </div>
 
       <p className="text-xs text-[color:var(--ds-text-muted)]">
-        Enterprise (EU-/On-Prem-Hosting, AVV, SSO)?{" "}
+        {t("billing.enterprise_q")}{" "}
         <a href="mailto:hello@subsum.eu" className="brand-text hover:underline">
-          Sprich mit uns
+          {t("billing.contact_us")}
         </a>
-        . Jahreszahlung −20 % — im Checkout wählbar.
+        . {t("billing.annual_note")}
       </p>
     </div>
   );

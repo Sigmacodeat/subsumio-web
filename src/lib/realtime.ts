@@ -76,7 +76,10 @@ class RealtimeClient {
           console.warn("[realtime] Failed to parse WS message:", err);
         }
       };
-      this.ws.onclose = () => { this.status = "closed"; this.scheduleReconnect(token); };
+      this.ws.onclose = () => {
+        this.status = "closed";
+        this.scheduleReconnect(token);
+      };
       this.ws.onerror = (e) => {
         console.warn("[realtime] WebSocket error:", e);
         this.status = "error";
@@ -110,7 +113,23 @@ class RealtimeClient {
         this.scheduleReconnect();
       };
       // Listen for known event types
-      const knownEvents = ["connected", "case.updated", "deadline.changed", "note.added", "invoice.created", "comment.added", "notification.created", "workflow.started", "workflow.step_changed", "workflow.completed", "workflow.failed"];
+      const knownEvents = [
+        "connected",
+        "case.updated",
+        "case.deleted",
+        "deadline.changed",
+        "note.added",
+        "invoice.created",
+        "comment.added",
+        "notification.created",
+        "workflow.started",
+        "workflow.step_changed",
+        "workflow.completed",
+        "workflow.failed",
+        "presence.joined",
+        "presence.left",
+        "presence.heartbeat",
+      ];
       for (const evt of knownEvents) {
         this.es.addEventListener(evt, (ev: MessageEvent) => {
           try {
@@ -154,7 +173,9 @@ class RealtimeClient {
 
   private emit(event: string, payload: unknown) {
     this.listeners.get(event)?.forEach((cb) => {
-      try { cb(payload); } catch (err) {
+      try {
+        cb(payload);
+      } catch (err) {
         console.warn(`[realtime] Listener error for "${event}":`, err);
       }
     });
@@ -172,7 +193,10 @@ class RealtimeClient {
   }
 
   disconnect() {
-    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.ws?.close();
     this.ws = null;
     this.es?.close();
@@ -190,7 +214,9 @@ export function useRealtime(event: string, cb: EventCallback) {
 
   useEffect(() => {
     const unsubscribe = realtime.on(event, (payload) => savedCb.current(payload));
-    return () => { unsubscribe(); };
+    return () => {
+      unsubscribe();
+    };
   }, [event]);
 }
 

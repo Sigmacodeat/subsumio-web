@@ -834,6 +834,7 @@ export const D = {
 
   // ── Sidebar: additional nav items ──
   "nav.playbooks": { de: "Playbooks", en: "Playbooks" },
+  "nav.process_strategy": { de: "Prozessstrategie", en: "Case Strategy" },
   "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
 
   // ── Topbar: additional strings ──
@@ -1142,6 +1143,848 @@ export const D = {
   "chat.search_sessions": { de: "Konversationen durchsuchen…", en: "Search conversations…" },
   "chat.cost_estimate": { de: "Geschätzte Kosten", en: "Estimated cost" },
   "chat.no_messages": { de: "Noch keine Nachrichten", en: "No messages yet" },
+
+  // ── Page headers: breadcrumb label "Dashboard" ──
+  "breadcrumb.dashboard": { de: "Dashboard", en: "Dashboard" },
+
+  // ── Upload page ──
+  "upload.title": { de: "Dokument hochladen", en: "Upload document" },
+  "upload.desc": {
+    de: "Markdown, PDF oder Text — Subsumio chunked, embeddet und indiziert automatisch.",
+    en: "Markdown, PDF or text — Subsumio chunks, embeds and indexes automatically.",
+  },
+  "upload.breadcrumb": { de: "Upload", en: "Upload" },
+  "upload.source_label": { de: "Brain Source", en: "Brain Source" },
+  "upload.tags_label": { de: "Tags (kommasepariert)", en: "Tags (comma-separated)" },
+  "upload.tags_placeholder": {
+    de: "z.B. fintech, q2-2026, alice",
+    en: "e.g. fintech, q2-2026, alice",
+  },
+  "upload.drop_text": { de: "Dateien hierher ziehen", en: "Drop files here" },
+  "upload.drop_release": { de: "Loslassen zum Hochladen", en: "Release to upload" },
+  "upload.click_browse": { de: "oder", en: "or" },
+  "upload.browse_link": { de: "Dateien auswählen", en: "browse files" },
+  "upload.max_size": { de: "· max 50 MB", en: "· max 50 MB" },
+  "upload.folder_scan": { de: "Ganzen Ordner einlesen", en: "Scan entire folder" },
+  "upload.folder_scanning": { de: "Ordner wird gelesen…", en: "Scanning folder…" },
+  "upload.folder_desc": {
+    de: 'Wählt einen lokalen Ordner wie eine IDE und liest alle unterstützten Dateien (auch in Unterordnern) ins Brain ein — nichts wird hochgeladen, bis du auf "Upload" klickst.',
+    en: 'Picks a local folder like an IDE and reads all supported files (including subfolders) into the brain — nothing is uploaded until you click "Upload".',
+  },
+  "upload.info_title": { de: "Wie funktioniert es?", en: "How does it work?" },
+  "upload.info_body": {
+    de: "Subsumio chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph. Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du das Dokument über die Query-Seite abfragen.",
+    en: "Subsumio automatically chunks the document, creates embeddings and indexes it in the knowledge graph. Entities (people, companies, concepts) are extracted and linked. You can then query the document via the Query page.",
+  },
+  "upload.info_hint": { de: "Hinweis:", en: "Note:" },
+  "upload.info_hint_body": {
+    de: "Die Subsumio Engine muss laufen",
+    en: "The Subsumio engine must be running",
+  },
+  "upload.files_count": { de: "Datei", en: "file" },
+  "upload.files_count_plural": { de: "Dateien", en: "files" },
+  "upload.done_count": { de: "fertig", en: "done" },
+  "upload.upload_btn": { de: "hochladen", en: "upload" },
+  "upload.clear_all": { de: "Alle löschen", en: "Clear all" },
+  "upload.pending": { de: "Bereit zum Hochladen", en: "Ready to upload" },
+  "upload.uploaded": { de: "hochgeladen", en: "uploaded" },
+  "upload.indexing": {
+    de: "Dein Brain wird indexiert. Sobald Subsumio die Embeddings erstellt hat, kannst du die Dokumente abfragen.",
+    en: "Your brain is being indexed. Once Subsumio has created the embeddings, you can query the documents.",
+  },
+  "upload.ask_brain": { de: "Brain jetzt fragen", en: "Ask brain now" },
+  "upload.explore_brain": { de: "Brain erkunden", en: "Explore brain" },
+  "upload.offline_msg": {
+    de: "Offline-Modus aktiv — Datei-Upload erfordert Internetverbindung.",
+    en: "Offline mode active — file upload requires internet connection.",
+  },
+  "upload.gobd_label": {
+    de: "Steuerlich relevanter Beleg (GoBD-Bausteine)",
+    en: "Tax-relevant document (GoBD modules)",
+  },
+  "upload.gobd_desc": {
+    de: "— Rechnungen, Kontoauszüge, Quittungen. Beim Hochladen werden eine 10-Jahre-Aufbewahrungsfrist (§ 147 AO) und ein Inhalts-Hash zur Manipulations-Evidenz (§ 146 Abs. 4 AO) ins Frontmatter geschrieben. Spätere Verifikation deckt Änderungen auf.",
+    en: "— Invoices, bank statements, receipts. On upload, a 10-year retention period (§ 147 AO) and a content hash for tamper evidence (§ 146 Abs. 4 AO) are written to the frontmatter. Later verification detects changes.",
+  },
+  "upload.gobd_note": {
+    de: "Technischer Baustein — volle GoBD-Konformität verlangt zusätzlich Verfahrensdokumentation und Prüfer-Abnahme.",
+    en: "Technical module — full GoBD compliance additionally requires process documentation and auditor approval.",
+  },
+  "upload.gobd_stamped": { de: "GoBD gestempelt", en: "GoBD stamped" },
+  "upload.error_offline": {
+    de: "Offline — Datei-Upload erfordert Internetverbindung. Datei wurde nicht gespeichert.",
+    en: "Offline — file upload requires internet connection. File was not saved.",
+  },
+  "upload.error_failed": { de: "Upload fehlgeschlagen", en: "Upload failed" },
+
+  // ── Approvals page ──
+  "approvals.title": { de: "Freigaben", en: "Approvals" },
+  "approvals.desc": {
+    de: "Vier-Augen-Prinzip — KI-/Agenten-Vorschläge werden erst durch eine zweite Person wirksam",
+    en: "Four-eyes principle — AI/agent proposals only take effect after approval by a second person",
+  },
+  "approvals.breadcrumb": { de: "Freigaben", en: "Approvals" },
+  "approvals.notice": {
+    de: "Risikoreiche Aktionen (Schriftsatz freigeben, Frist notieren, Buchung, Versand) werden nicht autonom wirksam. Sie landen hier und brauchen die Freigabe einer zweiten Person — berufsrechtliche Letztverantwortung + EU-AI-Act-Aufsichtspflicht (Annex III).",
+    en: "Risky actions (release brief, note deadline, booking, dispatch) do not take effect autonomously. They appear here and require approval by a second person — professional ultimate responsibility + EU AI Act oversight duty (Annex III).",
+  },
+  "approvals.pending_title": { de: "Offen", en: "Pending" },
+  "approvals.decided_title": { de: "Entschieden", en: "Decided" },
+  "approvals.empty": { de: "Keine offenen Freigaben.", en: "No pending approvals." },
+  "approvals.proposed_by": { de: "Eingereicht von", en: "Submitted by" },
+  "approvals.reject_confirm": { de: "Ablehnung bestätigen", en: "Confirm rejection" },
+  "approvals.cancel": { de: "Abbrechen", en: "Cancel" },
+  "approvals.approve_execute": { de: "Freigeben & ausführen", en: "Approve & execute" },
+  "approvals.reject": { de: "Ablehnen", en: "Reject" },
+  "approvals.status_approved": { de: "Freigegeben", en: "Approved" },
+  "approvals.status_rejected": { de: "Abgelehnt", en: "Rejected" },
+  "approvals.execution": { de: "Ausführung", en: "Execution" },
+  "approvals.execution_error": { de: "Ausführungsfehler", en: "Execution error" },
+  "approvals.reason_label": { de: "Grund", en: "Reason" },
+  "approvals.reject_placeholder": {
+    de: "Grund der Ablehnung (für die Akte dokumentiert)…",
+    en: "Reason for rejection (documented for the file)…",
+  },
+  "approvals.error_failed": { de: "Freigabe fehlgeschlagen", en: "Approval failed" },
+  "approvals.error_action": { de: "Aktion fehlgeschlagen", en: "Action failed" },
+
+  // ── Analyze page ──
+  "analyze.title": { de: "Dokument-Analyse", en: "Document Analysis" },
+  "analyze.desc": {
+    de: "KI-gestütztes Issue-Spotting mit Quellenprüfung — erkennt Parteien, Fristen, Risiken und zitiert nur verifizierte Normen",
+    en: "AI-powered issue-spotting with source verification — detects parties, deadlines, risks and cites only verified statutes",
+  },
+  "analyze.breadcrumb": { de: "Dokument-Analyse", en: "Document Analysis" },
+  "analyze.mode_slug": { de: "Aus Vault (Slug)", en: "From Vault (Slug)" },
+  "analyze.mode_text": { de: "Direkter Text", en: "Direct text" },
+  "analyze.slug_label": { de: "Dokument-Slug", en: "Document slug" },
+  "analyze.slug_placeholder": {
+    de: "z. B. mietvertrag-mueller-2026",
+    en: "e.g. lease-agreement-mueller-2026",
+  },
+  "analyze.slug_hint": {
+    de: "Das Dokument muss im Brain hochgeladen sein. Die Analyse wird mit verifizierten Normen aus dem Law-Corpus grounded.",
+    en: "The document must be uploaded to the brain. The analysis is grounded with verified statutes from the law corpus.",
+  },
+  "analyze.text_label": { de: "Dokumenttext", en: "Document text" },
+  "analyze.text_placeholder": {
+    de: "Dokumenttext hier einfügen…",
+    en: "Paste document text here…",
+  },
+  "analyze.run_btn": { de: "Analysieren", en: "Analyze" },
+  "analyze.error_failed": { de: "Analyse fehlgeschlagen.", en: "Analysis failed." },
+  "analyze.confidence": { de: "Konfidenz", en: "Confidence" },
+  "analyze.review_required": {
+    de: "Anwaltliche Prüfung erforderlich",
+    en: "Attorney review required",
+  },
+  "analyze.parties": { de: "Beteiligte", en: "Parties" },
+  "analyze.deadlines": { de: "Fristen & Daten", en: "Deadlines & Dates" },
+  "analyze.critical": { de: "Kritisch", en: "Critical" },
+  "analyze.issues": { de: "Issues", en: "Issues" },
+  "analyze.statutes": { de: "Normen", en: "Statutes" },
+  "analyze.grounding_info": {
+    de: "Corpus-Grounding",
+    en: "Corpus grounding",
+  },
+  "analyze.grounding_verified": { de: "verifiziert", en: "verified" },
+  "analyze.grounding_unverified": { de: "nicht im Corpus gefunden.", en: "not found in corpus." },
+  "analyze.actions": { de: "Empfohlene nächste Schritte", en: "Recommended next steps" },
+  "analyze.warnings": { de: "Hinweise", en: "Notes" },
+
+  // ── Word Add-in page ──
+  "wordaddin.title": { de: "Word Add-in", en: "Word Add-in" },
+  "wordaddin.desc": {
+    de: "Schriftsätze und Dokumente aus Subsumio direkt in Microsoft Word einfügen",
+    en: "Insert briefs and documents from Subsumio directly into Microsoft Word",
+  },
+  "wordaddin.breadcrumb": { de: "Word Add-in", en: "Word Add-in" },
+  "wordaddin.hero_title": { de: "Subsumio für Word", en: "Subsumio for Word" },
+  "wordaddin.hero_desc": {
+    de: "Greifen Sie aus Microsoft Word direkt auf Ihr Brain zu. Fügen Sie Schriftsätze, Verträge und Dokumente ein, ohne Word zu verlassen.",
+    en: "Access your brain directly from Microsoft Word. Insert briefs, contracts and documents without leaving Word.",
+  },
+  "wordaddin.f1_title": { de: "Dokumente einfügen", en: "Insert documents" },
+  "wordaddin.f1_desc": {
+    de: "Schriftsätze aus dem Brain direkt ins Word-Dokument",
+    en: "Briefs from the brain directly into the Word document",
+  },
+  "wordaddin.f2_title": { de: "Brain-Suche", en: "Brain search" },
+  "wordaddin.f2_desc": {
+    de: "Volltext-Suche über alle Brain-Pages ohne Word zu verlassen",
+    en: "Full-text search across all brain pages without leaving Word",
+  },
+  "wordaddin.f3_title": { de: "API-Token-Auth", en: "API token auth" },
+  "wordaddin.f3_desc": {
+    de: "Sichere Verbindung mit Ihrem persönlichen API-Token",
+    en: "Secure connection with your personal API token",
+  },
+  "wordaddin.f4_title": { de: "Office 365 Ready", en: "Office 365 Ready" },
+  "wordaddin.f4_desc": {
+    de: "Kompatibel mit Microsoft 365 und Office 2021+",
+    en: "Compatible with Microsoft 365 and Office 2021+",
+  },
+  "wordaddin.install_title": { de: "Installation", en: "Installation" },
+  "wordaddin.step1_title": { de: "Manifest-URL kopieren", en: "Copy manifest URL" },
+  "wordaddin.step1_desc": {
+    de: 'Kopieren Sie die URL und fügen Sie sie in Office unter "Add-in hochladen" ein.',
+    en: 'Copy the URL and paste it in Office under "Upload Add-in".',
+  },
+  "wordaddin.step2_title": { de: "In Word öffnen", en: "Open in Word" },
+  "wordaddin.step2_desc": {
+    de: 'Word → Registerkarte "Einfügen" → "Add-ins" → "Mein Add-in hochladen" → Manifest-URL einfügen.',
+    en: 'Word → "Insert" tab → "Add-ins" → "Upload my Add-in" → paste manifest URL.',
+  },
+  "wordaddin.step3_title": { de: "API-Token eingeben", en: "Enter API token" },
+  "wordaddin.step3_desc": {
+    de: "Generieren Sie einen API-Token unter",
+    en: "Generate an API token at",
+  },
+  "wordaddin.step3_link": { de: "API-Schlüssel", en: "API Keys" },
+  "wordaddin.step3_after": {
+    de: "und fügen Sie ihn im Add-in ein.",
+    en: "and paste it into the add-in.",
+  },
+  "wordaddin.download_manifest": { de: "Manifest herunterladen", en: "Download manifest" },
+  "wordaddin.open_taskpane": { de: "Taskpane öffnen", en: "Open taskpane" },
+  "wordaddin.gen_token": { de: "API-Token generieren", en: "Generate API token" },
+  "wordaddin.version_badge": {
+    de: "Version 1.0.0 · Office 365 / 2021+",
+    en: "Version 1.0.0 · Office 365 / 2021+",
+  },
+
+  // ── Email Import page ──
+  "email_import.title": { de: "E-Mail-Import", en: "Email Import" },
+  "email_import.desc": {
+    de: "Mandanten-E-Mails automatisch Akten zuordnen",
+    en: "Automatically assign client emails to cases",
+  },
+  "email_import.breadcrumb": { de: "E-Mail-Import", en: "Email Import" },
+  "email_import.drop_text": {
+    de: ".eml-Dateien hierher ziehen oder klicken",
+    en: "Drag .eml files here or click to browse",
+  },
+  "email_import.recognized": { de: "E-Mail(s) erkannt", en: "email(s) detected" },
+  "email_import.importing": { de: "Importiere…", en: "Importing…" },
+  "email_import.assign": { de: "Akten zuordnen", en: "Assign to cases" },
+  "email_import.matched": {
+    de: "E-Mail(s) erfolgreich zugeordnet.",
+    en: "email(s) successfully assigned.",
+  },
+  "email_import.unmatched": {
+    de: "ohne automatischen Treffer — bitte unten prüfen.",
+    en: "without automatic match — please review below.",
+  },
+  "email_import.confidence_high": { de: "Hoch", en: "High" },
+  "email_import.confidence_low": { de: "Unsicher", en: "Uncertain" },
+  "email_import.attachments": { de: "Anhänge", en: "attachments" },
+  "email_import.suggested": { de: "Vorgeschlagene Akte:", en: "Suggested case:" },
+  "email_import.assigned_dup": { de: "Bereits in Akte:", en: "Already in case:" },
+  "email_import.assigned_to": { de: "Zugeordnet zu Akte:", en: "Assigned to case:" },
+  "email_import.no_match": { de: "Keine passende Akte gefunden.", en: "No matching case found." },
+  "email_import.possible": { de: "Mögliche Akten:", en: "Possible cases:" },
+  "email_import.error_failed": { de: "Import fehlgeschlagen.", en: "Import failed." },
+
+  // ── DATEV Export page ──
+  "datev.title": { de: "DATEV Export", en: "DATEV Export" },
+  "datev.desc": {
+    de: "Abgerechnete Honorare und Auslagen für DATEV Unternehmen Online",
+    en: "Billed fees and expenses for DATEV Unternehmen Online",
+  },
+  "datev.breadcrumb": { de: "DATEV-Export", en: "DATEV Export" },
+  "datev.settings_title": { de: "Export-Einstellungen", en: "Export settings" },
+  "datev.from": { de: "Von", en: "From" },
+  "datev.to": { de: "Bis", en: "To" },
+  "datev.chart": { de: "Kontenrahmen", en: "Chart of accounts" },
+  "datev.consultant_nr": { de: "Berater-Nr.", en: "Consultant no." },
+  "datev.info": {
+    de: "Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten. Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihren Steuerberater verifizieren.",
+    en: "The export only includes already billed, chargeable items from cases. Please verify chart of accounts, tax keys and import format with your tax advisor before the DATEV import.",
+  },
+  "datev.entries": { de: "Einträge", en: "Entries" },
+  "datev.total_hours": { de: "Gesamtstunden", en: "Total hours" },
+  "datev.net_amount": { de: "Netto-Betrag", en: "Net amount" },
+  "datev.bookings": { de: "Buchungen", en: "Bookings" },
+  "datev.loading": { de: "Lade Buchungen…", en: "Loading bookings…" },
+  "datev.empty": { de: "Keine abgerechneten Buchungen gefunden.", en: "No billed bookings found." },
+  "datev.empty_hint": {
+    de: "Erstellen Sie zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den DATEV-Export wandern.",
+    en: "First create invoices from open time/expense entries so items appear in the DATEV export.",
+  },
+  "datev.expense": { de: "Auslage", en: "Expense" },
+  "datev.copy": { de: "Kopieren", en: "Copy" },
+  "datev.download": { de: "Herunterladen", en: "Download" },
+  "datev.error_load": {
+    de: "Buchungen konnten nicht geladen werden.",
+    en: "Bookings could not be loaded.",
+  },
+  "datev.unknown_client": { de: "Unbekannt", en: "Unknown" },
+  "datev.general_area": { de: "Allgemein", en: "General" },
+
+  // ── Billing page ──
+  "billing.title": { de: "Abrechnung", en: "Billing" },
+  "billing.desc": {
+    de: "Plan, Zahlung und Empfehlungs-Guthaben",
+    en: "Plan, payment and referral credits",
+  },
+  "billing.breadcrumb": { de: "Abrechnung", en: "Billing" },
+  "billing.success": {
+    de: "Zahlung erfolgreich — dein Plan wird in Kürze aktualisiert.",
+    en: "Payment successful — your plan will be updated shortly.",
+  },
+  "billing.cancelled": {
+    de: "Checkout abgebrochen — dein bisheriger Plan bleibt aktiv.",
+    en: "Checkout cancelled — your current plan remains active.",
+  },
+  "billing.usage_title": { de: "Verbrauch (Fair Use)", en: "Usage (Fair Use)" },
+  "billing.team_pool": { de: "Team-Pool", en: "Team pool" },
+  "billing.fair_use_note": {
+    de: "Fair Use heißt: Beim Erreichen des Limits drosseln wir nicht still und es gibt keine Überraschungsrechnung — wir melden uns und besprechen das passende Paket.",
+    en: "Fair Use means: when reaching the limit we don't throttle silently and there are no surprise bills — we'll reach out and discuss the right package.",
+  },
+  "billing.model_usage": { de: "Modell-Verbrauch", en: "Model usage" },
+  "billing.queries_total": { de: "Anfragen gesamt", en: "queries total" },
+  "billing.queries": { de: "Anfragen", en: "queries" },
+  "billing.token_cost_est": { de: "Geschätzte Token-Kosten", en: "Estimated token cost" },
+  "billing.token_note": {
+    de: "Token-Kosten sind Schätzwerte basierend auf veröffentlichten Provider-Preisen. Tatsächliche Abrechnung erfolgt über deinen Plan-Preis (inklusive Kontingent + Mehrverbrauch).",
+    en: "Token costs are estimates based on published provider prices. Actual billing is via your plan price (including quota + overage).",
+  },
+  "billing.current_plan": { de: "Aktueller Plan", en: "Current plan" },
+  "billing.free": { de: "Kostenlos", en: "Free" },
+  "billing.active": { de: "Aktiv", en: "Active" },
+  "billing.manage_plan": { de: "Plan verwalten", en: "Manage plan" },
+  "billing.referrals": { de: "Empfehlung", en: "referral" },
+  "billing.referrals_plural": { de: "Empfehlungen", en: "referrals" },
+  "billing.free_months": { de: "Gratismonat", en: "free month" },
+  "billing.free_months_plural": { de: "Gratismonate", en: "free months" },
+  "billing.free_months_earned": { de: "verdient", en: "earned" },
+  "billing.upgrade": { de: "Upgrade", en: "Upgrade" },
+  "billing.enterprise_q": {
+    de: "Enterprise (EU-/On-Prem-Hosting, AVV, SSO)?",
+    en: "Enterprise (EU/on-prem hosting, DPA, SSO)?",
+  },
+  "billing.contact_us": { de: "Sprich mit uns", en: "Talk to us" },
+  "billing.annual_note": {
+    de: "Jahreszahlung −20 % — im Checkout wählbar.",
+    en: "Annual billing −20% — selectable at checkout.",
+  },
+  "billing.checkout_failed": {
+    de: "Checkout fehlgeschlagen. Bitte erneut versuchen.",
+    en: "Checkout failed. Please try again.",
+  },
+  "billing.network_error": {
+    de: "Netzwerkfehler. Bitte erneut versuchen.",
+    en: "Network error. Please try again.",
+  },
+  "billing.portal_failed": {
+    de: "Portal konnte nicht geöffnet werden.",
+    en: "Portal could not be opened.",
+  },
+  "billing.pages_in_brain": { de: "Seiten im Brain", en: "Pages in brain" },
+
+  // ── Client Portal page ──
+  "client_portal.title": { de: "Meine Akten", en: "My cases" },
+  "client_portal.desc": {
+    de: "Übersicht über alle laufenden Mandate",
+    en: "Overview of all active mandates",
+  },
+  "client_portal.breadcrumb": { de: "Mandanten-Portal", en: "Client Portal" },
+  "client_portal.preview_title": {
+    de: "Mandanten-Portal — Vorschau",
+    en: "Client Portal — Preview",
+  },
+  "client_portal.preview_desc": {
+    de: "So sehen Ihre Mandanten künftig den Stand ihrer Akte.",
+    en: "This is how your clients will see the status of their case in the future.",
+  },
+  "client_portal.preview_note": {
+    de: "Dies ist eine Vorschau für die Kanzlei — sie zeigt alle Akten der explizit freigegebenen Akten. Das echte Mandanten-Portal mit eigenem Login pro Mandant und Akten-Filterung ist ein separates Deployment und noch nicht Teil dieses Dashboards.",
+    en: "This is a preview for the firm — it shows all explicitly shared cases. The real client portal with per-client login and case filtering is a separate deployment and not yet part of this dashboard.",
+  },
+  "client_portal.open_preview": {
+    de: "Vorschau öffnen (Anwaltsansicht)",
+    en: "Open preview (attorney view)",
+  },
+  "client_portal.end_preview": { de: "Vorschau beenden", en: "End preview" },
+  "client_portal.loading": { de: "Akten werden geladen…", en: "Loading cases…" },
+  "client_portal.empty": { de: "Keine Akten gefunden.", en: "No cases found." },
+  "client_portal.empty_hint": {
+    de: "Akten erscheinen hier, sobald sie in der Akte für die Portal-Vorschau freigegeben sind.",
+    en: "Cases appear here once they are shared for portal preview in the case file.",
+  },
+  "client_portal.status_closed": { de: "Geschlossen", en: "Closed" },
+  "client_portal.status_won": { de: "Gewonnen", en: "Won" },
+  "client_portal.status_open": { de: "Offen", en: "Open" },
+  "client_portal.documents": { de: "Dokumente", en: "Documents" },
+  "client_portal.next_step": { de: "Nächster Schritt", en: "Next step" },
+  "client_portal.no_deadline": { de: "Keine anstehenden Fristen", en: "No upcoming deadlines" },
+  "client_portal.msg_disabled": {
+    de: "Nachrichten sind erst im echten Mandantenportal verfügbar.",
+    en: "Messages are only available in the real client portal.",
+  },
+  "client_portal.message": { de: "Nachricht", en: "Message" },
+  "client_portal.unnamed_case": { de: "Unbenannte Akte", en: "Unnamed case" },
+  "client_portal.error_load": {
+    de: "Akten konnten nicht geladen werden.",
+    en: "Cases could not be loaded.",
+  },
+
+  // ── Cost Calculator page ──
+  "cost_calc.title": { de: "Kostenrechner", en: "Cost Calculator" },
+  "cost_calc.desc": {
+    de: "Anwaltskosten nach RVG 2025 (DE) oder RATG (AT)",
+    en: "Legal fees per RVG 2025 (DE) or RATG (AT)",
+  },
+  "cost_calc.breadcrumb": { de: "Kostenrechner", en: "Cost Calculator" },
+  "cost_calc.de": { de: "Deutschland (RVG 2025)", en: "Germany (RVG 2025)" },
+  "cost_calc.at": { de: "Österreich (RATG 2024)", en: "Austria (RATG 2024)" },
+  "cost_calc.dispute_value": { de: "Streitwert", en: "Dispute value" },
+  "cost_calc.placeholder": { de: "z.B. 15000", en: "e.g. 15000" },
+  "cost_calc.calculate": { de: "Berechnen", en: "Calculate" },
+  "cost_calc.link_case": { de: "Mit Akte verknüpfen", en: "Link to case" },
+  "cost_calc.no_case": { de: "Keine Akte", en: "No case" },
+  "cost_calc.result_title": { de: "Berechnungsergebnis", en: "Calculation result" },
+  "cost_calc.verfahrensgebuehr": { de: "Verfahrensgebühr (1,3)", en: "Proceedings fee (1.3)" },
+  "cost_calc.terminsgebuehr": { de: "Terminsgebühr (1,2)", en: "Hearing fee (1.2)" },
+  "cost_calc.einigungsgebuehr_de": { de: "Einigungsgebühr (1,0)", en: "Settlement fee (1.0)" },
+  "cost_calc.einigungsgebuehr_at": { de: "Einigungsgebühr (1,2)", en: "Settlement fee (1.2)" },
+  "cost_calc.auslagenpauschale": { de: "Auslagenpauschale", en: "Expense lump sum" },
+  "cost_calc.zwischensumme": { de: "Zwischensumme", en: "Subtotal" },
+  "cost_calc.mwst": { de: "MwSt", en: "VAT" },
+  "cost_calc.estimated_fee": { de: "Geschätztes Honorar (brutto)", en: "Estimated fee (gross)" },
+  "cost_calc.save_to_case": { de: "In Akte speichern", en: "Save to case" },
+  "cost_calc.save_success": {
+    de: "Kostenschätzung wurde in der Akte gespeichert.",
+    en: "Cost estimate saved to case.",
+  },
+  "cost_calc.save_error": { de: "Fehler beim Speichern.", en: "Error saving." },
+  "cost_calc.error_prefix": { de: "Fehler:", en: "Error:" },
+  "cost_calc.at_warning": {
+    de: "Die Österreich-Werte sind Näherungswerte. Das RATG rechnet mit Bemessungsgrundlage, Einheitssatz und ERV-Zuschlägen — eine verbindliche Berechnung ist nur anhand des konkreten Tarifpostens möglich.",
+    en: "The Austria values are approximations. The RATG calculates with assessment basis, unit rate and ERV surcharges — a binding calculation is only possible based on the specific tariff item.",
+  },
+  "cost_calc.disclaimer": {
+    de: "Dieser Rechner dient der Orientierung und ersetzt keine rechtsverbindliche Gebührenberechnung. Berechnungsbasis: RVG § 13 i.d.F. KostBRÄG 2025 (gerichtliches Verfahren 1. Instanz, VV 3100/3104/1003/7002). Prüfe vor verbindlichen Angaben die aktuell geltende Fassung des RVG bzw. RATG.",
+    en: "This calculator is for guidance only and does not replace a legally binding fee calculation. Basis: RVG § 13 as amended by KostBRÄG 2025 (first instance court proceedings, VV 3100/3104/1003/7002). Verify the current version of the RVG or RATG before binding statements.",
+  },
+
+  // ── Precedent Search page ──
+  "precedent.title": { de: "Präzedenzsuche", en: "Precedent Search" },
+  "precedent.desc": {
+    de: "Durchsucht interne Fallakten mit Stichwort- und Vektorsuche und bewertet Relevanz nach Rechtsgebiet, Datum und Ausgang",
+    en: "Searches internal case files with keyword and vector search and scores relevance by practice area, date and outcome",
+  },
+  "precedent.breadcrumb": { de: "Präzedenzsuche", en: "Precedent Search" },
+
+  // ── RAG Eval page ──
+  "rag_eval.title": { de: "Retrieval-Qualität", en: "Retrieval Quality" },
+  "rag_eval.desc": {
+    de: "Benchmark, Freigabeprüfung und menschliche Review für KI-Antworten",
+    en: "Benchmark, gate check and human review for AI responses",
+  },
+  "rag_eval.breadcrumb": { de: "Retrieval-Qualität", en: "Retrieval Quality" },
+
+  // ── Review Queue page ──
+  "review_queue.title": { de: "Prüfwarteschlange", en: "Review Queue" },
+  "review_queue.desc": {
+    de: "Kollaborative Dokumentenprüfung mit Status, Zuständigkeiten und nachvollziehbarer Freigabe",
+    en: "Collaborative document review with status, assignments and traceable approval",
+  },
+  "review_queue.breadcrumb": { de: "Prüfwarteschlange", en: "Review Queue" },
+
+  // ── Monitoring page ──
+  "monitoring.title": { de: "Regulatory Monitoring", en: "Regulatory Monitoring" },
+  "monitoring.desc": {
+    de: "Themen und Rechtsgebiete beobachten — neue Urteile, Verordnungen und Änderungen automatisch erfassen",
+    en: "Monitor topics and practice areas — automatically capture new rulings, regulations and changes",
+  },
+  "monitoring.breadcrumb": { de: "Monitoring", en: "Monitoring" },
+  "monitoring.new_monitor": { de: "Neuer Monitor", en: "New monitor" },
+  "monitoring.active": { de: "aktiv", en: "active" },
+  "monitoring.alerts_total": { de: "Alerts gesamt", en: "Alerts total" },
+  "monitoring.unread": { de: "Ungelesen", en: "Unread" },
+  "monitoring.loading": { de: "Lade Monitoring-Daten…", en: "Loading monitoring data…" },
+  "monitoring.tab_monitors": { de: "Monitore", en: "Monitors" },
+  "monitoring.tab_alerts": { de: "Alerts", en: "Alerts" },
+  "monitoring.tab_settings": { de: "Einstellungen", en: "Settings" },
+  "monitoring.empty_title": {
+    de: "Noch keine Monitore definiert.",
+    en: "No monitors defined yet.",
+  },
+  "monitoring.empty_hint": {
+    de: "Erstelle deinen ersten Monitor, um Themen und Rechtsgebiete zu beobachten.",
+    en: "Create your first monitor to watch topics and practice areas.",
+  },
+  "monitoring.create_monitor": { de: "Monitor anlegen", en: "Create monitor" },
+
+  // ── beA page ──
+  "bea.title": {
+    de: "beA — elektronischer Rechtsverkehr",
+    en: "beA — electronic legal communication",
+  },
+  "bea.desc": {
+    de: "Nachrichten-Import und Entwurfsvorbereitung",
+    en: "Message import and draft preparation",
+  },
+  "bea.breadcrumb": { de: "beA", en: "beA" },
+  "bea.compose": { de: "Entwurf erstellen", en: "Create draft" },
+  "bea.no_send_title": { de: "Kein Versand über Subsumio", en: "No sending via Subsumio" },
+  "bea.no_send_desc": {
+    de: "Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte. Subsumio versendet keine Nachrichten — es importiert beA-Nachrichten via XML-Export (Konnektor bea-import) und speichert Entwürfe im Brain, die Sie in Ihrer beA-Software (z. B. beA-Webclient, RA-MICRO) versenden.",
+    en: "Sending via beA requires certified beA software with a lawyer signature card. Subsumio does not send messages — it imports beA messages via XML export (connector bea-import) and stores drafts in the brain that you send in your beA software (e.g. beA web client, RA-MICRO).",
+  },
+  "bea.error_load": {
+    de: "beA-Daten konnten nicht geladen werden.",
+    en: "beA data could not be loaded.",
+  },
+  "bea.required_fields": {
+    de: "Betreff und Empfänger sind erforderlich.",
+    en: "Subject and recipient are required.",
+  },
+  "bea.draft_saved": { de: "Entwurf im Brain gespeichert.", en: "Draft saved in brain." },
+  "bea.save_failed": { de: "Speichern fehlgeschlagen.", en: "Save failed." },
+  "bea.compose_title": { de: "Neuer beA-Entwurf", en: "New beA draft" },
+  "bea.recipient_label": {
+    de: "Empfänger (Gericht/Behörde) *",
+    en: "Recipient (court/authority) *",
+  },
+  "bea.recipient_placeholder": { de: "z. B. Amtsgericht München", en: "e.g. Amtsgericht München" },
+  "bea.case_label": { de: "Aktenzeichen", en: "Case number" },
+  "bea.subject_label": { de: "Betreff *", en: "Subject *" },
+  "bea.subject_placeholder": { de: "z. B. Klageerwiderung", en: "e.g. Statement of defence" },
+  "bea.body_label": { de: "Nachrichtentext", en: "Message body" },
+  "bea.body_placeholder": { de: "Nachrichtentext…", en: "Message text…" },
+  "bea.ai_label": {
+    de: 'Inhalt KI-generiert — als „{label}" kennzeichnen (EU AI Act Art. 50)',
+    en: 'Content AI-generated — mark as "{label}" (EU AI Act Art. 50)',
+  },
+  "bea.save_draft": { de: "Als Entwurf im Brain speichern", en: "Save as draft in brain" },
+  "bea.loading_aria": { de: "beA-Nachrichten werden geladen", en: "Loading beA messages" },
+  "bea.drafts": { de: "Entwürfe", en: "Drafts" },
+  "bea.no_drafts": { de: "Keine Entwürfe vorhanden.", en: "No drafts available." },
+  "bea.draft_badge": { de: "Entwurf", en: "Draft" },
+  "bea.to": { de: "An:", en: "To:" },
+  "bea.case": { de: "Akte", en: "Case" },
+  "bea.filing": { de: "Filing:", en: "Filing:" },
+  "bea.submit_for_approval": { de: "Zur Freigabe einreichen", en: "Submit for approval" },
+  "bea.approve": { de: "Freigeben", en: "Approve" },
+  "bea.discard": { de: "Verwerfen", en: "Discard" },
+  "bea.approved_send_hint": {
+    de: "Freigegeben — Versand erfolgt in Ihrer beA-Software.",
+    en: "Approved — sending is done in your beA software.",
+  },
+  "bea.create_filing": { de: "Filing-Paket anlegen", en: "Create filing package" },
+  "bea.filing_created": {
+    de: "Filing-Paket angelegt (Status: Entwurf).",
+    en: "Filing package created (status: draft).",
+  },
+  "bea.filing_create_failed": {
+    de: "Filing-Paket konnte nicht angelegt werden.",
+    en: "Filing package could not be created.",
+  },
+  "bea.filing_status": { de: "Filing-Paket-Status:", en: "Filing package status:" },
+  "bea.filing_update_failed": {
+    de: "Status konnte nicht aktualisiert werden.",
+    en: "Status could not be updated.",
+  },
+  "bea.imported_messages": { de: "Importierte Nachrichten", en: "Imported messages" },
+  "bea.no_imported": { de: "Keine importierten beA-Nachrichten.", en: "No imported beA messages." },
+  "bea.import_hint": { de: "Import einrichten:", en: "Set up import:" },
+  "bea.from": { de: "Von:", en: "From:" },
+
+  // ── Sources page ──
+  "sources.title": { de: "Rechtsquellen", en: "Legal Sources" },
+  "sources.desc": {
+    de: "Quellen-Registry — Status, Freshness und Provenance aller Rechtsdaten",
+    en: "Source registry — status, freshness and provenance of all legal data",
+  },
+  "sources.breadcrumb": { de: "Rechtsquellen", en: "Legal Sources" },
+  "sources.export": { de: "Export", en: "Export" },
+
+  // ── Norms page ──
+  "norms.title": { de: "Normen", en: "Statutes" },
+  "norms.desc": {
+    de: "Gesetze und Rechtsvorschriften durchsuchen",
+    en: "Search laws and statutes",
+  },
+  "norms.breadcrumb": { de: "Normen", en: "Statutes" },
+  "norms.copy": { de: "Kopieren", en: "Copy" },
+  "norms.copied": { de: "Kopiert", en: "Copied" },
+  "norms.copy_title": { de: "Text kopieren", en: "Copy text" },
+  "norms.search_placeholder": {
+    de: "Norm suchen… z.B. § 823 BGB, Art. 5 GG",
+    en: "Search statute… e.g. § 823 BGB, Art. 5 GG",
+  },
+  "norms.all": { de: "Alle", en: "All" },
+  "norms.jurisdiction_at": { de: "🇦🇹 Österreich", en: "🇦🇹 Austria" },
+  "norms.jurisdiction_ch": { de: "🇨🇭 Schweiz", en: "🇨🇭 Switzerland" },
+  "norms.jurisdiction_de": { de: "🇩🇪 Deutschland", en: "🇩🇪 Germany" },
+  "norms.loading_detail": { de: "Gesetzestext wird geladen…", en: "Loading statute text…" },
+  "norms.laws_count": { de: "Gesetze", en: "statutes" },
+  "norms.empty": { de: "Keine Gesetze gefunden.", en: "No statutes found." },
+  "norms.empty_filter": {
+    de: "Passe den Filter oder die Suche an.",
+    en: "Adjust the filter or search.",
+  },
+  "norms.empty_import": {
+    de: "Importiere Gesetze über das CLI.",
+    en: "Import statutes via the CLI.",
+  },
+  "norms.error_load": {
+    de: "Normen konnten nicht geladen werden.",
+    en: "Statutes could not be loaded.",
+  },
+
+  // ── Vault page ──
+  "vault.title": { de: "Dokumenten-Vault", en: "Document Vault" },
+  "vault.desc": {
+    de: "Zentraler Dokumentenspeicher mit Massenanalyse und strukturierter Prüftabelle",
+    en: "Central document store with bulk analysis and structured review table",
+  },
+  "vault.breadcrumb": { de: "Dokumenten-Vault", en: "Document Vault" },
+  "vault.delete": { de: "Löschen", en: "Delete" },
+  "vault.bulk_review": { de: "Bulk-Review", en: "Bulk review" },
+
+  // ── WhatsApp page ──
+  "whatsapp.title": { de: "WhatsApp Copilot", en: "WhatsApp Copilot" },
+  "whatsapp.desc": {
+    de: "Interner Kanzlei-Assistent für Superbrain-Erfassung und Abfragen",
+    en: "Internal firm assistant for superbrain capture and queries",
+  },
+  "whatsapp.breadcrumb": { de: "WhatsApp", en: "WhatsApp" },
+  "whatsapp.events_log": { de: "WhatsApp Events", en: "WhatsApp Events" },
+  "whatsapp.intake": { de: "Intake", en: "Intake" },
+  "whatsapp.intake_desc": {
+    de: "WhatsApp-Anfragen triagieren und in Akten überführen",
+    en: "Triage WhatsApp requests and convert to cases",
+  },
+  "whatsapp.doc_requests": { de: "Dokumentenanfragen", en: "Document requests" },
+  "whatsapp.doc_requests_desc": {
+    de: "Unterlagenanforderungen verfolgen und erfüllen",
+    en: "Track and fulfill document requests",
+  },
+  "whatsapp.approvals": { de: "Freigaben", en: "Approvals" },
+  "whatsapp.approvals_desc": {
+    de: "Mandantenkommunikation und Aktionen sicher ausführen",
+    en: "Safely execute client communication and actions",
+  },
+
+  // ── Vault page: additional strings ──
+  "vault.type_legal_case": { de: "Akte", en: "Case" },
+  "vault.type_legal_contract": { de: "Vertrag", en: "Contract" },
+  "vault.type_legal_document": { de: "Dokument", en: "Document" },
+  "vault.type_bea_message": { de: "beA-Nachricht", en: "beA message" },
+  "vault.type_court_decision": { de: "Urteil", en: "Judgment" },
+  "vault.type_invoice": { de: "Rechnung", en: "Invoice" },
+  "vault.type_contact": { de: "Kontakt", en: "Contact" },
+  "vault.type_evidence": { de: "Beweismittel", en: "Evidence" },
+  "vault.q_deadlines": {
+    de: "Welche Fristen werden genannt?",
+    en: "Which deadlines are mentioned?",
+  },
+  "vault.q_parties": { de: "Welche Parteien sind beteiligt?", en: "Which parties are involved?" },
+  "vault.q_liability": { de: "Gibt es Haftungsklauseln?", en: "Are there liability clauses?" },
+  "vault.err_min_select": {
+    de: "Mindestens ein Dokument auswählen.",
+    en: "Select at least one document.",
+  },
+  "vault.err_no_results": { de: "Keine Ergebnisse.", en: "No results." },
+  "vault.err_cloud_unreachable": {
+    de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Dokumente angezeigt.",
+    en: "Cloud brain currently unreachable. Showing cached documents.",
+  },
+  "vault.err_load_failed": {
+    de: "Dokumente konnten nicht geladen werden.",
+    en: "Documents could not be loaded.",
+  },
+  "vault.confirm_delete_title": { de: "Dokument löschen", en: "Delete document" },
+  "vault.confirm_delete_msg": {
+    de: "Möchten Sie dieses Dokument wirklich löschen?",
+    en: "Do you really want to delete this document?",
+  },
+  "vault.confirm_delete_btn": { de: "Löschen", en: "Delete" },
+  "vault.err_delete_failed": { de: "Löschen fehlgeschlagen.", en: "Delete failed." },
+  "vault.bulk_review_count": { de: "Bulk-Review", en: "Bulk review" },
+  "vault.bulk_analysis": { de: "Bulk-Analyse über", en: "Bulk analysis across" },
+  "vault.selected_docs": { de: "ausgewählte Dokumente", en: "selected documents" },
+  "vault.question_placeholder": { de: "Frage", en: "Question" },
+  "vault.add_question": { de: "+ Frage hinzufügen", en: "+ Add question" },
+  "vault.analyzing": { de: "Wird analysiert…", en: "Analyzing…" },
+  "vault.start_bulk": { de: "Bulk-Review starten", en: "Start bulk review" },
+  "vault.csv_export": { de: "CSV Export", en: "CSV export" },
+  "vault.col_document": { de: "Dokument", en: "Document" },
+  "vault.search_placeholder": { de: "Dokumente durchsuchen…", en: "Search documents…" },
+  "vault.all_types": { de: "Alle Typen", en: "All types" },
+  "vault.all_tags": { de: "Alle Tags", en: "All tags" },
+  "vault.selected_count": { de: "ausgewählt", en: "selected" },
+  "vault.select_all": { de: "Alle auswählen", en: "Select all" },
+  "vault.deselect_all": { de: "Alle abwählen", en: "Deselect all" },
+  "vault.retry": { de: "Erneut versuchen", en: "Retry" },
+  "vault.empty_title": { de: "Keine Dokumente gefunden", en: "No documents found" },
+  "vault.empty_upload": {
+    de: "Lade Dokumente über den Upload-Bereich hoch.",
+    en: "Upload documents via the upload area.",
+  },
+  "vault.empty_filter": {
+    de: "Passe deine Suche oder Filter an.",
+    en: "Adjust your search or filters.",
+  },
+  "vault.pagination_of": { de: "von", en: "of" },
+
+  // ── WhatsApp page: additional strings ──
+  "whatsapp.loading": { de: "Lade WhatsApp Copilot…", en: "Loading WhatsApp Copilot…" },
+  "whatsapp.metric_config": { de: "Konfiguration", en: "Configuration" },
+  "whatsapp.metric_ready": { de: "bereit", en: "ready" },
+  "whatsapp.metric_open": { de: "offen", en: "pending" },
+  "whatsapp.metric_pending_approvals": { de: "Pending Freigaben", en: "Pending approvals" },
+  "whatsapp.metric_open_intakes": { de: "Offene Intakes", en: "Open intakes" },
+  "whatsapp.metric_open_docs": { de: "Dokumente offen", en: "Documents open" },
+  "whatsapp.phone_numbers": { de: "WhatsApp-Nummern", en: "WhatsApp numbers" },
+  "whatsapp.phone_placeholder": { de: "+49 170 1234567", en: "+49 170 1234567" },
+  "whatsapp.name_placeholder": { de: "Name", en: "Name" },
+  "whatsapp.role_lawyer": { de: "Anwalt", en: "Lawyer" },
+  "whatsapp.role_assistant": { de: "Assistenz", en: "Assistant" },
+  "whatsapp.role_client": { de: "Mandant", en: "Client" },
+  "whatsapp.role_intake": { de: "Intake", en: "Intake" },
+  "whatsapp.activate": { de: "Aktivieren", en: "Activate" },
+  "whatsapp.identity_default": { de: "WhatsApp Identity", en: "WhatsApp Identity" },
+  "whatsapp.verified": { de: "verifiziert", en: "verified" },
+  "whatsapp.not_verified": { de: "nicht verifiziert", en: "not verified" },
+  "whatsapp.suspend": { de: "Sperren", en: "Suspend" },
+  "whatsapp.delete": { de: "Löschen", en: "Delete" },
+  "whatsapp.no_identities": {
+    de: "Noch keine WhatsApp-Nummern im sicheren Identity Store.",
+    en: "No WhatsApp numbers in the secure identity store yet.",
+  },
+  "whatsapp.setup": { de: "Setup", en: "Setup" },
+  "whatsapp.storage_provider": { de: "Storage Provider", en: "Storage provider" },
+  "whatsapp.media_storage": { de: "Media Storage", en: "Media storage" },
+  "whatsapp.blob_missing": { de: "Blob Token fehlt", en: "Blob token missing" },
+  "whatsapp.media_limit": { de: "Media Limit", en: "Media limit" },
+  "whatsapp.per_file": { de: "MB pro Datei", en: "MB per file" },
+  "whatsapp.allowed_sender": { de: "Erlaubter Sender", en: "Allowed sender" },
+  "whatsapp.no_senders": {
+    de: "Keine erlaubten WhatsApp-Sender konfiguriert.",
+    en: "No allowed WhatsApp senders configured.",
+  },
+  "whatsapp.workflow_objects": { de: "Workflow Objekte", en: "Workflow objects" },
+  "whatsapp.no_workflow": { de: "Noch keine Workflow-Objekte.", en: "No workflow objects yet." },
+  "whatsapp.kind_approval": { de: "Freigabe", en: "Approval" },
+  "whatsapp.kind_intake": { de: "Intake", en: "Intake" },
+  "whatsapp.kind_docs": { de: "Dokumente", en: "Documents" },
+  "whatsapp.no_entries": { de: "Noch keine Einträge.", en: "No entries yet." },
+  "whatsapp.status_open": { de: "offen", en: "open" },
+  "whatsapp.err_load": {
+    de: "WhatsApp-Status konnte nicht geladen werden.",
+    en: "WhatsApp status could not be loaded.",
+  },
+  "whatsapp.err_save_identity": {
+    de: "WhatsApp-Nummer konnte nicht gespeichert werden.",
+    en: "WhatsApp number could not be saved.",
+  },
+
+  // ── Precedent Search page: additional strings ──
+  "precedent.err_failed": { de: "Präzedenzsuche fehlgeschlagen.", en: "Precedent search failed." },
+  "precedent.search_placeholder": {
+    de: "Rechtsfrage, Sachverhalt oder Stichwort…",
+    en: "Legal question, facts or keyword…",
+  },
+  "precedent.search_btn": { de: "Suchen", en: "Search" },
+  "precedent.jurisdiction": { de: "Rechtsordnung:", en: "Jurisdiction:" },
+  "precedent.jurisdiction_all": { de: "Alle", en: "All" },
+  "precedent.legal_area": { de: "Rechtsgebiet:", en: "Legal area:" },
+  "precedent.legal_area_placeholder": { de: "z. B. Mietrecht", en: "e.g. tenancy law" },
+  "precedent.max_results": { de: "Max. Ergebnisse:", en: "Max results:" },
+  "precedent.results_count": { de: "Ergebnisse", en: "results" },
+  "precedent.empty_title": { de: "Keine Präzedenzfälle gefunden.", en: "No precedents found." },
+  "precedent.empty_desc": {
+    de: "Es wurden keine passenden Fallakten in der Wissensbasis gefunden.",
+    en: "No matching case files were found in the knowledge base.",
+  },
+  "precedent.source_internal": { de: "Intern", en: "Internal" },
+  "precedent.source_external": { de: "Extern", en: "External" },
+  "precedent.to_case": { de: "Zur Akte", en: "Go to case" },
+
+  // ── Review Queue page: additional strings ──
+  "review_queue.status_pending": { de: "Ausstehend", en: "Pending" },
+  "review_queue.status_in_review": { de: "In Prüfung", en: "In review" },
+  "review_queue.status_approved": { de: "Freigegeben", en: "Approved" },
+  "review_queue.status_rejected": { de: "Abgelehnt", en: "Rejected" },
+  "review_queue.status_changes_requested": { de: "Überarbeitung", en: "Changes requested" },
+  "review_queue.all_status": { de: "Alle Status", en: "All statuses" },
+  "review_queue.all_assignees": { de: "Alle Bearbeiter", en: "All assignees" },
+  "review_queue.docs_count": { de: "Dokumente", en: "documents" },
+  "review_queue.assign_placeholder": { de: "Bearbeiter zuweisen…", en: "Assign reviewer…" },
+  "review_queue.approve": { de: "Freigeben", en: "Approve" },
+  "review_queue.revise": { de: "Überarbeiten", en: "Request changes" },
+  "review_queue.reject": { de: "Ablehnen", en: "Reject" },
+  "review_queue.empty": {
+    de: "Keine Dokumente in der Review-Queue. Dokumente mit Frontmatter-Feld",
+    en: "No documents in the review queue. Documents with frontmatter field",
+  },
+  "review_queue.empty_hint": {
+    de: "erscheinen hier.",
+    en: "appear here.",
+  },
+
+  // ── RAG Eval page: additional strings ──
+  "rag_eval.history": { de: "Historie", en: "History" },
+  "rag_eval.run_eval": { de: "Eval starten", en: "Start eval" },
+  "rag_eval.running": { de: "Laufe…", en: "Running…" },
+  "rag_eval.release_gate": { de: "Release-Gate", en: "Release gate" },
+  "rag_eval.gate_pass": { de: "Freigegeben", en: "Approved" },
+  "rag_eval.gate_warn": { de: "Warnung", en: "Warning" },
+  "rag_eval.gate_block": { de: "Blockiert", en: "Blocked" },
+  "rag_eval.set_baseline": {
+    de: "Aktuellen Run als Baseline setzen",
+    en: "Set current run as baseline",
+  },
+  "rag_eval.baseline_label": { de: "Baseline:", en: "Baseline:" },
+  "rag_eval.human_review": { de: "Human Review Feedback", en: "Human Review Feedback" },
+  "rag_eval.reviews_total": { de: "Reviews gesamt", en: "Total reviews" },
+  "rag_eval.correct": { de: "Korrekt", en: "Correct" },
+  "rag_eval.incorrect": { de: "Falsch", en: "Incorrect" },
+  "rag_eval.incomplete": { de: "Unvollständig", en: "Incomplete" },
+  "rag_eval.accuracy_rate": { de: "Accuracy Rate", en: "Accuracy rate" },
+  "rag_eval.eval_history": { de: "Eval-Historie", en: "Eval history" },
+  "rag_eval.queries": { de: "Queries", en: "Queries" },
+  "rag_eval.overall_score": { de: "Gesamtbewertung", en: "Overall score" },
+  "rag_eval.by_category": { de: "Nach Kategorie", en: "By category" },
+  "rag_eval.per_query": { de: "Einzelergebnisse", en: "Per-query results" },
+  "rag_eval.hits": { de: "Treffer", en: "hits" },
+  "rag_eval.eval_run": { de: "Eval-Lauf:", en: "Eval run:" },
+  "rag_eval.fixture_v": { de: "Fixture v", en: "Fixture v" },
+  "rag_eval.no_eval": { de: "Noch kein Eval durchgeführt.", en: "No eval run yet." },
+  "rag_eval.start_hint": {
+    de: 'Klicke „Eval starten", um die Retrieval-Qualität Ihres Brains zu benchmarken.',
+    en: 'Click "Start eval" to benchmark your brain\'s retrieval quality.',
+  },
+
+  // ── Client Portal page: additional strings ──
+  "client_portal.preview_warning": {
+    de: "Dies ist eine Vorschau für die Kanzlei — sie zeigt alle Akten der explizit freigegebenen Akten. Das echte Mandanten-Portal mit eigenem Login pro Mandant und Akten-Filterung ist ein separates Deployment und noch nicht Teil dieses Dashboards.",
+    en: "This is a preview for the law firm — it shows all explicitly shared cases. The real client portal with per-client login and case filtering is a separate deployment and not yet part of this dashboard.",
+  },
+  "client_portal.deadline_until": { de: "bis", en: "until" },
+  "client_portal.deadline_label": { de: "Frist", en: "Deadline" },
+
+  // ── Upload page: additional strings ──
+  "upload.err_offline": {
+    de: "Offline — Datei-Upload erfordert Internetverbindung. Datei wurde nicht gespeichert.",
+    en: "Offline — file upload requires internet connection. File was not saved.",
+  },
+  "upload.err_failed": { de: "Upload fehlgeschlagen", en: "Upload failed" },
+  "upload.how_title": { de: "Wie funktioniert es?", en: "How does it work?" },
+  "upload.how_desc": {
+    de: "Subsumio chunked das Dokument automatisch, erstellt Embeddings und indiziert es im Wissensgraph. Entitäten (Personen, Firmen, Konzepte) werden extrahiert und verknüpft. Danach kannst du das Dokument über die Query-Seite abfragen.",
+    en: "Subsumio automatically chunks the document, creates embeddings and indexes it in the knowledge graph. Entities (people, companies, concepts) are extracted and linked. You can then query the document via the Query page.",
+  },
+  "upload.hint_label": { de: "Hinweis:", en: "Note:" },
+  "upload.hint_desc": {
+    de: "Die Subsumio Engine muss laufen",
+    en: "The Subsumio engine must be running",
+  },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

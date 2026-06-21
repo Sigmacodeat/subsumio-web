@@ -37,6 +37,7 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   contacts: "nav.contacts",
   contracts: "nav.contracts",
   playbooks: "nav.playbooks",
+  "process-strategy": "nav.process_strategy",
   vault: "nav.vault",
   deadlines: "nav.deadlines",
   opponents: "nav.opponents",
