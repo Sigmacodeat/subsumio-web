@@ -16,6 +16,13 @@ jobs:
   tier1:
     name: Tier 1 (Mechanical)
     runs-on: ubuntu-latest
+    # All steps below assume the server/ subproject as cwd: test/e2e/*.test.ts
+    # and src/cli.ts only exist there. Without this, `bun install` installs
+    # the wrong package.json and `bun test test/e2e/...` fails with
+    # "module not found" — this workflow was broken until fixed (repo check).
+    defaults:
+      run:
+        working-directory: server
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -49,6 +56,9 @@ jobs:
     # from repo/org secrets. Nightly + manual triggers still supported via
     # the workflow-level `on:` list.
     needs: tier1
+    defaults:
+      run:
+        working-directory: server
     services:
       postgres:
         image: pgvector/pgvector:pg16
