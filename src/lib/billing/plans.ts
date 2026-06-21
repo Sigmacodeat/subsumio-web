@@ -60,7 +60,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
     name: "Pro",
     price: "890 €/Monat",
     features: [
-      "1.000 KI-Anfragen/Mon. inklusive",
+      "1.000 Assistenten-Anfragen/Mon. inklusive",
       "75 GB Cloud-Speicher",
       "300 WhatsApp-Nachrichten/Mon. inklusive",
       "Fair-Use WhatsApp- & Dokumenten-Import",
@@ -78,7 +78,7 @@ export const BILLING_PLANS_DISPLAY: BillingPlanDisplay[] = [
     features: [
       "Alles aus Pro",
       "Geteiltes Firmen-Gedächtnis",
-      "4.000 KI-Anfragen/Seat/Mon. inklusive",
+      "4.000 Assistenten-Anfragen/Seat/Mon. inklusive",
       "200 GB Cloud-Speicher pro Seat",
       "1.000 WhatsApp-Nachrichten/Mon. inklusive",
       "Zugriff pro Nutzer gescoped — fuzz-getestet, null Leaks",

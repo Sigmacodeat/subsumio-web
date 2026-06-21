@@ -53,6 +53,12 @@ declare global {
   namespace Express {
     interface Request {
       matterScope?: string[] | "all";
+      /**
+       * Subsumio R3: Document-level ACL groups for this caller.
+       * "all" / undefined = no ACL filtering (trusted admin).
+       * string[] = only pages accessible to these group UUIDs.
+       */
+      aclGroups?: string[] | "all";
     }
   }
 }
@@ -422,6 +428,57 @@ function matterScopeMiddleware(apiKey: string | undefined) {
 }
 
 /**
+ * Subsumio R3: Middleware that resolves the caller's document-level ACL groups.
+ * Reads the user_id from the identity token, queries access_group_members for
+ * the caller's source, and attaches the group UUIDs to req.aclGroups.
+ * "all" = no ACL filtering (admin or no groups configured).
+ */
+function aclGroupsMiddleware(engine: BrainEngine) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Admin role bypasses ACL filtering
+      const h = req.headers["x-sigmabrain-identity-token"];
+      const token = Array.isArray(h) ? h[0] : h;
+      if (!token || typeof token !== "string") {
+        req.aclGroups = "all";
+        next();
+        return;
+      }
+      // Extract user_id from the verified token
+      const apiKey = process.env.SUBSUMIO_WEB_API_KEY ?? process.env.SIGMABRAIN_WEB_API_KEY;
+      if (!apiKey) {
+        req.aclGroups = "all";
+        next();
+        return;
+      }
+      const { verifyIdentityToken } = await import("../core/identity-token.ts");
+      const payload = verifyIdentityToken(token, apiKey);
+      if (!payload || !payload.userId) {
+        req.aclGroups = "all";
+        next();
+        return;
+      }
+      // Admin users get unrestricted access
+      if (payload.role === "admin") {
+        req.aclGroups = "all";
+        next();
+        return;
+      }
+      const sourceId = requestSourceId(req);
+      const { getUserGroups } = await import("../core/acl.ts");
+      const groupIds = await getUserGroups(engine, payload.userId, sourceId);
+      req.aclGroups = groupIds.length > 0 ? groupIds : "all";
+      next();
+    } catch {
+      // Fail-open: if ACL resolution fails, don't block the request.
+      // The matter-scope middleware already provides the primary isolation.
+      req.aclGroups = "all";
+      next();
+    }
+  };
+}
+
+/**
  * Shared, public, READ-ONLY reference sources every tenant may query alongside
  * their own (e.g. the statute corpus imported into `law-at`/`law-de`). Set via
  * `GBRAIN_SHARED_READ_SOURCES=law-at,law-de`. Empty by default → behaviour is
@@ -454,13 +511,15 @@ async function invokeOp(
   params: Record<string, unknown>,
   sourceId: string = "default",
   allowedSources?: string[],
-  matterScope?: string[] | "all"
+  matterScope?: string[] | "all",
+  aclGroups?: string[] | "all"
 ): Promise<unknown> {
   const result = await dispatchToolCall(engine, name, params, {
     remote: false,
     sourceId,
     ...(allowedSources ? { allowedSources } : {}),
     ...(matterScope ? { matterScope } : {}),
+    ...(aclGroups ? { aclGroups } : {}),
   });
   if (result.isError) {
     let msg = "operation_failed";
@@ -572,6 +631,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // P0-SECR-002: attach verified matter scope to every request. Invalid
   // identity tokens are rejected; absent tokens default to "all".
   app.use("/api", matterScopeMiddleware(apiKey));
+  // Subsumio R3: resolve document-level ACL groups for every /api request.
+  app.use("/api", aclGroupsMiddleware(engine));
 
   app.get("/api/stats", async (req: Request, res: Response) => {
     try {
@@ -632,13 +693,15 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         return;
       }
       const scope = req.matterScope ?? "all";
+      const aclGroups = req.aclGroups ?? "all";
       const raw = await invokeOp(
         engine,
         "search",
         { query: q, limit },
         requestSourceId(req),
         readSourcesFor(req),
-        scope
+        scope,
+        aclGroups
       );
       const filtered = filterByMatterScope(
         Array.isArray(raw) ? (raw as Array<Record<string, unknown>>) : [],
@@ -689,6 +752,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       // It is also passed to runThink via its own options so retrieval can
       // reject out-of-scope pages before citations are even generated.
       const matterScope = req.matterScope ?? "all";
+      const aclGroups = req.aclGroups ?? "all";
 
       const result = await runThink(engine, {
         question: query,
@@ -698,6 +762,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // the answer can retrieve and cite the actual law, not just the firm's docs.
         ...(readSourcesFor(req) ? { allowedSources: readSourcesFor(req) } : {}),
         searchMode,
+        matterScope,
+        aclGroups,
         // Real-time token streaming: each text delta fires an SSE chunk event.
         onStreamChunk: (text) => {
           res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
@@ -1143,7 +1209,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           },
           requestSourceId(req),
           undefined,
-          req.matterScope ?? "all"
+          req.matterScope ?? "all",
+          req.aclGroups ?? "all"
         );
         res.json(result);
       } catch (e) {
@@ -1229,6 +1296,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.status(400).json({ error: "case_slug_required" });
         return;
       }
+      assertMatterScope(req.matterScope, caseSlug);
       const { getConnectorCoverage } = await import("../core/matter-scope.ts");
       const result = await getConnectorCoverage(engine, caseSlug, requestSourceId(req));
       res.json(result);
@@ -1251,7 +1319,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         }
         const { resolveEntity } = await import("../core/matter-scope.ts");
         const result = await resolveEntity(engine, mention, requestSourceId(req));
-        res.json(result);
+        const scope = req.matterScope ?? "all";
+        const inScope =
+          scope === "all" ||
+          !result.resolved_slug ||
+          scope.some((p) => result.resolved_slug!.startsWith(p) || result.resolved_slug === p);
+        res.json(
+          inScope ? result : { mention, resolved_slug: null, confidence: 0, entity_type: null }
+        );
       } catch (e) {
         legalErr(res, "entity_resolve", e);
       }
@@ -1273,8 +1348,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           return;
         }
         const { resolveEntities } = await import("../core/matter-scope.ts");
-        const result = await resolveEntities(engine, mentions, requestSourceId(req));
-        res.json(result);
+        const results = await resolveEntities(engine, mentions, requestSourceId(req));
+        const scope = req.matterScope ?? "all";
+        const scoped = results.map((r) => {
+          if (!r.resolved_slug) return r;
+          const inScope =
+            scope === "all" ||
+            scope.some((p) => r.resolved_slug!.startsWith(p) || r.resolved_slug === p);
+          return inScope
+            ? r
+            : { mention: r.mention, resolved_slug: null, confidence: 0, entity_type: null };
+        });
+        res.json(scoped);
       } catch (e) {
         legalErr(res, "entity_resolve_batch", e);
       }
@@ -1298,7 +1383,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         },
         requestSourceId(req),
         undefined,
-        req.matterScope ?? "all"
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all"
       );
       const pages = (Array.isArray(raw) ? raw : []).map((p) => {
         const pg = p as Record<string, unknown>;
@@ -1337,7 +1423,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         { slug },
         requestSourceId(req),
         readSourcesFor(req),
-        req.matterScope ?? "all"
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all"
       );
       const page = pageRaw as Record<string, unknown>;
       const tags = Array.isArray(page.tags) ? (page.tags as string[]) : [];
@@ -1441,7 +1528,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             { slug },
             sourceId,
             undefined,
-            req.matterScope ?? "all"
+            req.matterScope ?? "all",
+            req.aclGroups ?? "all"
           );
           const existing = existingRaw as Record<string, unknown>;
           if (existing && typeof existing === "object") {
@@ -1497,12 +1585,215 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         { slug, content: markdown },
         sourceId,
         undefined,
-        req.matterScope ?? "all"
+        req.matterScope ?? "all",
+        req.aclGroups ?? "all"
       );
       res.json({ slug, success: true, ...(result && typeof result === "object" ? result : {}) });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "unknown";
       res.status(500).json({ error: "put_page_failed", message: msg });
+    }
+  });
+
+  // ── Subsumio R3: Document-Level ACL REST Endpoints ──
+
+  // List all access groups for the tenant
+  app.get("/api/acls/groups", async (req: Request, res: Response) => {
+    try {
+      const { listAccessGroups } = await import("../core/acl.ts");
+      const groups = await listAccessGroups(engine, requestSourceId(req));
+      res.json(groups);
+    } catch (e) {
+      res
+        .status(500)
+        .json({ error: "acl_list_failed", message: e instanceof Error ? e.message : "unknown" });
+    }
+  });
+
+  // Create a new access group
+  app.post(
+    "/api/acls/groups",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const b = req.body as Record<string, unknown>;
+        const name = typeof b.name === "string" ? b.name.trim() : "";
+        if (!name) {
+          res.status(400).json({ error: "name_required" });
+          return;
+        }
+        const { createAccessGroup } = await import("../core/acl.ts");
+        const group = await createAccessGroup(engine, requestSourceId(req), name);
+        res.json(group);
+      } catch (e) {
+        res
+          .status(500)
+          .json({
+            error: "acl_create_failed",
+            message: e instanceof Error ? e.message : "unknown",
+          });
+      }
+    }
+  );
+
+  // Delete an access group
+  app.delete("/api/acls/groups/:groupId", async (req: Request, res: Response) => {
+    try {
+      const groupId = String(req.params.groupId ?? "");
+      if (!groupId) {
+        res.status(400).json({ error: "group_id_required" });
+        return;
+      }
+      const { deleteAccessGroup } = await import("../core/acl.ts");
+      const ok = await deleteAccessGroup(engine, groupId);
+      res.json({ success: ok });
+    } catch (e) {
+      res
+        .status(500)
+        .json({ error: "acl_delete_failed", message: e instanceof Error ? e.message : "unknown" });
+    }
+  });
+
+  // List members of a group
+  app.get("/api/acls/groups/:groupId/members", async (req: Request, res: Response) => {
+    try {
+      const groupId = String(req.params.groupId ?? "");
+      const { listGroupMembers } = await import("../core/acl.ts");
+      const members = await listGroupMembers(engine, groupId);
+      res.json(members);
+    } catch (e) {
+      res
+        .status(500)
+        .json({
+          error: "acl_list_members_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+    }
+  });
+
+  // Add a member to a group
+  app.post(
+    "/api/acls/groups/:groupId/members",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const groupId = String(req.params.groupId ?? "");
+        const b = req.body as Record<string, unknown>;
+        const userId = typeof b.user_id === "string" ? b.user_id.trim() : "";
+        if (!userId) {
+          res.status(400).json({ error: "user_id_required" });
+          return;
+        }
+        const { addGroupMember } = await import("../core/acl.ts");
+        await addGroupMember(engine, groupId, userId, requestSourceId(req));
+        res.json({ success: true });
+      } catch (e) {
+        res
+          .status(500)
+          .json({
+            error: "acl_add_member_failed",
+            message: e instanceof Error ? e.message : "unknown",
+          });
+      }
+    }
+  );
+
+  // Remove a member from a group
+  app.delete("/api/acls/groups/:groupId/members/:userId", async (req: Request, res: Response) => {
+    try {
+      const groupId = String(req.params.groupId ?? "");
+      const userId = String(req.params.userId ?? "");
+      const { removeGroupMember } = await import("../core/acl.ts");
+      const ok = await removeGroupMember(engine, groupId, userId);
+      res.json({ success: ok });
+    } catch (e) {
+      res
+        .status(500)
+        .json({
+          error: "acl_remove_member_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+    }
+  });
+
+  // Get page permissions for a slug
+  app.get("/api/acls/permissions/:slug", async (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug ?? "");
+      assertMatterScope(req.matterScope, slug);
+      const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+      if (!page) {
+        res.status(404).json({ error: "page_not_found" });
+        return;
+      }
+      const { getPagePermissions } = await import("../core/acl.ts");
+      const permissions = await getPagePermissions(engine, page.id);
+      res.json(permissions);
+    } catch (e) {
+      res
+        .status(500)
+        .json({
+          error: "acl_get_permissions_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
+    }
+  });
+
+  // Set a page permission
+  app.post(
+    "/api/acls/permissions",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const b = req.body as Record<string, unknown>;
+        const slug = typeof b.slug === "string" ? b.slug : "";
+        const groupId = typeof b.group_id === "string" ? b.group_id : "";
+        const permission = b.permission === "write" ? "write" : "read";
+        if (!slug || !groupId) {
+          res.status(400).json({ error: "slug_and_group_id_required" });
+          return;
+        }
+        assertMatterScope(req.matterScope, slug);
+        const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+        if (!page) {
+          res.status(404).json({ error: "page_not_found" });
+          return;
+        }
+        const { setPagePermission } = await import("../core/acl.ts");
+        await setPagePermission(engine, page.id, groupId, permission as "read" | "write");
+        res.json({ success: true, page_id: page.id, permission });
+      } catch (e) {
+        res
+          .status(500)
+          .json({
+            error: "acl_set_permission_failed",
+            message: e instanceof Error ? e.message : "unknown",
+          });
+      }
+    }
+  );
+
+  // Remove a page permission
+  app.delete("/api/acls/permissions/:slug/:groupId", async (req: Request, res: Response) => {
+    try {
+      const slug = String(req.params.slug ?? "");
+      const groupId = String(req.params.groupId ?? "");
+      assertMatterScope(req.matterScope, slug);
+      const page = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+      if (!page) {
+        res.status(404).json({ error: "page_not_found" });
+        return;
+      }
+      const { removePagePermission } = await import("../core/acl.ts");
+      const ok = await removePagePermission(engine, page.id, groupId);
+      res.json({ success: ok });
+    } catch (e) {
+      res
+        .status(500)
+        .json({
+          error: "acl_remove_permission_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
     }
   });
 
@@ -1739,7 +2030,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               },
               tenantSource,
               undefined,
-              req.matterScope ?? "all"
+              req.matterScope ?? "all",
+              req.aclGroups ?? "all"
             );
           } catch {
             /* best effort — the document is imported, stamping is enrichment */
@@ -1755,7 +2047,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 { slug, tag },
                 tenantSource,
                 undefined,
-                req.matterScope ?? "all"
+                req.matterScope ?? "all",
+                req.aclGroups ?? "all"
               );
             } catch {
               /* best effort */
@@ -2302,7 +2595,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
             },
             sourceId,
             undefined,
-            req.matterScope ?? "all"
+            req.matterScope ?? "all",
+            req.aclGroups ?? "all"
           );
           docs = (Array.isArray(raw) ? raw : [])
             .map((p) => {
@@ -2323,7 +2617,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               { slug: doc.slug },
               sourceId,
               undefined,
-              req.matterScope ?? "all"
+              req.matterScope ?? "all",
+              req.aclGroups ?? "all"
             );
             const page = pageRaw as Record<string, unknown>;
             const title = String(page.title ?? doc.title);
@@ -2534,7 +2829,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
               { slug, content: event.content },
               sourceId,
               undefined,
-              req.matterScope ?? "all"
+              req.matterScope ?? "all",
+              req.aclGroups ?? "all"
             );
             imported++;
           } catch (e) {

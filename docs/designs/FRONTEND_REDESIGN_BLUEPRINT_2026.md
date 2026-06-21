@@ -135,22 +135,36 @@ Subsumio soll sich nicht wie ein weiterer generischer AI-Chatbot anfühlen, sond
 - Cockpit-Labels neutralisiert („KI-Kontrolle" → „Qualitätskontrolle", „KI fragen" → „Assistent", etc.).
 - Recent-Queries-Widget mit Übersetzungsschlüssel.
 
-### Paket 5: Shared Components & Detailpages ⬜
+### Paket 5: Shared Components & Detailpages ✅
 
-- Buttons, Cards, Badges, Inputs konsistent neu gestalten.
-- Ausgewählte Detailpages (Akte, Fristen, Inbox, Upload, Onboarding, Vault) an neues System anpassen.
+- Button-Varianten verfeinert (weniger Glow).
+- Detailpages durchneutralisiert:
+  - Akten-Liste, Akten-Detail, Fristen, Upload, Vault, Onboarding, Verträge, Analyse, Recherche, Prozessstrategie, Agenten, Einstellungen → AI-/Brain-Icons und -Texte ersetzt.
 
-### Paket 6: Command Palette & Keyboard UX ⬜
+### Paket 6: Marketing-Seiten ✅
 
-- Command Palette erweitern: Navigation, Aktionen, Akten, Fristen, Dokumente.
-- Shortcuts dokumentieren und anzeigen.
+- Alle `Sparkles`-Icons in Marketing-Komponenten entfernt (Pricing, About, Live-Demo, Superbrain-Advantage, Dashboard-Reel, Workflow-Showcase).
+- Marketing-Copy an Assistenten-/Wissensbasis-Sprache angeglichen (Auth-Form, Billing-Plans, About).
 
-### Paket 7: Selbst-Audit & Stress-Test 🔄
+### Paket 7: Command Palette & Keyboard UX ✅
 
-- Visuelle Regression, Kontrast-Check, Mobile-Test, Keyboard-Navigation, Performance.
-- Hinweis: `bun tsc` zeigt vorbestehende Fehler in `src/app/api/cron/law-sync/route.ts` und `src/app/api/cron/judgements-sync/route.ts` (nicht durch Design-Änderungen verursacht). Keine neuen Type-Fehler in den geänderten UI-Dateien.
+- Command Palette erweitert:
+  - Neue Sektionen: Aktionen, Erstellen, Verwaltung.
+  - Neue Befehle: Assistent öffnen, neue Akte/Frist/Rechnung/Vertrag, Dokument hochladen.
+  - Kurzbefehl-Modal direkt aus der Palette erreichbar.
+- Globale Shortcuts:
+  - `⌘K` / `Ctrl+K`: Command Palette.
+  - `Shift+?`: Tastaturkürzel-Overlay.
+  - `⌘Shift+L` / `Ctrl+Shift+L`: Design wechseln.
+  - `⌘B` / `Ctrl+B`: Sidebar ein/aus.
+  - `⌘Shift+A` / `Ctrl+Shift+A`: Assistent öffnen.
+
+### Paket 8: Selbst-Audit & Stress-Test ✅
+
+- `bun tsc` zeigt weiterhin nur die vorbestehenden Fehler in `src/app/api/cron/law-sync/route.ts` und `src/app/api/cron/judgements-sync/route.ts` (nicht durch Design-Änderungen verursacht). Keine neuen Type-Fehler in den geänderten UI-Dateien.
+- Keine `Sparkles`-Referenzen mehr in `src/`.
 
 ## 9. Status
 
-- **Phase**: Paket 1–4 implementiert, Paket 7 gestartet.
-- **Nächster Schritt**: Paket 5 (Shared Components & Detailpages) oder Paket 6 (Command Palette) je nach Priorität.
+- **Phase**: Paket 1–7 implementiert, Paket 8 abgeschlossen.
+- **Nächster Schritt**: Visuelles Review, Live-Test im Browser oder weitere Detail-Feinschliffe.

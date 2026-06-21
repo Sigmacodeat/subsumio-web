@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
+import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
 import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
@@ -44,6 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const meQuery = useMe();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(true);
 
   // Persist copilot panel state
@@ -91,6 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       mobileOpen ||
       cmdOpen ||
       guideOpen ||
+      shortcutsOpen ||
       (copilotOpen && typeof window !== "undefined" && window.innerWidth < 768)
     ) {
       document.body.style.overflow = "hidden";
@@ -100,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileOpen, cmdOpen, guideOpen, copilotOpen]);
+  }, [mobileOpen, cmdOpen, guideOpen, shortcutsOpen, copilotOpen]);
 
   // Focus-trap for mobile drawer
   useEffect(() => {
@@ -146,11 +149,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setCmdOpen((v) => !v);
+        setShortcutsOpen(false);
+        return;
+      }
+      if (e.shiftKey && e.key === "?") {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        setCmdOpen(false);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "l") {
+        e.preventDefault();
+        toggleTheme();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        setCollapsed((c) => !c);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "a") {
+        e.preventDefault();
+        router.push("/dashboard/chat");
+        return;
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [toggleTheme, router]);
 
   return (
     <div
@@ -220,6 +246,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onToggleTheme={toggleTheme}
         onToggleSidebar={() => setCollapsed((c) => !c)}
       />
+      <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
 

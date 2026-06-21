@@ -22,6 +22,7 @@ import {
   Users,
   Network,
   Languages,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ import {
 } from "@/lib/queries/settings";
 import { useBrainStats } from "@/lib/queries/brain";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { AclSettings } from "@/components/dashboard/acl-settings";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
@@ -70,6 +72,7 @@ const ALL_TABS: { id: string; labelKey: DashboardKey; icon: typeof Database; all
       allowed: ["admin", "lawyer", "assistant"],
     },
     { id: "team", labelKey: "settings.tab_team", icon: Users, allowed: ["admin"] },
+    { id: "acls", labelKey: "settings.tab_acls", icon: Shield, allowed: ["admin"] },
     { id: "scim", labelKey: "settings.tab_scim", icon: Network, allowed: ["admin"] },
     {
       id: "account",
@@ -974,6 +977,13 @@ export default function SettingsPage() {
               ))
             )}
           </div>
+        </Card>
+      )}
+
+      {/* ACLs — Document-Level Access Control */}
+      {activeTab === "acls" && (
+        <Card role="tabpanel" id="panel-acls" aria-labelledby="tab-acls" className="p-6">
+          <AclSettings />
         </Card>
       )}
 

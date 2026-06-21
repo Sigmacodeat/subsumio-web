@@ -55,7 +55,7 @@ const COPY = {
     },
     signup: {
       title: "Subsumio starten",
-      sub: "Legal Software für Akten, Fristen und KI mit Fundstellen.",
+      sub: "Legal Software für Akten, Fristen und recherchierte Antworten mit Fundstellen.",
       cta: "Konto erstellen",
       switchText: "Schon ein Konto?",
       switchCta: "Anmelden",

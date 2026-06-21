@@ -1,5 +1,5 @@
-import type { BrainEngine } from './engine.ts';
-import { slugifyPath } from './sync.ts';
+import type { BrainEngine } from "./engine.ts";
+import { slugifyPath } from "./sync.ts";
 
 /**
  * Schema migrations — run automatically on initSchema().
@@ -77,10 +77,10 @@ export class MigrationDriftError extends Error {
   constructor(
     public readonly version: number,
     public readonly migrationName: string,
-    public readonly hint: string,
+    public readonly hint: string
   ) {
     super(`Migration v${version} (${migrationName}) verify failed: ${hint}`);
-    this.name = 'MigrationDriftError';
+    this.name = "MigrationDriftError";
   }
 }
 
@@ -95,16 +95,16 @@ export class MigrationRetryExhausted extends Error {
     public readonly migrationName: string,
     public readonly attempts: number,
     public readonly lastBlockers: IdleBlocker[],
-    public readonly lastError: Error,
+    public readonly lastError: Error
   ) {
     const lastB = lastBlockers[0];
     const hint = lastB
       ? `PID ${lastB.pid} idle since ${lastB.query_start} likely holds the lock; run: psql ... -c "SELECT pg_terminate_backend(${lastB.pid})"`
-      : 'No idle-in-transaction blockers detected; check pg_locks for active waiters and ~/.gbrain/audit/connection-events-*.jsonl';
+      : "No idle-in-transaction blockers detected; check pg_locks for active waiters and ~/.gbrain/audit/connection-events-*.jsonl";
     super(
       `Migration v${version} (${migrationName}) failed after ${attempts} attempts. ${hint}. Original: ${lastError.message}`
     );
-    this.name = 'MigrationRetryExhausted';
+    this.name = "MigrationRetryExhausted";
   }
 }
 
@@ -116,8 +116,8 @@ export const MIGRATIONS: Migration[] = [
   // Version 1 is the baseline (schema.sql creates everything with IF NOT EXISTS).
   {
     version: 2,
-    name: 'slugify_existing_pages',
-    sql: '',
+    name: "slugify_existing_pages",
+    sql: "",
     handler: async (engine) => {
       const pages = await engine.listPages();
       let renamed = 0;
@@ -139,7 +139,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 3,
-    name: 'unique_chunk_index',
+    name: "unique_chunk_index",
     sql: `
       -- Deduplicate any existing duplicate (page_id, chunk_index) rows before adding constraint
       DELETE FROM content_chunks a USING content_chunks b
@@ -149,7 +149,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 4,
-    name: 'access_tokens_and_mcp_log',
+    name: "access_tokens_and_mcp_log",
     sql: `
       CREATE TABLE IF NOT EXISTS access_tokens (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -173,7 +173,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 5,
-    name: 'minion_jobs_table',
+    name: "minion_jobs_table",
     sql: `
       CREATE TABLE IF NOT EXISTS minion_jobs (
         id               SERIAL PRIMARY KEY,
@@ -219,7 +219,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 6,
-    name: 'agent_orchestration_primitives',
+    name: "agent_orchestration_primitives",
     sql: `
       -- Token accounting columns
       ALTER TABLE minion_jobs ADD COLUMN IF NOT EXISTS tokens_input INTEGER NOT NULL DEFAULT 0;
@@ -245,7 +245,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 7,
-    name: 'agent_parity_layer',
+    name: "agent_parity_layer",
     sql: `
       -- Subagent primitives + BullMQ parity columns
       ALTER TABLE minion_jobs ADD COLUMN IF NOT EXISTS depth INTEGER NOT NULL DEFAULT 0;
@@ -315,7 +315,7 @@ export const MIGRATIONS: Migration[] = [
   //    every statement is idempotent.
   {
     version: 8,
-    name: 'multi_type_links_constraint',
+    name: "multi_type_links_constraint",
     // Idempotent for both upgrade and fresh-install paths.
     // Fresh installs already have links_from_to_type_unique from schema.sql; we drop it
     // (along with the legacy from-to-only constraint) before re-adding it cleanly.
@@ -339,7 +339,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 9,
-    name: 'timeline_dedup_index',
+    name: "timeline_dedup_index",
     // Idempotent: CREATE UNIQUE INDEX IF NOT EXISTS handles fresh + upgrade.
     // Dedup any existing duplicates first so the index can be created.
     // Helper btree turns the DELETE...USING self-join from O(n²) into O(n log n).
@@ -360,7 +360,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 10,
-    name: 'drop_timeline_search_trigger',
+    name: "drop_timeline_search_trigger",
     // Removes the trigger that updates pages.updated_at on every timeline_entries insert.
     // Structured timeline_entries are now graph data (queryable dates), not search text.
     // pages.timeline (markdown) still feeds the page search_vector via trg_pages_search_vector.
@@ -373,7 +373,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 11,
-    name: 'links_provenance_columns',
+    name: "links_provenance_columns",
     // v0.13: adds provenance columns so frontmatter-derived edges can be
     // distinguished from markdown/manual edges. Reconciliation on put_page
     // scopes by (link_source='frontmatter' AND origin_page_id = written_page)
@@ -437,7 +437,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 12,
-    name: 'budget_ledger',
+    name: "budget_ledger",
     // Resolver spend tracker. Primary key {scope, resolver_id, local_date} so
     // midnight rollover in the user's TZ naturally creates a new row instead of
     // mutating yesterday's. reserved_usd and committed_usd track reservations
@@ -472,7 +472,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 13,
-    name: 'minion_quiet_hours_stagger',
+    name: "minion_quiet_hours_stagger",
     // Adds quiet-hours gating + deterministic stagger to Minions.
     sql: `
       ALTER TABLE minion_jobs ADD COLUMN IF NOT EXISTS quiet_hours JSONB;
@@ -483,7 +483,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 14,
-    name: 'pages_updated_at_index',
+    name: "pages_updated_at_index",
     // v0.14.1 (fix wave): fixes the 14.6s "list pages newest-first" seqscan on 31k+ row brains.
     // Original report: https://github.com/garrytan/gbrain/issues/170 (PR #215).
     //
@@ -494,9 +494,9 @@ export const MIGRATIONS: Migration[] = [
     // call. A failed CONCURRENTLY leaves an invalid index with the target name;
     // the handler pre-drops any invalid remnant via pg_index.indisvalid. PGLite
     // has no concurrent writers, so plain CREATE is safe.
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           14,
           `DO $$ BEGIN
@@ -525,7 +525,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 23,
-    name: 'files_source_id_page_id_ledger',
+    name: "files_source_id_page_id_ledger",
     // v0.18.0 Step 7 (Lane E) — additive only: adds files.source_id and
     // files.page_id columns + creates the file_migration_ledger that
     // drives phase-B storage object rewrites. Does NOT drop page_slug
@@ -543,9 +543,9 @@ export const MIGRATIONS: Migration[] = [
     //
     // Phase B in the v0_18_0 orchestrator processes `status != complete`
     // rows. Re-runnable: resumes from whichever state it stopped in.
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'pglite') return;
+      if (engine.kind === "pglite") return;
 
       // Atomic: FK drop + UNIQUE swap + files.page_id addition +
       // backfill + ledger, all in one transaction. Closes the
@@ -565,18 +565,23 @@ export const MIGRATIONS: Migration[] = [
         //     the FK intact across v21/v22 and remove it inside the
         //     same txn that adds the replacement page_id path).
         //     Guard against PGLite just in case (already returned above).
-        await tx.runMigration(23, `
+        await tx.runMigration(
+          23,
+          `
           DO $$ BEGIN
             IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'files') THEN
               ALTER TABLE files DROP CONSTRAINT IF EXISTS files_page_slug_fkey;
             END IF;
           END $$;
-        `);
+        `
+        );
 
         // 0b. Swap pages.UNIQUE(slug) → UNIQUE(source_id, slug).
         //     Deferred from v21 so PR #356 closes the integrity
         //     window. PGLite already did this swap in its v21 path.
-        await tx.runMigration(23, `
+        await tx.runMigration(
+          23,
+          `
           ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_slug_key;
           DO $$ BEGIN
             IF NOT EXISTS (
@@ -586,10 +591,13 @@ export const MIGRATIONS: Migration[] = [
                 UNIQUE (source_id, slug);
             END IF;
           END $$;
-        `);
+        `
+        );
 
         // 1a. source_id with DEFAULT 'default' (idempotent)
-        await tx.runMigration(23, `
+        await tx.runMigration(
+          23,
+          `
           ALTER TABLE files ADD COLUMN IF NOT EXISTS source_id TEXT
             NOT NULL DEFAULT 'default' REFERENCES sources(id) ON DELETE CASCADE;
           CREATE INDEX IF NOT EXISTS idx_files_source_id ON files(source_id);
@@ -619,26 +627,32 @@ export const MIGRATIONS: Migration[] = [
           ALTER TABLE files ADD COLUMN IF NOT EXISTS page_id INTEGER
             REFERENCES pages(id) ON DELETE SET NULL;
           CREATE INDEX IF NOT EXISTS idx_files_page_id ON files(page_id);
-        `);
+        `
+        );
 
         // 1c. Backfill page_id from existing page_slug. Scoped to
         //     source_id='default' because pre-v0.17 pages ALL lived in
         //     the default source. Without this scope, after new sources
         //     get added mid-migration, the JOIN could hit the wrong
         //     page (different source, same slug).
-        await tx.runMigration(23, `
+        await tx.runMigration(
+          23,
+          `
           UPDATE files f
              SET page_id = p.id
             FROM pages p
            WHERE f.page_slug = p.slug
              AND p.source_id = 'default'
              AND f.page_id IS NULL;
-        `);
+        `
+        );
 
         // 2. file_migration_ledger — drives the storage object rewrite
         //    in the v0_18_0 orchestrator's phase B. Seeded from current
         //    files rows; re-seed is idempotent via NOT EXISTS guard.
-        await tx.runMigration(23, `
+        await tx.runMigration(
+          23,
+          `
           CREATE TABLE IF NOT EXISTS file_migration_ledger (
             file_id           INTEGER PRIMARY KEY REFERENCES files(id) ON DELETE CASCADE,
             storage_path_old  TEXT   NOT NULL,
@@ -664,13 +678,14 @@ export const MIGRATIONS: Migration[] = [
           WHERE NOT EXISTS (
             SELECT 1 FROM file_migration_ledger l WHERE l.file_id = f.id
           );
-        `);
+        `
+        );
       });
     },
   },
   {
     version: 22,
-    name: 'links_resolution_type',
+    name: "links_resolution_type",
     // v0.18.0 Step 4 (Lane B) — adds links.resolution_type column so
     // each edge records whether its target source was pinned at
     // extraction time via `[[source:slug]]` (qualified) or resolved
@@ -695,7 +710,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 21,
-    name: 'pages_source_id_composite_unique',
+    name: "pages_source_id_composite_unique",
     // v0.18.0 Step 2 (Lane B) — adds pages.source_id. Engine-split after
     // codex caught the pre-v23 integrity window:
     //
@@ -718,7 +733,7 @@ export const MIGRATIONS: Migration[] = [
     // where an INSERT between ADD COLUMN and SET NOT NULL could leave
     // source_id NULL. The default already references a valid sources
     // row (seeded in v16), so new INSERTs immediately get a valid FK.
-    sql: '',
+    sql: "",
     sqlFor: {
       postgres: `
         ALTER TABLE pages ADD COLUMN IF NOT EXISTS source_id TEXT
@@ -746,7 +761,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 20,
-    name: 'sources_table_additive',
+    name: "sources_table_additive",
     // v0.18.0 Step 1 (Lane A) — **additive only** so Step 1 is a safe
     // standalone commit. This migration installs the sources primitive
     // WITHOUT breaking the engine's existing ON CONFLICT (slug) upserts.
@@ -796,7 +811,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 15,
-    name: 'minion_jobs_max_stalled_default_5',
+    name: "minion_jobs_max_stalled_default_5",
     // v0.14.1 (fix wave): fixes https://github.com/garrytan/gbrain/issues/219
     // Shipped default was 1 — first stall = dead-letter, contradicting the
     // "SIGKILL rescued" claim. New default 5. UPDATE backfills existing non-
@@ -813,7 +828,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 16,
-    name: 'cycle_locks_table',
+    name: "cycle_locks_table",
     // v0.17 brain maintenance cycle (runCycle primitive).
     // PgBouncer transaction pooling strips session-scoped advisory locks
     // (pg_try_advisory_lock) across connection checkouts, so we can't use
@@ -839,7 +854,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 24,
-    name: 'rls_backfill_missing_tables',
+    name: "rls_backfill_missing_tables",
     // v0.18.1 RLS hardening: 10 gbrain-managed public tables shipped
     // without RLS enabled (access_tokens, mcp_request_log, minion_inbox,
     // minion_attachments, subagent_messages, subagent_tool_executions,
@@ -910,12 +925,12 @@ export const MIGRATIONS: Migration[] = [
     // since pglite-schema.ts is the canonical PGLite schema source. No-op
     // override keeps PGLite upgrades unwedged and the version bump intact.
     sqlFor: {
-      pglite: '',
+      pglite: "",
     },
   },
   {
     version: 25,
-    name: 'pages_page_kind',
+    name: "pages_page_kind",
     // v0.19.0 Layer 3 — pages.page_kind distinguishes markdown vs code pages
     // at the DB level. Needed so orphans filter, link-extraction auto-link,
     // and query --lang can branch on kind without sniffing `type` or chunk
@@ -953,7 +968,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 26,
-    name: 'content_chunks_code_metadata',
+    name: "content_chunks_code_metadata",
     // v0.19.0 Layer 3 — content_chunks gains code-specific metadata columns
     // so C6 (query --lang), C7 (code-def / code-refs), and the new
     // searchCodeChunks engine method can filter + surface symbol context
@@ -981,7 +996,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 27,
-    name: 'cathedral_ii_foundation',
+    name: "cathedral_ii_foundation",
     // v0.20.0 Cathedral II Layer 1 — schema-only foundation.
     //
     // Lands BEFORE any consumer layer to eliminate forward references
@@ -1102,7 +1117,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 28,
-    name: 'cathedral_ii_chunk_fts_backfill',
+    name: "cathedral_ii_chunk_fts_backfill",
     // v0.20.0 Cathedral II Layer 3 (1b) — backfill content_chunks.search_vector
     // for rows inserted before v27 ran. The v27 trigger only fires on
     // INSERT/UPDATE, so every chunk that existed before upgrade has a NULL
@@ -1133,7 +1148,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 29,
-    name: 'cathedral_ii_code_edges_rls',
+    name: "cathedral_ii_code_edges_rls",
     // v0.21.0 Cathedral II — RLS hardening for the two new tables added by
     // v27 (code_edges_chunk, code_edges_symbol). The v24 RLS-backfill
     // pattern: gated on BYPASSRLS (so we don't lock the migrating session
@@ -1164,7 +1179,7 @@ export const MIGRATIONS: Migration[] = [
       `,
       pglite: `-- PGLite: no-op. RLS check runs only against Postgres E2E.`,
     },
-    sql: '',
+    sql: "",
   },
   // NOTE: v37 + v38 are the v0.28 takes migrations. Renumbered four times during
   // the long-lived v0.28 branch as master shipped:
@@ -1178,7 +1193,7 @@ export const MIGRATIONS: Migration[] = [
   // Runtime sort by version ascending means source-order doesn't matter.
   {
     version: 37,
-    name: 'takes_and_synthesis_evidence',
+    name: "takes_and_synthesis_evidence",
     // v0.28: typed/weighted/attributed claims ("takes") + synthesis provenance.
     // Spec: docs/designs (CEO plan) + plan file. Schema decisions:
     //   - page_id FK (not page_slug) — pages.slug is unique only within source
@@ -1301,7 +1316,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 38,
-    name: 'access_tokens_permissions',
+    name: "access_tokens_permissions",
     // v0.28: per-token allow-list for takes visibility (Codex P0 #3 partial fix).
     // The complementary fix (chunker strips fenced takes content from page chunks
     // so query results don't bypass the allow-list) lives in src/core/chunkers/takes-strip.ts.
@@ -1322,7 +1337,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 30,
-    name: 'dream_verdicts_table',
+    name: "dream_verdicts_table",
     // v0.23 synthesize phase: cache for "is this transcript worth processing?"
     // verdict from the cheap Haiku judge. Distinct from raw_data (page-scoped);
     // transcripts aren't pages. Keyed by (file_path, content_hash) so edited
@@ -1350,7 +1365,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 31,
-    name: 'eval_capture_tables',
+    name: "eval_capture_tables",
     // v0.25.0 — BrainBench-Real session capture substrate.
     // Two tables:
     //   eval_candidates: per-call capture from the op-layer wrapper around
@@ -1446,11 +1461,11 @@ export const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_eval_capture_failures_ts ON eval_capture_failures (ts DESC);
       `,
     },
-    sql: '',
+    sql: "",
   },
   {
     version: 32,
-    name: 'oauth_infrastructure',
+    name: "oauth_infrastructure",
     // v0.26 OAuth 2.1 tables for `gbrain serve --http`. Supports client credentials,
     // authorization code + PKCE, and refresh token rotation. Renumbered from v30
     // → v32 on merge with master's v0.23 (dream_verdicts at v30) + v0.25
@@ -1512,7 +1527,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 33,
-    name: 'admin_dashboard_columns_v0_26_3',
+    name: "admin_dashboard_columns_v0_26_3",
     // v0.26.3 admin dashboard expansion. Adds 5 columns referenced by
     // src/commands/serve-http.ts and src/core/oauth-provider.ts that landed
     // in PR #586 without a corresponding schema migration. Without v33,
@@ -1556,7 +1571,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 34,
-    name: 'destructive_guard_columns',
+    name: "destructive_guard_columns",
     // v0.26.5 — soft-delete + recovery window for sources AND pages.
     // Renumbered v33→v34 on master merge: master's v33 (admin_dashboard_columns_v0_26_3)
     // landed first in PR #586. v34 follows it.
@@ -1580,20 +1595,25 @@ export const MIGRATIONS: Migration[] = [
     // Engine-aware partial index: Postgres uses CREATE INDEX CONCURRENTLY (no
     // write-blocking lock); PGLite uses plain CREATE INDEX. Mirrors v14
     // (pages_updated_at_index) handler shape.
-    sql: '',
+    sql: "",
     handler: async (engine) => {
       // 1. Add columns. ALTER TABLE ADD COLUMN IF NOT EXISTS is idempotent on
       //    both engines.
-      await engine.runMigration(34, `
+      await engine.runMigration(
+        34,
+        `
         ALTER TABLE pages   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
         ALTER TABLE sources ADD COLUMN IF NOT EXISTS archived           BOOLEAN     NOT NULL DEFAULT false;
         ALTER TABLE sources ADD COLUMN IF NOT EXISTS archived_at        TIMESTAMPTZ;
         ALTER TABLE sources ADD COLUMN IF NOT EXISTS archive_expires_at TIMESTAMPTZ;
-      `);
+      `
+      );
 
       // 2. Backfill from JSONB shape used by pre-v0.26.5 cherry-picks of PR #595.
       //    Idempotent: subsequent re-runs find zero matching rows.
-      await engine.runMigration(34, `
+      await engine.runMigration(
+        34,
+        `
         UPDATE sources
         SET archived = true,
             archived_at = COALESCE((config->>'archived_at')::timestamptz, now()),
@@ -1604,18 +1624,24 @@ export const MIGRATIONS: Migration[] = [
         WHERE config ? 'archived'
           AND (config->>'archived')::boolean = true
           AND archived = false;
-      `);
-      await engine.runMigration(34, `
+      `
+      );
+      await engine.runMigration(
+        34,
+        `
         UPDATE sources
         SET config = config - 'archived' - 'archived_at' - 'archive_expires_at'
         WHERE config ?| ARRAY['archived', 'archived_at', 'archive_expires_at'];
-      `);
+      `
+      );
 
       // 3. Partial index for the autopilot purge sweep. Postgres CONCURRENTLY
       //    avoids the SHARE lock on `pages`; PGLite has no concurrent writers.
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         // Pre-drop any invalid index from a prior CONCURRENTLY failure (matches v14 pattern).
-        await engine.runMigration(34, `
+        await engine.runMigration(
+          34,
+          `
           DO $$ BEGIN
             IF EXISTS (
               SELECT 1 FROM pg_index i
@@ -1625,16 +1651,23 @@ export const MIGRATIONS: Migration[] = [
               EXECUTE 'DROP INDEX CONCURRENTLY IF EXISTS pages_deleted_at_purge_idx';
             END IF;
           END $$;
-        `);
-        await engine.runMigration(34, `
+        `
+        );
+        await engine.runMigration(
+          34,
+          `
           CREATE INDEX CONCURRENTLY IF NOT EXISTS pages_deleted_at_purge_idx
             ON pages (deleted_at) WHERE deleted_at IS NOT NULL;
-        `);
+        `
+        );
       } else {
-        await engine.runMigration(34, `
+        await engine.runMigration(
+          34,
+          `
           CREATE INDEX IF NOT EXISTS pages_deleted_at_purge_idx
             ON pages (deleted_at) WHERE deleted_at IS NOT NULL;
-        `);
+        `
+        );
       }
     },
     // CONCURRENTLY on Postgres requires no surrounding transaction. PGLite ignores
@@ -1643,8 +1676,8 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 35,
-    name: 'auto_rls_event_trigger',
-    sql: '', // engine-specific via sqlFor
+    name: "auto_rls_event_trigger",
+    sql: "", // engine-specific via sqlFor
     // v0.26.7 — Postgres event trigger that auto-enables RLS on every new public.*
     // table, plus one-time backfill on every existing public.* table without it.
     //
@@ -1742,12 +1775,12 @@ export const MIGRATIONS: Migration[] = [
           END LOOP;
         END $$;
       `,
-      pglite: '', // PGLite has no RLS and no event trigger support
+      pglite: "", // PGLite has no RLS and no event trigger support
     },
   },
   {
     version: 36,
-    name: 'subagent_provider_neutral_persistence_v0_27',
+    name: "subagent_provider_neutral_persistence_v0_27",
     // v0.27 multi-provider subagent. Codex F-OV-1 / D11: the subagent_messages
     // and subagent_tool_executions tables stored Anthropic-shaped tool_use /
     // tool_result blocks as JSONB. When a worker resumes a job mid-loop and
@@ -1784,7 +1817,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 39,
-    name: 'multimodal_dual_column_v0_27_1',
+    name: "multimodal_dual_column_v0_27_1",
     // v0.27.1 multimodal ingestion. Three changes that travel together:
     //
     // 1. content_chunks gains `modality TEXT NOT NULL DEFAULT 'text'` so image
@@ -1812,33 +1845,33 @@ export const MIGRATIONS: Migration[] = [
     // run BEFORE any DDL fires; if we used `sqlFor` the runner would DDL
     // before calling the handler. So we keep `sql` empty and let the handler
     // run preflight + DDL in the right order.
-    sql: '',
+    sql: "",
     handler: async (engine: BrainEngine) => {
       // Eng-3C: refuse loudly if pgvector < 0.5 BEFORE any DDL fires.
       // Partial HNSW indexes need HNSW (pgvector 0.5.0+). PGLite ships a
       // recent pgvector inside its WASM bundle so this gate is Postgres-only.
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         const rows = await engine.executeRaw<{ extversion: string }>(
           `SELECT extversion FROM pg_extension WHERE extname = 'vector'`
         );
         if (rows.length === 0) {
           throw new Error(
             `Migration v39 requires the pgvector extension. Install it via\n` +
-            `  CREATE EXTENSION vector;\n` +
-            `then re-run \`gbrain apply-migrations --yes\`.`
+              `  CREATE EXTENSION vector;\n` +
+              `then re-run \`gbrain apply-migrations --yes\`.`
           );
         }
         const version = rows[0].extversion;
-        const [maj, minStr] = version.split('.');
-        const min = parseInt(minStr ?? '0', 10);
-        const major = parseInt(maj ?? '0', 10);
+        const [maj, minStr] = version.split(".");
+        const min = parseInt(minStr ?? "0", 10);
+        const major = parseInt(maj ?? "0", 10);
         if (major === 0 && min < 5) {
           throw new Error(
             `Migration v39 requires pgvector >= 0.5.0 (HNSW partial indexes).\n` +
-            `Found pgvector ${version}.\n\n` +
-            `Fix: ALTER EXTENSION vector UPDATE; then re-run \`gbrain apply-migrations --yes\`.\n` +
-            `If your Postgres provider doesn't ship pgvector >= 0.5, request\n` +
-            `an upgrade or migrate to PGLite for v0.27.1 multimodal support.`
+              `Found pgvector ${version}.\n\n` +
+              `Fix: ALTER EXTENSION vector UPDATE; then re-run \`gbrain apply-migrations --yes\`.\n` +
+              `If your Postgres provider doesn't ship pgvector >= 0.5, request\n` +
+              `an upgrade or migrate to PGLite for v0.27.1 multimodal support.`
           );
         }
       }
@@ -1846,7 +1879,9 @@ export const MIGRATIONS: Migration[] = [
       // Step 1: schema delta on content_chunks + widen pages.page_kind CHECK
       // to admit 'image'. Runs through engine.runMigration so multi-statement
       // DDL works on PGLite (db.exec) and Postgres (sql.unsafe).
-      await engine.runMigration(39, `
+      await engine.runMigration(
+        39,
+        `
         ALTER TABLE content_chunks
           ADD COLUMN IF NOT EXISTS modality TEXT NOT NULL DEFAULT 'text',
           ADD COLUMN IF NOT EXISTS embedding_image vector(1024);
@@ -1861,12 +1896,15 @@ export const MIGRATIONS: Migration[] = [
         ALTER TABLE pages DROP CONSTRAINT IF EXISTS pages_page_kind_check;
         ALTER TABLE pages ADD CONSTRAINT pages_page_kind_check
           CHECK (page_kind IN ('markdown','code','image'));
-      `);
+      `
+      );
 
       // Step 2: PGLite-only — add the files table that v0.18 deliberately
       // omitted. Postgres has had it since v0.18; this is parity catch-up.
-      if (engine.kind === 'pglite') {
-        await engine.runMigration(39, `
+      if (engine.kind === "pglite") {
+        await engine.runMigration(
+          39,
+          `
           CREATE TABLE IF NOT EXISTS files (
             id           SERIAL PRIMARY KEY,
             source_id    TEXT   NOT NULL DEFAULT 'default'
@@ -1887,13 +1925,14 @@ export const MIGRATIONS: Migration[] = [
           CREATE INDEX IF NOT EXISTS idx_files_page_id ON files(page_id);
           CREATE INDEX IF NOT EXISTS idx_files_source_id ON files(source_id);
           CREATE INDEX IF NOT EXISTS idx_files_hash ON files(content_hash);
-        `);
+        `
+        );
       }
     },
   },
   {
     version: 40,
-    name: 'pages_emotional_weight',
+    name: "pages_emotional_weight",
     // v0.29 — Salience + Anomaly Detection.
     //
     // Adds the `emotional_weight` column to pages. Populated by the new
@@ -1915,8 +1954,8 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 41,
-    name: 'pages_recency_columns',
-    sql: '',
+    name: "pages_recency_columns",
+    sql: "",
     // v0.29.1 — Salience-and-Recency, additive opt-in.
     //
     // Four new pages columns (all nullable, additive only, no behavior change
@@ -1953,17 +1992,22 @@ export const MIGRATIONS: Migration[] = [
     handler: async (engine) => {
       // 1. ADD COLUMN x4. ALTER TABLE ADD COLUMN IF NOT EXISTS is idempotent.
       //    No defaults, all nullable, all metadata-only on PG 11+ and PGLite.
-      await engine.runMigration(38, `
+      await engine.runMigration(
+        38,
+        `
         ALTER TABLE pages ADD COLUMN IF NOT EXISTS effective_date        TIMESTAMPTZ;
         ALTER TABLE pages ADD COLUMN IF NOT EXISTS effective_date_source TEXT;
         ALTER TABLE pages ADD COLUMN IF NOT EXISTS import_filename       TEXT;
         ALTER TABLE pages ADD COLUMN IF NOT EXISTS salience_touched_at   TIMESTAMPTZ;
-      `);
+      `
+      );
 
       // 2. Expression index for since/until date-range filters.
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         // Pre-drop any invalid index from a prior CONCURRENTLY failure.
-        await engine.runMigration(38, `
+        await engine.runMigration(
+          38,
+          `
           DO $$ BEGIN
             IF EXISTS (
               SELECT 1 FROM pg_index i
@@ -1973,16 +2017,23 @@ export const MIGRATIONS: Migration[] = [
               EXECUTE 'DROP INDEX CONCURRENTLY IF EXISTS pages_coalesce_date_idx';
             END IF;
           END $$;
-        `);
-        await engine.runMigration(38, `
+        `
+        );
+        await engine.runMigration(
+          38,
+          `
           CREATE INDEX CONCURRENTLY IF NOT EXISTS pages_coalesce_date_idx
             ON pages ((COALESCE(effective_date, updated_at)));
-        `);
+        `
+        );
       } else {
-        await engine.runMigration(38, `
+        await engine.runMigration(
+          38,
+          `
           CREATE INDEX IF NOT EXISTS pages_coalesce_date_idx
             ON pages ((COALESCE(effective_date, updated_at)));
-        `);
+        `
+        );
       }
     },
     // CONCURRENTLY on Postgres requires no surrounding transaction.
@@ -1990,7 +2041,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 42,
-    name: 'eval_candidates_recency_capture',
+    name: "eval_candidates_recency_capture",
     // v0.29.1 — capture agent-explicit recency + salience choices for replay
     // reproducibility (D11 codex resolution).
     //
@@ -2030,7 +2081,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 43,
-    name: 'takes_resolved_quality_and_drift_decisions',
+    name: "takes_resolved_quality_and_drift_decisions",
     // v0.30.0 (Slice A1, Universal Takes Epistemology wave). Bundles ALL schema
     // for the v0.30 release wave so A2/B1/C1 add no migrations (codex F6 fix:
     // schema-first ordering eliminates the cross-lane migrate.ts contention).
@@ -2162,7 +2213,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 44,
-    name: 'pages_emotional_weight_recomputed_at',
+    name: "pages_emotional_weight_recomputed_at",
     idempotent: true,
     // v0.30.1 (Codex X4 / Finding P2): emotional_weight = 0 is a VALID
     // steady-state value (migration v40 default). Indexing WHERE = 0
@@ -2188,7 +2239,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 45,
-    name: 'facts_hot_memory_v0_31',
+    name: "facts_hot_memory_v0_31",
     // v0.31: hot memory layer — real-time working memory queryable across
     // sessions. Sits alongside `takes` (cold, markdown-mirrored) as the
     // ephemeral DB-only counterpart. Dream cycle's new `consolidate` phase
@@ -2208,7 +2259,7 @@ export const MIGRATIONS: Migration[] = [
     //   - 5 partial indexes leading on source_id so every read uses the
     //     trust boundary as part of the index, not a callback.
     //   - consolidated_into BIGINT — takes.id is BIGSERIAL.
-    sql: '',
+    sql: "",
     handler: async (engine: BrainEngine) => {
       // Step 1: resolve embedding dim from config table (already populated
       // by the schema-init __EMBEDDING_DIMS__ replacement on PGLite, or by
@@ -2216,7 +2267,7 @@ export const MIGRATIONS: Migration[] = [
       let embeddingDim = 1536;
       try {
         const dimRows = await engine.executeRaw<{ value: string }>(
-          `SELECT value FROM config WHERE key = 'embedding_dimensions'`,
+          `SELECT value FROM config WHERE key = 'embedding_dimensions'`
         );
         if (dimRows.length > 0) {
           const parsed = parseInt(dimRows[0].value, 10);
@@ -2234,22 +2285,22 @@ export const MIGRATIONS: Migration[] = [
       // PGLite ships a recent pgvector inside its WASM bundle; we still
       // probe to be honest about the column type.
       let useHalfvec = false;
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         try {
           const vrows = await engine.executeRaw<{ extversion: string }>(
-            `SELECT extversion FROM pg_extension WHERE extname = 'vector'`,
+            `SELECT extversion FROM pg_extension WHERE extname = 'vector'`
           );
           if (vrows.length === 0) {
             throw new Error(
               `Migration v40 (facts hot memory) requires the pgvector extension. ` +
-              `Install it via\n  CREATE EXTENSION vector;\n` +
-              `then re-run \`gbrain apply-migrations --yes\`.`,
+                `Install it via\n  CREATE EXTENSION vector;\n` +
+                `then re-run \`gbrain apply-migrations --yes\`.`
             );
           }
           const v = vrows[0].extversion;
-          const parts = v.split('.');
-          const major = parseInt(parts[0] ?? '0', 10);
-          const minor = parseInt(parts[1] ?? '0', 10);
+          const parts = v.split(".");
+          const major = parseInt(parts[0] ?? "0", 10);
+          const minor = parseInt(parts[1] ?? "0", 10);
           // HALFVEC introduced in pgvector 0.7.0
           if (major > 0 || (major === 0 && minor >= 7)) {
             useHalfvec = true;
@@ -2258,13 +2309,13 @@ export const MIGRATIONS: Migration[] = [
             // eslint-disable-next-line no-console
             console.warn(
               `[v40 facts] pgvector ${v} < 0.7 — falling back to VECTOR(${embeddingDim}). ` +
-              `HALFVEC space savings unavailable; functionality otherwise identical. ` +
-              `Upgrade pgvector to 0.7+ to enable HALFVEC.`,
+                `HALFVEC space savings unavailable; functionality otherwise identical. ` +
+                `Upgrade pgvector to 0.7+ to enable HALFVEC.`
             );
           }
         } catch (err) {
           // Re-throw the missing-extension error; tolerate other probe failures.
-          if (err instanceof Error && err.message.includes('requires the pgvector')) throw err;
+          if (err instanceof Error && err.message.includes("requires the pgvector")) throw err;
           // Probe failed for other reason — assume older pgvector and fall back.
         }
       } else {
@@ -2272,11 +2323,11 @@ export const MIGRATIONS: Migration[] = [
         useHalfvec = true;
       }
 
-      const vecType = useHalfvec ? 'HALFVEC' : 'VECTOR';
+      const vecType = useHalfvec ? "HALFVEC" : "VECTOR";
       // HNSW operator class must match the column type:
       //   VECTOR(n)  → vector_cosine_ops
       //   HALFVEC(n) → halfvec_cosine_ops
-      const opclass = useHalfvec ? 'halfvec_cosine_ops' : 'vector_cosine_ops';
+      const opclass = useHalfvec ? "halfvec_cosine_ops" : "vector_cosine_ops";
       // FK to sources is added in a separate ALTER TABLE rather than inline
       // on the column. Inline `REFERENCES` worked on PGLite but silently
       // got dropped by postgres.js's `unsafe()` multi-statement path on
@@ -2359,8 +2410,10 @@ export const MIGRATIONS: Migration[] = [
 
       // Step 3: enable RLS on Postgres when role has BYPASSRLS (v24/v29 pattern).
       // PGLite has no RLS engine.
-      if (engine.kind === 'postgres') {
-        await engine.runMigration(40, `
+      if (engine.kind === "postgres") {
+        await engine.runMigration(
+          40,
+          `
           DO $$
           DECLARE
             has_bypass BOOLEAN;
@@ -2370,13 +2423,14 @@ export const MIGRATIONS: Migration[] = [
               ALTER TABLE facts ENABLE ROW LEVEL SECURITY;
             END IF;
           END $$;
-        `);
+        `
+        );
       }
     },
   },
   {
     version: 46,
-    name: 'mcp_request_log_params_jsonb_normalize',
+    name: "mcp_request_log_params_jsonb_normalize",
     idempotent: true,
     // v0.31.3 wave (D-codex-2 / D1): mcp_request_log.params is JSONB, but
     // pre-v0.31.3 serve-http.ts wrote `JSON.stringify(...)` strings into it
@@ -2406,7 +2460,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 47,
-    name: 'facts_notability_alter',
+    name: "facts_notability_alter",
     // v0.31.2 (B2 ship-blocker fix). Renumbered from v46 → v47 after the
     // merge from master picked up v0.31.3's mcp_request_log_params_jsonb_normalize
     // at v46. facts.notability column shipped via v45's inline CREATE TABLE
@@ -2449,7 +2503,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 48,
-    name: 'takes_weight_round_to_grid',
+    name: "takes_weight_round_to_grid",
     // v0.32.0 — Takes v2 wave (renumbered from v46 → v48 after merging master's
     // v0.31.3 wave which claimed v46 with mcp_request_log_params_jsonb_normalize).
     // Backfill the weight column to the 0.05 grid that v0.31's engine layer
@@ -2489,7 +2543,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 49,
-    name: 'eval_takes_quality_runs',
+    name: "eval_takes_quality_runs",
     // v0.32 — Takes v2 wave (EXP-5). Renumbered from v47 → v49 after merging
     // master's v0.31.3 wave (v46 → mcp_request_log_params_jsonb_normalize).
     //
@@ -2531,7 +2585,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 50,
-    name: 'ingest_log_source_id',
+    name: "ingest_log_source_id",
     // v0.31.2 (codex P1 #3). Renumbered from v47 → v50 after the merge from
     // master picked up v0.31.3's v46 + the takes v2 wave's v48 + v49.
     //
@@ -2560,7 +2614,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 51,
-    name: 'facts_fence_columns',
+    name: "facts_fence_columns",
     // v0.32.2: facts join the system-of-record invariant. Markdown fences on
     // entity pages become canonical; the facts table becomes a derived index.
     // The fence parser keys each row by `row_num` (monotonic, append-only) and
@@ -2598,7 +2652,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 52,
-    name: 'eval_contradictions_cache',
+    name: "eval_contradictions_cache",
     // v0.32.6 — P2 persistent judge cache for the contradiction probe.
     //
     // Composite primary key includes prompt_version + truncation_policy
@@ -2634,7 +2688,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 53,
-    name: 'eval_contradictions_runs',
+    name: "eval_contradictions_runs",
     // v0.32.6 — M5 time-series tracking for the contradiction probe.
     //
     // One row per `gbrain eval suspected-contradictions` run. The headline
@@ -2674,7 +2728,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 54,
-    name: 'cjk_wave_pages_chunker_version_and_source_path',
+    name: "cjk_wave_pages_chunker_version_and_source_path",
     // v0.32.7 CJK fix wave. Two new columns on `pages` so the post-upgrade
     // reindex sweep can find markdown pages built by the old chunker AND so
     // sync's delete/rename code can resolve frontmatter-fallback slugs by
@@ -2706,7 +2760,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 59,
-    name: 'code_traversal_cache_v0_34',
+    name: "code_traversal_cache_v0_34",
     // v0.34 W3b — memoization layer for code_blast / code_flow.
     // (Originally claimed v56; renumbered to v59 on merge with master which
     // landed query_cache_search_lite=v55, drift_watch=v56, search_telemetry=v57.)
@@ -2746,7 +2800,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 58,
-    name: 'edges_backfilled_at_v0_33_2',
+    name: "edges_backfilled_at_v0_33_2",
     // v0.33.2 W0c — resumable symbol-resolution backfill watermark.
     // (Originally claimed v55; renumbered to v58 on merge with master which
     // landed query_cache_search_lite=v55, drift_watch=v56, search_telemetry=v57.)
@@ -2795,7 +2849,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 55,
-    name: 'query_cache_search_lite',
+    name: "query_cache_search_lite",
     // v0.32.x (search-lite, originally claimed v52 in PR #897; renumbered
     // to v55 on merge with master to sit after eval_contradictions_cache (v52),
     // eval_contradictions_runs (v53), cjk_wave (v54)).
@@ -2824,13 +2878,13 @@ export const MIGRATIONS: Migration[] = [
     // table from v45 for consistency), otherwise VECTOR. Embedding dim is
     // resolved from `config.embedding_dimensions` at migration time so
     // non-OpenAI brains work — same approach as v45.
-    sql: '',
+    sql: "",
     handler: async (engine: BrainEngine) => {
       // Step 1: resolve embedding dim from config table (same pattern as v45).
       let embeddingDim = 1536;
       try {
         const dimRows = await engine.executeRaw<{ value: string }>(
-          `SELECT value FROM config WHERE key = 'embedding_dimensions'`,
+          `SELECT value FROM config WHERE key = 'embedding_dimensions'`
         );
         if (dimRows.length > 0) {
           const parsed = parseInt(dimRows[0].value, 10);
@@ -2845,16 +2899,16 @@ export const MIGRATIONS: Migration[] = [
       // Step 2: pgvector version probe for HALFVEC. Same logic as v45.
       // We deliberately mirror v45's facts table approach for consistency.
       let useHalfvec = false;
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         try {
           const vrows = await engine.executeRaw<{ extversion: string }>(
-            `SELECT extversion FROM pg_extension WHERE extname = 'vector'`,
+            `SELECT extversion FROM pg_extension WHERE extname = 'vector'`
           );
           if (vrows.length > 0) {
             const v = vrows[0].extversion;
-            const parts = v.split('.');
-            const major = parseInt(parts[0] ?? '0', 10);
-            const minor = parseInt(parts[1] ?? '0', 10);
+            const parts = v.split(".");
+            const major = parseInt(parts[0] ?? "0", 10);
+            const minor = parseInt(parts[1] ?? "0", 10);
             if (major > 0 || (major === 0 && minor >= 7)) {
               useHalfvec = true;
             }
@@ -2866,8 +2920,8 @@ export const MIGRATIONS: Migration[] = [
         useHalfvec = true;
       }
 
-      const vecType = useHalfvec ? 'HALFVEC' : 'VECTOR';
-      const opclass = useHalfvec ? 'halfvec_cosine_ops' : 'vector_cosine_ops';
+      const vecType = useHalfvec ? "HALFVEC" : "VECTOR";
+      const opclass = useHalfvec ? "halfvec_cosine_ops" : "vector_cosine_ops";
 
       const ddl = `
         CREATE TABLE IF NOT EXISTS query_cache (
@@ -2896,7 +2950,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 56,
-    name: 'query_cache_knobs_hash',
+    name: "query_cache_knobs_hash",
     // v0.32.3 search-lite mode cache contamination hotfix [CDX-4].
     //
     // PR #897's query_cache keyed rows on (id, source_id, query_text) only.
@@ -2928,7 +2982,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 57,
-    name: 'search_telemetry_rollup',
+    name: "search_telemetry_rollup",
     // v0.32.3 search-lite: per-day rollup of search-call shape.
     //
     // Powers `gbrain search stats [--days N]` and `gbrain search tune` so an
@@ -2971,7 +3025,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 60,
-    name: 'oauth_clients_source_id_fk',
+    name: "oauth_clients_source_id_fk",
     // v0.34.1 (#861 + D4 + D10 + D13 — P0 source-isolation leak seal).
     //
     // Adds oauth_clients.source_id, validates ALL existing rows can map to a
@@ -3051,7 +3105,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 61,
-    name: 'oauth_clients_federated_read_column',
+    name: "oauth_clients_federated_read_column",
     // v0.34.1 (#876): add federated_read TEXT[] for the read-side
     // federation feature. source_id (v60) is the WRITE-authority axis;
     // federated_read is the READ-scope axis. A client can write to ONE
@@ -3068,7 +3122,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 62,
-    name: 'oauth_clients_federated_read_backfill',
+    name: "oauth_clients_federated_read_backfill",
     // v0.34.1 (#876, F5 — codex outside-voice fix). Backfill federated_read
     // with explicit CASE so source_id IS NULL doesn't produce an ambiguous
     // array containing NULL. Three cases:
@@ -3092,7 +3146,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 63,
-    name: 'oauth_clients_federated_read_validate',
+    name: "oauth_clients_federated_read_validate",
     // v0.34.1 (#876): post-backfill validation. Every client with a
     // non-NULL source_id should now have its source_id reflected in
     // federated_read. Fail loud if backfill missed a row — points at a
@@ -3114,7 +3168,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 64,
-    name: 'oauth_clients_source_id_fk_restrict',
+    name: "oauth_clients_source_id_fk_restrict",
     // v0.34.1 (#876): flip the source_id FK from ON DELETE SET NULL (v60
     // posture) to ON DELETE RESTRICT now that federated_read provides
     // the alternative scope-loss path. Pre-fix, deleting a source could
@@ -3139,7 +3193,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 65,
-    name: 'oauth_clients_federated_read_gin_index',
+    name: "oauth_clients_federated_read_gin_index",
     // v0.34.1 (#876): GIN index for array-containment lookups
     // (`WHERE p.source_id = ANY(federated_read)` and similar). The five
     // read-side ops fall back to scalar sourceId when no auth is set, so
@@ -3152,7 +3206,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 78,
-    name: 'embedding_multimodal_column',
+    name: "embedding_multimodal_column",
     // D20 Phase 3: add the unified-multimodal vector column to content_chunks.
     //
     // Column-only migration — the HNSW partial index is built AFTER the first
@@ -3180,7 +3234,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 77,
-    name: 'mcp_spend_log',
+    name: "mcp_spend_log",
     // D23-#6: per-OAuth-client paid-API spend tracking. search_by_image
     // (Phase 2 of cross-modal wave) makes paid Voyage calls on behalf of
     // remote OAuth clients. The existing v0.22.7 limiter caps requests/min
@@ -3233,7 +3287,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 66,
-    name: 'embed_stale_partial_index',
+    name: "embed_stale_partial_index",
     // Renumbered v58→v59→v60→v66 across merge waves:
     //   - v58 was taken by master's v0.33.3 edges_backfilled_at.
     //   - v59 was taken by master's v0.34.0 code_traversal_cache.
@@ -3260,9 +3314,9 @@ export const MIGRATIONS: Migration[] = [
     // handler pre-drops any invalid remnant via pg_index.indisvalid.
     // PGLite has no concurrent writers, so plain CREATE is safe.
     idempotent: true,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           66,
           `DO $$ BEGIN
@@ -3293,7 +3347,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 67,
-    name: 'facts_typed_claim_columns',
+    name: "facts_typed_claim_columns",
     // v0.35.4 — typed-claim columns for trajectory queries.
     //
     // Adds four optional columns to `facts` so metric assertions like
@@ -3324,7 +3378,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 68,
-    name: 'calibration_profiles_v0_36',
+    name: "calibration_profiles_v0_36",
     // v0.36.1.0 — Hindsight calibration wave. Per-holder profile rows
     // aggregating TakesScorecard data into qualitative pattern statements.
     //
@@ -3385,7 +3439,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 69,
-    name: 'take_proposals_v0_36',
+    name: "take_proposals_v0_36",
     // v0.36.1.0 — propose_takes phase queue.
     //
     // Schema design:
@@ -3440,7 +3494,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 70,
-    name: 'take_grade_cache_v0_36',
+    name: "take_grade_cache_v0_36",
     // v0.36.1.0 — grade_takes verdict cache.
     //
     // Mirrors eval_contradictions_cache (v52) pattern:
@@ -3480,7 +3534,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 71,
-    name: 'take_nudge_log_v0_36',
+    name: "take_nudge_log_v0_36",
     // v0.36.1.0 — E7 nudge log + cooldown state (D16/F3 + CDX-5).
     //
     // Polymorphic reference (CDX-5 fix): a nudge can fire on a
@@ -3521,7 +3575,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 72,
-    name: 'takes_resolved_at_trend_idx_v0_36',
+    name: "takes_resolved_at_trend_idx_v0_36",
     // v0.36.1.0 — F10 perf finding. Brier-trend aggregation queries
     // (90-day windowed scorecard) hit takes WHERE resolved_at IS NOT NULL.
     // Without this partial index, large takes tables do full scans even
@@ -3531,9 +3585,9 @@ export const MIGRATIONS: Migration[] = [
     // resolution is the sparse dimension. Engine-aware via handler since
     // Postgres benefits from CONCURRENTLY on large tables.
     idempotent: true,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         // Pre-drop invalid remnant from a failed CONCURRENTLY attempt.
         await engine.runMigration(
           71,
@@ -3566,7 +3620,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 73,
-    name: 'think_ab_results_v0_36',
+    name: "think_ab_results_v0_36",
     // v0.36.1.0 (T18 / D19) — A/B harness data for `gbrain think --ab`.
     //
     // Each row records one side-by-side comparison of think with vs.
@@ -3596,7 +3650,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 74,
-    name: 'eval_candidates_embedding_column',
+    name: "eval_candidates_embedding_column",
     // v0.36.3.0 (D16 / CDX-10): persist the resolved embedding column on
     // each eval_candidates row so replay against a captured query uses
     // the column that was active at capture time — not whichever column
@@ -3629,7 +3683,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 75,
-    name: 'op_checkpoints_table',
+    name: "op_checkpoints_table",
     // v0.36+ autonomous-remediation wave (renumbered v67→v75 during master
     // merge — master's v0.36.1.0 calibration + v0.36.3.0 captured v67-v74).
     // Shared checkpoint table for long-running ops (embed, extract, lint,
@@ -3662,7 +3716,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 76,
-    name: 'minion_jobs_doctor_run_id_index',
+    name: "minion_jobs_doctor_run_id_index",
     // v0.36+ autonomous-remediation wave (renumbered v68→v76 during master
     // merge). Partial GIN on minion_jobs.data for `data ? 'doctor_run_id'`.
     // Lets `gbrain doctor --remediate` runs be queried by run id for audit
@@ -3674,19 +3728,19 @@ export const MIGRATIONS: Migration[] = [
     // supported the same way; audit query falls through to sequential
     // scan, which is fine for PGLite's single-host scope.
     idempotent: true,
-    sql: '',
+    sql: "",
     sqlFor: {
       postgres: `
         CREATE INDEX IF NOT EXISTS minion_jobs_doctor_run_id_idx
           ON minion_jobs USING GIN (data jsonb_path_ops)
           WHERE data ? 'doctor_run_id';
       `,
-      pglite: '',
+      pglite: "",
     },
   },
   {
     version: 79,
-    name: 'pages_last_retrieved_at',
+    name: "pages_last_retrieved_at",
     // v0.37.1.0 brainstorm/lsd wave (D15 + D11 + D12):
     // Originally planned as v77 but v77 + v78 were claimed by the v0.37.0.0
     // skillpack-registry + cross-modal waves landing on master first.
@@ -3715,7 +3769,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 80,
-    name: 'takes_unresolvable_quality_v0_37_2_0',
+    name: "takes_unresolvable_quality_v0_37_2_0",
     // v0.37.2.0 hotfix (master) — accepts quality='unresolvable' as a 4th
     // valid resolution state. Unblocks production grading scripts that write
     // the 4th verdict type (the judge in grade-takes returns
@@ -3760,7 +3814,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 81,
-    name: 'pages_provenance_columns',
+    name: "pages_provenance_columns",
     // v0.38 ingestion cathedral (eng review E4):
     // Adds four nullable provenance columns to `pages` so every ingested
     // page carries a record of WHERE it came from. The columns are
@@ -3803,7 +3857,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 82,
-    name: 'subagent_tool_executions_stable_id',
+    name: "subagent_tool_executions_stable_id",
     // (master v0.38.1.0; see end of conflict marker block for full body)
     idempotent: true,
     sql: `
@@ -3838,7 +3892,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 83,
-    name: 'mcp_spend_reservations',
+    name: "mcp_spend_reservations",
     // (master v0.38.1.0 — full body in merged region)
     idempotent: true,
     sql: `
@@ -3864,7 +3918,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 84,
-    name: 'oauth_clients_budget_usd_per_day',
+    name: "oauth_clients_budget_usd_per_day",
     // (master v0.38.1.0 — full body in merged region)
     idempotent: true,
     sql: `
@@ -3874,7 +3928,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 85,
-    name: 'oauth_clients_agent_binding',
+    name: "oauth_clients_agent_binding",
     // (master v0.38.1.0 — full body in merged region)
     idempotent: true,
     sql: `
@@ -3918,7 +3972,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 86,
-    name: 'page_links_view_alias',
+    name: "page_links_view_alias",
     // v0.39.0.0 schema-cathedral wave. Renumbered v81→v86 during the
     // master-merge of v0.38.0.0 ingestion cathedral + v0.38.1.0 agent loop
     // (master claimed v81-v85). page_links view alias is idempotent so
@@ -3940,7 +3994,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 87,
-    name: 'takes_kind_drop_check',
+    name: "takes_kind_drop_check",
     // v0.39.0.0 schema-cathedral wave (T3 + codex T10 fix). Renumbered
     // v80→v81→v82→v87 across successive master merges. Final renumber
     // landed it after master's v0.38.1.0 agent-loop bundle (v81-v85).
@@ -3970,7 +4024,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 88,
-    name: 'eval_candidates_schema_pack_per_source',
+    name: "eval_candidates_schema_pack_per_source",
     // v0.39.0.0 schema-cathedral wave (T4 + T28 + E10 + E11 codex fold).
     // Renumbered v81→v82→v83→v88 across successive master merges. Final
     // renumber landed it after master's v0.38.1.0 agent-loop bundle.
@@ -4016,7 +4070,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 89,
-    name: 'facts_event_type_column',
+    name: "facts_event_type_column",
     // v0.40.2.0 — trajectory routing wave.
     //
     // Adds nullable `event_type TEXT` to facts so the existing typed-claim
@@ -4054,7 +4108,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 90,
-    name: 'contextual_retrieval_columns',
+    name: "contextual_retrieval_columns",
     // v0.40.3.0 contextual retrieval wave (renumbered from v81 on master
     // merge — v82-v88 claimed by master's v0.38/v0.39 cathedrals, v89
     // reserved by garrytan/v0.40.2.0-trajectory-routing for
@@ -4104,7 +4158,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 91,
-    name: 'pages_generation_trigger_and_bookmark',
+    name: "pages_generation_trigger_and_bookmark",
     // v0.40.3.0 cache invalidation gate. Two columns + a trigger + an
     // index. Wires the document-side staleness signal for the new
     // query_cache two-layer gate.
@@ -4167,7 +4221,7 @@ export const MIGRATIONS: Migration[] = [
     // them without migration replay. REQUIRED_BOOTSTRAP_COVERAGE in
     // test/schema-bootstrap-coverage.test.ts pins the contract.
     idempotent: true,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
       // Columns + trigger function + trigger. Same SQL on both engines —
       // multi-statement is fine for these (transactional is fine for
@@ -4205,7 +4259,7 @@ export const MIGRATIONS: Migration[] = [
       `;
       await engine.runMigration(91, columnsAndTrigger);
 
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         // Pre-drop any invalid index from a prior CONCURRENTLY failure
         // (matches v14 pattern).
         await engine.runMigration(
@@ -4234,7 +4288,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 92,
-    name: 'sources_github_repo_index',
+    name: "sources_github_repo_index",
     // v0.40.5.0 Federated Sync v2 (D13): partial expression index on
     // sources.config->>'github_repo' so the new POST /webhooks/github
     // handler's source-by-repo lookup uses an index instead of a sequential
@@ -4259,7 +4313,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 93,
-    name: 'minions_v0_41_audit_and_budget',
+    name: "minions_v0_41_audit_and_budget",
     // v0.41 minions cathedral — three audit tables + three new columns on
     // minion_jobs. Single migration because the audit tables and budget
     // columns are jointly designed and consumed:
@@ -4346,7 +4400,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 94,
-    name: 'take_domain_assignments',
+    name: "take_domain_assignments",
     // v0.41.2 lens packs (Section 1 D9/T1 — codex outside-voice challenge
     // to scalar `takes.domain` column). One take can legitimately belong to
     // multiple calibration domains (a take about "Sequoia's investment in
@@ -4414,7 +4468,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 95,
-    name: 'links_link_source_check_includes_mentions',
+    name: "links_link_source_check_includes_mentions",
     // v0.41.18.0 Part B (migration #1 of #1409): widen the link_source
     // CHECK constraint to admit 'mentions' for auto-linked body-text
     // mentions from `gbrain extract links --by-mention`. Backlink-count
@@ -4443,7 +4497,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 96,
-    name: 'facts_extract_conversation_session_index',
+    name: "facts_extract_conversation_session_index",
     // v0.41.11.0 — partial index supporting the doctor query for
     // conversation_facts_backlog (Codex round-1 T2 + round-2 C2).
     // The doctor check runs:
@@ -4470,9 +4524,9 @@ export const MIGRATIONS: Migration[] = [
     // post-merge resolution. The index shape itself is unchanged
     // across all renumbers.
     transaction: false,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           96,
           `DO $$ BEGIN
@@ -4503,7 +4557,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 97,
-    name: 'pages_dedup_partial_index',
+    name: "pages_dedup_partial_index",
     // v0.41.13 (#1309) — partial index for findDuplicatePage's hot path.
     //
     // Codex review of the original plan caught "no new index is hand-wavy":
@@ -4522,10 +4576,10 @@ export const MIGRATIONS: Migration[] = [
     // The Postgres path uses CREATE INDEX CONCURRENTLY (with `transaction:
     // false` so postgres.js doesn't wrap an implicit BEGIN) and pre-drops
     // any invalid remnant from a prior failed CONCURRENTLY attempt.
-    sql: '',
+    sql: "",
     transaction: false,
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           97,
           `DO $$ BEGIN
@@ -4556,7 +4610,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 98,
-    name: 'gbrain_cycle_locks_last_refreshed_at',
+    name: "gbrain_cycle_locks_last_refreshed_at",
     // v0.41.15.0 (D-V3-4 + D-V4-1) — add last_refreshed_at column for
     // `gbrain sync --break-lock --max-age <s>` to correctly identify
     // wedged-but-alive lock holders without stealing healthy long-running
@@ -4578,7 +4632,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 99,
-    name: 'conversation_parser_llm_cache_table',
+    name: "conversation_parser_llm_cache_table",
     // v0.41.16.0 — content-hash-keyed cache for the conversation parser's
     // LLM polish + fallback calls. See src/schema.sql for design notes.
     sql: `
@@ -4610,7 +4664,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 101,
-    name: 'links_link_kind_column',
+    name: "links_link_kind_column",
     // v0.41.18.0 (gbrain onboard wave, A10 + codex finding #12):
     // NER link extraction adds a nullable link_kind column instead of
     // splitting link_source='ner' as a new provenance — keeps
@@ -4637,7 +4691,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 102,
-    name: 'timeline_entries_source_in_dedup',
+    name: "timeline_entries_source_in_dedup",
     // v0.41.18.0 (gbrain onboard wave, A11 + codex finding #11):
     // Widen idx_timeline_dedup from (page_id, date, summary) to
     // (page_id, date, summary, source) so --from-meetings provenance
@@ -4660,7 +4714,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 103,
-    name: 'migration_impact_log_and_priority_recent_idx',
+    name: "migration_impact_log_and_priority_recent_idx",
     // v0.41.18.0 (gbrain onboard wave, A6 + A25 + A13 + codex #9 + #10):
     // (1) migration_impact_log table — onboard --history backbone with
     //     attribution columns (job_id, source_id, brain_id, started_at,
@@ -4673,7 +4727,7 @@ export const MIGRATIONS: Migration[] = [
     // Engine-aware split: Postgres uses CREATE INDEX CONCURRENTLY +
     // invalid-remnant pre-drop; PGLite uses plain CREATE INDEX.
     transaction: false,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
       const createTableSql = `
         CREATE TABLE IF NOT EXISTS migration_impact_log (
@@ -4704,7 +4758,7 @@ export const MIGRATIONS: Migration[] = [
            ON migration_impact_log(job_id, source_id) WHERE job_id IS NOT NULL;`
       );
 
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           103,
           `DO $$ BEGIN
@@ -4735,7 +4789,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 104,
-    name: 'pages_atom_source_hash_idx',
+    name: "pages_atom_source_hash_idx",
     // Partial expression index on frontmatter->>'source_hash' for atom
     // rows. Powers `atomsExistingForHashes` in extract_atoms
     // (src/core/cycle/extract-atoms.ts), which replaces the prior
@@ -4747,9 +4801,9 @@ export const MIGRATIONS: Migration[] = [
     // invalid remnant from a prior failed CONCURRENTLY attempt via
     // pg_index.indisvalid. PGLite uses plain CREATE INDEX.
     transaction: false,
-    sql: '',
+    sql: "",
     handler: async (engine) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           104,
           `DO $$ BEGIN
@@ -4780,7 +4834,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 105,
-    name: 'slug_aliases',
+    name: "slug_aliases",
     // v0.41.22 type-unification wave (T1, plan D1+D11+D17).
     // Backing table for the concept-redirect → alias-table migration: 5.5K
     // concept-redirect pages in the reference production brain become rows
@@ -4796,7 +4850,7 @@ export const MIGRATIONS: Migration[] = [
     // CHECK no-self-reference + UNIQUE (source_id, alias_slug). PGLite uses
     // plain CREATE INDEX (no CONCURRENTLY); fresh installs also create the
     // table via PGLITE_SCHEMA_SQL so this migration is a no-op there.
-    sql: '',
+    sql: "",
     handler: async (engine) => {
       await engine.runMigration(
         105,
@@ -4820,7 +4874,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 106,
-    name: 'extract_rollup_7d_table',
+    name: "extract_rollup_7d_table",
     // v0.41.23 — Per-day rollup of extract events for fast doctor reads.
     // Audit JSONL at ~/.gbrain/audit/extract-rounds-YYYY-Www.jsonl remains
     // the SOURCE OF TRUTH (forensic, append-only, crash-safe). This DB
@@ -4858,7 +4912,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 107,
-    name: 'page_generation_clock_and_statement_trigger',
+    name: "page_generation_clock_and_statement_trigger",
     // v0.41.25.0 (D18/D19, codex outside-voice on /plan-eng-review): global
     // page-generation clock + statement-level trigger.
     //
@@ -4922,7 +4976,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 108,
-    name: 'pages_embedding_signature',
+    name: "pages_embedding_signature",
     // v0.41.31 — embedding provenance for real stale semantics.
     //
     // Adds `pages.embedding_signature TEXT NULL` = `<provider:model>:<dims>`
@@ -4948,7 +5002,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 109,
-    name: 'sources_newest_content_at',
+    name: "sources_newest_content_at",
     // v0.41.32.0 (supersedes #1623): durable newest-COMMIT timestamp per source,
     // written at sync time (HEAD committer time). The REMOTE staleness path
     // (federation_health, get_status_snapshot MCP op) reads this column instead
@@ -4964,7 +5018,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 110,
-    name: 'page_aliases',
+    name: "page_aliases",
     // T3 of the retrieval-cathedral wave (retrieval-maxpool incident).
     //
     // Free-text alias resolution: a query like "Hall of Light" or "明堂"
@@ -5007,7 +5061,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 111,
-    name: 'search_telemetry_rank1_columns',
+    name: "search_telemetry_rank1_columns",
     // T7 of the retrieval-cathedral wave — rank-1 base_score drift signal.
     // Aggregate columns (NOT per-query rows, D10) so a downward drift in the
     // median rank-1 match score is computable from the existing day/mode/intent
@@ -5025,7 +5079,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 112,
-    name: 'pages_links_extracted_at',
+    name: "pages_links_extracted_at",
     // v0.42.7 (#1696) — link-extraction freshness watermark.
     //
     // Closes the "imported ≠ curated" root cause: extraction is the silent third
@@ -5054,14 +5108,14 @@ export const MIGRATIONS: Migration[] = [
     //
     // Mirror lives in src/schema.sql + pglite-schema.ts (fresh-install column +
     // index) and the applyForwardReferenceBootstrap probe set in both engines.
-    sql: '',
+    sql: "",
     transaction: false,
     handler: async (engine) => {
       await engine.runMigration(
         112,
         `ALTER TABLE pages ADD COLUMN IF NOT EXISTS links_extracted_at TIMESTAMPTZ;`
       );
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         await engine.runMigration(
           112,
           `DO $$ BEGIN
@@ -5090,7 +5144,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 113,
-    name: 'links_link_source_widen_for_wikilink_basename',
+    name: "links_link_source_widen_for_wikilink_basename",
     // Issue #972: opt-in global-basename wikilink resolution (bare [[name]]
     // resolved by slug tail) emits edges tagged
     // `link_source = 'wikilink-resolved'`. Widen the CHECK to admit it.
@@ -5122,7 +5176,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 114,
-    name: 'links_link_source_check_kebab_regex',
+    name: "links_link_source_check_kebab_regex",
     // Issue #1941: open link_source from a closed allowlist to a kebab-case
     // format gate so external derivers (e.g. 'citation-graph') stamp their own
     // provenance without a per-deriver gbrain migration. Format: lowercase
@@ -5145,7 +5199,7 @@ export const MIGRATIONS: Migration[] = [
     // the constraint and safe to re-run.
     idempotent: true,
     transaction: false,
-    sql: '', // engine-specific via sqlFor (postgres two-phase vs pglite one-shot)
+    sql: "", // engine-specific via sqlFor (postgres two-phase vs pglite one-shot)
     sqlFor: {
       postgres: `
         ALTER TABLE links DROP CONSTRAINT IF EXISTS links_link_source_check;
@@ -5162,7 +5216,7 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 115,
-    name: 'op_checkpoint_paths_append_table',
+    name: "op_checkpoint_paths_append_table",
     // #1794 cathedral: append-only delta storage for op checkpoints. The parent
     // op_checkpoints.completed_keys JSONB was rewritten in full on every flush —
     // O(N^2) write bytes over a 204K-file sync. This child table banks one row
@@ -5186,11 +5240,56 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 116,
+    name: "page_acl_tables",
+    // Subsumio R3: Document-level ACLs — groups/roles within a tenant source.
+    // Three tables:
+    //   access_groups — named groups within a source (e.g. "Familienrecht", "Assistenten")
+    //   access_group_members — user → group membership (user_id is the web app's user ID)
+    //   page_permissions — page → group → permission level (read/write)
+    //
+    // Enforcement is in the operation layer (get_page, list_pages, search):
+    // when a caller's aclGroups is set, pages without a matching permission
+    // are filtered out. Pages with NO permissions rows are accessible to all
+    // (open-by-default), matching the existing behavior for pre-ACL brains.
+    //
+    // Idempotent: all CREATE ... IF NOT EXISTS. Safe on fresh installs and upgrades.
+    idempotent: true,
+    sql: `
+      CREATE TABLE IF NOT EXISTS access_groups (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        source_id   TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+        name        TEXT NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE(source_id, name)
+      );
+
+      CREATE TABLE IF NOT EXISTS access_group_members (
+        group_id    UUID NOT NULL REFERENCES access_groups(id) ON DELETE CASCADE,
+        user_id     TEXT NOT NULL,
+        source_id   TEXT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY(group_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_agm_user ON access_group_members(user_id);
+      CREATE INDEX IF NOT EXISTS idx_agm_source ON access_group_members(source_id);
+
+      CREATE TABLE IF NOT EXISTS page_permissions (
+        page_id     INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+        group_id    UUID NOT NULL REFERENCES access_groups(id) ON DELETE CASCADE,
+        permission  TEXT NOT NULL DEFAULT 'read' CHECK (permission IN ('read', 'write')),
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY(page_id, group_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_pp_page ON page_permissions(page_id);
+      CREATE INDEX IF NOT EXISTS idx_pp_group ON page_permissions(group_id);
+    `,
+  },
 ];
 
-export const LATEST_VERSION = MIGRATIONS.length > 0
-  ? Math.max(...MIGRATIONS.map(m => m.version))
-  : 1;
+export const LATEST_VERSION =
+  MIGRATIONS.length > 0 ? Math.max(...MIGRATIONS.map((m) => m.version)) : 1;
 
 /**
  * Row returned by `getIdleBlockers`. The shape is the public contract
@@ -5216,7 +5315,7 @@ export interface IdleBlocker {
  *   - any future `--exclusive` drain-wait logic
  */
 export async function getIdleBlockers(engine: BrainEngine): Promise<IdleBlocker[]> {
-  if (engine.kind !== 'postgres') return [];
+  if (engine.kind !== "postgres") return [];
   try {
     return await engine.executeRaw<IdleBlocker>(
       `SELECT pid, state, query_start::text, substring(query, 1, 120) as query
@@ -5237,12 +5336,16 @@ export async function getIdleBlockers(engine: BrainEngine): Promise<IdleBlocker[
 async function checkForBlockingConnections(engine: BrainEngine): Promise<boolean> {
   const rows = await getIdleBlockers(engine);
   if (rows.length > 0) {
-    console.warn(`\n⚠️  Found ${rows.length} idle-in-transaction connection(s) older than 5 minutes:`);
+    console.warn(
+      `\n⚠️  Found ${rows.length} idle-in-transaction connection(s) older than 5 minutes:`
+    );
     for (const r of rows) {
       console.warn(`  PID ${r.pid} — idle since ${r.query_start}`);
       console.warn(`    Query: ${r.query}`);
     }
-    console.warn(`  These may block ALTER TABLE DDL. To kill: SELECT pg_terminate_backend(<pid>);\n`);
+    console.warn(
+      `  These may block ALTER TABLE DDL. To kill: SELECT pg_terminate_backend(<pid>);\n`
+    );
     return true;
   }
   return false;
@@ -5261,15 +5364,20 @@ async function checkForBlockingConnections(engine: BrainEngine): Promise<boolean
 async function runMigrationSQLWithRetry(
   engine: BrainEngine,
   m: Migration,
-  sql: string,
+  sql: string
 ): Promise<void> {
-  const { isStatementTimeoutError, isRetryableConnError } = await import('./retry-matcher.ts');
+  const { isStatementTimeoutError, isRetryableConnError } = await import("./retry-matcher.ts");
   // GBRAIN_MIGRATE_BACKOFF_MS lets tests skip the 5s/15s/45s backoff. In
   // production the env var is unset and the default cadence applies.
   const fastBackoff = process.env.GBRAIN_MIGRATE_BACKOFF_MS;
-  const backoffs = fastBackoff !== undefined
-    ? [parseInt(fastBackoff, 10) || 0, parseInt(fastBackoff, 10) || 0, parseInt(fastBackoff, 10) || 0]
-    : [5000, 15000, 45000];
+  const backoffs =
+    fastBackoff !== undefined
+      ? [
+          parseInt(fastBackoff, 10) || 0,
+          parseInt(fastBackoff, 10) || 0,
+          parseInt(fastBackoff, 10) || 0,
+        ]
+      : [5000, 15000, 45000];
   let lastErr: Error | null = null;
   let lastBlockers: IdleBlocker[] = [];
 
@@ -5280,7 +5388,9 @@ async function runMigrationSQLWithRetry(
       if (attempt > 0) {
         lastBlockers = await getIdleBlockers(engine);
         if (lastBlockers.length > 0) {
-          console.warn(`  [retry ${attempt}/3] ${lastBlockers.length} idle-in-transaction blocker(s):`);
+          console.warn(
+            `  [retry ${attempt}/3] ${lastBlockers.length} idle-in-transaction blocker(s):`
+          );
           for (const b of lastBlockers) {
             console.warn(`    PID ${b.pid} idle since ${b.query_start} — ${b.query.slice(0, 80)}`);
           }
@@ -5302,8 +5412,10 @@ async function runMigrationSQLWithRetry(
         throw err;
       }
       const delay = backoffs[attempt];
-      console.warn(`  [retry ${attempt + 1}/3] ${m.name} hit ${lastErr.message.slice(0, 80)}; retrying in ${delay}ms`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      console.warn(
+        `  [retry ${attempt + 1}/3] ${m.name} hit ${lastErr.message.slice(0, 80)}; retrying in ${delay}ms`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   // Defensive: shouldn't reach here.
@@ -5315,18 +5427,14 @@ async function runMigrationSQLWithRetry(
  * Uses SET LOCAL statement_timeout inside a transaction to override
  * server-enforced timeouts (required for Supabase Postgres).
  */
-async function runMigrationSQL(
-  engine: BrainEngine,
-  m: Migration,
-  sql: string,
-): Promise<void> {
+async function runMigrationSQL(engine: BrainEngine, m: Migration, sql: string): Promise<void> {
   const useTransaction = m.transaction !== false;
 
-  if (useTransaction || engine.kind === 'pglite') {
+  if (useTransaction || engine.kind === "pglite") {
     // Wrap in transaction with extended timeout for Supabase compatibility.
     // SET LOCAL scopes the timeout to this transaction only.
     await engine.transaction(async (tx) => {
-      if (engine.kind === 'postgres') {
+      if (engine.kind === "postgres") {
         try {
           await tx.runMigration(m.version, "SET LOCAL statement_timeout = '600000'");
         } catch {
@@ -5380,8 +5488,8 @@ async function runMigrationSQL(
  */
 export async function hasPendingMigrations(engine: BrainEngine): Promise<boolean> {
   try {
-    const currentStr = await engine.getConfig('version');
-    const current = parseInt(currentStr || '1', 10);
+    const currentStr = await engine.getConfig("version");
+    const current = parseInt(currentStr || "1", 10);
     return current < LATEST_VERSION;
   } catch {
     return true;
@@ -5424,11 +5532,11 @@ export async function hasPendingMigrations(engine: BrainEngine): Promise<boolean
  * trivial DB load even on a stressed PgBouncer pool.
  */
 export type TryRunPendingMigrationsResult =
-  | { status: 'ok'; attempts: number }
-  | { status: 'not_needed' }
-  | { status: 'race_resolved'; attempts: number; pollIterations: number }
-  | { status: 'persistent'; attempts: number; pollIterations: number; error: Error }
-  | { status: 'error'; error: Error };
+  | { status: "ok"; attempts: number }
+  | { status: "not_needed" }
+  | { status: "race_resolved"; attempts: number; pollIterations: number }
+  | { status: "persistent"; attempts: number; pollIterations: number; error: Error }
+  | { status: "error"; error: Error };
 
 export interface TryRunPendingMigrationsOpts {
   deadlineMs?: number;
@@ -5445,18 +5553,18 @@ export interface TryRunPendingMigrationsOpts {
 
 export async function tryRunPendingMigrations(
   engine: BrainEngine,
-  opts: TryRunPendingMigrationsOpts = {},
+  opts: TryRunPendingMigrationsOpts = {}
 ): Promise<TryRunPendingMigrationsResult> {
   const deadlineMs = opts.deadlineMs ?? 5000;
   const pollIntervalMs = opts.pollIntervalMs ?? 250;
   const retryBackoffMs = opts.retryBackoffMs ?? 250;
   const initSchema = opts._hooks?.initSchema ?? (() => engine.initSchema());
   const hasPending = opts._hooks?.hasPending ?? (() => hasPendingMigrations(engine));
-  const sleep = opts._hooks?.sleep ?? ((ms: number) => new Promise(r => setTimeout(r, ms)));
+  const sleep = opts._hooks?.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const now = opts._hooks?.now ?? (() => Date.now());
 
   // Quick early-exit: if no migrations are actually pending, skip entirely.
-  if (!await hasPending()) return { status: 'not_needed' };
+  if (!(await hasPending())) return { status: "not_needed" };
 
   let attempts = 0;
   let lastErr: Error | null = null;
@@ -5465,12 +5573,12 @@ export async function tryRunPendingMigrations(
     attempts++;
     try {
       await initSchema();
-      return { status: 'ok', attempts };
+      return { status: "ok", attempts };
     } catch (err) {
       lastErr = err instanceof Error ? err : new Error(String(err));
       if (!isDeadlockError(lastErr)) {
         // Real failure: propagate to caller's catch.
-        return { status: 'error', error: lastErr };
+        return { status: "error", error: lastErr };
       }
       // Deadlock — backoff before retry.
       if (attempt === 0) await sleep(retryBackoffMs);
@@ -5484,17 +5592,17 @@ export async function tryRunPendingMigrations(
     pollIterations++;
     await sleep(pollIntervalMs);
     try {
-      if (!await hasPending()) return { status: 'race_resolved', attempts, pollIterations };
+      if (!(await hasPending())) return { status: "race_resolved", attempts, pollIterations };
     } catch {
       // hasPending throws → treat as pending (defensive; matches its own catch).
     }
   }
 
   return {
-    status: 'persistent',
+    status: "persistent",
     attempts,
     pollIterations,
-    error: lastErr ?? new Error('deadlock_persistent'),
+    error: lastErr ?? new Error("deadlock_persistent"),
   };
 }
 
@@ -5508,14 +5616,16 @@ export async function tryRunPendingMigrations(
 export function isDeadlockError(err: unknown): boolean {
   if (!err) return false;
   const maybe = err as { code?: string; sqlState?: string; message?: string };
-  if (maybe.code === '40P01' || maybe.sqlState === '40P01') return true;
+  if (maybe.code === "40P01" || maybe.sqlState === "40P01") return true;
   const msg = String(maybe.message ?? err);
   return /40P01|deadlock detected/i.test(msg);
 }
 
-export async function runMigrations(engine: BrainEngine): Promise<{ applied: number; current: number }> {
-  const currentStr = await engine.getConfig('version');
-  const current = parseInt(currentStr || '1', 10);
+export async function runMigrations(
+  engine: BrainEngine
+): Promise<{ applied: number; current: number }> {
+  const currentStr = await engine.getConfig("version");
+  const current = parseInt(currentStr || "1", 10);
 
   // Sort by version ascending so array insertion order doesn't affect
   // correctness. Migrations MUST run in version order; if v16 accidentally
@@ -5523,14 +5633,16 @@ export async function runMigrations(engine: BrainEngine): Promise<{ applied: num
   // be skipped on the next iteration.
   const sorted = [...MIGRATIONS].sort((a, b) => a.version - b.version);
 
-  const pending = sorted.filter(m => m.version > current);
+  const pending = sorted.filter((m) => m.version > current);
   if (pending.length === 0) {
     return { applied: 0, current };
   }
 
   // Progress messages route to stderr so callers parsing stdout (e.g.
   // `gbrain jobs submit --json | jq`) aren't polluted by migration noise.
-  process.stderr.write(`  Schema version ${current} → ${LATEST_VERSION} (${pending.length} migration(s) pending)\n`);
+  process.stderr.write(
+    `  Schema version ${current} → ${LATEST_VERSION} (${pending.length} migration(s) pending)\n`
+  );
 
   // Pre-flight: warn about connections that might block DDL
   await checkForBlockingConnections(engine);
@@ -5551,30 +5663,38 @@ export async function runMigrations(engine: BrainEngine): Promise<{ applied: num
         // Actionable diagnostics for statement timeout (Postgres error 57014).
         // Shape matches the 4-part error standard (what / why / fix / verify).
         const code = (err as { code?: string })?.code;
-        if (code === '57014' || err instanceof MigrationRetryExhausted) {
-          console.error(`\n❌ Migration ${m.version} (${m.name}) ${err instanceof MigrationRetryExhausted ? 'exhausted retries' : 'hit statement_timeout (SQLSTATE 57014)'}.`);
+        if (code === "57014" || err instanceof MigrationRetryExhausted) {
+          console.error(
+            `\n❌ Migration ${m.version} (${m.name}) ${err instanceof MigrationRetryExhausted ? "exhausted retries" : "hit statement_timeout (SQLSTATE 57014)"}.`
+          );
           if (err instanceof MigrationRetryExhausted && err.lastBlockers.length > 0) {
             const b = err.lastBlockers[0];
-            console.error('');
+            console.error("");
             console.error(`   Likely blocker: PID ${b.pid}, idle since ${b.query_start}`);
             console.error(`   Query: ${b.query.slice(0, 120)}`);
-            console.error('');
+            console.error("");
             console.error(`   Recovery: psql ... -c "SELECT pg_terminate_backend(${b.pid})"`);
-            console.error('');
+            console.error("");
           } else {
-            console.error('');
-            console.error('   Cause: another connection holds a lock on the target table, or the');
-            console.error('   server statement_timeout (~2 min on Supabase) is too short for this DDL.');
-            console.error('');
-            console.error('   Fix:');
-            console.error('     1. gbrain doctor --locks    # find idle-in-transaction blockers');
-            console.error('     2. Terminate blocker(s) shown by step 1 via pg_terminate_backend(<pid>)');
-            console.error('     3. gbrain apply-migrations --yes  # re-run from the version that failed');
-            console.error('');
+            console.error("");
+            console.error("   Cause: another connection holds a lock on the target table, or the");
+            console.error(
+              "   server statement_timeout (~2 min on Supabase) is too short for this DDL."
+            );
+            console.error("");
+            console.error("   Fix:");
+            console.error("     1. gbrain doctor --locks    # find idle-in-transaction blockers");
+            console.error(
+              "     2. Terminate blocker(s) shown by step 1 via pg_terminate_backend(<pid>)"
+            );
+            console.error(
+              "     3. gbrain apply-migrations --yes  # re-run from the version that failed"
+            );
+            console.error("");
           }
-          console.error('   Verify:');
-          console.error('     gbrain doctor              # schema_version should match latest');
-          console.error('');
+          console.error("   Verify:");
+          console.error("     gbrain doctor              # schema_version should match latest");
+          console.error("");
         }
         throw err;
       }
@@ -5603,14 +5723,14 @@ export async function runMigrations(engine: BrainEngine): Promise<{ applied: num
           throw new MigrationDriftError(
             m.version,
             m.name,
-            `Schema does not match expected post-condition. Run with --skip-verify to force.`,
+            `Schema does not match expected post-condition. Run with --skip-verify to force.`
           );
         }
       }
     }
 
     // Update version after both SQL and handler succeed
-    await engine.setConfig('version', String(m.version));
+    await engine.setConfig("version", String(m.version));
     process.stderr.write(`  [${m.version}] ✓ ${m.name}\n`);
     applied++;
   }

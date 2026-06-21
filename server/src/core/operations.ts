@@ -450,6 +450,15 @@ export interface OperationContext {
    * Operations MUST check this via the `matterScopeFilter` helper.
    */
   matterScope?: string[] | "all";
+  /**
+   * Subsumio R3: Document-level ACL groups for this caller.
+   * undefined / "all" = no ACL filtering (trusted admin, legacy).
+   * string[] = only pages accessible to these group UUIDs are visible.
+   *
+   * Set by buildOperationContext from opts.aclGroups, populated by the
+   * web-api middleware from the caller's access_group_members rows.
+   */
+  aclGroups?: string[] | "all";
 }
 
 /**
@@ -533,6 +542,29 @@ export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolea
   if (scope === "all") return true;
   if (scope.length === 0) return false;
   return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+}
+
+/**
+ * Subsumio R3: Async document-level ACL filter for search results.
+ * Filters results by page_id against page_permissions + access_group_members.
+ * Pages with NO permission rows are open-by-default.
+ * Returns the input array unchanged when aclGroups is undefined/"all"/empty.
+ */
+export async function aclFilter<T extends { page_id?: number }>(
+  results: T[],
+  ctx: OperationContext
+): Promise<T[]> {
+  const groups = ctx.aclGroups;
+  if (!groups || groups === "all" || groups.length === 0) return results;
+  if (results.length === 0) return results;
+  const { filterPagesByACL } = await import("./acl.ts");
+  const pageIds = results.map((r) => r.page_id).filter((id): id is number => id != null);
+  if (pageIds.length === 0) return results;
+  const accessibleIds = new Set(await filterPagesByACL(ctx.engine, pageIds, groups));
+  return results.filter((r) => {
+    if (r.page_id == null) return true;
+    return accessibleIds.has(r.page_id);
+  });
 }
 
 /**
@@ -781,6 +813,22 @@ const get_page: Operation = {
           ? "Check the slug or use fuzzy: true"
           : "Page may be soft-deleted; pass include_deleted: true to verify"
       );
+    }
+
+    // Subsumio R3: Document-level ACL check. If the caller has aclGroups
+    // set, verify the page is accessible. Pages with no permission rows
+    // are open-by-default. Denied pages throw the same error as not-found
+    // to prevent information leakage.
+    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0) {
+      const { isPageAccessible } = await import("./acl.ts");
+      const accessible = await isPageAccessible(ctx.engine, page.id, ctx.aclGroups);
+      if (!accessible) {
+        throw new OperationError(
+          "page_not_found",
+          `Page not found: ${slug}`,
+          "Page may be soft-deleted; pass include_deleted: true to verify"
+        );
+      }
     }
 
     // v0.37.0 (D11): op-layer write-back for the `last_retrieved_at` stale
@@ -1630,7 +1678,7 @@ const list_pages: Operation = {
       ...scope,
     });
     const includeFrontmatter = (p.include_frontmatter as boolean) === true;
-    return pages.map((pg) => ({
+    let result = pages.map((pg) => ({
       slug: pg.slug,
       type: pg.type,
       title: pg.title,
@@ -1638,6 +1686,21 @@ const list_pages: Operation = {
       ...(pg.deleted_at ? { deleted_at: pg.deleted_at } : {}),
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
+
+    // Subsumio R3: Filter by document-level ACLs.
+    if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
+      const { filterPagesByACL } = await import("./acl.ts");
+      const accessibleIds = new Set(
+        await filterPagesByACL(
+          ctx.engine,
+          pages.map((pg) => pg.id),
+          ctx.aclGroups
+        )
+      );
+      result = result.filter((_, i) => accessibleIds.has(pages[i]!.id));
+    }
+
+    return result;
   },
   scope: "read",
   cliHints: { name: "list" },
@@ -1688,7 +1751,9 @@ const search: Operation = {
       );
       maybeCaptureSearch(ctx, queryText, results, Date.now() - startedAt, false);
       // Subsumio P0-SECR-002: Filter by verified matter scope
-      return matterScopeFilter(results, ctx);
+      const scoped = matterScopeFilter(results, ctx);
+      // Subsumio R3: Filter by document-level ACLs
+      return aclFilter(scoped, ctx);
     }
 
     // Cheap-hybrid (D4/D15): full vector+keyword+RRF+pool+title+alias, but
@@ -1711,7 +1776,9 @@ const search: Operation = {
     );
     maybeCaptureSearch(ctx, queryText, results, latency_ms, true, capturedMeta);
     // Subsumio P0-SECR-002: Filter by verified matter scope
-    return matterScopeFilter(results, ctx);
+    const scoped = matterScopeFilter(results, ctx);
+    // Subsumio R3: Filter by document-level ACLs
+    return aclFilter(scoped, ctx);
   },
   scope: "read",
   cliHints: { name: "search", positional: ["query"] },
@@ -2181,6 +2248,8 @@ const think: Operation = {
       ...(scope.sourceIds !== undefined ? { allowedSources: scope.sourceIds } : {}),
       remote: ctx.remote === true,
       ...(p.legal_mode !== undefined ? { legalMode: Boolean(p.legal_mode) } : {}),
+      // Subsumio R3: Thread document-level ACL groups
+      ...(ctx.aclGroups ? { aclGroups: ctx.aclGroups } : {}),
     });
 
     // Persist if --save was passed locally
@@ -6908,6 +6977,192 @@ const dms_import_document: Operation = {
   cliHints: { name: "dms-import", positional: ["document_id"] },
 };
 
+// ── Subsumio R3: Document-Level ACL Operations ──
+
+const acl_list_groups: Operation = {
+  name: "acl_list_groups",
+  description:
+    "List all access groups for the caller's source. Returns group id, name, and member count.",
+  params: {},
+  scope: "read",
+  handler: async (ctx) => {
+    const { listAccessGroups } = await import("./acl.ts");
+    return listAccessGroups(ctx.engine, ctx.sourceId);
+  },
+  cliHints: { name: "acl-list-groups" },
+};
+
+const acl_create_group: Operation = {
+  name: "acl_create_group",
+  description:
+    "Create a named access group within the caller's source. Idempotent — returns existing group if name already exists.",
+  params: {
+    name: {
+      type: "string",
+      required: true,
+      description: "Group name (e.g. 'Familienrecht', 'Assistenten')",
+    },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { createAccessGroup } = await import("./acl.ts");
+    return createAccessGroup(ctx.engine, ctx.sourceId, String(p.name));
+  },
+  cliHints: { name: "acl-create-group", positional: ["name"] },
+};
+
+const acl_delete_group: Operation = {
+  name: "acl_delete_group",
+  description: "Delete an access group. Cascades to page_permissions and memberships.",
+  params: {
+    group_id: { type: "string", required: true, description: "Group UUID" },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { deleteAccessGroup } = await import("./acl.ts");
+    const ok = await deleteAccessGroup(ctx.engine, String(p.group_id));
+    return { success: ok };
+  },
+  cliHints: { name: "acl-delete-group", positional: ["group_id"] },
+};
+
+const acl_add_member: Operation = {
+  name: "acl_add_member",
+  description: "Add a user to an access group. Idempotent.",
+  params: {
+    group_id: { type: "string", required: true, description: "Group UUID" },
+    user_id: { type: "string", required: true, description: "Web app user ID" },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { addGroupMember } = await import("./acl.ts");
+    await addGroupMember(ctx.engine, String(p.group_id), String(p.user_id), ctx.sourceId);
+    return { success: true };
+  },
+  cliHints: { name: "acl-add-member", positional: ["group_id", "user_id"] },
+};
+
+const acl_remove_member: Operation = {
+  name: "acl_remove_member",
+  description: "Remove a user from an access group.",
+  params: {
+    group_id: { type: "string", required: true, description: "Group UUID" },
+    user_id: { type: "string", required: true, description: "Web app user ID" },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { removeGroupMember } = await import("./acl.ts");
+    const ok = await removeGroupMember(ctx.engine, String(p.group_id), String(p.user_id));
+    return { success: ok };
+  },
+  cliHints: { name: "acl-remove-member", positional: ["group_id", "user_id"] },
+};
+
+const acl_list_members: Operation = {
+  name: "acl_list_members",
+  description: "List all members of an access group.",
+  params: {
+    group_id: { type: "string", required: true, description: "Group UUID" },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const { listGroupMembers } = await import("./acl.ts");
+    return listGroupMembers(ctx.engine, String(p.group_id));
+  },
+  cliHints: { name: "acl-list-members", positional: ["group_id"] },
+};
+
+const acl_set_page_permission: Operation = {
+  name: "acl_set_page_permission",
+  description:
+    "Set or update a page permission for a group. Permission can be 'read' or 'write'. Pages with no permissions are open-by-default.",
+  params: {
+    slug: { type: "string", required: true, description: "Page slug" },
+    group_id: { type: "string", required: true, description: "Group UUID" },
+    permission: {
+      type: "string",
+      required: true,
+      description: "Permission level: 'read' or 'write'",
+    },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { setPagePermission } = await import("./acl.ts");
+    const slug = String(p.slug);
+    // Resolve slug to page_id via the engine
+    const page = await ctx.engine.getPage(slug, sourceScopeOpts(ctx));
+    if (!page) {
+      throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug");
+    }
+    const permission = p.permission === "write" ? "write" : "read";
+    await setPagePermission(
+      ctx.engine,
+      page.id,
+      String(p.group_id),
+      permission as "read" | "write"
+    );
+    return { success: true, page_id: page.id, permission };
+  },
+  cliHints: { name: "acl-set-permission", positional: ["slug", "group_id"] },
+};
+
+const acl_remove_page_permission: Operation = {
+  name: "acl_remove_page_permission",
+  description:
+    "Remove a page permission for a group. If no permissions remain, the page becomes open-by-default.",
+  params: {
+    slug: { type: "string", required: true, description: "Page slug" },
+    group_id: { type: "string", required: true, description: "Group UUID" },
+  },
+  scope: "write",
+  handler: async (ctx, p) => {
+    const { removePagePermission } = await import("./acl.ts");
+    const slug = String(p.slug);
+    const page = await ctx.engine.getPage(slug, sourceScopeOpts(ctx));
+    if (!page) {
+      throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug");
+    }
+    const ok = await removePagePermission(ctx.engine, page.id, String(p.group_id));
+    return { success: ok };
+  },
+  cliHints: { name: "acl-remove-permission", positional: ["slug", "group_id"] },
+};
+
+const acl_get_page_permissions: Operation = {
+  name: "acl_get_page_permissions",
+  description: "List all page permissions for a given page slug.",
+  params: {
+    slug: { type: "string", required: true, description: "Page slug" },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const { getPagePermissions } = await import("./acl.ts");
+    const slug = String(p.slug);
+    const page = await ctx.engine.getPage(slug, sourceScopeOpts(ctx));
+    if (!page) {
+      throw new OperationError("page_not_found", `Page not found: ${slug}`, "Check the slug");
+    }
+    return getPagePermissions(ctx.engine, page.id);
+  },
+  cliHints: { name: "acl-get-permissions", positional: ["slug"] },
+};
+
+const acl_get_user_groups: Operation = {
+  name: "acl_get_user_groups",
+  description:
+    "Get all access group IDs for a user within a source. Used by the web-api middleware to populate aclGroups.",
+  params: {
+    user_id: { type: "string", required: true, description: "Web app user ID" },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const { getUserGroups } = await import("./acl.ts");
+    const groupIds = await getUserGroups(ctx.engine, String(p.user_id), ctx.sourceId);
+    return { groups: groupIds };
+  },
+  cliHints: { name: "acl-get-user-groups", positional: ["user_id"] },
+};
+
 export const operations: Operation[] = [
   // Page CRUD
   get_page,
@@ -7062,6 +7317,17 @@ export const operations: Operation[] = [
   dms_search,
   dms_get_document,
   dms_import_document,
+  // Subsumio R3: Document-Level ACL operations
+  acl_list_groups,
+  acl_create_group,
+  acl_delete_group,
+  acl_add_member,
+  acl_remove_member,
+  acl_list_members,
+  acl_set_page_permission,
+  acl_remove_page_permission,
+  acl_get_page_permissions,
+  acl_get_user_groups,
 ];
 
 export const operationsByName = Object.fromEntries(operations.map((op) => [op.name, op])) as Record<

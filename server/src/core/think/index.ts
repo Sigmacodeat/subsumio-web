@@ -17,21 +17,28 @@
  * for those flags per Codex P1 #7.
  */
 
-import type Anthropic from '@anthropic-ai/sdk';
-import type { BrainEngine, SynthesisEvidenceInput } from '../engine.ts';
-import { runGather, renderPagesBlock, takesHitToTakeForPrompt } from './gather.ts';
-import { renderTakesBlock } from './sanitize.ts';
-import { buildThinkSystemPrompt, buildThinkUserMessage } from './prompt.ts';
-import { resolveCitations, validateCitationsAgainstContext, type ParsedCitation } from './cite-render.ts';
-import { resolveModel } from '../model-config.ts';
-import { chat as gatewayChat, probeChatModel, type ChatResult } from '../ai/gateway.ts';
-import { AIConfigError } from '../ai/errors.ts';
-import { normalizeModelId } from '../model-id.ts';
-import { hasAnthropicKey } from '../ai/anthropic-key.ts';
+import type Anthropic from "@anthropic-ai/sdk";
+import type { BrainEngine, SynthesisEvidenceInput } from "../engine.ts";
+import { runGather, renderPagesBlock, takesHitToTakeForPrompt } from "./gather.ts";
+import { renderTakesBlock } from "./sanitize.ts";
+import { buildThinkSystemPrompt, buildThinkUserMessage } from "./prompt.ts";
+import {
+  resolveCitations,
+  validateCitationsAgainstContext,
+  type ParsedCitation,
+} from "./cite-render.ts";
+import { resolveModel } from "../model-config.ts";
+import { chat as gatewayChat, probeChatModel, type ChatResult } from "../ai/gateway.ts";
+import { AIConfigError } from "../ai/errors.ts";
+import { normalizeModelId } from "../model-id.ts";
+import { hasAnthropicKey } from "../ai/anthropic-key.ts";
 
 /** Anthropic Messages client interface — same shape used by subagent.ts so test stubs can be shared. */
 export interface ThinkLLMClient {
-  create(params: Anthropic.MessageCreateParamsNonStreaming, opts?: { signal?: AbortSignal }): Promise<Anthropic.Message>;
+  create(
+    params: Anthropic.MessageCreateParamsNonStreaming,
+    opts?: { signal?: AbortSignal }
+  ): Promise<Anthropic.Message>;
   /**
    * Optional streaming variant. When present and opts.onStreamChunk is set,
    * runThink uses this to deliver real-time token streaming to the caller.
@@ -41,7 +48,7 @@ export interface ThinkLLMClient {
   createStream?(
     params: Anthropic.MessageCreateParamsNonStreaming,
     onChunk: (text: string) => void,
-    opts?: { signal?: AbortSignal },
+    opts?: { signal?: AbortSignal }
   ): Promise<Anthropic.Message>;
 }
 
@@ -129,7 +136,20 @@ export interface RunThinkOpts {
    *   balanced     → 25 pages / 20 takes (default)
    *   tokenmax     → 50 pages / 30 takes
    */
-  searchMode?: 'conservative' | 'balanced' | 'tokenmax';
+  searchMode?: "conservative" | "balanced" | "tokenmax";
+  /**
+   * P0-SECR-002: Verified matter scope from the web-api middleware. When set,
+   * gathered pages are filtered so the LLM never sees pages outside the
+   * caller's allowed matter prefixes. "all" or undefined = no restriction.
+   */
+  matterScope?: string[] | "all";
+  /**
+   * Subsumio R3: Document-level ACL groups for the caller. When set,
+   * gathered pages are filtered by page_permissions so the LLM never
+   * sees pages the caller's groups can't access.
+   * "all" or undefined = no ACL restriction.
+   */
+  aclGroups?: string[] | "all";
   /**
    * v0.43 — when true, activates legal-aware system prompt with statute
    * citation discipline, jurisdiction awareness, and attorney review
@@ -187,23 +207,30 @@ export interface ThinkResult {
 const DEFAULT_MAX_OUTPUT_TOKENS = 4000;
 
 function inferIntent(question: string, anchor?: string): string {
-  if (anchor) return 'entity';
+  if (anchor) return "entity";
   const q = question.toLowerCase();
-  if (/\b(when|history|over time|evolved|since|before|after)\b/.test(q)) return 'temporal';
-  if (/\b(meeting|event|happened)\b/.test(q)) return 'event';
-  return 'general';
+  if (/\b(when|history|over time|evolved|since|before|after)\b/.test(q)) return "temporal";
+  if (/\b(meeting|event|happened)\b/.test(q)) return "event";
+  return "general";
 }
 
 function tryParseJSON(text: string): unknown {
   // The model may wrap JSON in code fences. Strip if present.
-  const stripped = text.trim().replace(/^```(?:json)?\s*\n?/, '').replace(/```\s*$/, '');
+  const stripped = text
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/, "")
+    .replace(/```\s*$/, "");
   try {
     return JSON.parse(stripped);
   } catch {
     // Fallback: extract the first {...} block. Useful when the model emits prose alongside JSON.
     const m = stripped.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]); } catch { /* ignore */ }
+      try {
+        return JSON.parse(m[0]);
+      } catch {
+        /* ignore */
+      }
     }
     return null;
   }
@@ -219,17 +246,17 @@ function tryParseJSON(text: string): unknown {
 async function persistCitations(
   engine: BrainEngine,
   synthesisPageId: number,
-  citations: ParsedCitation[],
+  citations: ParsedCitation[]
 ): Promise<{ inserted: number; warnings: string[] }> {
   const warnings: string[] = [];
   // Resolve unique slugs to page_ids
   const slugToPageId = new Map<string, number>();
   for (const c of citations) {
-    if (c.row_num === null) continue;  // page-level, skip
+    if (c.row_num === null) continue; // page-level, skip
     if (slugToPageId.has(c.page_slug)) continue;
     const rows = await engine.executeRaw<{ id: number }>(
       `SELECT id FROM pages WHERE slug = $1 LIMIT 1`,
-      [c.page_slug],
+      [c.page_slug]
     );
     if (rows[0]) slugToPageId.set(c.page_slug, rows[0].id);
   }
@@ -257,19 +284,16 @@ async function persistCitations(
  * Run the think pipeline. Returns a ThinkResult — caller decides whether
  * to print, persist as synthesis page, or surface as MCP response.
  */
-export async function runThink(
-  engine: BrainEngine,
-  opts: RunThinkOpts,
-): Promise<ThinkResult> {
+export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise<ThinkResult> {
   const rounds = Math.max(1, opts.rounds ?? 1);
   const warnings: string[] = [];
 
   // Resolve the model through the 6-tier chain.
   const modelUsed = await resolveModel(engine, {
     cliFlag: opts.model,
-    configKey: 'models.think',
-    tier: 'deep',
-    fallback: 'opus',  // think is the high-stakes synthesis op; opus is the right default
+    configKey: "models.think",
+    tier: "deep",
+    fallback: "opus", // think is the high-stakes synthesis op; opus is the right default
   });
 
   // #1698: fail fast on an unresolvable EXPLICIT model (CLI --model, or the MCP op's
@@ -281,8 +305,8 @@ export async function runThink(
     if (!probe.ok) {
       throw new Error(
         `think: --model "${opts.model}" is not usable (${probe.reason}): ${probe.detail}. ` +
-        `Refusing to run synthesis with no model — fix the model id or omit --model.` +
-        (probe.fix ? ` Fix: ${probe.fix}` : ''),
+          `Refusing to run synthesis with no model — fix the model id or omit --model.` +
+          (probe.fix ? ` Fix: ${probe.fix}` : "")
       );
     }
   }
@@ -301,12 +325,12 @@ export async function runThink(
   // GATHER — mode controls how much context we pull in before synthesis.
   const MODE_GATHER_LIMITS = {
     conservative: { gatherLimit: 10, takesLimit: 10 },
-    balanced:     { gatherLimit: 25, takesLimit: 20 },
-    tokenmax:     { gatherLimit: 50, takesLimit: 30 },
+    balanced: { gatherLimit: 25, takesLimit: 20 },
+    tokenmax: { gatherLimit: 50, takesLimit: 30 },
   } as const;
-  const modeLimits = MODE_GATHER_LIMITS[opts.searchMode ?? 'balanced'];
+  const modeLimits = MODE_GATHER_LIMITS[opts.searchMode ?? "balanced"];
 
-  const gather = await runGather(engine, {
+  let gather = await runGather(engine, {
     question: opts.question,
     anchor: opts.anchor,
     questionEmbedding,
@@ -317,6 +341,42 @@ export async function runThink(
     sourceIds: opts.allowedSources,
   });
 
+  // P0-SECR-002: Filter gathered pages by verified matter scope.
+  // This prevents the LLM from seeing pages outside the caller's allowed matter.
+  const scope = opts.matterScope;
+  if (scope && scope !== "all" && scope.length > 0) {
+    gather = {
+      ...gather,
+      pages: gather.pages.filter((p) => {
+        const slug = (p as unknown as { slug?: string }).slug ?? "";
+        return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+      }),
+      graphSlugs: gather.graphSlugs.filter((slug) =>
+        scope.some((prefix) => slug.startsWith(prefix) || slug === prefix)
+      ),
+    };
+  }
+
+  // Subsumio R3: Filter gathered pages by document-level ACLs.
+  // Pages with NO permission rows are open-by-default.
+  const aclGroups = opts.aclGroups;
+  if (aclGroups && aclGroups !== "all" && aclGroups.length > 0 && gather.pages.length > 0) {
+    const { filterPagesByACL } = await import("../acl.ts");
+    const pageIds = gather.pages
+      .map((p) => (p as unknown as { page_id?: number }).page_id)
+      .filter((id): id is number => id != null);
+    if (pageIds.length > 0) {
+      const accessibleIds = new Set(await filterPagesByACL(engine, pageIds, aclGroups));
+      gather = {
+        ...gather,
+        pages: gather.pages.filter((p) => {
+          const pid = (p as unknown as { page_id?: number }).page_id;
+          return pid == null || accessibleIds.has(pid);
+        }),
+      };
+    }
+  }
+
   // Render evidence blocks for the prompt
   const pagesBlock = renderPagesBlock(gather.pages);
   const takesForPrompt = gather.takes.map(takesHitToTakeForPrompt);
@@ -324,21 +384,27 @@ export async function runThink(
   if (sanitizedCount > 0) {
     warnings.push(`SANITIZED_${sanitizedCount}_TAKE_CLAIMS`);
   }
-  const graphBlock = gather.graphSlugs.length > 0
-    ? `<anchor>${opts.anchor}</anchor>\nReachable: ${gather.graphSlugs.slice(0, 30).join(', ')}`
-    : undefined;
+  const graphBlock =
+    gather.graphSlugs.length > 0
+      ? `<anchor>${opts.anchor}</anchor>\nReachable: ${gather.graphSlugs.slice(0, 30).join(", ")}`
+      : undefined;
 
   // v0.36.1.0 (E1) — optional calibration profile retrieval. When enabled
   // and a profile exists, inject it per D22 (after retrieval, before question).
   // When enabled and no profile, fall back to baseline + warn.
   let calibrationBlockOpts:
-    | { holder: string; patternStatements: string[]; activeBiasTags: string[]; brier?: number | null }
+    | {
+        holder: string;
+        patternStatements: string[];
+        activeBiasTags: string[];
+        brier?: number | null;
+      }
     | undefined;
   if (opts.withCalibration) {
     try {
-      const { getLatestProfile } = await import('../../commands/calibration.ts');
+      const { getLatestProfile } = await import("../../commands/calibration.ts");
       const profile = await getLatestProfile(engine, {
-        holder: opts.calibrationHolder ?? 'garry',
+        holder: opts.calibrationHolder ?? "garry",
       });
       if (profile) {
         calibrationBlockOpts = {
@@ -348,12 +414,10 @@ export async function runThink(
           brier: profile.brier,
         };
       } else {
-        warnings.push('NO_CALIBRATION_PROFILE');
+        warnings.push("NO_CALIBRATION_PROFILE");
       }
     } catch (err) {
-      warnings.push(
-        `CALIBRATION_FETCH_FAILED: ${err instanceof Error ? err.message : 'unknown'}`,
-      );
+      warnings.push(`CALIBRATION_FETCH_FAILED: ${err instanceof Error ? err.message : "unknown"}`);
     }
   }
 
@@ -361,22 +425,22 @@ export async function runThink(
   // intents. Default ON (Eng D1). `think.trajectory_enabled` config flag
   // is the kill switch. `withTrajectory: false` caller opt also bypasses.
   // `other` intent short-circuits before any SQL fires.
-  let trajectoryBlock = '';
+  let trajectoryBlock = "";
   let trajectoryPointsCount = 0;
   const trajectoryEnabledConfig = await readThinkTrajectoryEnabled(engine);
   const trajectoryEnabledOpt = opts.withTrajectory !== false; // default true
   if (trajectoryEnabledConfig && trajectoryEnabledOpt) {
     try {
-      const { classifyIntent } = await import('./intent.ts');
+      const { classifyIntent } = await import("./intent.ts");
       const trajIntent = classifyIntent(opts.question);
-      if (trajIntent === 'temporal' || trajIntent === 'knowledge_update') {
-        const { extractCandidateEntities } = await import('./entity-extract.ts');
-        const retrievedSlugs = gather.pages.map(p => p.slug);
+      if (trajIntent === "temporal" || trajIntent === "knowledge_update") {
+        const { extractCandidateEntities } = await import("./entity-extract.ts");
+        const retrievedSlugs = gather.pages.map((p) => p.slug);
         const candidates = extractCandidateEntities(opts.question, retrievedSlugs);
         if (candidates.length > 0) {
-          const { resolveEntitySlugWithSource } = await import('../entities/resolve.ts');
-          const { formatTrajectoryBlock } = await import('../trajectory-format.ts');
-          const sourceIdScalar = opts.sourceId ?? 'default';
+          const { resolveEntitySlugWithSource } = await import("../entities/resolve.ts");
+          const { formatTrajectoryBlock } = await import("../trajectory-format.ts");
+          const sourceIdScalar = opts.sourceId ?? "default";
           // Per-candidate trajectory fetch. Concurrency cap = 3; each call
           // has its own 5s timeout via Promise.race. allSettled prevents
           // one error from killing the others (Codex Problem 13: timeout
@@ -389,9 +453,13 @@ export async function runThink(
             const batch = candidateQueue.splice(0, 3);
             const settled = await Promise.allSettled(
               batch.map(async (cand) => {
-                const resolved = await resolveEntitySlugWithSource(engine, sourceIdScalar, cand.raw);
+                const resolved = await resolveEntitySlugWithSource(
+                  engine,
+                  sourceIdScalar,
+                  cand.raw
+                );
                 if (!resolved) return null;
-                if (resolved.source === 'fallback_slugify') return null;
+                if (resolved.source === "fallback_slugify") return null;
                 if (seenSlugs.has(resolved.slug)) return null;
                 seenSlugs.add(resolved.slug);
                 // 5s per-candidate timeout. Promise.race resolves with the
@@ -400,12 +468,14 @@ export async function runThink(
                   engine.findTrajectory({
                     entitySlug: resolved.slug,
                     ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
-                    ...(opts.allowedSources !== undefined ? { sourceIds: opts.allowedSources } : {}),
+                    ...(opts.allowedSources !== undefined
+                      ? { sourceIds: opts.allowedSources }
+                      : {}),
                     ...(opts.remote !== undefined ? { remote: opts.remote } : {}),
-                    kind: 'all',
+                    kind: "all",
                     limit: 100,
                   }),
-                  new Promise<import('../engine.ts').TrajectoryPoint[]>(resolve => {
+                  new Promise<import("../engine.ts").TrajectoryPoint[]>((resolve) => {
                     setTimeout(() => resolve([]), 5000);
                   }),
                 ]);
@@ -415,16 +485,16 @@ export async function runThink(
                 });
                 if (fmt.rendered.length === 0) return null;
                 return { rendered: fmt.rendered, points: fmt.emittedPoints };
-              }),
+              })
             );
             for (const s of settled) {
-              if (s.status !== 'fulfilled' || s.value === null) continue;
+              if (s.status !== "fulfilled" || s.value === null) continue;
               allBlocks.push(s.value.rendered);
               totalPoints += s.value.points;
             }
           }
           if (allBlocks.length > 0) {
-            trajectoryBlock = allBlocks.join('\n\n');
+            trajectoryBlock = allBlocks.join("\n\n");
             trajectoryPointsCount = totalPoints;
           }
         }
@@ -434,7 +504,7 @@ export async function runThink(
       // error degrades to "no trajectory block" + a warning. The think
       // call itself never fails because of trajectory wiring.
       warnings.push(
-        `TRAJECTORY_INJECTION_FAILED: ${err instanceof Error ? err.message : 'unknown'}`,
+        `TRAJECTORY_INJECTION_FAILED: ${err instanceof Error ? err.message : "unknown"}`
       );
     }
   }
@@ -449,11 +519,13 @@ export async function runThink(
   // with slug starting 'legal/statutes/'), activate legal-aware prompt.
   const autoLegalMode = gather.pages.some((p) => {
     const page = p as unknown as Record<string, unknown>;
-    const pageType = typeof page.type === 'string' ? page.type : '';
-    const pageSlug = typeof page.slug === 'string' ? page.slug : '';
-    return pageType.startsWith('legal_') ||
-      (pageType === 'law' && pageSlug.startsWith('legal/statutes/')) ||
-      pageType === 'evidence';
+    const pageType = typeof page.type === "string" ? page.type : "";
+    const pageSlug = typeof page.slug === "string" ? page.slug : "";
+    return (
+      pageType.startsWith("legal_") ||
+      (pageType === "law" && pageSlug.startsWith("legal/statutes/")) ||
+      pageType === "evidence"
+    );
   });
   const legalMode = opts.legalMode || autoLegalMode;
   const systemPrompt = buildThinkSystemPrompt({
@@ -495,22 +567,24 @@ export async function runThink(
     // That bypassed gateway config (gbrain config set anthropic_api_key)
     // because the Anthropic SDK only reads process.env.ANTHROPIC_API_KEY.
     // Closes #952 (think over MCP returns "no LLM available").
-    const client = opts.client ?? await tryBuildGatewayClient(modelUsed, { explicitModel: opts.modelExplicit });
+    const client =
+      opts.client ??
+      (await tryBuildGatewayClient(modelUsed, { explicitModel: opts.modelExplicit }));
     if (!client) {
-      warnings.push('NO_ANTHROPIC_API_KEY');
+      warnings.push("NO_ANTHROPIC_API_KEY");
       // Degrade gracefully: return the gather without synthesis. Better than throwing.
       return {
         question: opts.question,
-        answer: '(no LLM available — set ANTHROPIC_API_KEY or pass `client`)',
+        answer: "(no LLM available — set ANTHROPIC_API_KEY or pass `client`)",
         citations: [],
-        gaps: ['no LLM available; gather succeeded but synthesis skipped'],
+        gaps: ["no LLM available; gather succeeded but synthesis skipped"],
         pagesGathered: gather.pages.length,
         takesGathered: gather.takes.length,
         graphHits: gather.graphSlugs.length,
         modelUsed,
         rounds: 0,
         warnings,
-        synthesisOk: false,  // #1698: no LLM ran — never persist this
+        synthesisOk: false, // #1698: no LLM ran — never persist this
         diagnostics: {
           pagesFromHybrid: gather.diagnostics.pagesFromHybrid,
           takesFromKeyword: gather.diagnostics.takesFromKeyword,
@@ -523,21 +597,23 @@ export async function runThink(
       model: modelUsed,
       max_tokens: DEFAULT_MAX_OUTPUT_TOKENS,
       system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: "user", content: userMessage }],
     });
-    const block = result.content.find(b => b.type === 'text');
-    const rawText = block && 'text' in block ? block.text : '';
+    const block = result.content.find((b) => b.type === "text");
+    const rawText = block && "text" in block ? block.text : "";
     const parsed = tryParseJSON(rawText);
-    if (!parsed || typeof parsed !== 'object') {
-      warnings.push('LLM_OUTPUT_NOT_JSON');
-      synthesisOk = false;  // #1698: malformed output (and the non-JSON graceful sentinel)
+    if (!parsed || typeof parsed !== "object") {
+      warnings.push("LLM_OUTPUT_NOT_JSON");
+      synthesisOk = false; // #1698: malformed output (and the non-JSON graceful sentinel)
       response = { answer: rawText, citations: [], gaps: [] };
     } else {
       const r = parsed as Partial<ThinkResponse>;
       response = {
-        answer: typeof r.answer === 'string' ? r.answer : '',
-        citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse['citations']) : [],
-        gaps: Array.isArray(r.gaps) ? (r.gaps as string[]).filter(g => typeof g === 'string') : [],
+        answer: typeof r.answer === "string" ? r.answer : "",
+        citations: Array.isArray(r.citations) ? (r.citations as ThinkResponse["citations"]) : [],
+        gaps: Array.isArray(r.gaps)
+          ? (r.gaps as string[]).filter((g) => typeof g === "string")
+          : [],
       };
     }
 
@@ -568,14 +644,12 @@ export async function runThink(
   const citationContext = {
     pageSlugs: new Set<string>([
       ...gather.pages
-        .map(p => String((p as unknown as { slug?: string }).slug ?? '').toLowerCase())
+        .map((p) => String((p as unknown as { slug?: string }).slug ?? "").toLowerCase())
         .filter(Boolean),
-      ...gather.takes.map(t => t.page_slug.toLowerCase()),
-      ...gather.graphSlugs.map(s => s.toLowerCase()),
+      ...gather.takes.map((t) => t.page_slug.toLowerCase()),
+      ...gather.graphSlugs.map((s) => s.toLowerCase()),
     ]),
-    takeKeys: new Set<string>(
-      gather.takes.map(t => `${t.page_slug.toLowerCase()}#${t.row_num}`),
-    ),
+    takeKeys: new Set<string>(gather.takes.map((t) => `${t.page_slug.toLowerCase()}#${t.row_num}`)),
   };
   const grounded = validateCitationsAgainstContext(resolved.citations, citationContext);
   for (const w of grounded.warnings) warnings.push(w);
@@ -587,7 +661,7 @@ export async function runThink(
   // The loop is in place so the v0.29 gap-fill heuristic doesn't change the call site.
   for (let r = 1; r < rounds; r++) {
     warnings.push(`ROUNDS_GT_1_NOT_GAP_DRIVEN_IN_V028`);
-    break;  // v0.28: single-pass only
+    break; // v0.28: single-pass only
   }
 
   return {
@@ -619,40 +693,43 @@ export async function runThink(
  */
 export async function persistSynthesis(
   engine: BrainEngine,
-  result: ThinkResult,
+  result: ThinkResult
 ): Promise<{ slug: string; evidenceInserted: number; warnings: string[] }> {
   // #1698: never persist an empty synthesis. Returned signal (NOT a throw, F3) so
   // the MCP `think` op can return the gather result + warning instead of a bare error
   // envelope; the CLI keys off this warning to exit non-zero. Guard on `=== false` so
   // pre-existing/test ThinkResult literals without the field still persist (back-compat).
   if (result.synthesisOk === false) {
-    return { slug: '', evidenceInserted: 0, warnings: ['SYNTHESIS_EMPTY_NOT_PERSISTED'] };
+    return { slug: "", evidenceInserted: 0, warnings: ["SYNTHESIS_EMPTY_NOT_PERSISTED"] };
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const slugSafe = result.question
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .slice(0, 60) || 'untitled';
+  const slugSafe =
+    result.question
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]+/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "untitled";
   const slug = `synthesis/${slugSafe}-${today}`;
 
   // Build the markdown body
   const body = [
     `# ${result.question}`,
-    '',
+    "",
     result.answer,
-    '',
-    result.gaps.length > 0 ? '## Gaps\n\n' + result.gaps.map(g => `- ${g}`).join('\n') : '',
-  ].filter(Boolean).join('\n');
+    "",
+    result.gaps.length > 0 ? "## Gaps\n\n" + result.gaps.map((g) => `- ${g}`).join("\n") : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const page = await engine.putPage(slug, {
     title: result.question.slice(0, 200),
-    type: 'synthesis',
+    type: "synthesis",
     compiled_truth: body,
     frontmatter: {
-      type: 'synthesis',
+      type: "synthesis",
       question: result.question,
       model: result.modelUsed,
       date: today,
@@ -701,10 +778,10 @@ export async function persistSynthesis(
  */
 async function readThinkTrajectoryEnabled(engine: BrainEngine): Promise<boolean> {
   try {
-    const v = await engine.getConfig('think.trajectory_enabled');
+    const v = await engine.getConfig("think.trajectory_enabled");
     if (v === null || v === undefined) return true;
     const lower = v.trim().toLowerCase();
-    if (lower === 'false' || lower === '0' || lower === 'no' || lower === 'off') return false;
+    if (lower === "false" || lower === "0" || lower === "no" || lower === "off") return false;
     return true;
   } catch {
     return true;
@@ -720,7 +797,7 @@ async function readThinkTrajectoryEnabled(engine: BrainEngine): Promise<boolean>
  */
 async function tryBuildGatewayClient(
   modelUsed: string,
-  opts: { explicitModel?: boolean } = {},
+  opts: { explicitModel?: boolean } = {}
 ): Promise<ThinkLLMClient | null> {
   // Normalize: ensure provider:model shape (and slash→colon — #1698). resolveModel
   // returns bare anthropic ids (`claude-opus-4-7`); gateway.chat needs `anthropic:...`.
@@ -737,8 +814,8 @@ async function tryBuildGatewayClient(
     if (opts.explicitModel) {
       throw new Error(
         `think: --model "${modelUsed}" is not usable (${probe.reason}): ${probe.detail}. ` +
-        `Refusing to run synthesis with no model — fix the model id or omit --model.` +
-        (probe.fix ? ` Fix: ${probe.fix}` : ''),
+          `Refusing to run synthesis with no model — fix the model id or omit --model.` +
+          (probe.fix ? ` Fix: ${probe.fix}` : "")
       );
     }
     return null;
@@ -747,15 +824,21 @@ async function tryBuildGatewayClient(
   return {
     create: async (params): Promise<Anthropic.Message> => {
       // Build ChatOpts from Anthropic.MessageCreateParamsNonStreaming.
-      const messages = params.messages.map(m => ({
+      const messages = params.messages.map((m) => ({
         role: m.role,
-        content: typeof m.content === 'string'
-          ? m.content
-          : (Array.isArray(m.content) ? m.content.map(b => 'text' in b ? b.text : '').join('') : ''),
+        content:
+          typeof m.content === "string"
+            ? m.content
+            : Array.isArray(m.content)
+              ? m.content.map((b) => ("text" in b ? b.text : "")).join("")
+              : "",
       }));
-      const system = typeof params.system === 'string'
-        ? params.system
-        : (Array.isArray(params.system) ? params.system.map(b => 'text' in b ? b.text : '').join('') : undefined);
+      const system =
+        typeof params.system === "string"
+          ? params.system
+          : Array.isArray(params.system)
+            ? params.system.map((b) => ("text" in b ? b.text : "")).join("")
+            : undefined;
 
       let result: ChatResult;
       try {
@@ -779,7 +862,6 @@ async function tryBuildGatewayClient(
       }
       return chatResultToMessage(result, modelStr) as unknown as Anthropic.Message;
     },
-
   };
 }
 
@@ -789,21 +871,24 @@ async function tryBuildGatewayClient(
  * other fields (usage, stop_reason) are returned with best-effort mapping
  * for downstream telemetry compat.
  */
-function chatResultToMessage(result: ChatResult, modelStr: string): {
+function chatResultToMessage(
+  result: ChatResult,
+  modelStr: string
+): {
   id: string;
-  type: 'message';
-  role: 'assistant';
+  type: "message";
+  role: "assistant";
   model: string;
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<{ type: "text"; text: string }>;
   usage: { input_tokens: number; output_tokens: number };
-  stop_reason: 'end_turn' | 'max_tokens' | 'tool_use' | 'stop_sequence';
+  stop_reason: "end_turn" | "max_tokens" | "tool_use" | "stop_sequence";
 } {
   return {
-    id: '',
-    type: 'message',
-    role: 'assistant',
+    id: "",
+    type: "message",
+    role: "assistant",
     model: modelStr,
-    content: [{ type: 'text', text: result.text }],
+    content: [{ type: "text", text: result.text }],
     usage: {
       input_tokens: result.usage.input_tokens,
       output_tokens: result.usage.output_tokens,
@@ -812,13 +897,19 @@ function chatResultToMessage(result: ChatResult, modelStr: string): {
   };
 }
 
-function mapStopReason(s: ChatResult['stopReason']): 'end_turn' | 'max_tokens' | 'tool_use' | 'stop_sequence' {
+function mapStopReason(
+  s: ChatResult["stopReason"]
+): "end_turn" | "max_tokens" | "tool_use" | "stop_sequence" {
   switch (s) {
-    case 'end': return 'end_turn';
-    case 'length': return 'max_tokens';
-    case 'tool_calls': return 'tool_use';
+    case "end":
+      return "end_turn";
+    case "length":
+      return "max_tokens";
+    case "tool_calls":
+      return "tool_use";
     // 'refusal', 'content_filter', 'other' → end_turn (no Anthropic equivalent)
-    default: return 'end_turn';
+    default:
+      return "end_turn";
   }
 }
 
@@ -830,21 +921,26 @@ function mapStopReason(s: ChatResult['stopReason']): 'end_turn' | 'max_tokens' |
  */
 function buildGracefulMessage(modelStr: string): {
   id: string;
-  type: 'message';
-  role: 'assistant';
+  type: "message";
+  role: "assistant";
   model: string;
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<{ type: "text"; text: string }>;
   usage: { input_tokens: number; output_tokens: number };
-  stop_reason: 'end_turn';
+  stop_reason: "end_turn";
 } {
   return {
-    id: '',
-    type: 'message',
-    role: 'assistant',
+    id: "",
+    type: "message",
+    role: "assistant",
     model: modelStr,
-    content: [{ type: 'text', text: '(no LLM available — set anthropic_api_key via gbrain config or ANTHROPIC_API_KEY env)' }],
+    content: [
+      {
+        type: "text",
+        text: "(no LLM available — set anthropic_api_key via gbrain config or ANTHROPIC_API_KEY env)",
+      },
+    ],
     usage: { input_tokens: 0, output_tokens: 0 },
-    stop_reason: 'end_turn',
+    stop_reason: "end_turn",
   };
 }
 

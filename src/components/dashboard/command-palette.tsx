@@ -12,6 +12,13 @@ import {
   PanelLeft,
   Keyboard,
   LifeBuoy,
+  Plus,
+  Briefcase,
+  CalendarClock,
+  FileText,
+  Upload,
+  MessageSquareText,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -227,6 +234,54 @@ export function CommandPalette({
       keywords: "reload refresh neu laden aktualisieren",
     });
     cmds.push({
+      id: "assistant",
+      label: t("cmd.action.assistant"),
+      icon: MessageSquareText,
+      href: "/dashboard/chat",
+      section: t("cmd.section.actions"),
+      keywords: "chat assistant fragen fragebot",
+    });
+    cmds.push({
+      id: "create-case",
+      label: t("cmd.action.new_case"),
+      icon: Briefcase,
+      href: "/dashboard/cases/new",
+      section: t("cmd.section.create"),
+      keywords: "neue akte mandant fall matter create",
+    });
+    cmds.push({
+      id: "create-deadline",
+      label: t("cmd.action.new_deadline"),
+      icon: CalendarClock,
+      href: "/dashboard/deadlines",
+      section: t("cmd.section.create"),
+      keywords: "neue frist termin deadline create",
+    });
+    cmds.push({
+      id: "create-invoice",
+      label: t("cmd.action.new_invoice"),
+      icon: FileText,
+      href: "/dashboard/invoicing",
+      section: t("cmd.section.create"),
+      keywords: "neue rechnung invoice create",
+    });
+    cmds.push({
+      id: "create-contract",
+      label: t("cmd.action.new_contract"),
+      icon: FileText,
+      href: "/dashboard/contracts",
+      section: t("cmd.section.create"),
+      keywords: "neuer vertrag contract create",
+    });
+    cmds.push({
+      id: "upload-document",
+      label: t("cmd.action.upload"),
+      icon: Upload,
+      href: "/dashboard/upload",
+      section: t("cmd.section.create"),
+      keywords: "upload dokument hochladen datei",
+    });
+    cmds.push({
       id: "help-docs",
       label: t("cmd.action.help.docs"),
       icon: BookOpen,
@@ -238,7 +293,9 @@ export function CommandPalette({
       id: "help-shortcuts",
       label: t("cmd.action.help.shortcuts"),
       icon: Keyboard,
-      href: "/docs#shortcuts",
+      action: () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", shiftKey: true }));
+      },
       section: t("cmd.section.admin"),
       keywords: "keyboard shortcuts hotkeys tastatur",
     });

@@ -14,7 +14,7 @@ import {
   CalendarClock,
   Send,
   FileText,
-  Sparkles,
+  MessageSquare,
   Search,
   Clock,
   AlertTriangle,
@@ -292,7 +292,7 @@ export default function DashboardReel({
           })}
           {/* usage at bottom */}
           <div className="mt-auto border-t [border-color:var(--mk-border)] pt-3">
-            <div className="mb-1 text-xs [color:var(--mk-text-subtle)]">KI-Anfragen</div>
+            <div className="mb-1 text-xs [color:var(--mk-text-subtle)]">Assistenten-Anfragen</div>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full [background:var(--mk-surface)]">
                 <div className="brand-bg h-full rounded-full" style={{ width: "42%" }} />
@@ -419,7 +419,7 @@ export default function DashboardReel({
                         className="flex gap-2"
                       >
                         <div className="brand-soft brand-border flex h-6 w-6 shrink-0 items-center justify-center rounded-md border">
-                          <Sparkles size={12} className="brand-text" />
+                          <MessageSquare size={12} className="brand-text" />
                         </div>
                         <div className="max-w-[85%]">
                           <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">

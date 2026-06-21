@@ -6,14 +6,14 @@
  * + missing-context bugs; this module exists to prevent that recurring.
  */
 
-import type { BrainEngine } from '../core/engine.ts';
-import { operations, OperationError } from '../core/operations.ts';
-import type { Operation, OperationContext, AuthInfo } from '../core/operations.ts';
-import { isEngineError } from '../core/engine-errors.ts';
-import { loadConfig } from '../core/config.ts';
+import type { BrainEngine } from "../core/engine.ts";
+import { operations, OperationError } from "../core/operations.ts";
+import type { Operation, OperationContext, AuthInfo } from "../core/operations.ts";
+import { isEngineError } from "../core/engine-errors.ts";
+import { loadConfig } from "../core/config.ts";
 
 export interface ToolResult {
-  content: { type: 'text'; text: string }[];
+  content: { type: "text"; text: string }[];
   isError?: boolean;
   /**
    * v0.31 (eD3): MCP spec-blessed metadata slot for server-supplied data.
@@ -32,7 +32,7 @@ export interface DispatchOpts {
   /** Defaults to true (remote/untrusted). Local CLI callers (`gbrain call`) pass false. */
   remote?: boolean;
   /** Override the default stderr logger (e.g. CLI uses console.* directly). */
-  logger?: OperationContext['logger'];
+  logger?: OperationContext["logger"];
   /**
    * v0.28: per-token allow-list for the takes.holder field. Threaded by
    * the HTTP/stdio transport from `access_tokens.permissions.takes_holders`.
@@ -58,10 +58,7 @@ export interface DispatchOpts {
    * Returning undefined means "no _meta to inject"; the dispatcher
    * preserves the existing response shape.
    */
-  metaHook?: (
-    name: string,
-    ctx: OperationContext,
-  ) => Promise<Record<string, unknown> | undefined>;
+  metaHook?: (name: string, ctx: OperationContext) => Promise<Record<string, unknown> | undefined>;
   /**
    * OAuth auth info threaded through from the HTTP MCP transport. Set so
    * the whoami op (and any future scope-aware op handlers) can introspect
@@ -90,7 +87,14 @@ export interface DispatchOpts {
    * string[] = only pages whose slug starts with one of these prefixes.
    * undefined = no enforcement (legacy callers, CLI, tests).
    */
-  matterScope?: string[] | 'all';
+  matterScope?: string[] | "all";
+  /**
+   * Subsumio R3: Document-level ACL groups for this caller.
+   * Set by the web-api from the caller's access_group_members rows.
+   * "all" / undefined = no ACL filtering (trusted admin, legacy).
+   * string[] = only pages accessible to these group UUIDs.
+   */
+  aclGroups?: string[] | "all";
 }
 
 /**
@@ -120,7 +124,7 @@ export interface DispatchOpts {
  */
 export interface ParamSummary {
   redacted: true;
-  kind: 'array' | 'object' | string;
+  kind: "array" | "object" | string;
   declared_keys?: string[];
   unknown_key_count?: number;
   length?: number;
@@ -150,20 +154,24 @@ export function summarizeMcpParams(opName: string, params: unknown): ParamSummar
   if (params == null) return null;
 
   let approxBytes: number | undefined;
-  try { approxBytes = bucketBytes(JSON.stringify(params).length); } catch { approxBytes = undefined; }
+  try {
+    approxBytes = bucketBytes(JSON.stringify(params).length);
+  } catch {
+    approxBytes = undefined;
+  }
 
   if (Array.isArray(params)) {
     return {
       redacted: true,
-      kind: 'array',
+      kind: "array",
       length: params.length,
       ...(approxBytes !== undefined ? { approx_bytes: approxBytes } : {}),
     };
   }
 
-  if (typeof params === 'object') {
+  if (typeof params === "object") {
     const submittedKeys = Object.keys(params as Record<string, unknown>);
-    const op = operations.find(o => o.name === opName);
+    const op = operations.find((o) => o.name === opName);
     const allowList = op ? new Set(Object.keys(op.params)) : new Set<string>();
     const declared: string[] = [];
     let unknown = 0;
@@ -174,7 +182,7 @@ export function summarizeMcpParams(opName: string, params: unknown): ParamSummar
     declared.sort();
     return {
       redacted: true,
-      kind: 'object',
+      kind: "object",
       declared_keys: declared,
       unknown_key_count: unknown,
       ...(approxBytes !== undefined ? { approx_bytes: approxBytes } : {}),
@@ -197,17 +205,21 @@ export function validateParams(op: Operation, params: Record<string, unknown>): 
     if (params[key] !== undefined && params[key] !== null) {
       const val = params[key];
       const expected = def.type;
-      if (expected === 'string' && typeof val !== 'string') return `Parameter "${key}" must be a string`;
-      if (expected === 'number' && typeof val !== 'number') return `Parameter "${key}" must be a number`;
-      if (expected === 'boolean' && typeof val !== 'boolean') return `Parameter "${key}" must be a boolean`;
-      if (expected === 'object' && (typeof val !== 'object' || Array.isArray(val))) return `Parameter "${key}" must be an object`;
-      if (expected === 'array' && !Array.isArray(val)) return `Parameter "${key}" must be an array`;
+      if (expected === "string" && typeof val !== "string")
+        return `Parameter "${key}" must be a string`;
+      if (expected === "number" && typeof val !== "number")
+        return `Parameter "${key}" must be a number`;
+      if (expected === "boolean" && typeof val !== "boolean")
+        return `Parameter "${key}" must be a boolean`;
+      if (expected === "object" && (typeof val !== "object" || Array.isArray(val)))
+        return `Parameter "${key}" must be an object`;
+      if (expected === "array" && !Array.isArray(val)) return `Parameter "${key}" must be an array`;
     }
   }
   return null;
 }
 
-const stderrLogger: OperationContext['logger'] = {
+const stderrLogger: OperationContext["logger"] = {
   info: (msg: string) => process.stderr.write(`[info] ${msg}\n`),
   warn: (msg: string) => process.stderr.write(`[warn] ${msg}\n`),
   error: (msg: string) => process.stderr.write(`[error] ${msg}\n`),
@@ -216,11 +228,11 @@ const stderrLogger: OperationContext['logger'] = {
 export function buildOperationContext(
   engine: BrainEngine,
   params: Record<string, unknown>,
-  opts: DispatchOpts = {},
+  opts: DispatchOpts = {}
 ): OperationContext {
   return {
     engine,
-    config: loadConfig() || { engine: 'postgres' },
+    config: loadConfig() || { engine: "postgres" },
     logger: opts.logger || stderrLogger,
     dryRun: !!params.dry_run,
     remote: opts.remote ?? true,
@@ -229,19 +241,22 @@ export function buildOperationContext(
     // for single-source brains and any caller who didn't resolve a sourceId.
     // CLI / HTTP / stdio transports SHOULD pass an explicit sourceId via opts;
     // this fallback covers code paths that historically passed undefined.
-    sourceId: opts.sourceId ?? 'default',
+    sourceId: opts.sourceId ?? "default",
     // Prefer a real OAuth grant. Otherwise, if a trusted caller supplied a
     // federated read scope (web-api: tenant + shared law sources), synthesize a
     // minimal local auth carrying ONLY allowedSources — sourceScopeOpts reads it
     // for reads; clientId 'local' is accurate for the trusted server-to-server path.
-    auth: opts.auth
-      ?? (opts.allowedSources && opts.allowedSources.length > 0
-        ? { token: '', clientId: 'local', scopes: [], allowedSources: opts.allowedSources }
+    auth:
+      opts.auth ??
+      (opts.allowedSources && opts.allowedSources.length > 0
+        ? { token: "", clientId: "local", scopes: [], allowedSources: opts.allowedSources }
         : undefined),
     // Subsumio P0-SECR-002: Thread verified matter scope into the context.
     // Source precedence: explicit opts.matterScope > opts.auth.matterScope
     // (OAuth token permissions). Undefined = no enforcement (legacy/CLI).
     matterScope: opts.matterScope ?? opts.auth?.matterScope,
+    // Subsumio R3: Thread document-level ACL groups into the context.
+    aclGroups: opts.aclGroups,
   };
 }
 
@@ -255,9 +270,9 @@ export async function dispatchToolCall(
   engine: BrainEngine,
   name: string,
   params: Record<string, unknown> | undefined,
-  opts: DispatchOpts = {},
+  opts: DispatchOpts = {}
 ): Promise<ToolResult> {
-  const op = operations.find(o => o.name === name);
+  const op = operations.find((o) => o.name === name);
   if (!op) {
     // Always return JSON-shaped error content. v0.31 e2e tests
     // (sources-remote-mcp.test.ts) parse content via JSON.parse so a
@@ -265,7 +280,16 @@ export async function dispatchToolCall(
     // unknown-op path and the resulting test failure looked like a
     // transport bug.
     return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'unknown_tool', message: `Unknown tool: ${name}` }, null, 2) }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { error: "unknown_tool", message: `Unknown tool: ${name}` },
+            null,
+            2
+          ),
+        },
+      ],
       isError: true,
     };
   }
@@ -274,7 +298,12 @@ export async function dispatchToolCall(
   const validationError = validateParams(op, safeParams);
   if (validationError) {
     return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'invalid_params', message: validationError }, null, 2) }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ error: "invalid_params", message: validationError }, null, 2),
+        },
+      ],
       isError: true,
     };
   }
@@ -283,7 +312,7 @@ export async function dispatchToolCall(
 
   try {
     const result = await op.handler(ctx, safeParams);
-    const out: ToolResult = { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    const out: ToolResult = { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     // v0.31 (eD3 + eE4): best-effort _meta.brain_hot_memory injection.
     // The hook is wrapped in its own try/catch — any DB blip / cache miss /
     // helper crash degrades to no `_meta` rather than flipping the whole
@@ -300,12 +329,20 @@ export async function dispatchToolCall(
     return out;
   } catch (e: unknown) {
     if (e instanceof OperationError) {
-      return { content: [{ type: 'text', text: JSON.stringify(e.toJSON(), null, 2) }], isError: true };
+      return {
+        content: [{ type: "text", text: JSON.stringify(e.toJSON(), null, 2) }],
+        isError: true,
+      };
     }
     // EngineError subtypes — preserve kind for structured error handling.
     if (isEngineError(e)) {
       return {
-        content: [{ type: 'text', text: JSON.stringify({ error: e.kind, message: e.message, fix: e.fix }, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ error: e.kind, message: e.message, fix: e.fix }, null, 2),
+          },
+        ],
         isError: true,
       };
     }
@@ -315,7 +352,9 @@ export async function dispatchToolCall(
     // tried JSON.parse(content).
     const msg = e instanceof Error ? e.message : String(e);
     return {
-      content: [{ type: 'text', text: JSON.stringify({ error: 'internal_error', message: msg }, null, 2) }],
+      content: [
+        { type: "text", text: JSON.stringify({ error: "internal_error", message: msg }, null, 2) },
+      ],
       isError: true,
     };
   }

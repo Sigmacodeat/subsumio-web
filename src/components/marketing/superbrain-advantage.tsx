@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Network,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
@@ -21,8 +20,8 @@ const copy = {
   en: {
     eyebrow: "The Subsumio engine",
     title: "Not another chatbot. The memory layer your firm runs on.",
-    sub: "Most AI tools answer one prompt. Subsumio builds a durable, permission-aware brain over your own work: files, messages, meetings, entities, decisions and open loops.",
-    center: "Your firm brain",
+    sub: "Most assistants only answer one prompt. Subsumio builds a durable, permission-aware knowledge base over your own work: files, messages, meetings, entities, decisions and open loops.",
+    center: "Your firm knowledge base",
     proof: [
       {
         icon: Database,
@@ -45,12 +44,12 @@ const copy = {
         desc: "Self-hosted on your keys and hardware, or managed EU cloud when you want speed.",
       },
     ],
-    capabilityTitle: "What your brain does",
+    capabilityTitle: "What your knowledge base does",
     capabilities: [
       {
         icon: Brain,
         title: "Compounds",
-        desc: "Every matter, every email, every deadline feeds the brain — it remembers what your firm has ever done.",
+        desc: "Every matter, every email, every deadline feeds the knowledge base — it remembers what your firm has ever done.",
       },
       {
         icon: FileSearch,
@@ -68,8 +67,8 @@ const copy = {
   de: {
     eyebrow: "Die Subsumio-Engine",
     title: "Kein weiterer Chatbot. Die Gedächtnisschicht, auf der deine Kanzlei läuft.",
-    sub: "Die meisten KI-Tools beantworten einen Prompt. Subsumio baut ein dauerhaftes, rechtebewusstes Brain über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
-    center: "Dein Kanzlei-Brain",
+    sub: "Die meisten Assistenten beantworten nur einen Prompt. Subsumio baut eine dauerhafte, rechtebewusste Wissensbasis über deine eigene Arbeit: Dateien, Nachrichten, Termine, Entitäten, Entscheidungen und offene Punkte.",
+    center: "Deine Kanzlei-Wissensbasis",
     proof: [
       {
         icon: Database,
@@ -217,7 +216,7 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
 
             <div className="relative border-t [border-color:var(--mk-border)] p-5 md:p-6">
               <div className="mb-4 flex items-center gap-2">
-                <Sparkles size={16} className="brand-text" />
+                <Database size={16} className="brand-text" />
                 <h3 className="text-sm font-bold [color:var(--mk-text)]">{t.capabilityTitle}</h3>
               </div>
               <div className="space-y-3">

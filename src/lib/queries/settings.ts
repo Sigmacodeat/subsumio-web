@@ -260,3 +260,141 @@ export function useUpdateModelPreference() {
     },
   });
 }
+
+// ── ACL Groups (Subsumio R3: Document-Level ACLs) ──
+
+export interface AclGroup {
+  id: string;
+  source_id: string;
+  name: string;
+  created_at: string;
+  member_count?: number;
+}
+
+export interface AclGroupMember {
+  user_id: string;
+  created_at: string;
+}
+
+export interface AclPagePermission {
+  page_id: number;
+  group_id: string;
+  group_name?: string;
+  permission: "read" | "write";
+  created_at: string;
+}
+
+export function useAclGroups() {
+  return useQuery({
+    queryKey: ["acls", "groups"],
+    queryFn: () => fetch("/api/acls/groups").then((r) => r.json()) as Promise<AclGroup[]>,
+  });
+}
+
+export function useCreateAclGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      csrfFetch("/api/acls/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      }).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
+  });
+}
+
+export function useDeleteAclGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string) =>
+      csrfFetch(`/api/acls/groups/${encodeURIComponent(groupId)}`, { method: "DELETE" }).then((r) =>
+        r.json()
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
+  });
+}
+
+export function useAclGroupMembers(groupId: string | undefined) {
+  return useQuery({
+    queryKey: ["acls", "groups", groupId, "members"],
+    enabled: !!groupId,
+    queryFn: () =>
+      fetch(`/api/acls/groups/${encodeURIComponent(groupId!)}/members`).then((r) =>
+        r.json()
+      ) as Promise<AclGroupMember[]>,
+  });
+}
+
+export function useAddAclGroupMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { groupId: string; userId: string }) =>
+      csrfFetch(`/api/acls/groups/${encodeURIComponent(input.groupId)}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: input.userId }),
+      }).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
+  });
+}
+
+export function useRemoveAclGroupMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { groupId: string; userId: string }) =>
+      csrfFetch(
+        `/api/acls/groups/${encodeURIComponent(input.groupId)}/members/${encodeURIComponent(input.userId)}`,
+        {
+          method: "DELETE",
+        }
+      ).then((r) => r.json()),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["acls", "groups"] }),
+  });
+}
+
+export function usePagePermissions(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["acls", "permissions", slug],
+    enabled: !!slug,
+    queryFn: () =>
+      fetch(`/api/acls/permissions/${encodeURIComponent(slug!)}`).then((r) => r.json()) as Promise<
+        AclPagePermission[]
+      >,
+  });
+}
+
+export function useSetPagePermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { slug: string; groupId: string; permission: "read" | "write" }) =>
+      csrfFetch("/api/acls/permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: input.slug,
+          group_id: input.groupId,
+          permission: input.permission,
+        }),
+      }).then((r) => r.json()),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ["acls", "permissions", variables.slug] });
+    },
+  });
+}
+
+export function useRemovePagePermission() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { slug: string; groupId: string }) =>
+      csrfFetch(
+        `/api/acls/permissions/${encodeURIComponent(input.slug)}/${encodeURIComponent(input.groupId)}`,
+        {
+          method: "DELETE",
+        }
+      ).then((r) => r.json()),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ["acls", "permissions", variables.slug] });
+    },
+  });
+}

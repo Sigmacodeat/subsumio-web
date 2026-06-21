@@ -5,7 +5,7 @@
 // every section scroll-reveals; value-props use signal-colored tiles.
 
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PRICING, PRICING_FAQ, p, type Lang } from "@/content/site";
@@ -68,7 +68,7 @@ export default function PricingPage({ lang }: { lang: Lang }) {
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <span className="brand-border brand-soft brand-text mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
-              <Sparkles size={12} className="brand-text" />
+              <Check size={12} className="brand-text" />
               {lang === "de" ? "Transparent & fair" : "Transparent & fair"}
             </span>
             <h1 className="mb-5 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">

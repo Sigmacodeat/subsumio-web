@@ -11,7 +11,6 @@ import {
   MessageSquare,
   Search,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { type Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
@@ -165,7 +164,7 @@ export default function ProductWorkflowShowcase({
                 >
                   <Search size={16} className="brand-text" />
                   <span className="text-sm [color:var(--mk-text)]">{c.query}</span>
-                  <Sparkles size={16} className="ml-auto [color:var(--brand-secondary)]" />
+                  <CheckCircle2 size={16} className="ml-auto [color:var(--brand-secondary)]" />
                 </motion.div>
 
                 <div className="grid gap-4 lg:grid-cols-[1fr_0.9fr]">

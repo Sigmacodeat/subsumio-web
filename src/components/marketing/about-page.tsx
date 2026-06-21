@@ -54,10 +54,10 @@ const CONTENT = {
     badge: "Über Subsumio",
     h1a: "Aus Österreich",
     h1b: "für DACH-Kanzleien.",
-    sub: "Subsumio ist die KI-Kanzleisoftware, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
+    sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
     missionTitle: "Unsere Mission",
     missionText:
-      "Jeder Kanzlei ein Brain geben, das nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst, nicht fremder Cloud.",
+      "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst, nicht fremder Cloud.",
     valuesTitle: "Woran wir glauben",
     values: [
       {
@@ -68,7 +68,7 @@ const CONTENT = {
       {
         icon: "Brain",
         title: "Zitate, nicht Halluzinationen",
-        desc: "Jede KI-Antwort nennt ihre Quelle. Anwälte verifizieren mit einem Klick. Keine halluzinierten Referenzen, keine Black-Box-Outputs.",
+        desc: "Jede Antwort des Assistenten nennt ihre Quelle. Anwälte verifizieren mit einem Klick. Keine halluzinierten Referenzen, keine Black-Box-Outputs.",
       },
       {
         icon: "Globe",

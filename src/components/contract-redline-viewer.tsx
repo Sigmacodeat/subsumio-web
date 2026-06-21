@@ -302,7 +302,7 @@ export function ContractRedlineViewer({
               Contract Redline
             </h2>
             <p className="text-xs text-[color:var(--ds-text-muted)]">
-              KI-gestützte Klauselanalyse und Überarbeitung
+              Assistentengestützte Klauselanalyse und Überarbeitung
               {contractType && ` · ${contractType}`}
             </p>
           </div>

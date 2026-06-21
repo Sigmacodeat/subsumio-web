@@ -7,7 +7,7 @@
 // scripted answer — so the section is always useful, never broken.
 
 import { useState } from "react";
-import { Send, Loader2, Sparkles } from "lucide-react";
+import { Send, Loader2, CheckCircle2 } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
 
@@ -159,7 +159,7 @@ export default function LiveDemo({
             {live ? (
               <div>
                 <p className="brand-text mb-2 flex items-center gap-1.5 text-xs">
-                  <Sparkles size={12} /> {t.liveLabel}
+                  <CheckCircle2 size={12} /> {t.liveLabel}
                 </p>
                 <ul className="space-y-2">
                   {live.map((r, i) => (
