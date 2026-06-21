@@ -16,9 +16,8 @@ const buttonVariants = cva(
         ghost:
           "bg-transparent text-[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         danger:
-          "border border-red-500/20 bg-red-500/10 text-red-400 hover:border-red-500/40 hover:bg-red-500/20 dark:border-[var(--signal-rose)]/20 dark:bg-[var(--signal-rose)]/10 dark:text-[var(--signal-rose)]",
-        success:
-          "bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500 dark:bg-[var(--signal-green)] dark:hover:opacity-90",
+          "border border-red-500/20 bg-red-500/10 text-red-400 hover:border-red-500/40 hover:bg-red-500/20",
+        success: "bg-emerald-600 text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-500",
         glow: "brand-bg text-white shadow-[0_0_16px_-4px_var(--brand-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_24px_-2px_var(--brand-glow)] active:translate-y-0 active:shadow-[0_0_12px_-4px_var(--brand-glow)]",
         outline: "brand-border brand-text hover:brand-border-strong hover:brand-soft border",
       },

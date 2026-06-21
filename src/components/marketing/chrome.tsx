@@ -695,7 +695,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
             </div>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
               {lang === "de"
-                ? "Das Brain Ihrer Kanzlei — für AT, DE und CH."
+                ? "Das Brain deiner Kanzlei — für AT, DE und CH."
                 : "The memory layer for your law firm — built for AT, DE and CH."}
             </p>
             <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">

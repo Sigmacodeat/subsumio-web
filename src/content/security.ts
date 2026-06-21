@@ -161,14 +161,14 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     metaDesc:
       "Volle Engine self-hosted oder EU-Cloud mit AVV. Zugriff pro Nutzer gescoped, fuzz-getestet. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
     badge: "Sicherheit & Datenschutz",
-    h1a: "Ihre Daten sind der Wert des Produkts.",
-    h1b: "Deshalb bleiben sie unter Ihrer Kontrolle.",
+    h1a: "Deine Daten sind der Wert des Produkts.",
+    h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
     sub: "Subsumio ist für Berufe gebaut, in denen Verschwiegenheit Gesetz ist, nicht Präferenz: Kanzleien in der DACH-Region. Hier ist die Architektur — und eine ehrliche Liste dessen, was noch in Arbeit ist.",
     pillars: [
       {
         icon: "Shield",
         title: "Self-Hosting, vollständig",
-        desc: "Die komplette Engine läuft auf Ihrer Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und Ihre IT kontrolliert jedes System, das Ihre Akten berührt.",
+        desc: "Die komplette Engine läuft auf deiner Hardware — das volle Produkt, nichts zurückgehalten. Mandantendaten erreichen überhaupt keinen Dritten, und deine IT kontrolliert jedes System, das deine Akten berührt.",
       },
       {
         icon: "Layers",
@@ -177,8 +177,8 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       },
       {
         icon: "Lock",
-        title: "Kein Training mit Ihren Daten",
-        desc: "Ihre Inhalte trainieren weder unsere noch fremde Modelle. Synthese-Calls gehen an den LLM-Provider, den Sie konfigurieren; Self-Hosted-Setups wählen eigene Endpunkte oder Gateways.",
+        title: "Kein Training mit deinen Daten",
+        desc: "Deine Inhalte trainieren weder unsere noch fremde Modelle. Synthese-Calls gehen an den LLM-Provider, den du konfigurierst; Self-Hosted-Setups wählen eigene Endpunkte oder Gateways.",
       },
       {
         icon: "Eye",
@@ -187,15 +187,15 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       },
     ],
     hostingTitle: "Zwei Betriebsarten",
-    hostingSub: "Beide lassen Ihnen die Kontrolle. Wählen Sie nach Ihrer Compliance-Lage.",
+    hostingSub: "Beide lassen dir die Kontrolle. Wähle nach deiner Compliance-Lage.",
     hostingOptions: [
       {
         title: "Self-hosted / On-Premise (Enterprise)",
         points: [
-          "Ihre Hardware, Ihre Jurisdiktion, Ihre Keys",
+          "Deine Hardware, deine Jurisdiktion, deine Keys",
           "Kein Dritter verarbeitet Mandantendaten — relevant für § 203 StGB: keine mitwirkende Person",
-          "Die komplette Engine, auditierbar, auf Ihrer Infrastruktur",
-          "Updates und Backups verwalten Sie selbst",
+          "Die komplette Engine, auditierbar, auf deiner Infrastruktur",
+          "Updates und Backups verwaltest du selbst",
         ],
       },
       {
@@ -246,7 +246,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ],
     roadmapTitle: "Was wir noch nicht haben — ehrlich",
     roadmapText:
-      "Wir sagen es lieber hier, als dass Sie es im Einkauf herausfinden. In Arbeit, in dieser Reihenfolge:",
+      "Wir sagen es lieber hier, als dass du es im Einkauf herausfindest. In Arbeit, in dieser Reihenfolge:",
     roadmapItems: [
       "SOC 2 / ISO 27001-Zertifizierung — noch nicht vorhanden; Audit-Roadmap parallel zum Enterprise-Rollout geplant. Self-Hosting macht die Frage für viele Käufer gegenstandslos.",
       "SSO/SAML für gehostete Team-Pläne (Self-Hosted-Deployments können die Engine heute hinter die eigene Auth legen).",
@@ -254,16 +254,16 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ],
     disclosureTitle: "Responsible Disclosure",
     disclosureText:
-      "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten Sie auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — hosten Sie stattdessen eine Kopie selbst auf eigener Hardware.",
+      "Schwachstelle gefunden? E-Mail an security@subsum.eu. Wir bestätigen den Eingang innerhalb von 48 Stunden, halten dich auf dem Laufenden und nennen Researcher auf Wunsch namentlich. Bitte nicht gegen Systeme mit echten Kundendaten testen — hoste stattdessen eine Kopie selbst auf eigener Hardware.",
     faqTitle: "Sicherheitsfragen, klar beantwortet",
     faq: [
       {
         q: "Wo genau liegen meine Daten?",
-        a: "Self-hosted: auf Ihren Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für Ihren Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
+        a: "Self-hosted: auf deinen Maschinen, Punkt. Gehostet: in EU-Rechenzentren, Standort im AVV benannt. Synthese-Anfragen gehen an den für deinen Plan konfigurierten LLM-Provider — Enterprise-Setups können über EU-Endpunkte oder ein eigenes Gateway routen.",
       },
       {
         q: "Können Subsumio-Mitarbeiter mein Brain lesen?",
-        a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und Ihre Inhalte trainieren keine Modelle.",
+        a: "Self-hosted: nein, strukturell — es gibt keinen Zugriffspfad. Gehostet: Zugriff ist auf protokollierte Break-Glass-Betriebsprozeduren beschränkt und durch AVV plus Verschwiegenheitsverpflichtung gedeckt. Wir durchstöbern keine Kundeninhalte, und deine Inhalte trainieren keine Modelle.",
       },
       {
         q: "Was passiert mit meinen Daten, wenn ich kündige?",
@@ -271,12 +271,12 @@ export const SECURITY: Record<Lang, SecurityContent> = {
       },
       {
         q: "Ist Self-Hosting unsicherer als eure Cloud?",
-        a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: Sie statt wir.",
+        a: "Es ist dieselbe Engine. Sicherheitsrelevantes Verhalten — Scoping, Trust-Boundaries, Isolation — ist identisch und test-gepinnt. Der Unterschied ist, wer sie betreibt: du statt wir.",
       },
     ],
-    ctaTitle: "Bringen Sie Ihren Datenschutzbeauftragten mit.",
+    ctaTitle: "Bring deinen Datenschutzbeauftragten mit.",
     ctaSub:
       "Wir sprechen seine Sprache. Gehostet mit AVV — oder self-hosted, sodass sich die Frage gar nicht stellt.",
-    ctaButton: "Sprechen Sie mit uns",
+    ctaButton: "Sprich mit uns",
   },
 };

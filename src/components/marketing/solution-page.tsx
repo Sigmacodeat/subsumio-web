@@ -194,7 +194,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       <Section tone="light" className="px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="mb-4 text-sm font-medium [color:var(--mk-text-subtle)]">
-            {lang === "de" ? "Nicht ganz das Richtige für Sie?" : "Not quite the right fit?"}
+            {lang === "de" ? "Nicht ganz das Richtige für dich?" : "Not quite the right fit?"}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {

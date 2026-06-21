@@ -57,13 +57,13 @@ const CONTENT = {
     sub: "Subsumio ist die KI-Kanzleisoftware, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
     missionTitle: "Unsere Mission",
     missionText:
-      "Jeder Kanzlei ein Brain geben, das nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die Sie überprüfen können, bevor Sie sich darauf verlassen. Auf Infrastruktur, die Sie kontrollieren, nicht fremder Cloud.",
+      "Jeder Kanzlei ein Brain geben, das nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst, nicht fremder Cloud.",
     valuesTitle: "Woran wir glauben",
     values: [
       {
         icon: "Shield",
         title: "Vertraulichkeit per Architektur",
-        desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb Ihrer Kontrolle.",
+        desc: "Mandantendaten sind heilig. Self-hosted oder EU-gehostet, verschlüsselt und isoliert — nie zum Training geteilter Modelle, nie außerhalb deiner Kontrolle.",
       },
       {
         icon: "Brain",
@@ -78,7 +78,7 @@ const CONTENT = {
       {
         icon: "Heart",
         title: "Anwalt-zentriertes Design",
-        desc: "Tools, die Ihre Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, Mobile-First. Nicht ein weiteres System, das sie meiden.",
+        desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, Mobile-First. Nicht ein weiteres System, das sie meiden.",
       },
     ],
     statsTitle: "In Zahlen",
@@ -89,7 +89,7 @@ const CONTENT = {
       { value: "0", label: "Mandantendaten-Leaks, by Design" },
     ],
     ctaTitle: "Sprich mit uns",
-    ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von Ihnen zu hören.",
+    ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von dir zu hören.",
     ctaButton: "Kontakt aufnehmen",
   },
 };

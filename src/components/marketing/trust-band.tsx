@@ -21,13 +21,13 @@ const COPY = {
         icon: ShieldCheck,
         signal: "blue",
         t: "Self-hosted oder EU-Cloud",
-        d: "Ihre Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht.",
+        d: "Deine Hardware oder EU-Hosting mit AVV. Mandantendaten verlassen die EU nicht.",
       },
       {
         icon: Lock,
         signal: "green",
-        t: "Kein Training auf Ihren Daten",
-        d: "Ihr Wissen trainiert nie geteilte Modelle. Niemals.",
+        t: "Kein Training auf deinen Daten",
+        d: "Dein Wissen trainiert nie geteilte Modelle. Niemals.",
       },
       {
         icon: Quote,

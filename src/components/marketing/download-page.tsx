@@ -82,7 +82,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
           >
             <Search size={12} className="text-[var(--signal-blue)]" />
             <span className="text-xs [color:var(--mk-text-muted)]">
-              {lang === "en" ? "Ask your brain…" : "Fragen Sie Ihr Brain…"}
+              {lang === "en" ? "Ask your brain…" : "Frag dein Brain…"}
             </span>
           </motion.div>
 

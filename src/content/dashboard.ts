@@ -210,7 +210,7 @@ export const D = {
   "dashboard.show_all": { de: "Alle anzeigen", en: "Show all" },
   "dashboard.no_activity": { de: "Noch keine Aktivität", en: "No activity yet" },
   "dashboard.no_activity_desc": {
-    de: "Laden Sie ein Dokument hoch oder stellen Sie eine Frage, um zu starten",
+    de: "Lade ein Dokument hoch oder stelle eine Frage, um zu starten",
     en: "Upload a document or ask a question to get started",
   },
   "dashboard.quick_actions": { de: "Schnellzugriff", en: "Quick actions" },
@@ -230,13 +230,13 @@ export const D = {
   "dashboard.dream_cycle": { de: "Dream Cycle", en: "Dream Cycle" },
   "dashboard.dream_inactive": { de: "Inaktiv", en: "Inactive" },
   "dashboard.dream_desc": {
-    de: "Der Dream Cycle läuft nachts und konsolidiert Ihr Wissen, fixiert Zitate und findet Widersprüche.",
+    de: "Der Dream Cycle läuft nachts und konsolidiert dein Wissen, fixiert Zitate und findet Widersprüche.",
     en: "The Dream Cycle runs at night, consolidates your knowledge, fixes citations and finds contradictions.",
   },
   "dashboard.dream_setup": { de: "Dream Cycle einrichten", en: "Set up Dream Cycle" },
   "dashboard.welcome": { de: "Willkommen im Kanzlei-OS.", en: "Welcome to your firm OS." },
   "dashboard.welcome_desc": {
-    de: "Starten Sie mit einer Akte, importieren Sie bestehende Kanzleidaten oder verbinden Sie Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
+    de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
     en: "Start with a case, import existing firm data, or connect inbox channels. The brain works in the background while the cockpit runs the day.",
   },
   "dashboard.welcome_upload": { de: "Erstes Dokument hochladen", en: "Upload first document" },
@@ -344,10 +344,10 @@ export const D = {
   "cases.retry": { de: "Erneut versuchen", en: "Retry" },
   "cases.empty_title": { de: "Keine Akten gefunden", en: "No cases found" },
   "cases.empty_no_cases": {
-    de: "Erstellen Sie Ihre erste Akte oder importieren Sie bestehende Fälle.",
+    de: "Erstelle deine erste Akte oder importiere bestehende Fälle.",
     en: "Create your first case or import existing ones.",
   },
-  "cases.empty_filtered": { de: "Passen Sie Ihre Filter an.", en: "Adjust your filters." },
+  "cases.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
   "cases.empty_create": { de: "Neue Akte erstellen", en: "Create new case" },
   "cases.bulk_delete": { de: "Auswahl löschen", en: "Delete selection" },
   "cases.col_title": { de: "Akte", en: "Case" },
@@ -388,7 +388,7 @@ export const D = {
   "deadlines.calc_remaining": { de: "Tage verbleibend", en: "days remaining" },
   "deadlines.detect_title": { de: "Fristen erkennen", en: "Detect deadlines" },
   "deadlines.detect_desc": {
-    de: "Fügen Sie einen Text (E-Mail, Brief, Gerichtsbescheid) ein. Die KI erkennt automatisch Fristen, Termine und gesetzliche Deadlines und schlägt deren Anlage vor.",
+    de: "Füge einen Text (E-Mail, Brief, Gerichtsbescheid) ein. Die KI erkennt automatisch Fristen, Termine und gesetzliche Deadlines und schlägt deren Anlage vor.",
     en: "Paste text (email, letter, court notice). AI automatically detects deadlines, dates and statutory deadlines and suggests creating them.",
   },
   "deadlines.detect_placeholder": { de: "Text hier einfügen…", en: "Paste text here…" },
@@ -414,7 +414,7 @@ export const D = {
     de: "Fristen werden automatisch aus hochgeladenen Dokumenten extrahiert.",
     en: "Deadlines are automatically extracted from uploaded documents.",
   },
-  "deadlines.empty_filtered": { de: "Passen Sie Ihre Filter an.", en: "Adjust your filters." },
+  "deadlines.empty_filtered": { de: "Passe deine Filter an.", en: "Adjust your filters." },
   "deadlines.col_title": { de: "Frist", en: "Deadline" },
   "deadlines.col_case": { de: "Akte", en: "Case" },
   "deadlines.col_date": { de: "Datum", en: "Date" },
@@ -467,7 +467,7 @@ export const D = {
   "inv.search": { de: "Rechnung suchen…", en: "Search invoice…" },
   "inv.empty_title": { de: "Keine Rechnungen", en: "No invoices" },
   "inv.empty_desc": {
-    de: "Erstellen Sie eine Rechnung aus einer Akte mit Zeiterfassung.",
+    de: "Erstelle eine Rechnung aus einer Akte mit Zeiterfassung.",
     en: "Create an invoice from a case with time tracking.",
   },
   "inv.status_draft": { de: "Entwurf", en: "Draft" },
@@ -487,7 +487,7 @@ export const D = {
   "inv.send_reminder": { de: "Mahnung senden", en: "Send reminder" },
   "inv.delete": { de: "Löschen", en: "Delete" },
   "inv.confirm_delete_title": { de: "Rechnung löschen", en: "Delete invoice" },
-  "inv.confirm_delete_msg": { de: "Möchten Sie Rechnung", en: "Do you want to delete invoice" },
+  "inv.confirm_delete_msg": { de: "Möchtest du Rechnung", en: "Do you want to delete invoice" },
   "inv.confirm_delete_confirm": { de: "Löschen", en: "Delete" },
   "inv.error_offline": {
     de: "Cloud-Brain gerade nicht erreichbar. Es werden zwischengespeicherte Rechnungen angezeigt.",
@@ -705,12 +705,12 @@ export const D = {
   },
   "settings.datev_consultant": { de: "DATEV Berater-Nr.", en: "DATEV consultant no." },
   "settings.datev_consultant_desc": {
-    de: "Ihre Steuerberater-Nummer für DATEV",
+    de: "Deine Steuerberater-Nummer für DATEV",
     en: "Your tax consultant number for DATEV",
   },
   "settings.datev_client": { de: "DATEV Mandanten-Nr.", en: "DATEV client no." },
   "settings.datev_client_desc": {
-    de: "Ihre Mandanten-Nummer beim Steuerberater",
+    de: "Deine Mandanten-Nummer beim Steuerberater",
     en: "Your client number at the tax consultant",
   },
   "settings.smtp_server": { de: "SMTP-Server", en: "SMTP server" },
@@ -745,7 +745,7 @@ export const D = {
   "settings.role_client_viewer": { de: "Client Viewer", en: "Client Viewer" },
   "settings.account_title": { de: "Account", en: "Account" },
   "settings.plan": { de: "Plan", en: "Plan" },
-  "settings.plan_desc": { de: "Ihr aktuelles Abonnement", en: "Your current subscription" },
+  "settings.plan_desc": { de: "Dein aktuelles Abonnement", en: "Your current subscription" },
   "settings.upgrade": { de: "Upgrade auf Pro →", en: "Upgrade to Pro →" },
   "settings.usage": { de: "Nutzung", en: "Usage" },
   "settings.usage_desc": { de: "Aktueller Monat", en: "Current month" },
@@ -753,7 +753,7 @@ export const D = {
   "settings.usage_queries": { de: "Queries", en: "Queries" },
   "settings.referral": { de: "Empfehlen & sparen", en: "Refer & save" },
   "settings.referral_desc": {
-    de: "Sie bekommen 1 Monat gratis pro geworbenem Kunden — der Geworbene auch.",
+    de: "Du bekommst 1 Monat gratis pro geworbenem Kunden — der Geworbene auch.",
     en: "You get 1 month free per referred customer — so do they.",
   },
   "settings.referral_info": {
@@ -771,7 +771,7 @@ export const D = {
   },
   "settings.data_export": { de: "Datenexport (DSGVO)", en: "Data export (GDPR)" },
   "settings.data_export_desc": {
-    de: "Alle Ihre Daten — Konto, Nutzung und das komplette Brain (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
+    de: "Alle deine Daten — Konto, Nutzung und das komplette Brain (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
     en: "All your data — account, usage and the complete brain (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
@@ -883,7 +883,7 @@ export const D = {
   },
   "guide.default_title": { de: "Kanzlei-Cockpit verstehen", en: "Understand the firm cockpit" },
   "guide.default_desc": {
-    de: "Starten Sie mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis Sie sie brauchen.",
+    de: "Starte mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
     en: "Start with cases, deadlines, and inbox. System and brain features stay in the background until needed.",
   },
   "guide.setup_title": { de: "Setup-Checkliste", en: "Setup checklist" },
@@ -947,12 +947,12 @@ export const D = {
   "onboarding.finish": { de: "Fertig — Dashboard öffnen", en: "Finish — Open dashboard" },
   "onboarding.step_welcome": { de: "Willkommen", en: "Welcome" },
   "onboarding.step_welcome_desc": {
-    de: "Ihr Kanzlei-Brain wird gleich einsatzbereit sein. Lassen Sie uns kurz einrichten, was Sie brauchen.",
+    de: "Dein Kanzlei-Brain wird gleich einsatzbereit sein. Lass uns kurz einrichten, was du brauchst.",
     en: "Your firm brain will be ready in a moment. Let's quickly set up what you need.",
   },
   "onboarding.step_industry": { de: "Branche wählen", en: "Choose industry" },
   "onboarding.step_industry_desc": {
-    de: "Wir personalisieren Ihr Dashboard und Brain-Schema basierend auf Ihrer Praxis.",
+    de: "Wir personalisieren dein Dashboard und Brain-Schema basierend auf deiner Praxis.",
     en: "We personalize your dashboard and brain schema based on your practice.",
   },
   "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
@@ -964,7 +964,7 @@ export const D = {
   "onboarding.profile_owner": { de: "Ansprechpartner", en: "Main contact" },
   "onboarding.profile_email": { de: "Kanzlei-E-Mail", en: "Firm email" },
   "onboarding.profile_country": { de: "Land / Rechtsraum", en: "Country / jurisdiction" },
-  "onboarding.profile_role": { de: "Ihre Rolle", en: "Your role" },
+  "onboarding.profile_role": { de: "Deine Rolle", en: "Your role" },
   "onboarding.role_lawyer": { de: "Anwalt", en: "Lawyer" },
   "onboarding.role_assistant": { de: "Assistenz", en: "Assistant" },
   "onboarding.role_management": { de: "Management", en: "Management" },
@@ -992,7 +992,7 @@ export const D = {
   },
   "onboarding.step_query": { de: "Erste Frage", en: "First question" },
   "onboarding.step_query_desc": {
-    de: "Stellen Sie eine Frage zu Ihrem Brain. Die KI antwortet mit Fundstellen.",
+    de: "Stelle eine Frage zu deinem Brain. Die KI antwortet mit Fundstellen.",
     en: "Ask a question about your brain. AI answers with citations.",
   },
   "onboarding.step_query_placeholder": {
@@ -1006,7 +1006,7 @@ export const D = {
   // ── Onboarding: WhatsApp setup step ──
   "onboarding.step_whatsapp": { de: "WhatsApp verbinden", en: "Connect WhatsApp" },
   "onboarding.step_whatsapp_desc": {
-    de: "Verbinden Sie Ihre WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
+    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
     en: "Connect your WhatsApp Business number — clients can message directly and AI routes requests.",
   },
   "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
@@ -1026,7 +1026,7 @@ export const D = {
   // ── Onboarding: Billing/rate setup step ──
   "onboarding.step_billing": { de: "Stundensatz & Abrechnung", en: "Hourly rate & billing" },
   "onboarding.step_billing_desc": {
-    de: "Legen Sie Ihren Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
+    de: "Lege deinen Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
     en: "Set your hourly rate and billing increment — used for time tracking and invoices.",
   },
   "onboarding.billing_rate": { de: "Stundensatz (€)", en: "Hourly rate (€)" },
@@ -1078,9 +1078,9 @@ export const D = {
 
   // ── Drafting page ──
   "drafting.name": { de: "Name", en: "Name" },
-  "drafting.describe_case": { de: "Beschreiben Sie den Sachverhalt", en: "Describe the case" },
+  "drafting.describe_case": { de: "Beschreibe den Sachverhalt", en: "Describe the case" },
   "onboarding.step_done_desc": {
-    de: "Ihr Kanzlei-Brain ist einsatzbereit. Sie können jederzeit Dokumente nachladen und Fragen stellen.",
+    de: "Dein Kanzlei-Brain ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
     en: "Your firm brain is ready. You can upload more documents and ask questions anytime.",
   },
   "onboarding.industry_legal": { de: "Kanzlei / Rechtsabteilung", en: "Law firm / legal team" },
@@ -1301,7 +1301,7 @@ export const D = {
   "wordaddin.breadcrumb": { de: "Word Add-in", en: "Word Add-in" },
   "wordaddin.hero_title": { de: "Subsumio für Word", en: "Subsumio for Word" },
   "wordaddin.hero_desc": {
-    de: "Greifen Sie aus Microsoft Word direkt auf Ihr Brain zu. Fügen Sie Schriftsätze, Verträge und Dokumente ein, ohne Word zu verlassen.",
+    de: "Greife aus Microsoft Word direkt auf dein Brain zu. Füge Schriftsätze, Verträge und Dokumente ein, ohne Word zu verlassen.",
     en: "Access your brain directly from Microsoft Word. Insert briefs, contracts and documents without leaving Word.",
   },
   "wordaddin.f1_title": { de: "Dokumente einfügen", en: "Insert documents" },
@@ -1316,7 +1316,7 @@ export const D = {
   },
   "wordaddin.f3_title": { de: "API-Token-Auth", en: "API token auth" },
   "wordaddin.f3_desc": {
-    de: "Sichere Verbindung mit Ihrem persönlichen API-Token",
+    de: "Sichere Verbindung mit deinem persönlichen API-Token",
     en: "Secure connection with your personal API token",
   },
   "wordaddin.f4_title": { de: "Office 365 Ready", en: "Office 365 Ready" },
@@ -1327,7 +1327,7 @@ export const D = {
   "wordaddin.install_title": { de: "Installation", en: "Installation" },
   "wordaddin.step1_title": { de: "Manifest-URL kopieren", en: "Copy manifest URL" },
   "wordaddin.step1_desc": {
-    de: 'Kopieren Sie die URL und fügen Sie sie in Office unter "Add-in hochladen" ein.',
+    de: 'Kopiere die URL und füge sie in Office unter "Add-in hochladen" ein.',
     en: 'Copy the URL and paste it in Office under "Upload Add-in".',
   },
   "wordaddin.step2_title": { de: "In Word öffnen", en: "Open in Word" },
@@ -1337,12 +1337,12 @@ export const D = {
   },
   "wordaddin.step3_title": { de: "API-Token eingeben", en: "Enter API token" },
   "wordaddin.step3_desc": {
-    de: "Generieren Sie einen API-Token unter",
+    de: "Generiere einen API-Token unter",
     en: "Generate an API token at",
   },
   "wordaddin.step3_link": { de: "API-Schlüssel", en: "API Keys" },
   "wordaddin.step3_after": {
-    de: "und fügen Sie ihn im Add-in ein.",
+    de: "und füge ihn im Add-in ein.",
     en: "and paste it into the add-in.",
   },
   "wordaddin.download_manifest": { de: "Manifest herunterladen", en: "Download manifest" },
@@ -1398,7 +1398,7 @@ export const D = {
   "datev.chart": { de: "Kontenrahmen", en: "Chart of accounts" },
   "datev.consultant_nr": { de: "Berater-Nr.", en: "Consultant no." },
   "datev.info": {
-    de: "Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten. Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch Ihren Steuerberater verifizieren.",
+    de: "Der Export berücksichtigt nur bereits abgerechnete, abrechenbare Positionen aus Akten. Bitte Kontenrahmen, Steuerschlüssel und Importformat vor dem DATEV-Import durch deinen Steuerberater verifizieren.",
     en: "The export only includes already billed, chargeable items from cases. Please verify chart of accounts, tax keys and import format with your tax advisor before the DATEV import.",
   },
   "datev.entries": { de: "Einträge", en: "Entries" },
@@ -1408,7 +1408,7 @@ export const D = {
   "datev.loading": { de: "Lade Buchungen…", en: "Loading bookings…" },
   "datev.empty": { de: "Keine abgerechneten Buchungen gefunden.", en: "No billed bookings found." },
   "datev.empty_hint": {
-    de: "Erstellen Sie zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den DATEV-Export wandern.",
+    de: "Erstelle zuerst Rechnungen aus offenen Zeiten/Auslagen, damit Positionen in den DATEV-Export wandern.",
     en: "First create invoices from open time/expense entries so items appear in the DATEV export.",
   },
   "datev.expense": { de: "Auslage", en: "Expense" },
@@ -1495,7 +1495,7 @@ export const D = {
     en: "Client Portal — Preview",
   },
   "client_portal.preview_desc": {
-    de: "So sehen Ihre Mandanten künftig den Stand ihrer Akte.",
+    de: "So sehen deine Mandanten künftig den Stand ihrer Akte.",
     en: "This is how your clients will see the status of their case in the future.",
   },
   "client_portal.preview_note": {
@@ -1773,7 +1773,7 @@ export const D = {
   "sources.all_status": { de: "Alle Status", en: "All status" },
   "sources.empty": { de: "Keine Quellen gefunden.", en: "No sources found." },
   "sources.empty_hint": {
-    de: "Passen Sie die Filter an oder aktualisieren Sie die Ansicht.",
+    de: "Passe die Filter an oder aktualisiere die Ansicht.",
     en: "Adjust the filters or refresh the view.",
   },
   "sources.about_title": { de: "Über die Quellen-Registry", en: "About the Source Registry" },
@@ -1824,7 +1824,7 @@ export const D = {
   "bea.compose": { de: "Entwurf erstellen", en: "Create draft" },
   "bea.no_send_title": { de: "Kein Versand über Subsumio", en: "No sending via Subsumio" },
   "bea.no_send_desc": {
-    de: "Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte. Subsumio versendet keine Nachrichten — es importiert beA-Nachrichten via XML-Export (Konnektor bea-import) und speichert Entwürfe im Brain, die Sie in Ihrer beA-Software (z. B. beA-Webclient, RA-MICRO) versenden.",
+    de: "Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte. Subsumio versendet keine Nachrichten — es importiert beA-Nachrichten via XML-Export (Konnektor bea-import) und speichert Entwürfe im Brain, die du in deiner beA-Software (z. B. beA-Webclient, RA-MICRO) versendest.",
     en: "Sending via beA requires certified beA software with a lawyer signature card. Subsumio does not send messages — it imports beA messages via XML export (connector bea-import) and stores drafts in the brain that you send in your beA software (e.g. beA web client, RA-MICRO).",
   },
   "bea.error_load": {
@@ -1864,7 +1864,7 @@ export const D = {
   "bea.approve": { de: "Freigeben", en: "Approve" },
   "bea.discard": { de: "Verwerfen", en: "Discard" },
   "bea.approved_send_hint": {
-    de: "Freigegeben — Versand erfolgt in Ihrer beA-Software.",
+    de: "Freigegeben — Versand erfolgt in deiner beA-Software.",
     en: "Approved — sending is done in your beA software.",
   },
   "bea.create_filing": { de: "Filing-Paket anlegen", en: "Create filing package" },
@@ -1993,7 +1993,7 @@ export const D = {
   },
   "vault.confirm_delete_title": { de: "Dokument löschen", en: "Delete document" },
   "vault.confirm_delete_msg": {
-    de: "Möchten Sie dieses Dokument wirklich löschen?",
+    de: "Möchtest du dieses Dokument wirklich löschen?",
     en: "Do you really want to delete this document?",
   },
   "vault.confirm_delete_btn": { de: "Löschen", en: "Delete" },
@@ -2150,7 +2150,7 @@ export const D = {
   "rag_eval.fixture_v": { de: "Fixture v", en: "Fixture v" },
   "rag_eval.no_eval": { de: "Noch kein Eval durchgeführt.", en: "No eval run yet." },
   "rag_eval.start_hint": {
-    de: 'Klicke „Eval starten", um die Retrieval-Qualität Ihres Brains zu benchmarken.',
+    de: 'Klicke „Eval starten", um die Retrieval-Qualität deines Brains zu benchmarken.',
     en: 'Click "Start eval" to benchmark your brain\'s retrieval quality.',
   },
 

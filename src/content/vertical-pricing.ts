@@ -102,7 +102,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
   de: {
     legal: {
       title: "Preise für Kanzleien",
-      sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die Sie kontrollieren.",
+      sub: "Pro Seat, jährliche Abrechnung. Akten-Synthese, WhatsApp-Copilot und Compliance-Infrastruktur — auf EU-Infrastruktur, die du kontrollierst.",
       tiers: [
         {
           id: "starter",
@@ -168,7 +168,7 @@ export const VERTICAL_PRICING: Record<Lang, Partial<Record<string, VerticalPrici
           name: "Enterprise",
           price: "ab 1.890 €",
           period: "/Seat/Mon.",
-          blurb: "Compliance-Grade, auf Ihrer Infrastruktur oder EU-Cloud. Ab 20 Seats.",
+          blurb: "Compliance-Grade, auf deiner Infrastruktur oder EU-Cloud. Ab 20 Seats.",
           features: [
             "15.000 KI-Anfragen/Seat/Mon. (Fair Use darüber)",
             "5.000 WhatsApp-Nachrichten/Seat/Mon.",

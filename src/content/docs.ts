@@ -27,7 +27,7 @@ const DE: DocsContent = {
     sub: "Vollständige Feature-Dokumentation — direkt aus dem Quellcode. Keine Floskeln, nur Fakten.",
   },
   intro:
-    "Subsumio ist eine vollständige Kanzlei-Software mit einem KI-Brain im Kern. Hier finden Sie jede Funktion, jeden Endpunkt und jeden Workflow — auf einen Blick.",
+    "Subsumio ist eine vollständige Kanzlei-Software mit einem KI-Brain im Kern. Hier findest du jede Funktion, jeden Endpunkt und jeden Workflow — auf einen Blick.",
   categories: [
     {
       id: "brain",
@@ -319,7 +319,7 @@ const DE: DocsContent = {
         {
           icon: "Network",
           title: "Plugin-System",
-          desc: "Erweiterbarkeit durch eigene Plugins und Skills. subsumio.plugin.json Format, Subagenten, Skillpacks — die Plattform wächst mit Ihren Workflows.",
+          desc: "Erweiterbarkeit durch eigene Plugins und Skills. subsumio.plugin.json Format, Subagenten, Skillpacks — die Plattform wächst mit deinen Workflows.",
         },
       ],
     },
@@ -479,7 +479,7 @@ const DE: DocsContent = {
       {
         icon: "Shield",
         title: "Self-Hosted oder EU-Cloud",
-        desc: "Lokale Docker-Installation oder gehostet in der EU mit AVV. Daten verlassen nie Ihre Kontrolle.",
+        desc: "Lokale Docker-Installation oder gehostet in der EU mit AVV. Daten verlassen nie deine Kontrolle.",
       },
       {
         icon: "Network",

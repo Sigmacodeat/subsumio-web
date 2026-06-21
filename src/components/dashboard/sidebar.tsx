@@ -457,89 +457,95 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         >
           <SubsumioMark size={32} />
         </Link>
-        {!collapsed && (
-          <Link
-            href="/dashboard"
-            className="font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)]"
-            onClick={() => setMobileOpen(false)}
-          >
-            Subsum<span className="brand-text">•io</span>
-          </Link>
-        )}
+        <Link
+          href="/dashboard"
+          className={cn(
+            "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            collapsed ? "pointer-events-none opacity-0" : "opacity-100"
+          )}
+          onClick={() => setMobileOpen(false)}
+        >
+          Subsum<span className="brand-text">•io</span>
+        </Link>
       </div>
 
       <div
         className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3"
         style={{ contain: "strict" }}
       >
-        {/* Brain status */}
-        {!collapsed && (
-          <div
-            className="mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5"
+        {/* Brain status — expanded version */}
+        <div
+          className={cn(
+            "mx-3 mt-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            collapsed
+              ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
+              : "opacity-100"
+          )}
+          role="status"
+          aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
+        >
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              {t("sidebar.brain_status")}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+              <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
+            </div>
+          </div>
+          <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
+            {pages} pages · {entities} entities
+          </div>
+        </div>
+        {/* Brain status — collapsed dot */}
+        <div
+          className={cn(
+            "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
+            collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
+          )}
+          title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+        >
+          <span
+            className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
             role="status"
-            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}, ${pages} pages, ${entities} entities`}
-          >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                {t("sidebar.brain_status")}
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
-                  aria-hidden
-                />
-                <span className="text-xs font-medium text-emerald-600">{t("sidebar.active")}</span>
-              </div>
-            </div>
-            <div className="font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
-              {pages} pages · {entities} entities
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div
-            className="mt-4 hidden items-center justify-center md:flex"
-            title={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
-          >
-            <span
-              className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
-              role="status"
-              aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
-            />
-          </div>
-        )}
+            aria-label={`${t("sidebar.brain_status")}: ${t("sidebar.active")}`}
+          />
+        </div>
 
         {/* Sync status */}
         <SyncStatus collapsed={collapsed} />
 
         {/* Search / Filter */}
-        {!collapsed && (
-          <div className="px-3 pt-3">
-            <div className="relative">
-              <Search
-                size={14}
-                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
-                aria-label={t("sidebar.filter_placeholder")}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
-                  aria-label={t("sidebar.clear_filter")}
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
+        <div
+          className={cn(
+            "px-3 pt-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            collapsed ? "pointer-events-none h-0 overflow-hidden pt-0 opacity-0" : "opacity-100"
+          )}
+        >
+          <div className="relative">
+            <Search
+              size={14}
+              className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("sidebar.filter_placeholder")}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+              aria-label={t("sidebar.filter_placeholder")}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+                aria-label={t("sidebar.clear_filter")}
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Nav */}
         <nav className="px-3 py-4" aria-label={t("sidebar.main_nav")}>
@@ -571,7 +577,16 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   )}
                 >
                   <Icon size={17} className="shrink-0" />
-                  {!collapsed && <span>{highlightMatch(t(item.labelKey), searchQuery)}</span>}
+                  <span
+                    className={cn(
+                      "transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                      collapsed
+                        ? "pointer-events-none w-0 overflow-hidden opacity-0"
+                        : "opacity-100"
+                    )}
+                  >
+                    {highlightMatch(t(item.labelKey), searchQuery)}
+                  </span>
                 </Link>
               );
             })}
@@ -736,58 +751,60 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         </nav>
 
         {/* Dream Cycle indicator */}
-        {!collapsed && (
-          <div
-            className={cn(
-              "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3",
-              dreamCycle
-                ? "border-emerald-500/20 bg-emerald-500/[0.06]"
-                : "border-amber-500/20 bg-amber-500/[0.06]"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Zap
-                size={12}
-                className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
-              />
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  dreamCycle ? "text-emerald-700" : "text-amber-700"
-                )}
-              >
-                {t("sidebar.dream_cycle")}
-              </span>
-            </div>
-            <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
-              {dreamCycle
-                ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-                : t("sidebar.dream_not_scheduled")}
-            </p>
+        <div
+          className={cn(
+            "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            dreamCycle
+              ? "border-emerald-500/20 bg-emerald-500/[0.06]"
+              : "border-amber-500/20 bg-amber-500/[0.06]",
+            collapsed
+              ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
+              : "opacity-100"
+          )}
+        >
+          <div className="flex items-center gap-2">
+            <Zap
+              size={12}
+              className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
+            />
+            <span
+              className={cn(
+                "text-xs font-semibold",
+                dreamCycle ? "text-emerald-700" : "text-amber-700"
+              )}
+            >
+              {t("sidebar.dream_cycle")}
+            </span>
           </div>
-        )}
+          <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
+            {dreamCycle
+              ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+              : t("sidebar.dream_not_scheduled")}
+          </p>
+        </div>
 
         {/* User profile section */}
         <div className="border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
-          {!collapsed && (
-            <Link
-              href="/dashboard/settings"
-              onClick={() => setMobileOpen(false)}
-              className="group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95"
-            >
-              <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
-                <User size={15} className="brand-text" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
-                  {userName ?? t("sidebar.user")}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                  {userEmail ?? ""}
-                </p>
-              </div>
-            </Link>
-          )}
+          <Link
+            href="/dashboard/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95",
+              collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+            )}
+          >
+            <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+              <User size={15} className="brand-text" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                {userName ?? t("sidebar.user")}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                {userEmail ?? ""}
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
 

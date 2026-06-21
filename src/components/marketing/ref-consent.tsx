@@ -63,7 +63,7 @@ export default function RefConsentBanner() {
       </p>
       <p className="mb-4 text-xs leading-relaxed [color:var(--mk-text-muted)]">
         {isGerman
-          ? "Sie sind über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie speichern, damit Ihr Werber seine Provision bekommt und Sie Ihren Gratismonat? Sonst passiert nichts — die Seite funktioniert auch ohne."
+          ? "Du bist über eine Empfehlung hier. Dürfen wir den Empfehlungs-Code 90 Tage als Cookie speichern, damit dein Werber seine Provision bekommt und du deinen Gratismonat? Sonst passiert nichts — die Seite funktioniert auch ohne."
           : "You arrived via a referral. May we store the referral code as a cookie for 90 days so your referrer gets their commission and you get your free month? Nothing else happens — the site works fine without it."}
       </p>
       <div className="flex gap-2">
