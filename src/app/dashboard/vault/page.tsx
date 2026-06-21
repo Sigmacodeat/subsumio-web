@@ -10,7 +10,7 @@ import {
   X,
   Trash2,
   Download,
-  Sparkles,
+  FileSearch,
   Table2,
   Filter,
   Clock,
@@ -343,15 +343,11 @@ export default function VaultPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              type="submit"
-              disabled={reviewLoading}
-              className="brand-bg brand-bg gap-2 text-white"
-            >
+            <Button type="submit" disabled={reviewLoading} className="gap-2">
               {reviewLoading ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
-                <Sparkles size={14} />
+                <FileSearch size={14} />
               )}
               {reviewLoading ? t("vault.analyzing") : t("vault.start_bulk")}
             </Button>

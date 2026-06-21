@@ -158,6 +158,10 @@ async function main() {
     const { importFromContent } = await import("../src/core/import-file.ts");
     if (DB_OVERRIDE) {
       // Explicit throwaway / local PGLite brain (verification runs).
+      // Configure gateway from env so embeddings work (mirrors cli.ts).
+      const { buildGatewayConfig } = await import("../src/core/ai/build-gateway-config.ts");
+      const { configureGateway } = await import("../src/core/ai/gateway.ts");
+      configureGateway(buildGatewayConfig({} as any));
       const { PGLiteEngine } = await import("../src/core/pglite-engine.ts");
       engine = new PGLiteEngine();
       await engine.connect({ database_path: DB_OVERRIDE });
@@ -175,8 +179,23 @@ async function main() {
             "in ~/.gbrain/config.json, or pass --db <path> for a throwaway brain."
         );
       }
+      // Configure the AI gateway BEFORE engine connect — importFromContent
+      // needs embeddings, and the gateway must be configured or it throws
+      // "AI gateway is not configured". Mirrors cli.ts#connectEngine.
+      const { buildGatewayConfig } = await import("../src/core/ai/build-gateway-config.ts");
+      const { configureGateway } = await import("../src/core/ai/gateway.ts");
+      configureGateway(buildGatewayConfig(cfg));
+
       engine = await createEngine(toEngineConfig(cfg));
       await engine.connect(toEngineConfig(cfg));
+
+      // Re-stamp gateway with DB-plane config overrides (same as cli.ts).
+      try {
+        const { reconfigureGatewayWithEngine } = await import("../src/core/ai/gateway.ts");
+        await reconfigureGatewayWithEngine(engine);
+      } catch {
+        // Non-fatal: pre-v39 brains may not have a usable config table.
+      }
     }
     await engine.initSchema();
     // Shared statute source (e.g. --source law-at): create the row if missing so

@@ -19,7 +19,7 @@ import {
   AlertCircle,
   BookOpen,
   Lock,
-  Sparkles,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -322,10 +322,10 @@ export default function UploadPage() {
               <span className="text-sm font-semibold text-[color:var(--ds-text)]">
                 Kanzlei-Wissen
               </span>
-              <Sparkles size={11} className="text-[color:var(--ds-text-subtle)]" />
+              <BookOpen size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
             <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Brain-Loop konsolidiert
+              Firmenweites Wissen: Präzedenzfälle, Vorlagen, Playbooks. Der Assistent konsolidiert
               automatisch aus Akten.
             </p>
           </div>
@@ -396,9 +396,9 @@ export default function UploadPage() {
             ))}
           </select>
           <div className="mt-3 flex items-start gap-2 rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs text-[color:var(--ds-text-muted)]">
-            <Sparkles size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
+            <Info size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
             <span>
-              Der Brain-Loop konsolidiert automatisch Wissen aus allen Akten in diese Bereiche.
+              Der Assistent konsolidiert automatisch Wissen aus allen Akten in diese Bereiche.
               Präzedenzfälle und Muster werden über den{" "}
               <strong className="text-[color:var(--ds-text)]">Consolidate-Cycle</strong> extrahiert
               — ohne manuellen Aufwand.

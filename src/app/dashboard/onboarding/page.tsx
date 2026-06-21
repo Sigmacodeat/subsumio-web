@@ -14,7 +14,6 @@ import {
   Scale,
   Briefcase,
   FileText,
-  Sparkles,
   Smartphone,
   CreditCard,
 } from "lucide-react";
@@ -783,7 +782,7 @@ export default function OnboardingPage() {
             {step === "done" && (
               <div className="space-y-4 text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10">
-                  <Sparkles size={28} className="text-emerald-600" />
+                  <CheckCircle2 size={28} className="text-emerald-600" />
                 </div>
                 <h1 className="text-2xl font-bold text-[color:var(--ds-text)]">
                   {t("onboarding.step_done")}

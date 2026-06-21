@@ -55,9 +55,14 @@ NEXT STEPS (≈10 min, mostly DNS wait):
   6. curl https://api.subsum.io/health       # expect 200 once TLS issues
   7. Import statutes (AT/DE/CH/EU) into shared read-only sources:
        cd /opt/subsumio
-       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \
-         bun run server/scripts/import-eu-statutes-http.ts --source law-eu
-       # Repeat for AT/DE/CH as needed (see server/scripts/import-statutes-split.ts)
+       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
+         bun run server/scripts/import-statutes-split.ts --source law-at
+       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
+         bun run server/scripts/import-statutes-split.ts --source law-de
+       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
+         bun run server/scripts/import-statutes-split.ts --source law-ch
+       docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
+         bun run server/scripts/import-statutes-split.ts --source law-eu
   8. In Vercel, set SUBSUMIO_API_URL=https://api.subsum.io and
      SUBSUMIO_WEB_API_KEY=<same as in .env>, then redeploy.
 EOF

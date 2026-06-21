@@ -234,14 +234,14 @@ export const D = {
   "dashboard.dream_setup": { de: "Dream Cycle einrichten", en: "Set up Dream Cycle" },
   "dashboard.welcome": { de: "Willkommen im Kanzlei-OS.", en: "Welcome to your firm OS." },
   "dashboard.welcome_desc": {
-    de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Das Brain arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
-    en: "Start with a case, import existing firm data, or connect inbox channels. The brain works in the background while the cockpit runs the day.",
+    de: "Starte mit einer Akte, importiere bestehende Kanzleidaten oder verbinde Eingangskanäle. Der Assistent arbeitet im Hintergrund, das Cockpit steuert den Arbeitstag.",
+    en: "Start with a case, import existing firm data, or connect inbox channels. The assistant works in the background while the cockpit runs the day.",
   },
   "dashboard.welcome_upload": { de: "Erstes Dokument hochladen", en: "Upload first document" },
-  "dashboard.welcome_ask": { de: "Brain fragen", en: "Ask brain" },
+  "dashboard.welcome_ask": { de: "Assistent fragen", en: "Ask assistant" },
   "dashboard.error_load": {
-    de: "Brain-Status konnte nicht geladen werden.",
-    en: "Failed to load brain status.",
+    de: "Status der Wissensbasis konnte nicht geladen werden.",
+    en: "Failed to load knowledge base status.",
   },
   "dashboard.error_engine": {
     de: "Engine oder Netzwerk ist nicht erreichbar.",
@@ -536,13 +536,13 @@ export const D = {
     de: "Subsumio Engine & Dashboard konfigurieren",
     en: "Configure Subsumio engine & dashboard",
   },
-  "settings.tab_brain": { de: "Brain", en: "Brain" },
+  "settings.tab_brain": { de: "Wissensbasis", en: "Knowledge Base" },
   "settings.tab_api": { de: "API Keys", en: "API Keys" },
   "settings.tab_dream": { de: "Dream Cycle", en: "Dream Cycle" },
   "settings.tab_kanzlei": { de: "Kanzlei", en: "Firm" },
   "settings.tab_team": { de: "Team", en: "Team" },
   "settings.tab_account": { de: "Account", en: "Account" },
-  "settings.brain_config": { de: "Brain-Konfiguration", en: "Brain configuration" },
+  "settings.brain_config": { de: "Wissensbasis-Konfiguration", en: "Knowledge base configuration" },
   "settings.engine_url": { de: "Engine-URL", en: "Engine URL" },
   "settings.engine_url_desc": {
     de: "URL des laufenden Subsumio-Engine-Servers",
@@ -580,8 +580,8 @@ export const D = {
   "settings.create_key": { de: "API Key erstellen", en: "Create API key" },
   "settings.anthropic_key": { de: "Anthropic API Key", en: "Anthropic API Key" },
   "settings.anthropic_key_desc": {
-    de: "Für KI-Synthese (Claude 3.5 Sonnet)",
-    en: "For AI synthesis (Claude 3.5 Sonnet)",
+    de: "Für Antwort-Synthese (Claude 3.5 Sonnet)",
+    en: "For answer synthesis (Claude 3.5 Sonnet)",
   },
   "settings.zeroentropy_key": { de: "ZeroEntropy API Key", en: "ZeroEntropy API Key" },
   "settings.zeroentropy_key_desc": {
@@ -771,8 +771,8 @@ export const D = {
   },
   "settings.data_export": { de: "Datenexport (DSGVO)", en: "Data export (GDPR)" },
   "settings.data_export_desc": {
-    de: "Alle deine Daten — Konto, Nutzung und das komplette Brain (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
-    en: "All your data — account, usage and the complete brain (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
+    de: "Alle deine Daten — Konto, Nutzung und die komplette Wissensbasis (Akten, Dokumente, Fristen) — als JSON-Datei (Art. 20 DSGVO).",
+    en: "All your data — account, usage and the complete knowledge base (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
   "settings.language": { de: "Sprache", en: "Language" },
@@ -835,7 +835,7 @@ export const D = {
   // ── Sidebar: additional nav items ──
   "nav.playbooks": { de: "Playbooks", en: "Playbooks" },
   "nav.process_strategy": { de: "Prozessstrategie", en: "Case Strategy" },
-  "nav.ai_model": { de: "KI-Modell", en: "AI Model" },
+  "nav.ai_model": { de: "Modell", en: "Model" },
 
   // ── Topbar: additional strings ──
   "topbar.close_menu": { de: "Menü schließen", en: "Close menu" },
@@ -878,8 +878,8 @@ export const D = {
   },
   "guide.default_title": { de: "Kanzlei-Cockpit verstehen", en: "Understand the firm cockpit" },
   "guide.default_desc": {
-    de: "Starte mit Akten, Fristen und Eingang. System- und Brain-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
-    en: "Start with cases, deadlines, and inbox. System and brain features stay in the background until needed.",
+    de: "Starte mit Akten, Fristen und Eingang. System- und Assistenten-Funktionen bleiben im Hintergrund, bis du sie brauchst.",
+    en: "Start with cases, deadlines, and inbox. System and assistant features stay in the background until needed.",
   },
   "guide.setup_title": { de: "Setup-Checkliste", en: "Setup checklist" },
   "guide.setup_firm": {
@@ -931,8 +931,8 @@ export const D = {
   // ── Onboarding wizard ──
   "onboarding.title": { de: "Willkommen bei Subsumio", en: "Welcome to Subsumio" },
   "onboarding.subtitle": {
-    de: "In 3 Schritten zum einsatzbereiten Kanzlei-Brain",
-    en: "3 steps to your ready-to-use firm brain",
+    de: "In 3 Schritten zur einsatzbereiten Kanzlei-Wissensbasis",
+    en: "3 steps to your ready-to-use firm knowledge base",
   },
   "onboarding.step": { de: "Schritt", en: "Step" },
   "onboarding.of": { de: "von", en: "of" },
@@ -942,13 +942,13 @@ export const D = {
   "onboarding.finish": { de: "Fertig — Dashboard öffnen", en: "Finish — Open dashboard" },
   "onboarding.step_welcome": { de: "Willkommen", en: "Welcome" },
   "onboarding.step_welcome_desc": {
-    de: "Dein Kanzlei-Brain wird gleich einsatzbereit sein. Lass uns kurz einrichten, was du brauchst.",
-    en: "Your firm brain will be ready in a moment. Let's quickly set up what you need.",
+    de: "Deine Kanzlei-Wissensbasis wird gleich einsatzbereit sein. Lass uns kurz einrichten, was du brauchst.",
+    en: "Your firm knowledge base will be ready in a moment. Let's quickly set up what you need.",
   },
   "onboarding.step_industry": { de: "Branche wählen", en: "Choose industry" },
   "onboarding.step_industry_desc": {
-    de: "Wir personalisieren dein Dashboard und Brain-Schema basierend auf deiner Praxis.",
-    en: "We personalize your dashboard and brain schema based on your practice.",
+    de: "Wir personalisieren dein Dashboard und Wissens-Schema basierend auf deiner Praxis.",
+    en: "We personalize your dashboard and knowledge schema based on your practice.",
   },
   "onboarding.step_profile": { de: "Kanzlei-Grunddaten", en: "Firm basics" },
   "onboarding.step_profile_desc": {
@@ -987,8 +987,8 @@ export const D = {
   },
   "onboarding.step_query": { de: "Erste Frage", en: "First question" },
   "onboarding.step_query_desc": {
-    de: "Stelle eine Frage zu deinem Brain. Die KI antwortet mit Fundstellen.",
-    en: "Ask a question about your brain. AI answers with citations.",
+    de: "Stelle eine Frage zur Wissensbasis. Der Assistent antwortet mit Fundstellen.",
+    en: "Ask a question about your knowledge base. The assistant answers with citations.",
   },
   "onboarding.step_query_placeholder": {
     de: "z.B. Was ist der aktuelle Stand in Akte Meier?",
@@ -1001,8 +1001,8 @@ export const D = {
   // ── Onboarding: WhatsApp setup step ──
   "onboarding.step_whatsapp": { de: "WhatsApp verbinden", en: "Connect WhatsApp" },
   "onboarding.step_whatsapp_desc": {
-    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
-    en: "Connect your WhatsApp Business number — clients can message directly and AI routes requests.",
+    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und der Assistent routet die Anfragen.",
+    en: "Connect your WhatsApp Business number — clients can message directly and the assistant routes requests.",
   },
   "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
   "onboarding.whatsapp_phone_hint": {
@@ -1206,10 +1206,10 @@ export const D = {
   "cases.detail_dl_save": { de: "Speichern", en: "Save" },
   "cases.detail_dl_add_btn": { de: "Hinzufügen", en: "Add" },
   "cases.detail_dl_cancel": { de: "Abbrechen", en: "Cancel" },
-  "cases.detail_dl_ai_title": { de: "KI-Fristen-Erkennung", en: "AI deadline detection" },
+  "cases.detail_dl_ai_title": { de: "Fristen-Erkennung", en: "Deadline detection" },
   "cases.detail_dl_ai_desc": {
-    de: "Fügen Sie E-Mail-Text oder ein Schriftstück ein — die KI erkennt automatisch Fristen und Termine.",
-    en: "Paste email text or a document — the AI automatically detects deadlines and dates.",
+    de: "Fügen Sie E-Mail-Text oder ein Schriftstück ein — der Assistent erkennt automatisch Fristen und Termine.",
+    en: "Paste email text or a document — the assistant automatically detects deadlines and dates.",
   },
   "cases.detail_dl_ai_ph": {
     de: "Z. B.: 'Binnen 4 Wochen ab Zustellung des Urteils vom 15.06.2026 können Berufung eingelegt werden…'",
@@ -1333,12 +1333,12 @@ export const D = {
     en: "No audit entries yet.",
   },
   "cases.detail_query_desc": {
-    de: "Stelle eine Frage im Kontext dieser Akte. Das Brain durchsucht alle zugehörigen Dokumente und Gesetze.",
-    en: "Ask a question in the context of this case. The brain searches all related documents and laws.",
+    de: "Stelle eine Frage im Kontext dieser Akte. Die Wissensbasis durchsucht alle zugehörigen Dokumente und Gesetze.",
+    en: "Ask a question in the context of this case. The knowledge base searches all related documents and laws.",
   },
   "cases.detail_query_ph": { de: "Frage zur Akte…", en: "Ask about this case…" },
   "cases.detail_query_send": { de: "Senden", en: "Send" },
-  "cases.detail_query_ai_answer": { de: "KI-Antwort", en: "AI answer" },
+  "cases.detail_query_ai_answer": { de: "Assistenten-Antwort", en: "Assistant answer" },
   "cases.detail_chat_title": { de: "Akten-Chat:", en: "Case chat:" },
   "cases.detail_audit_tasks": { de: "Aufgaben bearbeitet", en: "Tasks edited" },
   "cases.detail_audit_time": { de: "Zeiterfassung bearbeitet", en: "Time tracking edited" },
@@ -1460,8 +1460,8 @@ export const D = {
   "drafting.name": { de: "Name", en: "Name" },
   "drafting.describe_case": { de: "Beschreibe den Sachverhalt", en: "Describe the case" },
   "onboarding.step_done_desc": {
-    de: "Dein Kanzlei-Brain ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
-    en: "Your firm brain is ready. You can upload more documents and ask questions anytime.",
+    de: "Deine Kanzlei-Wissensbasis ist einsatzbereit. Du kannst jederzeit Dokumente nachladen und Fragen stellen.",
+    en: "Your firm knowledge base is ready. You can upload more documents and ask questions anytime.",
   },
   "onboarding.industry_legal": { de: "Kanzlei / Rechtsabteilung", en: "Law firm / legal team" },
   "onboarding.industry_other": { de: "Andere", en: "Other" },
