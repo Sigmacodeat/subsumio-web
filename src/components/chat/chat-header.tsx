@@ -36,6 +36,7 @@ interface ChatHeaderProps {
     tokenWidget: boolean;
     exportChat: boolean;
   };
+  compact?: boolean;
   modelOverride?: string;
   onModelChange: (model: string | undefined) => void;
   queryMode: QueryMode;
@@ -70,6 +71,7 @@ const JURISDICTIONS: Array<{ value: Jurisdiction; label: string }> = [
 
 export function ChatHeader(props: ChatHeaderProps) {
   const { t } = useLang();
+  const compact = props.compact ?? false;
   const statsQuery = useBrainStats();
   const usageQuery = useUsage();
   const [showModeMenu, setShowModeMenu] = useState(false);
@@ -129,7 +131,7 @@ export function ChatHeader(props: ChatHeaderProps) {
               {t("chat.title")}
             </h2>
             <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-subtle)]">
-              {props.features.brainStatus && (
+              {props.features.brainStatus && !compact && (
                 <span className="inline-flex items-center gap-1">
                   <span
                     className={cn(
@@ -144,18 +146,24 @@ export function ChatHeader(props: ChatHeaderProps) {
                       : t("chat.brain_offline")}
                 </span>
               )}
-              {props.features.tokenWidget && props.sessionTokens > 0 && (
+              {props.features.tokenWidget && props.sessionTokens > 0 && !compact && (
                 <span className="inline-flex items-center gap-0.5">
                   · <Zap size={9} />
                   {props.sessionTokens.toLocaleString("de-DE")}
                 </span>
               )}
-              {props.features.tokenWidget && costEstimate != null && costEstimate > 0 && (
-                <span className="inline-flex items-center gap-0.5" title={t("chat.cost_estimate")}>
-                  · ~{formatCost(costEstimate)}
-                </span>
-              )}
-              {props.features.tokenWidget && queriesRemaining != null && (
+              {props.features.tokenWidget &&
+                costEstimate != null &&
+                costEstimate > 0 &&
+                !compact && (
+                  <span
+                    className="inline-flex items-center gap-0.5"
+                    title={t("chat.cost_estimate")}
+                  >
+                    · ~{formatCost(costEstimate)}
+                  </span>
+                )}
+              {props.features.tokenWidget && queriesRemaining != null && !compact && (
                 <span className="inline-flex items-center gap-0.5">
                   · {queriesRemaining} {t("chat.queries_remaining")}
                 </span>
@@ -368,8 +376,8 @@ export function ChatHeader(props: ChatHeaderProps) {
           </div>
         )}
 
-        {/* Jurisdiction selector */}
-        {props.features.jurisdictionSelector && (
+        {/* Jurisdiction selector — hidden in compact mode */}
+        {props.features.jurisdictionSelector && !compact && (
           <div className="flex items-center gap-0.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-0.5">
             <Scale size={10} className="ml-1 text-[color:var(--ds-text-subtle)]" />
             {JURISDICTIONS.map((j) => (
@@ -435,8 +443,8 @@ export function ChatHeader(props: ChatHeaderProps) {
           </div>
         )}
 
-        {/* Model selector */}
-        {props.features.modelSelector && (
+        {/* Model selector — hidden in compact mode */}
+        {props.features.modelSelector && !compact && (
           <ModelSelector selectedModelId={props.modelOverride} onSelect={props.onModelChange} />
         )}
       </div>

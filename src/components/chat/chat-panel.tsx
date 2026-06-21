@@ -9,18 +9,14 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Reply, X } from "lucide-react";
+import { Reply, X, ArrowDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
-import {
-  buildPromptContext,
-  processStreamingChunk,
-  JURISDICTION_LABELS,
-} from "@/components/chat/system-prompt";
+import { buildPromptContext, processStreamingChunk } from "@/components/chat/system-prompt";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import {
@@ -57,7 +53,6 @@ import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageBubble } from "@/components/chat/chat-message";
 import { ChatEmptyState } from "@/components/chat/chat-empty-state";
 import { ChatStreamingIndicator } from "@/components/chat/chat-streaming-indicator";
-import { ChatLoadingSkeleton } from "@/components/chat/chat-loading-skeleton";
 
 interface ChatPanelProps {
   context?: {
@@ -383,6 +378,21 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const [queryMode, setQueryMode] = useState<QueryMode>("deep_matter");
   const [modelOverride, setModelOverride] = useState<string | undefined>(undefined);
   const [sessionTokens, setSessionTokens] = useState(0);
+  const [isCompact, setIsCompact] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Detect narrow panel for compact header mode
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIsCompact(entry.contentRect.width < 360);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Session state
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -544,50 +554,22 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         await saveMessage(activeSessionId, assistantMsg);
       }
 
-      // Build prompt
-      const contextParts: string[] = [];
-      if (attachments && attachments.length > 0) {
-        contextParts.push("--- ANGEHÄNGTE DOKUMENTE ---");
-        for (const att of attachments) {
-          try {
-            const page = await api.brain.getPage(att.slug);
-            contextParts.push(`\nDOKUMENT: ${att.name}\n${(page.content || "").slice(0, 8000)}\n`);
-          } catch {
-            contextParts.push(`\nDOKUMENT: ${att.name}\n[Inhalt nicht abrufbar]\n`);
-          }
-        }
-        contextParts.push("--- ENDE DOKUMENTE ---\n");
-      }
-
-      const jurisdictionLabel = JURISDICTION_LABELS[jurisdiction];
-      const systemPrompt = `Du bist der Brain Copilot für eine Kanzlei im ${jurisdictionLabel.toUpperCase()} Rechtsraum. Beantworte präzise unter Berücksichtigung des ${jurisdictionLabel} Rechts. Zitiere Gesetze mit § und Absatz, und gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nWICHTIG — MANDANTENISOLATION:\nWenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte. Vermeide mandantenübergreifende Informationen. Wenn ein Nutzer nach anderen Mandanten fragt, weise darauf hin, dass du nur im Kontext der aktuellen Akte antworten kannst.\n\nDu hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutzer eine Aktion wünscht, kannst du Tool-Marker in deine Antwort einbetten (unsichtbar für den Nutzer, aber vom System erkannt):\n- Navigation: [TOOL:navigate route="/dashboard/cases"]\n- Akten suchen: [TOOL:search_cases query="Muster GmbH"]\n- Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="overdue"]\n- Wissen suchen: [TOOL:search_knowledge query="BGB § 280"]\n- Akte erstellen: [TOOL:create_case title="Klage Muster GmbH" client_name="Max Mustermann" opponent_name="Gegner AG"]\n- Aktenzusammenfassung: [TOOL:case_summary case_slug="cases/123"]\n- Email-Entwurf: [TOOL:email_draft subject="Status Update" recipient="mandant@email.de" case_slug="cases/123" tone="formal"]\n- Fristen extrahieren: [TOOL:deadline_extract document_slug="urteil-2026"]\n- Dokument zusammenfassen: [TOOL:document_summary document_slug="vertrag-2026"]\n- Konfliktprüfung: [TOOL:conflict_check name="Muster GmbH"]\n- Zeiteintrag: [TOOL:time_entry case_slug="cases/123" description="Aktenanalyse" hours="1.5" activity_type="research"]\n- Mandanten-Update: [TOOL:client_update case_slug="cases/123" update_type="status"]\n- Besprechungsnotizen: [TOOL:meeting_tasks notes="Besprechung mit Mandant..." case_slug="cases/123"]\n- Mandantsaufnahme: [TOOL:intake_create client_name="Max Mustermann" matter_type="Zivilrecht" jurisdiction="de" urgency="medium"]\n\nVerwende Tools nur wenn der Nutzer explizit eine Aktion wünscht. Antworte sonst normal.\n\nDu kannst MEHRERE Tool-Marker in einer einzigen Antwort verwenden, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Setze jeden Marker in eine eigene Zeile.\n\nWICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
-
-      if (selectedCaseSlug) {
-        const selected = cases.find((c) => c.slug === selectedCaseSlug);
-        contextParts.push(
-          `--- AKTENKONTEXT ---\nAktive Akte: ${selected?.title ?? selectedCaseSlug}\nSlug: ${selectedCaseSlug}\nNutze Matter Context und zitiere nur belegte Aussagen.\n--- ENDE AKTENKONTEXT ---\n`
-        );
-      }
-
-      if (context.type === "brain_page" && context.pageSlug) {
-        contextParts.push(
-          `--- SEITENKONTEXT ---\nBrain-Seite: ${context.pageSlug}\nBeantworte Fragen im Kontext dieser Seite.\n--- ENDE SEITENKONTEXT ---\n`
-        );
-      }
-
-      if (selectedCaseSlug) {
-        const selected = cases.find((c) => c.slug === selectedCaseSlug);
-        const caseTitle = selected?.title ?? selectedCaseSlug;
-        contextParts.push(`AKTE: ${caseTitle} (slug: ${selectedCaseSlug})`);
-      }
-
-      if (replyTo) {
-        contextParts.push(
-          `--- ZITIERTE NACHRICHT ---\nAntworte auf die folgende ${replyTo.role === "user" ? "Nutzernachricht" : "KI-Antwort"}:\n"${replyTo.preview}"\n--- ENDE ZITAT ---`
-        );
-      }
-
-      const userInput = `${contextParts.join("\n")}\nNUTZERFRAGE:\n${text}`;
+      // Build prompt via shared context builder
+      const { systemPrompt, userInput } = await buildPromptContext({
+        jurisdiction,
+        selectedCaseSlug,
+        cases,
+        contextType: context.type,
+        contextCaseSlug: context.caseSlug,
+        pageSlug: context.pageSlug,
+        attachments,
+        replyTo,
+        userText: text,
+        attachmentFetcher: async (slug) => {
+          const page = await api.brain.getPage(slug);
+          return page.content || "";
+        },
+      });
       const prompt = buildSafePrompt(systemPrompt, userInput);
 
       // Create abort controller
@@ -604,35 +586,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
-            // Prepend any buffered partial marker from previous chunk
-            const combined = toolMarkerBuffer + chunk;
-            toolMarkerBuffer = "";
-
-            // Check for incomplete [TOOL: marker at end (no closing ])
-            const lastOpen = combined.lastIndexOf("[TOOL:");
-            if (lastOpen !== -1 && combined.indexOf("]", lastOpen) === -1) {
-              // Incomplete marker — buffer it and don't show
-              toolMarkerBuffer = combined.slice(lastOpen);
-              const beforeMarker = combined.slice(0, lastOpen);
-              // Still filter any complete markers in the visible part
-              const cleanChunk = beforeMarker.replace(/\[TOOL:[^\]]*\]/gi, "");
-              if (!cleanChunk) return;
-              setMessages((m) => {
-                const last = m[m.length - 1];
-                if (!last || last.role !== "assistant") return m;
-                return [...m.slice(0, -1), { ...last, content: last.content + cleanChunk }];
-              });
-              return;
-            }
-
-            // No incomplete marker — filter complete markers normally
-            const cleanChunk = combined.replace(/\[TOOL:[^\]]*\]/gi, "");
-            if (!cleanChunk) return;
-            setMessages((m) => {
-              const last = m[m.length - 1];
-              if (!last || last.role !== "assistant") return m;
-              return [...m.slice(0, -1), { ...last, content: last.content + cleanChunk }];
-            });
+            toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
           },
         });
 
@@ -1124,38 +1078,24 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         await saveMessage(activeSessionId, assistantMsg);
       }
 
-      // Rebuild prompt (same as handleSend)
-      const contextParts: string[] = [];
-      if (userMsg.attachments && userMsg.attachments.length > 0) {
-        contextParts.push("--- ANGEHÄNGTE DOKUMENTE ---");
-        for (const att of userMsg.attachments) {
-          try {
-            const page = await api.brain.getPage(att.slug);
-            contextParts.push(`\nDOKUMENT: ${att.name}\n${(page.content || "").slice(0, 8000)}\n`);
-          } catch {
-            contextParts.push(`\nDOKUMENT: ${att.name}\n[Inhalt nicht abrufbar]\n`);
-          }
-        }
-        contextParts.push("--- ENDE DOKUMENTE ---\n");
-      }
-
-      const jurisdictionLabel = JURISDICTION_LABELS[jurisdiction];
-      const systemPrompt = `Du bist der Brain Copilot für eine Kanzlei im ${jurisdictionLabel.toUpperCase()} Rechtsraum. Beantworte präzise unter Berücksichtigung des ${jurisdictionLabel} Rechts. Zitiere Gesetze mit § und Absatz, und gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nWICHTIG — MANDANTENISOLATION:\nWenn eine konkrete Akte aktiv ist, beantworte Fragen NUR im Kontext dieser Akte. Vermeide mandantenübergreifende Informationen. Wenn ein Nutzer nach anderen Mandanten fragt, weise darauf hin, dass du nur im Kontext der aktuellen Akte antworten kannst.\n\nDu hast Zugriff auf Kanzlei-Funktionen. Wenn der Nutzer eine Aktion wünscht, kannst du Tool-Marker in deine Antwort einbetten (unsichtbar für den Nutzer, aber vom System erkannt):\n- Navigation: [TOOL:navigate route="/dashboard/cases"]\n- Akten suchen: [TOOL:search_cases query="Muster GmbH"]\n- Fristen prüfen: [TOOL:search_deadlines status="open"] oder [TOOL:search_deadlines case_slug="cases/123" status="overdue"]\n- Wissen suchen: [TOOL:search_knowledge query="BGB § 280"]\n- Akte erstellen: [TOOL:create_case title="Klage Muster GmbH" client_name="Max Mustermann" opponent_name="Gegner AG"]\n- Aktenzusammenfassung: [TOOL:case_summary case_slug="cases/123"]\n- Email-Entwurf: [TOOL:email_draft subject="Status Update" recipient="mandant@email.de" case_slug="cases/123" tone="formal"]\n- Fristen extrahieren: [TOOL:deadline_extract document_slug="urteil-2026"]\n- Dokument zusammenfassen: [TOOL:document_summary document_slug="vertrag-2026"]\n- Konfliktprüfung: [TOOL:conflict_check name="Muster GmbH"]\n- Zeiteintrag: [TOOL:time_entry case_slug="cases/123" description="Aktenanalyse" hours="1.5" activity_type="research"]\n- Mandanten-Update: [TOOL:client_update case_slug="cases/123" update_type="status"]\n- Besprechungsnotizen: [TOOL:meeting_tasks notes="Besprechung mit Mandant..." case_slug="cases/123"]\n- Mandantsaufnahme: [TOOL:intake_create client_name="Max Mustermann" matter_type="Zivilrecht" jurisdiction="de" urgency="medium"]\n\nVerwende Tools nur wenn der Nutzer explizit eine Aktion wünscht. Antworte sonst normal.\n\nDu kannst MEHRERE Tool-Marker in einer einzigen Antwort verwenden, wenn mehrere Aktionen sinnvoll sind (z.B. zuerst eine Akte suchen, dann eine Frist prüfen). Setze jeden Marker in eine eigene Zeile.\n\nWICHTIG: Tools, die Daten erstellen oder verändern (create_case, intake_create, time_entry), erfordern eine Bestätigung durch den Nutzer. Betten Sie diese Tool-Marker wie gewohnt ein — das System zeigt dem Nutzer einen Bestätigungsdialog an.`;
-
-      if (selectedCaseSlug) {
-        const selected = cases.find((c) => c.slug === selectedCaseSlug);
-        contextParts.push(
-          `--- AKTENKONTEXT ---\nAktive Akte: ${selected?.title ?? selectedCaseSlug}\nSlug: ${selectedCaseSlug}\nNutze Matter Context und zitiere nur belegte Aussagen.\n--- ENDE AKTENKONTEXT ---\n`
-        );
-      }
-      if (context.type === "brain_page" && context.pageSlug) {
-        contextParts.push(
-          `--- SEITENKONTEXT ---\nBrain-Seite: ${context.pageSlug}\nBeantworte Fragen im Kontext dieser Seite.\n--- ENDE SEITENKONTEXT ---\n`
-        );
-      }
-
-      const userInput = `${contextParts.join("\n")}\nNUTZERFRAGE:\n${userMsg.content}`;
-      const prompt = buildSafePrompt(systemPrompt, userInput);
+      // Rebuild prompt via shared context builder
+      const { systemPrompt: regenSystemPrompt, userInput: regenUserInput } =
+        await buildPromptContext({
+          jurisdiction,
+          selectedCaseSlug,
+          cases,
+          contextType: context.type,
+          contextCaseSlug: context.caseSlug,
+          pageSlug: context.pageSlug,
+          attachments: userMsg.attachments,
+          replyTo: null,
+          userText: userMsg.content,
+          attachmentFetcher: async (slug) => {
+            const page = await api.brain.getPage(slug);
+            return page.content || "";
+          },
+        });
+      const prompt = buildSafePrompt(regenSystemPrompt, regenUserInput);
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -1170,30 +1110,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           ...(modelOverride && modelOverride !== "auto" ? { model: modelOverride } : {}),
           signal: controller.signal,
           onChunk: (chunk) => {
-            const combined = toolMarkerBuffer + chunk;
-            toolMarkerBuffer = "";
-
-            const lastOpen = combined.lastIndexOf("[TOOL:");
-            if (lastOpen !== -1 && combined.indexOf("]", lastOpen) === -1) {
-              toolMarkerBuffer = combined.slice(lastOpen);
-              const beforeMarker = combined.slice(0, lastOpen);
-              const cleanChunk = beforeMarker.replace(/\[TOOL:[^\]]*\]/gi, "");
-              if (!cleanChunk) return;
-              setMessages((m) => {
-                const last = m[m.length - 1];
-                if (!last || last.role !== "assistant") return m;
-                return [...m.slice(0, -1), { ...last, content: last.content + cleanChunk }];
-              });
-              return;
-            }
-
-            const cleanChunk = combined.replace(/\[TOOL:[^\]]*\]/gi, "");
-            if (!cleanChunk) return;
-            setMessages((m) => {
-              const last = m[m.length - 1];
-              if (!last || last.role !== "assistant") return m;
-              return [...m.slice(0, -1), { ...last, content: last.content + cleanChunk }];
-            });
+            toolMarkerBuffer = processStreamingChunk(chunk, toolMarkerBuffer, setMessages);
           },
         });
 
@@ -1302,22 +1219,35 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   // Edit user message and resend
   const handleEdit = useCallback(
-    (messageId: string) => {
-      if (isStreaming) return; // Prevent editing during active stream
+    async (messageId: string) => {
+      if (isStreaming) return;
       const msg = messagesRef.current.find((m) => m.id === messageId);
       if (!msg || msg.role !== "user") return;
+
+      const idx = messagesRef.current.findIndex((m) => m.id === messageId);
+      const messagesAfter = messagesRef.current.length - idx - 1;
+
+      if (messagesAfter > 2) {
+        const ok = await confirm({
+          title: "Nachricht bearbeiten?",
+          message: `Beim Bearbeiten werden ${messagesAfter} nachfolgende Nachrichten gelöscht und neu generiert.`,
+          confirmLabel: "Bearbeiten & neu generieren",
+          cancelLabel: "Abbrechen",
+          variant: "danger",
+        });
+        if (!ok) return;
+      }
+
       const editedContent = msg.content;
       const editedAttachments = msg.attachments;
-      // Remove all messages after the edited one (including its response)
       setMessages((m) => {
         const idx = m.findIndex((mm) => mm.id === messageId);
         if (idx < 0) return m;
         return m.slice(0, idx);
       });
-      // Re-send the edited content
       handleSend(editedContent, editedAttachments);
     },
-    [handleSend, isStreaming]
+    [handleSend, isStreaming, confirm]
   );
 
   // Quote-reply to a message
@@ -1326,6 +1256,55 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     role: "user" | "assistant";
     preview: string;
   } | null>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [dismissedError, setDismissedError] = useState(false);
+
+  // Reply-to Esc shortcut
+  useEffect(() => {
+    if (!replyTo) return;
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setReplyTo(null);
+    }
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [replyTo]);
+
+  // Scroll-to-bottom button visibility
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    function handleScroll() {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+      setShowScrollBtn(!nearBottom && messages.length > 4);
+    }
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [messages.length]);
+
+  // Reset dismissed error when new error appears
+  useEffect(() => {
+    if (error) setDismissedError(false);
+  }, [error]);
+
+  // Date separator helper
+  function getDateLabel(dateStr: string): string {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    if (isToday) return "Heute";
+    if (isYesterday) return "Gestern";
+    return date.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
   const handleReply = useCallback((messageId: string) => {
     const msg = messagesRef.current.find((m) => m.id === messageId);
     if (!msg) return;
@@ -1455,6 +1434,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         "flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
         className
@@ -1463,6 +1443,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       aria-label={title ?? t("chat.title")}
     >
       <ChatHeader
+        compact={isCompact}
         features={{
           modelSelector: resolvedFeatures.modelSelector,
           modeSelector: resolvedFeatures.modeSelector,
@@ -1513,37 +1494,79 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           />
         ) : (
           <div className="py-2">
-            {messages.map((msg) => (
-              <ChatMessageBubble
-                key={msg.id}
-                message={msg}
-                features={messageFeatures}
-                onRegenerate={msg.role === "assistant" ? handleRegenerateById : undefined}
-                onEdit={msg.role === "user" ? handleEditById : undefined}
-                onReply={handleReplyById}
-                onExport={handleExport}
-                onToolConfirm={handleToolConfirm}
-                onToolCancel={handleToolCancel}
-                onToolRetry={handleToolRetry}
-              />
-            ))}
+            {messages.map((msg, idx) => {
+              const prevMsg = idx > 0 ? messages[idx - 1] : null;
+              const showDateSeparator =
+                !prevMsg ||
+                new Date(prevMsg.createdAt).toDateString() !==
+                  new Date(msg.createdAt).toDateString();
+              return (
+                <div
+                  key={msg.id}
+                  style={
+                    messages.length > 30 && idx < messages.length - 10
+                      ? { contentVisibility: "auto", containIntrinsicSize: "auto 120px" }
+                      : undefined
+                  }
+                >
+                  {showDateSeparator && (
+                    <div className="my-2 flex items-center gap-2 px-4">
+                      <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
+                      <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
+                        {getDateLabel(msg.createdAt)}
+                      </span>
+                      <div className="h-px flex-1 bg-[color:var(--ds-border)]" />
+                    </div>
+                  )}
+                  <ChatMessageBubble
+                    message={msg}
+                    features={messageFeatures}
+                    onRegenerate={msg.role === "assistant" ? handleRegenerateById : undefined}
+                    onEdit={msg.role === "user" ? handleEditById : undefined}
+                    onReply={handleReplyById}
+                    onExport={handleExport}
+                    onToolConfirm={handleToolConfirm}
+                    onToolCancel={handleToolCancel}
+                    onToolRetry={handleToolRetry}
+                  />
+                </div>
+              );
+            })}
             {isStreaming &&
               messages.length > 0 &&
               messages[messages.length - 1].role === "assistant" &&
-              !messages[messages.length - 1].content && <ChatLoadingSkeleton />}
+              !messages[messages.length - 1].content && <ChatStreamingIndicator />}
             <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
+      {/* Scroll-to-bottom button */}
+      {showScrollBtn && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-24 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg transition-[opacity,transform] duration-200 hover:bg-[color:var(--ds-hover)] active:scale-95"
+          aria-label="Nach unten scrollen"
+        >
+          <ArrowDown size={16} className="text-[color:var(--ds-text-muted)]" />
+        </button>
+      )}
+
       {/* Error banner */}
-      {error && (
+      {error && !dismissedError && (
         <div
           role="alert"
           aria-live="assertive"
-          className="border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-xs text-red-600 dark:text-red-400"
+          className="flex items-center gap-2 border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-xs text-red-600 dark:text-red-400"
         >
-          {error}
+          <span className="min-w-0 flex-1 truncate">{error}</span>
+          <button
+            onClick={() => setDismissedError(true)}
+            className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
+            aria-label="Fehlermeldung schließen"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 

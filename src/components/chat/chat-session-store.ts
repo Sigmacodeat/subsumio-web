@@ -9,6 +9,8 @@ const DB_NAME = "subsumio-chat";
 const DB_VERSION = 2;
 const SESSIONS_STORE = "sessions";
 const MESSAGES_STORE = "messages";
+const MAX_SESSIONS = 100;
+const PRUNE_AFTER_DAYS = 30;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -62,8 +64,38 @@ export async function createSession(session: ChatSession): Promise<void> {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    pruneOldSessions().catch((e) => console.error("[chat-session] prune failed:", e));
   } catch (e) {
     console.error("[chat-session] createSession:", e);
+  }
+}
+
+async function pruneOldSessions(): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(SESSIONS_STORE, "readonly");
+    const req = tx.objectStore(SESSIONS_STORE).getAll();
+    const sessions = await new Promise<ChatSession[]>((resolve) => {
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+
+    if (sessions.length <= MAX_SESSIONS) return;
+
+    const cutoff = Date.now() - PRUNE_AFTER_DAYS * 24 * 60 * 60 * 1000;
+    const candidates = sessions
+      .filter((s) => !s.pinned && new Date(s.updatedAt).getTime() < cutoff)
+      .sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
+
+    const toDelete = candidates.slice(0, sessions.length - MAX_SESSIONS);
+    if (toDelete.length === 0) return;
+
+    for (const s of toDelete) {
+      await deleteSession(s.id);
+    }
+    console.info(`[chat-session] pruned ${toDelete.length} old sessions`);
+  } catch (e) {
+    console.error("[chat-session] pruneOldSessions:", e);
   }
 }
 

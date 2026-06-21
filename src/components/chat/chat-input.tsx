@@ -37,6 +37,11 @@ export function ChatInput({
   const templateRef = useRef<HTMLDivElement>(null);
   const { t } = useLang();
 
+  const charCount = text.length;
+  const nearLimit = charCount > 45_000;
+  const overLimit = charCount > 50_000;
+  const canSend = text.trim().length > 0 && !isStreaming && !disabled && !uploading && !overLimit;
+
   const autoFocus = useCallback(() => {
     requestAnimationFrame(() => textareaRef.current?.focus());
   }, []);
@@ -68,8 +73,7 @@ export function ChatInput({
 
   function handleSubmit() {
     const trimmed = text.trim();
-    if (!trimmed || isStreaming || disabled) return;
-    if (trimmed.length > 50_000) return;
+    if (!trimmed || isStreaming || disabled || overLimit) return;
     onSend(trimmed, attachments.length > 0 ? attachments : undefined);
     setText("");
     setAttachments([]);
@@ -146,7 +150,7 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="flex items-end gap-2 px-4 py-3">
+      <div className="relative flex items-end gap-2 px-4 py-3">
         {/* Template picker */}
         <div ref={templateRef} className="relative">
           <button
@@ -218,11 +222,28 @@ export function ChatInput({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={placeholder ?? t("chat.placeholder")}
+          placeholder={isStreaming ? "AI antwortet…" : (placeholder ?? t("chat.placeholder"))}
           rows={1}
-          className="min-h-[36px] flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
+          maxLength={50000}
+          className={cn(
+            "min-h-[36px] flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50",
+            nearLimit && !overLimit && "border-amber-400/60",
+            overLimit && "border-red-500"
+          )}
           aria-label="Nachricht eingeben"
         />
+
+        {/* Char counter — visible when approaching limit */}
+        {nearLimit && (
+          <span
+            className={cn(
+              "absolute right-14 bottom-1 text-[10px] font-medium",
+              overLimit ? "text-red-500" : "text-amber-500"
+            )}
+          >
+            {charCount.toLocaleString("de-DE")} / 50.000
+          </span>
+        )}
 
         {/* Send / Stop button */}
         {isStreaming ? (
@@ -237,8 +258,11 @@ export function ChatInput({
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={!text.trim() || disabled || uploading}
-            className="brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!canSend}
+            className={cn(
+              "brand-bg brand-text-on-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40",
+              overLimit && "bg-red-500"
+            )}
             aria-label="Senden"
             title="Senden (Enter)"
           >
