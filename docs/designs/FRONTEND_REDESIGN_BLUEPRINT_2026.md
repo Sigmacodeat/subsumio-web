@@ -164,7 +164,18 @@ Subsumio soll sich nicht wie ein weiterer generischer AI-Chatbot anfühlen, sond
 - `bun tsc` zeigt weiterhin nur die vorbestehenden Fehler in `src/app/api/cron/law-sync/route.ts` und `src/app/api/cron/judgements-sync/route.ts` (nicht durch Design-Änderungen verursacht). Keine neuen Type-Fehler in den geänderten UI-Dateien.
 - Keine `Sparkles`-Referenzen mehr in `src/`.
 
+### Paket 9: Haptics & Motion-Audit ✅
+
+- **Befund**: Sidebar- und Copilot-Animationen nutzten 400 ms + `cubic-bezier(0.32,0.72,0,1)` — zu schnell startend, subjektiv hektisch.
+- **Massnahme**: Neue Tokens `--ds-duration-smooth: 500ms` und `--ds-ease-smooth: cubic-bezier(0.33, 1, 0.68, 1)`.
+- **Umgesetzt**:
+  - Sidebar-Collapse/Expand: 500 ms, weiche Dämpfung.
+  - Copilot-Panel (Desktop + Mobile): 500 ms, gleiches Ease.
+  - `active:scale-95` entfernt an Sidebar-, Copilot-, Topbar- und Mobile-Tab-Bar-Buttons.
+  - `motion-reduce:transition-none` an allen Sidebar-/Copiot-Transform-Animationen.
+- **Ergebnis**: Öffnen/Klappen der Menübar und des Copilot fühlt sich flüssig und modern an, nicht schnell.
+
 ## 9. Status
 
-- **Phase**: Paket 1–7 implementiert, Paket 8 abgeschlossen.
+- **Phase**: Paket 1–9 implementiert.
 - **Nächster Schritt**: Visuelles Review, Live-Test im Browser oder weitere Detail-Feinschliffe.

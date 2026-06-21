@@ -271,7 +271,7 @@ function ProactiveAlerts({ alerts, onQuery, onDismiss, t, className }: Proactive
             <div
               key={alertKey}
               className={cn(
-                "group/alert flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                "group/alert flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition-[background-color,border-color] duration-200 ease-[var(--ds-ease-smooth)]",
                 alert.severity === "urgent"
                   ? "border-l-2 border-red-200/60 border-l-red-500 bg-red-50/40 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:border-l-red-400 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
                   : "border-l-2 border-amber-200/60 border-l-amber-500 bg-amber-50/40 text-amber-700 hover:bg-amber-50 dark:border-amber-900/40 dark:border-l-amber-400 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
@@ -339,7 +339,7 @@ function QuickActionsChips({
             <button
               key={action.label}
               onClick={() => onAction(action)}
-              className="group/action flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-left text-xs text-[color:var(--ds-text-muted)] shadow-sm transition-[border-color,background-color,color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
+              className="group/action flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-left text-xs text-[color:var(--ds-text-muted)] shadow-sm transition-[border-color,background-color,color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
             >
               <span className="group-hover/action:brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] transition-colors">
                 <Icon
@@ -592,7 +592,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* Mobile overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none md:hidden",
           mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => {
@@ -606,7 +606,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       <div
         ref={drawerRef}
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform md:hidden",
+          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-transform motion-reduce:transition-none md:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
@@ -641,7 +641,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 setMobileOpen(false);
                 onToggle();
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               aria-label={t("copilot.close_esc")}
             >
               <X size={18} />
@@ -691,7 +691,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           "relative hidden min-w-0 shrink-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block",
           isResizing
             ? "transition-none"
-            : "transition-[width] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width]",
+            : "transition-[width] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-[width] motion-reduce:transition-none",
           open ? "" : "w-0",
           className
         )}
@@ -747,7 +747,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           <button
             onClick={onToggle}
             className={cn(
-              "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95",
+              "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
               !open && "pointer-events-none opacity-0"
             )}
             aria-label={t("copilot.collapse")}
@@ -762,7 +762,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           {/* Panel content — stays mounted during transition for smooth animation */}
           <div
             className={cn(
-              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity] delay-75 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity] delay-75 duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
               open ? "opacity-100" : "pointer-events-none opacity-0"
             )}
             aria-hidden={!open}
@@ -788,7 +788,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 </div>
                 <button
                   onClick={onToggle}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   aria-label={t("copilot.close_panel")}
                   title={t("copilot.close_panel")}
                 >
@@ -842,7 +842,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {!open && (
         <button
           onClick={onToggle}
-          className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95 md:flex"
+          className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex"
           aria-label={t("copilot.expand")}
           title={t("copilot.expand_hint")}
         >
@@ -850,7 +850,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             size={16}
             className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
           />
-          <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
+          <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
             {t("copilot.copilot")}
           </span>
         </button>

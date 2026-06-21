@@ -443,7 +443,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[width,transform]",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-[width,transform] motion-reduce:transition-none",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -474,7 +474,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         >
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:hidden"
             aria-label={t("sidebar.close_menu")}
           >
             <X size={18} />
@@ -489,7 +489,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           <Link
             href="/dashboard"
             className={cn(
-              "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
               collapsed ? "pointer-events-none opacity-0" : "opacity-100"
             )}
             onClick={() => setMobileOpen(false)}
@@ -502,7 +502,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Brain status — expanded version */}
           <div
             className={cn(
-              "mx-3 mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "mx-3 mt-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 transition-[opacity,height,padding] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
               collapsed
                 ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
                 : "opacity-100"
@@ -536,7 +536,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Brain status — collapsed dot */}
           <div
             className={cn(
-              "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:flex",
+              "mt-4 hidden items-center justify-center transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)] md:flex",
               collapsed ? "opacity-100" : "pointer-events-none h-0 overflow-hidden opacity-0"
             )}
             title={`${t("sidebar.brain_status")}: ${brainStatusLabel}`}
@@ -559,7 +559,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Search / Filter */}
           <div
             className={cn(
-              "px-3 pt-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "px-3 pt-3 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
               collapsed ? "pointer-events-none h-0 overflow-hidden pt-0 opacity-0" : "opacity-100"
             )}
           >
@@ -610,7 +610,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={collapsed ? t(item.labelKey) : undefined}
                     className={cn(
-                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       active
                         ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -619,7 +619,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <Icon size={17} className="shrink-0" />
                     <span
                       className={cn(
-                        "transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                        "transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
                         collapsed
                           ? "pointer-events-none w-0 overflow-hidden opacity-0"
                           : "opacity-100"
@@ -635,7 +635,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {/* Collapsed: flat icon list */}
             <div
               className={cn(
-                "mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4 transition-[opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4 transition-[opacity] duration-200 ease-[var(--ds-ease-smooth)]",
                 collapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"
               )}
             >
@@ -658,7 +658,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       onClick={() => setMobileOpen(false)}
                       title={t(item.labelKey)}
                       className={cn(
-                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                         active
                           ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -672,7 +672,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {/* Expanded: accordion sections */}
             <div
               className={cn(
-                "mt-4 space-y-2 transition-[opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "mt-4 space-y-2 transition-[opacity] duration-200 ease-[var(--ds-ease-smooth)]",
                 collapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"
               )}
             >
@@ -687,7 +687,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   <div
                     key={section.titleKey}
                     className={cn(
-                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)]",
                       section.titleKey === "nav.section.admin"
                         ? "border-[color:var(--ds-border)] bg-transparent"
                         : "border-transparent",
@@ -733,7 +733,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[350ms] ease-[var(--ds-ease-smooth)]",
                           isOpen && "rotate-180"
                         )}
                       />
@@ -741,7 +741,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       id={panelId}
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-[grid-template-rows]",
+                        "grid transition-[grid-template-rows,opacity] duration-[350ms] ease-[var(--ds-ease-smooth)] will-change-[grid-template-rows]",
                         isOpen
                           ? "grid-rows-[1fr] opacity-100"
                           : "pointer-events-none grid-rows-[0fr] opacity-0"
@@ -777,7 +777,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 aria-current={active ? "page" : undefined}
                                 onClick={() => setMobileOpen(false)}
                                 className={cn(
-                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-95",
+                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                                   active
                                     ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
                                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -802,7 +802,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           {/* Dream Cycle indicator */}
           <div
             className={cn(
-              "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+              "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
               dreamCycle
                 ? "border-emerald-500/20 bg-emerald-500/[0.06]"
                 : "border-amber-500/20 bg-amber-500/[0.06]",
@@ -838,7 +838,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               href="/dashboard/settings"
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] active:scale-95",
+                "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,opacity] duration-300 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
                 collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
               )}
             >
@@ -863,7 +863,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
             aria-expanded={!collapsed}
             className={cn(
-              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
               collapsed && "justify-center px-0"
             )}
           >

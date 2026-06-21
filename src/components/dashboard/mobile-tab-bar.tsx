@@ -109,7 +109,7 @@ export function MobileTabBar({
       {/* More-sheet overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[var(--ds-ease-smooth)] md:hidden",
           moreOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
         onClick={() => setMoreOpen(false)}
@@ -120,7 +120,7 @@ export function MobileTabBar({
       <div
         ref={moreRef}
         className={cn(
-          "fixed right-0 bottom-0 left-0 z-50 transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          "fixed right-0 bottom-0 left-0 z-50 transform transition-transform duration-300 ease-[var(--ds-ease-smooth)] md:hidden",
           moreOpen ? "translate-y-0" : "pointer-events-none translate-y-full"
         )}
         role="dialog"
@@ -140,7 +140,7 @@ export function MobileTabBar({
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Mehr</h3>
             <button
               onClick={() => setMoreOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               aria-label="Schließen"
             >
               <X size={18} />
@@ -208,7 +208,7 @@ export function MobileTabBar({
         {/* Active indicator bar */}
         <div className="relative h-0.5">
           <div
-            className="brand-bg absolute top-0 h-0.5 transition-[width,left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="brand-bg absolute top-0 h-0.5 transition-[width,left] duration-300 ease-[var(--ds-ease-smooth)]"
             style={{
               width: `${100 / 6}%`,
               left: `${(activeTab >= 0 ? activeTab : 0) * (100 / 6)}%`,
@@ -230,7 +230,7 @@ export function MobileTabBar({
                 role="tab"
                 aria-selected={active}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
                   active
                     ? "brand-text"
                     : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -250,7 +250,7 @@ export function MobileTabBar({
             role="tab"
             aria-selected={copilotActive}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
               copilotActive
                 ? "text-[color:var(--brand-primary)]"
                 : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -277,7 +277,7 @@ export function MobileTabBar({
             aria-expanded={moreOpen}
             role="tab"
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
               moreOpen
                 ? "brand-text"
                 : "text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text-muted)]"
@@ -307,7 +307,7 @@ function MoreSheetButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+        "flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
         active
           ? "brand-soft brand-text"
           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -333,7 +333,7 @@ function MoreSheetLink({
   return (
     <Link
       href={href}
-      className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+      className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
     >
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         <Icon size={17} />
