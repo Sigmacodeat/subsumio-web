@@ -13,6 +13,7 @@ import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
+import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 
 function useTheme(): [Theme, () => void] {
@@ -163,13 +164,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {t("layout.skip_to_content")}
       </a>
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-[45] bg-black/60 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-[45] bg-black/60 transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
 
       <Sidebar
         ref={drawerRef}

@@ -1203,6 +1203,24 @@ pre {
 
 /* Mobile: eliminate 300ms tap delay and double-tap-to-zoom on interactive elements.
    Also prevents accidental text selection on rapid taps. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
 [data-app="dashboard"] button,
 [data-app="dashboard"] a,
 [data-app="dashboard"] [role="button"],

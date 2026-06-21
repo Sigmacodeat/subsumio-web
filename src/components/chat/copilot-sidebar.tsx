@@ -392,16 +392,17 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   return (
     <>
       {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm md:hidden"
-          onClick={() => {
-            setMobileOpen(false);
-            if (open) onToggle();
-          }}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => {
+          setMobileOpen(false);
+          if (open) onToggle();
+        }}
+        aria-hidden="true"
+      />
 
       {/* Mobile drawer */}
       <div

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, CheckCircle2, LifeBuoy, Mail, Route, X } from "lucide-react";
 import { useLang } from "@/lib/use-lang";
+import { cn } from "@/lib/utils";
 
 interface DashboardGuideProps {
   open: boolean;
@@ -71,8 +72,6 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  if (!open) return null;
-
   const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match)) ?? {
     title: t("guide.default_title"),
     desc: t("guide.default_desc"),
@@ -85,16 +84,23 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex justify-end bg-black/30 backdrop-blur-sm"
+      className={cn(
+        "fixed inset-0 z-[90] flex justify-end bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        open ? "opacity-100" : "pointer-events-none opacity-0"
+      )}
       role="presentation"
     >
       <button
         className="absolute inset-0 cursor-default"
         onClick={onClose}
         aria-label={t("topbar.close")}
+        tabIndex={open ? 0 : -1}
       />
       <aside
-        className="card-shadow-elevated relative z-[91] flex h-full w-full max-w-sm flex-col border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        className={cn(
+          "card-shadow-elevated relative z-[91] flex h-full w-full max-w-sm flex-col border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          open ? "translate-x-0" : "translate-x-full"
+        )}
         role="dialog"
         aria-modal="true"
         aria-label={t("guide.title")}

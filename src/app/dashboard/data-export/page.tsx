@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Download, FileJson, Shield, Loader2, Database } from "lucide-react";
+import { useState, useRef } from "react";
+import { Download, FileJson, Shield, Loader2, Database, Upload, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
@@ -11,11 +11,14 @@ import { PageHeader } from "@/components/dashboard/page-header";
 export default function DataExportPage() {
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
+  const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
   const [stats, setStats] = useState<{ total: number; byType: Record<string, number> } | null>(
     null
   );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const meQuery = useMe();
   const isAdmin = meQuery.data?.user?.role === "admin";
@@ -170,6 +173,83 @@ export default function DataExportPage() {
               {backupError}
             </div>
           )}
+
+          {/* Restore */}
+          <div className="border-t border-[color:var(--ds-border)] pt-4">
+            <div className="flex items-start gap-3">
+              <Upload size={18} className="brand-text mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                  Backup einspielen (Restore)
+                </p>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                  Stellt ein zuvor erstelltes Voll-Backup wieder her. Vorhandene Pages mit gleichem
+                  Slug werden überschrieben.
+                </p>
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setRestoreLoading(true);
+                setRestoreNotice(null);
+                setBackupError(null);
+                try {
+                  const text = await file.text();
+                  const data = JSON.parse(text);
+                  const pages: Array<{
+                    slug: string;
+                    title: string;
+                    type?: string;
+                    content?: string;
+                    frontmatter?: Record<string, unknown>;
+                  }> = Array.isArray(data) ? data : (data.pages ?? []);
+                  let restored = 0;
+                  for (const page of pages) {
+                    if (!page.slug || !page.title) continue;
+                    await api.brain.createPage({
+                      slug: page.slug,
+                      title: page.title,
+                      type: page.type,
+                      content: page.content,
+                      frontmatter: page.frontmatter,
+                    });
+                    restored++;
+                  }
+                  setRestoreNotice(`${restored} Pages wiederhergestellt.`);
+                } catch (err) {
+                  setBackupError(err instanceof Error ? err.message : "Restore fehlgeschlagen.");
+                } finally {
+                  setRestoreLoading(false);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              className="brand-border brand-text brand-bg/10 mt-3 gap-2 text-sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={restoreLoading}
+            >
+              {restoreLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Upload size={14} />
+              )}
+              {restoreLoading ? "Stelle wieder her…" : "Backup-Datei auswählen"}
+            </Button>
+            {restoreNotice && (
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700">
+                <CheckCircle2 size={14} />
+                {restoreNotice}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

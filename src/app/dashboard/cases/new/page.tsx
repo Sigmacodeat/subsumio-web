@@ -115,7 +115,22 @@ export default function NewCasePage() {
       };
 
       if (isOnline()) {
-        await api.brain.createPage(pagePayload);
+        const result = (await api.brain.createPage(pagePayload)) as {
+          conflictWarning?: {
+            checked: boolean;
+            matches?: Array<{ name: string; slug: string; type: string }>;
+          };
+        };
+        if (result.conflictWarning?.matches?.length) {
+          const names = result.conflictWarning.matches.map((m) => m.name).join(", ");
+          setConflictResult({
+            hasConflict: true,
+            severity: "low",
+            hits: [],
+            checkedContacts: 0,
+            warning: `Server-Kollisionsprüfung: Konflikt gefunden mit ${names}`,
+          });
+        }
       } else {
         await enqueueMutation({ type: "createPage", payload: pagePayload });
       }

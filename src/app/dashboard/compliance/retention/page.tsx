@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, Trash2, CheckCircle2, Shield } from "lucide-react";
+import { AlertTriangle, Trash2, CheckCircle2, Shield, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 
 interface RetentionCase {
@@ -21,9 +22,11 @@ interface RetentionCase {
 const RETENTION_YEARS = 6;
 
 export default function RetentionPage() {
+  const confirm = useConfirm();
   const [cases, setCases] = useState<RetentionCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -142,11 +145,44 @@ export default function RetentionPage() {
                 </div>
               </div>
               {c.action !== "keep" && (
-                <span
-                  className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}
-                >
-                  {c.action === "delete" ? "Löschfällig" : "Prüfung empfohlen"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}
+                  >
+                    {c.action === "delete" ? "Löschfällig" : "Prüfung empfohlen"}
+                  </span>
+                  {c.action === "delete" && (
+                    <button
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Akte löschen",
+                          message: `Möchtest du die Akte "${c.title}" (${c.caseNumber}) unwiderruflich löschen? Erstelle vorher eine Datenträgerkopie.`,
+                          confirmLabel: "Löschen",
+                          cancelLabel: "Abbrechen",
+                          variant: "danger",
+                        });
+                        if (!ok) return;
+                        setDeleting(c.slug);
+                        try {
+                          await api.brain.deletePage(c.slug);
+                          setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
+                        } catch (e) {
+                          setLoadError(e instanceof Error ? e.message : "Löschen fehlgeschlagen.");
+                        } finally {
+                          setDeleting(null);
+                        }
+                      }}
+                      disabled={deleting === c.slug}
+                      className="rounded-lg border border-red-500/20 bg-red-500/5 px-2.5 py-1 text-xs text-red-600 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {deleting === c.slug ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        "Löschen"
+                      )}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ))}

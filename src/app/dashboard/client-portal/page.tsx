@@ -41,7 +41,10 @@ export default function ClientPortalPage() {
   async function loadCases() {
     setLoading(true);
     try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 50 });
+      // API doesn't support frontmatter-based filtering (portal_enabled),
+      // so we fetch all cases and filter client-side. Limit 200 to cover
+      // most practices. For 500+ cases, a dedicated API endpoint would be needed.
+      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
       const loaded: ClientCase[] = pages
         .filter((p) => caseFrontmatter(p).portal_enabled === true)
         .map((p) => {

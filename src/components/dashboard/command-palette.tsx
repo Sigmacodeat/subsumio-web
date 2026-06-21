@@ -363,7 +363,7 @@ export function CommandPalette({
   return (
     <>
       <div
-        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] animate-[fade-in_0.2s_ease-out] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -372,7 +372,7 @@ export function CommandPalette({
         role="dialog"
         aria-modal="true"
         aria-label={t("cmd.search_aria")}
-        className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 px-4 md:px-0"
+        className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 animate-[fade-in-scale_0.2s_ease-out] px-4 md:px-0"
       >
         <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
           {/* Search input */}

@@ -155,6 +155,11 @@ export const DELETE = createHandler(
         entityId: path,
         details: { userId: ctx.user.id },
       });
+      broadcastSseEvent(ctx.brainId, "case.deleted", {
+        slug: path,
+        by: ctx.user.email,
+        at: new Date().toISOString(),
+      });
       return Response.json({ ok: true });
     } catch (e) {
       console.error("[pages/...slug] delete failed:", e instanceof Error ? e.message : String(e));

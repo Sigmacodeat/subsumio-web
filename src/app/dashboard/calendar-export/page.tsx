@@ -36,13 +36,11 @@ function generateIcal(events: CalendarEvent[]): string {
   for (const ev of events) {
     const uid = `${ev.id}@subsumio.local`;
     const dateStr = ev.date.replace(/-/g, "");
-    const dtStart = `${dateStr}T090000Z`;
-    const dtEnd = `${dateStr}T100000Z`;
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${uid}`);
-    lines.push(`DTSTART:${dtStart}`);
-    lines.push(`DTEND:${dtEnd}`);
+    lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
+    lines.push(`DTEND;VALUE=DATE:${dateStr}`);
     lines.push(`SUMMARY:${escapeIcalText(ev.title)}`);
     if (ev.description) lines.push(`DESCRIPTION:${escapeIcalText(ev.description)}`);
     if (ev.location) lines.push(`LOCATION:${escapeIcalText(ev.location)}`);

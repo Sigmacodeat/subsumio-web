@@ -101,13 +101,14 @@ export function MobileTabBar({
   return (
     <>
       {/* More-sheet overlay */}
-      {moreOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm md:hidden"
-          onClick={() => setMoreOpen(false)}
-          aria-hidden
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
+          moreOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setMoreOpen(false)}
+        aria-hidden
+      />
 
       {/* More-sheet — slides up from bottom */}
       <div

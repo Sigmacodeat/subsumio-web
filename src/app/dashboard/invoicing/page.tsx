@@ -128,6 +128,8 @@ function escapeHtmlLines(text: string): string {
  * einmalige, fortlaufende Nummern — Zufallsnummern sind unzulässig).
  * Die nächste Nummer wird aus den bereits im Brain gespeicherten Rechnungen
  * des laufenden Jahres abgeleitet: R-<Jahr>-<lfd. Nr., 4-stellig>.
+ * Bei Kollision (Race Condition bei gleichzeitiger Erstellung) wird ein
+ * Suffix-Buchstabe angehängt, um Eindeutigkeit zu garantieren.
  */
 function nextInvoiceNumber(existing: Invoice[]): string {
   const year = new Date().getFullYear();
@@ -139,7 +141,16 @@ function nextInvoiceNumber(existing: Invoice[]): string {
       if (Number.isFinite(seq) && seq > maxSeq) maxSeq = seq;
     }
   }
-  return `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+  let candidate = `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+  const existingNumbers = new Set(existing.map((i) => i.number));
+  if (existingNumbers.has(candidate)) {
+    let suffix = "A";
+    while (existingNumbers.has(`${candidate}-${suffix}`)) {
+      suffix = String.fromCharCode(suffix.charCodeAt(0) + 1);
+    }
+    candidate = `${candidate}-${suffix}`;
+  }
+  return candidate;
 }
 
 export default function InvoicingPage() {

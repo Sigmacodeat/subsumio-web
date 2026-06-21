@@ -64,7 +64,7 @@ export default function ResearchPage() {
   async function loadSavedResearch() {
     setSavedLoading(true);
     try {
-      const pages = await api.brain.listPages({ type: "legal_research", limit: 50 });
+      const pages = await api.brain.listPages({ type: "legal_research", limit: 200 });
       setSavedPages(pages);
       await setCache(OFFLINE_KEYS.research, pages);
     } catch {
