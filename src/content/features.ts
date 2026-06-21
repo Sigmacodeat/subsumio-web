@@ -24,6 +24,8 @@ export interface FeaturesContent {
   ctaTitle: string;
   ctaSub: string;
   ctaButton: string;
+  faqTitle: string;
+  faq: { q: string; a: string }[];
 }
 
 export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
@@ -224,6 +226,25 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ctaTitle: "Seen enough?",
     ctaSub: "Up and running in minutes. First answer the same day.",
     ctaButton: "Get started",
+    faqTitle: "Questions, answered",
+    faq: [
+      {
+        q: "Do I need to train or fine-tune a model?",
+        a: "No. Subsumio uses retrieval-augmented generation with your own knowledge graph. No model training, no fine-tuning — your data stays yours.",
+      },
+      {
+        q: "Can I use it with my existing tools?",
+        a: "Yes. Subsumio integrates via MCP (Model Context Protocol), REST API, and a full CLI. It works alongside Claude, Cursor, and any MCP-compatible agent.",
+      },
+      {
+        q: "How accurate are the citations?",
+        a: "Every claim in a synthesized answer links directly to its source page. You can verify any statement with one click — no black-box answers.",
+      },
+      {
+        q: "Is my data secure?",
+        a: "All data is encrypted at rest and in transit. Self-hosting is available. No data is shared with third parties or used for model training.",
+      },
+    ],
   },
   de: {
     metaTitle: "Subsumio Features — KI-Wissensgraph für Anwaltskanzleien",
@@ -422,5 +443,24 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ctaTitle: "Genug gesehen?",
     ctaSub: "In Minuten startklar. Erste Antwort am selben Tag.",
     ctaButton: "Jetzt starten",
+    faqTitle: "Fragen, beantwortet",
+    faq: [
+      {
+        q: "Muss ich ein Modell trainieren oder fine-tunen?",
+        a: "Nein. Subsumio nutzt Retrieval-augmented Generation mit Ihrem eigenen Wissensgraphen. Kein Modell-Training, kein Fine-Tuning — Ihre Daten bleiben Ihre Daten.",
+      },
+      {
+        q: "Funktioniert es mit meinen bestehenden Tools?",
+        a: "Ja. Subsumio integriert sich über MCP (Model Context Protocol), REST-API und eine vollwertige CLI. Es funktioniert alongside Claude, Cursor und jedem MCP-kompatiblen Agent.",
+      },
+      {
+        q: "Wie genau sind die Zitate?",
+        a: "Jede Aussage in einer synthetisierten Antwort verlinkt direkt auf ihre Quellseite. Jede Behauptung mit einem Klick verifizierbar — keine Black-Box-Antworten.",
+      },
+      {
+        q: "Sind meine Daten sicher?",
+        a: "Alle Daten werden verschlüsselt at-rest und in-transit. Self-Hosting ist verfügbar. Keine Daten werden an Dritte weitergegeben oder für Modell-Training verwendet.",
+      },
+    ],
   },
 };

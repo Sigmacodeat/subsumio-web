@@ -67,7 +67,7 @@ const ALLOWED_ATTRS = new Set([
   "cellspacing",
 ]);
 
-const DANGEROUS_URL = /^(javascript:|vbscript:|file:|data:(?!image\/(?:png|jpeg|gif|webp\b))/i;
+const DANGEROUS_URL = /^(javascript:|vbscript:|file:|data:(?!image\/(?:png|jpeg|gif|webp\b)))/i;
 
 export function sanitizeHtml(html: string): string {
   if (!html) return "";

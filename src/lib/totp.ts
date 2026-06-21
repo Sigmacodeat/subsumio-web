@@ -5,6 +5,8 @@
  * RFC 6238 / RFC 4226 kompatibel.
  */
 
+import { timingSafeEqual } from "node:crypto";
+
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; // Base32
 
 function base32Encode(bytes: Uint8Array): string {
@@ -89,7 +91,11 @@ export async function verifyTOTP(token: string, secret: string): Promise<boolean
   const now = Date.now() / 1000;
   for (const offset of [-1, 0, 1]) {
     const expected = await generateTOTP(secret, { time: now + offset * 30 });
-    if (expected === token) return true;
+    if (
+      expected.length === token.length &&
+      timingSafeEqual(Buffer.from(expected), Buffer.from(token))
+    )
+      return true;
   }
   return false;
 }
