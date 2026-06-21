@@ -365,7 +365,11 @@ function filterByMatterScope<T extends { slug?: string }>(
  * unchanged unless a deployment opts in. Statute text is public, so federating
  * it into reads is not a data-isolation concern; writes are unaffected.
  */
-const SHARED_READ_SOURCES: string[] = (process.env.GBRAIN_SHARED_READ_SOURCES ?? "")
+const SHARED_READ_SOURCES: string[] = (
+  process.env.SUBSUMIO_SHARED_READ_SOURCES ??
+  process.env.GBRAIN_SHARED_READ_SOURCES ??
+  ""
+)
   .split(",")
   .map((s) => s.trim())
   .filter((s) => s && SOURCE_RE.test(s));
@@ -1614,11 +1618,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const caseSlug = fields.case_slug?.trim();
         if (caseSlug) {
           try {
-            await invokeOp(engine, "put_page", {
-              slug,
-              frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
-              merge: true,
-            }, tenantSource);
+            await invokeOp(
+              engine,
+              "put_page",
+              {
+                slug,
+                frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
+                merge: true,
+              },
+              tenantSource
+            );
           } catch {
             /* best effort — the document is imported, stamping is enrichment */
           }
@@ -2022,12 +2031,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const queue = new MinionQueue(engine);
         const msg = await queue.sendMessage(jobId, payload, "user");
         if (!msg) {
-          res
-            .status(409)
-            .json({
-              error: "job_not_messageable",
-              message: "Job does not exist or is in a terminal state.",
-            });
+          res.status(409).json({
+            error: "job_not_messageable",
+            message: "Job does not exist or is in a terminal state.",
+          });
           return;
         }
 

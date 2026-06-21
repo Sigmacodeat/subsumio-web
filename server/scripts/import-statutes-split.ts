@@ -29,7 +29,8 @@ const args = Bun.argv.slice(2);
 const NO_EMBED = args.includes("--no-embed");
 const DRY = args.includes("--dry-run");
 const onlyIdx = args.indexOf("--only");
-const ONLY = onlyIdx !== -1 ? new Set(args[onlyIdx + 1].split(",").map((s) => s.trim().toLowerCase())) : null;
+const ONLY =
+  onlyIdx !== -1 ? new Set(args[onlyIdx + 1].split(",").map((s) => s.trim().toLowerCase())) : null;
 const dbIdx = args.indexOf("--db");
 const DB_OVERRIDE = dbIdx !== -1 ? args[dbIdx + 1] : null;
 // Target source. For the hosted SaaS the statutes live in ONE shared, public
@@ -43,7 +44,7 @@ const CORPUS = join(import.meta.dir, "..", "..", "law-corpus");
 interface StatuteFile {
   file: string; // relative to law-corpus/
   abbr: string; // slug segment, lowercase
-  jurisdiction: "at" | "de" | "ch";
+  jurisdiction: "at" | "de" | "ch" | "eu";
 }
 
 const FILES: StatuteFile[] = [
@@ -92,6 +93,14 @@ const FILES: StatuteFile[] = [
   { file: "ch/or.md", abbr: "or", jurisdiction: "ch" },
   { file: "ch/zgb.md", abbr: "zgb", jurisdiction: "ch" },
   { file: "ch/stgb.md", abbr: "stgb", jurisdiction: "ch" },
+  // EU
+  { file: "eu/dsgvo.md", abbr: "dsgvo", jurisdiction: "eu" },
+  { file: "eu/dsrl.md", abbr: "dsrl", jurisdiction: "eu" },
+  { file: "eu/eprivacy.md", abbr: "eprivacy", jurisdiction: "eu" },
+  { file: "eu/romi.md", abbr: "romi", jurisdiction: "eu" },
+  { file: "eu/romii.md", abbr: "romii", jurisdiction: "eu" },
+  { file: "eu/brusselsibis.md", abbr: "brusselsibis", jurisdiction: "eu" },
+  { file: "eu/euco.md", abbr: "euco", jurisdiction: "eu" },
 ];
 
 function yamlEscape(v: string): string {
@@ -101,8 +110,14 @@ function yamlEscape(v: string): string {
 /** Build the per-§ page markdown (frontmatter + heading + body). */
 function sectionPage(
   sf: StatuteFile,
-  meta: { abbreviation?: string; title?: string; version_date?: string; source_url?: string; license?: string },
-  section: { marker: "§" | "Art."; ref: string; title: string; body: string },
+  meta: {
+    abbreviation?: string;
+    title?: string;
+    version_date?: string;
+    source_url?: string;
+    license?: string;
+  },
+  section: { marker: "§" | "Art."; ref: string; title: string; body: string }
 ): string {
   const abbr = meta.abbreviation || sf.abbr.toUpperCase();
   const head = `${section.marker} ${section.ref} ${abbr}`;
@@ -118,17 +133,23 @@ function sectionPage(
   if (meta.version_date) fm.version_date = meta.version_date;
   if (meta.source_url) fm.source_url = meta.source_url;
   if (meta.license) fm.license = meta.license;
-  const front = `---\n${Object.entries(fm).map(([k, v]) => `${k}: ${yamlEscape(v)}`).join("\n")}\n---\n`;
+  const front = `---\n${Object.entries(fm)
+    .map(([k, v]) => `${k}: ${yamlEscape(v)}`)
+    .join("\n")}\n---\n`;
   return `${front}\n# ${heading}\n\n${section.body}\n`;
 }
 
 async function main() {
-  const selected = FILES.filter((f) => !ONLY || ONLY.has(f.abbr) || ONLY.has(f.file.replace("/", ":")));
+  const selected = FILES.filter(
+    (f) => !ONLY || ONLY.has(f.abbr) || ONLY.has(f.file.replace("/", ":"))
+  );
 
   console.log("═══════════════════════════════════════════════════════════");
   console.log("  SigmaBrain — Gesetze-Import (pro § / per-paragraph)");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`);
+  console.log(
+    `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`
+  );
   console.log("");
 
   // Lazy-load the engine only when actually importing — keeps --dry-run dependency-free.
@@ -151,7 +172,7 @@ async function main() {
       if (!cfg) {
         throw new Error(
           "No engine configured. Set DATABASE_URL (Postgres) or a PGLite database_path " +
-            "in ~/.gbrain/config.json, or pass --db <path> for a throwaway brain.",
+            "in ~/.gbrain/config.json, or pass --db <path> for a throwaway brain."
         );
       }
       engine = await createEngine(toEngineConfig(cfg));
@@ -163,7 +184,7 @@ async function main() {
     if (SOURCE_ID) {
       await engine.executeRaw(
         `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
-        [SOURCE_ID],
+        [SOURCE_ID]
       );
     }
     // expose for the loop
@@ -216,10 +237,14 @@ async function main() {
 
   console.log("");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  GESAMT: ${totalSections} §-Seiten${DRY ? " (dry-run)" : " importiert"}, ${totalErrors} Fehler`);
+  console.log(
+    `  GESAMT: ${totalSections} §-Seiten${DRY ? " (dry-run)" : " importiert"}, ${totalErrors} Fehler`
+  );
   console.log("═══════════════════════════════════════════════════════════");
   if (!DRY && NO_EMBED) {
-    console.log("⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pending.ts");
+    console.log(
+      "⚠️  Embedding übersprungen. Nachholen: bun run server/scripts/auto-embed-pending.ts"
+    );
   }
 }
 
