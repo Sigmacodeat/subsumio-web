@@ -655,7 +655,7 @@ async function executeTimeEntry(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Time entry failed",
+      error: "Time entry failed",
       display: {
         kind: "confirmation",
         title: "Zeiteintrag fehlgeschlagen",
@@ -724,7 +724,7 @@ async function executeClientUpdate(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Client update failed",
+      error: "Client update failed",
       display: {
         kind: "summary",
         title: "Mandanten-Update fehlgeschlagen",
@@ -774,7 +774,7 @@ async function executeMeetingTasks(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Meeting task extraction failed",
+      error: "Meeting task extraction failed",
       display: {
         kind: "summary",
         title: "Analyse fehlgeschlagen",
@@ -872,7 +872,7 @@ async function executeIntakeCreate(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Intake failed",
+      error: "Intake failed",
       display: {
         kind: "confirmation",
         title: "Mandantsaufnahme fehlgeschlagen",

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import type { BrainPage } from "@/lib/types";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { STATUS_TEXT, STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
@@ -166,10 +167,86 @@ export default function InvoicingPage() {
     loadKanzleiSettings()
       .then(setKanzlei)
       .catch(() => {});
-    loadInvoices();
-    loadCases();
+    loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [invoicePages, casePages] = await Promise.all([
+        api.brain.listPages({ type: "invoice", limit: 200 }).catch(() => [] as BrainPage[]),
+        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
+      ]);
+      const loadedInvoices: Invoice[] = invoicePages.map((p) => {
+        const fm = invoiceFrontmatter(p);
+        return {
+          id: p.slug,
+          number: fm.invoice_number || p.slug,
+          client: fm.client || "",
+          clientSlug: fm.client_slug,
+          clientAddress: fm.client_address,
+          caseNumber: fm.case_number,
+          date: fm.date || p.created_at,
+          dueDate: fm.due_date || "",
+          items: fm.items || [],
+          expenses: fm.expenses || [],
+          status: (fm.status as Invoice["status"]) || "draft",
+          subtotal: fm.subtotal || 0,
+          expenseTotal: fm.expense_total || 0,
+          advancePayment: fm.advance_payment || 0,
+          paidAmount: fm.paid_amount,
+          paidAt: fm.paid_at,
+          vatRate: fm.vat_rate ?? 0.19,
+          tax: fm.tax || 0,
+          total: fm.total || 0,
+          paymentTerms: fm.payment_terms,
+          bank: fm.bank,
+          notes: fm.notes,
+          reminderCount: fm.reminder_count,
+          reminderSentAt: fm.reminder_sent_at,
+          reminderFee: fm.reminder_fee,
+          invoiceType: fm.invoice_type,
+          parentInvoiceId: fm.parent_invoice_id,
+          caseSlugs: fm.case_slugs,
+        };
+      });
+      const loadedCases: InvoiceCase[] = casePages.map((p) => {
+        const fm = caseFrontmatter(p);
+        return {
+          slug: p.slug,
+          title: p.title,
+          caseNumber: fm.case_number || p.slug,
+          clientName: fm.client_name,
+          clientSlug: fm.client_slug,
+          timeEntries: fm.time_entries || [],
+          expenses: fm.expenses || [],
+        };
+      });
+      setInvoices(loadedInvoices);
+      setCases(loadedCases);
+      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
+        invoices: loadedInvoices,
+        cases: loadedCases,
+      });
+    } catch (err) {
+      console.error(
+        "[invoicing] loadAll failed:",
+        err instanceof Error ? err.message : String(err)
+      );
+      const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
+      if (cached) {
+        setInvoices(cached.invoices);
+        setCases(cached.cases);
+        setStatusMessage(t("inv.error_offline"));
+      } else {
+        setInvoices([]);
+        setCases([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadInvoices() {
     try {
@@ -208,7 +285,6 @@ export default function InvoicingPage() {
         };
       });
       setInvoices(loaded);
-      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices: loaded, cases });
     } catch (err) {
       console.error(
         "[invoicing] failed to load invoices:",
@@ -243,7 +319,6 @@ export default function InvoicingPage() {
         };
       });
       setCases(loadedCases);
-      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, { invoices, cases: loadedCases });
     } catch (err) {
       console.error(
         "[invoicing] failed to load cases:",

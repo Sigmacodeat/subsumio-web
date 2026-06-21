@@ -284,9 +284,10 @@ export default function DraftingPage() {
   async function submitForApproval(text: string) {
     const current = f.getValues();
     setSubmitting(true);
+    let draftSlug: string | null = null;
     try {
-      const slug = await saveDraftToBrain(text);
-      if (!slug) return;
+      draftSlug = await saveDraftToBrain(text);
+      if (!draftSlug) return;
       const actionSlug = `legal/approvals/${Date.now()}-${template.key}`;
       await api.brain.createPage({
         slug: actionSlug,
@@ -296,12 +297,19 @@ export default function DraftingPage() {
         frontmatter: agentActionFrontmatter({
           action_type: "document_finalize",
           proposed_by: "Schriftsatz-Generator (KI)",
-          target_slug: slug,
+          target_slug: draftSlug,
           summary: `${template.label}: ${current.title || "Entwurf"}${current.selectedCaseSlug ? ` · Akte ${current.selectedCaseSlug}` : ""}`,
         }),
       });
       setDraftSaved(`approval:${actionSlug}`);
     } catch (e) {
+      if (draftSlug) {
+        try {
+          await api.brain.deletePage(draftSlug);
+        } catch {
+          // Best-effort cleanup — draft may remain as orphan
+        }
+      }
       setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Einreichen");
     } finally {
       setSubmitting(false);

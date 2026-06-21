@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, CheckCircle2, LifeBuoy, Mail, Route, X } from "lucide-react";
@@ -57,6 +58,19 @@ const ROUTE_HELP: Array<{
 export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
   const pathname = usePathname();
   const { t } = useLang();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const routeHelp = ROUTE_HELP.find((item) => pathname.startsWith(item.match)) ?? {

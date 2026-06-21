@@ -21,6 +21,7 @@ export interface QueuedMutation {
   type: "createPage" | "updatePage" | "deletePage";
   payload: Record<string, unknown>;
   createdAt: string;
+  retries?: number;
 }
 
 type OfflineErrorReporter = (error: Error, context: string) => void;
@@ -185,6 +186,32 @@ export async function removeMutation(id: string): Promise<void> {
     });
   } catch (e) {
     report(e, "removeMutation");
+  }
+}
+
+export async function incrementMutationRetries(id: string): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(MUTATION_STORE, "readwrite");
+    const store = tx.objectStore(MUTATION_STORE);
+    const req = store.get(id);
+    await new Promise<void>((resolve) => {
+      req.onsuccess = () => {
+        const mut = req.result as QueuedMutation | undefined;
+        if (mut) {
+          mut.retries = (mut.retries ?? 0) + 1;
+          store.put(mut);
+        }
+        resolve();
+      };
+      req.onerror = () => resolve();
+    });
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (e) {
+    report(e, "incrementMutationRetries");
   }
 }
 

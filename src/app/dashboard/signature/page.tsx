@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
 import { PageHeader } from "@/components/dashboard/page-header";
+import type { BrainPage } from "@/lib/types";
 
 interface SignatureRequest {
   id: string;
@@ -83,6 +84,7 @@ const STATUS_CONFIG: Record<
 
 export default function SignaturePage() {
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
+  const [drafts, setDrafts] = useState<BrainPage[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +104,15 @@ export default function SignaturePage() {
     let cancelled = false;
     (async () => {
       try {
-        const pages = await api.brain.listPages({ type: "signature_request", limit: 100 });
+        const [sigPages, draftPages] = await Promise.all([
+          api.brain.listPages({ type: "signature_request", limit: 100 }),
+          api.brain
+            .listPages({ type: "legal_document", limit: 100 })
+            .catch(() => [] as BrainPage[]),
+        ]);
+        if (cancelled) return;
+        setDrafts(draftPages);
+        const pages = sigPages;
         if (cancelled) return;
         setRequests(
           pages.map((p) => {
@@ -276,6 +286,32 @@ export default function SignaturePage() {
           <h2 className="text-sm font-semibold text-indigo-600">
             Unterschriften-Anfrage erstellen
           </h2>
+          {drafts.length > 0 && (
+            <div>
+              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                Entwurf auswählen (optional)
+              </label>
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const draft = drafts.find((d) => d.slug === e.target.value);
+                    if (draft) {
+                      sigForm.setValue("documentName", draft.title);
+                    }
+                  }
+                }}
+                defaultValue=""
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-indigo-500/50 focus:outline-none"
+              >
+                <option value="">— Manuell eingeben —</option>
+                {drafts.map((d) => (
+                  <option key={d.slug} value={d.slug}>
+                    {d.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">

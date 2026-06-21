@@ -1201,6 +1201,24 @@ pre {
   border-radius: 4px;
 }
 
+/* Mobile: eliminate 300ms tap delay and double-tap-to-zoom on interactive elements.
+   Also prevents accidental text selection on rapid taps. */
+[data-app="dashboard"] button,
+[data-app="dashboard"] a,
+[data-app="dashboard"] [role="button"],
+[data-app="dashboard"] [role="tab"] {
+  touch-action: manipulation;
+}
+
+/* Mobile: smooth momentum scrolling for all scroll containers (iOS < 15 compatibility). */
+[data-app="dashboard"] .overflow-y-auto,
+[data-app="dashboard"] .overflow-auto,
+[data-app="dashboard"] .overflow-x-auto,
+[data-app="dashboard"] [role="listbox"] {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* Accessibility: respect users who prefer reduced motion.
    Decorative animations stop; content stays fully usable. */
 @media (prefers-reduced-motion: reduce) {

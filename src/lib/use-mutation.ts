@@ -2,7 +2,16 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { api } from "./api";
-import { isOnline, enqueueMutation, getPendingMutations, removeMutation, setOfflineErrorReporter } from "./offline-store";
+import {
+  isOnline,
+  enqueueMutation,
+  getPendingMutations,
+  removeMutation,
+  incrementMutationRetries,
+  setOfflineErrorReporter,
+} from "./offline-store";
+
+const MAX_RETRIES = 5;
 
 interface MutationState {
   pendingCount: number;
@@ -11,14 +20,20 @@ interface MutationState {
 }
 
 export function useMutationQueue() {
-  const [state, setState] = useState<MutationState>({ pendingCount: 0, syncing: false, lastError: null });
+  const [state, setState] = useState<MutationState>({
+    pendingCount: 0,
+    syncing: false,
+    lastError: null,
+  });
 
   // Wire IndexedDB errors into the hook's lastError state
   useEffect(() => {
     setOfflineErrorReporter((err, context) => {
       setState((s) => ({ ...s, lastError: `[${context}] ${err.message}` }));
     });
-    return () => { setOfflineErrorReporter(null); };
+    return () => {
+      setOfflineErrorReporter(null);
+    };
   }, []);
 
   const refreshPending = useCallback(async () => {
@@ -32,20 +47,53 @@ export function useMutationQueue() {
     try {
       const pending = await getPendingMutations();
       for (const mut of pending) {
+        const retryCount = mut.retries ?? 0;
+        if (retryCount >= MAX_RETRIES) {
+          console.warn(`[mutation-sync] dropping ${mut.id} after ${MAX_RETRIES} retries`);
+          await removeMutation(mut.id);
+          continue;
+        }
         try {
           if (mut.type === "createPage") {
-            await api.brain.createPage(mut.payload as { slug: string; title: string; type: string; content?: string; frontmatter?: Record<string, unknown> });
+            await api.brain.createPage(
+              mut.payload as {
+                slug: string;
+                title: string;
+                type: string;
+                content?: string;
+                frontmatter?: Record<string, unknown>;
+              }
+            );
           } else if (mut.type === "updatePage") {
-            await api.brain.updatePage(mut.payload as { slug: string; title?: string; content?: string; frontmatter?: Record<string, unknown> });
+            await api.brain.updatePage(
+              mut.payload as {
+                slug: string;
+                title?: string;
+                content?: string;
+                frontmatter?: Record<string, unknown>;
+              }
+            );
           } else if (mut.type === "deletePage") {
             const slug = typeof mut.payload.slug === "string" ? mut.payload.slug : "";
             if (!slug) throw new Error("deletePage mutation missing slug");
-            await api.brain.deletePage(slug);
+            try {
+              await api.brain.deletePage(slug);
+            } catch (err) {
+              if (err instanceof Error && err.message.includes("404")) {
+                // Tombstone: page already deleted — treat as success
+              } else {
+                throw err;
+              }
+            }
           }
           await removeMutation(mut.id);
         } catch (err) {
-          console.error("[mutation-sync] failed for", mut.id, err instanceof Error ? err.message : String(err));
-          // Keep in queue for retry
+          console.error(
+            "[mutation-sync] failed for",
+            mut.id,
+            err instanceof Error ? err.message : String(err)
+          );
+          await incrementMutationRetries(mut.id);
         }
       }
       await refreshPending();
@@ -66,21 +114,24 @@ export function useMutationQueue() {
     return () => window.removeEventListener("online", onOnline);
   }, [refreshPending, syncPending]);
 
-  const mutate = useCallback(async <T>(
-    type: "createPage" | "updatePage" | "deletePage",
-    payload: Record<string, unknown>,
-    onlineFetcher: () => Promise<T>
-  ): Promise<T | null> => {
-    if (isOnline()) {
-      const result = await onlineFetcher();
+  const mutate = useCallback(
+    async <T>(
+      type: "createPage" | "updatePage" | "deletePage",
+      payload: Record<string, unknown>,
+      onlineFetcher: () => Promise<T>
+    ): Promise<T | null> => {
+      if (isOnline()) {
+        const result = await onlineFetcher();
+        await refreshPending();
+        return result;
+      }
+      // Offline: enqueue
+      await enqueueMutation({ type, payload });
       await refreshPending();
-      return result;
-    }
-    // Offline: enqueue
-    await enqueueMutation({ type, payload });
-    await refreshPending();
-    return null;
-  }, [refreshPending]);
+      return null;
+    },
+    [refreshPending]
+  );
 
   return { ...state, syncPending, mutate, refreshPending };
 }

@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Calculator, Euro, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Calculator,
+  Euro,
+  Info,
+  AlertTriangle,
+  CheckCircle2,
+  Save,
+  Loader2,
+  Briefcase,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { api } from "@/lib/api";
+import { caseFrontmatter, type ExpenseEntry } from "@/lib/legal-types";
+import type { BrainPage } from "@/lib/types";
 
 // RVG § 13 Abs. 1 i.d.F. KostBRÄG 2025 (Deutschland, gültig ab 01.06.2025).
 // Die einfache (1,0) Gebühr wird per Stufenformel berechnet, nicht aus einer
@@ -68,6 +80,52 @@ export default function CostCalculatorPage() {
   const [jurisdiction, setJurisdiction] = useState<"de" | "at">("de");
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [cases, setCases] = useState<BrainPage[]>([]);
+  const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.brain
+      .listPages({ type: "legal_case", limit: 200 })
+      .then(setCases)
+      .catch(() => setCases([]));
+  }, []);
+
+  async function saveToCase() {
+    if (!result || !selectedCaseSlug) return;
+    setSaving(true);
+    setSaveNotice(null);
+    try {
+      const page = await api.brain.getPage(selectedCaseSlug);
+      const fm = caseFrontmatter(page);
+      const entry: ExpenseEntry = {
+        id: `cost-calc-${Date.now()}`,
+        description: `Kostenschätzung (${result.jurisdiction === "de" ? "RVG" : "RATG"}) — Streitwert ${result.streitwert.toLocaleString("de-DE")} €`,
+        date: new Date().toISOString(),
+        amount: result.total,
+        billable: false,
+      };
+      const updatedExpenses = [...(fm.expenses ?? []), entry];
+      await api.brain.updatePage({
+        slug: selectedCaseSlug,
+        frontmatter: {
+          ...fm,
+          expenses: updatedExpenses,
+          estimated_value: {
+            min: result.total,
+            max: result.total,
+            currency: "EUR",
+          },
+        },
+      });
+      setSaveNotice("Kostenschätzung wurde in der Akte gespeichert.");
+    } catch (e) {
+      setSaveNotice(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Speichern.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function calculate() {
     const sw = parseFloat(streitwert.replace(/[^0-9.,]/g, "").replace(",", "."));
@@ -164,6 +222,31 @@ export default function CostCalculatorPage() {
           <Calculator size={16} />
           Berechnen
         </Button>
+
+        {/* Case selector */}
+        {cases.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+              Mit Akte verknüpfen
+            </label>
+            <select
+              value={selectedCaseSlug}
+              onChange={(e) => setSelectedCaseSlug(e.target.value)}
+              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            >
+              <option value="">Keine Akte</option>
+              {cases.map((c) => {
+                const fm = caseFrontmatter(c);
+                return (
+                  <option key={c.slug} value={c.slug}>
+                    {fm.case_number ? `${fm.case_number} - ` : ""}
+                    {c.title}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Result */}
@@ -238,6 +321,31 @@ export default function CostCalculatorPage() {
               </span>
             </div>
           </div>
+
+          {/* Save to case */}
+          {selectedCaseSlug && (
+            <div className="flex items-center gap-3 border-t border-[color:var(--ds-border)] pt-3">
+              <Button
+                onClick={saveToCase}
+                disabled={saving}
+                variant="primary"
+                className="brand-bg gap-2 text-sm text-white"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                In Akte speichern
+              </Button>
+              {saveNotice && (
+                <span
+                  className={cn(
+                    "text-xs",
+                    saveNotice.startsWith("Fehler:") ? "text-red-600" : "text-emerald-600"
+                  )}
+                >
+                  {saveNotice}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

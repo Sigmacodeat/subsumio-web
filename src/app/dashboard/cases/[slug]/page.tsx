@@ -572,12 +572,31 @@ export default function CaseDetailPage() {
         version: (caseData.version || 0) + 1,
       };
       if (isOnline()) {
-        await api.brain.updatePage({
-          slug: caseData.slug,
-          title: caseData.title,
-          content: caseData.facts,
-          frontmatter,
+        const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
+        const res = await csrfFetch(`/api/pages/${slugPath}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": String(caseData.version || 0),
+          },
+          body: JSON.stringify({
+            title: caseData.title,
+            content: caseData.facts,
+            frontmatter,
+          }),
         });
+        if (res.status === 409) {
+          const data = await res.json().catch(() => ({}));
+          setConflictWarning(
+            `Die Akte wurde zwischenzeitlich von einem anderen Nutzer bearbeitet (Version ${data.currentVersion ?? "unbekannt"}). Bitte lade die Seite neu, bevor du weitere Änderungen speicherst.`
+          );
+          setSaveError(null);
+          return;
+        }
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `HTTP ${res.status}`);
+        }
       } else {
         await enqueueMutation({
           type: "updatePage",

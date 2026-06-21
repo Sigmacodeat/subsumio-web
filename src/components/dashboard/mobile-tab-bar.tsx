@@ -120,7 +120,7 @@ export function MobileTabBar({
         aria-label="Mehr Aktionen"
         aria-modal="true"
       >
-        <div className="rounded-t-2xl border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
+        <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
           {/* Grab handle */}
           <div className="flex justify-center pt-2.5 pb-1">
             <div className="h-1 w-10 rounded-full bg-[color:var(--ds-border)]" />
