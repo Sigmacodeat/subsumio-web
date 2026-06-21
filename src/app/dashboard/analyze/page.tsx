@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import type { DocumentAnalysisResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { CitationPanel } from "@/components/legal/CitationPanel";
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -29,6 +30,7 @@ const SEVERITY_STYLES: Record<string, string> = {
 };
 
 export default function AnalyzePage() {
+  const { t } = useLang();
   const [slug, setSlug] = useState("");
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"slug" | "text">("slug");
@@ -46,7 +48,7 @@ export default function AnalyzePage() {
       );
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analyse fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("analyze.error_failed"));
     } finally {
       setLoading(false);
     }
@@ -57,9 +59,12 @@ export default function AnalyzePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Dokument-Analyse"
-        description="KI-gestütztes Issue-Spotting mit Quellenprüfung — erkennt Parteien, Fristen, Risiken und zitiert nur verifizierte Normen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Dokument-Analyse" }]}
+        title={t("analyze.title")}
+        description={t("analyze.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("analyze.breadcrumb") },
+        ]}
       />
 
       {/* Mode toggle */}
@@ -73,7 +78,7 @@ export default function AnalyzePage() {
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
           )}
         >
-          Aus Vault (Slug)
+          {t("analyze.mode_slug")}
         </button>
         <button
           onClick={() => setMode("text")}
@@ -84,7 +89,7 @@ export default function AnalyzePage() {
               : "border border-transparent text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
           )}
         >
-          Direkter Text
+          {t("analyze.mode_text")}
         </button>
       </div>
 
@@ -96,18 +101,17 @@ export default function AnalyzePage() {
               htmlFor="analyze-slug"
               className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
             >
-              Dokument-Slug
+              {t("analyze.slug_label")}
             </label>
             <Input
               id="analyze-slug"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="z. B. mietvertrag-mueller-2026"
+              placeholder={t("analyze.slug_placeholder")}
               className="mt-1.5 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
             />
             <p className="mt-1.5 text-xs text-[color:var(--ds-text-muted)]">
-              Das Dokument muss im Brain hochgeladen sein. Die Analyse wird mit verifizierten Normen
-              aus dem Law-Corpus grounded.
+              {t("analyze.slug_hint")}
             </p>
           </div>
         ) : (
@@ -116,13 +120,13 @@ export default function AnalyzePage() {
               htmlFor="analyze-text"
               className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
             >
-              Dokumenttext
+              {t("analyze.text_label")}
             </label>
             <textarea
               id="analyze-text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Dokumenttext hier einfügen…"
+              placeholder={t("analyze.text_placeholder")}
               className="mt-1.5 h-48 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
             />
           </div>
@@ -133,7 +137,7 @@ export default function AnalyzePage() {
           className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <FileSearch size={15} />}
-          Analysieren
+          {t("analyze.run_btn")}
         </Button>
       </div>
 
@@ -160,7 +164,7 @@ export default function AnalyzePage() {
                   </Badge>
                   {result.type_confidence !== undefined && (
                     <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      Konfidenz: {Math.round(result.type_confidence * 100)}%
+                      {t("analyze.confidence")}: {Math.round(result.type_confidence * 100)}%
                     </span>
                   )}
                 </div>
@@ -171,7 +175,7 @@ export default function AnalyzePage() {
                   variant="default"
                   className="shrink-0 border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
                 >
-                  Anwaltliche Prüfung erforderlich
+                  {t("analyze.review_required")}
                 </Badge>
               )}
             </div>
@@ -181,7 +185,7 @@ export default function AnalyzePage() {
           {result.parties.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <Users size={14} /> Beteiligte
+                <Users size={14} /> {t("analyze.parties")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {result.parties.map((p, i) => (
@@ -202,7 +206,7 @@ export default function AnalyzePage() {
           {(result.key_dates?.length || result.deadlines?.length) && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <CalendarClock size={14} /> Fristen & Daten
+                <CalendarClock size={14} /> {t("analyze.deadlines")}
               </h3>
               <div className="space-y-2">
                 {(result.deadlines ?? result.key_dates ?? []).map((d, i) => {
@@ -219,7 +223,7 @@ export default function AnalyzePage() {
                           variant="default"
                           className="border-red-500/20 bg-red-500/10 text-xs text-red-600"
                         >
-                          Kritisch
+                          {t("analyze.critical")}
                         </Badge>
                       )}
                     </div>
@@ -233,7 +237,7 @@ export default function AnalyzePage() {
           {result.issues && result.issues.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <AlertTriangle size={14} /> Issues ({result.issues.length})
+                <AlertTriangle size={14} /> {t("analyze.issues")} ({result.issues.length})
               </h3>
               <div className="space-y-3">
                 {result.issues.map((issue, i) => (
@@ -268,7 +272,7 @@ export default function AnalyzePage() {
           {result.cited_statutes?.length || result.relevant_statutes?.length ? (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <Scale size={14} /> Normen
+                <Scale size={14} /> {t("analyze.statutes")}
               </h3>
               {result.cited_statutes && result.cited_statutes.length > 0 ? (
                 <div className="space-y-1.5">
@@ -289,8 +293,9 @@ export default function AnalyzePage() {
                   ))}
                   {result._grounding && (
                     <p className="mt-2 text-xs text-[color:var(--ds-text-muted)]">
-                      Corpus-Grounding: {result._grounding.citations_verified} verifiziert,{" "}
-                      {result._grounding.citations_unverified} nicht im Corpus gefunden.
+                      {t("analyze.grounding_info")}: {result._grounding.citations_verified}{" "}
+                      {t("analyze.grounding_verified")}, {result._grounding.citations_unverified}{" "}
+                      {t("analyze.grounding_unverified")}
                     </p>
                   )}
                 </div>
@@ -330,7 +335,7 @@ export default function AnalyzePage() {
           {(result.action_items ?? result.recommended_actions ?? []).length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <ListChecks size={14} /> Empfohlene nächste Schritte
+                <ListChecks size={14} /> {t("analyze.actions")}
               </h3>
               <ul className="space-y-1.5">
                 {(result.action_items ?? result.recommended_actions ?? []).map((a, i) => (
@@ -349,7 +354,7 @@ export default function AnalyzePage() {
           {/* Warnings */}
           {result.warnings && result.warnings.length > 0 && (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              <p className="mb-1 text-xs font-medium text-amber-600">Hinweise</p>
+              <p className="mb-1 text-xs font-medium text-amber-600">{t("analyze.warnings")}</p>
               {result.warnings.map((w, i) => (
                 <p key={i} className="text-xs text-amber-600/80">
                   {w}

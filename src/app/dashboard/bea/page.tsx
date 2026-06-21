@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import {
   createFilingPackage,
   submitForApproval,
@@ -38,6 +39,7 @@ interface BeaImported {
 }
 
 export default function BeaPage() {
+  const { t } = useLang();
   const [drafts, setDrafts] = useState<BeaDraft[]>([]);
   const [imported, setImported] = useState<BeaImported[]>([]);
   const [filings, setFilings] = useState<Record<string, FilingPackage>>({});
@@ -96,8 +98,7 @@ export default function BeaPage() {
           })
         );
       } catch (e) {
-        if (!cancelled)
-          setLoadError(e instanceof Error ? e.message : "beA-Daten konnten nicht geladen werden.");
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : t("bea.error_load"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -109,7 +110,7 @@ export default function BeaPage() {
 
   async function saveDraft() {
     if (!subject.trim() || !recipient.trim()) {
-      setStatusMessage("Betreff und Empfänger sind erforderlich.");
+      setStatusMessage(t("bea.required_fields"));
       return;
     }
     setSaving(true);
@@ -150,10 +151,10 @@ export default function BeaPage() {
       setCaseNumber("");
       setBody("");
       setAiGenerated(false);
-      setStatusMessage("Entwurf im Brain gespeichert.");
+      setStatusMessage(t("bea.draft_saved"));
     } catch (e) {
       setStatusMessage(
-        e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen."
+        e instanceof Error ? `${t("bea.save_failed")} ${e.message}` : t("bea.save_failed")
       );
     } finally {
       setSaving(false);
@@ -183,11 +184,9 @@ export default function BeaPage() {
         created_by: "dashboard-user",
       });
       await saveFilingPackage(draft.slug, pkg);
-      setStatusMessage("Filing-Paket angelegt (Status: Entwurf).");
+      setStatusMessage(t("bea.filing_created"));
     } catch (e) {
-      setStatusMessage(
-        e instanceof Error ? e.message : "Filing-Paket konnte nicht angelegt werden."
-      );
+      setStatusMessage(e instanceof Error ? e.message : t("bea.filing_create_failed"));
     } finally {
       setFilingBusy(null);
     }
@@ -208,9 +207,9 @@ export default function BeaPage() {
             ? approveFiling(pkg, "dashboard-user")
             : cancelFiling(pkg, "dashboard-user", "Manuell verworfen im Dashboard");
       await saveFilingPackage(draftSlug, next);
-      setStatusMessage(`Filing-Paket-Status: ${getFilingStatusLabel(next.status)}.`);
+      setStatusMessage(`${t("bea.filing_status")} ${getFilingStatusLabel(next.status)}.`);
     } catch (e) {
-      setStatusMessage(e instanceof Error ? e.message : "Status konnte nicht aktualisiert werden.");
+      setStatusMessage(e instanceof Error ? e.message : t("bea.filing_update_failed"));
     } finally {
       setFilingBusy(null);
     }
@@ -219,9 +218,12 @@ export default function BeaPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="beA — elektronischer Rechtsverkehr"
-        description="Nachrichten-Import und Entwurfsvorbereitung"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "beA" }]}
+        title={t("bea.title")}
+        description={t("bea.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("bea.breadcrumb") },
+        ]}
         actions={
           <Button
             variant="primary"
@@ -230,7 +232,7 @@ export default function BeaPage() {
             aria-expanded={showCompose}
           >
             <FileText size={14} aria-hidden="true" />
-            Entwurf erstellen
+            {t("bea.compose")}
           </Button>
         }
       />
@@ -242,14 +244,8 @@ export default function BeaPage() {
       >
         <Info size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
         <div className="text-sm text-amber-600">
-          <p className="mb-1 font-medium">Kein Versand über Subsumio</p>
-          <p className="text-xs leading-relaxed">
-            Der beA-Versand erfordert eine zertifizierte beA-Software mit Anwalts-Signaturkarte.
-            Subsumio <strong>versendet keine Nachrichten</strong> — es importiert beA-Nachrichten
-            via XML-Export (Konnektor <code className="font-mono">bea-import</code>) und speichert
-            Entwürfe im Brain, die Sie in Ihrer beA-Software (z. B. beA-Webclient, RA-MICRO)
-            versenden.
-          </p>
+          <p className="mb-1 font-medium">{t("bea.no_send_title")}</p>
+          <p className="text-xs leading-relaxed">{t("bea.no_send_desc")}</p>
         </div>
       </div>
 
@@ -273,20 +269,20 @@ export default function BeaPage() {
             void saveDraft();
           }}
         >
-          <h2 className="text-sm font-semibold text-blue-600">Neuer beA-Entwurf</h2>
+          <h2 className="text-sm font-semibold text-blue-600">{t("bea.compose_title")}</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="bea-recipient"
                 className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
               >
-                Empfänger (Gericht/Behörde) *
+                {t("bea.recipient_label")}
               </label>
               <input
                 id="bea-recipient"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
-                placeholder="z. B. Amtsgericht München"
+                placeholder={t("bea.recipient_placeholder")}
                 required
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
               />
@@ -296,7 +292,7 @@ export default function BeaPage() {
                 htmlFor="bea-case"
                 className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
               >
-                Aktenzeichen
+                {t("bea.case_label")}
               </label>
               <input
                 id="bea-case"
@@ -312,13 +308,13 @@ export default function BeaPage() {
               htmlFor="bea-subject"
               className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
             >
-              Betreff *
+              {t("bea.subject_label")}
             </label>
             <input
               id="bea-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="z. B. Klageerwiderung"
+              placeholder={t("bea.subject_placeholder")}
               required
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             />
@@ -328,14 +324,14 @@ export default function BeaPage() {
               htmlFor="bea-body"
               className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
             >
-              Nachrichtentext
+              {t("bea.body_label")}
             </label>
             <textarea
               id="bea-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={6}
-              placeholder="Nachrichtentext…"
+              placeholder={t("bea.body_placeholder")}
               className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             />
           </div>
@@ -350,7 +346,7 @@ export default function BeaPage() {
               className="mt-0.5 accent-amber-500"
             />
             <span className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              Inhalt KI-generiert — als „{AI_BADGE_LABEL}&quot; kennzeichnen (EU AI Act Art. 50)
+              {t("bea.ai_label").replace("{label}", AI_BADGE_LABEL)}
             </span>
           </label>
           <Button
@@ -364,7 +360,7 @@ export default function BeaPage() {
             ) : (
               <Save size={14} aria-hidden="true" />
             )}
-            Als Entwurf im Brain speichern
+            {t("bea.save_draft")}
           </Button>
         </form>
       )}
@@ -373,7 +369,7 @@ export default function BeaPage() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="beA-Nachrichten werden geladen"
+          aria-label={t("bea.loading_aria")}
         >
           <Loader2 size={24} className="animate-spin text-blue-600" aria-hidden="true" />
         </div>
@@ -385,12 +381,12 @@ export default function BeaPage() {
               id="bea-drafts-heading"
               className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
             >
-              Entwürfe ({drafts.length})
+              {t("bea.drafts")} ({drafts.length})
             </h2>
             <div className="space-y-2">
               {drafts.length === 0 ? (
                 <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">
-                  Keine Entwürfe vorhanden.
+                  {t("bea.no_drafts")}
                 </p>
               ) : (
                 drafts.map((msg) => (
@@ -413,7 +409,7 @@ export default function BeaPage() {
                           variant="default"
                           className="border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
                         >
-                          Entwurf
+                          {t("bea.draft_badge")}
                         </Badge>
                         {msg.aiGenerated && (
                           <Badge
@@ -425,8 +421,8 @@ export default function BeaPage() {
                         )}
                       </div>
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                        An: {msg.recipient} {msg.caseNumber && `· Akte ${msg.caseNumber}`} ·{" "}
-                        {msg.createdAt}
+                        {t("bea.to")} {msg.recipient}{" "}
+                        {msg.caseNumber && `· ${t("bea.case")} ${msg.caseNumber}`} · {msg.createdAt}
                       </div>
                       {/* Filing-Paket: State-Machine aus efiling-architecture.ts.
                           "Versand" bleibt bewusst aus (siehe Hinweisbanner oben) —
@@ -438,7 +434,7 @@ export default function BeaPage() {
                               variant="default"
                               className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
                             >
-                              Filing: {getFilingStatusLabel(filings[msg.slug].status)}
+                              {t("bea.filing")} {getFilingStatusLabel(filings[msg.slug].status)}
                             </Badge>
                             {filings[msg.slug].status === "draft" && (
                               <Button
@@ -447,7 +443,7 @@ export default function BeaPage() {
                                 disabled={filingBusy === msg.slug}
                                 onClick={() => void advanceFiling(msg.slug, "submit")}
                               >
-                                Zur Freigabe einreichen
+                                {t("bea.submit_for_approval")}
                               </Button>
                             )}
                             {filings[msg.slug].status === "pending_approval" && (
@@ -458,7 +454,7 @@ export default function BeaPage() {
                                   disabled={filingBusy === msg.slug}
                                   onClick={() => void advanceFiling(msg.slug, "approve")}
                                 >
-                                  Freigeben
+                                  {t("bea.approve")}
                                 </Button>
                                 <Button
                                   variant="secondary"
@@ -466,13 +462,13 @@ export default function BeaPage() {
                                   disabled={filingBusy === msg.slug}
                                   onClick={() => void advanceFiling(msg.slug, "cancel")}
                                 >
-                                  Verwerfen
+                                  {t("bea.discard")}
                                 </Button>
                               </>
                             )}
                             {filings[msg.slug].status === "approved" && (
                               <span className="text-xs text-[color:var(--ds-text-muted)]">
-                                Freigegeben — Versand erfolgt in Ihrer beA-Software.
+                                {t("bea.approved_send_hint")}
                               </span>
                             )}
                           </>
@@ -484,7 +480,7 @@ export default function BeaPage() {
                             onClick={() => void createPackageForDraft(msg)}
                           >
                             <Send size={12} aria-hidden="true" />
-                            Filing-Paket anlegen
+                            {t("bea.create_filing")}
                           </Button>
                         )}
                       </div>
@@ -501,14 +497,14 @@ export default function BeaPage() {
               id="bea-imported-heading"
               className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]"
             >
-              Importierte Nachrichten ({imported.length})
+              {t("bea.imported_messages")} ({imported.length})
             </h2>
             <div className="space-y-2">
               {imported.length === 0 ? (
                 <div className="space-y-1 py-4 text-sm text-[color:var(--ds-text-muted)]">
-                  <p>Keine importierten beA-Nachrichten.</p>
+                  <p>{t("bea.no_imported")}</p>
                   <p className="text-xs">
-                    Import einrichten:{" "}
+                    {t("bea.import_hint")}{" "}
                     <code className="font-mono text-blue-600">
                       subsumio connector add bea-import --watch-dir ~/Downloads/bea
                     </code>
@@ -531,7 +527,7 @@ export default function BeaPage() {
                         {msg.subject}
                       </span>
                       <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                        Von: {msg.sender} · {msg.sentDate}
+                        {t("bea.from")} {msg.sender} · {msg.sentDate}
                       </div>
                     </div>
                   </div>
