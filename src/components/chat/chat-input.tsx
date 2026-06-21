@@ -260,7 +260,7 @@ export function ChatInput({
             <ModelSelector
               selectedModelId={modelOverride}
               onSelect={onModelChange}
-              className="[&>button]:rounded-lg [&>button]:border-0 [&>button]:bg-[color:var(--ds-surface-2)] [&>button]:px-2 [&>button]:py-1 [&>button]:text-[11px]"
+              variant="compact"
             />
           )}
         </div>
