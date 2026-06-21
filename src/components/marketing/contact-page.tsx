@@ -5,10 +5,7 @@ import { Mail, MessageSquare, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
-import {
-  Section,
-  SectionHeading,
-} from "./chrome";
+import { Section, SectionHeading } from "./chrome";
 
 const CONTENT = {
   en: {
@@ -99,7 +96,6 @@ export default function ContactPage({ lang }: { lang: Lang }) {
   const c = CONTENT[lang];
   return (
     <>
-
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span
@@ -108,7 +104,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
           >
-            <span className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full" />
+            <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {c.badge}
           </motion.span>
           <motion.h1
@@ -242,7 +238,6 @@ export default function ContactPage({ lang }: { lang: Lang }) {
           </Link>
         </motion.div>
       </Section>
-
     </>
   );
 }

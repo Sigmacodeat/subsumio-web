@@ -217,7 +217,7 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
         <motion.div {...reveal(0)}>
           <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--brand-secondary)]" />{" "}
+            <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />{" "}
             {c.waEyebrow}
           </span>
           <h2 className="mb-4 text-3xl leading-tight font-black [color:var(--mk-text)] md:text-4xl">

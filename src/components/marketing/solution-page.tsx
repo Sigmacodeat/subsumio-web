@@ -6,18 +6,11 @@ import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import type { SolutionContent } from "@/content/solutions";
-import {
-  Section,
-  SectionHeading,
-  ICONS,
-  accentTile,
-  type Tone,
-} from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile, type Tone } from "./chrome";
 
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
   return (
     <>
-
       {/* Hero */}
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -27,7 +20,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full" />
+            <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {content.badge}
           </motion.span>
           <motion.h1
@@ -209,7 +202,6 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
           </Link>
         </motion.div>
       </Section>
-
     </>
   );
 }

@@ -177,7 +177,9 @@
   --mk-card-shadow:
     0 1px 2px rgba(15, 15, 30, 0.05), 0 8px 24px rgba(15, 15, 30, 0.07),
     0 1px 0 rgba(255, 255, 255, 0.7) inset;
-  --brand-text: var(--brand-primary);
+  --brand-text: var(
+    --signal-blue
+  ); /* was --brand-primary (#2f6bff → 3.12:1 fail on light). #1e40af → 7.29:1 AA ✓ */
   color-scheme: light;
 }
 [data-tone="slate"] {
@@ -676,8 +678,32 @@ body {
   background-clip: text;
 }
 
+/* Light-tone override: use darker brand colors for AA contrast on light bg.
+   Default --brand-gradient-from (#20d3c2) is ~1.5:1 on #eef0f4 — fail.
+   Override to --signal-blue shades which achieve 7:1+ on light. */
+[data-tone="light"] .gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--signal-blue, #1e40af) 0%,
+    var(--brand-primary, #2f6bff) 50%,
+    var(--signal-blue, #1e40af) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .gradient-text-gold {
   background: linear-gradient(135deg, var(--color-warning) 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light-tone override: gold gradient (#fbbf24→#f59e0b) is ~2:1 on light — fail.
+   Use darker amber shades for AA. */
+[data-tone="light"] .gradient-text-gold {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -839,6 +865,27 @@ pre {
   background-clip: text;
 }
 
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--signal-blue, #1e40af) 0%,
+    var(--brand-primary, #2f6bff) 50%,
+    var(--signal-blue, #1e40af) 100%
+  );
+  background-size: 200% 200%;
+  animation: gradient-border-spin 5s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-text-animated,
+  .hero-gradient-text {
+    animation: none;
+  }
+}
+
 /* Clip-path reveal — baseline for CSS-only usage (framer handles the motion) */
 .clip-reveal {
   clip-path: inset(0% 0% 0% 0%);
@@ -853,6 +900,29 @@ pre {
   to {
     transform: scaleX(1);
     transform-origin: left;
+  }
+}
+
+/* Badge pulse — consistent with Framer Motion hero badge (scale + opacity, 2s) */
+@keyframes badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+.badge-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-pulse {
+    animation: none;
   }
 }
 
@@ -996,6 +1066,19 @@ pre {
 }
 [data-app="dashboard"] .widget-fade-in {
   animation: widget-fade-in 0.3s ease-out both;
+}
+
+/* Accessibility: global focus-visible ring for dashboard interactive elements.
+   Ensures WCAG 2.2 AA keyboard focus indicator on all raw <button>, <a>, etc.
+   that don't have explicit focus-visible Tailwind classes. */
+[data-app="dashboard"] button:focus-visible,
+[data-app="dashboard"] a:focus-visible,
+[data-app="dashboard"] input:focus-visible,
+[data-app="dashboard"] select:focus-visible,
+[data-app="dashboard"] textarea:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Accessibility: respect users who prefer reduced motion.

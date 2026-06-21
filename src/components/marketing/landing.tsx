@@ -6,7 +6,7 @@
 // decorative motion respects prefers-reduced-motion via MotionConfig.
 
 import Link from "next/link";
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
@@ -16,13 +16,8 @@ import LiveDemo from "./live-demo";
 import DashboardReel from "./dashboard-reel";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
-import {
-  SectionHeading,
-  FaqList,
-  ICONS,
-  accentTile,
-} from "./chrome";
-import { GlowCard, StaggerContainer, StaggerItem, EASE } from "./motion-system";
+import { SectionHeading, FaqList, ICONS, accentTile } from "./chrome";
+import { GlowCard, StaggerContainer, StaggerItem, EASE, ScrollProgress } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -50,20 +45,68 @@ const heroItem: Variants = {
   },
 };
 
+const h1Container: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.06 },
+  },
+};
+
+const h1Word: Variants = {
+  hidden: { clipPath: "inset(100% 0% 0% 0%)", opacity: 0 },
+  visible: {
+    clipPath: "inset(0% 0% 0% 0%)",
+    opacity: 1,
+    transition: { duration: 0.6, ease: EASE.dramatic },
+  },
+};
+
+const trustContainer: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const trustItem: Variants = {
+  hidden: { opacity: 0, y: 4 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE.out } },
+};
+
 export default function LandingPage({ lang }: { lang: Lang }) {
   const t = LANDING[lang];
   const pricing = PRICING[lang];
+  const reduce = useReducedMotion();
 
   return (
-    <div
-      data-tone="light"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
-      lang={lang}
-    >
-      {/* Hero band — hero on the light page surface */}
-      <div className="relative">
-        {/* Hero */}
+    <>
+      <ScrollProgress />
+      <div
+        data-tone="light"
+        className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+        lang={lang}
+      >
+        {/* Hero band — hero on the light page surface */}
+        <div className="relative">
+          {/* Hero */}
           <section className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-24 text-center md:pt-36 md:pb-28">
+            {/* Aurora wash — local to hero */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 80% 50% at 30% 20%, color-mix(in srgb, var(--brand-primary) 5%, transparent), transparent 70%)",
+                }}
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 60% 40% at 70% 80%, color-mix(in srgb, var(--brand-secondary) 4%, transparent), transparent 70%)",
+                }}
+              />
+            </div>
             <motion.div
               className="relative z-10"
               initial="hidden"
@@ -72,19 +115,55 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             >
               <motion.div variants={heroItem}>
                 <div className="brand-soft brand-border mb-6 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold [color:var(--signal-blue)]">
-                  <span
-                    className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full"
+                  <motion.span
+                    className="brand-bg h-1.5 w-1.5 rounded-full"
                     aria-hidden="true"
+                    animate={
+                      reduce
+                        ? undefined
+                        : {
+                            scale: [1, 1.3, 1],
+                            opacity: [0.7, 1, 0.7],
+                          }
+                    }
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   />
                   {t.badge}
                 </div>
               </motion.div>
               <motion.div variants={heroItem}>
-                <h1 className="mb-8 text-5xl leading-[1.05] font-bold tracking-tight [color:var(--mk-text)] md:text-7xl">
-                  {t.h1a}
-                  <br />
-                  <span className="whitespace-nowrap [color:var(--brand-primary)]">{t.h1b}</span>
-                </h1>
+                <motion.h1
+                  className="mb-8 text-5xl leading-[1.05] font-bold tracking-tight [color:var(--mk-text)] md:text-7xl"
+                  variants={h1Container}
+                >
+                  {reduce ? (
+                    <>
+                      {t.h1a}
+                      <br />
+                      <span className="hero-gradient-text whitespace-nowrap">{t.h1b}</span>
+                    </>
+                  ) : (
+                    <>
+                      {t.h1a.split(" ").map((word, i) => (
+                        <motion.span key={i} className="inline-block" variants={h1Word}>
+                          {word}
+                          {i < t.h1a.split(" ").length - 1 ? " " : ""}
+                        </motion.span>
+                      ))}
+                      <br />
+                      <motion.span
+                        className="hero-gradient-text inline-block whitespace-nowrap"
+                        variants={h1Word}
+                      >
+                        {t.h1b}
+                      </motion.span>
+                    </>
+                  )}
+                </motion.h1>
               </motion.div>
               <motion.div variants={heroItem}>
                 <p className="mx-auto mb-12 max-w-3xl text-lg leading-normal [color:var(--mk-text-muted)] md:text-xl">
@@ -93,11 +172,16 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </motion.div>
               <motion.div variants={heroItem}>
                 <div className="mb-10 flex flex-col justify-center gap-4 sm:flex-row">
-                  <Link href={p(lang, "/signup")}>
-                    <Button size="xl" variant="glow" className="min-w-[200px]">
-                      {t.ctaPrimary} <SubsumioMark size={18} tile={false} />
-                    </Button>
-                  </Link>
+                  <motion.div
+                    whileHover={reduce ? undefined : { scale: 1.03, y: -2 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <Link href={p(lang, "/signup")}>
+                      <Button size="xl" variant="glow" className="min-w-[200px]">
+                        {t.ctaPrimary} <SubsumioMark size={18} tile={false} />
+                      </Button>
+                    </Link>
+                  </motion.div>
                   <a href="#demo">
                     <Button
                       size="xl"
@@ -111,20 +195,28 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </motion.div>
               {/* Micro-trust signals below CTAs — Stripe/Linear pattern */}
               <motion.div variants={heroItem}>
-                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                    {lang === "de" ? "Keine Kreditkarte" : "No credit card"}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                    {lang === "de" ? "3 Min. zur ersten Antwort" : "3 min to first answer"}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                    {lang === "de" ? "EU-gehostet oder self-hosted" : "EU-hosted or self-hosted"}
-                  </span>
-                </div>
+                <motion.div
+                  className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]"
+                  variants={trustContainer}
+                >
+                  {[
+                    lang === "de" ? "Keine Kreditkarte" : "No credit card",
+                    lang === "de" ? "3 Min. zur ersten Antwort" : "3 min to first answer",
+                    lang === "de" ? "EU-gehostet oder self-hosted" : "EU-hosted or self-hosted",
+                  ].map((label) => (
+                    <motion.span
+                      key={label}
+                      className="inline-flex items-center gap-1.5"
+                      variants={trustItem}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                        aria-hidden="true"
+                      />
+                      {label}
+                    </motion.span>
+                  ))}
+                </motion.div>
               </motion.div>
             </motion.div>
 
@@ -159,7 +251,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             >
               {t.stats.map((stat) => (
                 <StaggerItem key={stat.label}>
-                  <p className="mb-1 text-3xl font-black [color:var(--brand-primary)]">
+                  <p className="mb-1 text-3xl font-black [color:var(--signal-blue)]">
                     {stat.value}
                   </p>
                   <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
@@ -253,7 +345,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   transition={{ duration: 0.4, delay: i * 0.08 }}
                   className="rounded-xl border [border-color:var(--mk-border)] p-6 [box-shadow:var(--mk-card-shadow)] [background:var(--mk-bg)]"
                 >
-                  <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--brand-primary)] uppercase">
+                  <p className="mb-3 text-xs font-semibold tracking-wider text-[var(--signal-blue)] uppercase">
                     {s.role}
                   </p>
                   <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{s.text}</p>
@@ -289,8 +381,8 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                         <span className="font-mono text-xs [color:var(--mk-text-subtle)]">
                           {item.step}
                         </span>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/10">
-                          {Icon && <Icon size={15} className="text-[var(--brand-primary)]" />}
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10">
+                          {Icon && <Icon size={15} className="text-[var(--signal-blue)]" />}
                         </div>
                       </div>
                       <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
@@ -368,7 +460,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
             </span>
           </div>
         </motion.section>
-
-    </div>
+      </div>
+    </>
   );
 }

@@ -104,7 +104,10 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
             className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
             style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}
           >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#60a5fa" }} />
+            <span
+              className="badge-pulse h-1.5 w-1.5 rounded-full"
+              style={{ background: "#60a5fa" }}
+            />
             {c.eyebrow}
           </span>
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{c.title}</h2>

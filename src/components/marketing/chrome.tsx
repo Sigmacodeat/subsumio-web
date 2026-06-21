@@ -695,7 +695,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
             </div>
             <p className="mb-4 text-sm [color:var(--mk-text-muted)]">
               {lang === "de"
-                ? "Das Gedächtnis Ihrer Kanzlei — für AT, DE und CH."
+                ? "Das Brain deiner Kanzlei — für AT, DE und CH."
                 : "The memory layer for your law firm — built for AT, DE and CH."}
             </p>
             <p className="max-w-xs text-xs leading-relaxed [color:var(--mk-text-subtle)]">
@@ -814,7 +814,7 @@ export function SectionHeading({
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
           transition={{ duration: 0.4, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
         >
-          <span className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full" />
+          <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
           {badge}
         </motion.span>
       )}

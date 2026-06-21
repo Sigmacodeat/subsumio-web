@@ -14,10 +14,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
-import {
-  Section,
-  SectionHeading,
-} from "./chrome";
+import { Section, SectionHeading } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
 import { Reveal } from "./motion-system";
 
@@ -65,7 +62,7 @@ function Hero({
       <div className="mx-auto max-w-4xl text-center">
         <motion.div {...reveal}>
           <span className="brand-border brand-soft brand-text mb-7 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--brand-secondary)]" />{" "}
+            <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />{" "}
             {eyebrow}
           </span>
           <h1 className="mb-5 text-4xl leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">

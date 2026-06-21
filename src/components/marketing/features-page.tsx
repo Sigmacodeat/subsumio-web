@@ -312,308 +312,306 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
     >
-        {/* Hero — copy left, animated graph right */}
-        <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="text-center lg:text-left"
-            >
-              <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
-                <span className="brand-bg h-1.5 w-1.5 animate-pulse rounded-full" />
-                {t.badge}
-              </div>
-              <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
-                {t.h1a}
-                <br />
-                <span className="gradient-text glow-text">{t.h1b}</span>
-              </h1>
-              <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
-                {t.sub}
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-                <Link href={p(lang, "/signup")}>
-                  <Button size="lg" variant="glow">
-                    {t.ctaButton} <ArrowRight size={16} />
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-              className="relative"
-            >
-              <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
-              <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
-                <GraphHero />
-                <p className="mt-2 text-center font-mono text-xs [color:var(--mk-text-subtle)]">
-                  {lang === "en"
-                    ? "typed edges, extracted on every write"
-                    : "typisierte Kanten, bei jedem Write extrahiert"}
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Stats band */}
-        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {stats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewport}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
-              >
-                <div className="gradient-text mb-1 text-3xl font-black md:text-4xl">
-                  {s.prefix ?? ""}
-                  <CountUp to={s.to} decimals={s.dec} />
-                  {s.suffix ?? ""}
-                </div>
-                <p className="text-xs leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* How it works — sequential pipeline */}
-        <HowItWorks lang={lang} />
-
-        {/* On the Subsumio brand: the comprehensive law-firm feature set
-            (WhatsApp copilot spotlight + the full capability bento). */}
-        {isSubsumio && <SubsumioShowcase lang={lang} />}
-
-        {/* Category explorer */}
-        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
-          <div
-            role="tablist"
-            aria-label="Feature categories"
-            className="mb-12 flex flex-wrap justify-center gap-2"
-          >
-            {t.categories.map((c) => {
-              const Icon = ICONS[c.icon];
-              const isActive = c.id === active;
-              return (
-                <button
-                  key={c.id}
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActive(c.id)}
-                  className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "brand-text"
-                      : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.span
-                      layoutId="feature-tab-pill"
-                      className="brand-soft brand-border absolute inset-0 rounded-full border shadow-lg shadow-black/30"
-                      transition={{ type: "spring", stiffness: 400, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative flex items-center gap-2">
-                    {Icon && <Icon size={14} />}
-                    {c.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={cat.id}
-              role="tabpanel"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="grid items-start gap-8 lg:grid-cols-2"
-            >
-              {/* Left: explanation */}
-              <div>
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
-                    {CatIcon && <CatIcon size={22} className="brand-text" />}
-                  </div>
-                  <h2 className="text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-                    {cat.title}
-                  </h2>
-                </div>
-                <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
-                  {cat.intro}
-                </p>
-                <div className="space-y-4">
-                  {cat.items.map((item, i) => (
-                    <motion.div
-                      key={item.title}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.06 * i, duration: 0.22 }}
-                      className="hover:brand-border flex gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 transition-colors [background:var(--mk-surface)] hover:[background:var(--mk-hover)]"
-                    >
-                      <CheckCircle2 size={16} className="brand-text mt-0.5 shrink-0" />
-                      <div>
-                        <h3 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
-                          {item.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right: terminal demo */}
-              {cat.demo ? (
-                <div className="lg:sticky lg:top-8">
-                  <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/50 [background:var(--mk-bg)]">
-                    <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3">
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-                      <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text-subtle)]">
-                        {cat.demo.windowTitle}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5 p-5 font-mono text-xs leading-relaxed">
-                      {cat.demo.lines.map((line, i) => (
-                        <motion.p
-                          key={`${cat.id}-${i}`}
-                          initial={{ opacity: 0, x: -4 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.12 * i, duration: 0.25 }}
-                          className={
-                            line.startsWith("$") || line.startsWith(">")
-                              ? "[color:var(--mk-text)]"
-                              : line.includes("⚠")
-                                ? "[color:var(--signal-amber)]"
-                                : line.startsWith("→") || line.match(/^\d\d:\d\d/)
-                                  ? "brand-text"
-                                  : "[color:var(--mk-text-muted)]"
-                          }
-                        >
-                          {line}
-                        </motion.p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="hidden h-full min-h-[300px] items-center justify-center rounded-2xl border border-dashed [border-color:var(--mk-border)] lg:flex">
-                  <div className="px-8 text-center">
-                    {CatIcon && <CatIcon size={32} className="brand-text mx-auto mb-4" />}
-                    <p className="max-w-xs text-sm [color:var(--mk-text-subtle)]">
-                      {lang === "en"
-                        ? "Enforced by tests, not policy docs — deterministic, verifiable behavior."
-                        : "Durch Tests erzwungen, nicht durch Policy-Dokumente — deterministisches, prüfbares Verhalten."}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </section>
-
-        {/* Security cross-link — replaces former Security & Teams category */}
-        <section className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+      {/* Hero — copy left, animated graph right */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12"
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center lg:text-left"
           >
-            <div className="brand-soft absolute inset-0 opacity-30 blur-3xl" />
-            <div className="relative">
-              <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
-                <Shield size={24} className="brand-text" />
-              </div>
-              <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-                {lang === "en"
-                  ? "Built for confidentiality-first work"
-                  : "Gebaut für Verschwiegenheit zuerst"}
-              </h2>
-              <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
-                {lang === "en"
-                  ? "Self-hosting, fuzz-tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
-                  : "Self-Hosting, fuzz-getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Security- und Datenschutz-Story hat eine eigene Seite."}
-              </p>
-              <Link href={p(lang, "/security")}>
-                <Button size="lg" variant="secondary">
-                  {lang === "en" ? "Explore security" : "Sicherheit ansehen"}{" "}
-                  <ArrowRight size={16} />
+            <div className="brand-border brand-soft brand-text mb-8 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium">
+              <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
+              {t.badge}
+            </div>
+            <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+              {t.h1a}
+              <br />
+              <span className="gradient-text glow-text">{t.h1b}</span>
+            </h1>
+            <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
+              {t.sub}
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              <Link href={p(lang, "/signup")}>
+                <Button size="lg" variant="glow">
+                  {t.ctaButton} <ArrowRight size={16} />
                 </Button>
               </Link>
             </div>
           </motion.div>
-        </section>
 
-        {/* Everything at a glance */}
-        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
-          <h2 className="mb-12 text-center text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-            {lang === "en"
-              ? "Five capability areas, one engine"
-              : "Fünf Fähigkeits-Bereiche, eine Engine"}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {t.categories.map((c, i) => {
-              const Icon = ICONS[c.icon];
-              return (
-                <motion.button
-                  key={c.id}
-                  onClick={() => {
-                    setActive(c.id);
-                    if (typeof window !== "undefined")
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewport}
-                  transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
-                  className="group hover:brand-border rounded-2xl border [border-color:var(--mk-border)] p-6 text-left transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]"
-                >
-                  <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
-                    {Icon && <Icon size={20} className="brand-text" />}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+            className="relative"
+          >
+            <div className="brand-soft absolute inset-0 rounded-full blur-3xl" />
+            <div className="glass relative rounded-3xl p-6 shadow-2xl shadow-black/40">
+              <GraphHero />
+              <p className="mt-2 text-center font-mono text-xs [color:var(--mk-text-subtle)]">
+                {lang === "en"
+                  ? "typed edges, extracted on every write"
+                  : "typisierte Kanten, bei jedem Write extrahiert"}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stats band */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={viewport}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="rounded-2xl border [border-color:var(--mk-border)] p-5 text-center transition-colors [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
+            >
+              <div className="gradient-text mb-1 text-3xl font-black md:text-4xl">
+                {s.prefix ?? ""}
+                <CountUp to={s.to} decimals={s.dec} />
+                {s.suffix ?? ""}
+              </div>
+              <p className="text-xs leading-snug [color:var(--mk-text-muted)]">{s.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* How it works — sequential pipeline */}
+      <HowItWorks lang={lang} />
+
+      {/* On the Subsumio brand: the comprehensive law-firm feature set
+            (WhatsApp copilot spotlight + the full capability bento). */}
+      {isSubsumio && <SubsumioShowcase lang={lang} />}
+
+      {/* Category explorer */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+        <div
+          role="tablist"
+          aria-label="Feature categories"
+          className="mb-12 flex flex-wrap justify-center gap-2"
+        >
+          {t.categories.map((c) => {
+            const Icon = ICONS[c.icon];
+            const isActive = c.id === active;
+            return (
+              <button
+                key={c.id}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActive(c.id)}
+                className={`relative flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "brand-text"
+                    : "[color:var(--mk-text-muted)] hover:[color:var(--mk-text)]"
+                }`}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="feature-tab-pill"
+                    className="brand-soft brand-border absolute inset-0 rounded-full border shadow-lg shadow-black/30"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <span className="relative flex items-center gap-2">
+                  {Icon && <Icon size={14} />}
+                  {c.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={cat.id}
+            role="tabpanel"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="grid items-start gap-8 lg:grid-cols-2"
+          >
+            {/* Left: explanation */}
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="brand-soft brand-border flex h-12 w-12 items-center justify-center rounded-xl border">
+                  {CatIcon && <CatIcon size={22} className="brand-text" />}
+                </div>
+                <h2 className="text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+                  {cat.title}
+                </h2>
+              </div>
+              <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
+                {cat.intro}
+              </p>
+              <div className="space-y-4">
+                {cat.items.map((item, i) => (
+                  <motion.div
+                    key={item.title}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.06 * i, duration: 0.22 }}
+                    className="hover:brand-border flex gap-3 rounded-xl border [border-color:var(--mk-border)] p-4 transition-colors [background:var(--mk-surface)] hover:[background:var(--mk-hover)]"
+                  >
+                    <CheckCircle2 size={16} className="brand-text mt-0.5 shrink-0" />
+                    <div>
+                      <h3 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: terminal demo */}
+            {cat.demo ? (
+              <div className="lg:sticky lg:top-8">
+                <div className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] shadow-2xl shadow-black/50 [background:var(--mk-bg)]">
+                  <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3">
+                    <div className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
+                    <div className="ml-4 flex-1 font-mono text-xs [color:var(--mk-text-subtle)]">
+                      {cat.demo.windowTitle}
+                    </div>
                   </div>
-                  <h3 className="mb-1.5 text-base font-bold [color:var(--mk-text)]">{c.title}</h3>
-                  <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                    {c.intro}
+                  <div className="space-y-1.5 p-5 font-mono text-xs leading-relaxed">
+                    {cat.demo.lines.map((line, i) => (
+                      <motion.p
+                        key={`${cat.id}-${i}`}
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.12 * i, duration: 0.25 }}
+                        className={
+                          line.startsWith("$") || line.startsWith(">")
+                            ? "[color:var(--mk-text)]"
+                            : line.includes("⚠")
+                              ? "[color:var(--signal-amber)]"
+                              : line.startsWith("→") || line.match(/^\d\d:\d\d/)
+                                ? "brand-text"
+                                : "[color:var(--mk-text-muted)]"
+                        }
+                      >
+                        {line}
+                      </motion.p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="hidden h-full min-h-[300px] items-center justify-center rounded-2xl border border-dashed [border-color:var(--mk-border)] lg:flex">
+                <div className="px-8 text-center">
+                  {CatIcon && <CatIcon size={32} className="brand-text mx-auto mb-4" />}
+                  <p className="max-w-xs text-sm [color:var(--mk-text-subtle)]">
+                    {lang === "en"
+                      ? "Enforced by tests, not policy docs — deterministic, verifiable behavior."
+                      : "Durch Tests erzwungen, nicht durch Policy-Dokumente — deterministisches, prüfbares Verhalten."}
                   </p>
-                  <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-                    {lang === "en" ? "Explore" : "Ansehen"} <ArrowRight size={12} />
-                  </span>
-                </motion.button>
-              );
-            })}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </section>
+
+      {/* Security cross-link — replaces former Security & Teams category */}
+      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="brand-border relative overflow-hidden rounded-3xl border p-8 text-center [background:var(--mk-surface)] md:p-12"
+        >
+          <div className="brand-soft absolute inset-0 opacity-30 blur-3xl" />
+          <div className="relative">
+            <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
+              <Shield size={24} className="brand-text" />
+            </div>
+            <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+              {lang === "en"
+                ? "Built for confidentiality-first work"
+                : "Gebaut für Verschwiegenheit zuerst"}
+            </h2>
+            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
+              {lang === "en"
+                ? "Self-hosting, fuzz-tested isolation, EU AI Act compliance, and an honest roadmap. The full security and data-protection story lives on its own page."
+                : "Self-Hosting, fuzz-getestete Isolation, EU-AI-Act-Compliance und eine ehrliche Roadmap. Die vollständige Security- und Datenschutz-Story hat eine eigene Seite."}
+            </p>
+            <Link href={p(lang, "/security")}>
+              <Button size="lg" variant="secondary">
+                {lang === "en" ? "Explore security" : "Sicherheit ansehen"} <ArrowRight size={16} />
+              </Button>
+            </Link>
           </div>
-        </section>
+        </motion.div>
+      </section>
 
-        {/* CTA */}
-        <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
-          <SubsumioMark size={64} className="glow mx-auto mb-8 rounded-[15px]" />
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
-            {t.ctaTitle}
-          </h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
-        </section>
+      {/* Everything at a glance */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+        <h2 className="mb-12 text-center text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+          {lang === "en"
+            ? "Five capability areas, one engine"
+            : "Fünf Fähigkeits-Bereiche, eine Engine"}
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {t.categories.map((c, i) => {
+            const Icon = ICONS[c.icon];
+            return (
+              <motion.button
+                key={c.id}
+                onClick={() => {
+                  setActive(c.id);
+                  if (typeof window !== "undefined")
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={viewport}
+                transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
+                className="group hover:brand-border rounded-2xl border [border-color:var(--mk-border)] p-6 text-left transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]"
+              >
+                <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
+                  {Icon && <Icon size={20} className="brand-text" />}
+                </div>
+                <h3 className="mb-1.5 text-base font-bold [color:var(--mk-text)]">{c.title}</h3>
+                <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                  {c.intro}
+                </p>
+                <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                  {lang === "en" ? "Explore" : "Ansehen"} <ArrowRight size={12} />
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </section>
 
+      {/* CTA */}
+      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
+        <SubsumioMark size={64} className="glow mx-auto mb-8 rounded-[15px]" />
+        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          {t.ctaTitle}
+        </h2>
+        <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+        <Link href={p(lang, "/signup")}>
+          <Button size="xl" variant="glow">
+            {t.ctaButton} <ArrowRight size={18} />
+          </Button>
+        </Link>
+      </section>
     </div>
   );
 }

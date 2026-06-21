@@ -139,12 +139,6 @@ export const NAV: Record<Lang, NavContent> = {
             description: "Refer clients, earn 30% recurring",
             icon: "Handshake",
           },
-          {
-            label: "Download",
-            href: "/download",
-            description: "Get the mobile and desktop apps",
-            icon: "Download",
-          },
         ],
       },
       {
@@ -155,12 +149,6 @@ export const NAV: Record<Lang, NavContent> = {
             href: "/about",
             description: "Built in Austria for DACH law",
             icon: "Info",
-          },
-          {
-            label: "Security",
-            href: "/security",
-            description: "GDPR, GoBD, confidentiality by design",
-            icon: "ShieldCheck",
           },
           { label: "Contact", href: "/contact", description: "Talk to our team", icon: "Mail" },
           {
@@ -258,12 +246,6 @@ export const NAV: Record<Lang, NavContent> = {
             description: "Kunden empfehlen, 30 % wiederkehrend",
             icon: "Handshake",
           },
-          {
-            label: "Download",
-            href: "/download",
-            description: "Mobile- und Desktop-Apps laden",
-            icon: "Download",
-          },
         ],
       },
       {
@@ -274,12 +256,6 @@ export const NAV: Record<Lang, NavContent> = {
             href: "/about",
             description: "Aus Österreich für DACH-Kanzleien",
             icon: "Info",
-          },
-          {
-            label: "Sicherheit",
-            href: "/security",
-            description: "DSGVO, GoBD, Vertraulichkeit by Design",
-            icon: "ShieldCheck",
           },
           {
             label: "Kontakt",
@@ -328,7 +304,6 @@ export const FOOTER = {
         links: [
           { label: "Documentation", href: "/docs" },
           { label: "Partner Program", href: "/partners" },
-          { label: "Refer a customer — earn 30%", href: "/partners#affiliate" },
           { label: "Dashboard", href: "/dashboard", external: false },
         ],
       },
@@ -351,7 +326,7 @@ export const FOOTER = {
     note: "Your data, your keys — self-hosted on your hardware or our EU cloud. Built for confidentiality-first work.",
   },
   de: {
-    tagline: "Das Gedächtnis deiner Firma.",
+    tagline: "Das Brain deiner Kanzlei.",
     columns: [
       {
         title: "Plattform",
@@ -378,7 +353,6 @@ export const FOOTER = {
         links: [
           { label: "Dokumentation", href: "/docs" },
           { label: "Partnerprogramm", href: "/partners" },
-          { label: "Kunden empfehlen — 30 % verdienen", href: "/partners#affiliate" },
           { label: "Dashboard", href: "/dashboard", external: false },
         ],
       },

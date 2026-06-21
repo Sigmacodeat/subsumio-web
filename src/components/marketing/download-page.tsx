@@ -25,10 +25,7 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import {
-  SectionHeading,
-  FaqList,
-} from "./chrome";
+import { SectionHeading, FaqList } from "./chrome";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -82,7 +79,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
             transition={{ delay: 0.6, duration: 0.4 }}
             className="mx-4 flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 [background:var(--mk-bg)]"
           >
-            <Search size={12} className="text-[var(--brand-primary)]" />
+            <Search size={12} className="text-[var(--signal-blue)]" />
             <span className="text-xs [color:var(--mk-text-muted)]">
               {lang === "en" ? "Ask your brain…" : "Frag dein Brain…"}
             </span>
@@ -163,186 +160,185 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
     >
-        {/* Hero — copy left, phone mockup right */}
-        <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="text-center lg:text-left"
-            >
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1.5 text-xs font-medium text-[var(--brand-primary)]">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--brand-primary)]" />
-                {t.badge}
-              </div>
-              <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
-                {t.h1a}
-                <br />
-                <span className="gradient-text glow-text">{t.h1b}</span>
-              </h1>
-              <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
-                {t.sub}
-              </p>
+      {/* Hero — copy left, phone mockup right */}
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center lg:text-left"
+          >
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/10 px-3 py-1.5 text-xs font-medium text-[var(--signal-blue)]">
+              <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--signal-blue)]" />
+              {t.badge}
+            </div>
+            <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+              {t.h1a}
+              <br />
+              <span className="gradient-text glow-text">{t.h1b}</span>
+            </h1>
+            <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
+              {t.sub}
+            </p>
 
-              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
-                {installEvent ? (
-                  <Button
-                    size="xl"
-                    variant="glow"
-                    className="min-w-[240px]"
-                    onClick={() => installEvent.prompt()}
-                  >
-                    <DownloadIcon size={18} />
-                    {lang === "en" ? "Install Subsumio now" : "Subsumio jetzt installieren"}
-                  </Button>
-                ) : (
-                  <Link href={p(lang, "/signup")}>
-                    <Button size="xl" variant="glow">
-                      {lang === "en" ? "Get started" : "Jetzt starten"} <ArrowRight size={18} />
-                    </Button>
-                  </Link>
-                )}
-                <Link href={p(lang, "/features")}>
-                  <Button size="xl" variant="secondary">
-                    {lang === "en" ? "See features" : "Features ansehen"}
+            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              {installEvent ? (
+                <Button
+                  size="xl"
+                  variant="glow"
+                  className="min-w-[240px]"
+                  onClick={() => installEvent.prompt()}
+                >
+                  <DownloadIcon size={18} />
+                  {lang === "en" ? "Install Subsumio now" : "Subsumio jetzt installieren"}
+                </Button>
+              ) : (
+                <Link href={p(lang, "/signup")}>
+                  <Button size="xl" variant="glow">
+                    {lang === "en" ? "Get started" : "Jetzt starten"} <ArrowRight size={18} />
                   </Button>
                 </Link>
-              </div>
-            </motion.div>
+              )}
+              <Link href={p(lang, "/features")}>
+                <Button size="xl" variant="secondary">
+                  {lang === "en" ? "See features" : "Features ansehen"}
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
 
-            <PhoneMockup lang={lang} />
-          </div>
-        </section>
+          <PhoneMockup lang={lang} />
+        </div>
+      </section>
 
-        {/* Platform cards */}
-        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
-          <div className="grid gap-5 md:grid-cols-3">
-            {t.platforms.map((platform, idx) => {
-              const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
-              return (
-                <motion.div
-                  key={platform.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewport}
-                  transition={{ delay: idx * 0.08, duration: 0.3 }}
-                  className="flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
-                >
-                  <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/10">
-                    <Icon size={22} className="text-[var(--brand-primary)]" />
-                  </div>
-                  <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
-                  <p className="mb-5 text-sm font-medium text-[var(--brand-primary)]">
-                    {platform.tagline}
+      {/* Platform cards */}
+      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+        <div className="grid gap-5 md:grid-cols-3">
+          {t.platforms.map((platform, idx) => {
+            const Icon = PLATFORM_ICONS[platform.icon] ?? Monitor;
+            return (
+              <motion.div
+                key={platform.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={viewport}
+                transition={{ delay: idx * 0.08, duration: 0.3 }}
+                className="flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10">
+                  <Icon size={22} className="text-[var(--signal-blue)]" />
+                </div>
+                <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
+                <p className="mb-5 text-sm font-medium text-[var(--signal-blue)]">
+                  {platform.tagline}
+                </p>
+                <ol className="flex-1 space-y-3">
+                  {platform.steps.map((step, i) => (
+                    <li
+                      key={step}
+                      className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--signal-blue)]/30 bg-[var(--signal-blue)]/20 text-xs font-bold text-[var(--signal-blue)]">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+                {platform.note && (
+                  <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+                    {platform.note}
                   </p>
-                  <ol className="flex-1 space-y-3">
-                    {platform.steps.map((step, i) => (
-                      <li
-                        key={step}
-                        className="flex gap-3 text-sm leading-relaxed [color:var(--mk-text-muted)]"
-                      >
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/20 text-xs font-bold text-[var(--brand-primary)]">
-                          {i + 1}
-                        </span>
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-                  {platform.note && (
-                    <p className="mt-5 border-t [border-color:var(--mk-border)] pt-4 text-xs leading-relaxed [color:var(--mk-text-subtle)]">
-                      {platform.note}
-                    </p>
-                  )}
-                </motion.div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Store preview */}
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
+            {t.storesTitle}
+          </h2>
+          <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
+            {t.storesSub}
+          </p>
+
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
+            {[
+              {
+                icon: Bell,
+                label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen",
+              },
+              {
+                icon: Fingerprint,
+                label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung",
+              },
+              {
+                icon: Share2,
+                label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“",
+              },
+            ].map((f) => {
+              const Icon = f.icon;
+              return (
+                <span
+                  key={f.label}
+                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
+                >
+                  <Icon size={13} className="text-[var(--signal-blue)]" /> {f.label}
+                </span>
               );
             })}
           </div>
-        </section>
 
-        {/* Store preview */}
-        <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
-              {t.storesTitle}
-            </h2>
-            <p className="mb-8 text-base leading-relaxed [color:var(--mk-text-muted)]">
-              {t.storesSub}
-            </p>
-
-            <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
-              {[
-                {
-                  icon: Bell,
-                  label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen",
-                },
-                {
-                  icon: Fingerprint,
-                  label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung",
-                },
-                {
-                  icon: Share2,
-                  label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“",
-                },
-              ].map((f) => {
-                const Icon = f.icon;
-                return (
-                  <span
-                    key={f.label}
-                    className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-xs [color:var(--mk-text-muted)] [background:var(--mk-surface)]"
-                  >
-                    <Icon size={13} className="text-[var(--brand-primary)]" /> {f.label}
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* Store badge placeholders — replace with official badges at store launch */}
-            <div className="mb-6 flex items-center justify-center gap-4">
-              {["App Store", "Google Play"].map((store) => (
-                <div
-                  key={store}
-                  aria-disabled="true"
-                  className="flex items-center gap-3 rounded-xl border border-dashed [border-color:var(--mk-border-strong)] px-6 py-3 opacity-70 select-none [background:var(--mk-bg)]"
-                >
-                  <DownloadIcon size={16} className="[color:var(--mk-text-subtle)]" />
-                  <div className="text-left">
-                    <p className="text-xs tracking-wide [color:var(--mk-text-subtle)] uppercase">
-                      {lang === "en" ? "Coming soon to" : "Bald im"}
-                    </p>
-                    <p className="text-sm font-semibold [color:var(--mk-text-muted)]">{store}</p>
-                  </div>
+          {/* Store badge placeholders — replace with official badges at store launch */}
+          <div className="mb-6 flex items-center justify-center gap-4">
+            {["App Store", "Google Play"].map((store) => (
+              <div
+                key={store}
+                aria-disabled="true"
+                className="flex items-center gap-3 rounded-xl border border-dashed [border-color:var(--mk-border-strong)] px-6 py-3 opacity-70 select-none [background:var(--mk-bg)]"
+              >
+                <DownloadIcon size={16} className="[color:var(--mk-text-subtle)]" />
+                <div className="text-left">
+                  <p className="text-xs tracking-wide [color:var(--mk-text-subtle)] uppercase">
+                    {lang === "en" ? "Coming soon to" : "Bald im"}
+                  </p>
+                  <p className="text-sm font-semibold [color:var(--mk-text-muted)]">{store}</p>
                 </div>
-              ))}
-            </div>
-            <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
-              {t.storesNote}
-            </p>
+              </div>
+            ))}
           </div>
-        </section>
+          <p className="mx-auto max-w-xl text-xs leading-relaxed [color:var(--mk-text-subtle)]">
+            {t.storesNote}
+          </p>
+        </div>
+      </section>
 
-        {/* FAQ */}
-        <section className="relative z-10 px-6 py-24">
-          <div className="mx-auto max-w-5xl">
-            <SectionHeading title={t.faqTitle} />
-            <FaqList items={t.faq} />
-          </div>
-        </section>
+      {/* FAQ */}
+      <section className="relative z-10 px-6 py-24">
+        <div className="mx-auto max-w-5xl">
+          <SectionHeading title={t.faqTitle} />
+          <FaqList items={t.faq} />
+        </div>
+      </section>
 
-        {/* CTA */}
-        <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
-          <SubsumioMark size={64} className="mx-auto mb-8" />
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
-            {t.ctaTitle}
-          </h2>
-          <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
-        </section>
-
+      {/* CTA */}
+      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
+        <SubsumioMark size={64} className="mx-auto mb-8" />
+        <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
+          {t.ctaTitle}
+        </h2>
+        <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
+        <Link href={p(lang, "/signup")}>
+          <Button size="xl" variant="glow">
+            {t.ctaButton} <ArrowRight size={18} />
+          </Button>
+        </Link>
+      </section>
     </div>
   );
 }
