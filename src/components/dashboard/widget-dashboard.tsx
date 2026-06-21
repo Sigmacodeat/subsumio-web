@@ -20,8 +20,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { StatsCard } from "@/components/dashboard/stats-card";
 import { useBrainStats, usePages, useRecentQueries } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
@@ -144,88 +142,131 @@ function useKanzleiCockpitData() {
 
 function EmptyLine({ text }: { text: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-[color:var(--ds-border)] px-4 py-5 text-center text-sm text-[color:var(--ds-text-muted)]">
+    <div className="rounded-md border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-5 text-center text-sm text-[color:var(--ds-text-muted)]">
       {text}
     </div>
   );
 }
 
-function SectionHeader({
+function QueuePanel({
   icon: Icon,
   title,
   href,
   action,
+  children,
 }: {
   icon: typeof Briefcase;
   title: string;
   href: string;
   action: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] p-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <Icon size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-        <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+          <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+        </div>
+        <Link
+          href={href}
+          className="brand-text inline-flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
+        >
+          {action}
+          <ArrowRight size={13} />
+        </Link>
       </div>
-      <Link
-        href={href}
-        className="brand-text inline-flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
+      {children}
+    </section>
+  );
+}
+
+function QueueRow({
+  href,
+  icon: Icon,
+  title,
+  meta,
+  badge,
+  badgeVariant = "default",
+  urgent = false,
+}: {
+  href: string;
+  icon: typeof Briefcase;
+  title: string;
+  meta: string;
+  badge?: string;
+  badgeVariant?: "default" | "warning" | "danger" | "success" | "info" | "accent";
+  urgent?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
+    >
+      <div
+        className={`flex h-8 w-8 items-center justify-center rounded-md border ${
+          urgent
+            ? "border-amber-500/30 bg-amber-500/10"
+            : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
+        }`}
       >
-        {action}
-        <ArrowRight size={13} />
-      </Link>
-    </div>
+        <Icon
+          size={15}
+          className={urgent ? "text-amber-600" : "text-[color:var(--ds-text-muted)]"}
+        />
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">{title}</p>
+        <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">{meta}</p>
+      </div>
+      {badge && (
+        <Badge variant={badgeVariant} className="shrink-0">
+          {badge}
+        </Badge>
+      )}
+    </Link>
   );
 }
 
 function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitData>["deadlines"] }) {
   const { t } = useLang();
   return (
-    <Card className="min-h-[320px]">
-      <SectionHeader
-        icon={CalendarClock}
-        title={t("cockpit.deadlines_title")}
-        href="/dashboard/deadlines"
-        action={t("cockpit.open")}
-      />
-      <div className="space-y-2 p-3">
+    <QueuePanel
+      icon={CalendarClock}
+      title={t("cockpit.deadlines_title")}
+      href="/dashboard/deadlines"
+      action={t("cockpit.open")}
+    >
+      <div>
         {items.slice(0, 6).length === 0 ? (
-          <EmptyLine text={t("cockpit.no_deadlines")} />
+          <div className="p-3">
+            <EmptyLine text={t("cockpit.no_deadlines")} />
+          </div>
         ) : (
           items.slice(0, 6).map((item) => {
             const title = text(item.page.title, t("dashboard.unnamed_deadline"));
             return (
-              <Link
+              <QueueRow
                 key={item.page.slug}
+                icon={CalendarClock}
                 href={pageHref(item.page, "/dashboard/deadlines")}
-                className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-[color:var(--ds-hover)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                      {title}
-                    </p>
-                    <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                      {formatDate(item.due)}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={item.overdue ? "danger" : item.critical ? "warning" : "default"}
-                    className="shrink-0"
-                  >
-                    {item.overdue
-                      ? t("cockpit.overdue")
-                      : item.daysLeft === 0
-                        ? t("dashboard.today")
-                        : `${item.daysLeft}T`}
-                  </Badge>
-                </div>
-              </Link>
+                title={title}
+                meta={`${formatDate(item.due)} · ${text(item.page.frontmatter?.status, "open")}`}
+                urgent={item.overdue || item.critical}
+                badge={
+                  item.overdue
+                    ? t("cockpit.overdue")
+                    : item.daysLeft === 0
+                      ? t("dashboard.today")
+                      : `${item.daysLeft}T`
+                }
+                badgeVariant={item.overdue ? "danger" : item.critical ? "warning" : "default"}
+              />
             );
           })
         )}
       </div>
-    </Card>
+    </QueuePanel>
   );
 }
 
@@ -276,121 +317,99 @@ function TodayList({
   ];
 
   return (
-    <Card className="min-h-[320px]">
-      <SectionHeader
-        icon={Clock}
-        title={t("cockpit.today_title")}
-        href="/dashboard/workflows"
-        action={t("cockpit.plan")}
-      />
-      <div className="divide-y divide-[color:var(--ds-border)]">
+    <QueuePanel
+      icon={Clock}
+      title={t("cockpit.today_title")}
+      href="/dashboard/workflows"
+      action={t("cockpit.plan")}
+    >
+      <div>
         {tasks.map((task) => {
           const Icon = task.icon;
           return (
-            <Link
+            <QueueRow
               key={task.href}
               href={task.href}
-              className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-[color:var(--ds-hover)]"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-                <Icon
-                  size={16}
-                  className={task.urgent ? "text-amber-600" : "text-[color:var(--ds-text-muted)]"}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                  {task.label}
-                </p>
-                <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">{task.detail}</p>
-              </div>
-              <ArrowRight size={14} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
-            </Link>
+              icon={Icon}
+              title={task.label}
+              meta={task.detail}
+              urgent={task.urgent}
+              badge={task.urgent ? t("cockpit.task_critical") : undefined}
+              badgeVariant="warning"
+            />
           );
         })}
       </div>
-    </Card>
+    </QueuePanel>
   );
 }
 
 function InboxList({ items }: { items: DashboardPageLike[] }) {
   const { t } = useLang();
   return (
-    <Card>
-      <SectionHeader
-        icon={Inbox}
-        title={t("cockpit.inbox_title")}
-        href="/dashboard/intake"
-        action={t("cockpit.triage")}
-      />
-      <div className="space-y-2 p-3">
+    <QueuePanel
+      icon={Inbox}
+      title={t("cockpit.inbox_title")}
+      href="/dashboard/intake"
+      action={t("cockpit.triage")}
+    >
+      <div>
         {items.slice(0, 5).length === 0 ? (
-          <EmptyLine text={t("cockpit.no_inbox")} />
+          <div className="p-3">
+            <EmptyLine text={t("cockpit.no_inbox")} />
+          </div>
         ) : (
-          items.slice(0, 5).map((item) => (
-            <Link
-              key={item.slug}
-              href={item.type === "bea_draft" ? "/dashboard/bea" : "/dashboard/intake"}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-[color:var(--ds-hover)]"
-            >
-              <Mail size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                  {text(item.title, t("cockpit.untitled_inbox"))}
-                </p>
-                <p className="text-xs text-[color:var(--ds-text-muted)]">
-                  {item.type === "bea_draft" ? "beA" : t("nav.intake")}
-                </p>
-              </div>
-            </Link>
-          ))
+          items.slice(0, 5).map((item) => {
+            const source = item.type === "bea_draft" ? "beA" : t("nav.intake");
+            return (
+              <QueueRow
+                key={item.slug}
+                icon={Mail}
+                href={item.type === "bea_draft" ? "/dashboard/bea" : "/dashboard/intake"}
+                title={text(item.title, t("cockpit.untitled_inbox"))}
+                meta={`${source} · ${formatDate(new Date(item.created_at))}`}
+                badge={source}
+                badgeVariant="info"
+              />
+            );
+          })
         )}
       </div>
-    </Card>
+    </QueuePanel>
   );
 }
 
 function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
   const { t } = useLang();
   return (
-    <Card>
-      <SectionHeader
-        icon={Briefcase}
-        title={t("cockpit.cases_title")}
-        href="/dashboard/cases"
-        action={t("cockpit.open")}
-      />
-      <div className="space-y-2 p-3">
+    <QueuePanel
+      icon={Briefcase}
+      title={t("cockpit.cases_title")}
+      href="/dashboard/cases"
+      action={t("cockpit.open")}
+    >
+      <div>
         {cases.slice(0, 5).length === 0 ? (
-          <EmptyLine text={t("cockpit.no_cases")} />
+          <div className="p-3">
+            <EmptyLine text={t("cockpit.no_cases")} />
+          </div>
         ) : (
           cases.slice(0, 5).map((item) => {
             const fm = item.frontmatter ?? {};
             return (
-              <Link
+              <QueueRow
                 key={item.slug}
+                icon={Briefcase}
                 href={`/dashboard/cases/${item.slug}`}
-                className="block rounded-lg px-3 py-2.5 transition-colors hover:bg-[color:var(--ds-hover)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                      {text(item.title, t("cases.empty_title"))}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-[color:var(--ds-text-muted)]">
-                      {text(fm.legal_area, t("cockpit.case_area_fallback"))}
-                    </p>
-                  </div>
-                  <Badge variant="default" className="shrink-0">
-                    {text(fm.status, "open")}
-                  </Badge>
-                </div>
-              </Link>
+                title={text(item.title, t("cases.empty_title"))}
+                meta={text(fm.legal_area, t("cockpit.case_area_fallback"))}
+                badge={text(fm.status, "open")}
+              />
             );
           })
         )}
       </div>
-    </Card>
+    </QueuePanel>
   );
 }
 
@@ -406,21 +425,71 @@ function QuickActions() {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-2">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
           <Link
             key={action.href}
             href={action.href}
-            className="group flex min-h-20 items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
+            className="group inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
-            <div className="brand-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-              <Icon size={16} className="brand-text" />
+            <Icon size={15} className="group-hover:brand-text shrink-0" />
+            <span>{action.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function MetricRail({
+  loading,
+  items,
+}: {
+  loading: boolean;
+  items: Array<{
+    label: string;
+    value: number;
+    icon: typeof AlertTriangle;
+    description: string;
+    href: string;
+    tone?: "danger" | "warning" | "neutral";
+  }>;
+}) {
+  return (
+    <div className="grid gap-px overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] md:grid-cols-5">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            className="group bg-[color:var(--ds-surface)] px-4 py-3 transition-colors hover:bg-[color:var(--ds-hover)]"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="truncate text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+                {item.label}
+              </span>
+              <Icon
+                size={15}
+                className={
+                  item.tone === "danger"
+                    ? "text-red-600"
+                    : item.tone === "warning"
+                      ? "text-amber-600"
+                      : "group-hover:brand-text text-[color:var(--ds-text-subtle)]"
+                }
+              />
             </div>
-            <span className="group-hover:brand-text text-sm leading-snug font-semibold text-[color:var(--ds-text)]">
-              {action.label}
-            </span>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-2xl leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
+                {loading ? "—" : item.value}
+              </span>
+              <span className="pb-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                {item.description}
+              </span>
+            </div>
           </Link>
         );
       })}
@@ -440,30 +509,37 @@ export function WidgetDashboard() {
       value: data.criticalDeadlines.length,
       icon: AlertTriangle,
       description: t("cockpit.stat_deadlines_desc"),
+      href: "/dashboard/deadlines",
+      tone: data.criticalDeadlines.length > 0 ? ("danger" as const) : ("neutral" as const),
     },
     {
       label: t("cockpit.stat_cases"),
       value: data.activeCases.length,
       icon: Briefcase,
       description: t("cockpit.stat_cases_desc"),
+      href: "/dashboard/cases",
     },
     {
       label: t("cockpit.stat_inbox"),
       value: data.inboxItems.length,
       icon: Inbox,
       description: t("cockpit.stat_inbox_desc"),
+      href: "/dashboard/intake",
+      tone: data.inboxItems.length > 0 ? ("warning" as const) : ("neutral" as const),
     },
     {
       label: t("cockpit.stat_reviews"),
       value: reviewCount,
       icon: CheckSquare,
       description: t("cockpit.stat_reviews_desc"),
+      href: "/dashboard/review-queue",
     },
     {
       label: t("cockpit.stat_billing"),
       value: openInvoiceCount,
       icon: BarChart3,
       description: t("cockpit.stat_billing_desc"),
+      href: "/dashboard/invoicing",
     },
   ];
 
@@ -483,20 +559,7 @@ export function WidgetDashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {statsCards.map((card) => (
-          <StatsCard
-            key={card.label}
-            title={card.label}
-            value={data.loading ? "—" : card.value}
-            icon={card.icon}
-            description={card.description}
-            loading={data.loading}
-          />
-        ))}
-      </div>
-
-      <QuickActions />
+      <MetricRail loading={data.loading} items={statsCards} />
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
         <TodayList
@@ -508,16 +571,17 @@ export function WidgetDashboard() {
         <DeadlineList items={data.deadlines} />
       </div>
 
+      <QuickActions />
+
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <InboxList items={data.inboxItems} />
         <ActiveCasesList cases={data.activeCases} />
-        <Card>
-          <SectionHeader
-            icon={ShieldCheck}
-            title={t("cockpit.ai_control_title")}
-            href="/dashboard/review-queue"
-            action={t("cockpit.review")}
-          />
+        <QueuePanel
+          icon={ShieldCheck}
+          title={t("cockpit.ai_control_title")}
+          href="/dashboard/review-queue"
+          action={t("cockpit.review")}
+        >
           <div className="space-y-3 p-4">
             <div className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -551,7 +615,7 @@ export function WidgetDashboard() {
                 : t("cockpit.brain_degraded")}
             </div>
           </div>
-        </Card>
+        </QueuePanel>
       </div>
     </div>
   );
