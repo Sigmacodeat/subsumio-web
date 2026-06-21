@@ -53,7 +53,7 @@ npx cap open android  # Android Studio: Gerät wählen → Run
 | Feature         | Plugin                                | Hinweis                                                                                                                   |
 | --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Push            | `@capacitor/push-notifications`       | Braucht APNs-Key (Apple) + FCM-Projekt (Google); Backend-Endpoint zum Token-Speichern unter `/api/push/register` anlegen. |
-| Biometrie       | `@capacitor-community/biometric-auth` | Lokale Entsperrung vor Session-Nutzung.                                                                                   |
+| Biometrie       | `@aparajita/capacitor-biometric-auth` | Lokale Entsperrung vor Session-Nutzung.                                                                                   |
 | Share-Extension | `@capacitor/share` + iOS Share Target | „Text/URL an Subsumio senden“ → POST an `/api/think` bzw. Upload.                                                         |
 
 ## Store-Submission-Checkliste

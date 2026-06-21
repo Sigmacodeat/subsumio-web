@@ -43,7 +43,7 @@
     "@capacitor/core": "^7.0.0",
     "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/share": "^7.0.0",
-    "@capacitor-community/biometric-auth": "^7.0.0",
+    "@aparajita/capacitor-biometric-auth": "^7.0.0",
     "@hookform/resolvers": "^5.0.0",
     "@next/bundle-analyzer": "^15.5.0",
     "@radix-ui/react-avatar": "^1.1.4",

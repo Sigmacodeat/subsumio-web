@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
 import { caseFrontmatter, type ExpenseEntry } from "@/lib/legal-types";
 import type { BrainPage } from "@/lib/types";
@@ -77,6 +78,7 @@ interface CalculationResult {
 }
 
 export default function CostCalculatorPage() {
+  const { t } = useLang();
   const [jurisdiction, setJurisdiction] = useState<"de" | "at">("de");
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -119,9 +121,13 @@ export default function CostCalculatorPage() {
           },
         },
       });
-      setSaveNotice("Kostenschätzung wurde in der Akte gespeichert.");
+      setSaveNotice(t("cost_calc.save_success"));
     } catch (e) {
-      setSaveNotice(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Speichern.");
+      setSaveNotice(
+        e instanceof Error
+          ? `${t("cost_calc.error_prefix")} ${e.message}`
+          : t("cost_calc.save_error")
+      );
     } finally {
       setSaving(false);
     }
@@ -162,9 +168,12 @@ export default function CostCalculatorPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Kostenrechner"
-        description="Anwaltskosten nach RVG 2025 (DE) oder RATG (AT)"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Kostenrechner" }]}
+        title={t("cost_calc.title")}
+        description={t("cost_calc.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("cost_calc.breadcrumb") },
+        ]}
       />
 
       {/* Jurisdiction selector */}
@@ -178,7 +187,7 @@ export default function CostCalculatorPage() {
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
-          🇩🇪 Deutschland (RVG 2025)
+          🇩🇪 {t("cost_calc.de")}
         </button>
         <button
           onClick={() => setJurisdiction("at")}
@@ -189,7 +198,7 @@ export default function CostCalculatorPage() {
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
           )}
         >
-          🇦🇹 Österreich (RATG 2024)
+          🇦🇹 {t("cost_calc.at")}
         </button>
       </div>
 
@@ -197,7 +206,7 @@ export default function CostCalculatorPage() {
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div>
           <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-            Streitwert ({jurisdiction === "de" ? "EUR" : "EUR"})
+            {t("cost_calc.dispute_value")} ({jurisdiction === "de" ? "EUR" : "EUR"})
           </label>
           <div className="relative">
             <Euro
@@ -208,8 +217,8 @@ export default function CostCalculatorPage() {
               value={streitwert}
               onChange={(e) => setStreitwert(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && calculate()}
-              placeholder="z.B. 15000"
-              aria-label="z.B. 15000"
+              placeholder={t("cost_calc.placeholder")}
+              aria-label={t("cost_calc.placeholder")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
@@ -220,21 +229,21 @@ export default function CostCalculatorPage() {
           className="brand-bg brand-bg w-full gap-2 text-white"
         >
           <Calculator size={16} />
-          Berechnen
+          {t("cost_calc.calculate")}
         </Button>
 
         {/* Case selector */}
         {cases.length > 0 && (
           <div>
             <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
-              Mit Akte verknüpfen
+              {t("cost_calc.link_case")}
             </label>
             <select
               value={selectedCaseSlug}
               onChange={(e) => setSelectedCaseSlug(e.target.value)}
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             >
-              <option value="">Keine Akte</option>
+              <option value="">{t("cost_calc.no_case")}</option>
               {cases.map((c) => {
                 const fm = caseFrontmatter(c);
                 return (
@@ -255,47 +264,59 @@ export default function CostCalculatorPage() {
           <div className="flex items-center gap-2">
             <CheckCircle2 size={18} className="text-emerald-600" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Berechnungsergebnis
+              {t("cost_calc.result_title")}
             </h2>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] py-2">
-              <span className="text-sm text-[color:var(--ds-text-muted)]">Streitwert</span>
+              <span className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("cost_calc.dispute_value")}
+              </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.streitwert.toLocaleString("de-DE")} €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-[color:var(--ds-text-muted)]">
-                Verfahrensgebühr (1,3)
+                {t("cost_calc.verfahrensgebuehr")}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.verfahrensgebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-[color:var(--ds-text-muted)]">Terminsgebühr (1,2)</span>
+              <span className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("cost_calc.terminsgebuehr")}
+              </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.terminGebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-[color:var(--ds-text-muted)]">
-                Einigungsgebühr ({result.jurisdiction === "de" ? "1,0" : "1,2"})
+                {t(
+                  result.jurisdiction === "de"
+                    ? "cost_calc.einigungsgebuehr_de"
+                    : "cost_calc.einigungsgebuehr_at"
+                )}
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.einigungsgebuehr.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-[color:var(--ds-text-muted)]">Auslagenpauschale</span>
+              <span className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("cost_calc.auslagenpauschale")}
+              </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.auslagen.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] py-2">
-              <span className="text-sm text-[color:var(--ds-text-muted)]">Zwischensumme</span>
+              <span className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("cost_calc.zwischensumme")}
+              </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {(
                   result.verfahrensgebuehr +
@@ -308,14 +329,16 @@ export default function CostCalculatorPage() {
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm text-[color:var(--ds-text-muted)]">
-                MwSt ({result.jurisdiction === "de" ? "19%" : "20%"})
+                {t("cost_calc.mwst")} ({result.jurisdiction === "de" ? "19%" : "20%"})
               </span>
               <span className="font-mono text-sm text-[color:var(--ds-text)]">
                 {result.mwst.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
             </div>
             <div className="brand-soft brand-border/10 flex items-center justify-between rounded-lg border px-3 py-3">
-              <span className="brand-text text-sm font-semibold">Geschätztes Honorar (brutto)</span>
+              <span className="brand-text text-sm font-semibold">
+                {t("cost_calc.estimated_fee")}
+              </span>
               <span className="brand-text font-mono text-lg font-bold">
                 {result.total.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </span>
@@ -332,13 +355,15 @@ export default function CostCalculatorPage() {
                 className="brand-bg gap-2 text-sm text-white"
               >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                In Akte speichern
+                {t("cost_calc.save_to_case")}
               </Button>
               {saveNotice && (
                 <span
                   className={cn(
                     "text-xs",
-                    saveNotice.startsWith("Fehler:") ? "text-red-600" : "text-emerald-600"
+                    saveNotice.startsWith(t("cost_calc.error_prefix"))
+                      ? "text-red-600"
+                      : "text-emerald-600"
                   )}
                 >
                   {saveNotice}
@@ -356,23 +381,14 @@ export default function CostCalculatorPage() {
           role="note"
         >
           <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <p>
-            Die Österreich-Werte sind <strong>Näherungswerte</strong>. Das RATG rechnet mit
-            Bemessungsgrundlage, Einheitssatz und ERV-Zuschlägen — eine verbindliche Berechnung ist
-            nur anhand des konkreten Tarifpostens möglich.
-          </p>
+          <p>{t("cost_calc.at_warning")}</p>
         </div>
       )}
 
       {/* Disclaimer */}
       <div className="flex items-start gap-2 border-t border-[color:var(--ds-border)] pt-4 text-xs text-[color:var(--ds-text-muted)]">
         <Info size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <p>
-          Dieser Rechner dient der Orientierung und ersetzt keine rechtsverbindliche
-          Gebührenberechnung. Berechnungsbasis: RVG § 13 i.d.F. KostBRÄG 2025 (gerichtliches
-          Verfahren 1. Instanz, VV 3100/3104/1003/7002). Prüfe vor verbindlichen Angaben die aktuell
-          geltende Fassung des RVG bzw. RATG.
-        </p>
+        <p>{t("cost_calc.disclaimer")}</p>
       </div>
     </div>
   );

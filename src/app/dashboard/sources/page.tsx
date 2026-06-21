@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLang } from "@/lib/use-lang";
+import type { TFunc } from "@/content/dashboard";
 import {
   Database,
   Globe,
@@ -32,43 +33,44 @@ import type {
   AuthorityTier,
   JurisdictionCode,
 } from "@/lib/source-registry";
+import type { DashboardKey } from "@/content/dashboard";
 
 // ── Status config ─────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<
   SourceStatus,
-  { label: string; color: string; bg: string; border: string; icon: React.ElementType }
+  { labelKey: DashboardKey; color: string; bg: string; border: string; icon: React.ElementType }
 > = {
   fresh: {
-    label: "Aktuell",
+    labelKey: "sources.status_fresh",
     color: "text-emerald-600",
     bg: "bg-emerald-500/5",
     border: "border-emerald-500/20",
     icon: CheckCircle2,
   },
   stale: {
-    label: "Veraltet",
+    labelKey: "sources.status_stale",
     color: "text-amber-600",
     bg: "bg-amber-500/5",
     border: "border-amber-500/20",
     icon: Clock,
   },
   syncing: {
-    label: "Synchronisiert",
+    labelKey: "sources.status_syncing",
     color: "text-blue-600",
     bg: "bg-blue-500/5",
     border: "border-blue-500/20",
     icon: RefreshCw,
   },
   error: {
-    label: "Fehler",
+    labelKey: "sources.status_error",
     color: "text-red-600",
     bg: "bg-red-500/5",
     border: "border-red-500/20",
     icon: XCircle,
   },
   unknown: {
-    label: "Unbekannt",
+    labelKey: "sources.status_unknown",
     color: "text-[color:var(--ds-text-muted)]",
     bg: "bg-[color:var(--ds-hover)]",
     border: "border-[color:var(--ds-border)]",
@@ -76,35 +78,36 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const TYPE_CONFIG: Record<SourceType, { label: string; icon: React.ElementType }> = {
-  statute_corpus: { label: "Gesetzeskorpus", icon: Scale },
-  judgement_api: { label: "Judikatur-API", icon: Landmark },
-  regulatory_feed: { label: "Regulatorischer Feed", icon: Globe },
-  commercial: { label: "Kommerziell", icon: Database },
+const TYPE_CONFIG: Record<SourceType, { labelKey: DashboardKey; icon: React.ElementType }> = {
+  statute_corpus: { labelKey: "sources.type_statute", icon: Scale },
+  judgement_api: { labelKey: "sources.type_judgement", icon: Landmark },
+  regulatory_feed: { labelKey: "sources.type_regulatory", icon: Globe },
+  commercial: { labelKey: "sources.type_commercial", icon: Database },
 };
 
-const AUTHORITY_CONFIG: Record<AuthorityTier, { label: string; badge: string }> = {
+const AUTHORITY_CONFIG: Record<AuthorityTier, { labelKey: DashboardKey; badge: string }> = {
   official: {
-    label: "Offiziell",
+    labelKey: "sources.auth_official",
     badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   },
   "semi-official": {
-    label: "Semi-offiziell",
+    labelKey: "sources.auth_semi",
     badge: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   },
-  community: { label: "Community", badge: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  community: {
+    labelKey: "sources.auth_community",
+    badge: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
   commercial: {
-    label: "Kommerziell",
+    labelKey: "sources.auth_commercial",
     badge: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   },
 };
 
-const JURISDICTION_LABELS: Record<JurisdictionCode, string> = {
-  DE: "🇩🇪 Deutschland",
-  AT: "🇦🇹 Österreich",
-  CH: "🇨🇭 Schweiz",
-  EU: "🇪🇺 EU",
-  ALL: "🌍 Alle",
+const JURISDICTION_LABEL_KEYS: Partial<Record<JurisdictionCode, DashboardKey>> = {
+  DE: "norms.jurisdiction_de",
+  AT: "norms.jurisdiction_at",
+  CH: "norms.jurisdiction_ch",
 };
 
 // ── Source Card ───────────────────────────────────────────────────────
@@ -113,10 +116,12 @@ function SourceCard({
   source,
   onRefresh,
   refreshing,
+  t,
 }: {
   source: SourceRegistryEntry;
   onRefresh: (id: string) => void;
   refreshing: string | null;
+  t: TFunc;
 }) {
   const [expanded, setExpanded] = useState(false);
   const statusCfg = STATUS_CONFIG[source.status];
@@ -152,29 +157,39 @@ function SourceCard({
             <span className="font-medium text-[color:var(--ds-text)]">{source.label}</span>
             <span className={cn("text-xs font-medium", statusCfg.color)}>
               <StatusIcon size={11} className="mr-0.5 inline" />
-              {statusCfg.label}
+              {t(statusCfg.labelKey)}
             </span>
             <Badge variant="default" className={cn("border text-xs", authCfg.badge)}>
-              {authCfg.label}
+              {t(authCfg.labelKey)}
             </Badge>
           </div>
 
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-            <span>{JURISDICTION_LABELS[source.jurisdiction]}</span>
+            <span>
+              {JURISDICTION_LABEL_KEYS[source.jurisdiction]
+                ? t(JURISDICTION_LABEL_KEYS[source.jurisdiction]!)
+                : source.jurisdiction}
+            </span>
             <span className="flex items-center gap-1">
               <FileText size={10} />
-              {source.document_count} Dokumente
+              {source.document_count} {t("sources.docs_count")}
             </span>
             {source.freshness_hours !== null && (
               <span className="flex items-center gap-1">
                 <Clock size={10} />
                 {source.freshness_hours < 24
-                  ? `vor ${source.freshness_hours}h`
-                  : `vor ${Math.floor(source.freshness_hours / 24)}d`}
+                  ? t("sources.ago_h").replace("{h}", String(source.freshness_hours))
+                  : t("sources.ago_d").replace(
+                      "{d}",
+                      String(Math.floor(source.freshness_hours / 24))
+                    )}
               </span>
             )}
             {source.last_sync_at && (
-              <span>Sync: {new Date(source.last_sync_at).toLocaleDateString("de-DE")}</span>
+              <span>
+                {t("sources.sync_label")}{" "}
+                {new Date(source.last_sync_at).toLocaleDateString("de-DE")}
+              </span>
             )}
           </div>
 
@@ -198,7 +213,7 @@ function SourceCard({
                 className="brand-text flex items-center gap-1 text-xs hover:underline"
               >
                 {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                {source.diff_log.length} Änderung(en) seit letztem Sync
+                {source.diff_log.length} {t("sources.changes_since_sync")}
               </button>
               {expanded && (
                 <div className="mt-2 space-y-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] p-2">
@@ -218,10 +233,10 @@ function SourceCard({
                         )}
                       >
                         {diff.change_type === "added"
-                          ? "Neu"
+                          ? t("sources.diff_added")
                           : diff.change_type === "modified"
-                            ? "Geändert"
-                            : "Entfernt"}
+                            ? t("sources.diff_modified")
+                            : t("sources.diff_removed")}
                       </span>
                       <span className="font-mono">{diff.statute_code}</span>
                       <span className="text-[color:var(--ds-text-subtle)]">
@@ -249,7 +264,7 @@ function SourceCard({
             ) : (
               <RefreshCw size={12} />
             )}
-            Sync
+            {t("sources.sync_btn")}
           </Button>
         </div>
       </div>
@@ -259,13 +274,17 @@ function SourceCard({
 
 // ── Stats Bar ─────────────────────────────────────────────────────────
 
-function StatsBar({ registry }: { registry: SourceRegistryResponse }) {
+function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc }) {
   const stats = [
-    { label: "Gesamt", value: registry.total, color: "text-[color:var(--ds-text)]" },
-    { label: "Aktuell", value: registry.fresh, color: "text-emerald-600" },
-    { label: "Veraltet", value: registry.stale, color: "text-amber-600" },
-    { label: "Fehler", value: registry.error, color: "text-red-600" },
-    { label: "Unbekannt", value: registry.unknown, color: "text-[color:var(--ds-text-muted)]" },
+    { label: t("sources.stat_total"), value: registry.total, color: "text-[color:var(--ds-text)]" },
+    { label: t("sources.stat_fresh"), value: registry.fresh, color: "text-emerald-600" },
+    { label: t("sources.stat_stale"), value: registry.stale, color: "text-amber-600" },
+    { label: t("sources.stat_error"), value: registry.error, color: "text-red-600" },
+    {
+      label: t("sources.stat_unknown"),
+      value: registry.unknown,
+      color: "text-[color:var(--ds-text-muted)]",
+    },
   ];
 
   return (
@@ -309,7 +328,7 @@ export default function SourcesPage() {
       const res = await api.sources.list(params);
       setRegistry(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Quellen-Status konnte nicht geladen werden.");
+      setError(e instanceof Error ? e.message : t("sources.error_load"));
       setRegistry(null);
     } finally {
       setLoading(false);
@@ -327,11 +346,11 @@ export default function SourcesPage() {
     try {
       const result = await api.sources.refresh(sourceId);
       setMessage(
-        `${result.label}: ${result.sync_summary?.imported ?? 0} Dokumente synchronisiert.`
+        `${result.label}: ${result.sync_summary?.imported ?? 0} ${t("sources.docs_count")} synchronisiert.`
       );
       await loadSources();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sync fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("sources.sync_failed"));
     } finally {
       setRefreshing(null);
     }
@@ -367,9 +386,12 @@ export default function SourcesPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Rechtsquellen"
-        description="Quellen-Registry — Status, Freshness und Provenance aller Rechtsdaten"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Rechtsquellen" }]}
+        title={t("sources.title")}
+        description={t("sources.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("sources.breadcrumb") },
+        ]}
         actions={
           <Button
             onClick={handleExport}
@@ -379,7 +401,7 @@ export default function SourcesPage() {
             className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
           >
             <Download size={14} />
-            Export
+            {t("sources.export")}
           </Button>
         }
       />
@@ -399,41 +421,43 @@ export default function SourcesPage() {
       )}
 
       {/* Stats */}
-      {registry && <StatsBar registry={registry} />}
+      {registry && <StatsBar registry={registry} t={t} />}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
         <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
-        <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">Filter:</span>
+        <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+          {t("sources.filter")}
+        </span>
         <select
           value={jurisdictionFilter}
           onChange={(e) => setJurisdictionFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
-          <option value="all">Alle Jurisdiktionen</option>
-          <option value="DE">🇩🇪 Deutschland</option>
-          <option value="AT">🇦🇹 Österreich</option>
-          <option value="CH">🇨🇭 Schweiz</option>
+          <option value="all">{t("sources.all_jurisdictions")}</option>
+          <option value="DE">🇩🇪 {t("norms.jurisdiction_de")}</option>
+          <option value="AT">🇦🇹 {t("norms.jurisdiction_at")}</option>
+          <option value="CH">🇨🇭 {t("norms.jurisdiction_ch")}</option>
         </select>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
-          <option value="all">Alle Typen</option>
-          <option value="statute_corpus">Gesetzeskorpus</option>
-          <option value="judgement_api">Judikatur-API</option>
+          <option value="all">{t("sources.all_types")}</option>
+          <option value="statute_corpus">{t("sources.type_statute")}</option>
+          <option value="judgement_api">{t("sources.type_judgement")}</option>
         </select>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         >
-          <option value="all">Alle Status</option>
-          <option value="fresh">Aktuell</option>
-          <option value="stale">Veraltet</option>
-          <option value="error">Fehler</option>
-          <option value="unknown">Unbekannt</option>
+          <option value="all">{t("sources.all_status")}</option>
+          <option value="fresh">{t("sources.stat_fresh")}</option>
+          <option value="stale">{t("sources.stat_stale")}</option>
+          <option value="error">{t("sources.stat_error")}</option>
+          <option value="unknown">{t("sources.stat_unknown")}</option>
         </select>
         <div className="flex-1" />
         <Button
@@ -444,7 +468,7 @@ export default function SourcesPage() {
           className="gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
         >
           {loading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          Aktualisieren
+          {t("sources.refresh")}
         </Button>
       </div>
 
@@ -461,9 +485,9 @@ export default function SourcesPage() {
         <div className="space-y-4 py-20 text-center">
           <Database size={48} className="mx-auto text-[color:var(--ds-border)]" />
           <div>
-            <p className="text-[color:var(--ds-text-muted)]">Keine Quellen gefunden.</p>
+            <p className="text-[color:var(--ds-text-muted)]">{t("sources.empty")}</p>
             <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-              Passen Sie die Filter an oder aktualisieren Sie die Ansicht.
+              {t("sources.empty_hint")}
             </p>
           </div>
         </div>
@@ -478,7 +502,7 @@ export default function SourcesPage() {
                 <div className="flex items-center gap-2">
                   <TypeIcon size={16} className="text-[color:var(--ds-text-muted)]" />
                   <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                    {typeCfg.label}
+                    {t(typeCfg.labelKey)}
                   </h2>
                   <span className="text-xs text-[color:var(--ds-text-muted)]">
                     ({sources.length})
@@ -491,6 +515,7 @@ export default function SourcesPage() {
                       source={source}
                       onRefresh={handleRefresh}
                       refreshing={refreshing}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -503,27 +528,23 @@ export default function SourcesPage() {
       {/* Info panel */}
       <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-          Über die Quellen-Registry
+          {t("sources.about_title")}
         </h3>
         <p className="text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-          Die Source Registry ist die zentrale Instanz für Rechtsdaten-Provenance in Subsumio. Sie
-          verfolgt den Status aller Rechtsquellen — Gesetzeskorpora, Judikatur-APIs und
-          regulatorische Feeds — mit Freshness-Indikatoren, Authority-Tier und Sync-Historie. Jede
-          AI-Antwort kann über die Registry nachweisen, aus welchen Quellen und welchem Stand sie
-          stammt.
+          {t("sources.about_desc")}
         </p>
         <div className="flex items-center gap-4 pt-1 text-xs text-[color:var(--ds-text-muted)]">
           <span className="flex items-center gap-1">
             <CheckCircle2 size={11} className="text-emerald-600" />
-            Fresh = innerhalb des Sync-Intervalls
+            {t("sources.fresh_hint")}
           </span>
           <span className="flex items-center gap-1">
             <Clock size={11} className="text-amber-600" />
-            Stale = Sync-Intervall überschritten
+            {t("sources.stale_hint")}
           </span>
           <span className="flex items-center gap-1">
             <XCircle size={11} className="text-red-600" />
-            Error = Sync fehlgeschlagen
+            {t("sources.error_hint")}
           </span>
         </div>
       </div>
