@@ -195,7 +195,7 @@ export function MobileTabBar({
         {/* Active indicator bar */}
         <div className="relative h-0.5">
           <div
-            className="brand-bg absolute top-0 h-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="brand-bg absolute top-0 h-0.5 transition-[width,left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
             style={{
               width: `${100 / 6}%`,
               left: `${(activeTab >= 0 ? activeTab : 0) * (100 / 6)}%`,

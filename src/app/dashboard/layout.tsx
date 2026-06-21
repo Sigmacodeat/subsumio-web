@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </a>
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          className="fixed inset-0 z-[45] bg-black/60 md:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />

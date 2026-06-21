@@ -114,7 +114,7 @@ export type ValidatedQuery<Q> = Q extends z.ZodTypeAny ? z.infer<Q> : undefined;
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token, x-internal-secret",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-csrf-token",
   "Access-Control-Max-Age": "86400",
 };
 

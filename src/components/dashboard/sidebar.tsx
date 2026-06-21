@@ -277,7 +277,7 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
         <button
           onClick={() => void syncPending()}
           disabled={syncing}
-          className="brand-text text-xs transition-all disabled:opacity-50"
+          className="brand-text text-xs transition-[opacity,color] duration-200 disabled:opacity-50"
         >
           {syncing ? t("sidebar.syncing") : t("sidebar.sync_now")}
         </button>
@@ -521,7 +521,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-8 text-xs text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-transparent focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
                 aria-label={t("sidebar.filter_placeholder")}
               />
               {searchQuery && (

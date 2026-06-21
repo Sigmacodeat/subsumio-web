@@ -454,7 +454,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       mobileChatRef.current?.sendMessage(alert.query);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-all",
+                      "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
                       alert.severity === "urgent"
                         ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
                         : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
@@ -483,7 +483,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       key={action.label}
                       onClick={() => handleQuickAction(action)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
                     >
                       <Icon size={12} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
                       {action.label}
@@ -587,7 +587,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       ref?.sendMessage(alert.query);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-all",
+                      "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-[background-color,border-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
                       alert.severity === "urgent"
                         ? "border-red-200/60 bg-red-50/50 text-red-700 hover:border-red-300 hover:bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-400 dark:hover:bg-red-950/30"
                         : "border-amber-200/60 bg-amber-50/50 text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/30"
@@ -616,7 +616,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                     <button
                       key={action.label}
                       onClick={() => handleQuickAction(action)}
-                      className="group/action inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                      className="group/action inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none active:scale-95"
                     >
                       <Icon
                         size={12}
@@ -662,7 +662,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             size={16}
             className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
           />
-          <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-all duration-200 group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
+          <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
             Copilot
           </span>
         </button>

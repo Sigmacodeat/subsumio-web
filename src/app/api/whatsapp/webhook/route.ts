@@ -113,11 +113,11 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       try {
         await sendWhatsAppText(
           message.from,
-          `Kanzlei OS konnte die Nachricht nicht verarbeiten: ${error}`
+          "Kanzlei OS konnte die Nachricht derzeit nicht verarbeiten. Bitte versuchen Sie es später erneut."
         );
       } catch {}
       await markMessageProcessed(message.id, phoneHash(message.from), message.type, "failed");
-      results.push({ id: message.id, status: "failed", error });
+      results.push({ id: message.id, status: "failed" });
     }
   }
 

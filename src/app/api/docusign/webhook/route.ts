@@ -54,13 +54,15 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     return Response.json({ ok: true, dedup: true });
   }
 
-  // HMAC verification (optional — requires DOCUSIGN_CONNECT_SECRET)
+  // HMAC verification (mandatory — prevents forged envelope status updates)
   const connectSecret = process.env.DOCUSIGN_CONNECT_SECRET;
-  if (connectSecret) {
-    const signature = req.headers.get("x-docusign-signature-1");
-    if (!verifyDocusignConnectSignature(rawBody, signature, connectSecret)) {
-      return Response.json({ error: "invalid_signature" }, { status: 401 });
-    }
+  if (!connectSecret) {
+    console.error("[docusign-webhook] DOCUSIGN_CONNECT_SECRET not configured — rejecting webhook");
+    return Response.json({ error: "webhook_not_configured" }, { status: 501 });
+  }
+  const signature = req.headers.get("x-docusign-signature-1");
+  if (!verifyDocusignConnectSignature(rawBody, signature, connectSecret)) {
+    return Response.json({ error: "invalid_signature" }, { status: 401 });
   }
 
   // Map Docusign → Subsumio status
