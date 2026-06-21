@@ -76,7 +76,8 @@ export type AuditAction =
   | "whatsapp.outbound_sent"
   | "whatsapp.outbound_blocked"
   | "whatsapp.briefing_feedback"
-  | "feedback.submit";
+  | "feedback.submit"
+  | "time.auto_extract";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -133,6 +134,7 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.outbound_sent": "WhatsApp proaktiv gesendet",
   "whatsapp.outbound_blocked": "WhatsApp-Versand geblockt",
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
+  "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
 };
 

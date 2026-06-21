@@ -133,8 +133,8 @@ export default async function RootLayout({
             </ToastProvider>
           </MonitoringProvider>
         </QueryProvider>
-        <RefConsentBanner />
-        <AnalyticsConsentBanner />
+        {isMarketingPage && <RefConsentBanner />}
+        {isMarketingPage && <AnalyticsConsentBanner />}
         <ServiceWorkerRegister />
       </body>
     </html>

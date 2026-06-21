@@ -20,6 +20,8 @@ export interface DeadlineEntry {
   law?: string;
   calculation_note?: string;
   reminder_sent_at?: string;
+  /** Welche Eskalationsstufen (in Tagen vor Fälligkeit) bereits per Mail verschickt wurden. */
+  reminder_stages_sent?: number[];
   review_status?: "unreviewed" | "reviewed" | "approved" | "rejected";
   reviewed_by?: string;
   reviewed_at?: string;
@@ -266,7 +268,14 @@ export interface DecisionFrontmatter {
 export interface AuditLogEntry {
   id: string;
   at: string;
-  action: "created" | "updated" | "deleted" | "status_changed" | "time_added" | "deadline_added" | "reminder_sent";
+  action:
+    | "created"
+    | "updated"
+    | "deleted"
+    | "status_changed"
+    | "time_added"
+    | "deadline_added"
+    | "reminder_sent";
   actor?: string;
   actorId?: string;
   field?: string;
@@ -278,7 +287,7 @@ export interface AuditLogEntry {
 /** Frontmatter eines beliebigen Objekts typisiert lesen (fehlend → {}). */
 export function frontmatterOf<T>(page: unknown): T {
   const fm = (page as { frontmatter?: Record<string, unknown> } | null | undefined)?.frontmatter;
-  return ((fm && typeof fm === "object") ? fm : {}) as T;
+  return (fm && typeof fm === "object" ? fm : {}) as T;
 }
 
 /** Frontmatter einer Page als CaseFrontmatter lesen (fehlend → {}). */
@@ -287,6 +296,8 @@ export function caseFrontmatter(page: { frontmatter?: Record<string, unknown> })
 }
 
 /** Frontmatter einer Page als InvoiceFrontmatter lesen (fehlend → {}). */
-export function invoiceFrontmatter(page: { frontmatter?: Record<string, unknown> }): InvoiceFrontmatter {
+export function invoiceFrontmatter(page: {
+  frontmatter?: Record<string, unknown>;
+}): InvoiceFrontmatter {
   return (page.frontmatter ?? {}) as InvoiceFrontmatter;
 }

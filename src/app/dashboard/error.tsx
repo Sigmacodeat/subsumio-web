@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
 
+import { D } from "@/content/dashboard";
+
 export default function DashboardError({
   error,
   reset,
@@ -13,29 +15,29 @@ export default function DashboardError({
   useEffect(() => {
     console.error("[dashboard error]", error);
     if (process.env.NODE_ENV === "production") {
-      import("@sentry/nextjs")
-        .then((Sentry) => Sentry.captureException(error))
-        .catch(() => {});
+      import("@sentry/nextjs").then((Sentry) => Sentry.captureException(error)).catch(() => {});
     }
   }, [error]);
 
+  const title = D["dashboard.error_title"].de;
+  const defaultMsg = D["dashboard.error_default"].de;
+  const retry = D["dashboard.retry_btn"].de;
+
   return (
-    <div className="flex items-center justify-center min-h-[60vh] px-6">
-      <div className="text-center max-w-sm">
-        <div className="w-12 h-12 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mx-auto mb-6">
+    <div className="flex min-h-[60vh] items-center justify-center px-6">
+      <div className="max-w-sm text-center">
+        <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-rose-500/30 bg-rose-600/20">
           <AlertCircle size={20} className="text-rose-400" />
         </div>
-        <h2 className="text-lg font-semibold text-[color:var(--ds-text)] mb-2">
-          Etwas ist schiefgelaufen
-        </h2>
-        <p className="text-sm text-[color:var(--ds-text-muted)] mb-6">
-          {error.message || "Ein unerwarteter Fehler ist aufgetreten."}
+        <h2 className="mb-2 text-lg font-semibold text-[color:var(--ds-text)]">{title}</h2>
+        <p className="mb-6 text-sm text-[color:var(--ds-text-muted)]">
+          {error.message || defaultMsg}
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 bg-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary-hover)] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--brand-primary)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[color:var(--brand-primary-hover)]"
         >
-          <RotateCcw size={14} /> Erneut versuchen
+          <RotateCcw size={14} /> {retry}
         </button>
       </div>
     </div>

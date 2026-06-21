@@ -24,6 +24,27 @@ export type SolutionSlug = "law-firms" | "solo" | "in-house" | "mid-sized";
 
 export const SOLUTION_SLUGS: SolutionSlug[] = ["law-firms", "solo", "in-house", "mid-sized"];
 
+/** Short cross-link labels for the "not quite right for you?" switcher on every
+ *  /solutions/* page — same icons as the header mega-nav (site.ts), kept here
+ *  since this is the solutions domain file. */
+export const SOLUTION_CROSS_LINKS: Record<
+  Lang,
+  Record<SolutionSlug, { label: string; icon: string }>
+> = {
+  en: {
+    "law-firms": { label: "For Law Firms", icon: "Landmark" },
+    solo: { label: "For Solo Lawyers", icon: "User" },
+    "in-house": { label: "For In-House", icon: "Building2" },
+    "mid-sized": { label: "For Mid-Sized Firms", icon: "Users" },
+  },
+  de: {
+    "law-firms": { label: "Für Kanzleien", icon: "Landmark" },
+    solo: { label: "Für Einzelanwälte", icon: "User" },
+    "in-house": { label: "Für Justiziariate", icon: "Building2" },
+    "mid-sized": { label: "Für Mittelständische", icon: "Users" },
+  },
+};
+
 export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
   en: {
     "law-firms": {

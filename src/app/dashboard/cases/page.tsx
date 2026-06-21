@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { STATUS_TEXT, type StatusColor } from "@/lib/status-colors";
+import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -63,7 +63,7 @@ const STATUS_CONFIG: Record<
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  low: "bg-gray-500/10 text-gray-600 border-gray-500/20",
   medium: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   high: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   critical: "bg-red-500/10 text-red-600 border-red-500/20",
@@ -219,7 +219,13 @@ export default function CasesPage() {
       sortAccessor: (c) => c.title,
       cell: (c) => (
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)]">
+          <div
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
+              STATUS_BG[(STATUS_CONFIG[c.status] || STATUS_CONFIG.open).color],
+              STATUS_BORDER[(STATUS_CONFIG[c.status] || STATUS_CONFIG.open).color]
+            )}
+          >
             {(() => {
               const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.open;
               const Icon = cfg.icon;
@@ -245,7 +251,12 @@ export default function CasesPage() {
         return (
           <Badge
             variant="default"
-            className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
+            className={cn(
+              "border text-xs font-medium",
+              STATUS_BG[cfg.color],
+              STATUS_TEXT[cfg.color],
+              STATUS_BORDER[cfg.color]
+            )}
           >
             {t(cfg.labelKey)}
           </Badge>

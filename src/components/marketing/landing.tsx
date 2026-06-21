@@ -16,7 +16,9 @@ import LiveDemo from "./live-demo";
 import DashboardReel from "./dashboard-reel";
 import SuperbrainAdvantage from "./superbrain-advantage";
 import TrustBand from "./trust-band";
-import { SectionHeading, FaqList, ICONS, accentTile } from "./chrome";
+import AudienceTabs from "./audience-tabs";
+import { SectionHeading, ICONS, accentTile } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
 import { GlowCard, StaggerContainer, StaggerItem, EASE, ScrollProgress } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
@@ -355,6 +357,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
           </div>
         </section>
 
+        {/* Audience segments — homepage teaser linking to /solutions/* */}
+        <AudienceTabs lang={lang} />
+
         {/* How it works — alternating surface band */}
         <section
           data-tone="light"
@@ -425,7 +430,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         >
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
-            <FaqList items={t.faq} />
+            <AnimatedFaqList items={t.faq} tone="light" />
           </motion.div>
         </section>
 

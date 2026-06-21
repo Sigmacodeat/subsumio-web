@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   Database,
   Globe,
@@ -285,6 +286,7 @@ function StatsBar({ registry }: { registry: SourceRegistryResponse }) {
 // ── Main Page ─────────────────────────────────────────────────────────
 
 export default function SourcesPage() {
+  const { t } = useLang();
   const [registry, setRegistry] = useState<SourceRegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<string | null>(null);
@@ -451,7 +453,7 @@ export default function SourcesPage() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Wird geladen"
+          aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>

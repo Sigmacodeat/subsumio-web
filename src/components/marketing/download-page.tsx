@@ -25,7 +25,8 @@ import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { p, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
-import { SectionHeading, FaqList } from "./chrome";
+import { SectionHeading } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -322,7 +323,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       <section className="relative z-10 px-6 py-24">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.faqTitle} />
-          <FaqList items={t.faq} />
+          <AnimatedFaqList items={t.faq} tone="light" />
         </div>
       </section>
 

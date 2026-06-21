@@ -131,10 +131,10 @@ export default function ApiKeysPage() {
           <thead>
             <tr className="border-b border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]">
               <th className="px-4 py-3 text-left font-medium">Name</th>
-              <th className="px-4 py-3 text-left font-medium">Prefix</th>
-              <th className="px-4 py-3 text-left font-medium">Scopes</th>
+              <th className="hidden px-4 py-3 text-left font-medium md:table-cell">Prefix</th>
+              <th className="hidden px-4 py-3 text-left font-medium lg:table-cell">Scopes</th>
               <th className="px-4 py-3 text-left font-medium">Status</th>
-              <th className="px-4 py-3 text-left font-medium">Erstellt</th>
+              <th className="hidden px-4 py-3 text-left font-medium md:table-cell">Erstellt</th>
               <th className="px-4 py-3 text-right font-medium"></th>
             </tr>
           </thead>
@@ -159,10 +159,10 @@ export default function ApiKeysPage() {
                   className="border-b border-[color:var(--ds-border)]/50 transition-colors hover:bg-[color:var(--ds-surface)]"
                 >
                   <td className="px-4 py-3 text-[color:var(--ds-text)]">{k.name}</td>
-                  <td className="px-4 py-3 font-mono text-[color:var(--ds-text-muted)]">
+                  <td className="hidden px-4 py-3 font-mono text-[color:var(--ds-text-muted)] md:table-cell">
                     {k.prefix}…
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="hidden px-4 py-3 lg:table-cell">
                     <div className="flex gap-1">
                       {k.scopes.map((s) => (
                         <Badge
@@ -182,7 +182,7 @@ export default function ApiKeysPage() {
                       <span className="text-xs text-red-600">Inaktiv</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-[color:var(--ds-text-muted)]">
+                  <td className="hidden px-4 py-3 text-[color:var(--ds-text-muted)] md:table-cell">
                     {new Date(k.createdAt).toLocaleDateString("de-DE")}
                   </td>
                   <td className="px-4 py-3 text-right">

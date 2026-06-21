@@ -440,6 +440,98 @@
   --tw-prose-td-borders: var(--ds-border);
 }
 
+/* Chat markdown rendering — lightweight prose for AI responses */
+.prose-chat {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ds-text);
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3,
+.prose-chat h4 {
+  font-weight: 600;
+  color: var(--ds-text);
+  margin-top: 0.75em;
+  margin-bottom: 0.25em;
+}
+.prose-chat h1 {
+  font-size: 1.15em;
+}
+.prose-chat h2 {
+  font-size: 1.1em;
+}
+.prose-chat h3 {
+  font-size: 1.05em;
+}
+.prose-chat h4 {
+  font-size: 1em;
+}
+.prose-chat p {
+  margin: 0.5em 0;
+}
+.prose-chat ul,
+.prose-chat ol {
+  margin: 0.5em 0;
+  padding-left: 1.25em;
+}
+.prose-chat ul {
+  list-style: disc;
+}
+.prose-chat ol {
+  list-style: decimal;
+}
+.prose-chat li {
+  margin: 0.25em 0;
+}
+.prose-chat strong {
+  font-weight: 600;
+  color: var(--ds-text);
+}
+.prose-chat em {
+  font-style: italic;
+}
+.prose-chat a {
+  color: var(--brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-chat a:hover {
+  opacity: 0.8;
+}
+.prose-chat code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  background: var(--ds-surface-2);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+.prose-chat pre {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+  padding: 0.75em;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.prose-chat pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+.prose-chat blockquote {
+  border-left: 3px solid var(--ds-border);
+  padding-left: 0.75em;
+  margin: 0.5em 0;
+  color: var(--ds-text-muted);
+  font-style: italic;
+}
+.prose-chat hr {
+  border: none;
+  border-top: 1px solid var(--ds-border);
+  margin: 1em 0;
+}
+
 /* Brand typography: Space Grotesk carries every headline — the geometric,
    slightly technical voice of the Sigma Synapse mark. Body stays Inter. */
 h1,
@@ -623,6 +715,41 @@ body {
 
 .brand-text {
   color: var(--brand-text);
+}
+
+/*
+ * brand-soft/N, brand-border/N, brand-text/N — explicit opacity variants.
+ * `brand-soft` etc. are plain CSS classes, NOT Tailwind color utilities, so
+ * Tailwind's `/N` opacity-modifier syntax can't generate these on its own —
+ * every `brand-soft/5`-style className in the codebase silently compiled to
+ * NO rule at all (invisible fill, dead class). Pin the exact variants in use.
+ */
+.brand-soft\/5 {
+  background-color: color-mix(in srgb, var(--brand-primary) 5%, transparent);
+}
+.brand-soft\/15 {
+  background-color: color-mix(in srgb, var(--brand-primary) 15%, transparent);
+}
+.brand-soft\/20 {
+  background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+.brand-soft\/30 {
+  background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+.brand-border\/10 {
+  border-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+.brand-border\/40 {
+  border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
+}
+.brand-border\/60 {
+  border-color: color-mix(in srgb, var(--brand-primary) 60%, transparent);
+}
+.brand-text\/70 {
+  color: color-mix(in srgb, var(--brand-text) 70%, transparent);
+}
+.brand-text\/90 {
+  color: color-mix(in srgb, var(--brand-text) 90%, transparent);
 }
 
 .brand-glow-bg {

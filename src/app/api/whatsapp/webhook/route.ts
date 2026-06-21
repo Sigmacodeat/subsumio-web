@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { sendWhatsAppText } from "@/lib/whatsapp/send";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { isMessageProcessed, markMessageProcessed } from "@/lib/whatsapp/dedup";
 import {
   extractIncomingMessages,
@@ -11,6 +12,7 @@ import { verifyWebhookChallenge, verifyWhatsAppSignature, phoneHash } from "@/li
 import { resolveSenderIdentity } from "@/lib/whatsapp/identity";
 import { getWhatsAppWindowStore } from "@/lib/whatsapp/window-store";
 import { orchestrateWhatsAppMessage } from "@/lib/whatsapp-kanzlei-os/orchestrator";
+import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createWebhookHandler } from "@/lib/api-handler";
@@ -71,6 +73,38 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       if (result.reply) {
         await sendWhatsAppText(message.from, result.reply);
       }
+
+      // ── Dispatch approval notification via Event Bus (P1-SECR-001) ──────
+      // If the orchestrator created a pending approval with a notification event,
+      // send a proactive WhatsApp message to the lawyer with the approval summary.
+      if (result.status === "pending_approval" && result.actionSlug) {
+        try {
+          const approvalPageRes = await fetch(
+            `${ENGINE_URL}/api/pages/${encodeURIComponent(`legal/chat/actions/${result.actionSlug}`)}`,
+            { headers: engineHeadersForBrain(sender.brainId) }
+          );
+          if (approvalPageRes.ok) {
+            const approvalPage = await approvalPageRes.json();
+            const fm = approvalPage.frontmatter ?? {};
+            if (fm._notificationEvent) {
+              const event = fm._notificationEvent;
+              const messageBody = buildWhatsAppMessageBody(event);
+              if (event.recipient_phone && messageBody) {
+                await sendProactiveMessage({
+                  to: event.recipient_phone,
+                  brainId: sender.brainId,
+                  scope: "approval_request",
+                  freeform: messageBody,
+                  urgent: true,
+                });
+              }
+            }
+          }
+        } catch {
+          // Non-blocking: notification dispatch is best-effort
+        }
+      }
+
       await markMessageProcessed(message.id, phoneHash(message.from), message.type, result.status);
       results.push({ id: message.id, status: result.status });
     } catch (err) {

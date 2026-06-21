@@ -27,12 +27,15 @@ export const D = {
 
   // ── Sidebar: nav items (brain) ──
   "nav.overview": { de: "Übersicht", en: "Overview" },
-  "nav.assistant": { de: "Assistant", en: "Assistant" },
-  "nav.query": { de: "Query", en: "Query" },
+  "nav.assistant": { de: "Akten-Chat", en: "Case Chat" },
+  "nav.chat": { de: "Brain-Chat", en: "Brain Chat" },
+  "nav.chat_analytics": { de: "Chat-Analytics", en: "Chat Analytics" },
+  "nav.chat_compare": { de: "Modell-Vergleich", en: "Model Comparison" },
+  "nav.query": { de: "Wissenssuche (Kanzlei)", en: "Firm Knowledge Search" },
   "nav.agents": { de: "Agenten", en: "Agents" },
   "nav.approvals": { de: "Freigaben", en: "Approvals" },
   "nav.workflows": { de: "Workflows", en: "Workflows" },
-  "nav.brain": { de: "Brain", en: "Brain" },
+  "nav.brain": { de: "Wissensdatenbank", en: "Knowledge Database" },
   "nav.graph": { de: "Graph", en: "Graph" },
   "nav.upload": { de: "Upload", en: "Upload" },
   "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
@@ -47,7 +50,7 @@ export const D = {
   "nav.client_portal": { de: "Mandanten-Portal", en: "Client Portal" },
 
   // ── Sidebar: nav items (research) ──
-  "nav.legal_research": { de: "Legal Research", en: "Legal Research" },
+  "nav.legal_research": { de: "Rechtsrecherche", en: "Legal Research" },
   "nav.analyze": { de: "Dokument-Analyse", en: "Document Analysis" },
   "nav.precedent_search": { de: "Präzedenzsuche", en: "Precedent Search" },
   "nav.translate": { de: "Übersetzung", en: "Translation" },
@@ -103,6 +106,7 @@ export const D = {
   "nav.api_keys": { de: "API-Keys", en: "API Keys" },
   "nav.billing": { de: "Abrechnung", en: "Billing" },
   "nav.mobile": { de: "Mobile", en: "Mobile" },
+  "nav.experience": { de: "Erfahrung & Profil", en: "Experience & Profile" },
   "nav.settings": { de: "Settings", en: "Settings" },
   "nav.kanzlei": { de: "Kanzlei", en: "Firm" },
   "nav.security": { de: "Sicherheit", en: "Security" },
@@ -989,6 +993,41 @@ export const D = {
   "onboarding.step_query_thinking": { de: "Denke nach…", en: "Thinking…" },
   "onboarding.step_done": { de: "Fertig!", en: "Done!" },
 
+  // ── Onboarding: WhatsApp setup step ──
+  "onboarding.step_whatsapp": { de: "WhatsApp verbinden", en: "Connect WhatsApp" },
+  "onboarding.step_whatsapp_desc": {
+    de: "Verbinde deine WhatsApp Business Number — Mandanten können direkt schreiben und die KI routet die Anfragen.",
+    en: "Connect your WhatsApp Business number — clients can message directly and AI routes requests.",
+  },
+  "onboarding.whatsapp_phone": { de: "WhatsApp-Nummer", en: "WhatsApp number" },
+  "onboarding.whatsapp_phone_hint": {
+    de: "Format: +49 123 4567890",
+    en: "Format: +49 123 4567890",
+  },
+  "onboarding.whatsapp_skip": {
+    de: "Später einrichten",
+    en: "Set up later",
+  },
+  "onboarding.whatsapp_connected": {
+    de: "Verbunden! Mandanten können ab jetzt WhatsApp-Nachrichten senden.",
+    en: "Connected! Clients can now send WhatsApp messages.",
+  },
+
+  // ── Onboarding: Billing/rate setup step ──
+  "onboarding.step_billing": { de: "Stundensatz & Abrechnung", en: "Hourly rate & billing" },
+  "onboarding.step_billing_desc": {
+    de: "Lege deinen Stundensatz und Abrechnungstakt fest — wird für Zeiterfassung und Rechnungen verwendet.",
+    en: "Set your hourly rate and billing increment — used for time tracking and invoices.",
+  },
+  "onboarding.billing_rate": { de: "Stundensatz (€)", en: "Hourly rate (€)" },
+  "onboarding.billing_increment": { de: "Abrechnungstakt", en: "Billing increment" },
+  "onboarding.billing_increment_5": { de: "5 Min.", en: "5 min" },
+  "onboarding.billing_increment_10": { de: "10 Min.", en: "10 min" },
+  "onboarding.billing_increment_15": { de: "15 Min.", en: "15 min" },
+  "onboarding.billing_increment_30": { de: "30 Min.", en: "30 min" },
+  "onboarding.billing_iban": { de: "IBAN (für Rechnungen)", en: "IBAN (for invoices)" },
+  "onboarding.billing_bank": { de: "Bankname", en: "Bank name" },
+
   // ── Shared aria-labels ──
   "aria.loading": { de: "Wird geladen", en: "Loading" },
   "aria.loading_data": { de: "Daten werden geladen", en: "Loading data" },
@@ -1044,6 +1083,56 @@ export const D = {
     de: "Frage konnte nicht gesendet werden. Bitte erneut versuchen.",
     en: "Failed to send question. Please try again.",
   },
+
+  // ── Unified Chat ──
+  "chat.placeholder": { de: "Frage an das Brain stellen…", en: "Ask the Brain…" },
+  "chat.title": { de: "Brain-Chat", en: "Brain Chat" },
+  "chat.empty_title": { de: "Brain-Chat bereit", en: "Brain Chat ready" },
+  "chat.empty_desc": {
+    de: "Stelle eine Frage oder wähle eine Akte für kontextbezogene Antworten.",
+    en: "Ask a question or select a case for context-aware answers.",
+  },
+  "chat.clear": { de: "Chat löschen", en: "Clear chat" },
+  "chat.export": { de: "Chat exportieren", en: "Export chat" },
+  "chat.new_session": { de: "Neue Konversation", en: "New conversation" },
+  "chat.sessions": { de: "Konversationen", en: "Conversations" },
+  "chat.no_sessions": { de: "Keine Konversationen", en: "No conversations" },
+  "chat.session_count": { de: "Nachrichten", en: "messages" },
+  "chat.brain_online": { de: "Brain online", en: "Brain online" },
+  "chat.brain_offline": { de: "Brain offline", en: "Brain offline" },
+  "chat.brain_degraded": { de: "Brain eingeschränkt", en: "Brain degraded" },
+  "chat.tokens_session": { de: "Session-Tokens", en: "Session tokens" },
+  "chat.queries_remaining": { de: "Anfragen verbleibend", en: "Queries remaining" },
+  "chat.case_select": { de: "Akte wählen", en: "Select case" },
+  "chat.no_case": { de: "Keine Akte", en: "No case" },
+  "chat.jurisdiction": { de: "Rechtskreis", en: "Jurisdiction" },
+  "chat.mode": { de: "Modus", en: "Mode" },
+  "chat.model": { de: "Modell", en: "Model" },
+  "chat.stop": { de: "Stoppen", en: "Stop" },
+  "chat.send": { de: "Senden", en: "Send" },
+  "chat.regenerate": { de: "Neu generieren", en: "Regenerate" },
+  "chat.edit": { de: "Bearbeiten", en: "Edit" },
+  "chat.copy": { de: "Kopieren", en: "Copy" },
+  "chat.copied": { de: "Kopiert", en: "Copied" },
+  "chat.error_generic": {
+    de: "Ein Fehler ist aufgetreten. Bitte erneut versuchen.",
+    en: "An error occurred. Please try again.",
+  },
+  "chat.error_engine": {
+    de: "Die Engine ist nicht erreichbar. Bitte später erneut versuchen.",
+    en: "The engine is unreachable. Please try again later.",
+  },
+  "chat.confirm_clear": {
+    de: "Alle Nachrichten löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    en: "Delete all messages? This action cannot be undone.",
+  },
+  "chat.confirm_delete_session": {
+    de: "Diese Konversation löschen?",
+    en: "Delete this conversation?",
+  },
+  "chat.search_sessions": { de: "Konversationen durchsuchen…", en: "Search conversations…" },
+  "chat.cost_estimate": { de: "Geschätzte Kosten", en: "Estimated cost" },
+  "chat.no_messages": { de: "Noch keine Nachrichten", en: "No messages yet" },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

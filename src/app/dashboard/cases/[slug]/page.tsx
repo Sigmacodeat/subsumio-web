@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -50,6 +51,7 @@ import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
 import { MatterContextPanel } from "@/components/legal/MatterContextPanel";
 import { cn } from "@/lib/utils";
+import { ChatPanel } from "@/components/chat/chat-panel";
 import {
   STATUS_TEXT,
   STATUS_BG,
@@ -210,6 +212,7 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
 }
 
 export default function CaseDetailPage() {
+  const { t } = useLang();
   const params = useParams();
   const slug = decodeURIComponent(params.slug as string);
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
@@ -335,7 +338,6 @@ export default function CaseDetailPage() {
         description: "",
       });
       saveCaseUpdate({ deadlines: updated });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [deadlinesList, editingDeadlineIndex]
   );
@@ -352,7 +354,6 @@ export default function CaseDetailPage() {
       setEvidenceList(updated);
       evidenceForm.reset({ title: "", type: "", description: "", source: "", weight: 0.5 });
       saveCaseUpdate({ evidence: updated });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [evidenceList, editingEvidenceIndex]
   );
@@ -387,7 +388,6 @@ export default function CaseDetailPage() {
         });
         saveCaseUpdate({ timeEntries: updated });
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [timeEntries]
   );
@@ -411,7 +411,6 @@ export default function CaseDetailPage() {
         expenseForm.reset({ description: "", amount: "", billable: true });
         saveCaseUpdate({ expenses: updated });
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [expensesList]
   );
@@ -608,7 +607,12 @@ export default function CaseDetailPage() {
     setQueryResult(null);
     try {
       const res = await api.query.think(
-        `Im Kontext der Akte "${caseData.title}" (${caseData.caseNumber}): ${query}`
+        `Im Kontext der Akte "${caseData.title}" (${caseData.caseNumber}): ${query}`,
+        {
+          mode: "tokenmax",
+          queryMode: "deep_matter",
+          caseSlug: caseData.slug,
+        }
       );
       setQueryResult(res.answer);
     } catch {
@@ -684,7 +688,7 @@ export default function CaseDetailPage() {
         <div className="mb-3 flex items-center gap-2">
           <Link
             href="/dashboard/cases"
-            aria-label="Zurück zur Aktenliste"
+            aria-label={t("aria.back_to_cases")}
             className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
           >
             <ArrowLeft size={16} aria-hidden="true" />
@@ -1987,7 +1991,7 @@ export default function CaseDetailPage() {
                     }
                   }}
                   placeholder="Neue Aufgabe…"
-                  aria-label="Neue Aufgabe"
+                  aria-label={t("cases.new_task")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
@@ -2511,21 +2515,21 @@ export default function CaseDetailPage() {
                 <input
                   {...timeForm.register("description")}
                   placeholder="Tätigkeit…"
-                  aria-label="Tätigkeit"
+                  aria-label={t("cases.activity")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <input
                   {...timeForm.register("minutes")}
                   type="number"
                   placeholder="Min."
-                  aria-label="Minuten"
+                  aria-label={t("cases.minutes")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <input
                   {...timeForm.register("rate")}
                   type="number"
                   placeholder="€/h"
-                  aria-label="Stundensatz"
+                  aria-label={t("cases.hourly_rate")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
               </div>
@@ -2545,7 +2549,7 @@ export default function CaseDetailPage() {
                 <input
                   {...timeForm.register("lawyer")}
                   placeholder="Bearbeiter / Anwalt"
-                  aria-label="Bearbeiter oder Anwalt"
+                  aria-label={t("cases.assignee")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
@@ -2655,7 +2659,7 @@ export default function CaseDetailPage() {
                 <input
                   {...expenseForm.register("description")}
                   placeholder="z. B. Gerichtskosten, Porto, Fahrtkosten"
-                  aria-label="Auslage"
+                  aria-label={t("cases.expense")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <input
@@ -2663,7 +2667,7 @@ export default function CaseDetailPage() {
                   type="number"
                   step="0.01"
                   placeholder="Betrag €"
-                  aria-label="Betrag"
+                  aria-label={t("cases.amount")}
                   className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                 />
                 <label className="flex items-center gap-2 text-sm whitespace-nowrap text-[color:var(--ds-text-muted)]">
@@ -2802,6 +2806,26 @@ export default function CaseDetailPage() {
         {activeTab === "superbrain" && (
           <div className="max-w-3xl space-y-4">
             <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
+            <div className="h-[500px]">
+              <ChatPanel
+                context={{ type: "case", caseSlug: caseData.slug }}
+                features={{
+                  caseSelector: false,
+                  jurisdictionSelector: true,
+                  modelSelector: true,
+                  modeSelector: true,
+                  fileUpload: true,
+                  sessionHistory: true,
+                  tokenWidget: true,
+                  brainStatus: true,
+                  exampleQueries: true,
+                  exportChat: true,
+                  messageActions: true,
+                }}
+                className="h-full"
+                title={`Akten-Chat: ${caseData.title}`}
+              />
+            </div>
           </div>
         )}
 
@@ -2823,7 +2847,7 @@ export default function CaseDetailPage() {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleQuery()}
                     placeholder="Frage zur Akte…"
-                    aria-label="Frage zur Akte"
+                    aria-label={t("cases.ask_case")}
                     className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                   />
                 </div>

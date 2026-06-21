@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useLang } from "@/lib/use-lang";
 import { Loader2, CheckCircle2, XCircle, Clock, FileText, UserCheck, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ACTION_LABELS, type AgentActionFrontmatter } from "@/lib/approval";
@@ -18,6 +19,7 @@ function fmOf(page: { frontmatter?: Record<string, unknown> }): Partial<AgentAct
 }
 
 export default function ApprovalsPage() {
+  const { t } = useLang();
   const pagesQuery = usePages({ type: "agent_action", limit: 200 });
   const [busy, setBusy] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -115,7 +117,11 @@ export default function ApprovalsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Lädt">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label={t("aria.loading")}
+        >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : (
@@ -175,7 +181,7 @@ export default function ApprovalsPage() {
                         onChange={(e) => setReason(e.target.value)}
                         rows={2}
                         placeholder="Grund der Ablehnung (für die Akte dokumentiert)…"
-                        aria-label="Grund der Ablehnung"
+                        aria-label={t("approvals.reject_reason")}
                         className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-red-500/50 focus:outline-none"
                       />
                       <div className="flex items-center gap-2">

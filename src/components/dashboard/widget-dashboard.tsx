@@ -431,7 +431,7 @@ function QuickActions() {
     { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake"), tone: "urgent" },
     { href: "/dashboard/drafting", icon: PenTool, label: t("cockpit.action_draft") },
     { href: "/dashboard/upload", icon: Upload, label: t("cockpit.action_upload") },
-    { href: "/dashboard/query", icon: MessageSquare, label: t("cockpit.action_ai") },
+    { href: "/dashboard/chat", icon: MessageSquare, label: t("cockpit.action_ai") },
   ];
 
   return (
@@ -662,6 +662,44 @@ export function WidgetDashboard() {
           </div>
         </QueuePanel>
       </div>
+
+      {/* Recent Queries */}
+      {data.recent.length > 0 && (
+        <QueuePanel
+          icon={MessageSquare}
+          title="Letzte Anfragen"
+          href="/dashboard/chat"
+          action="Alle anzeigen"
+        >
+          <div>
+            {data.recent.slice(0, 5).map((rq) => (
+              <Link
+                key={rq.id ?? rq.query}
+                href={`/dashboard/chat?q=${encodeURIComponent(rq.query)}`}
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
+              >
+                <MessageSquare size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-[color:var(--ds-text)]">{rq.query}</p>
+                  {rq.answer_preview && (
+                    <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+                      {rq.answer_preview}
+                    </p>
+                  )}
+                </div>
+                {rq.created_at && (
+                  <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
+                    {new Date(rq.created_at).toLocaleDateString("de-DE", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </QueuePanel>
+      )}
     </div>
   );
 }

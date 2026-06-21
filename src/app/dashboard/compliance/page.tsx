@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -189,6 +190,7 @@ const STATUS_CYCLE: CheckStatus[] = ["ok", "warn", "fail"];
 const STATUS_LABEL: Record<CheckStatus, string> = { ok: "OK", warn: "Offen", fail: "Fehlt" };
 
 export default function CompliancePage() {
+  const { t } = useLang();
   const [activeTab, setActiveTab] = useState<"dsgvo" | "gwg" | "gobd">("dsgvo");
   const [statuses, setStatuses] = useState<Record<string, CheckStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -275,7 +277,7 @@ export default function CompliancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2" role="tablist" aria-label="Compliance-Bereich">
+      <div className="flex gap-2" role="tablist" aria-label={t("aria.compliance_area")}>
         <button
           role="tab"
           aria-selected={activeTab === "dsgvo"}
@@ -351,7 +353,7 @@ export default function CompliancePage() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Checkliste wird geladen"
+          aria-label={t("aria.checklist_loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>

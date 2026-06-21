@@ -15,6 +15,8 @@ import {
   Briefcase,
   FileText,
   Sparkles,
+  Smartphone,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,16 +26,35 @@ import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { normalizeKanzleiSettings, saveKanzleiSettings } from "@/lib/kanzlei-settings";
 
-type Step = "welcome" | "industry" | "profile" | "upload" | "query" | "done";
+type Step =
+  | "welcome"
+  | "industry"
+  | "profile"
+  | "whatsapp"
+  | "billing"
+  | "upload"
+  | "query"
+  | "done";
 
-const STEPS: Step[] = ["welcome", "industry", "profile", "upload", "query", "done"];
+const STEPS: Step[] = [
+  "welcome",
+  "industry",
+  "profile",
+  "whatsapp",
+  "billing",
+  "upload",
+  "query",
+  "done",
+];
 const STEP_INDEX: Record<Step, number> = {
   welcome: 0,
   industry: 1,
   profile: 2,
-  upload: 3,
-  query: 4,
-  done: 5,
+  whatsapp: 3,
+  billing: 4,
+  upload: 5,
+  query: 6,
+  done: 7,
 };
 
 export default function OnboardingPage() {
@@ -60,6 +81,14 @@ export default function OnboardingPage() {
   const [completing, setCompleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappConnected, setWhatsappConnected] = useState(false);
+  const [billing, setBilling] = useState({
+    stundensatz: "220",
+    abrechnungstakt: "15",
+    iban: "",
+    bankName: "",
+  });
 
   const currentIdx = STEP_INDEX[step];
   const totalSteps = STEPS.length - 1;
@@ -112,8 +141,12 @@ export default function OnboardingPage() {
     setError(null);
     setQueryAnswer(null);
     try {
-      const result = await api.query.think(queryText.trim(), "balanced", (chunk) => {
-        setQueryAnswer((prev) => (prev ?? "") + chunk);
+      const result = await api.query.think(queryText.trim(), {
+        mode: "balanced",
+        queryMode: "balanced",
+        onChunk: (chunk) => {
+          setQueryAnswer((prev) => (prev ?? "") + chunk);
+        },
       });
       if (!result.answer && !queryAnswer) {
         setQueryAnswer(result.answer || "—");
@@ -135,17 +168,21 @@ export default function OnboardingPage() {
       anwaltName: contactName,
       kanzleiEmail: contactEmail,
       country: profile.country,
+      stundensatz: billing.stundensatz,
+      abrechnungstakt: billing.abrechnungstakt,
+      iban: billing.iban.trim() || undefined,
+      bankName: billing.bankName.trim() || undefined,
       rechtsgebietSaetze: profile.focus
         .split(",")
         .map((item) => item.trim().toLowerCase())
         .filter(Boolean)
         .reduce<Record<string, number>>((acc, item) => {
-          acc[item] = 200;
+          acc[item] = parseInt(billing.stundensatz, 10) || 200;
           return acc;
         }, {}),
     });
     await saveKanzleiSettings(settings);
-  }, [profile, userEmail, userName]);
+  }, [profile, userEmail, userName, billing]);
 
   const finish = useCallback(async () => {
     setCompleting(true);
@@ -186,7 +223,7 @@ export default function OnboardingPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center p-4 md:p-8"
+      className="flex min-h-full items-center justify-center p-4 md:p-8"
       style={{
         background:
           "linear-gradient(135deg, var(--brand-gradient-from, #14b8a6) 0%, var(--brand-gradient-via, #1d4ed8) 50%, var(--brand-gradient-to, #0f172a) 100%)",
@@ -408,6 +445,167 @@ export default function OnboardingPage() {
                       onChange={(e) => updateProfile("focus", e.target.value)}
                       className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder={t("onboarding.profile_focus_hint")}
+                    />
+                  </label>
+                </div>
+
+                {error && <p className="text-xs text-red-600">{error}</p>}
+
+                <div className="flex justify-between pt-2">
+                  <Button variant="ghost" size="sm" onClick={back}>
+                    <ArrowLeft size={14} /> {t("onboarding.back")}
+                  </Button>
+                  <Button variant="glow" size="sm" onClick={next}>
+                    {t("onboarding.next")} <ArrowRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* WhatsApp Setup */}
+            {step === "whatsapp" && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
+                    <Smartphone size={18} className="brand-text" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                      {t("onboarding.step_whatsapp")}
+                    </h2>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.step_whatsapp_desc")}
+                    </p>
+                  </div>
+                </div>
+
+                {whatsappConnected ? (
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+                      <CheckCircle2 size={24} className="text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-medium text-emerald-700">
+                      {t("onboarding.whatsapp_connected")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="space-y-1.5">
+                      <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                        {t("onboarding.whatsapp_phone")}
+                      </span>
+                      <input
+                        value={whatsappPhone}
+                        onChange={(e) => setWhatsappPhone(e.target.value)}
+                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                        placeholder={t("onboarding.whatsapp_phone_hint")}
+                      />
+                    </label>
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                      <p className="text-xs text-amber-600">
+                        Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach dem Onboarding
+                        kannst du die Webhook-URL im Dashboard konfigurieren.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {error && <p className="text-xs text-red-600">{error}</p>}
+
+                <div className="flex justify-between pt-2">
+                  <Button variant="ghost" size="sm" onClick={back}>
+                    <ArrowLeft size={14} /> {t("onboarding.back")}
+                  </Button>
+                  <div className="flex gap-2">
+                    {!whatsappConnected && (
+                      <Button variant="ghost" size="sm" onClick={next}>
+                        {t("onboarding.whatsapp_skip")} <ArrowRight size={14} />
+                      </Button>
+                    )}
+                    <Button
+                      variant="glow"
+                      size="sm"
+                      onClick={() => {
+                        if (whatsappPhone.trim()) {
+                          setWhatsappConnected(true);
+                        }
+                        next();
+                      }}
+                    >
+                      {t("onboarding.next")} <ArrowRight size={14} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Billing Setup */}
+            {step === "billing" && (
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
+                    <CreditCard size={18} className="brand-text" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-[color:var(--ds-text)]">
+                      {t("onboarding.step_billing")}
+                    </h2>
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.step_billing_desc")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.billing_rate")}
+                    </span>
+                    <input
+                      type="number"
+                      value={billing.stundensatz}
+                      onChange={(e) => setBilling((b) => ({ ...b, stundensatz: e.target.value }))}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder="220"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.billing_increment")}
+                    </span>
+                    <select
+                      value={billing.abrechnungstakt}
+                      onChange={(e) =>
+                        setBilling((b) => ({ ...b, abrechnungstakt: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    >
+                      <option value="5">{t("onboarding.billing_increment_5")}</option>
+                      <option value="10">{t("onboarding.billing_increment_10")}</option>
+                      <option value="15">{t("onboarding.billing_increment_15")}</option>
+                      <option value="30">{t("onboarding.billing_increment_30")}</option>
+                    </select>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.billing_iban")}
+                    </span>
+                    <input
+                      value={billing.iban}
+                      onChange={(e) => setBilling((b) => ({ ...b, iban: e.target.value }))}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder="AT60 1234 5678 9012 3456"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.billing_bank")}
+                    </span>
+                    <input
+                      value={billing.bankName}
+                      onChange={(e) => setBilling((b) => ({ ...b, bankName: e.target.value }))}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      placeholder="Bank Austria"
                     />
                   </label>
                 </div>

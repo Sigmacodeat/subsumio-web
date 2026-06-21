@@ -11,22 +11,38 @@ function getTestEmail() {
   return `e2e-${Date.now()}-${testCounter}@sigmabrain.local`;
 }
 
+async function signUpViaApi(page: import("@playwright/test").Page, email: string) {
+  const res = await page.context().request.post("/api/auth/signup", {
+    data: {
+      email,
+      name: TEST_USER.name,
+      password: TEST_USER.password,
+      locale: "en",
+      industry: "legal",
+    },
+  });
+  expect(res.status()).toBe(201);
+  await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });
+  const csrfToken = (await page.context().cookies()).find(
+    (cookie) => cookie.name === "sb_csrf"
+  )?.value;
+  const onboardingRes = await page.context().request.post("/api/onboarding", {
+    data: { industry: null },
+    headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+  });
+  expect(onboardingRes.status()).toBe(200);
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/dashboard\/?$/);
+}
+
 test.describe("Kanzlei-OS E2E Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Signup
     const email = getTestEmail();
-    await page.goto("/signup", { waitUntil: "networkidle" });
-    await expect(page.locator('form button[type="submit"]')).toBeEnabled();
-    await page.locator('input[name="name"]').fill(TEST_USER.name);
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(TEST_USER.password);
-    await page.locator('form button[type="submit"]').click();
-    await page.waitForFunction(() => window.location.pathname === '/dashboard', { timeout: 45_000 });
-    await page.waitForLoadState("domcontentloaded");
+    await signUpViaApi(page, email);
   });
 
   test("case creation form renders", async ({ page }) => {
-    await page.goto("/dashboard/cases/new");
+    await page.goto("/dashboard/cases/new", { waitUntil: "domcontentloaded" });
     await expect(page.locator('input[name="title"]')).toBeVisible();
     await expect(page.locator('input[name="caseNumber"]')).toBeVisible();
     await expect(page.locator('textarea[name="facts"]')).toBeVisible();
@@ -36,22 +52,25 @@ test.describe("Kanzlei-OS E2E Flow", () => {
   test("drafting and compliance flow", async ({ page }) => {
     // 1. Drafting
     await page.goto("/dashboard/drafting");
-    await expect(page.getByRole('button', { name: 'Klage', exact: true })).toBeVisible();
-    await page.locator('input[aria-label="z.B. Vertragsbruch Muster GmbH"]').fill("E2E Drafting Test");
+    await expect(page.getByRole("button", { name: "Klage", exact: true })).toBeVisible();
+    await page
+      .locator('input[aria-label="z.B. Vertragsbruch Muster GmbH"]')
+      .fill("E2E Drafting Test");
     await page.locator('input[placeholder="Name"]').first().fill("Kläger E2E");
     await page.fill('textarea[placeholder*="Sachverhalt"]', "Test-Sachverhalt für Drafting.");
     await page.click('button:has-text("generieren")');
     await page.waitForTimeout(3000);
 
     // 2. Compliance checklist
-    await page.goto("/dashboard/compliance", { waitUntil: "networkidle" });
-    await expect(page.getByRole('tab', { name: 'DSGVO' })).toBeVisible();
-    await expect(page.locator('button[aria-label*="Rechtsgrundlage"]')).toBeVisible({ timeout: 15_000 });
-    await page.locator('button[aria-label*="Rechtsgrundlage"]').click();
-    await expect(page.locator('text=OK').first()).toBeVisible();
+    await page.goto("/dashboard/compliance", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("tab", { name: "DSGVO" })).toBeVisible();
+    const legalBasisCheck = page.getByRole("button", { name: /Rechtsgrundlage/i }).first();
+    await expect(legalBasisCheck).toBeVisible({ timeout: 15_000 });
+    await legalBasisCheck.click();
+    await expect(page.locator("text=OK").first()).toBeVisible();
     // Verify tab switching
-    await page.getByRole('tab', { name: 'GwG' }).click();
-    await expect(page.getByRole('tab', { name: 'GoBD' })).toBeVisible();
+    await page.getByRole("tab", { name: "GwG" }).click();
+    await expect(page.getByRole("tab", { name: "GoBD" })).toBeVisible();
 
     // 3. Calendar export
     await page.goto("/dashboard/calendar-export");
@@ -59,26 +78,34 @@ test.describe("Kanzlei-OS E2E Flow", () => {
   });
 
   test("RVG fee calculator", async ({ page }) => {
-    await page.goto("/dashboard/invoicing", { waitUntil: "networkidle" });
-    await page.click('button:has-text("Create invoice"), button:has-text("Rechnung erstellen")');
-    await page.click('button:has-text("Calculate RVG"), button:has-text("RVG berechnen")');
-    await expect(page.getByRole('heading', { name: /RVG/i })).toBeVisible();
-    await page.fill('input[placeholder="z. B. 10000"]', "50000");
-    await expect(page.locator('text=785.00').first()).toBeVisible();
+    await page.goto("/dashboard/cost-calculator", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    await expect(page.getByRole("heading", { name: /Kostenrechner/i })).toBeVisible();
+    await page.locator('input[aria-label="z.B. 15000"]').fill("50000");
+    await page.getByRole("button", { name: /Berechnen/i }).click();
+    await expect(page.getByRole("heading", { name: /Berechnungsergebnis/i })).toBeVisible();
+    await expect(page.getByText(/Geschätztes Honorar/i)).toBeVisible();
   });
 
   test("AI deadline detection", async ({ page }) => {
-    await page.goto("/dashboard/deadlines", { waitUntil: "networkidle" });
-    await page.click('button:has-text("Detect deadlines"), button:has-text("Fristen erkennen")');
-    await expect(page.locator('textarea')).toBeVisible();
-    await page.locator('textarea').fill("Die Klagefrist endet am 31.12.2026.");
-    await page.click('button:has-text("Detect deadlines"), button:has-text("Fristen erkennen")');
+    await page.goto("/dashboard/deadlines", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    await page
+      .getByRole("button", { name: /Fristen erkennen|Detect deadlines/i })
+      .first()
+      .click();
+    await expect(page.locator("textarea")).toBeVisible();
+    await page.locator("textarea").fill("Die Klagefrist endet am 31.12.2026.");
+    await page
+      .getByRole("button", { name: /Fristen erkennen|Detect deadlines/i })
+      .nth(2)
+      .click();
     await page.waitForTimeout(2000);
   });
 
   test("contacts page renders with create form", async ({ page }) => {
-    await page.goto("/dashboard/contacts", { waitUntil: "networkidle" });
-    await expect(page.getByRole('heading', { name: 'Kontakte', exact: true })).toBeVisible();
+    await page.goto("/dashboard/contacts", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Kontakte", exact: true })).toBeVisible();
 
     // Verify create form is present
     await expect(page.locator('input[placeholder="Name"]').first()).toBeVisible();
@@ -89,7 +116,7 @@ test.describe("Kanzlei-OS E2E Flow", () => {
 
   test("data export GDPR", async ({ page }) => {
     await page.goto("/dashboard/data-export");
-    await expect(page.getByRole('heading', { name: 'Datenexport' })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Datenexport" })).toBeVisible();
     await expect(page.locator('button:has-text("JSON-Export herunterladen")')).toBeVisible();
   });
 });

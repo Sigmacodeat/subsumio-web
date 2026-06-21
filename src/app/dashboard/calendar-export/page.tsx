@@ -158,6 +158,7 @@ export default function CalendarExportPage() {
       <PageHeader
         title="Kalender-Export"
         description="Fristen & Termine als iCal (.ics)"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kalender-Export" }]}
         actions={
           <Button
             variant="primary"

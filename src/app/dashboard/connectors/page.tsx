@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   Plug,
   Loader2,
@@ -49,6 +50,7 @@ const CONNECTOR_LABELS: Record<string, string> = {
 };
 
 export default function ConnectorsPage() {
+  const { t } = useLang();
   const [connectors, setConnectors] = useState<ConnectorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -115,7 +117,11 @@ export default function ConnectorsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
-      <PageHeader title="Konnektoren" description="Externe Systeme verbinden und synchronisieren" />
+      <PageHeader
+        title="Konnektoren"
+        description="Externe Systeme verbinden und synchronisieren"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Konnektoren" }]}
+      />
 
       {/* Info */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
@@ -148,7 +154,7 @@ export default function ConnectorsPage() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Wird geladen"
+          aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>

@@ -80,6 +80,7 @@ export default function TabularReviewPage() {
       <PageHeader
         title="Massen-Review"
         description="Eine Frage gegen viele Dokumente — Antworten im Raster, jede Zelle mit Quelle"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Massen-Review" }]}
       />
 
       {/* Konfiguration */}

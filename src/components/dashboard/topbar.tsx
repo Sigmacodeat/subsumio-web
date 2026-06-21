@@ -332,14 +332,13 @@ export function Topbar({
                   searchActiveIdx >= 0 &&
                   searchActiveIdx < searchItems.length
                 ) {
-                  router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setSearchQuery("");
-                  setSearchOpen(false);
+                  const item = searchItems[searchActiveIdx];
+                  router.push(`/dashboard/brain/${item.slug}`);
                 } else {
                   router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setSearchQuery("");
-                  setSearchOpen(false);
                 }
+                setSearchQuery("");
+                setSearchOpen(false);
               } else if (e.key === "ArrowDown" && searchOpen && searchItems.length > 0) {
                 e.preventDefault();
                 setSearchActiveIdx((i) => Math.min(i + 1, searchItems.length - 1));
@@ -372,11 +371,11 @@ export function Topbar({
             >
               {searchResults.isLoading ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
-                  <Loader2 size={13} className="animate-spin" /> Suche…
+                  <Loader2 size={13} className="animate-spin" /> {t("topbar.search_loading")}
                 </div>
               ) : searchItems.length === 0 ? (
                 <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
-                  Keine Treffer für „{searchQuery}“
+                  {t("topbar.search_no_results")} „{searchQuery}“
                 </div>
               ) : (
                 <>
@@ -411,8 +410,10 @@ export function Topbar({
                     </button>
                   ))}
                   <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
-                    <span>↵ für alle Ergebnisse</span>
-                    <span>{searchItems.length} Treffer</span>
+                    <span>{t("topbar.search_enter_all")}</span>
+                    <span>
+                      {searchItems.length} {t("topbar.search_hits")}
+                    </span>
                   </div>
                 </>
               )}
@@ -515,7 +516,9 @@ export function Topbar({
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`rounded-lg border p-3 ${n.type === "deadline" ? "border-amber-500/20 bg-amber-500/5" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-blue-500/20 bg-blue-500/5" : n.type === "reply" ? "border-purple-500/20 bg-purple-500/5" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                      role="menuitem"
+                      tabIndex={0}
+                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-amber-500/20 bg-amber-500/5" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-blue-500/20 bg-blue-500/5" : n.type === "reply" ? "border-purple-500/20 bg-purple-500/5" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -528,7 +531,8 @@ export function Topbar({
                         </div>
                         {!n.read && (
                           <button
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               try {
                                 await csrfFetch("/api/notifications", {
                                   method: "PATCH",
@@ -542,8 +546,8 @@ export function Topbar({
                                 );
                               } catch {}
                             }}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                            aria-label="Als gelesen markieren"
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                            aria-label={t("topbar.mark_read")}
                           >
                             <Check size={12} />
                           </button>

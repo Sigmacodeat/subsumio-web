@@ -20,6 +20,7 @@ import type {
   TabularReviewResponse,
 } from "./types";
 import type { SourceRegistryResponse } from "./source-registry";
+import type { QueryMode } from "./matter-context-types";
 import { csrfFetch, getCsrfToken } from "./csrf";
 
 // Browser: same-origin Next.js proxy (/api/*). Server: direct engine URL.
@@ -29,6 +30,17 @@ const BASE_URL =
   typeof window !== "undefined"
     ? ""
     : env("SUBSUMIO_API_URL") || env("NEXT_PUBLIC_SUBSUMIO_API_URL") || "http://localhost:3001";
+
+type ThinkMode = "conservative" | "balanced" | "tokenmax";
+
+interface ThinkOptions {
+  mode?: ThinkMode;
+  queryMode?: QueryMode;
+  caseSlug?: string;
+  model?: string;
+  signal?: AbortSignal;
+  onChunk?: (chunk: string) => void;
+}
 
 // Auth endpoints are consumed by older UI code with shape-specific property access.
 // Keep this loose locally instead of forcing unsafe casts across every caller.
@@ -139,13 +151,23 @@ export const api = {
      */
     async think(
       query: string,
-      mode: "conservative" | "balanced" | "tokenmax" = "balanced",
+      modeOrOptions: ThinkMode | ThinkOptions = "balanced",
       onChunk?: (chunk: string) => void
     ): Promise<QueryResponse> {
+      const options =
+        typeof modeOrOptions === "string" ? { mode: modeOrOptions, onChunk } : modeOrOptions;
+      const mode = options.mode ?? "balanced";
       const res = await csrfFetch(`${BASE_URL}/api/think`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, mode }),
+        body: JSON.stringify({
+          query,
+          mode,
+          query_mode: options.queryMode,
+          case_slug: options.caseSlug,
+          ...(options.model && options.model !== "auto" ? { model: options.model } : {}),
+        }),
+        ...(options.signal ? { signal: options.signal } : {}),
       });
 
       if (!res.ok) {
@@ -171,10 +193,12 @@ export const api = {
           const parsed = JSON.parse(data);
           if (typeof parsed.chunk === "string") {
             result.answer += parsed.chunk;
-            onChunk?.(parsed.chunk);
+            options.onChunk?.(parsed.chunk);
           }
           if (Array.isArray(parsed.citations)) result.citations = parsed.citations;
           if (Array.isArray(parsed.gaps)) result.gaps = parsed.gaps;
+          if (typeof parsed.tokens_used === "number") result.tokens_used = parsed.tokens_used;
+          if (typeof parsed.latency_ms === "number") result.latency_ms = parsed.latency_ms;
         } catch {}
       };
 
@@ -470,16 +494,18 @@ export const api = {
       return request("/api/whatsapp/status");
     },
 
-    identities(): Promise<{ identities: Array<{
-      id: string;
-      brainId: string;
-      userId?: string;
-      name?: string;
-      role?: string;
-      status: string;
-      verifiedAt: string | null;
-      phoneHash: string;
-    }> }> {
+    identities(): Promise<{
+      identities: Array<{
+        id: string;
+        brainId: string;
+        userId?: string;
+        name?: string;
+        role?: string;
+        status: string;
+        verifiedAt: string | null;
+        phoneHash: string;
+      }>;
+    }> {
       return request("/api/whatsapp/identities");
     },
 
@@ -605,12 +631,14 @@ export const api = {
   },
 
   email: {
-    import(email: {
-      subject: string;
-      from: string;
-      body: string;
-      date?: string;
-    }): Promise<Record<string, unknown>> {
+    import(email: { subject: string; from: string; body: string; date?: string }): Promise<{
+      success: boolean;
+      duplicate?: boolean;
+      error?: string;
+      message?: string;
+      matchedCase?: { slug: string; caseNumber?: string; title: string };
+      suggestions?: Array<{ slug: string; caseNumber?: string; title: string }>;
+    }> {
       return request("/api/email-import", {
         method: "POST",
         body: JSON.stringify(email),
@@ -703,7 +731,11 @@ export const api = {
   },
 
   documentRequests: {
-    list(params?: { caseSlug?: string; status?: string; limit?: number }): Promise<Record<string, unknown>> {
+    list(params?: {
+      caseSlug?: string;
+      status?: string;
+      limit?: number;
+    }): Promise<Record<string, unknown>> {
       const searchParams = new URLSearchParams();
       if (params?.caseSlug) searchParams.set("caseSlug", params.caseSlug);
       if (params?.status) searchParams.set("status", params.status);
@@ -714,7 +746,10 @@ export const api = {
 
     create(input: {
       case_slug: string;
-      items?: Array<string | { key?: string; label?: string; required?: boolean; received_document_slug?: string }>;
+      items?: Array<
+        | string
+        | { key?: string; label?: string; required?: boolean; received_document_slug?: string }
+      >;
       text?: string;
       channel?: "whatsapp" | "portal" | "email" | "manual";
       recipient_role?: "client" | "lawyer" | "assistant" | "other";
@@ -729,7 +764,10 @@ export const api = {
     update(input: {
       slug: string;
       status?: "draft" | "sent" | "partially_fulfilled" | "fulfilled" | "expired";
-      items?: Array<string | { key?: string; label?: string; required?: boolean; received_document_slug?: string }>;
+      items?: Array<
+        | string
+        | { key?: string; label?: string; required?: boolean; received_document_slug?: string }
+      >;
       message_draft?: string;
       sent_at?: string;
     }): Promise<Record<string, unknown>> {

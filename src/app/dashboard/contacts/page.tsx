@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
+import { useLang } from "@/lib/use-lang";
 import {
   Mail,
   Phone,
@@ -109,6 +110,7 @@ function slugifyContact(name: string): string {
 }
 
 export default function ContactsPage() {
+  const { t } = useLang();
   const { addToast } = useToast();
   const [contacts, setContacts] = useState<ContactItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -525,7 +527,7 @@ export default function ContactsPage() {
                     <button
                       type="button"
                       onClick={() => setEditingSlug(null)}
-                      aria-label="Bearbeiten abbrechen"
+                      aria-label={t("aria.cancel_edit")}
                       className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                     >
                       <X size={14} />

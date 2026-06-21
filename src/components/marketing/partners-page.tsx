@@ -10,7 +10,8 @@ import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
-import { SectionHeading, FaqList, ICONS } from "./chrome";
+import { SectionHeading, ICONS } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
 import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
@@ -172,7 +173,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             <SectionHeading title={t.faqTitle} />
           </Reveal>
           <Reveal variant="up" delay={0.1}>
-            <FaqList items={t.faq} />
+            <AnimatedFaqList items={t.faq} tone="light" />
           </Reveal>
         </div>
       </section>

@@ -18,6 +18,15 @@ import {
 import { canAutoRouteWhatsApp, classifyWhatsAppRisk, textFromWhatsAppMessage } from "./risk";
 import { parseFeedbackFromReply, recordBriefingFeedback } from "@/lib/whatsapp/briefing-feedback";
 import { wasBriefingSentToday } from "@/lib/whatsapp/daily-briefing";
+import {
+  parseApprovalResponse,
+  matchApprovalByReference,
+  responseToApprovalDecision,
+  createApprovalRequestEvent,
+  type ParsedApprovalResponse,
+} from "@/lib/whatsapp-event-bus";
+import { executeApprovedAction, type ApprovalExecutionDeps } from "@/lib/approval-execution";
+import type { AgentActionFrontmatter, ActionType } from "@/lib/approval";
 
 /**
  * Briefing feedback was dead code (P1-SECR-006 followup): nothing ever
@@ -72,6 +81,21 @@ export interface OrchestratorDeps {
   handleMedia?: typeof handleLegalChatMedia;
   downloadMedia?: typeof downloadAndStoreWhatsAppMedia;
   transcribeVoice?: typeof transcribeVoiceMessage;
+  /** Approval return channel: list pending approvals for this sender */
+  listPendingApprovals?: (
+    brainId: string,
+    senderId: string
+  ) => Promise<Array<{ action_slug: string; action_type: ActionType }>>;
+  /** Approval return channel: update approval status after response */
+  updateApprovalStatus?: (
+    brainId: string,
+    actionSlug: string,
+    status: "approved" | "rejected",
+    decidedBy: string,
+    rejectReason?: string
+  ) => Promise<boolean>;
+  /** Approval execution deps (optional — if provided, approved actions auto-execute) */
+  approvalExecutionDeps?: ApprovalExecutionDeps;
 }
 
 function confirmationText(message: WhatsAppIncomingMessage): string | null {
@@ -100,6 +124,65 @@ function safeClientReply(): string {
 
 function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
   return role === "client" || role === "external" || role === "intake";
+}
+
+/**
+ * Approval Return Channel (P1-SECR-005)
+ *
+ * Checks if an inbound WhatsApp message is an approval response (Ja/Nein + reference).
+ * If so, matches it to a pending approval and updates its status.
+ * Returns null if the message is NOT an approval response (normal processing continues).
+ */
+async function tryApprovalReturnChannel(
+  message: WhatsAppIncomingMessage,
+  sender: WhatsAppIdentity,
+  normalizedText: string,
+  deps: OrchestratorDeps
+): Promise<{ reply: string; actionSlug: string } | null> {
+  if (!deps.listPendingApprovals || !deps.updateApprovalStatus) return null;
+  if (sender.role !== "admin" && sender.role !== "lawyer" && sender.role !== "assistant")
+    return null;
+
+  const parsed = parseApprovalResponse(normalizedText);
+  if (parsed.response === "unknown") return null;
+
+  const pending = await deps.listPendingApprovals(sender.brainId, sender.id);
+  if (pending.length === 0) return null;
+
+  const matched = matchApprovalByReference(parsed, pending);
+  if (!matched) return null;
+
+  const decision = responseToApprovalDecision(parsed);
+  if (!decision) return null;
+
+  const updated = await deps.updateApprovalStatus(
+    sender.brainId,
+    matched.action_slug,
+    decision.status as "approved" | "rejected",
+    sender.id,
+    decision.reject_reason
+  );
+
+  if (!updated) return null;
+
+  // Auto-execute if approved and execution deps are available
+  if (decision.status === "approved" && deps.approvalExecutionDeps) {
+    try {
+      await executeApprovedAction(deps.approvalExecutionDeps, {
+        actionSlug: matched.action_slug,
+        executedBy: sender.id,
+      });
+    } catch (err) {
+      console.error("[orchestrator] Approval auto-execution failed:", err);
+    }
+  }
+
+  const replyText =
+    decision.status === "approved"
+      ? `✅ Freigabe bestätigt für ${matched.action_type} (${matched.action_slug.slice(-8)}).`
+      : `❌ Abgelehnt: ${matched.action_type} (${matched.action_slug.slice(-8)}).${parsed.reject_reason ? ` Grund: ${parsed.reject_reason}` : ""}`;
+
+  return { reply: replyText, actionSlug: matched.action_slug };
 }
 
 function caseSlugFromText(text: string): string | undefined {
@@ -157,6 +240,21 @@ export async function orchestrateWhatsAppMessage(
 
   await writeConversationEvent(sender.brainId, event, deps.fetchImpl);
 
+  // ── Approval Return Channel (P1-SECR-005) ────────────────────────────
+  // Check if this message is an approval response (Ja/Nein + reference)
+  // BEFORE routing to risk-based approval or legal chat.
+  if (normalizedText && (message.type === "text" || message.type === "reaction")) {
+    const approvalResult = await tryApprovalReturnChannel(message, sender, normalizedText, deps);
+    if (approvalResult) {
+      return {
+        reply: approvalResult.reply,
+        eventSlug: event.slug,
+        actionSlug: approvalResult.actionSlug,
+        status: "executed",
+      };
+    }
+  }
+
   if (!canAutoRouteWhatsApp({ risk, senderRole: sender.role })) {
     let targetSlug: string | undefined;
     if (isClientRole(sender.role)) {
@@ -207,6 +305,32 @@ export async function orchestrateWhatsAppMessage(
       documentItems,
     });
     const approvalRecord = await writeWhatsAppApproval(sender.brainId, approval, deps.fetchImpl);
+
+    // ── Publish approval_request event to Notification Event Bus (P1-SECR-001) ──
+    // This makes the approval visible to the WhatsApp notification handler,
+    // which will send a proactive WhatsApp message to the lawyer with the
+    // approval summary and the reference code for the return channel.
+    try {
+      const approvalEvent = createApprovalRequestEvent({
+        brain_id: sender.brainId,
+        org_id: sender.orgId,
+        case_slug: caseSlugFromText(normalizedText),
+        action_slug: approvalRecord.slug,
+        action_type: approvalRecord.actionType,
+        summary: normalizedText.slice(0, 200),
+        recipient_user_ids: [sender.id],
+        recipient_phone: sender.phone,
+      });
+      // The event bus is initialized and dispatched by the webhook route
+      // or cron job — here we just make the event available via a side channel.
+      // The webhook route can pick this up from the orchestrator result.
+      (
+        approvalRecord as unknown as { _notificationEvent?: typeof approvalEvent }
+      )._notificationEvent = approvalEvent;
+    } catch {
+      // Non-blocking: event bus is best-effort, not critical path
+    }
+
     return {
       reply: safeClientReply(),
       eventSlug: event.slug,

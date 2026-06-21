@@ -5,8 +5,39 @@ import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
-import type { SolutionContent } from "@/content/solutions";
+import type { SolutionContent, SolutionSlug } from "@/content/solutions";
+import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
 import { Section, SectionHeading, ICONS, accentTile, type Tone } from "./chrome";
+import { AnimatedFaqList } from "./animated-faq";
+
+/** Per-vertical hero motif: a small floating constellation built from this
+ *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
+ *  reads visually distinct even though they share one layout component. */
+function HeroIconConstellation({ content }: { content: SolutionContent }) {
+  const icons = content.features.slice(0, 3);
+  return (
+    <motion.div
+      className="mt-10 flex items-center justify-center gap-4"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {icons.map((feat, i) => {
+        const Icon = ICONS[feat.icon] ?? ICONS.Layers;
+        return (
+          <div
+            key={feat.title}
+            className={`float-gentle flex h-12 w-12 items-center justify-center rounded-2xl border ${accentTile("violet", "light")}`}
+            style={{ animationDelay: `${i * 0.4}s` }}
+            title={feat.title}
+          >
+            <Icon size={20} />
+          </div>
+        );
+      })}
+    </motion.div>
+  );
+}
 
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
   return (
@@ -62,6 +93,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
               </Button>
             </Link>
           </motion.div>
+          <HeroIconConstellation content={content} />
         </div>
       </Section>
 
@@ -154,24 +186,31 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             title={lang === "de" ? "Fragen, beantwortet" : "Questions, answered"}
             tone="light"
           />
-          <div className="space-y-3">
-            {content.faq.map((item) => (
-              <details
-                key={item.q}
-                className="group rounded-xl border [border-color:var(--mk-border)] [background:var(--mk-surface)] open:[border-color:var(--mk-border-strong)]"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 text-sm font-medium [color:var(--mk-text)]">
-                  {item.q}
-                  <ArrowRight
-                    size={15}
-                    className="ml-4 shrink-0 [color:var(--mk-text-subtle)] transition-transform group-open:rotate-90"
-                  />
-                </summary>
-                <p className="px-5 pb-4 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                  {item.a}
-                </p>
-              </details>
-            ))}
+          <AnimatedFaqList items={content.faq} tone="light" />
+        </div>
+      </Section>
+
+      {/* Cross-link: not quite the right fit? */}
+      <Section tone="light" className="px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="mb-4 text-sm font-medium [color:var(--mk-text-subtle)]">
+            {lang === "de" ? "Nicht ganz das Richtige für dich?" : "Not quite the right fit?"}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {
+              const link = SOLUTION_CROSS_LINKS[lang][slug];
+              const Icon = ICONS[link.icon] ?? ICONS.Layers;
+              return (
+                <Link
+                  key={slug}
+                  href={p(lang, `/solutions/${slug}`)}
+                  className="inline-flex items-center gap-2 rounded-full border [border-color:var(--mk-border)] px-4 py-2 text-sm font-medium [color:var(--mk-text-muted)] transition-all hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
+                >
+                  <Icon size={14} />
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </Section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import { useFieldArray } from "react-hook-form";
 import {
   Search,
@@ -81,6 +82,7 @@ function parseDoc(page: BrainPage): VaultDoc {
 }
 
 export default function VaultPage() {
+  const { t } = useLang();
   const confirm = useConfirm();
   const [docs, setDocs] = useState<VaultDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -394,7 +396,7 @@ export default function VaultPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Dokumente durchsuchen…"
-            aria-label="Dokumente durchsuchen"
+            aria-label={t("aria.search_docs")}
             className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
         </div>
@@ -454,7 +456,11 @@ export default function VaultPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Lädt">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label={t("aria.loading")}
+        >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : filtered.length === 0 ? (

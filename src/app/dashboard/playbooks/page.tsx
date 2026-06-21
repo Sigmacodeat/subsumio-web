@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   BookOpen,
   Plus,
@@ -116,6 +117,7 @@ function emptyRule(): PlaybookRule {
 }
 
 export default function PlaybooksPage() {
+  const { t } = useLang();
   const confirm = useConfirm();
   const [playbooks, setPlaybooks] = useState<PlaybookItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -371,7 +373,11 @@ export default function PlaybooksPage() {
 
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Lädt">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label={t("aria.loading")}
+        >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : !isFormOpen && filtered.length === 0 ? (

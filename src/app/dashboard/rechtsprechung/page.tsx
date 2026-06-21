@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import { Landmark, Search, Loader2, ExternalLink, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface JudgementResult {
 }
 
 export default function RechtsprechungPage() {
+  const { t } = useLang();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<JudgementResult[]>([]);
@@ -86,7 +88,11 @@ export default function RechtsprechungPage() {
       // 3. AI fallback if no results at all
       if (judgements.length === 0) {
         const thinkResult = await api.query.think(
-          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : "Deutschland und Österreich"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`
+          `Suche nach Rechtsprechung zu "${query}" in ${jurisdiction === "at" ? "Österreich" : jurisdiction === "de" ? "Deutschland" : "Deutschland und Österreich"}. Liste relevante Urteile mit Gericht, Datum, Aktenzeichen und Leitsatz.`,
+          {
+            mode: "balanced",
+            queryMode: "external_law",
+          }
         );
         const lines = thinkResult.answer.split("\n").filter((l) => l.trim());
         let current: Partial<JudgementResult> = {};
@@ -153,7 +159,11 @@ export default function RechtsprechungPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6 md:p-8">
-      <PageHeader title="Rechtsprechung" description="Urteile und Entscheidungen durchsuchen" />
+      <PageHeader
+        title="Rechtsprechung"
+        description="Urteile und Entscheidungen durchsuchen"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Rechtsprechung" }]}
+      />
 
       {/* Search */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -184,7 +194,7 @@ export default function RechtsprechungPage() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz"
-              aria-label="Urteil suchen… z.B. Haftung, Vertragsbruch, Datenschutz"
+              aria-label={t("aria.search_judgements")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>

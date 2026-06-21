@@ -99,6 +99,10 @@ export default function JudgementsSyncPage() {
       <PageHeader
         title="Rechtsprechungs-Sync"
         description="OGH, BGH, EuGH Urteile ins Brain laden"
+        breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
+          { label: "Rechtsprechungs-Sync" },
+        ]}
         actions={
           <Button
             variant="primary"

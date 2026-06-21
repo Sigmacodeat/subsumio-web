@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useLang } from "@/lib/use-lang";
 import {
   BookOpen,
   Search,
@@ -62,13 +63,14 @@ const CODE_LABELS: Record<string, string> = {
 // useSearchParams() braucht eine Suspense-Grenze, sonst scheitert das
 // Prerendering der Seite im Production-Build.
 export default function NormsPage() {
+  const { t } = useLang();
   return (
     <Suspense
       fallback={
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Wird geladen"
+          aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
@@ -80,6 +82,7 @@ export default function NormsPage() {
 }
 
 function NormsPageInner() {
+  const { t } = useLang();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("citation") || "";
   const [initialSearchQuery] = useState(initialQuery);
@@ -229,7 +232,7 @@ function NormsPageInner() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Norm suchen… z.B. § 823 BGB, Art. 5 GG"
-            aria-label="Norm suchen… z.B. § 823 BGB, Art. 5 GG"
+            aria-label={t("aria.search_norms")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
@@ -361,7 +364,7 @@ function NormsPageInner() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Wird geladen"
+          aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
@@ -12,14 +11,11 @@ export const maxDuration = 300;
 const thinkSchema = z.object({
   query: z.string().min(1, "query_required"),
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
-  query_mode: z.enum([
-    "conservative",
-    "balanced",
-    "deep_matter",
-    "external_law",
-    "admin_audit",
-  ]).default("balanced"),
+  query_mode: z
+    .enum(["conservative", "balanced", "deep_matter", "external_law", "admin_audit"])
+    .default("balanced"),
   case_slug: z.string().optional(),
+  model: z.string().optional(),
 });
 
 export const POST = createHandler(
@@ -47,6 +43,7 @@ export const POST = createHandler(
         mode: engineMode,
         case_slug: body.case_slug,
         query_mode: body.query_mode,
+        model: body.model,
       };
 
       const upstream = await fetch(`${ENGINE_URL}/api/think`, {
@@ -56,23 +53,19 @@ export const POST = createHandler(
       });
 
       if (!upstream.ok) {
-        return apiError(
-          "engine_error",
-          `Engine returned ${upstream.status}`,
-          upstream.status,
-        );
+        return apiError("engine_error", `Engine returned ${upstream.status}`, upstream.status);
       }
 
-      return apiStream(
-        createCitationGateStream(upstream.body!),
-        {
-          contentType: upstream.headers.get("Content-Type") || "text/event-stream",
-          aiGenerated: true,
-        }
-      );
+      return apiStream(createCitationGateStream(upstream.body!), {
+        contentType: upstream.headers.get("Content-Type") || "text/event-stream",
+        aiGenerated: true,
+      });
     } catch (err) {
-      console.error("[think] engine unreachable:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[think] engine unreachable:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
-  },
+  }
 );

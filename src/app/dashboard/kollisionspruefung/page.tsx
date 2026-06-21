@@ -65,6 +65,7 @@ export default function KollisionspruefungPage() {
       <PageHeader
         title="Kollisionsprüfung"
         description="Interessenkonflikte nach § 43a BRAO prüfen"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kollisionsprüfung" }]}
       />
 
       {/* Search */}

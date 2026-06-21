@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
   ShieldCheck,
@@ -89,6 +90,7 @@ function parseContract(page: BrainPage): ContractItem {
 }
 
 export default function ContractsPage() {
+  const { t } = useLang();
   const confirm = useConfirm();
   const [contracts, setContracts] = useState<ContractItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,7 +224,10 @@ export default function ContractsPage() {
     setAnalysisLoading(true);
     try {
       const prompt = `Analysiere den folgenden Vertrag nach deutschem Recht (BGB, AGB-Recht, DSGVO). Erstelle eine strukturierte Analyse:\n\nVERTRAGSTEXT:\n${contract.content.slice(0, 12000)}\n\nGIB DEINE ANTWORT IN DIESER STRUKTUR:\n## Vertragsanalyse — ${contract.title}\n\n### Übersicht\n- **Vertragstyp:** [Typ]\n- **Parteien:** [Parteien]\n- **Gesamtrisiko:** 🟢 Niedrig / 🟡 Mittel / 🔴 Hoch / 🚨 Kritisch\n- **Risiko-Score:** [0-100]\n\n### Klauselmatrix\n| Klausel | Bewertung | Risiko | Empfehlung |\n|---------|-----------|--------|------------|\n| [Klausel 1] | [Zusammenfassung] | 🟢/🟡/🔴 | [Vorschlag] |\n\n### Rote Flaggen\n1. [Klausel]: [Problem] — [Rechtliche Grundlage]\n\n### Fehlende Standardklauseln\n- [ ] [Klausel]\n\n### Empfohlene Änderungen\n1. [Konkreter Textvorschlag]\n\nENDE DER ANALYSE.`;
-      const result = await api.query.think(prompt, "balanced");
+      const result = await api.query.think(prompt, {
+        mode: "tokenmax",
+        queryMode: "deep_matter",
+      });
       setAnalysisResult(result.answer);
       const riskMatch = result.answer.match(/🟢|🟡|🔴|🚨/);
       const riskLevel: ContractItem["riskLevel"] = riskMatch
@@ -355,6 +360,10 @@ export default function ContractsPage() {
       <PageHeader
         title="Vertrags-Intelligenz"
         description="KI-gestützte Vertragsanalyse, Risikobewertung und Massen-Review"
+        breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
+          { label: "Vertrags-Intelligenz" },
+        ]}
         actions={
           <>
             <Button
@@ -647,7 +656,11 @@ export default function ContractsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20" role="status" aria-label="Lädt">
+        <div
+          className="flex items-center justify-center py-20"
+          role="status"
+          aria-label={t("aria.loading")}
+        >
           <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
         </div>
       ) : filtered.length === 0 ? (

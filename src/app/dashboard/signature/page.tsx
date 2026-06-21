@@ -214,6 +214,7 @@ export default function SignaturePage() {
       <PageHeader
         title="e-Signatur"
         description="Dokumente digital unterschreiben lassen"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "e-Signatur" }]}
         actions={
           <div className="flex items-center gap-2">
             <a

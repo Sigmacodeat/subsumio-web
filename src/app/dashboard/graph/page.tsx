@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Network,
   ZoomIn,
@@ -30,6 +31,7 @@ const NODE_COLORS: Record<string, string> = {
 type LayoutNode = GraphNode & { x: number; y: number };
 
 export default function GraphPage() {
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [links, setLinks] = useState<GraphLink[]>([]);
@@ -391,7 +393,9 @@ export default function GraphPage() {
               size="md"
               className="w-full"
               onClick={() =>
-                (window.location.href = `/dashboard/brain/${selected.id.split("/").map(encodeURIComponent).join("/")}`)
+                router.push(
+                  `/dashboard/brain/${selected.id.split("/").map(encodeURIComponent).join("/")}`
+                )
               }
             >
               Seite öffnen

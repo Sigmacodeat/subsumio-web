@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarClock,
   AlertTriangle,
@@ -86,6 +87,7 @@ function calculateDeadline(
 }
 
 export default function DeadlinesPage() {
+  const router = useRouter();
   const { addToast } = useToast();
   const { t } = useLang();
   const [deadlines, setDeadlines] = useState<DeadlineItem[]>([]);
@@ -383,7 +385,7 @@ export default function DeadlinesPage() {
             </h2>
             <button
               onClick={() => setShowCalc(false)}
-              aria-label={t("deadlines.calc_title")}
+              aria-label={t("cmd.close")}
               className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
             >
               <XCircle size={16} />
@@ -642,7 +644,7 @@ export default function DeadlinesPage() {
         }
         emptyIcon={CalendarClock}
         onRowClick={(d) =>
-          d.caseSlug && window.open(`/dashboard/cases/${encodeURIComponent(d.caseSlug)}`, "_self")
+          d.caseSlug && router.push(`/dashboard/cases/${encodeURIComponent(d.caseSlug)}`)
         }
         rowKey={(d) => d.id}
         pageSize={20}

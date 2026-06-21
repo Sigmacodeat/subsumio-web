@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 import {
   Bot,
@@ -265,6 +266,7 @@ function JobDetail({
   allJobs: AgentJob[];
   onRefresh: () => void;
 }) {
+  const { t } = useLang();
   const children = allJobs.filter((j: AgentJob) => j.parentId === job.id);
   const [acting, setActing] = useState<string | null>(null);
 
@@ -584,7 +586,7 @@ function JobDetail({
                 onChange={(e) => setInboxInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                 placeholder="Nachricht an Agenten…"
-                aria-label="Nachricht an Agenten"
+                aria-label={t("agents.message")}
                 disabled={sendMutation.isPending}
                 className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
               />
@@ -618,6 +620,7 @@ function JobDetail({
 // ── Main Page ────────────────────────────────────────────────
 
 export default function AgentsPage() {
+  const { t } = useLang();
   const [tab, setTab] = useState<"jobs" | "builder">("jobs");
   const agentsQuery = useAgents();
   const submitMutation = useSubmitSupervisor();
@@ -759,7 +762,7 @@ export default function AgentsPage() {
                   value={submitPrompt}
                   onChange={(e) => setSubmitPrompt(e.target.value)}
                   placeholder="Beschreibe die Aufgabe..."
-                  aria-label="Beschreibe die Aufgabe..."
+                  aria-label={t("agents.task_placeholder")}
                   className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
                 />
                 <button

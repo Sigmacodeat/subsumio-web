@@ -6,7 +6,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "./empty-state";
-import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Trash2, FileText, type LucideIcon } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 
 export interface BulkAction {
   label: string;
@@ -75,7 +84,11 @@ export function DataTable<T>({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<BulkAction | null>(null);
 
-  const getKey = useCallback((row: T, index: number) => rowKey ? rowKey(row, index) : String((row as { id?: string }).id ?? index), [rowKey]);
+  const getKey = useCallback(
+    (row: T, index: number) =>
+      rowKey ? rowKey(row, index) : String((row as { id?: string }).id ?? index),
+    [rowKey]
+  );
 
   const sorted = useMemo(() => {
     if (!sortKey) return data;
@@ -95,23 +108,31 @@ export function DataTable<T>({
   const currentPage = Math.min(page, totalPages - 1);
   const pageData = sorted.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-  const toggleSort = useCallback((key: string) => {
-    setSortDir((prev) => {
-      if (sortKey !== key) return "asc";
-      return prev === "asc" ? "desc" : "asc";
-    });
-    setSortKey(key);
-  }, [sortKey]);
+  const toggleSort = useCallback(
+    (key: string) => {
+      setSortDir((prev) => {
+        if (sortKey !== key) return "asc";
+        return prev === "asc" ? "desc" : "asc";
+      });
+      setSortKey(key);
+    },
+    [sortKey]
+  );
 
-  const allOnPageSelected = pageData.length > 0 && pageData.every((row, i) => selected.has(getKey(row, i)));
+  const allOnPageSelected =
+    pageData.length > 0 && pageData.every((row, i) => selected.has(getKey(row, i)));
   const someOnPageSelected = pageData.some((row, i) => selected.has(getKey(row, i)));
 
   const toggleAllOnPage = useCallback(() => {
     const next = new Set(selected);
     if (allOnPageSelected) {
-      pageData.forEach((row, i) => { next.delete(getKey(row, i)); });
+      pageData.forEach((row, i) => {
+        next.delete(getKey(row, i));
+      });
     } else {
-      pageData.forEach((row, i) => { next.add(getKey(row, i)); });
+      pageData.forEach((row, i) => {
+        next.add(getKey(row, i));
+      });
     }
     setSelected(next);
   }, [allOnPageSelected, pageData, selected, getKey]);
@@ -136,15 +157,18 @@ export function DataTable<T>({
     }
   }, [onBulkAction, selectedRows]);
 
-  const handleBulkActionClick = useCallback((action: BulkAction) => {
-    const selectedIds = Array.from(selected);
-    if (action.variant === "destructive" || action.confirmTitle) {
-      setConfirmAction(action);
-    } else {
-      action.onClick(selectedIds);
-      setSelected(new Set());
-    }
-  }, [selected]);
+  const handleBulkActionClick = useCallback(
+    (action: BulkAction) => {
+      const selectedIds = Array.from(selected);
+      if (action.variant === "destructive" || action.confirmTitle) {
+        setConfirmAction(action);
+      } else {
+        action.onClick(selectedIds);
+        setSelected(new Set());
+      }
+    },
+    [selected]
+  );
 
   const executeConfirmedAction = useCallback(() => {
     if (confirmAction) {
@@ -170,8 +194,8 @@ export function DataTable<T>({
     <div className={cn("space-y-3", className)}>
       {/* Bulk action bar */}
       {selectable && selected.size > 0 && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl brand-soft brand-border animate-in fade-in slide-in-from-top-1">
-          <span className="text-xs font-medium brand-text">
+        <div className="brand-soft brand-border animate-in fade-in slide-in-from-top-1 flex items-center justify-between gap-3 rounded-xl px-4 py-2.5">
+          <span className="brand-text text-xs font-medium">
             {selected.size} {selected.size === 1 ? "Eintrag" : "Einträge"} ausgewählt
           </span>
           <div className="flex items-center gap-2">
@@ -193,10 +217,10 @@ export function DataTable<T>({
                     size="sm"
                     onClick={() => handleBulkActionClick(action)}
                     className={cn(
-                      "text-xs gap-1.5",
+                      "gap-1.5 text-xs",
                       action.variant === "destructive"
-                        ? "text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]",
+                        ? "text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
                     {ActionIcon && <ActionIcon size={13} />}
@@ -209,7 +233,7 @@ export function DataTable<T>({
                 variant="ghost"
                 size="sm"
                 onClick={handleBulkAction}
-                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-500/10 gap-1.5"
+                className="gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
               >
                 <BulkIcon size={13} />
                 {bulkActionLabel}
@@ -222,22 +246,26 @@ export function DataTable<T>({
       {/* Confirmation dialog for destructive bulk actions */}
       {confirmAction && (
         <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onClick={() => setConfirmAction(null)}
         >
           <div
-            className="bg-[color:var(--ds-surface)] rounded-xl border border-[color:var(--ds-border)] p-6 max-w-sm w-full space-y-4"
+            className="w-full max-w-sm space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6"
             onClick={(e) => e.stopPropagation()}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="bulk-confirm-title"
             aria-describedby="bulk-confirm-desc"
           >
-            <h2 id="bulk-confirm-title" className="text-sm font-semibold text-[color:var(--ds-text)]">
+            <h2
+              id="bulk-confirm-title"
+              className="text-sm font-semibold text-[color:var(--ds-text)]"
+            >
               {confirmAction.confirmTitle ?? "Aktion bestätigen"}
             </h2>
             <p id="bulk-confirm-desc" className="text-sm text-[color:var(--ds-text-muted)]">
-              {confirmAction.confirmMessage ?? `Diese Aktion betrifft ${selected.size} ${selected.size === 1 ? "Eintrag" : "Einträge"}. Fortfahren?`}
+              {confirmAction.confirmMessage ??
+                `Diese Aktion betrifft ${selected.size} ${selected.size === 1 ? "Eintrag" : "Einträge"}. Fortfahren?`}
             </p>
             <div className="flex items-center justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setConfirmAction(null)}>
@@ -257,15 +285,17 @@ export function DataTable<T>({
       )}
 
       {/* Desktop table */}
-      <div className="hidden md:block rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] overflow-hidden card-shadow">
+      <div className="card-shadow hidden overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
                 {selectable && (
-                  <th className="px-4 py-3.5 w-10">
+                  <th className="w-10 px-4 py-3.5">
                     <Checkbox
-                      checked={allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false}
+                      checked={
+                        allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false
+                      }
                       onCheckedChange={toggleAllOnPage}
                       aria-label="Alle auf dieser Seite auswählen"
                     />
@@ -275,21 +305,35 @@ export function DataTable<T>({
                   <th
                     key={col.key}
                     className={cn(
-                      "px-4 py-3.5 text-left text-[0.6875rem] font-semibold text-[color:var(--ds-text-muted)] uppercase tracking-wider",
-                      col.sortable && "cursor-pointer hover:text-[color:var(--ds-text)] select-none transition-colors",
+                      "px-4 py-3.5 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
+                      col.sortable &&
+                        "cursor-pointer transition-colors select-none hover:text-[color:var(--ds-text)]",
                       col.width
                     )}
                     onClick={col.sortable ? () => toggleSort(col.key) : undefined}
-                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                    aria-sort={
+                      sortKey === col.key
+                        ? sortDir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
                   >
                     <span className="inline-flex items-center gap-1">
                       {col.header}
                       {col.sortable && (
                         <span className="shrink-0">
                           {sortKey === col.key ? (
-                            sortDir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                            sortDir === "asc" ? (
+                              <ChevronUp size={12} />
+                            ) : (
+                              <ChevronDown size={12} />
+                            )
                           ) : (
-                            <ChevronsUpDown size={12} className="text-[color:var(--ds-text-subtle)]" />
+                            <ChevronsUpDown
+                              size={12}
+                              className="text-[color:var(--ds-text-subtle)]"
+                            />
                           )}
                         </span>
                       )}
@@ -302,7 +346,11 @@ export function DataTable<T>({
               {loading
                 ? Array.from({ length: Math.min(5, pageSize) }).map((_, i) => (
                     <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
-                      {selectable && <td className="px-4 py-4"><Skeleton className="h-4 w-4 rounded" /></td>}
+                      {selectable && (
+                        <td className="px-4 py-4">
+                          <Skeleton className="h-4 w-4 rounded" />
+                        </td>
+                      )}
                       {columns.map((col) => (
                         <td key={col.key} className="px-4 py-4">
                           <Skeleton className="h-4 w-full max-w-[120px] rounded" />
@@ -318,13 +366,18 @@ export function DataTable<T>({
                         key={key}
                         onClick={() => onRowClick?.(row)}
                         className={cn(
-                          "border-b border-[color:var(--ds-border)] last:border-0 transition-colors",
-                          onRowClick && !selectable && "cursor-pointer hover:bg-[color:var(--ds-hover)]",
-                          isSelected && "brand-soft/30"
+                          "group border-b border-[color:var(--ds-border)] transition-colors duration-150 last:border-0",
+                          onRowClick &&
+                            !selectable &&
+                            "cursor-pointer hover:bg-[color:var(--ds-hover)]",
+                          isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
+                          onRowClick &&
+                            !isSelected &&
+                            "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]"
                         )}
                       >
                         {selectable && (
-                          <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleRow(key)}
@@ -333,7 +386,13 @@ export function DataTable<T>({
                           </td>
                         )}
                         {columns.map((col) => (
-                          <td key={col.key} className={cn("px-4 py-3.5 text-[color:var(--ds-text)] leading-snug", col.width)}>
+                          <td
+                            key={col.key}
+                            className={cn(
+                              "px-4 py-4 leading-snug text-[color:var(--ds-text)]",
+                              col.width
+                            )}
+                          >
                             {col.cell(row)}
                           </td>
                         ))}
@@ -346,10 +405,13 @@ export function DataTable<T>({
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden space-y-2">
+      <div className="space-y-2 md:hidden">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2">
+              <div
+                key={i}
+                className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+              >
                 <Skeleton className="h-4 w-3/4 rounded" />
                 <Skeleton className="h-3 w-1/2 rounded" />
               </div>
@@ -362,13 +424,17 @@ export function DataTable<T>({
                   key={key}
                   onClick={() => onRowClick?.(row)}
                   className={cn(
-                    "rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 space-y-2 transition-all",
-                    onRowClick && "cursor-pointer active:scale-[0.99]",
+                    "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all duration-150",
+                    onRowClick &&
+                      "cursor-pointer hover:border-[color:var(--brand-primary)]/40 active:scale-[0.99]",
                     isSelected && "brand-border brand-soft/30"
                   )}
                 >
                   {selectable && (
-                    <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center justify-between"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleRow(key)}
@@ -379,12 +445,21 @@ export function DataTable<T>({
                   {columns
                     .filter((c) => !c.hideOnMobile)
                     .map((col, colIdx) => (
-                      <div key={col.key} className={cn(colIdx === 0 ? "text-sm font-medium text-[color:var(--ds-text)]" : "text-xs text-[color:var(--ds-text-muted)]")}>
+                      <div
+                        key={col.key}
+                        className={cn(
+                          colIdx === 0
+                            ? "text-sm font-medium text-[color:var(--ds-text)]"
+                            : "text-xs text-[color:var(--ds-text-muted)]"
+                        )}
+                      >
                         {colIdx === 0 ? (
                           col.cell(row)
                         ) : (
                           <div className="flex items-start gap-2">
-                            <span className="text-[color:var(--ds-text-subtle)] font-medium shrink-0">{col.header}:</span>
+                            <span className="shrink-0 font-medium text-[color:var(--ds-text-subtle)]">
+                              {col.header}:
+                            </span>
                             <span className="flex-1">{col.cell(row)}</span>
                           </div>
                         )}
@@ -399,7 +474,8 @@ export function DataTable<T>({
       {sorted.length > pageSize && (
         <div className="flex items-center justify-between px-1">
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, sorted.length)} von {sorted.length}
+            {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, sorted.length)} von{" "}
+            {sorted.length}
           </span>
           <div className="flex items-center gap-1">
             <Button
@@ -412,7 +488,7 @@ export function DataTable<T>({
             >
               <ChevronLeft size={16} />
             </Button>
-            <span className="text-xs text-[color:var(--ds-text-muted)] tabular-nums px-2">
+            <span className="px-2 text-xs text-[color:var(--ds-text-muted)] tabular-nums">
               {currentPage + 1} / {totalPages}
             </span>
             <Button

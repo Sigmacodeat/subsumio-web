@@ -91,8 +91,12 @@ export default function ResearchPage() {
 
     try {
       const prompt = `Recherchiere präzise zur folgenden Rechtsfrage unter Berücksichtigung des ${jurisdiction.toUpperCase()}-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nRECHTSFRAGE: ${query}`;
-      const result = await api.query.think(prompt, "balanced", (chunk) => {
-        setCurrentAnswer((prev) => prev + chunk);
+      const result = await api.query.think(prompt, {
+        mode: "balanced",
+        queryMode: "external_law",
+        onChunk: (chunk) => {
+          setCurrentAnswer((prev) => prev + chunk);
+        },
       });
       setCurrentAnswer(result.answer);
       setCurrentCitations(result.citations || []);
@@ -197,6 +201,7 @@ export default function ResearchPage() {
       <PageHeader
         title="Legal Research"
         description="KI-gestützte Rechtsrecherche mit Zitation und Quellenangabe"
+        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Legal Research" }]}
       />
 
       {/* Research Input */}
@@ -408,7 +413,11 @@ export default function ResearchPage() {
                 size={14}
                 className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
               />
+              <label htmlFor="saved-research-search" className="sr-only">
+                Gespeicherte Recherchen durchsuchen
+              </label>
               <input
+                id="saved-research-search"
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
                 placeholder="Gespeicherte Recherchen durchsuchen…"
@@ -521,6 +530,7 @@ export default function ResearchPage() {
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
                             className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
+                            aria-label={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >
                             {isExpanded ? <X size={13} /> : <ChevronRight size={13} />}
                           </button>
@@ -528,6 +538,7 @@ export default function ResearchPage() {
                             onClick={() => deleteResearch(page.slug)}
                             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
                             title="Löschen"
+                            aria-label="Löschen"
                           >
                             <Trash2 size={13} />
                           </button>

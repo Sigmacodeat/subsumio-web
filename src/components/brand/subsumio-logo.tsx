@@ -1,8 +1,11 @@
+"use client";
+
 // Subsumio brand lockup — scales of justice in a royal-blue app tile + the
 // "Subsum•io" wordmark (the blue dot is the domain dot of subsum.io). A serious,
 // legal-professional palette, distinct from the violet Subsumio platform mark.
 
 import { Scale } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 export function SubsumioMark({
   size = 32,
@@ -62,19 +65,55 @@ export function SubsumioLogo({
   subtitle?: string;
   className?: string;
 }) {
+  const reduce = useReducedMotion();
+
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <SubsumioMark size={size} />
-      <span className="flex flex-col leading-none">
+      <motion.span
+        initial={reduce ? false : { scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={
+          reduce ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 15, delay: 0.1 }
+        }
+        style={{ display: "inline-flex" }}
+      >
+        <SubsumioMark size={size} />
+      </motion.span>
+      <motion.span
+        className="flex flex-col leading-none"
+        initial={reduce ? false : { opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={
+          reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.3 }
+        }
+      >
         <span className="font-display text-[19px] font-bold tracking-tight [color:var(--mk-text)]">
-          Subsum<span className="brand-text">•</span>io
+          Subsum
+          <motion.span
+            className="brand-text inline-block"
+            animate={
+              reduce
+                ? undefined
+                : {
+                    scale: [1, 1.2, 1],
+                  }
+            }
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            •
+          </motion.span>
+          io
         </span>
         {subtitle && (
           <span className="mt-1 text-xs font-medium tracking-[0.22em] [color:var(--mk-text-subtle)]">
             {subtitle}
           </span>
         )}
-      </span>
+      </motion.span>
     </span>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import {
   Users,
   Mail,
@@ -58,6 +59,7 @@ function errMsg(code?: string): string {
 }
 
 export default function TeamPage() {
+  const { t } = useLang();
   const orgQuery = useOrg();
   const createOrgMutation = useCreateOrg();
   const inviteMutation = useInviteMemberOrg();
@@ -193,7 +195,11 @@ export default function TeamPage() {
                     <p className="flex items-center gap-1.5 truncate text-sm text-[color:var(--ds-text)]">
                       {m.name}
                       {m.isOwner && (
-                        <Crown size={12} className="shrink-0 text-amber-600" aria-label="Inhaber" />
+                        <Crown
+                          size={12}
+                          className="shrink-0 text-amber-600"
+                          aria-label={t("aria.owner")}
+                        />
                       )}
                     </p>
                     <p className="truncate text-xs text-[color:var(--ds-text-muted)]">{m.email}</p>

@@ -1,9 +1,10 @@
 # Subsumio Software Repo Audit
 
 Stand: 2026-06-20  
-Scope: gesamtes Repository `/Users/msc/subsumio-web`, statischer Repo-Audit
-plus Todo-/Plan-Inventar. Dieser Audit ist kein Beweis, dass alle Codepfade
-runtime-geprüft sind; dafür müssen die unten genannten Gates laufen.
+Scope: gesamtes Repository `/Users/msc/subsumio-web`, Todo-/Plan-Inventar,
+statischer Repo-Audit und ausgewählte Runtime-Gates. Dieser Audit ist kein
+Beweis, dass alle Codepfade vollständig releasefertig sind; Full-E2E über alle
+Browser/Projekte und Last-/Staging-Tests bleiben separat offen.
 
 ## Antwort auf die Kernfrage
 
@@ -23,7 +24,8 @@ Nicht erledigt ist:
 - Alle Engine-/GBrain-Follow-ups aus `TODOS.md` zu schließen.
 - Alle offenen Checkboxen in historischen Audit-Prompts, Blueprints und
   Research-Dateien abzuarbeiten.
-- Eine vollständige runtime-/E2E-Verifikation aller Features.
+- Eine vollständige runtime-/E2E-Verifikation aller Features über alle Browser,
+  Devices und Projekte.
 
 ## Repo-weites Todo-Inventar
 
@@ -123,44 +125,58 @@ Für einen echten Release-Abschluss muss zuerst geklärt werden:
 - Welche sind nur Design-/Pricing-/Model-Strategie-Arbeit?
 - Welche müssen getrennt reviewed werden?
 
-## Fehlende Verifikation
+## Verifikation
 
-Nicht ausgeführt in diesem Audit:
+Ausgeführt und grün:
 
-- `bun run lint`
-- `bun run typecheck`
-- `bun run test:unit`
-- `bun run test:e2e`
-- `server` Verify
-- echte k6-/Staging-Lasttests
-- manuelle Browserprüfung aller kritischen Dashboard-Flows
+- `bun run lint`: bestanden, mit 175 bestehenden Warnungen.
+- `bun run typecheck`: bestanden.
+- `bun run test:unit`: bestanden, 193 Testdateien / 4672 Assertions.
+- `cd server && bun run verify`: bestanden, 30/30 Checks grün.
+- Fokussierter Chromium-E2E-Block:
+  `bunx playwright test tests/e2e-playwright/api-guard-chain.spec.ts tests/e2e-playwright/billing-flow.spec.ts tests/e2e-playwright/kanzlei-flow.spec.ts tests/e2e-playwright/smoke.spec.ts --project=chromium`:
+  35 bestanden, 2 bewusst übersprungen.
 
-Ausgeführt:
+Zusätzlich gezielt ausgeführt:
 
-- Markdown-Formatcheck für die geänderten Dokumentationsdateien:
-  `bunx prettier --check ...`
+- `bunx vitest run src/lib/offline-store.test.ts`: bestanden.
+- `bunx vitest run src/lib/model-config.test.ts`: bestanden.
+- `bunx playwright test tests/e2e-playwright/smoke.spec.ts --project=chromium -g "signup → dashboard"`:
+  bestanden.
+- `bunx playwright test tests/e2e-playwright/kanzlei-flow.spec.ts --project=chromium -g "AI deadline detection"`:
+  bestanden.
+- `bunx prettier --write ...` für die geänderten Test-, Code- und
+  Dokumentationsdateien.
+
+Nicht vollständig ausgeführt / noch offen:
+
+- Voller `bun run test:e2e` über alle Playwright-Projekte. Ein erster Lauf wurde
+  nach vielen Timeout-/Browser-Projektfehlern abgebrochen; der fokussierte
+  Chromium-Kernblock wurde danach stabilisiert und grün verifiziert.
+- Firefox-/WebKit-E2E-Stabilisierung.
+- echte k6-/Staging-Lasttests.
+- manuelle Browserprüfung aller kritischen Dashboard-Flows.
 
 ## Gesamtrisiko
 
-| Bereich               | Risiko | Begründung                                                                      |
-| --------------------- | ------ | ------------------------------------------------------------------------------- |
-| Statuswahrheit        | Mittel | Legal-AI ist jetzt konsolidiert, aber andere Audit-/Todo-Dateien bleiben offen. |
-| Produktreife          | Hoch   | 21 teilweise Pakete und 3 offene Produktpakete sind dokumentiert.               |
-| Release-Sicherheit    | Hoch   | Full CI/E2E/Server-Verify wurde hier nicht ausgeführt.                          |
-| Dokumentationshygiene | Mittel | Viele historische Audits/Blueprints existieren parallel.                        |
-| Worktree-Hygiene      | Hoch   | Viele uncommitted Änderungen außerhalb dieser Doku-Arbeit.                      |
+| Bereich               | Risiko | Begründung                                                                                                   |
+| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| Statuswahrheit        | Mittel | Legal-AI ist jetzt konsolidiert, aber andere Audit-/Todo-Dateien bleiben offen.                              |
+| Produktreife          | Hoch   | 21 teilweise Pakete und 3 offene Produktpakete sind dokumentiert.                                            |
+| Release-Sicherheit    | Mittel | Lint, Typecheck, Unit, Server-Verify und fokussierter Chromium-E2E sind grün; Full-E2E/Browser-Matrix fehlt. |
+| Dokumentationshygiene | Mittel | Viele historische Audits/Blueprints existieren parallel.                                                     |
+| Worktree-Hygiene      | Hoch   | Viele uncommitted Änderungen außerhalb dieser Doku-Arbeit.                                                   |
 
 ## Empfohlene nächste Schritte
 
 1. Doku-Konsolidierung committen oder als eigenen PR isolieren.
 2. Danach den bestehenden großen Frontend-/Pricing-/Model-Worktree separat
    reviewen.
-3. `bun run lint`, `bun run typecheck`, `bun run test:unit` und `bun run test:e2e`
-   laufen lassen.
-4. `server`-Verify separat laufen lassen.
-5. Die 40 Legal-AI-Paketzeilen priorisieren und pro Paket erst dann auf
+3. Vollständigen `bun run test:e2e` erneut laufen lassen und Firefox/WebKit-
+   Projektfehler separat stabilisieren.
+4. Die 40 Legal-AI-Paketzeilen priorisieren und pro Paket erst dann auf
    "fertig" setzen, wenn Nutzerflow, Tests und Gate genannt sind.
-6. `TODOS.md` nicht mit Subsumio-Produktarbeit vermischen; separat als
+5. `TODOS.md` nicht mit Subsumio-Produktarbeit vermischen; separat als
    Engine/GBrain-Backlog behandeln.
 
 ## Abschlussurteil
@@ -169,6 +185,7 @@ Der Todo-/Plan-Überblick ist jetzt sauberer als vorher, aber das gesamte Repo i
 nicht fertig. Die richtige Aussage lautet:
 
 > Die Legal-AI-Dokumentation ist konsolidiert; die Software hat ein starkes
-> Fundament; mehrere Produkt- und Engine-Todos bleiben offen; ein vollständiger
-> Release-Audit braucht noch Testläufe und Review der bestehenden uncommitted
-> Codeänderungen.
+> Fundament; Lint, Typecheck, Unit, Server-Verify und ein fokussierter
+> Chromium-E2E-Kernblock sind grün; mehrere Produkt- und Engine-Todos bleiben
+> offen; ein vollständiger Release-Audit braucht noch Full-E2E über die gesamte
+> Browser-/Projektmatrix und Review der bestehenden uncommitted Codeänderungen.

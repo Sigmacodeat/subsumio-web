@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,7 +149,11 @@ function Field({
 
 export default function SettingsPage() {
   const { t } = useLang();
-  const [activeTab, setActiveTab] = useState("brain");
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get("tab");
+    return tab ?? "brain";
+  });
   const [referralUrl, setReferralUrl] = useState("");
   const [referrals, setReferrals] = useState<number | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "checking" | "online" | "offline">(
@@ -370,18 +375,33 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-8">
-      <PageHeader title={t("settings.title")} description={t("settings.desc")} />
+      <PageHeader
+        title={t("settings.title")}
+        description={t("settings.desc")}
+        breadcrumbs={[
+          { label: t("nav.overview"), href: "/dashboard" },
+          { label: t("settings.title") },
+        ]}
+      />
 
       {/* Tab navigation */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] pb-px">
+      <div
+        className="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] pb-px"
+        role="tablist"
+        aria-label={t("settings.title")}
+      >
         {ALL_TABS.filter((tab) => tab.allowed.includes(userRole)).map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all",
+                "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
                 activeTab === tab.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -396,7 +416,7 @@ export default function SettingsPage() {
 
       {/* Brain Settings */}
       {activeTab === "brain" && (
-        <Card>
+        <Card role="tabpanel" id="panel-brain" aria-labelledby="tab-brain">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
               {t("settings.brain_config")}
@@ -470,7 +490,7 @@ export default function SettingsPage() {
                     <code className="brand-text flex-1 font-mono text-xs">{cmd}</code>
                     <button
                       onClick={() => navigator.clipboard.writeText(cmd)}
-                      aria-label="Befehl kopieren"
+                      aria-label={t("aria.copy_command")}
                       className="shrink-0 text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
                     >
                       <Copy size={12} />
@@ -485,7 +505,7 @@ export default function SettingsPage() {
 
       {/* API Keys */}
       {activeTab === "api" && (
-        <Card>
+        <Card role="tabpanel" id="panel-api" aria-labelledby="tab-api">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
               {t("settings.api_keys")}
@@ -554,7 +574,7 @@ export default function SettingsPage() {
 
       {/* Dream Cycle */}
       {activeTab === "dream" && (
-        <Card>
+        <Card role="tabpanel" id="panel-dream" aria-labelledby="tab-dream">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <div className="flex items-center gap-3">
               <Zap size={18} className="text-amber-600" />
@@ -618,7 +638,7 @@ export default function SettingsPage() {
 
       {/* Kanzlei */}
       {activeTab === "kanzlei" && (
-        <Card>
+        <Card role="tabpanel" id="panel-kanzlei" aria-labelledby="tab-kanzlei">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <h2 className="text-base font-semibold text-[color:var(--ds-text)]">
               {t("settings.kanzlei_title")}
@@ -887,7 +907,7 @@ export default function SettingsPage() {
 
       {/* Team */}
       {activeTab === "team" && (
-        <Card>
+        <Card role="tabpanel" id="panel-team" aria-labelledby="tab-team">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <h2 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
               {t("settings.team_title")}
@@ -958,7 +978,7 @@ export default function SettingsPage() {
 
       {/* SCIM Directory Sync */}
       {activeTab === "scim" && (
-        <Card>
+        <Card role="tabpanel" id="panel-scim" aria-labelledby="tab-scim">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <div className="flex items-center gap-3">
               <Network size={18} className="text-[color:var(--ds-text-muted)]" />
@@ -1010,7 +1030,7 @@ export default function SettingsPage() {
 
       {/* Account */}
       {activeTab === "account" && (
-        <Card>
+        <Card role="tabpanel" id="panel-account" aria-labelledby="tab-account">
           <div className="border-b border-[color:var(--ds-border)] p-6">
             <h2 className="text-base font-semibold tracking-tight text-[color:var(--ds-text)]">
               {t("settings.account_title")}

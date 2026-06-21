@@ -7,6 +7,7 @@ import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
+import { ChatDrawer } from "@/components/chat/chat-drawer";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { useBrainStats } from "@/lib/queries/brain";
@@ -189,6 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onToggleSidebar={() => setCollapsed((c) => !c)}
       />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <ChatDrawer />
     </div>
   );
 }

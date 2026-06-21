@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useLang } from "@/lib/use-lang";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -102,6 +103,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 export default function WorkflowsPage() {
+  const { t } = useLang();
   const pagesQuery = usePages({ type: "workflow", limit: 200 });
   const meQuery = useMe();
   const createMutation = useCreatePage();
@@ -403,7 +405,11 @@ export default function WorkflowsPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20" role="status" aria-label="Lädt">
+            <div
+              className="flex items-center justify-center py-20"
+              role="status"
+              aria-label={t("aria.loading")}
+            >
               <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
             </div>
           ) : filtered.length === 0 ? (

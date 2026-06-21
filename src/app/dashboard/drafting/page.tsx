@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
   FileText,
@@ -122,6 +123,7 @@ const TEMPLATES = [
 ];
 
 export default function DraftingPage() {
+  const { t } = useLang();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("klage");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -149,7 +151,12 @@ export default function DraftingPage() {
       setResult(null);
       try {
         const res = await api.query.think(
-          template.prompt(data as unknown as Record<string, string>)
+          template.prompt(data as unknown as Record<string, string>),
+          {
+            mode: data.selectedCaseSlug ? "tokenmax" : "balanced",
+            queryMode: data.selectedCaseSlug ? "deep_matter" : "balanced",
+            caseSlug: data.selectedCaseSlug || undefined,
+          }
         );
         setResult(res.answer);
         setDraftSaved(null);
@@ -306,6 +313,10 @@ export default function DraftingPage() {
       <PageHeader
         title="Schriftsatz-Generator"
         description="Schriftsätze und Gutachten mit KI-Unterstützung erstellen"
+        breadcrumbs={[
+          { label: "Übersicht", href: "/dashboard" },
+          { label: "Schriftsatz-Generator" },
+        ]}
       />
 
       {/* Template selector */}
@@ -381,7 +392,7 @@ export default function DraftingPage() {
             <Input
               {...register("klaeger")}
               placeholder="Name"
-              aria-label="Name"
+              aria-label={t("drafting.name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
@@ -392,7 +403,7 @@ export default function DraftingPage() {
             <Input
               {...register("beklagter")}
               placeholder="Name"
-              aria-label="Name"
+              aria-label={t("drafting.name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
@@ -405,7 +416,7 @@ export default function DraftingPage() {
             {...register("facts")}
             rows={4}
             placeholder="Beschreibe den Sachverhalt…"
-            aria-label="Beschreibe den Sachverhalt"
+            aria-label={t("drafting.describe_case")}
             className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
           {f.formState.errors.facts && (
@@ -491,6 +502,8 @@ export default function DraftingPage() {
               <button
                 onClick={() => copyToClipboard(result)}
                 className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+                title="In Zwischenablage kopieren"
+                aria-label="In Zwischenablage kopieren"
               >
                 {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
               </button>

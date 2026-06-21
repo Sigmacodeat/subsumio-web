@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useLang } from "@/lib/use-lang";
 import { useDropzone } from "react-dropzone";
 import {
   Upload,
@@ -57,6 +59,8 @@ function formatBytes(bytes: number) {
 }
 
 export default function UploadPage() {
+  const router = useRouter();
+  const { t } = useLang();
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [source, setSource] = useState("wiki");
   const [tags, setTags] = useState("");
@@ -307,7 +311,7 @@ export default function UploadPage() {
           !isOnline() && "cursor-not-allowed opacity-50"
         )}
       >
-        <input {...getInputProps()} aria-label="Datei hochladen" />
+        <input {...getInputProps()} aria-label={t("aria.file_upload")} />
         <div className="flex flex-col items-center gap-4">
           <div
             className={cn(
@@ -472,18 +476,10 @@ export default function UploadPage() {
             Dokumente abfragen.
           </p>
           <div className="flex gap-3">
-            <Button
-              size="sm"
-              variant="success"
-              onClick={() => (window.location.href = "/dashboard/query")}
-            >
+            <Button size="sm" variant="success" onClick={() => router.push("/dashboard/query")}>
               Brain jetzt fragen
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => (window.location.href = "/dashboard/brain")}
-            >
+            <Button size="sm" variant="secondary" onClick={() => router.push("/dashboard/brain")}>
               Brain erkunden
             </Button>
           </div>

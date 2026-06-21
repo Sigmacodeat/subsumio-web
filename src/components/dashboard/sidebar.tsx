@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   BookOpen,
+  Brain,
   Network,
   Upload,
   Settings,
@@ -32,6 +33,7 @@ import {
   FileSpreadsheet,
   ScrollText,
   Bot,
+  MessageCircle,
   FileText,
   Mail,
   RefreshCw,
@@ -62,6 +64,9 @@ import {
   Workflow,
   Inbox,
   FileClock,
+  Smartphone,
+  Award,
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -85,9 +90,6 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cockpit",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-      { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
-      { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
-      { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
       { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
       { href: "/dashboard/workflows", icon: Workflow, labelKey: "nav.workflows" },
@@ -97,11 +99,13 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
+      { href: "/dashboard/chat", icon: MessageCircle, labelKey: "nav.chat" },
+      { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
+      { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
       { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
       { href: "/dashboard/opponents", icon: Swords, labelKey: "nav.opponents" },
       { href: "/dashboard/contracts", icon: ShieldCheck, labelKey: "nav.contracts" },
-      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
       { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
     ],
@@ -124,21 +128,6 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.section.documents_drafting",
-    items: [
-      { href: "/dashboard/upload", icon: Upload, labelKey: "nav.upload" },
-      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
-      { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
-      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-      { href: "/dashboard/tabular-review", icon: Table2, labelKey: "nav.tabular_review" },
-      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
-      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
-      { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-      { href: "/dashboard/translate", icon: Languages, labelKey: "nav.translate" },
-      { href: "/dashboard/version-history", icon: History, labelKey: "nav.version_history" },
-    ],
-  },
-  {
     titleKey: "nav.section.research_knowledge",
     items: [
       { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
@@ -152,10 +141,24 @@ export const NAV_SECTIONS: NavSection[] = [
         labelKey: "nav.obligation_tracking",
       },
       { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-      { href: "/dashboard/query", icon: MessageSquare, labelKey: "nav.query" },
-      { href: "/dashboard/brain", icon: BookOpen, labelKey: "nav.brain" },
+      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
       { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
       { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+    ],
+  },
+  {
+    titleKey: "nav.section.documents_drafting",
+    items: [
+      { href: "/dashboard/upload", icon: Upload, labelKey: "nav.upload" },
+      { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
+      { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
+      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+      { href: "/dashboard/tabular-review", icon: Table2, labelKey: "nav.tabular_review" },
+      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
+      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+      { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
+      { href: "/dashboard/translate", icon: Languages, labelKey: "nav.translate" },
+      { href: "/dashboard/version-history", icon: History, labelKey: "nav.version_history" },
     ],
   },
   {
@@ -199,8 +202,9 @@ export const NAV_SECTIONS: NavSection[] = [
 
 export const BOTTOM_ITEMS: NavItem[] = [
   { href: "/dashboard/team", icon: Users, labelKey: "nav.team" },
-  { href: "/dashboard/assistant", icon: Bot, labelKey: "nav.assistant" },
+  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
   { href: "/dashboard/agents", icon: Sparkles, labelKey: "nav.agents" },
+  { href: "/dashboard/mobile", icon: Smartphone, labelKey: "nav.mobile" },
   { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
   { href: "/dashboard/audit", icon: ScrollText, labelKey: "nav.audit_log" },
   { href: "/dashboard/rag-eval", icon: BarChart3, labelKey: "nav.rag_eval" },
@@ -214,6 +218,7 @@ export const BOTTOM_ITEMS: NavItem[] = [
 
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
+  { href: "/dashboard/chat", icon: MessageCircle, labelKey: "nav.chat" },
   { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
@@ -233,6 +238,8 @@ const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> 
   { href: "/dashboard/drafting", section: "nav.section.documents_drafting" },
   { href: "/dashboard/upload", section: "nav.section.documents_drafting" },
   { href: "/dashboard/research", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/chat", section: "nav.section.cases_clients" },
+  { href: "/dashboard/assistant", section: "nav.section.cases_clients" },
   { href: "/dashboard/query", section: "nav.section.research_knowledge" },
   { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
   { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
@@ -650,8 +657,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       >
                         {t(section.titleKey)}
                       </span>
-                      {sectionActive && (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--accent-gold)]" />
+                      {sectionActive && !isOpen && (
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]"
+                          aria-hidden
+                        />
                       )}
                       <ChevronDown
                         size={14}

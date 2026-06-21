@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLang } from "@/lib/use-lang";
 import { ShieldAlert, Loader2, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface OpponentStats {
 }
 
 export default function OpponentsPage() {
+  const { t } = useLang();
   const [opponents, setOpponents] = useState<OpponentStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -164,7 +166,7 @@ export default function OpponentsPage() {
         <div
           className="flex items-center justify-center py-20"
           role="status"
-          aria-label="Wird geladen"
+          aria-label={t("aria.loading")}
         >
           <Loader2 size={24} className="brand-text animate-spin" />
         </div>

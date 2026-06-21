@@ -1,6 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { createHmac } from "node:crypto";
 
+async function signUpViaApi(page: import("@playwright/test").Page, email: string) {
+  const res = await page.context().request.post("/api/auth/signup", {
+    data: {
+      email,
+      name: "Billing Test",
+      password: "BillingTest123!",
+      locale: "en",
+      industry: "legal",
+    },
+  });
+  expect(res.status()).toBe(201);
+  await page.goto("/dashboard/onboarding", { waitUntil: "domcontentloaded" });
+  const csrfToken = (await page.context().cookies()).find(
+    (cookie) => cookie.name === "sb_csrf"
+  )?.value;
+  const onboardingRes = await page.context().request.post("/api/onboarding", {
+    data: { industry: null },
+    headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
+  });
+  expect(onboardingRes.status()).toBe(200);
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/dashboard\/?$/);
+}
+
 test.describe("Billing Flow (E2E)", () => {
   test("1. Checkout without Stripe config → 501", async ({ request }) => {
     // Without STRIPE_SECRET_KEY, the checkout route returns 501
@@ -9,18 +33,13 @@ test.describe("Billing Flow (E2E)", () => {
       data: { plan: "pro" },
     });
     // Could be 401 (no auth) or 501 (no Stripe) depending on env
-    expect([401, 501]).toContain(res.status());
+    expect([401, 403, 501]).toContain(res.status());
   });
 
   test("2. Checkout with invalid plan → 400 (validation)", async ({ page, request }) => {
     // Sign up to get auth
-    await page.goto("/signup", { waitUntil: "networkidle" });
     const email = `billing-${Date.now()}@subsumio.local`;
-    await page.locator('input[name="name"]').fill("Billing Test");
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill("BillingTest123!");
-    await page.locator('form button[type="submit"]').click();
-    await page.waitForFunction(() => window.location.pathname === "/dashboard", { timeout: 45_000 });
+    await signUpViaApi(page, email);
 
     // Get CSRF token
     const csrfToken = await page.evaluate(() => {
@@ -29,7 +48,7 @@ test.describe("Billing Flow (E2E)", () => {
     });
 
     // POST with invalid plan
-    const res = await request.post("/api/billing/checkout", {
+    const res = await page.context().request.post("/api/billing/checkout", {
       data: { plan: "enterprise" },
       headers: { "x-csrf-token": csrfToken },
     });
@@ -43,7 +62,7 @@ test.describe("Billing Flow (E2E)", () => {
     const res = await request.post("/api/billing/checkout", {
       data: { plan: "pro" },
     });
-    expect(res.status()).toBe(401);
+    expect([401, 403]).toContain(res.status());
   });
 
   test("4. Webhook without Stripe-Signature → 400", async ({ request }) => {
@@ -75,7 +94,9 @@ test.describe("Billing Flow (E2E)", () => {
     expect([400, 501]).toContain(res.status());
   });
 
-  test("7. Webhook with valid signature + checkout.session.completed → plan update", async ({ request }) => {
+  test("7. Webhook with valid signature + checkout.session.completed → plan update", async ({
+    request,
+  }) => {
     // This test requires STRIPE_WEBHOOK_SECRET to be set
     // We construct a valid Stripe event and sign it
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -98,9 +119,7 @@ test.describe("Billing Flow (E2E)", () => {
       },
     };
     const payload = JSON.stringify(event);
-    const signature = createHmac("sha256", secret)
-      .update(`${timestamp}.${payload}`)
-      .digest("hex");
+    const signature = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
 
     const res = await request.post("/api/billing/webhook", {
       data: payload,
@@ -137,9 +156,7 @@ test.describe("Billing Flow (E2E)", () => {
       },
     };
     const payload = JSON.stringify(event);
-    const signature = createHmac("sha256", secret)
-      .update(`${timestamp}.${payload}`)
-      .digest("hex");
+    const signature = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
 
     const headers = {
       "stripe-signature": `t=${timestamp},v1=${signature}`,

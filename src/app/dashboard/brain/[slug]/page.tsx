@@ -28,6 +28,8 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { BrainPage, Entity } from "@/lib/types";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
+import { ChatPanel } from "@/components/chat/chat-panel";
+import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 // Erweiterte Felder, die die Detail-API zusätzlich zur BrainPage liefert.
 interface PageGraphExtras {
@@ -62,6 +64,7 @@ export default function BrainDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [content, setContent] = useState("");
   const [copied, setCopied] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -421,6 +424,41 @@ export default function BrainDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Embedded Chat */}
+      <div className="mt-6">
+        <button
+          onClick={() => setChatOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+        >
+          <span className="flex items-center gap-2">
+            <MessageCircle size={16} className="brand-text" />
+            Frage zu dieser Seite stellen
+          </span>
+          {chatOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {chatOpen && (
+          <div className="mt-2 h-[500px]">
+            <ChatPanel
+              context={{ type: "brain_page", pageSlug: slug }}
+              features={{
+                caseSelector: false,
+                jurisdictionSelector: true,
+                modelSelector: true,
+                modeSelector: true,
+                fileUpload: false,
+                sessionHistory: true,
+                tokenWidget: true,
+                brainStatus: true,
+                exampleQueries: true,
+                exportChat: true,
+                messageActions: true,
+              }}
+              className="h-full"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
