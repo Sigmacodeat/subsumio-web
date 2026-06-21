@@ -6,6 +6,14 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 // Mock @tanstack/react-query
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn(() => ({ data: null, isLoading: false })),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+}));
+
+// Mock csrfFetch
+vi.mock("@/lib/csrf", () => ({
+  csrfFetch: vi.fn(() => Promise.resolve(new Response("{}"))),
 }));
 
 // Mock useMe from queries/auth
@@ -87,7 +95,9 @@ describe("useLang", () => {
     await waitFor(() => {
       expect(result.current.lang).toBe("de");
     });
-    const translated = result.current.t("nav.overview" as unknown as Parameters<typeof result.current.t>[0]);
+    const translated = result.current.t(
+      "nav.overview" as unknown as Parameters<typeof result.current.t>[0]
+    );
     expect(typeof translated).toBe("string");
     expect(translated.length).toBeGreaterThan(0);
   });

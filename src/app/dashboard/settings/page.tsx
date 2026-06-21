@@ -21,6 +21,7 @@ import {
   Euro,
   Users,
   Network,
+  Languages,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -148,7 +149,7 @@ function Field({
 }
 
 export default function SettingsPage() {
-  const { t } = useLang();
+  const { t, lang, setLang } = useLang();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => {
     const tab = searchParams.get("tab");
@@ -1100,6 +1101,36 @@ export default function SettingsPage() {
                 >
                   {t("settings.partner_link")} <ExternalLink size={10} />
                 </Link>
+              </div>
+            </Field>
+            <Field label={t("settings.language")} desc={t("settings.language_desc")}>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLang("de")}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    lang === "de"
+                      ? "brand-soft brand-text brand-border"
+                      : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
+                  )}
+                  aria-pressed={lang === "de"}
+                >
+                  <Languages size={14} className="shrink-0" />
+                  Deutsch
+                </button>
+                <button
+                  onClick={() => setLang("en")}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                    lang === "en"
+                      ? "brand-soft brand-text brand-border"
+                      : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
+                  )}
+                  aria-pressed={lang === "en"}
+                >
+                  <Languages size={14} className="shrink-0" />
+                  English
+                </button>
               </div>
             </Field>
             <Field label={t("settings.data_export")} desc={t("settings.data_export_desc")}>

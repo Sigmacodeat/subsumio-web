@@ -21,6 +21,7 @@ import {
   CornerDownLeft,
   HelpCircle,
   Sparkles,
+  Languages,
 } from "lucide-react";
 import { useBrainSelector } from "@/lib/use-brain-selector";
 import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
@@ -70,7 +71,7 @@ export function Topbar({
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
-  const { t } = useLang();
+  const { t, lang, setLang } = useLang();
 
   // Debounce search query for live results
   useEffect(() => {
@@ -722,6 +723,45 @@ export function Topbar({
                   )}
                   {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
                 </button>
+                {/* Language switcher */}
+                <div className="px-3 py-2" role="menuitem" aria-label={t("topbar.language_switch")}>
+                  <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                    <Languages size={13} className="shrink-0" />
+                    {t("topbar.language")}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => {
+                        setLang("de");
+                        setUserMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                        lang === "de"
+                          ? "brand-soft brand-text brand-border"
+                          : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                      )}
+                      aria-pressed={lang === "de"}
+                    >
+                      DE
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLang("en");
+                        setUserMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95",
+                        lang === "en"
+                          ? "brand-soft brand-text brand-border"
+                          : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                      )}
+                      aria-pressed={lang === "en"}
+                    >
+                      EN
+                    </button>
+                  </div>
+                </div>
                 <button
                   onClick={logout}
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600 active:scale-95"

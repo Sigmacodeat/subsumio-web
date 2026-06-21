@@ -4,15 +4,16 @@ import { SESSION_COOKIE, revokeAllSessions } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
-  // Try to get the user for audit and optional global revocation
+  // Try to get the user for audit and session revocation
   const user = await getSession();
-  const allDevices = req.headers.get("x-logout-all-devices") === "true";
 
   if (user) {
-    if (allDevices) {
-      await revokeAllSessions(user.uid);
-    }
-    void logAudit("user.logout", "user", { entityId: user.uid, details: { allDevices } });
+    // Always revoke all sessions on logout — this invalidates any stolen JWT
+    // immediately, not just when "logout all devices" is requested.
+    // The version-based revocation system doesn't support single-session
+    // revocation, so we revoke all for security.
+    await revokeAllSessions(user.uid);
+    void logAudit("user.logout", "user", { entityId: user.uid, details: { allDevices: true } });
   }
 
   const res = NextResponse.json({ ok: true });

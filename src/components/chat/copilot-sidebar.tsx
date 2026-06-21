@@ -413,7 +413,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         )}
         role="dialog"
         aria-label="Brain Copilot"
-        aria-modal="true"
+        aria-modal={mobileOpen ? "true" : undefined}
+        aria-hidden={!mobileOpen}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
           {/* Mobile header bar */}

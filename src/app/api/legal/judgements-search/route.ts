@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { searchJudgements } from "@/lib/judgements";
 import { createHandler } from "@/lib/api-handler";
@@ -11,8 +10,14 @@ const judgementsSearchSchema = z.object({
   court: z.string().default(""),
   from: z.string().default(""),
   to: z.string().default(""),
-  page: z.string().transform((v) => Math.max(parseInt(v, 10) || 0, 0)).default("0"),
-  limit: z.string().transform((v) => Math.min(parseInt(v, 10) || 20, 50)).default("20"),
+  page: z
+    .string()
+    .transform((v) => Math.max(parseInt(v, 10) || 0, 0))
+    .default("0"),
+  limit: z
+    .string()
+    .transform((v) => Math.min(parseInt(v, 10) || 20, 50))
+    .default("20"),
 });
 
 export const GET = createHandler(
@@ -46,9 +51,7 @@ export const GET = createHandler(
       total: results.length,
       page: query.page,
       limit: query.limit,
-      ...(errors.length > 0 && results.length === 0
-        ? { error: `Quelle(n) nicht erreichbar: ${errors.join("; ")}` }
-        : {}),
+      ...(errors.length > 0 && results.length === 0 ? { error: "Quelle(n) nicht erreichbar" } : {}),
     });
-  },
+  }
 );

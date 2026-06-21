@@ -84,24 +84,26 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
       </button>
 
       {/* Drawer overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={cn(
+          "fixed inset-0 z-50 bg-black/20 backdrop-blur-sm transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        )}
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* Drawer panel */}
       <div
         ref={drawerRef}
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-300 ease-out",
+          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           open ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
         aria-label="Brain Copilot"
-        aria-modal="true"
+        aria-modal={open ? "true" : undefined}
+        aria-hidden={!open}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] shadow-2xl">
           {/* Close button */}

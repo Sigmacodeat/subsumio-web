@@ -89,6 +89,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
         open ? "opacity-100" : "pointer-events-none opacity-0"
       )}
       role="presentation"
+      aria-hidden={!open}
     >
       <button
         className="absolute inset-0 cursor-default"
@@ -102,8 +103,9 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
           open ? "translate-x-0" : "translate-x-full"
         )}
         role="dialog"
-        aria-modal="true"
+        aria-modal={open ? "true" : undefined}
         aria-label={t("guide.title")}
+        aria-hidden={!open}
       >
         <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3">
           <div className="min-w-0">

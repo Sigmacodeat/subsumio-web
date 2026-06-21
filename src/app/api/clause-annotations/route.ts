@@ -140,7 +140,7 @@ export const POST = createHandler(
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        return apiError("annotation_create_failed", `Engine returned ${res.status}: ${text}`, 502);
+        return apiError("annotation_create_failed", "Annotation konnte nicht erstellt werden", 502);
       }
 
       broadcastSseEvent(ctx.brainId, "annotation.created", {
@@ -228,7 +228,7 @@ export const PATCH = createHandler(
         const text = await updateRes.text().catch(() => "");
         return apiError(
           "annotation_update_failed",
-          `Engine returned ${updateRes.status}: ${text}`,
+          "Annotation konnte nicht aktualisiert werden",
           502
         );
       }

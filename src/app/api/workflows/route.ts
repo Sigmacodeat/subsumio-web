@@ -113,7 +113,7 @@ export const POST = createHandler(
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        return apiError("workflow_create_failed", `Engine returned ${res.status}: ${text}`, 502);
+        return apiError("workflow_create_failed", "Workflow konnte nicht erstellt werden", 502);
       }
 
       broadcastSseEvent(
@@ -219,11 +219,7 @@ export const PATCH = createHandler(
 
       if (!updateRes.ok) {
         const text = await updateRes.text().catch(() => "");
-        return apiError(
-          "workflow_update_failed",
-          `Engine returned ${updateRes.status}: ${text}`,
-          502
-        );
+        return apiError("workflow_update_failed", "Workflow konnte nicht aktualisiert werden", 502);
       }
 
       broadcastSseEvent(

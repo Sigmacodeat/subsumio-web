@@ -88,11 +88,13 @@ export function MobileTabBar({
     if (moreOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      // Only clear if no other overlay is locking scroll
+      // (layout manages its own scroll lock for sidebar/copilot/cmd/guide)
+      const otherOverlayOpen = document.querySelector('[aria-modal="true"]') !== null;
+      if (!otherOverlayOpen) {
+        document.body.style.overflow = "";
+      }
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [moreOpen]);
 
   const activeTab = TABS.findIndex((tab) => isActive(pathname, tab.href));
@@ -119,7 +121,8 @@ export function MobileTabBar({
         )}
         role="dialog"
         aria-label="Mehr Aktionen"
-        aria-modal="true"
+        aria-modal={moreOpen ? "true" : undefined}
+        aria-hidden={!moreOpen}
       >
         <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
           {/* Grab handle */}

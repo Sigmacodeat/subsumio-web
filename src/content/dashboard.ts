@@ -163,6 +163,10 @@ export const D = {
   "topbar.notif_days_overdue": { de: "Tage überfällig", en: "days overdue" },
   "topbar.notif_dream_last": { de: "Letzter Lauf: vor", en: "Last run:" },
   "topbar.notif_dream_hours": { de: "Stunden", en: "hours" },
+  "topbar.language": { de: "Sprache", en: "Language" },
+  "topbar.language_de": { de: "Deutsch", en: "German" },
+  "topbar.language_en": { de: "Englisch", en: "English" },
+  "topbar.language_switch": { de: "Sprache wechseln", en: "Switch language" },
 
   // ── Dashboard page ──
   "dashboard.title": { de: "Kanzlei-Cockpit", en: "Firm Cockpit" },
@@ -771,6 +775,11 @@ export const D = {
     en: "All your data — account, usage and the complete brain (cases, documents, deadlines) — as a JSON file (Art. 20 GDPR).",
   },
   "settings.export_button": { de: "Daten exportieren ↓", en: "Export data ↓" },
+  "settings.language": { de: "Sprache", en: "Language" },
+  "settings.language_desc": {
+    de: "Dashboardsprache wählen — wird gespeichert und beim Login wiederhergestellt",
+    en: "Choose dashboard language — saved and restored on login",
+  },
   "settings.tab_scim": { de: "SCIM", en: "SCIM" },
   "settings.scim_title": { de: "SCIM Directory Sync", en: "SCIM Directory Sync" },
   "settings.scim_desc": {
