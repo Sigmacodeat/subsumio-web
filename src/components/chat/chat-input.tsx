@@ -31,6 +31,7 @@ export function ChatInput({
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<Array<{ name: string; slug: string }>>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +102,18 @@ export function ChatInput({
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
-    if (files.length > 10) return;
+    setUploadError(null);
+    if (files.length > 10) {
+      setUploadError(t("chat.input.too_many_files"));
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    const oversized = files.filter((f) => f.size > 10 * 1024 * 1024);
+    if (oversized.length > 0) {
+      setUploadError(t("chat.input.file_too_large"));
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setUploading(true);
     try {
       const uploaded = await Promise.all(files.map((f) => api.upload.file(f, { source: "chat" })));
@@ -111,6 +123,7 @@ export function ChatInput({
       ]);
     } catch (err) {
       console.error("[chat-input] upload failed:", err);
+      setUploadError(t("chat.input.upload_failed"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -147,6 +160,21 @@ export function ChatInput({
               </button>
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Upload error */}
+      {uploadError && (
+        <div className="flex items-center gap-2 px-4 pt-2 text-xs text-red-600 dark:text-red-400">
+          <X size={12} className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{uploadError}</span>
+          <button
+            onClick={() => setUploadError(null)}
+            className="shrink-0 text-red-400 transition-colors hover:text-red-600 dark:text-red-500 dark:hover:text-red-300"
+            aria-label={t("chat.dismiss_error")}
+          >
+            <X size={11} />
+          </button>
         </div>
       )}
 

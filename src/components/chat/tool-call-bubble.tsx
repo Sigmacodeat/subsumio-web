@@ -43,6 +43,35 @@ const TOOL_ICONS: Record<string, typeof FileText> = {
   intake_create: UserPlus,
 };
 
+const PARAM_LABEL_KEYS: Record<string, string> = {
+  route: "chat.tool.param_route",
+  query: "chat.tool.param_query",
+  status: "chat.tool.param_status",
+  case_slug: "chat.tool.param_case_slug",
+  title: "chat.tool.param_title",
+  client_name: "chat.tool.param_client_name",
+  opponent_name: "chat.tool.param_opponent_name",
+  subject: "chat.tool.param_subject",
+  recipient: "chat.tool.param_recipient",
+  tone: "chat.tool.param_tone",
+  document_slug: "chat.tool.param_document_slug",
+  name: "chat.tool.param_name",
+  description: "chat.tool.param_description",
+  hours: "chat.tool.param_hours",
+  activity_type: "chat.tool.param_activity_type",
+  update_type: "chat.tool.param_update_type",
+  notes: "chat.tool.param_notes",
+  matter_type: "chat.tool.param_matter_type",
+  jurisdiction: "chat.tool.param_jurisdiction",
+  urgency: "chat.tool.param_urgency",
+};
+
+function formatParamKey(key: string, t: (k: never) => string): string {
+  const labelKey = PARAM_LABEL_KEYS[key];
+  if (labelKey) return t(labelKey as never);
+  return key.replace(/_/g, " ");
+}
+
 export function ToolCallBubble({
   toolCall,
   onConfirm,
@@ -97,7 +126,7 @@ export function ToolCallBubble({
               {paramEntries.map(([key, value]) => (
                 <div key={key} className="flex items-start gap-2 text-xs">
                   <dt className="shrink-0 font-medium text-amber-700 dark:text-amber-300">
-                    {key}:
+                    {formatParamKey(key, t)}:
                   </dt>
                   <dd className="min-w-0 flex-1 truncate text-amber-900 dark:text-amber-100">
                     {typeof value === "object" ? JSON.stringify(value) : String(value)}

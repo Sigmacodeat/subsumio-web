@@ -256,9 +256,15 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const drawerRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ChatPanelHandle>(null);
   const quickActionNavRef = useRef(false);
+  const onToggleRef = useRef(onToggle);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [actionsExpanded, setActionsExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+
+  // Keep onToggle ref current to avoid stale closure in route-change effect
+  useEffect(() => {
+    onToggleRef.current = onToggle;
+  }, [onToggle]);
 
   const {
     width: panelWidth,
@@ -290,9 +296,9 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     }
     setMobileOpen(false);
     if (open && isMobile) {
-      onToggle();
+      onToggleRef.current();
     }
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, open, isMobile]);
 
   // ── G6: Proactive Suggestions — fetch from /api/notifications (unified) ──
   const [proactiveAlerts, setProactiveAlerts] = useState<
@@ -449,7 +455,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   }, []);
 
   const visibleAlerts = useMemo(
-    () => proactiveAlerts.filter((a, i) => !dismissedAlerts.has(`${a.label}-${i}`)),
+    () => proactiveAlerts.filter((a) => !dismissedAlerts.has(`${a.label}-${a.query}`)),
     [proactiveAlerts, dismissedAlerts]
   );
 
@@ -522,7 +528,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               </div>
               <div className="space-y-1.5">
                 {visibleAlerts.map((alert) => {
-                  const alertKey = `${alert.label}-${proactiveAlerts.indexOf(alert)}`;
+                  const alertKey = `${alert.label}-${alert.query}`;
                   return (
                     <div
                       key={alertKey}
@@ -737,7 +743,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 </div>
                 <div className="space-y-1.5">
                   {visibleAlerts.map((alert) => {
-                    const alertKey = `${alert.label}-${proactiveAlerts.indexOf(alert)}`;
+                    const alertKey = `${alert.label}-${alert.query}`;
                     return (
                       <div
                         key={alertKey}

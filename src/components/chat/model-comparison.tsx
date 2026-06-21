@@ -21,7 +21,7 @@ interface ModelResult {
 }
 
 export function ModelComparison() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [query, setQuery] = useState("");
   const [modelA, setModelA] = useState<string | undefined>(undefined);
   const [modelB, setModelB] = useState<string | undefined>(undefined);
@@ -32,6 +32,9 @@ export function ModelComparison() {
   const runComparison = useCallback(async () => {
     const trimmed = query.trim();
     if (!trimmed || !modelA || !modelB) return;
+
+    // Abort any previous run before starting a new one
+    abortRef.current?.abort();
 
     setHasRun(true);
     setResults([
@@ -52,64 +55,61 @@ export function ModelComparison() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    for (let i = 0; i < 2; i++) {
-      const modelId = i === 0 ? modelA : modelB;
-      const modelName = AI_MODELS.find((m) => m.id === modelId)?.name ?? modelId;
+    // Run both queries in parallel for true side-by-side comparison
+    await Promise.all(
+      [modelA, modelB].map(async (modelId, i) => {
+        const modelName = AI_MODELS.find((m) => m.id === modelId)?.name ?? modelId;
+        try {
+          const result: QueryResponse = await api.query.think(trimmed, {
+            mode: "balanced",
+            model: modelId,
+            signal: controller.signal,
+          });
 
-      setResults((prev) => {
-        const next = [...prev];
-        next[i] = { ...next[i], loading: true };
-        return next;
-      });
-
-      try {
-        const result: QueryResponse = await api.query.think(trimmed, {
-          mode: "balanced",
-          model: modelId,
-          signal: controller.signal,
-        });
-
-        setResults((prev) => {
-          const next = [...prev];
-          next[i] = {
-            ...next[i],
-            answer: result.answer,
-            tokensUsed: result.tokens_used,
-            latencyMs: result.latency_ms,
-            citations: result.citations,
-            loading: false,
-          };
-          return next;
-        });
-      } catch (err) {
-        const isAborted = err instanceof DOMException && err.name === "AbortError";
-        setResults((prev) => {
-          const next = [...prev];
-          next[i] = {
-            ...next[i],
-            loading: false,
-            answer: isAborted ? "[Abgebrochen]" : "",
-            error: isAborted
-              ? undefined
-              : err instanceof Error
-                ? err.message
-                : "Unbekannter Fehler",
-          };
-          return next;
-        });
-      }
-    }
-  }, [query, modelA, modelB]);
+          setResults((prev) => {
+            const next = [...prev];
+            next[i] = {
+              ...next[i],
+              answer: result.answer,
+              tokensUsed: result.tokens_used,
+              latencyMs: result.latency_ms,
+              citations: result.citations,
+              loading: false,
+            };
+            return next;
+          });
+        } catch (err) {
+          const isAborted = err instanceof DOMException && err.name === "AbortError";
+          setResults((prev) => {
+            const next = [...prev];
+            next[i] = {
+              ...next[i],
+              loading: false,
+              answer: isAborted ? t("chat.aborted") : "",
+              error: isAborted
+                ? undefined
+                : err instanceof Error
+                  ? err.message
+                  : t("chat.error_generic"),
+            };
+            return next;
+          });
+        }
+      })
+    );
+  }, [query, modelA, modelB, t]);
 
   return (
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
           <GitCompare size={20} className="brand-text" />
-          <h1 className="text-xl font-bold text-[color:var(--ds-text)]">Modell-Vergleich</h1>
+          <h1 className="text-xl font-bold text-[color:var(--ds-text)]">
+            {t("chat.model_comparison")}
+          </h1>
         </div>
         <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-          Vergleiche Antworten verschiedener KI-Modelle auf dieselbe Frage side-by-side.
+          {t("chat.model_comparison_desc")}
         </p>
       </div>
 
@@ -117,12 +117,12 @@ export function ModelComparison() {
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-            Frage
+            {t("chat.model_comparison_question")}
           </label>
           <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="z.B. Was ist die Verjährungsfrist für Ansprüche aus unerlaubter Handung?"
+            placeholder={t("chat.model_comparison_placeholder")}
             rows={3}
             className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
@@ -131,13 +131,13 @@ export function ModelComparison() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-              Modell A
+              {t("chat.model_comparison_model_a")}
             </label>
             <ModelSelector selectedModelId={modelA} onSelect={setModelA} />
           </div>
           <div>
             <label className="mb-1.5 block text-xs font-medium text-[color:var(--ds-text-muted)]">
-              Modell B
+              {t("chat.model_comparison_model_b")}
             </label>
             <ModelSelector selectedModelId={modelB} onSelect={setModelB} />
           </div>
@@ -147,7 +147,7 @@ export function ModelComparison() {
           <div className="text-xs text-[color:var(--ds-text-subtle)]">
             {modelA && modelB && (
               <span>
-                Geschätzte Kosten:{" "}
+                {t("chat.model_comparison_est_cost")}{" "}
                 {formatCost(
                   ((AI_MODELS.find((m) => m.id === modelA)?.costPer1MInput ?? 0) +
                     (AI_MODELS.find((m) => m.id === modelB)?.costPer1MInput ?? 0)) /
@@ -167,7 +167,7 @@ export function ModelComparison() {
             ) : (
               <GitCompare size={14} />
             )}
-            Vergleichen
+            {t("chat.model_comparison_compare")}
           </button>
         </div>
       </div>
@@ -279,7 +279,7 @@ export function ModelComparison() {
           <div className="flex items-center justify-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-3 text-sm">
             {results[0].latencyMs != null && results[1].latencyMs != null && (
               <span className="text-[color:var(--ds-text-muted)]">
-                Schneller:{" "}
+                {t("chat.model_comparison_faster")}{" "}
                 <strong className="text-[color:var(--ds-text)]">
                   {results[0].latencyMs < results[1].latencyMs
                     ? results[0].modelName
@@ -292,7 +292,7 @@ export function ModelComparison() {
               <>
                 <ArrowRight size={12} className="text-[color:var(--ds-text-subtle)]" />
                 <span className="text-[color:var(--ds-text-muted)]">
-                  Token-effizienter:{" "}
+                  {t("chat.model_comparison_efficient")}{" "}
                   <strong className="text-[color:var(--ds-text)]">
                     {results[0].tokensUsed < results[1].tokensUsed
                       ? results[0].modelName

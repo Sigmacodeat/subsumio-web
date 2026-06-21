@@ -2874,6 +2874,58 @@ export const D = {
   "chat.tool.open": { de: "Öffnen", en: "Open" },
   "chat.tool.open_navigation": { de: "Navigation öffnen", en: "Open navigation" },
 
+  // ── Chat: model comparison ──
+  "chat.model_comparison": { de: "Modell-Vergleich", en: "Model Comparison" },
+  "chat.model_comparison_desc": {
+    de: "Vergleiche Antworten verschiedener KI-Modelle auf dieselbe Frage side-by-side.",
+    en: "Compare responses from different AI models to the same question side-by-side.",
+  },
+  "chat.model_comparison_question": { de: "Frage", en: "Question" },
+  "chat.model_comparison_placeholder": {
+    de: "z.B. Was ist die Verjährungsfrist für Ansprüche aus unerlaubter Handlung?",
+    en: "e.g. What is the statute of limitations for tort claims?",
+  },
+  "chat.model_comparison_model_a": { de: "Modell A", en: "Model A" },
+  "chat.model_comparison_model_b": { de: "Modell B", en: "Model B" },
+  "chat.model_comparison_est_cost": { de: "Geschätzte Kosten:", en: "Estimated cost:" },
+  "chat.model_comparison_compare": { de: "Vergleichen", en: "Compare" },
+  "chat.model_comparison_faster": { de: "Schneller:", en: "Faster:" },
+  "chat.model_comparison_efficient": { de: "Token-effizienter:", en: "More token-efficient:" },
+  "chat.aborted": { de: "[Abgebrochen]", en: "[Aborted]" },
+
+  // ── Chat: upload errors ──
+  "chat.input.upload_failed": { de: "Upload fehlgeschlagen", en: "Upload failed" },
+  "chat.input.too_many_files": {
+    de: "Maximal 10 Dateien gleichzeitig",
+    en: "Maximum 10 files at once",
+  },
+  "chat.input.file_too_large": {
+    de: "Datei zu groß (max 10 MB)",
+    en: "File too large (max 10 MB)",
+  },
+
+  // ── Chat: tool param labels ──
+  "chat.tool.param_route": { de: "Ziel", en: "Destination" },
+  "chat.tool.param_query": { de: "Suche", en: "Search" },
+  "chat.tool.param_status": { de: "Status", en: "Status" },
+  "chat.tool.param_case_slug": { de: "Akte", en: "Case" },
+  "chat.tool.param_title": { de: "Titel", en: "Title" },
+  "chat.tool.param_client_name": { de: "Mandant", en: "Client" },
+  "chat.tool.param_opponent_name": { de: "Gegner", en: "Opponent" },
+  "chat.tool.param_subject": { de: "Betreff", en: "Subject" },
+  "chat.tool.param_recipient": { de: "Empfänger", en: "Recipient" },
+  "chat.tool.param_tone": { de: "Ton", en: "Tone" },
+  "chat.tool.param_document_slug": { de: "Dokument", en: "Document" },
+  "chat.tool.param_name": { de: "Name", en: "Name" },
+  "chat.tool.param_description": { de: "Beschreibung", en: "Description" },
+  "chat.tool.param_hours": { de: "Stunden", en: "Hours" },
+  "chat.tool.param_activity_type": { de: "Aktivität", en: "Activity" },
+  "chat.tool.param_update_type": { de: "Update-Typ", en: "Update type" },
+  "chat.tool.param_notes": { de: "Notizen", en: "Notes" },
+  "chat.tool.param_matter_type": { de: "Rechtsgebiet", en: "Practice area" },
+  "chat.tool.param_jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
+  "chat.tool.param_urgency": { de: "Dringlichkeit", en: "Urgency" },
+
   // ── Nav: dashboard ──
   "nav.dashboard": { de: "Dashboard", en: "Dashboard" },
 
