@@ -534,7 +534,7 @@ function CoverageDisplay({ coverage }: { coverage: MatterCoverageStatus }) {
           <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
-                "h-full rounded-full transition-all",
+                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"
               )}
               style={{ width: `${score}%` }}

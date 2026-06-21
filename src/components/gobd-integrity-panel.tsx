@@ -106,7 +106,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
           <button
             onClick={verifyInvoice}
             disabled={state.kind === "checking"}
-            className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all disabled:opacity-50"
+            className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-50"
           >
             {state.kind === "checking" ? (
               <Loader2 size={13} className="animate-spin" />
@@ -120,7 +120,7 @@ export function GobdIntegrityPanel({ page }: { page: BrainPage }) {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={state.kind === "checking"}
-              className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all disabled:opacity-50"
+              className="brand-soft brand-text brand-border hover:brand-soft-strong inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-50"
             >
               {state.kind === "checking" ? (
                 <Loader2 size={13} className="animate-spin" />

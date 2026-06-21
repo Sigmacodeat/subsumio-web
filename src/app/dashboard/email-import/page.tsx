@@ -73,7 +73,7 @@ export default function EmailImportPage() {
           );
           void onDrop(files);
         }}
-        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-all duration-300 hover:border-blue-500/30 hover:bg-blue-500/[0.02]"
+        className="cursor-pointer rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-8 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-blue-500/30 hover:bg-blue-500/[0.02]"
         onClick={() => document.getElementById("email-file-input")?.click()}
       >
         <Upload size={32} className="mx-auto mb-3 text-[color:var(--ds-border)]" />

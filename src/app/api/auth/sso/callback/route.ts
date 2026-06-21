@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get("error");
 
   if (error) {
-    return Response.json({ error: "sso_denied", detail: error }, { status: 400 });
+    console.error("[sso/callback] SSO provider error:", error);
+    return Response.json({ error: "sso_denied" }, { status: 400 });
   }
   if (!code) {
     return Response.json({ error: "code_required" }, { status: 400 });

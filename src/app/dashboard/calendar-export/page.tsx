@@ -190,7 +190,7 @@ export default function CalendarExportPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
               filter === f
                 ? "border-blue-500/30 bg-blue-600/15 text-blue-600"
                 : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -244,7 +244,7 @@ export default function CalendarExportPage() {
             return (
               <div
                 key={ev.id}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-all ${
+                className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   isOverdue
                     ? "border-red-500/20 bg-red-500/5"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"

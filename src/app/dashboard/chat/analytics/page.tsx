@@ -137,7 +137,7 @@ export default function ChatAnalyticsPage() {
                 style={{ height: "100%" }}
               >
                 <div
-                  className="brand-bg w-full rounded-t transition-all hover:opacity-80"
+                  className="brand-bg w-full rounded-t transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-80"
                   style={{
                     height: `${(day.tokens / maxTokens) * 100}%`,
                     minHeight: day.tokens > 0 ? "4px" : "0",

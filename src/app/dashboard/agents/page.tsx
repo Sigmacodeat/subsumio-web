@@ -334,7 +334,7 @@ function JobDetail({
               onRefresh();
             }}
             disabled={acting !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-600/15 px-3 py-1.5 text-xs font-medium text-amber-600 transition-all hover:bg-amber-600/25 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-600/15 px-3 py-1.5 text-xs font-medium text-amber-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-amber-600/25 disabled:opacity-40"
           >
             {acting === "pause" ? (
               <Loader2 size={12} className="animate-spin" />
@@ -353,7 +353,7 @@ function JobDetail({
               onRefresh();
             }}
             disabled={acting !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-all hover:bg-emerald-600/25 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-600/25 disabled:opacity-40"
           >
             {acting === "resume" ? (
               <Loader2 size={12} className="animate-spin" />
@@ -372,7 +372,7 @@ function JobDetail({
               onRefresh();
             }}
             disabled={acting !== null}
-            className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-all hover:bg-red-600/25 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600/25 disabled:opacity-40"
           >
             {acting === "cancel" ? (
               <Loader2 size={12} className="animate-spin" />
@@ -391,7 +391,7 @@ function JobDetail({
               onRefresh();
             }}
             disabled={acting !== null}
-            className="brand-soft brand-text brand-border hover:brand-bg/25 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-40"
+            className="brand-soft brand-text brand-border hover:brand-bg/25 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
           >
             {acting === "replay" ? (
               <Loader2 size={12} className="animate-spin" />
@@ -452,7 +452,7 @@ function JobDetail({
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
             <div
-              className="brand-soft h-full rounded-full transition-all"
+              className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               style={{ width: `${(job.progress.step / job.progress.total) * 100}%` }}
             />
           </div>
@@ -601,7 +601,7 @@ function JobDetail({
               <button
                 onClick={handleSendMessage}
                 disabled={sendMutation.isPending || !inboxInput.trim()}
-                className="brand-bg brand-bg disabled:hover:brand-bg flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-white transition-all disabled:opacity-40"
+                className="brand-bg brand-bg disabled:hover:brand-bg flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
               >
                 {sendMutation.isPending ? (
                   <Loader2 size={12} className="animate-spin" />
@@ -668,7 +668,7 @@ export default function AgentsPage() {
         <button
           onClick={() => setTab("jobs")}
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             tab === "jobs"
               ? "brand-soft brand-text brand-border border"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -680,7 +680,7 @@ export default function AgentsPage() {
         <button
           onClick={() => setTab("builder")}
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             tab === "builder"
               ? "brand-soft brand-text brand-border border"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -748,7 +748,7 @@ export default function AgentsPage() {
                     onClick={() => {
                       setSubmitPrompt(template.prompt);
                     }}
-                    className="hover:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-xs text-[color:var(--ds-text-muted)] transition-all hover:text-[color:var(--ds-text)]"
+                    className="hover:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)]"
                   >
                     <span className="mr-1.5">{template.icon}</span>
                     {template.label}
@@ -776,7 +776,7 @@ export default function AgentsPage() {
                 <button
                   type="submit"
                   disabled={submitMutation.isPending || !submitPrompt.trim()}
-                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-40"
+                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
                 >
                   {submitMutation.isPending ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -806,7 +806,7 @@ export default function AgentsPage() {
                     key={f}
                     onClick={() => setFilter(f)}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       filter === f
                         ? "brand-soft brand-text brand-border border"
                         : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
@@ -836,7 +836,7 @@ export default function AgentsPage() {
                   key={job.id}
                   onClick={() => setSelectedJob(job.id)}
                   className={cn(
-                    "w-full rounded-lg border p-3 text-left transition-all",
+                    "w-full rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     selectedJob === job.id
                       ? "brand-soft brand-border"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -879,7 +879,7 @@ export default function AgentsPage() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => agentsQuery.refetch()}
-                  className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 >
                   <RefreshCw size={12} />
                   Aktualisieren

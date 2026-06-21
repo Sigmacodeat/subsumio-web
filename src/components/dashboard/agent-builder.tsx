@@ -171,20 +171,20 @@ function StepEditor({
             <button
               onClick={() => moveStep(idx, -1)}
               disabled={idx === 0}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
             >
               <ChevronUp size={14} />
             </button>
             <button
               onClick={() => moveStep(idx, 1)}
               disabled={idx === steps.length - 1}
-              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
+              className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-30"
             >
               <ChevronDown size={14} />
             </button>
             <button
               onClick={() => removeStep(idx)}
-              className="rounded p-1 text-red-500 transition-all hover:bg-red-500/10 hover:text-red-400"
+              className="rounded p-1 text-red-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-400"
             >
               <Trash2 size={14} />
             </button>
@@ -201,7 +201,7 @@ function StepEditor({
 
       <button
         onClick={addStep}
-        className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-all hover:text-[color:var(--ds-text)]"
+        className="hover:brand-border flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[color:var(--ds-border)] px-3 py-2 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-[color:var(--ds-text)]"
       >
         <Plus size={14} />
         Step hinzufügen
@@ -238,7 +238,7 @@ function TemplateCard({
     <div
       onClick={onSelect}
       className={cn(
-        "w-full cursor-pointer rounded-lg border p-3 text-left transition-all",
+        "w-full cursor-pointer rounded-lg border p-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
         isSelected
           ? "brand-soft brand-border"
           : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -258,7 +258,7 @@ function TemplateCard({
               onRun();
             }}
             disabled={isRunning}
-            className="brand-soft brand-text brand-border hover:brand-bg/30 rounded-md border p-1.5 transition-all disabled:opacity-40"
+            className="brand-soft brand-text brand-border hover:brand-bg/30 rounded-md border p-1.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
             title="Agent ausführen"
           >
             {isRunning ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
@@ -268,7 +268,7 @@ function TemplateCard({
               e.stopPropagation();
               onEdit();
             }}
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Bearbeiten"
           >
             <Edit3 size={13} />
@@ -278,7 +278,7 @@ function TemplateCard({
               e.stopPropagation();
               onDuplicate();
             }}
-            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
             title="Duplizieren"
           >
             <Copy size={13} />
@@ -290,7 +290,7 @@ function TemplateCard({
                 setConfirmDelete(false);
                 onDelete();
               }}
-              className="rounded-md border border-red-500/20 bg-red-600/15 p-1.5 text-red-500 transition-all"
+              className="rounded-md border border-red-500/20 bg-red-600/15 p-1.5 text-red-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               title="Wirklich löschen"
             >
               <Trash2 size={13} />
@@ -301,7 +301,7 @@ function TemplateCard({
                 e.stopPropagation();
                 setConfirmDelete(true);
               }}
-              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-500"
+              className="rounded-md p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-500"
               title="Löschen"
             >
               <Trash2 size={13} />
@@ -371,7 +371,7 @@ function RunDialog({
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="rounded-md p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             <X size={18} />
           </button>
@@ -391,14 +391,14 @@ function RunDialog({
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="rounded-lg px-4 py-2 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
           >
             Abbrechen
           </button>
           <button
             onClick={() => onRun(input.trim() || undefined)}
             disabled={isRunning}
-            className="brand-bg brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-40"
+            className="brand-bg brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
           >
             {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
             {isRunning ? "Starte..." : "Starten"}
@@ -581,7 +581,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             </div>
             <button
               onClick={handleNew}
-              className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-all"
+              className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
             >
               <Plus size={14} />
               Neu
@@ -627,7 +627,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               </p>
               <button
                 onClick={handleNew}
-                className="brand-soft brand-text brand-border hover:brand-bg/30 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+                className="brand-soft brand-text brand-border hover:brand-bg/30 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 <Plus size={14} />
                 Neues Template
@@ -699,7 +699,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={handleCancel}
                   disabled={savePending}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] disabled:opacity-40"
                 >
                   <X size={14} />
                   Abbrechen
@@ -707,7 +707,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={handleSave}
                   disabled={savePending}
-                  className="brand-bg brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all disabled:opacity-40"
+                  className="brand-bg brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
                 >
                   {savePending ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -722,14 +722,14 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={() => handleRunClick(selected)}
                   disabled={isRunning}
-                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all disabled:opacity-40"
+                  className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
                 >
                   {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                   Ausführen
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 >
                   <Edit3 size={14} />
                   Bearbeiten
@@ -738,7 +738,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
             ) : (
               <button
                 onClick={handleNew}
-                className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+                className="brand-soft brand-text brand-border hover:brand-bg/30 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 <Plus size={14} />
                 Neues Template
@@ -761,7 +761,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               </p>
               <button
                 onClick={handleNew}
-                className="brand-bg brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+                className="brand-bg brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90"
               >
                 <Plus size={16} />
                 Erstes Template erstellen
@@ -864,7 +864,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                           setForm({ ...form, force_specialists: next });
                         }}
                         className={cn(
-                          "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
+                          "rounded-lg border px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                           active
                             ? "brand-soft brand-text brand-border"
                             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -909,13 +909,13 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={() => setForm({ ...form, skip_critic: !form.skip_critic })}
                   className={cn(
-                    "relative h-5 w-10 rounded-full transition-all",
+                    "relative h-5 w-10 rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     form.skip_critic ? "brand-bg" : "bg-[color:var(--ds-border)]"
                   )}
                 >
                   <span
                     className={cn(
-                      "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all",
+                      "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       form.skip_critic ? "left-5" : "left-0.5"
                     )}
                   />

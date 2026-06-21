@@ -169,7 +169,7 @@ export default function ConnectorsPage() {
               <div
                 key={c.service}
                 className={cn(
-                  "flex items-center gap-4 rounded-xl border px-4 py-3 transition-all",
+                  "flex items-center gap-4 rounded-xl border px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   isLegal
                     ? "brand-border brand-soft"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"

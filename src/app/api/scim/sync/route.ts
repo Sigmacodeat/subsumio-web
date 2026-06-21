@@ -37,7 +37,7 @@ export const POST = createHandler(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[scim/sync] error:", msg);
-      return apiError("sync_failed", `Sync failed: ${msg}`, 500);
+      return apiError("sync_failed", "Sync fehlgeschlagen", 500);
     }
   }
 );

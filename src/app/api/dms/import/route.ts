@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { getConnector } from "@/lib/dms";
 import { recordQuota } from "@/lib/engine";
@@ -33,7 +32,7 @@ export const POST = createHandler(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[dms import] error:", msg);
-      return apiError("import_failed", msg, 500);
+      return apiError("import_failed", "Import fehlgeschlagen", 500);
     }
-  },
+  }
 );

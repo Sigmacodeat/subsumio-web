@@ -279,7 +279,7 @@ export default function GraphPage() {
               <div className="flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-1 backdrop-blur">
                 <button
                   onClick={() => setZoom((z) => Math.min(z + 0.2, 3))}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <ZoomIn size={14} />
                 </button>
@@ -288,20 +288,20 @@ export default function GraphPage() {
                 </span>
                 <button
                   onClick={() => setZoom((z) => Math.max(z - 0.2, 0.3))}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <ZoomOut size={14} />
                 </button>
                 <button
                   onClick={() => setZoom(1)}
-                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
+                  className="rounded p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-border)] hover:text-[color:var(--ds-text)]"
                 >
                   <Maximize2 size={14} />
                 </button>
               </div>
               <button
                 onClick={loadGraph}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-2 text-[color:var(--ds-text-muted)] backdrop-blur transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
               >
                 <RefreshCw size={14} />
               </button>

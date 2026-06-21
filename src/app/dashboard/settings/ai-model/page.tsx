@@ -96,7 +96,7 @@ export default function AIModelSettingsPage() {
       {/* Auto / Default card */}
       <div
         className={cn(
-          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-all",
+          "mb-4 cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
           activeId === "auto"
             ? "brand-border brand-soft"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"
@@ -152,7 +152,7 @@ export default function AIModelSettingsPage() {
             <div
               key={model.id}
               className={cn(
-                "group cursor-pointer rounded-2xl border-2 p-5 transition-all",
+                "group cursor-pointer rounded-2xl border-2 p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 isActive
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"

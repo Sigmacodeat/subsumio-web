@@ -106,7 +106,7 @@ export default function ApiKeysPage() {
               </code>
               <button
                 onClick={() => copyKey(newKeyPlaintext)}
-                className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
               >
                 {copied ? (
                   <CheckCircle2 size={14} className="text-emerald-600" />
@@ -188,7 +188,7 @@ export default function ApiKeysPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => deleteKey(k.id)}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                       title="Löschen"
                     >
                       <Trash2 size={14} />

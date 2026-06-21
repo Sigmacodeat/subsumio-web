@@ -129,7 +129,7 @@ function SourceCard({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-[color:var(--ds-surface)] transition-all",
+        "rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
         statusCfg.border,
         expanded && "ring-1 ring-[color:var(--brand-primary)]/20"
       )}

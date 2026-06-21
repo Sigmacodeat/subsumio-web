@@ -116,6 +116,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[scim/Users POST] error:", msg);
-    return scimError(500, `Failed to create user: ${msg}`);
+    return scimError(500, "Failed to create user");
   }
 }

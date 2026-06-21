@@ -227,7 +227,7 @@ export default function ClauseLibraryPage() {
             <div
               key={clause.slug}
               className={cn(
-                "group cursor-pointer rounded-xl border p-4 transition-all",
+                "group cursor-pointer rounded-xl border p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 selectedClause?.slug === clause.slug
                   ? "brand-border brand-soft"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:border-[color:var(--ds-border-strong)]"

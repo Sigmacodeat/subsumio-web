@@ -331,7 +331,7 @@ export default function DraftingPage() {
                 setResult(null);
               }}
               className={cn(
-                "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all",
+                "flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 selectedTemplate === t.key
                   ? "brand-soft brand-border brand-text"
                   : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"

@@ -19,7 +19,7 @@ export default function RvgDialog() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text-muted)] transition-all [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
+        className="flex items-center gap-2 rounded-xl border [border-color:var(--mk-border)] px-3 py-2 text-xs [color:var(--mk-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"
       >
         <Scale size={14} />
         RVG-Rechner

@@ -239,7 +239,7 @@ export default function UploadPage() {
             id="upload-source"
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           >
             <option value="wiki">wiki</option>
             <option value="meetings">meetings</option>
@@ -262,7 +262,7 @@ export default function UploadPage() {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="z.B. fintech, q2-2026, alice"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-all placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
         </div>
       </div>
@@ -304,7 +304,7 @@ export default function UploadPage() {
       <div
         {...getRootProps()}
         className={cn(
-          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-all duration-300",
+          "relative cursor-pointer rounded-2xl border border-dashed p-12 text-center transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isDragActive
             ? "brand-border brand-soft ring-1 ring-[color:var(--brand-primary)]/20"
             : "hover:brand-border hover:brand-soft border-[color:var(--ds-border-strong)]",
@@ -315,7 +315,7 @@ export default function UploadPage() {
         <div className="flex flex-col items-center gap-4">
           <div
             className={cn(
-              "flex h-16 w-16 items-center justify-center rounded-2xl transition-all",
+              "flex h-16 w-16 items-center justify-center rounded-2xl transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
               isDragActive ? "brand-soft" : "bg-[color:var(--ds-surface-2)]"
             )}
           >
@@ -416,7 +416,7 @@ export default function UploadPage() {
                   {f.status === "uploading" && (
                     <div className="h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                       <div
-                        className="brand-bg h-full rounded-full transition-all duration-200"
+                        className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                         style={{ width: `${f.progress}%` }}
                       />
                     </div>

@@ -131,10 +131,10 @@ export function MobileTabBar({
             <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Mehr</h3>
             <button
               onClick={() => setMoreOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
               aria-label="Schließen"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
 

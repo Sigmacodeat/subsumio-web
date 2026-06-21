@@ -643,7 +643,7 @@ export default function ContactsPage() {
                     <button
                       onClick={() => startEdit(contact)}
                       aria-label={`${contact.name} bearbeiten`}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                       title="Bearbeiten"
                     >
                       <Pencil size={13} />
@@ -651,7 +651,7 @@ export default function ContactsPage() {
                     <button
                       onClick={() => deleteContact(contact.slug)}
                       aria-label={`${contact.name} löschen`}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                       title="Löschen"
                     >
                       <Trash2 size={13} />

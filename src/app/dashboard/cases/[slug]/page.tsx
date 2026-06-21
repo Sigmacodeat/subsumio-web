@@ -807,7 +807,7 @@ export default function CaseDetailPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all",
+                  "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   activeTab === tab.key
                     ? "brand-text border-[color:var(--brand-primary)]"
                     : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -968,7 +968,7 @@ export default function CaseDetailPage() {
                           }
                         }}
                         className={cn(
-                          "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
+                          "flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                           pendingStatus === target
                             ? "brand-bg border-transparent text-white"
                             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)] hover:text-[color:var(--ds-text)]"
@@ -2033,7 +2033,7 @@ export default function CaseDetailPage() {
                   <div
                     key={task.id}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all",
+                      "flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       task.done
                         ? "border-emerald-500/20 bg-emerald-500/5"
                         : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
@@ -2048,7 +2048,7 @@ export default function CaseDetailPage() {
                         saveCaseUpdate({ tasks: updated });
                       }}
                       className={cn(
-                        "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all",
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                         task.done
                           ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-600"
                           : "hover:brand-border border-[color:var(--ds-border)]"
@@ -2432,7 +2432,7 @@ export default function CaseDetailPage() {
                         <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                           <div
                             className={cn(
-                              "h-full rounded-full transition-all",
+                              "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                               (ev.weight || 0) >= 0.7
                                 ? "bg-emerald-500"
                                 : (ev.weight || 0) >= 0.4
@@ -2485,7 +2485,7 @@ export default function CaseDetailPage() {
                       setTimerStartAt(Date.now());
                       setElapsedSeconds(0);
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-all hover:bg-emerald-600/25"
+                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-600/15 px-3 py-1.5 text-xs font-medium text-emerald-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-600/25"
                   >
                     <Play size={14} /> Start
                   </button>
@@ -2499,7 +2499,7 @@ export default function CaseDetailPage() {
                       setElapsedSeconds(0);
                       timeForm.setValue("minutes", String(minutes));
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-all hover:bg-red-600/25"
+                    className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-600/15 px-3 py-1.5 text-xs font-medium text-red-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600/25"
                   >
                     <Square size={14} /> Stop
                   </button>
@@ -2628,7 +2628,7 @@ export default function CaseDetailPage() {
                               setTimeEntries(updated);
                               saveCaseUpdate({ timeEntries: updated });
                             }}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                             title="Buchung löschen"
                           >
                             <Trash2 size={13} />
@@ -2737,7 +2737,7 @@ export default function CaseDetailPage() {
                               setExpensesList(updated);
                               saveCaseUpdate({ expenses: updated });
                             }}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                             title="Auslage löschen"
                           >
                             <Trash2 size={13} />

@@ -166,7 +166,7 @@ async function executeSearchCases(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Search failed",
+      error: "Search failed",
       display: {
         kind: "list",
         title: "Akten-Suche fehlgeschlagen",
@@ -221,7 +221,7 @@ async function executeSearchDeadlines(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Search failed",
+      error: "Search failed",
       display: {
         kind: "list",
         title: "Fristen-Suche fehlgeschlagen",
@@ -263,7 +263,7 @@ async function executeSearchKnowledge(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Search failed",
+      error: "Search failed",
       display: {
         kind: "list",
         title: "Wissens-Suche fehlgeschlagen",
@@ -325,7 +325,7 @@ async function executeCreateCase(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Create failed",
+      error: "Create failed",
       display: {
         kind: "confirmation",
         title: "Akte konnte nicht erstellt werden",
@@ -370,7 +370,7 @@ async function executeCaseSummary(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Summary failed",
+      error: "Summary failed",
       display: {
         kind: "summary",
         title: "Zusammenfassung fehlgeschlagen",
@@ -440,7 +440,7 @@ async function executeEmailDraft(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Email draft failed",
+      error: "Email draft failed",
       display: {
         kind: "summary",
         title: "Email-Entwurf fehlgeschlagen",
@@ -492,7 +492,7 @@ async function executeDeadlineExtract(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Deadline extraction failed",
+      error: "Deadline extraction failed",
       display: {
         kind: "summary",
         title: "Fristen-Extraktion fehlgeschlagen",
@@ -539,7 +539,7 @@ async function executeDocumentSummary(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Summary failed",
+      error: "Summary failed",
       display: {
         kind: "summary",
         title: "Zusammenfassung fehlgeschlagen",
@@ -588,7 +588,7 @@ async function executeConflictCheck(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Conflict check failed",
+      error: "Conflict check failed",
       display: {
         kind: "confirmation",
         title: "Konfliktprüfung fehlgeschlagen",

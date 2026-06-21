@@ -37,7 +37,7 @@ function TabLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
         active
           ? "brand-soft brand-border brand-text"
           : "[border-color:var(--mk-border)] [color:var(--mk-text-muted)] [background:var(--mk-surface-2)] hover:[border-color:var(--mk-border-strong)] hover:[color:var(--mk-text)]"

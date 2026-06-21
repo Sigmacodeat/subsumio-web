@@ -424,7 +424,7 @@ export function DataTable<T>({
                   key={key}
                   onClick={() => onRowClick?.(row)}
                   className={cn(
-                    "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all duration-150",
+                    "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     onRowClick &&
                       "cursor-pointer hover:border-[color:var(--brand-primary)]/40 active:scale-[0.99]",
                     isSelected && "brand-border brand-soft/30"

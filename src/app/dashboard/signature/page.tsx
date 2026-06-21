@@ -219,7 +219,7 @@ export default function SignaturePage() {
           <div className="flex items-center gap-2">
             <a
               href="/dashboard/settings"
-              className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 transition-all hover:bg-amber-500/10"
+              className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-amber-500/10"
             >
               <Settings size={14} />
               Anbieter konfigurieren
@@ -371,7 +371,7 @@ export default function SignaturePage() {
             return (
               <div
                 key={req.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-all hover:border-indigo-500/30"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-indigo-500/30"
               >
                 <div
                   className={cn(
@@ -399,7 +399,7 @@ export default function SignaturePage() {
                   {req.status === "draft" && (
                     <button
                       onClick={() => markPrepared(req)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-indigo-500/10 hover:text-indigo-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-indigo-500/10 hover:text-indigo-600"
                       title="Als extern versendet markieren"
                     >
                       <Send size={14} />
@@ -407,7 +407,7 @@ export default function SignaturePage() {
                   )}
                   <a
                     href={`/dashboard/brain/${encodeURIComponent(req.id)}`}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
                     title="Brain-Seite öffnen"
                   >
                     <ExternalLink size={14} />

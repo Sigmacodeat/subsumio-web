@@ -58,7 +58,7 @@ export const GET = createHandler(
     };
 
     return Response.json(response);
-  },
+  }
 );
 
 const refreshSchema = z.object({
@@ -84,7 +84,7 @@ export const POST = createHandler(
     if (!source) {
       return Response.json(
         { error: "source_not_found", message: `Quelle '${body.source_id}' nicht gefunden.` },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -104,7 +104,11 @@ export const POST = createHandler(
           throw new Error(`Engine returned ${res.status}`);
         }
 
-        const result = (await res.json()) as { fetched?: number; imported?: number; errors?: string[] };
+        const result = (await res.json()) as {
+          fetched?: number;
+          imported?: number;
+          errors?: string[];
+        };
         const duration_ms = Date.now() - startTime;
         const now = new Date().toISOString();
 
@@ -134,10 +138,7 @@ export const POST = createHandler(
         };
         await saveSyncStatus(ENGINE_URL, engineHeadersForBrain(ctx.brainId), syncStatus);
 
-        return Response.json(
-          { error: "sync_failed", message: errorMsg, source_id: source.id },
-          { status: 502 },
-        );
+        return Response.json({ error: "sync_failed", source_id: source.id }, { status: 502 });
       }
     }
 
@@ -164,8 +165,11 @@ export const POST = createHandler(
     }
 
     return Response.json(
-      { error: "unsupported_source_type", message: `Sync für Typ '${source.type}' nicht unterstützt.` },
-      { status: 400 },
+      {
+        error: "unsupported_source_type",
+        message: `Sync für Typ '${source.type}' nicht unterstützt.`,
+      },
+      { status: 400 }
     );
-  },
+  }
 );

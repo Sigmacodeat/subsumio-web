@@ -108,10 +108,10 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
           <button
             ref={closeButtonRef}
             onClick={() => setOpen(false)}
-            className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
             aria-label="Brain Copilot schließen (Esc)"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
 
           <ChatPanel

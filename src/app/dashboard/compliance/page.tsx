@@ -283,7 +283,7 @@ export default function CompliancePage() {
           aria-selected={activeTab === "dsgvo"}
           onClick={() => setActiveTab("dsgvo")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             activeTab === "dsgvo"
               ? "border-emerald-500/30 bg-emerald-600/10 text-emerald-600"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -297,7 +297,7 @@ export default function CompliancePage() {
           aria-selected={activeTab === "gwg"}
           onClick={() => setActiveTab("gwg")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             activeTab === "gwg"
               ? "border-blue-500/30 bg-blue-600/10 text-blue-600"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -311,7 +311,7 @@ export default function CompliancePage() {
           aria-selected={activeTab === "gobd"}
           onClick={() => setActiveTab("gobd")}
           className={cn(
-            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-all",
+            "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
             activeTab === "gobd"
               ? "brand-soft brand-border brand-text"
               : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -367,7 +367,7 @@ export default function CompliancePage() {
                 onClick={() => cycleStatus(check.id)}
                 aria-label={`${check.label} — Status: ${STATUS_LABEL[status]}. Klicken zum Ändern.`}
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-all",
+                  "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--brand-primary)]",
                   status === "ok"
                     ? "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40"

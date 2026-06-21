@@ -331,7 +331,7 @@ export default function NewCasePage() {
                   onClick={() => setValue("priority", o.value as CaseFormData["priority"])}
                   aria-pressed={priority === o.value}
                   className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
+                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     priority === o.value
                       ? o.value === "critical"
                         ? "border-red-500/30 bg-red-500/10 text-red-600"

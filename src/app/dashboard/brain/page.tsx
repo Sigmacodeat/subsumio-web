@@ -188,7 +188,7 @@ export default function BrainPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 filter === f.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -213,7 +213,7 @@ export default function BrainPage() {
               key={s.key}
               onClick={() => setSort(s.key)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all",
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 sort === s.key
                   ? "brand-soft brand-text brand-border border"
                   : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -316,7 +316,7 @@ export default function BrainPage() {
                   <a
                     key={page.slug}
                     href={`/dashboard/brain/${page.slug.split("/").map(encodeURIComponent).join("/")}`}
-                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
+                    className="group card-shadow flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)]"
                   >
                     <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border">
                       <TypeIcon size={17} className="brand-text" />

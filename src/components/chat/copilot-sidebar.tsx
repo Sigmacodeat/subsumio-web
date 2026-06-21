@@ -562,11 +562,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               </div>
               <button
                 onClick={onToggle}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
                 aria-label="Panel schließen"
                 title="Panel schließen"
               >
-                <PanelRightClose size={14} />
+                <PanelRightClose size={16} />
               </button>
             </div>
           </div>

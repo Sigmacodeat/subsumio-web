@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { listEnvelopes } from "@/lib/docusign";
 import { isAppError } from "@/lib/errors";
@@ -30,7 +29,7 @@ export const GET = createHandler(
       }
       const msg = err instanceof Error ? err.message : String(err);
       console.error("[docusign envelopes] error:", msg);
-      return apiError("list_failed", msg, 500);
+      return apiError("list_failed", "Envelope-Liste konnte nicht geladen werden", 500);
     }
-  },
+  }
 );

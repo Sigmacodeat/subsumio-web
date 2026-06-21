@@ -401,7 +401,7 @@ export default function SettingsPage() {
               aria-controls={`panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
+                "-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
                 activeTab === tab.id
                   ? "brand-text border-[color:var(--brand-primary)]"
                   : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -464,7 +464,7 @@ export default function SettingsPage() {
                     key={mode}
                     onClick={() => setSearchMode(mode)}
                     className={cn(
-                      "rounded-lg border px-4 py-2 text-sm font-medium transition-all",
+                      "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       searchMode === mode
                         ? "brand-soft brand-text brand-border"
                         : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -709,7 +709,7 @@ export default function SettingsPage() {
                     key={opt.key}
                     onClick={() => kanzleiForm.setValue("tarifModell", opt.key)}
                     className={cn(
-                      "rounded-lg border px-4 py-2 text-sm font-medium transition-all",
+                      "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       tarifModellWatch === opt.key
                         ? "brand-soft brand-text brand-border"
                         : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -834,7 +834,7 @@ export default function SettingsPage() {
                     key={opt.key}
                     onClick={() => kanzleiForm.setValue("datevKontenrahmen", opt.key)}
                     className={cn(
-                      "rounded-lg border px-4 py-2 text-sm font-medium transition-all",
+                      "rounded-lg border px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       kanzleiForm.watch("datevKontenrahmen") === opt.key
                         ? "border-emerald-500/30 bg-emerald-600/15 text-emerald-600"
                         : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -962,7 +962,7 @@ export default function SettingsPage() {
                         );
                       }
                     }}
-                    className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-all focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+                    className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-1.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
                   >
                     <option value="admin">{t("settings.role_admin")}</option>
                     <option value="lawyer">{t("settings.role_lawyer")}</option>

@@ -276,7 +276,7 @@ export default function RagEvalPage() {
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  className="h-full rounded-full bg-emerald-500 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                   style={{ width: `${reviewSummary.accuracy_rate * 100}%` }}
                 />
               </div>

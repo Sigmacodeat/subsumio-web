@@ -331,7 +331,7 @@ export default function CasesPage() {
               e.stopPropagation();
               deleteCase(c.slug);
             }}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
             title={t("cases.delete")}
             aria-label={`${t("cases.delete")} ${c.title}`}
           >

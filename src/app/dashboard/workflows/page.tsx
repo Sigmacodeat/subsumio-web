@@ -347,7 +347,7 @@ export default function WorkflowsPage() {
                 <button
                   key={template.id}
                   onClick={() => setSelectedTemplate(template.id)}
-                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-all"
+                  className="hover:brand-border hover:brand-soft/5 space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-left transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                 >
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 text-xl">{template.icon}</span>
@@ -457,7 +457,7 @@ function WorkflowCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-all",
+        "overflow-hidden rounded-xl border bg-[color:var(--ds-surface)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
         fm.status === "failed"
           ? "border-red-500/20"
           : fm.status === "completed"
@@ -505,7 +505,7 @@ function WorkflowCard({
           <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[color:var(--ds-surface-2)]">
             <div
               className={cn(
-                "h-full rounded-full transition-all",
+                "h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 fm.status === "failed"
                   ? "bg-red-500"
                   : fm.status === "completed"

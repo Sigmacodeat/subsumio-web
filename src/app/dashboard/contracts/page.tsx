@@ -788,7 +788,7 @@ export default function ContractsPage() {
                       <div className="mt-2 flex items-center gap-2">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
                           <div
-                            className={`h-full rounded-full transition-all ${
+                            className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                               contract.riskLevel === "low"
                                 ? "bg-emerald-400"
                                 : contract.riskLevel === "medium"
@@ -825,7 +825,7 @@ export default function ContractsPage() {
                     <button
                       onClick={() => analyzeContract(contract)}
                       disabled={isAnalyzing}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                       title="KI-Analyse"
                     >
                       {isAnalyzing ? (
@@ -836,21 +836,21 @@ export default function ContractsPage() {
                     </button>
                     <button
                       onClick={() => setRedlineContract(contract)}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                       title="Redline"
                     >
                       <GitCompare size={14} />
                     </button>
                     <button
                       onClick={() => startEdit(contract)}
-                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                      className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                       title="Bearbeiten"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => deleteContract(contract.slug)}
-                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                       title="Löschen"
                     >
                       <Trash2 size={14} />

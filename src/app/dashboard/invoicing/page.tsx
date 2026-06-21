@@ -916,7 +916,7 @@ export default function InvoicingPage() {
             return (
               <div
                 key={inv.id}
-                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-all hover:bg-[color:var(--ds-hover)]"
+                className="flex items-center gap-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)]"
               >
                 <div
                   className={cn(
@@ -966,14 +966,14 @@ export default function InvoicingPage() {
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => void printInvoice(inv)}
-                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-emerald-500/10 hover:text-emerald-600"
+                    className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
                     title={t("inv.print")}
                   >
                     <Printer size={14} />
                   </button>
                   <button
                     onClick={() => void downloadPdf(inv)}
-                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all"
+                    className="hover:brand-text brand-bg/10 rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                     title={t("inv.download_pdf")}
                   >
                     <FileText size={14} />
@@ -981,7 +981,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer" || userRole === "assistant") && (
                     <button
                       onClick={() => void sendInvoiceEmail(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-blue-500/10 hover:text-blue-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-blue-500/10 hover:text-blue-600"
                       title={t("inv.send_email")}
                     >
                       <Mail size={14} />
@@ -990,7 +990,7 @@ export default function InvoicingPage() {
                   {inv.status === "draft" && (
                     <button
                       onClick={() => updateStatus(inv, "sent")}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-blue-500/10 hover:text-blue-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-blue-500/10 hover:text-blue-600"
                       title={t("inv.mark_sent")}
                     >
                       <Send size={14} />
@@ -999,7 +999,7 @@ export default function InvoicingPage() {
                   {inv.status === "sent" && (
                     <button
                       onClick={() => updateStatus(inv, "paid")}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-emerald-500/10 hover:text-emerald-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
                       title={t("inv.mark_paid")}
                     >
                       <CheckCircle2 size={14} />
@@ -1010,7 +1010,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => updateStatus(inv, "cancelled")}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                         title={t("inv.cancel_invoice")}
                       >
                         <XCircle size={14} />
@@ -1020,7 +1020,7 @@ export default function InvoicingPage() {
                     (userRole === "admin" || userRole === "lawyer") && (
                       <button
                         onClick={() => void sendReminder(inv)}
-                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-amber-500/10 hover:text-amber-600"
+                        className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-amber-500/10 hover:text-amber-600"
                         title={`${inv.reminderCount ? `${inv.reminderCount}. ` : ""}${t("inv.send_reminder")}`}
                       >
                         <AlertTriangle size={14} />
@@ -1029,7 +1029,7 @@ export default function InvoicingPage() {
                   {(userRole === "admin" || userRole === "lawyer") && (
                     <button
                       onClick={() => deleteInvoice(inv)}
-                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+                      className="rounded-lg p-2 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
                       title={t("inv.delete")}
                     >
                       <Trash2 size={14} />

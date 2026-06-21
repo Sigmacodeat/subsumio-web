@@ -95,7 +95,7 @@ function UsageCard() {
                 aria-label={row.label}
               >
                 <div
-                  className={`h-full rounded-full transition-all ${warn ? "bg-amber-500" : "brand-soft"}`}
+                  className={`h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${warn ? "bg-amber-500" : "brand-soft"}`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -175,7 +175,7 @@ function ModelBreakdownCard() {
                   aria-label={`${modelName} usage`}
                 >
                   <div
-                    className="brand-soft h-full rounded-full transition-all"
+                    className="brand-soft h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

@@ -487,21 +487,21 @@ function PlaybookCard({
         <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
             title="Aufklappen"
           >
             <BookOpen size={14} />
           </button>
           <button
             onClick={onEdit}
-            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
             title="Bearbeiten"
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={onDelete}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all hover:bg-red-500/10 hover:text-red-600"
+            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
             title="Löschen"
           >
             <Trash2 size={14} />
@@ -632,7 +632,7 @@ function PlaybookEditor(props: {
               <button
                 key={t}
                 onClick={() => props.onContractTypeToggle(t)}
-                className={`rounded-lg border px-2.5 py-1 text-xs transition-all ${
+                className={`rounded-lg border px-2.5 py-1 text-xs transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   selected
                     ? "brand-bg border-transparent text-white"
                     : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--brand-primary)]"
@@ -733,14 +733,14 @@ function RuleRow({
         />
         <button
           onClick={onDuplicate}
-          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-all"
+          className="hover:brand-text rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
           title="Duplizieren"
         >
           <Copy size={12} />
         </button>
         <button
           onClick={onRemove}
-          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-all hover:text-red-600"
+          className="rounded p-1 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-red-600"
           title="Entfernen"
         >
           <X size={12} />

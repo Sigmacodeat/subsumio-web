@@ -296,7 +296,7 @@ export default function ResearchPage() {
       <div className="flex gap-1 border-b border-[color:var(--ds-border)]">
         <button
           onClick={() => setActiveTab("new")}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-all ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             activeTab === "new"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -308,7 +308,7 @@ export default function ResearchPage() {
         </button>
         <button
           onClick={() => setActiveTab("saved")}
-          className={`border-b-2 px-4 py-2 text-sm font-medium transition-all ${
+          className={`border-b-2 px-4 py-2 text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             activeTab === "saved"
               ? "brand-border brand-text"
               : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
@@ -429,7 +429,7 @@ export default function ResearchPage() {
                 <button
                   key={j}
                   onClick={() => setSavedJurisdiction(j)}
-                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                     savedJurisdiction === j
                       ? "brand-soft brand-border brand-text"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)]"
@@ -528,7 +528,7 @@ export default function ResearchPage() {
                         <div className="flex shrink-0 items-center gap-1">
                           <button
                             onClick={() => setExpandedSlug(isExpanded ? null : page.slug)}
-                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-all"
+                            className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                             title={isExpanded ? "Zuklappen" : "Aufklappen"}
                             aria-label={isExpanded ? "Zuklappen" : "Aufklappen"}
                           >
@@ -536,7 +536,7 @@ export default function ResearchPage() {
                           </button>
                           <button
                             onClick={() => deleteResearch(page.slug)}
-                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
+                            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
                             title="Löschen"
                             aria-label="Löschen"
                           >
