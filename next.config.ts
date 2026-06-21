@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
     formats: ["image/avif", "image/webp"],
   },
   async redirects() {
@@ -31,7 +29,10 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload",
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
@@ -48,7 +49,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com wss:",
+              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com",
               "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
               "frame-ancestors 'none'",
               "object-src 'none'",

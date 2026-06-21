@@ -415,6 +415,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         aria-label="Brain Copilot"
         aria-modal={mobileOpen ? "true" : undefined}
         aria-hidden={!mobileOpen}
+        inert={!mobileOpen || undefined}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
           {/* Mobile header bar */}
@@ -522,6 +523,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         )}
         aria-label="Brain Copilot Panel"
         aria-hidden={!open}
+        inert={!open || undefined}
       >
         {/* Collapse toggle — premium vertical tab */}
         <button

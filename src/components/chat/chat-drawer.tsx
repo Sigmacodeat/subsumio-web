@@ -104,6 +104,7 @@ export function ChatDrawer({ className }: ChatDrawerProps) {
         aria-label="Brain Copilot"
         aria-modal={open ? "true" : undefined}
         aria-hidden={!open}
+        inert={!open || undefined}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] shadow-2xl">
           {/* Close button */}

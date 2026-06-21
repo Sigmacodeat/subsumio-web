@@ -123,6 +123,7 @@ export function MobileTabBar({
         aria-label="Mehr Aktionen"
         aria-modal={moreOpen ? "true" : undefined}
         aria-hidden={!moreOpen}
+        inert={!moreOpen || undefined}
       >
         <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
           {/* Grab handle */}

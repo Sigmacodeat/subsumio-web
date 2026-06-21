@@ -2,13 +2,17 @@ import { getStore } from "@/lib/auth/store";
 import { hashPassword } from "@/lib/auth/password";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";
 import { passwordSchema } from "@/lib/api-validation";
+import { revokeAllSessions } from "@/lib/auth/session";
 
 export async function POST(req: Request) {
   try {
     const { token, password: rawPassword } = await req.json();
     const passwordResult = passwordSchema.safeParse(rawPassword);
     if (!token || !passwordResult.success) {
-      return Response.json({ error: "invalid_input", details: passwordResult.error?.flatten() }, { status: 400 });
+      return Response.json(
+        { error: "invalid_input", details: passwordResult.error?.flatten() },
+        { status: 400 }
+      );
     }
     const password = passwordResult.data;
 
@@ -20,15 +24,16 @@ export async function POST(req: Request) {
     const store = getStore();
     const user = await store.getById(payload.uid);
     if (!user) {
-      return Response.json({ error: "user_not_found" }, { status: 404 });
+      return Response.json({ error: "invalid_or_expired_token" }, { status: 400 });
     }
 
     const currentBind = await bindFragment(user.passwordHash);
     if (currentBind !== payload.bind) {
-      return Response.json({ error: "token_invalidated" }, { status: 400 });
+      return Response.json({ error: "invalid_or_expired_token" }, { status: 400 });
     }
 
     await store.update(user.id, { passwordHash: await hashPassword(password) });
+    await revokeAllSessions(user.id);
     return Response.json({ success: true });
   } catch (err: unknown) {
     console.error("[auth/reset-password]", err instanceof Error ? err.message : String(err));

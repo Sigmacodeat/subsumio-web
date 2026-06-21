@@ -90,6 +90,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
       )}
       role="presentation"
       aria-hidden={!open}
+      inert={!open || undefined}
     >
       <button
         className="absolute inset-0 cursor-default"
