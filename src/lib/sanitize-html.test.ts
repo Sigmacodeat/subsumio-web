@@ -63,7 +63,13 @@ describe("sanitizeHtml", () => {
 
   it("preserves table tags", () => {
     const html = "<table><tr><td>cell</td></tr></table>";
-    expect(sanitizeHtml(html)).toBe(html);
+    const result = sanitizeHtml(html);
+    expect(result).toContain("<table>");
+    expect(result).toContain("<tr>");
+    expect(result).toContain("<td>cell</td>");
+    expect(result).toContain("</table>");
+    // DOMPurify normalizes tables by inserting <tbody>
+    expect(result).toContain("<tbody>");
   });
 
   it("blocks data:image/svg+xml URLs (XSS via SVG)", () => {

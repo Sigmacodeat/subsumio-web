@@ -124,10 +124,31 @@ const SANITIZE_CONFIG = {
   ],
 };
 
+DOMPurify.addHook("beforeSanitizeAttributes", (node: Element) => {
+  if (!node || typeof node.getAttribute !== "function") return;
+  const dangerousData = /^data:image\/svg\+xml|^data:text\/html|^data:application\/xhtml/i;
+  const safeData = /^data:image\/(?:png|jpeg|jpg|gif|webp|bmp);/i;
+  for (const attr of ["src", "href"] as const) {
+    const val = node.getAttribute(attr);
+    if (val && val.trim().toLowerCase().startsWith("data:") && !safeData.test(val) && dangerousData.test(val)) {
+      node.removeAttribute(attr);
+    }
+  }
+});
+
 DOMPurify.addHook("afterSanitizeAttributes", (node: Element) => {
   if (node.tagName === "A" && node.getAttribute("href")) {
     node.setAttribute("target", "_blank");
     node.setAttribute("rel", "noopener noreferrer");
+  }
+  // Defense-in-depth: strip any src/href that still contains event handler
+  // payloads after sanitization (covers edge cases where beforeSanitizeAttributes
+  // hook didn't fire in certain jsdom versions)
+  for (const attr of ["src", "href"] as const) {
+    const val = node.getAttribute(attr);
+    if (val && /onload|onerror|onclick|onmouseover/i.test(val)) {
+      node.removeAttribute(attr);
+    }
   }
 });
 
