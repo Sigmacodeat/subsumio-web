@@ -1,5 +1,5 @@
 /**
- * Sigmabrain Web Dashboard REST API.
+ * Subsumio Web Dashboard REST API.
  *
  * Thin HTTP layer over BrainEngine + operations for the Next.js product UI.
  * Mounted at /api/* by serve-http.ts. Intended for same-machine / trusted-proxy
@@ -32,14 +32,14 @@ import type { ThinkResult } from "../core/think/index.ts";
 import { MinionQueue } from "../core/minions/queue.ts";
 
 export interface WebApiOptions {
-  /** When set, require matching X-Sigmabrain-Api-Key or Authorization: Bearer header. */
+  /** When set, require matching X-Subsumio-Api-Key or Authorization: Bearer header. */
   apiKey?: string;
   /**
    * Fail-closed multi-tenant mode (SaaS deployments). When true, every
-   * request MUST carry a valid `x-sigmabrain-source` header naming a
+   * request MUST carry a valid `x-subsumio-source` header naming a
    * non-default tenant source — requests without one are rejected with 400
    * instead of silently falling back to the all-seeing 'default' scope.
-   * Enable via GBRAIN_REQUIRE_TENANT=true (or SIGMABRAIN_REQUIRE_TENANT).
+   * Enable via GBRAIN_REQUIRE_TENANT=true (or SUBSUMIO_REQUIRE_TENANT).
    */
   requireTenant?: boolean;
 }
@@ -405,6 +405,7 @@ function mapPage(page: Record<string, unknown>, tags: string[] = []) {
  * server-to-server, never from the browser. The engine still accepts the
  * legacy `x-sigmabrain-source` header for backward compatibility. Every
  * operation context and every raw query in this module scopes to the
+ * operation context and every raw query in this module scopes to the
  * resolved source; unknown/invalid headers fall back to 'default'
  * (single-tenant/self-hosted behavior unchanged).
  */
@@ -414,12 +415,12 @@ const SOURCE_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/;
  * Resolve the tenant source from the incoming request headers.
  *
  * Canonical header (Subsumio rebrand): `x-subsumio-source`.
- * Legacy header (Sigmabrain pre-rebrand): `x-sigmabrain-source`.
+ * Legacy header (pre-rebrand): `x-sigmabrain-source`.
  *
  * Accepting both prevents a silent source-scoping failure: the Next.js
- * dashboard proxies send `x-subsumio-source`, while the engine previously
- * only read `x-sigmabrain-source`. Without this fallback every dashboard
- * request landed on the `default` source, breaking multi-tenant isolation.
+ * dashboard proxies send `x-subsumio-source`, while older engines
+ * only read `x-sigmabrain-source`. Without this fallback older dashboard
+ * requests landed on the `default` source, breaking multi-tenant isolation.
  */
 function requestSourceId(req: Request): string {
   const h = req.headers["x-subsumio-source"] ?? req.headers["x-sigmabrain-source"];
@@ -459,7 +460,7 @@ type MatterScopeResult =
   | { present: true; valid: true; scope: string[] | "all" };
 
 function parseMatterScopeToken(req: Request, apiKey: string | undefined): MatterScopeResult {
-  const h = req.headers["x-sigmabrain-identity-token"];
+  const h = req.headers["x-subsumio-identity-token"] ?? req.headers["x-sigmabrain-identity-token"];
   const token = Array.isArray(h) ? h[0] : h;
   if (!token || typeof token !== "string") return { present: false };
   if (!apiKey) return { present: true, valid: false }; // can't verify without a secret — deny, don't trust
@@ -483,7 +484,7 @@ function verifiedMatterScope(req: Request, apiKey: string | undefined): string[]
     throw new OperationError(
       "identity_token_invalid",
       "Identity token failed verification.",
-      "The x-sigmabrain-identity-token header was present but invalid, expired, or unverifiable. Refusing to fall back to unrestricted access."
+      "The x-subsumio-identity-token header was present but invalid, expired, or unverifiable. Refusing to fall back to unrestricted access."
     );
   }
   return result.scope;
@@ -566,7 +567,8 @@ function aclGroupsMiddleware(engine: BrainEngine) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // Admin role bypasses ACL filtering
-      const h = req.headers["x-sigmabrain-identity-token"];
+      const h =
+        req.headers["x-subsumio-identity-token"] ?? req.headers["x-sigmabrain-identity-token"];
       const token = Array.isArray(h) ? h[0] : h;
       if (!token || typeof token !== "string") {
         req.aclGroups = "all";
@@ -716,7 +718,7 @@ async function enrichCitations(
 export function mountWebApi(app: Application, engine: BrainEngine, options: WebApiOptions = {}) {
   // SUBSUMIO_WEB_API_KEY is the canonical name (matches .env.example and the
   // signing key documented in identity-token.ts). The GBRAIN_/SIGMABRAIN_
-  // variants are pre-rebrand fallbacks ONLY — a deployment that sets just
+  // variants are legacy fallbacks ONLY — a deployment that sets just
   // SUBSUMIO_WEB_API_KEY (as documented) must still resolve the same secret
   // here, or the API-key gate silently opens AND every identity-token HMAC
   // verification silently fails closed-to-open (verifiedMatterScope treats
@@ -1639,7 +1641,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       );
 
       res.json({
-        format: "sigmabrain-export-v1",
+        format: "subsumio-export-v1",
         exported_at: new Date().toISOString(),
         source: sourceId,
         page_count: rows.length,
@@ -2141,7 +2143,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 sourceId: tenantSource,
                 filename: file.filename,
                 source_kind: "web_upload",
-                source_uri: `sigmabrain-upload:${beaSlug}`,
+                source_uri: `subsumio-upload:${beaSlug}`,
               });
               await persistUploadBytes(file, beaSlug, tenantSource, opCtx.config.storage);
               assertMatterScope(req.matterScope, beaSlug);
@@ -2181,7 +2183,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           sourceId: tenantSource,
           filename: file.filename,
           source_kind: "web_upload",
-          source_uri: `sigmabrain-upload:${slug}`,
+          source_uri: `subsumio-upload:${slug}`,
         });
 
         // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
@@ -3321,6 +3323,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   });
 
   console.error(
-    `[web-api] Sigmabrain dashboard REST API mounted at /api/* (engine: ${config.engine})`
+    `[web-api] Subsumio dashboard REST API mounted at /api/* (engine: ${config.engine})`
   );
 }

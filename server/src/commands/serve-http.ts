@@ -10,41 +10,41 @@
  * - Health check at /health
  */
 
-import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import { randomBytes, createHash } from 'crypto';
-import { safeHexEqual } from '../core/timing-safe.ts';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
-import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
-import type { BrainEngine } from '../core/engine.ts';
-import { operations, OperationError } from '../core/operations.ts';
-import type { OperationContext, AuthInfo } from '../core/operations.ts';
-import { GBrainOAuthProvider, validateTokenEndpointAuthMethod } from '../core/oauth-provider.ts';
-import type { SqlQuery } from '../core/oauth-provider.ts';
-import { hasScope, ALLOWED_SCOPES_LIST, normalizeScopesInput } from '../core/scope.ts';
-import { summarizeMcpParams, dispatchToolCall } from '../mcp/dispatch.ts';
-import { paramDefToSchema } from '../mcp/tool-defs.ts';
-import { getBrainHotMemoryMeta } from '../core/facts/meta-hook.ts';
-import { loadConfig } from '../core/config.ts';
-import { buildError, serializeError } from '../core/errors.ts';
-import { VERSION } from '../version.ts';
-import * as db from '../core/db.ts';
-import { sqlQueryForEngine, executeRawJsonb } from '../core/sql-query.ts';
-import { MinionQueue } from '../core/minions/queue.ts';
+import express from "express";
+import type { Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import { randomBytes, createHash } from "crypto";
+import { safeHexEqual } from "../core/timing-safe.ts";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { mcpAuthRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+import type { BrainEngine } from "../core/engine.ts";
+import { operations, OperationError } from "../core/operations.ts";
+import type { OperationContext, AuthInfo } from "../core/operations.ts";
+import { GBrainOAuthProvider, validateTokenEndpointAuthMethod } from "../core/oauth-provider.ts";
+import type { SqlQuery } from "../core/oauth-provider.ts";
+import { hasScope, ALLOWED_SCOPES_LIST, normalizeScopesInput } from "../core/scope.ts";
+import { summarizeMcpParams, dispatchToolCall } from "../mcp/dispatch.ts";
+import { paramDefToSchema } from "../mcp/tool-defs.ts";
+import { getBrainHotMemoryMeta } from "../core/facts/meta-hook.ts";
+import { loadConfig } from "../core/config.ts";
+import { buildError, serializeError } from "../core/errors.ts";
+import { VERSION } from "../version.ts";
+import * as db from "../core/db.ts";
+import { sqlQueryForEngine, executeRawJsonb } from "../core/sql-query.ts";
+import { MinionQueue } from "../core/minions/queue.ts";
 import {
   computeContentHash,
   validateIngestionEvent,
   type IngestionContentType,
   type IngestionEvent,
-} from '../core/ingestion/types.ts';
-import { mountWebApi } from './web-api.ts';
-import { startConnectorIngestion } from '../core/ingestion/connectors/daemon-integration.ts';
+} from "../core/ingestion/types.ts";
+import { mountWebApi } from "./web-api.ts";
+import { startConnectorIngestion } from "../core/ingestion/connectors/daemon-integration.ts";
 
 /**
  * /health endpoint timeout. 3s rather than 5s: Fly.io's default
@@ -69,32 +69,36 @@ export const HEALTH_TIMEOUT_MS = 3000;
  * fallback without monkey-patching `crypto.randomBytes`.
  */
 export type BootstrapTokenResolution =
-  | { kind: 'ok'; token: string; fromEnv: boolean }
-  | { kind: 'error'; message: string };
+  | { kind: "ok"; token: string; fromEnv: boolean }
+  | { kind: "error"; message: string };
 
 export function resolveBootstrapToken(
   envValue: string | undefined,
-  randomBytesHex: () => string = () => randomBytes(32).toString('hex'),
+  randomBytesHex: () => string = () => randomBytes(32).toString("hex")
 ): BootstrapTokenResolution {
   if (envValue === undefined) {
-    return { kind: 'ok', token: randomBytesHex(), fromEnv: false };
+    return { kind: "ok", token: randomBytesHex(), fromEnv: false };
   }
   const trimmed = envValue.trim();
   if (!/^[A-Za-z0-9_-]{32,}$/.test(trimmed)) {
     return {
-      kind: 'error',
+      kind: "error",
       message:
-        'GBRAIN_ADMIN_BOOTSTRAP_TOKEN must be at least 32 chars and match [A-Za-z0-9_-]+.\n' +
-        '  Refusing to start with a weak admin bootstrap token. Generate one with:\n' +
+        "GBRAIN_ADMIN_BOOTSTRAP_TOKEN must be at least 32 chars and match [A-Za-z0-9_-]+.\n" +
+        "  Refusing to start with a weak admin bootstrap token. Generate one with:\n" +
         '    head -c 32 /dev/urandom | base64 | tr -d "+/=" | head -c 48',
     };
   }
-  return { kind: 'ok', token: trimmed, fromEnv: true };
+  return { kind: "ok", token: trimmed, fromEnv: true };
 }
 
 export type ProbeHealthResult =
-  | { ok: true; status: 200; body: { status: 'ok'; version: string; engine: string; [k: string]: unknown } }
-  | { ok: false; status: 503; body: { error: 'service_unavailable'; error_description: string } };
+  | {
+      ok: true;
+      status: 200;
+      body: { status: "ok"; version: string; engine: string; [k: string]: unknown };
+    }
+  | { ok: false; status: 503; body: { error: "service_unavailable"; error_description: string } };
 
 /**
  * Pure async health probe. Races `engine.getStats()` against a timeout,
@@ -105,7 +109,7 @@ export async function probeHealth(
   engine: BrainEngine,
   engineName: string,
   version: string,
-  timeoutMs: number = HEALTH_TIMEOUT_MS,
+  timeoutMs: number = HEALTH_TIMEOUT_MS
 ): Promise<ProbeHealthResult> {
   // Capture the handle so we can clearTimeout when getStats() wins. Without
   // this, every fast /health request leaves a 3s pending timer in the event
@@ -117,24 +121,25 @@ export async function probeHealth(
     const stats = await Promise.race([
       engine.getStats(),
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('health_timeout')), timeoutMs);
+        timer = setTimeout(() => reject(new Error("health_timeout")), timeoutMs);
       }),
     ]);
     return {
       ok: true,
       status: 200,
-      body: { status: 'ok', version, engine: engineName, ...stats },
+      body: { status: "ok", version, engine: engineName, ...stats },
     };
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'unknown';
+    const msg = e instanceof Error ? e.message : "unknown";
     return {
       ok: false,
       status: 503,
       body: {
-        error: 'service_unavailable',
-        error_description: msg === 'health_timeout'
-          ? 'Health check timed out (database pool may be saturated)'
-          : 'Database connection failed',
+        error: "service_unavailable",
+        error_description:
+          msg === "health_timeout"
+            ? "Health check timed out (database pool may be saturated)"
+            : "Database connection failed",
       },
     };
   } finally {
@@ -157,31 +162,32 @@ export async function probeLiveness(
   sql: SqlQuery,
   engineName: string,
   version: string,
-  timeoutMs: number = HEALTH_TIMEOUT_MS,
+  timeoutMs: number = HEALTH_TIMEOUT_MS
 ): Promise<ProbeHealthResult> {
   let timer: ReturnType<typeof setTimeout> | null = null;
   try {
     await Promise.race([
       sql`SELECT 1`,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('health_timeout')), timeoutMs);
+        timer = setTimeout(() => reject(new Error("health_timeout")), timeoutMs);
       }),
     ]);
     return {
       ok: true,
       status: 200,
-      body: { status: 'ok', version, engine: engineName },
+      body: { status: "ok", version, engine: engineName },
     };
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'unknown';
+    const msg = e instanceof Error ? e.message : "unknown";
     return {
       ok: false,
       status: 503,
       body: {
-        error: 'service_unavailable',
-        error_description: msg === 'health_timeout'
-          ? 'Health check timed out (database pool may be saturated)'
-          : 'Database connection failed',
+        error: "service_unavailable",
+        error_description:
+          msg === "health_timeout"
+            ? "Health check timed out (database pool may be saturated)"
+            : "Database connection failed",
       },
     };
   } finally {
@@ -212,9 +218,9 @@ export async function probeLiveness(
  * limit. See SECURITY.md "Reverse-proxy trust" for the full contract.
  */
 export function resolveTrustProxy(env: string | undefined): string | number | boolean {
-  if (env === undefined || env === '') return 'loopback';
-  if (env === '0' || env === 'false') return false;
-  if (env === '1' || env === 'true') return 1;
+  if (env === undefined || env === "") return "loopback";
+  if (env === "0" || env === "false") return false;
+  if (env === "1" || env === "true") return 1;
   if (/^\d+$/.test(env)) return parseInt(env, 10);
   return env;
 }
@@ -231,7 +237,10 @@ export function resolveTrustProxy(env: string | undefined): string | number | bo
 export function parseCorsAllowlistOAuth(): Set<string> | null {
   const v = process.env.GBRAIN_HTTP_CORS_ORIGIN;
   if (!v) return null;
-  const origins = v.split(',').map(s => s.trim()).filter(Boolean);
+  const origins = v
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   return origins.length === 0 ? null : new Set(origins);
 }
 
@@ -249,7 +258,7 @@ export function parseCorsAllowlistOAuth(): Set<string> | null {
  * cors package translates to "no CORS headers needed" — they're not
  * cross-origin so they don't trigger the gate.
  */
-export function resolveCorsOrigin(allowlist: Set<string> | null): cors.CorsOptions['origin'] {
+export function resolveCorsOrigin(allowlist: Set<string> | null): cors.CorsOptions["origin"] {
   if (allowlist === null) return false;
   return (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) return cb(null, true);
@@ -364,14 +373,15 @@ export async function queryAgentClientSpend(engine: BrainEngine): Promise<AgentC
       AND ('agent' = ANY (string_to_array(c.scope, ' ')) OR c.bound_tools IS NOT NULL)
     ORDER BY c.client_name ASC
   `;
-  return rows.map(r => ({
+  return rows.map((r) => ({
     client_id: String(r.client_id),
     client_name: String(r.client_name ?? r.client_id),
-    cap_usd_per_day: r.cap_usd_per_day !== null && r.cap_usd_per_day !== undefined
-      ? parseFloat(String(r.cap_usd_per_day))
-      : null,
-    spent_cents_today: parseFloat(String(r.spent_cents_today ?? '0')),
-    pending_cents: parseFloat(String(r.pending_cents ?? '0')),
+    cap_usd_per_day:
+      r.cap_usd_per_day !== null && r.cap_usd_per_day !== undefined
+        ? parseFloat(String(r.cap_usd_per_day))
+        : null,
+    spent_cents_today: parseFloat(String(r.spent_cents_today ?? "0")),
+    pending_cents: parseFloat(String(r.pending_cents ?? "0")),
     inflight_count: Number(r.inflight_count ?? 0),
   }));
 }
@@ -385,15 +395,18 @@ export async function queryAgentClientSpend(engine: BrainEngine): Promise<AgentC
  * unit-tested without standing up a server. See `readMcpPublishSkills`
  * (skill-catalog.ts) for the config resolution this status reflects.
  */
-export function skillPublishStatus(publishSkills: boolean): { bannerValue: string; nudge: string | null } {
-  if (publishSkills) return { bannerValue: 'published', nudge: null };
+export function skillPublishStatus(publishSkills: boolean): {
+  bannerValue: string;
+  nudge: string | null;
+} {
+  if (publishSkills) return { bannerValue: "published", nudge: null };
   return {
-    bannerValue: 'not published',
+    bannerValue: "not published",
     nudge:
       "[serve-http] NOTE: skill publishing is OFF — connected agents can't call " +
-      'list_skills / get_skill, so this brain’s skill catalog is invisible to them ' +
-      '(core tools like search / query / think still work). Enable it with: ' +
-      'gbrain config set mcp.publish_skills true',
+      "list_skills / get_skill, so this brain’s skill catalog is invisible to them " +
+      "(core tools like search / query / think still work). Enable it with: " +
+      "gbrain config set mcp.publish_skills true",
   };
 }
 
@@ -406,18 +419,18 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // interface). Declaring `--public-url` without `--bind` is almost always
   // a misconfiguration; we WARN to stderr at startup in that case rather
   // than silently binding loopback only.
-  const bind = options.bind ?? '127.0.0.1';
-  const config = loadConfig() || { engine: 'pglite' as const };
+  const bind = options.bind ?? "127.0.0.1";
+  const config = loadConfig() || { engine: "pglite" as const };
 
   if (logFullParams) {
     console.error(
-      '[serve-http] WARNING: --log-full-params writes raw request payloads to mcp_request_log + SSE feed. Disable for shared dashboards or production.',
+      "[serve-http] WARNING: --log-full-params writes raw request payloads to mcp_request_log + SSE feed. Disable for shared dashboards or production."
     );
   }
 
   if (publicUrl && options.bind === undefined) {
     console.error(
-      '[serve-http] WARNING: --public-url is set but --bind is not. Default bind changed to 127.0.0.1 in v0.34.1; remote clients reaching the public URL will be refused. Pass --bind 0.0.0.0 to accept all interfaces.',
+      "[serve-http] WARNING: --public-url is set but --bind is not. Default bind changed to 127.0.0.1 in v0.34.1; remote clients reaching the public URL will be refused. Pass --bind 0.0.0.0 to accept all interfaces."
     );
   }
 
@@ -428,8 +441,8 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // discover it via an empty list_skills on the agent side.
   let publishSkills = false;
   try {
-    const dbVal = await engine.getConfig('mcp.publish_skills');
-    publishSkills = dbVal != null ? dbVal === 'true' : config?.mcp?.publish_skills === true;
+    const dbVal = await engine.getConfig("mcp.publish_skills");
+    publishSkills = dbVal != null ? dbVal === "true" : config?.mcp?.publish_skills === true;
   } catch {
     publishSkills = config?.mcp?.publish_skills === true;
   }
@@ -458,7 +471,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     const swept = await oauthProvider.sweepExpiredTokens();
     if (swept > 0) console.error(`Swept ${swept} expired tokens`);
   } catch (e) {
-    console.error('Token sweep failed (non-blocking):', e instanceof Error ? e.message : e);
+    console.error("Token sweep failed (non-blocking):", e instanceof Error ? e.message : e);
   }
 
   // v0.36.x #1024: bootstrap token sourcing.
@@ -470,13 +483,13 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // restart is the original gripe; with `GBRAIN_ADMIN_BOOTSTRAP_TOKEN` set
   // and `--suppress-bootstrap-token`, no value reaches the log.
   const resolved = resolveBootstrapToken(process.env.GBRAIN_ADMIN_BOOTSTRAP_TOKEN);
-  if (resolved.kind === 'error') {
+  if (resolved.kind === "error") {
     console.error(resolved.message);
     process.exit(1);
   }
   let bootstrapToken: string = resolved.token;
   let bootstrapFromEnv: boolean = resolved.fromEnv;
-  const bootstrapHash = createHash('sha256').update(bootstrapToken).digest('hex');
+  const bootstrapHash = createHash("sha256").update(bootstrapToken).digest("hex");
   const suppressBootstrapPrint = options.suppressBootstrapToken === true;
   const adminSessions = new Map<string, number>(); // sessionId → expiresAt
 
@@ -487,7 +500,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   function broadcastEvent(event: Record<string, unknown>) {
     const data = `data: ${JSON.stringify(event)}\n\n`;
     for (const client of sseClients) {
-      try { client.write(data); } catch { sseClients.delete(client); }
+      try {
+        client.write(data);
+      } catch {
+        sseClients.delete(client);
+      }
     }
   }
 
@@ -500,7 +517,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // real client IP for rate-limiting and req.secure detection. The legacy
   // transport already reads this env var (src/mcp/http-transport.ts:111)
   // for the same purpose; T8 makes the Express path agree.
-  app.set('trust proxy', resolveTrustProxy(process.env.GBRAIN_HTTP_TRUST_PROXY));
+  app.set("trust proxy", resolveTrustProxy(process.env.GBRAIN_HTTP_TRUST_PROXY));
 
   // ---------------------------------------------------------------------------
   // Cookie parsing — required for /admin auth (express 5 has no built-in)
@@ -523,24 +540,24 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // laptop install; it ships co-located with the brain and uses
   // same-origin XHR, so the lockdown doesn't break it.
   const corsAllowlistOAuth = parseCorsAllowlistOAuth();
-  if (!corsAllowlistOAuth && bind === '0.0.0.0') {
+  if (!corsAllowlistOAuth && bind === "0.0.0.0") {
     console.error(
-      '[serve-http] WARNING: --bind 0.0.0.0 is set but GBRAIN_HTTP_CORS_ORIGIN is unset. OAuth endpoints will reject ALL cross-origin requests until you set the env var (comma-separated origins).',
+      "[serve-http] WARNING: --bind 0.0.0.0 is set but GBRAIN_HTTP_CORS_ORIGIN is unset. OAuth endpoints will reject ALL cross-origin requests until you set the env var (comma-separated origins)."
     );
   }
   const corsOAuthOptions: cors.CorsOptions = {
     origin: resolveCorsOrigin(corsAllowlistOAuth),
     credentials: false,
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   };
-  app.use('/mcp', cors(corsOAuthOptions));
-  app.use('/token', cors(corsOAuthOptions));
-  app.use('/authorize', cors(corsOAuthOptions));
-  app.use('/register', cors(corsOAuthOptions));
-  app.use('/revoke', cors(corsOAuthOptions));
-  // Sigmabrain dashboard REST API — same CORS allowlist as OAuth when set.
-  app.use('/api', cors({ ...corsOAuthOptions, credentials: true }));
+  app.use("/mcp", cors(corsOAuthOptions));
+  app.use("/token", cors(corsOAuthOptions));
+  app.use("/authorize", cors(corsOAuthOptions));
+  app.use("/register", cors(corsOAuthOptions));
+  app.use("/revoke", cors(corsOAuthOptions));
+  // Subsumio dashboard REST API — same CORS allowlist as OAuth when set.
+  app.use("/api", cors({ ...corsOAuthOptions, credentials: true }));
 
   // ---------------------------------------------------------------------------
   // Custom client_credentials handler (before mcpAuthRouter)
@@ -551,7 +568,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     max: 50,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'too_many_requests', error_description: 'Rate limit exceeded. Try again in 15 minutes.' },
+    message: {
+      error: "too_many_requests",
+      error_description: "Rate limit exceeded. Try again in 15 minutes.",
+    },
   });
 
   // Magic-link rate limiter: 10 requests/min/IP. The bootstrap token is
@@ -564,28 +584,42 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    message: 'Too many magic-link attempts. Wait a minute before trying again.',
+    message: "Too many magic-link attempts. Wait a minute before trying again.",
   });
 
-  app.post('/token', ccRateLimiter, express.urlencoded({ extended: false }), async (req, res, next) => {
-    if (req.body?.grant_type !== 'client_credentials') {
-      return next(); // Fall through to confidential-client handler or SDK
-    }
-
-    try {
-      const { client_id, client_secret, scope } = req.body;
-      if (!client_id || !client_secret) {
-        res.status(400).json({ error: 'invalid_request', error_description: 'client_id and client_secret required' });
-        return;
+  app.post(
+    "/token",
+    ccRateLimiter,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      if (req.body?.grant_type !== "client_credentials") {
+        return next(); // Fall through to confidential-client handler or SDK
       }
 
-      const tokens = await oauthProvider.exchangeClientCredentials(client_id, client_secret, scope);
-      res.json(tokens);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error';
-      res.status(400).json({ error: 'invalid_grant', error_description: msg });
+      try {
+        const { client_id, client_secret, scope } = req.body;
+        if (!client_id || !client_secret) {
+          res
+            .status(400)
+            .json({
+              error: "invalid_request",
+              error_description: "client_id and client_secret required",
+            });
+          return;
+        }
+
+        const tokens = await oauthProvider.exchangeClientCredentials(
+          client_id,
+          client_secret,
+          scope
+        );
+        res.json(tokens);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        res.status(400).json({ error: "invalid_grant", error_description: msg });
+      }
     }
-  });
+  );
 
   // ---------------------------------------------------------------------------
   // v0.37.7.0 #1166: Custom authorization_code + refresh_token handler for
@@ -598,9 +632,9 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // Public clients (token_endpoint_auth_method='none') fall through to
   // the SDK's handler — the v0.34.1.0 PKCE path stays canonical.
   // ---------------------------------------------------------------------------
-  app.post('/token', ccRateLimiter, async (req, res, next) => {
+  app.post("/token", ccRateLimiter, async (req, res, next) => {
     const grantType = req.body?.grant_type;
-    if (grantType !== 'authorization_code' && grantType !== 'refresh_token') {
+    if (grantType !== "authorization_code" && grantType !== "refresh_token") {
       return next();
     }
 
@@ -610,11 +644,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     const bodySecret: string | undefined = req.body?.client_secret;
     let clientId: string | undefined = req.body?.client_id;
     let presentedSecret: string | undefined = bodySecret;
-    const authHeader = (req.headers.authorization ?? '').toString();
-    if (!presentedSecret && authHeader.startsWith('Basic ')) {
+    const authHeader = (req.headers.authorization ?? "").toString();
+    if (!presentedSecret && authHeader.startsWith("Basic ")) {
       try {
-        const decoded = Buffer.from(authHeader.slice('Basic '.length), 'base64').toString('utf8');
-        const idx = decoded.indexOf(':');
+        const decoded = Buffer.from(authHeader.slice("Basic ".length), "base64").toString("utf8");
+        const idx = decoded.indexOf(":");
         if (idx > -1) {
           clientId ||= decodeURIComponent(decoded.slice(0, idx));
           presentedSecret = decodeURIComponent(decoded.slice(idx + 1));
@@ -630,33 +664,41 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     try {
       const client = await oauthProvider.verifyConfidentialClientSecret(clientId, presentedSecret);
       let tokens;
-      if (grantType === 'authorization_code') {
+      if (grantType === "authorization_code") {
         const code = req.body.code;
         const redirectUri = req.body.redirect_uri;
         const codeVerifier = req.body.code_verifier;
         if (!code) {
-          res.status(400).json({ error: 'invalid_request', error_description: 'code required' });
+          res.status(400).json({ error: "invalid_request", error_description: "code required" });
           return;
         }
-        tokens = await oauthProvider.exchangeAuthorizationCode(client, code, codeVerifier, redirectUri);
+        tokens = await oauthProvider.exchangeAuthorizationCode(
+          client,
+          code,
+          codeVerifier,
+          redirectUri
+        );
       } else {
         const refreshToken = req.body.refresh_token;
-        const scopeParam = typeof req.body.scope === 'string' ? req.body.scope.split(/\s+/) : undefined;
+        const scopeParam =
+          typeof req.body.scope === "string" ? req.body.scope.split(/\s+/) : undefined;
         if (!refreshToken) {
-          res.status(400).json({ error: 'invalid_request', error_description: 'refresh_token required' });
+          res
+            .status(400)
+            .json({ error: "invalid_request", error_description: "refresh_token required" });
           return;
         }
         tokens = await oauthProvider.exchangeRefreshToken(client, refreshToken, scopeParam);
       }
       res.json(tokens);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error';
+      const msg = e instanceof Error ? e.message : "Unknown error";
       // RFC 6749: invalid_client for auth failures, invalid_grant for
       // code/token problems. "Invalid client" → 401; everything else 400.
-      if (msg === 'Invalid client' || msg === 'Client has been revoked') {
-        res.status(401).json({ error: 'invalid_client', error_description: msg });
+      if (msg === "Invalid client" || msg === "Client has been revoked") {
+        res.status(401).json({ error: "invalid_client", error_description: msg });
       } else {
-        res.status(400).json({ error: 'invalid_grant', error_description: msg });
+        res.status(400).json({ error: "invalid_grant", error_description: msg });
       }
     }
   });
@@ -678,10 +720,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // the network path could MITM the admin cookie over plaintext.
   const adminCookie = (req: Request, maxAge: number) => ({
     httpOnly: true,
-    sameSite: 'strict' as const,
-    secure: req.secure || issuerUrl.protocol === 'https:',
+    sameSite: "strict" as const,
+    secure: req.secure || issuerUrl.protocol === "https:",
     maxAge,
-    path: '/admin',
+    path: "/admin",
   });
 
   const authRouterOptions: any = {
@@ -692,7 +734,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     // users_admin via /.well-known/oauth-authorization-server. The legacy
     // ['read','write','admin'] list left those new scopes invisible.
     scopesSupported: [...ALLOWED_SCOPES_LIST],
-    resourceName: 'GBrain MCP Server',
+    resourceName: "GBrain MCP Server",
   };
 
   // F12: DCR disable lives on the provider's constructor option above. The
@@ -706,11 +748,14 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // The SDK hardcodes ['authorization_code', 'refresh_token'] — we intercept
   // the response and add client_credentials before it reaches the client.
   app.use((req, res, next) => {
-    if (req.path === '/.well-known/oauth-authorization-server' && req.method === 'GET') {
+    if (req.path === "/.well-known/oauth-authorization-server" && req.method === "GET") {
       const origJson = res.json.bind(res);
       (res as any).json = (body: any) => {
-        if (body?.grant_types_supported && !body.grant_types_supported.includes('client_credentials')) {
-          body.grant_types_supported.push('client_credentials');
+        if (
+          body?.grant_types_supported &&
+          !body.grant_types_supported.includes("client_credentials")
+        ) {
+          body.grant_types_supported.push("client_credentials");
         }
         return origJson(body);
       };
@@ -721,7 +766,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   app.use(authRouter);
 
   // ---------------------------------------------------------------------------
-  // Sigmabrain Web Dashboard REST API (v0.42+ product layer)
+  // Subsumio Web Dashboard REST API (v0.42+ product layer)
   // ---------------------------------------------------------------------------
   mountWebApi(app, engine);
 
@@ -729,8 +774,8 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // Health check — liveness only. Full engine stats live at
   // /admin/api/full-stats (requireAdmin). See probeLiveness above for the why.
   // ---------------------------------------------------------------------------
-  app.get('/health', async (_req, res) => {
-    const result = await probeLiveness(sql, config.engine || 'pglite', VERSION);
+  app.get("/health", async (_req, res) => {
+    const result = await probeLiveness(sql, config.engine || "pglite", VERSION);
     res.status(result.status).json(result.body);
   });
 
@@ -740,25 +785,25 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // v0.40 D15.5: safeHexEqual extracted to src/core/timing-safe.ts so the new
   // /webhooks/github HMAC verifier reuses the same constant-time compare.
   // POST /admin/login — JSON body with token (for programmatic/UI login)
-  app.post('/admin/login', express.json(), (req, res) => {
+  app.post("/admin/login", express.json(), (req, res) => {
     const token = req.body?.token;
-    if (!token || typeof token !== 'string') {
-      res.status(400).json({ error: 'Token required' });
+    if (!token || typeof token !== "string") {
+      res.status(400).json({ error: "Token required" });
       return;
     }
 
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const tokenHash = createHash("sha256").update(token).digest("hex");
     if (!safeHexEqual(tokenHash, bootstrapHash)) {
-      res.status(401).json({ error: 'Invalid token. Check your terminal output.' });
+      res.status(401).json({ error: "Invalid token. Check your terminal output." });
       return;
     }
 
-    const sessionId = randomBytes(32).toString('hex');
+    const sessionId = randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
     adminSessions.set(sessionId, expiresAt);
 
-    res.cookie('gbrain_admin', sessionId, adminCookie(req, 24 * 60 * 60 * 1000));
-    res.json({ status: 'authenticated' });
+    res.cookie("gbrain_admin", sessionId, adminCookie(req, 24 * 60 * 60 * 1000));
+    res.json({ status: "authenticated" });
   });
 
   // ---------------------------------------------------------------------------
@@ -810,20 +855,20 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
 
   // POST /admin/api/issue-magic-link — agent-callable mint endpoint.
   // Auth: Authorization: Bearer <bootstrapToken>. Returns one-time nonce.
-  app.post('/admin/api/issue-magic-link', express.json(), (req: Request, res: Response) => {
-    const auth = (req.headers.authorization || '') as string;
+  app.post("/admin/api/issue-magic-link", express.json(), (req: Request, res: Response) => {
+    const auth = (req.headers.authorization || "") as string;
     const m = auth.match(/^Bearer\s+(\S+)$/i);
     if (!m) {
-      res.status(401).json({ error: 'Authorization: Bearer <bootstrap-token> required' });
+      res.status(401).json({ error: "Authorization: Bearer <bootstrap-token> required" });
       return;
     }
-    const tokenHash = createHash('sha256').update(m[1]).digest('hex');
+    const tokenHash = createHash("sha256").update(m[1]).digest("hex");
     if (!safeHexEqual(tokenHash, bootstrapHash)) {
-      res.status(401).json({ error: 'Invalid bootstrap token' });
+      res.status(401).json({ error: "Invalid bootstrap token" });
       return;
     }
     pruneExpiredNonces();
-    const nonce = randomBytes(32).toString('hex');
+    const nonce = randomBytes(32).toString("hex");
     magicLinkNonces.set(nonce, Date.now() + NONCE_TTL_MS);
     const baseUrl = publicUrl || `http://localhost:${port}`;
     res.json({ url: `${baseUrl}/admin/auth/${nonce}`, expires_in: NONCE_TTL_MS / 1000 });
@@ -833,8 +878,8 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // Browser hits it, server validates the nonce (exists + unconsumed +
   // unexpired), marks consumed, sets cookie, redirects to dashboard.
   // Rate-limited at 10/min/IP to harden against DoS via bad-token loops.
-  app.get('/admin/auth/:token', adminAuthRateLimiter, (req: Request, res: Response) => {
-    const nonce = String(req.params.token ?? '');
+  app.get("/admin/auth/:token", adminAuthRateLimiter, (req: Request, res: Response) => {
+    const nonce = String(req.params.token ?? "");
     pruneExpiredNonces();
 
     const expiresAt = magicLinkNonces.get(nonce);
@@ -864,25 +909,25 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     magicLinkNonces.delete(nonce);
     consumedNonces.add(nonce);
 
-    const sessionId = randomBytes(32).toString('hex');
+    const sessionId = randomBytes(32).toString("hex");
     const sessionExpiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days for magic link
     adminSessions.set(sessionId, sessionExpiresAt);
 
-    res.cookie('gbrain_admin', sessionId, adminCookie(req, 7 * 24 * 60 * 60 * 1000));
-    res.redirect('/admin/');
+    res.cookie("gbrain_admin", sessionId, adminCookie(req, 7 * 24 * 60 * 60 * 1000));
+    res.redirect("/admin/");
   });
 
   // Admin auth middleware
   function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
     const sessionId = (req.cookies as Record<string, string>)?.gbrain_admin;
     if (!sessionId || !adminSessions.has(sessionId)) {
-      res.status(401).json({ error: 'Admin authentication required' });
+      res.status(401).json({ error: "Admin authentication required" });
       return;
     }
     const expiresAt = adminSessions.get(sessionId)!;
     if (Date.now() > expiresAt) {
       adminSessions.delete(sessionId);
-      res.status(401).json({ error: 'Session expired' });
+      res.status(401).json({ error: "Session expired" });
       return;
     }
     next();
@@ -896,13 +941,13 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // browser/tab fails its next request, gets 401, redirects to login.
   // The bootstrap token itself is unaffected (still valid for new
   // magic-link mints) — this only revokes existing cookie sessions.
-  app.post('/admin/api/sign-out-everywhere', requireAdmin, (_req: Request, res: Response) => {
+  app.post("/admin/api/sign-out-everywhere", requireAdmin, (_req: Request, res: Response) => {
     const count = adminSessions.size;
     adminSessions.clear();
     res.json({ revoked_sessions: count });
   });
 
-  app.get('/admin/api/agents', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/agents", requireAdmin, async (_req: Request, res: Response) => {
     try {
       // Unified view: OAuth clients + legacy API keys
       const oauthClients = await sql`
@@ -925,12 +970,12 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       `;
       res.json([...oauthClients, ...legacyKeys]);
     } catch (e) {
-      res.status(503).json({ error: 'service_unavailable' });
+      res.status(503).json({ error: "service_unavailable" });
     }
   });
 
   // v0.44.0 — Legal Brain admin API endpoints
-  app.get('/admin/api/legal/entities', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/legal/entities", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       const rows = await sql`
@@ -940,13 +985,21 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         ORDER BY created_at DESC
         LIMIT 100
       `;
-      const entities = (rows as unknown as Array<{ slug: string; type: string; title: string; frontmatter: Record<string, unknown>; created_at: string }>).map((r) => ({
+      const entities = (
+        rows as unknown as Array<{
+          slug: string;
+          type: string;
+          title: string;
+          frontmatter: Record<string, unknown>;
+          created_at: string;
+        }>
+      ).map((r) => ({
         id: r.slug,
-        type: (r.frontmatter.legal_type as string) || 'lawyer',
+        type: (r.frontmatter.legal_type as string) || "lawyer",
         displayName: r.title,
         legalAreas: (r.frontmatter.legal_areas as string[]) || [],
         specializations: (r.frontmatter.specializations as string[]) || [],
-        jurisdiction: (r.frontmatter.jurisdiction as string) || '',
+        jurisdiction: (r.frontmatter.jurisdiction as string) || "",
         caseCount: (r.frontmatter.anonymized_case_count as number) || 0,
         tags: (r.frontmatter.tags as string[]) || [],
         createdAt: r.created_at,
@@ -957,7 +1010,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.get('/admin/api/legal/cases', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/legal/cases", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       const rows = await sql`
@@ -967,17 +1020,26 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         ORDER BY created_at DESC
         LIMIT 100
       `;
-      const cases = (rows as unknown as Array<{ slug: string; type: string; title: string; frontmatter: Record<string, unknown>; compiled_truth: string; created_at: string }>).map((r) => ({
+      const cases = (
+        rows as unknown as Array<{
+          slug: string;
+          type: string;
+          title: string;
+          frontmatter: Record<string, unknown>;
+          compiled_truth: string;
+          created_at: string;
+        }>
+      ).map((r) => ({
         id: r.slug,
         caseNumber: (r.frontmatter.case_number as string) || r.slug,
         displayTitle: r.title,
-        legalArea: (r.frontmatter.legal_area as string) || '',
-        subArea: (r.frontmatter.sub_area as string) || '',
-        status: (r.frontmatter.status as string) || 'open',
-        priority: (r.frontmatter.priority as string) || 'medium',
-        opponentId: (r.frontmatter.opponent_id as string) || '',
+        legalArea: (r.frontmatter.legal_area as string) || "",
+        subArea: (r.frontmatter.sub_area as string) || "",
+        status: (r.frontmatter.status as string) || "open",
+        priority: (r.frontmatter.priority as string) || "medium",
+        opponentId: (r.frontmatter.opponent_id as string) || "",
         claims: (r.frontmatter.claims as string[]) || [],
-        facts: r.compiled_truth || '',
+        facts: r.compiled_truth || "",
         createdAt: r.created_at,
       }));
       res.json({ cases });
@@ -986,13 +1048,17 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.get('/admin/api/legal/stats', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/legal/stats", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
-      const [entityCount] = await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-entity'`;
-      const [caseCount] = await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case'`;
-      const [openCases] = await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case' AND frontmatter->>'status' = 'open'`;
-      const [wonCases] = await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case' AND frontmatter->>'status' = 'won'`;
+      const [entityCount] =
+        await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-entity'`;
+      const [caseCount] =
+        await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case'`;
+      const [openCases] =
+        await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case' AND frontmatter->>'status' = 'open'`;
+      const [wonCases] =
+        await sql`SELECT count(*)::int as count FROM pages WHERE type = 'legal-case' AND frontmatter->>'status' = 'won'`;
       res.json({
         entities: (entityCount?.count as number) ?? 0,
         cases: (caseCount?.count as number) ?? 0,
@@ -1005,71 +1071,93 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   });
 
   // ── Legal Brain CRUD ──────────────────────────────────────────────────
-  app.post('/admin/api/legal/entity', requireAdmin, async (req: Request, res: Response) => {
+  app.post("/admin/api/legal/entity", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
-      const { title, legalType, legalAreas, jurisdiction, specializations, tags, sourceId } = req.body;
+      const { title, legalType, legalAreas, jurisdiction, specializations, tags, sourceId } =
+        req.body;
       if (!title || !legalType) {
-        res.status(400).json({ error: 'title and legalType are required' });
+        res.status(400).json({ error: "title and legalType are required" });
         return;
       }
-      const slugBase = (title as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slugBase = (title as string)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
       const slug = `legal-entity-${slugBase}-${Date.now()}`;
       const frontmatter = {
         legal_type: legalType,
         legal_areas: legalAreas || [],
-        jurisdiction: jurisdiction || '',
+        jurisdiction: jurisdiction || "",
         specializations: specializations || [],
         tags: tags || [],
       };
-      const source_id = (sourceId as string) || 'default';
+      const source_id = (sourceId as string) || "default";
       await sql`
         INSERT INTO pages (slug, source_id, type, title, frontmatter, compiled_truth, created_at, updated_at)
-        VALUES (${slug}, ${source_id}, ${'legal-entity'}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, '', NOW(), NOW())
+        VALUES (${slug}, ${source_id}, ${"legal-entity"}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, '', NOW(), NOW())
       `;
-      res.status(201).json({ slug, title, type: 'legal-entity' });
+      res.status(201).json({ slug, title, type: "legal-entity" });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  app.post('/admin/api/legal/case', requireAdmin, async (req: Request, res: Response) => {
+  app.post("/admin/api/legal/case", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
-      const { title, caseNumber, legalArea, subArea, status, priority, opponentId, claims, facts, sourceId } = req.body;
+      const {
+        title,
+        caseNumber,
+        legalArea,
+        subArea,
+        status,
+        priority,
+        opponentId,
+        claims,
+        facts,
+        sourceId,
+      } = req.body;
       if (!title || !legalArea) {
-        res.status(400).json({ error: 'title and legalArea are required' });
+        res.status(400).json({ error: "title and legalArea are required" });
         return;
       }
-      const slugBase = (title as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slugBase = (title as string)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
       const slug = `legal-case-${slugBase}-${Date.now()}`;
       const frontmatter = {
         case_number: caseNumber || slug,
         legal_area: legalArea,
-        sub_area: subArea || '',
-        status: status || 'open',
-        priority: priority || 'medium',
-        opponent_id: opponentId || '',
+        sub_area: subArea || "",
+        status: status || "open",
+        priority: priority || "medium",
+        opponent_id: opponentId || "",
         claims: claims || [],
       };
-      const source_id = (sourceId as string) || 'default';
+      const source_id = (sourceId as string) || "default";
       await sql`
         INSERT INTO pages (slug, source_id, type, title, frontmatter, compiled_truth, created_at, updated_at)
-        VALUES (${slug}, ${source_id}, ${'legal-case'}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, ${facts || ''}, NOW(), NOW())
+        VALUES (${slug}, ${source_id}, ${"legal-case"}, ${title}, ${JSON.stringify(frontmatter)}::jsonb, ${facts || ""}, NOW(), NOW())
       `;
-      res.status(201).json({ slug, title, type: 'legal-case' });
+      res.status(201).json({ slug, title, type: "legal-case" });
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
   });
 
-  app.put('/admin/api/legal/entity/:slug', requireAdmin, async (req: Request, res: Response) => {
+  app.put("/admin/api/legal/entity/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       const slug = req.params.slug;
       const { title, legalType, legalAreas, jurisdiction, specializations, tags } = req.body;
-      const [existing] = await sql`SELECT frontmatter FROM pages WHERE slug = ${slug} AND type = 'legal-entity'`;
-      if (!existing) { res.status(404).json({ error: 'Entity not found' }); return; }
+      const [existing] =
+        await sql`SELECT frontmatter FROM pages WHERE slug = ${slug} AND type = 'legal-entity'`;
+      if (!existing) {
+        res.status(404).json({ error: "Entity not found" });
+        return;
+      }
       const fm = (existing.frontmatter as Record<string, unknown>) || {};
       const newFm = {
         ...fm,
@@ -1092,13 +1180,18 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.put('/admin/api/legal/case/:slug', requireAdmin, async (req: Request, res: Response) => {
+  app.put("/admin/api/legal/case/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       const slug = req.params.slug;
-      const { title, caseNumber, legalArea, subArea, status, priority, opponentId, claims, facts } = req.body;
-      const [existing] = await sql`SELECT frontmatter FROM pages WHERE slug = ${slug} AND type = 'legal-case'`;
-      if (!existing) { res.status(404).json({ error: 'Case not found' }); return; }
+      const { title, caseNumber, legalArea, subArea, status, priority, opponentId, claims, facts } =
+        req.body;
+      const [existing] =
+        await sql`SELECT frontmatter FROM pages WHERE slug = ${slug} AND type = 'legal-case'`;
+      if (!existing) {
+        res.status(404).json({ error: "Case not found" });
+        return;
+      }
       const fm = (existing.frontmatter as Record<string, unknown>) || {};
       const newFm = {
         ...fm,
@@ -1124,7 +1217,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.delete('/admin/api/legal/entity/:slug', requireAdmin, async (req: Request, res: Response) => {
+  app.delete("/admin/api/legal/entity/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       await sql`DELETE FROM pages WHERE slug = ${req.params.slug} AND type = 'legal-entity'`;
@@ -1134,7 +1227,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.delete('/admin/api/legal/case/:slug', requireAdmin, async (req: Request, res: Response) => {
+  app.delete("/admin/api/legal/case/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
       const sql = db.getConnection();
       await sql`DELETE FROM pages WHERE slug = ${req.params.slug} AND type = 'legal-case'`;
@@ -1149,7 +1242,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // can render a "$X / $Y today" cell. Read-side endpoint only — no mutation.
   // Falls back to an empty array on pre-v0.38 brains where mcp_spend_log
   // exists but agent dispatch hasn't recorded anything.
-  app.get('/admin/api/agents/spend', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/agents/spend", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const rows = await queryAgentClientSpend(engine);
       res.json(rows);
@@ -1160,12 +1253,15 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     }
   });
 
-  app.get('/admin/api/stats', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/stats", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const [clients] = await sql`SELECT count(*)::int as count FROM oauth_clients`;
-      const [tokens] = await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at > ${Math.floor(Date.now() / 1000)}`;
-      const [requests] = await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE created_at > now() - interval '24 hours'`;
-      const [apiKeys] = await sql`SELECT count(*)::int as count FROM access_tokens WHERE revoked_at IS NULL`;
+      const [tokens] =
+        await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at > ${Math.floor(Date.now() / 1000)}`;
+      const [requests] =
+        await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE created_at > now() - interval '24 hours'`;
+      const [apiKeys] =
+        await sql`SELECT count(*)::int as count FROM access_tokens WHERE revoked_at IS NULL`;
       res.json({
         connected_agents: (clients as any).count,
         active_tokens: (tokens as any).count,
@@ -1173,23 +1269,29 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         requests_today: (requests as any).count,
       });
     } catch {
-      res.status(503).json({ error: 'service_unavailable' });
+      res.status(503).json({ error: "service_unavailable" });
     }
   });
 
-  app.get('/admin/api/health-indicators', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/health-indicators", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const [expiring] = await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at BETWEEN ${now} AND ${now + 86400}`;
-      const [errors] = await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE status != 'success' AND created_at > now() - interval '24 hours'`;
-      const [total] = await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE created_at > now() - interval '24 hours'`;
-      const errorRate = (total as any).count > 0 ? ((errors as any).count / (total as any).count * 100).toFixed(1) : '0';
+      const [expiring] =
+        await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at BETWEEN ${now} AND ${now + 86400}`;
+      const [errors] =
+        await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE status != 'success' AND created_at > now() - interval '24 hours'`;
+      const [total] =
+        await sql`SELECT count(*)::int as count FROM mcp_request_log WHERE created_at > now() - interval '24 hours'`;
+      const errorRate =
+        (total as any).count > 0
+          ? (((errors as any).count / (total as any).count) * 100).toFixed(1)
+          : "0";
       res.json({
         expiring_soon: (expiring as any).count,
         error_rate: `${errorRate}%`,
       });
     } catch {
-      res.status(503).json({ error: 'service_unavailable' });
+      res.status(503).json({ error: "service_unavailable" });
     }
   });
 
@@ -1198,16 +1300,16 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // / etc. authenticate as admin and call this endpoint. probeHealth races
   // engine.getStats() against HEALTH_TIMEOUT_MS so a saturated pool returns
   // 503 rather than hanging.
-  app.get('/admin/api/full-stats', requireAdmin, async (_req: Request, res: Response) => {
-    const result = await probeHealth(engine, config.engine || 'pglite', VERSION);
+  app.get("/admin/api/full-stats", requireAdmin, async (_req: Request, res: Response) => {
+    const result = await probeHealth(engine, config.engine || "pglite", VERSION);
     res.status(result.status).json(result.body);
   });
 
   // v0.41 D2 — live jobs dashboard data. Shares readSnapshot() with the
   // TTY `gbrain jobs watch` command so the two surfaces stay 1:1.
-  app.get('/admin/api/jobs/watch', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/jobs/watch", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const { readSnapshot } = await import('./jobs-watch.ts');
+      const { readSnapshot } = await import("./jobs-watch.ts");
       const snap = await readSnapshot(engine);
       res.json(snap);
     } catch (e) {
@@ -1219,14 +1321,17 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // v0.43.0: brain status dashboard endpoint (PMBrain admin parity).
   // Returns page counts, source breakdown, embedding coverage, and
   // bi-temporal link metrics for the admin dashboard.
-  app.get('/admin/api/brain-status', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/brain-status", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const [pages] = await sql`SELECT count(*)::int as count FROM pages WHERE deleted_at IS NULL`;
-      const [sources] = await sql`SELECT count(*)::int as count FROM sources WHERE archived_at IS NULL`;
+      const [sources] =
+        await sql`SELECT count(*)::int as count FROM sources WHERE archived_at IS NULL`;
       const [chunks] = await sql`SELECT count(*)::int as count FROM content_chunks`;
-      const [embedded] = await sql`SELECT count(*)::int as count FROM content_chunks WHERE embedding IS NOT NULL`;
+      const [embedded] =
+        await sql`SELECT count(*)::int as count FROM content_chunks WHERE embedding IS NOT NULL`;
       const [links] = await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NULL`;
-      const [linksHistory] = await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NOT NULL`;
+      const [linksHistory] =
+        await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NOT NULL`;
       const sourceRows = await sql`
         SELECT s.source_id, s.local_path, count(p.id)::int as page_count
         FROM sources s
@@ -1260,9 +1365,9 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // v0.42: Connector status endpoint for admin dashboard.
   // Returns all configured connectors with their enabled/disabled state
   // and last-known health. Reads from the connector registry on disk.
-  app.get('/admin/api/connectors', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/connectors", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const { ConnectorManager } = await import('../core/ingestion/connectors/manager.ts');
+      const { ConnectorManager } = await import("../core/ingestion/connectors/manager.ts");
       const mgr = new ConnectorManager();
       const entries = await mgr.list();
       const enabled = await mgr.loadEnabled();
@@ -1286,157 +1391,216 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   });
 
   // v0.42: POST /admin/api/connectors/:service/sync — manual sync trigger.
-  app.post('/admin/api/connectors/:service/sync', requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const service = String(req.params.service);
-      const { ConnectorManager, SUPPORTED_CONNECTORS, CONNECTOR_REGISTRY } = await import('../core/ingestion/connectors/manager.ts');
-      if (!SUPPORTED_CONNECTORS.includes(service)) {
-        res.status(400).json({ error: 'unsupported_service', message: `Service "${service}" is not supported` });
-        return;
+  app.post(
+    "/admin/api/connectors/:service/sync",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const service = String(req.params.service);
+        const { ConnectorManager, SUPPORTED_CONNECTORS, CONNECTOR_REGISTRY } =
+          await import("../core/ingestion/connectors/manager.ts");
+        if (!SUPPORTED_CONNECTORS.includes(service)) {
+          res
+            .status(400)
+            .json({
+              error: "unsupported_service",
+              message: `Service "${service}" is not supported`,
+            });
+          return;
+        }
+        const mgr = new ConnectorManager();
+        const entries = await mgr.list();
+        const entry = entries.find((e) => e.service === service);
+        if (!entry) {
+          res
+            .status(404)
+            .json({ error: "not_found", message: `Connector "${service}" not configured` });
+          return;
+        }
+        if (!entry.enabled) {
+          res
+            .status(409)
+            .json({
+              error: "disabled",
+              message: `Connector "${service}" is disabled. Enable it first.`,
+            });
+          return;
+        }
+        // Load raw registry to get config for instantiation.
+        const rawPath = (mgr as any)._registryPath ? (mgr as any)._registryPath() : "";
+        const { readFileSync, existsSync } = await import("node:fs");
+        let config: Record<string, unknown> = {};
+        if (existsSync(rawPath)) {
+          const raw = JSON.parse(readFileSync(rawPath, "utf-8")) as Array<{
+            service: string;
+            config: Record<string, unknown>;
+          }>;
+          const found = raw.find((r) => r.service === service);
+          if (found) config = found.config;
+        }
+        const Ctor = CONNECTOR_REGISTRY[service];
+        if (!Ctor) {
+          res.status(500).json({ error: "internal", message: "Connector registry inconsistency" });
+          return;
+        }
+        const connector = new Ctor(config);
+        connector.sync().catch((err: unknown) => {
+          console.error(
+            `[admin] Manual sync failed for ${service}:`,
+            err instanceof Error ? err.message : String(err)
+          );
+        });
+        res.json({ status: "sync_triggered", service });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        res.status(500).json({ error: msg });
       }
-      const mgr = new ConnectorManager();
-      const entries = await mgr.list();
-      const entry = entries.find((e) => e.service === service);
-      if (!entry) {
-        res.status(404).json({ error: 'not_found', message: `Connector "${service}" not configured` });
-        return;
-      }
-      if (!entry.enabled) {
-        res.status(409).json({ error: 'disabled', message: `Connector "${service}" is disabled. Enable it first.` });
-        return;
-      }
-      // Load raw registry to get config for instantiation.
-      const rawPath = (mgr as any)._registryPath ? (mgr as any)._registryPath() : '';
-      const { readFileSync, existsSync } = await import('node:fs');
-      let config: Record<string, unknown> = {};
-      if (existsSync(rawPath)) {
-        const raw = JSON.parse(readFileSync(rawPath, 'utf-8')) as Array<{ service: string; config: Record<string, unknown> }>;
-        const found = raw.find((r) => r.service === service);
-        if (found) config = found.config;
-      }
-      const Ctor = CONNECTOR_REGISTRY[service];
-      if (!Ctor) {
-        res.status(500).json({ error: 'internal', message: 'Connector registry inconsistency' });
-        return;
-      }
-      const connector = new Ctor(config);
-      connector.sync().catch((err: unknown) => {
-        console.error(`[admin] Manual sync failed for ${service}:`, err instanceof Error ? err.message : String(err));
-      });
-      res.json({ status: 'sync_triggered', service });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
     }
-  });
+  );
 
   // v0.42: POST /admin/api/connectors/:service/toggle — enable/disable.
-  app.post('/admin/api/connectors/:service/toggle', requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const service = String(req.params.service);
-      const { ConnectorManager, SUPPORTED_CONNECTORS } = await import('../core/ingestion/connectors/manager.ts');
-      if (!SUPPORTED_CONNECTORS.includes(service)) {
-        res.status(400).json({ error: 'unsupported_service', message: `Service "${service}" is not supported` });
-        return;
+  app.post(
+    "/admin/api/connectors/:service/toggle",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const service = String(req.params.service);
+        const { ConnectorManager, SUPPORTED_CONNECTORS } =
+          await import("../core/ingestion/connectors/manager.ts");
+        if (!SUPPORTED_CONNECTORS.includes(service)) {
+          res
+            .status(400)
+            .json({
+              error: "unsupported_service",
+              message: `Service "${service}" is not supported`,
+            });
+          return;
+        }
+        const mgr = new ConnectorManager();
+        const entries = await mgr.list();
+        const entry = entries.find((e) => e.service === service);
+        if (!entry) {
+          res
+            .status(404)
+            .json({ error: "not_found", message: `Connector "${service}" not configured` });
+          return;
+        }
+        const newState = !entry.enabled;
+        await mgr.setEnabled(service, newState);
+        res.json({ status: "ok", service, enabled: newState });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        res.status(500).json({ error: msg });
       }
-      const mgr = new ConnectorManager();
-      const entries = await mgr.list();
-      const entry = entries.find((e) => e.service === service);
-      if (!entry) {
-        res.status(404).json({ error: 'not_found', message: `Connector "${service}" not configured` });
-        return;
-      }
-      const newState = !entry.enabled;
-      await mgr.setEnabled(service, newState);
-      res.json({ status: 'ok', service, enabled: newState });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
     }
-  });
+  );
 
   // v0.42: GET /admin/api/connectors/:service/health — detailed health check.
-  app.get('/admin/api/connectors/:service/health', requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const service = String(req.params.service);
-      const { ConnectorManager, SUPPORTED_CONNECTORS } = await import('../core/ingestion/connectors/manager.ts');
-      if (!SUPPORTED_CONNECTORS.includes(service)) {
-        res.status(400).json({ error: 'unsupported_service', message: `Service "${service}" is not supported` });
-        return;
+  app.get(
+    "/admin/api/connectors/:service/health",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const service = String(req.params.service);
+        const { ConnectorManager, SUPPORTED_CONNECTORS } =
+          await import("../core/ingestion/connectors/manager.ts");
+        if (!SUPPORTED_CONNECTORS.includes(service)) {
+          res
+            .status(400)
+            .json({
+              error: "unsupported_service",
+              message: `Service "${service}" is not supported`,
+            });
+          return;
+        }
+        const mgr = new ConnectorManager();
+        const entries = await mgr.list();
+        const entry = entries.find((e) => e.service === service);
+        if (!entry) {
+          res
+            .status(404)
+            .json({ error: "not_found", message: `Connector "${service}" not configured` });
+          return;
+        }
+        const running = await mgr.loadEnabled();
+        const isRunning = running.some((c) => c.id === service);
+        res.json({
+          service,
+          enabled: entry.enabled,
+          running: isRunning,
+          hasCredentials: entry.hasCredentials,
+          status: isRunning ? "ok" : entry.enabled ? "stopped" : "disabled",
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        res.status(500).json({ error: msg });
       }
-      const mgr = new ConnectorManager();
-      const entries = await mgr.list();
-      const entry = entries.find((e) => e.service === service);
-      if (!entry) {
-        res.status(404).json({ error: 'not_found', message: `Connector "${service}" not configured` });
-        return;
-      }
-      const running = await mgr.loadEnabled();
-      const isRunning = running.some((c) => c.id === service);
-      res.json({
-        service,
-        enabled: entry.enabled,
-        running: isRunning,
-        hasCredentials: entry.hasCredentials,
-        status: isRunning ? 'ok' : entry.enabled ? 'stopped' : 'disabled',
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      res.status(500).json({ error: msg });
     }
-  });
+  );
 
   // v0.43.0: Natural Language Console endpoint.
   // Accepts a text query, parses intent, executes the matching BrainEngine
   // operation, and returns a natural language response.
-  app.post('/admin/api/nl-query', requireAdmin, async (req: Request, res: Response) => {
+  app.post("/admin/api/nl-query", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const { parseNLQuery, formatNLResponse } = await import('../core/nl-console.ts');
-      const text = (req.body as { query?: string }).query ?? '';
+      const { parseNLQuery, formatNLResponse } = await import("../core/nl-console.ts");
+      const text = (req.body as { query?: string }).query ?? "";
       const nl = parseNLQuery(text);
 
       let data: unknown;
       switch (nl.intent) {
-        case 'brain_status': {
-          const [pages] = await sql`SELECT count(*)::int as count FROM pages WHERE deleted_at IS NULL`;
-          const [sources] = await sql`SELECT count(*)::int as count FROM sources WHERE archived_at IS NULL`;
+        case "brain_status": {
+          const [pages] =
+            await sql`SELECT count(*)::int as count FROM pages WHERE deleted_at IS NULL`;
+          const [sources] =
+            await sql`SELECT count(*)::int as count FROM sources WHERE archived_at IS NULL`;
           const [chunks] = await sql`SELECT count(*)::int as count FROM content_chunks`;
-          const [embedded] = await sql`SELECT count(*)::int as count FROM content_chunks WHERE embedding IS NOT NULL`;
-          const [links] = await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NULL`;
-          const [linksHistory] = await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NOT NULL`;
+          const [embedded] =
+            await sql`SELECT count(*)::int as count FROM content_chunks WHERE embedding IS NOT NULL`;
+          const [links] =
+            await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NULL`;
+          const [linksHistory] =
+            await sql`SELECT count(*)::int as count FROM links WHERE valid_to IS NOT NULL`;
           data = {
             pages: (pages?.count as number) ?? 0,
             sources: (sources?.count as number) ?? 0,
             chunks: (chunks?.count as number) ?? 0,
-            embedding_coverage_pct: (chunks?.count as number) ? Math.round(((embedded?.count as number) / (chunks?.count as number)) * 100) : 0,
+            embedding_coverage_pct: (chunks?.count as number)
+              ? Math.round(((embedded?.count as number) / (chunks?.count as number)) * 100)
+              : 0,
             links_current: (links?.count as number) ?? 0,
             links_historical: (linksHistory?.count as number) ?? 0,
           };
           break;
         }
-        case 'health': {
+        case "health": {
           const now = Math.floor(Date.now() / 1000);
-          const [expiring] = await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at BETWEEN ${now} AND ${now + 86400}`;
-          const [errors] = await sql`SELECT count(*)::int as count FROM mcp_log WHERE status >= 400 AND created_at > now() - interval '24 hours'`;
-          const totalReqs = await sql`SELECT count(*)::int as count FROM mcp_log WHERE created_at > now() - interval '24 hours'`;
-          const errorRate = totalReqs[0]?.count ? `${(((errors?.count as number) / (totalReqs[0].count as number)) * 100).toFixed(1)}%` : '0%';
+          const [expiring] =
+            await sql`SELECT count(*)::int as count FROM oauth_tokens WHERE token_type = 'access' AND expires_at BETWEEN ${now} AND ${now + 86400}`;
+          const [errors] =
+            await sql`SELECT count(*)::int as count FROM mcp_log WHERE status >= 400 AND created_at > now() - interval '24 hours'`;
+          const totalReqs =
+            await sql`SELECT count(*)::int as count FROM mcp_log WHERE created_at > now() - interval '24 hours'`;
+          const errorRate = totalReqs[0]?.count
+            ? `${(((errors?.count as number) / (totalReqs[0].count as number)) * 100).toFixed(1)}%`
+            : "0%";
           data = { expiring_soon: (expiring?.count as number) ?? 0, error_rate: errorRate };
           break;
         }
-        case 'agents': {
+        case "agents": {
           const oauthClients = await sql`SELECT client_id, client_name FROM oauth_clients`;
           data = oauthClients;
           break;
         }
-        case 'page_links': {
+        case "page_links": {
           data = nl.slug ? await engine.getLinks(nl.slug) : [];
           break;
         }
-        case 'page_backlinks': {
+        case "page_backlinks": {
           data = nl.slug ? await engine.getBacklinks(nl.slug) : [];
           break;
         }
-        case 'search': {
+        case "search": {
           data = nl.query ? await engine.searchKeyword(nl.query, { limit: 5 }) : [];
           break;
         }
@@ -1460,143 +1624,163 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // takes table, sorted by weight desc. v0.37+ will store per-pattern
   // source_take_ids on calibration_profiles_patterns so the drill-down
   // shows the EXACT takes that drove the pattern.
-  app.get('/admin/api/calibration/pattern/:id', requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const { getLatestProfile } = await import('./calibration.ts');
-      const holder = (req.query.holder as string) || 'garry';
-      const profile = await getLatestProfile(engine, { holder });
-      if (!profile) {
-        res.status(404).json({ error: 'no_profile' });
-        return;
-      }
-      const rawId = req.params.id;
-      const idStr = Array.isArray(rawId) ? rawId[0] : rawId;
-      const idx = Number.parseInt(idStr ?? '', 10) - 1;
-      if (!Number.isFinite(idx) || idx < 0 || idx >= profile.pattern_statements.length) {
-        res.status(400).json({ error: 'invalid_pattern_index', max: profile.pattern_statements.length });
-        return;
-      }
-      const statement = profile.pattern_statements[idx];
-      // v0.36.1.0 ship state: surface the top resolved takes for the
-      // holder as drill-down evidence. Per-pattern provenance is v0.37.
-      const takes = await engine.executeRaw<{
-        id: number;
-        page_slug: string;
-        row_num: number;
-        claim: string;
-        weight: number;
-        resolved_quality: string | null;
-        since_date: string | null;
-      }>(
-        `SELECT id, page_slug, row_num, claim, weight, resolved_quality, since_date
+  app.get(
+    "/admin/api/calibration/pattern/:id",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const { getLatestProfile } = await import("./calibration.ts");
+        const holder = (req.query.holder as string) || "garry";
+        const profile = await getLatestProfile(engine, { holder });
+        if (!profile) {
+          res.status(404).json({ error: "no_profile" });
+          return;
+        }
+        const rawId = req.params.id;
+        const idStr = Array.isArray(rawId) ? rawId[0] : rawId;
+        const idx = Number.parseInt(idStr ?? "", 10) - 1;
+        if (!Number.isFinite(idx) || idx < 0 || idx >= profile.pattern_statements.length) {
+          res
+            .status(400)
+            .json({ error: "invalid_pattern_index", max: profile.pattern_statements.length });
+          return;
+        }
+        const statement = profile.pattern_statements[idx];
+        // v0.36.1.0 ship state: surface the top resolved takes for the
+        // holder as drill-down evidence. Per-pattern provenance is v0.37.
+        const takes = await engine.executeRaw<{
+          id: number;
+          page_slug: string;
+          row_num: number;
+          claim: string;
+          weight: number;
+          resolved_quality: string | null;
+          since_date: string | null;
+        }>(
+          `SELECT id, page_slug, row_num, claim, weight, resolved_quality, since_date
            FROM takes
            WHERE holder = $1 AND active = true AND resolved_at IS NOT NULL
            ORDER BY weight DESC, since_date DESC
            LIMIT 25`,
-        [holder],
-      );
-      res.json({
-        pattern_statement: statement,
-        pattern_index: idx + 1,
-        holder,
-        provenance_note: 'v0.36.1.0 ship state shows top-25 resolved takes for this holder; per-pattern source_take_ids land in v0.37.',
-        takes,
-      });
-    } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'unknown' });
+          [holder]
+        );
+        res.json({
+          pattern_statement: statement,
+          pattern_index: idx + 1,
+          holder,
+          provenance_note:
+            "v0.36.1.0 ship state shows top-25 resolved takes for this holder; per-pattern source_take_ids land in v0.37.",
+          takes,
+        });
+      } catch (err) {
+        res.status(500).json({ error: err instanceof Error ? err.message : "unknown" });
+      }
     }
-  });
+  );
 
-  app.get('/admin/api/calibration/profile', requireAdmin, async (req: Request, res: Response) => {
+  app.get("/admin/api/calibration/profile", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const { getLatestProfile } = await import('./calibration.ts');
-      const holder = (req.query.holder as string) || 'garry';
+      const { getLatestProfile } = await import("./calibration.ts");
+      const holder = (req.query.holder as string) || "garry";
       const profile = await getLatestProfile(engine, { holder });
       res.json(profile);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'unknown' });
+      res.status(500).json({ error: err instanceof Error ? err.message : "unknown" });
     }
   });
 
-  app.get('/admin/api/calibration/charts/:type', requireAdmin, async (req: Request, res: Response) => {
-    try {
-      const { getLatestProfile } = await import('./calibration.ts');
-      const {
-        renderBrierTrend,
-        renderDomainBars,
-        renderAbandonedThreadsCard,
-        renderPatternStatementsCard,
-      } = await import('../core/calibration/svg-renderer.ts');
-      const holder = (req.query.holder as string) || 'garry';
-      const type = req.params.type;
-      const profile = await getLatestProfile(engine, { holder });
+  app.get(
+    "/admin/api/calibration/charts/:type",
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const { getLatestProfile } = await import("./calibration.ts");
+        const {
+          renderBrierTrend,
+          renderDomainBars,
+          renderAbandonedThreadsCard,
+          renderPatternStatementsCard,
+        } = await import("../core/calibration/svg-renderer.ts");
+        const holder = (req.query.holder as string) || "garry";
+        const type = req.params.type;
+        const profile = await getLatestProfile(engine, { holder });
 
-      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
-      res.setHeader('Cache-Control', 'private, max-age=60');
+        res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
+        res.setHeader("Cache-Control", "private, max-age=60");
 
-      if (type === 'brier-trend') {
-        // v0.36.1.0 ship state: 1-point series from the active profile. A
-        // proper 90-day time series will read from calibration_profiles
-        // generated_at history in v0.37 once we have multiple snapshots.
-        const series = profile?.brier !== null && profile?.brier !== undefined
-          ? [{ date: profile.generated_at.slice(0, 10), brier: profile.brier }]
-          : [];
-        return res.send(renderBrierTrend({ series }));
-      }
-      if (type === 'domain-bars') {
-        // v0.36.1.0 ship state: domain_scorecards JSONB is a placeholder
-        // (per-domain rendering comes when batchGetTakesScorecards lands in
-        // a follow-up). Render empty for now.
-        return res.send(renderDomainBars({ bars: [] }));
-      }
-      if (type === 'pattern-statements') {
-        return res.send(
-          renderPatternStatementsCard(
-            (profile?.pattern_statements ?? []).map((text: string) => ({ text })),
-          ),
-        );
-      }
-      if (type === 'abandoned-threads') {
-        // v0.36.1.0 ship state: pull abandoned threads inline via a small
-        // SQL query (the doctor check counts them; this surfaces details).
-        const rows = await engine.executeRaw<{
-          id: number;
-          page_slug: string;
-          claim: string;
-          weight: number;
-          since_date: string;
-        }>(
-          `SELECT id, page_slug, claim, weight, since_date
+        if (type === "brier-trend") {
+          // v0.36.1.0 ship state: 1-point series from the active profile. A
+          // proper 90-day time series will read from calibration_profiles
+          // generated_at history in v0.37 once we have multiple snapshots.
+          const series =
+            profile?.brier !== null && profile?.brier !== undefined
+              ? [{ date: profile.generated_at.slice(0, 10), brier: profile.brier }]
+              : [];
+          return res.send(renderBrierTrend({ series }));
+        }
+        if (type === "domain-bars") {
+          // v0.36.1.0 ship state: domain_scorecards JSONB is a placeholder
+          // (per-domain rendering comes when batchGetTakesScorecards lands in
+          // a follow-up). Render empty for now.
+          return res.send(renderDomainBars({ bars: [] }));
+        }
+        if (type === "pattern-statements") {
+          return res.send(
+            renderPatternStatementsCard(
+              (profile?.pattern_statements ?? []).map((text: string) => ({ text }))
+            )
+          );
+        }
+        if (type === "abandoned-threads") {
+          // v0.36.1.0 ship state: pull abandoned threads inline via a small
+          // SQL query (the doctor check counts them; this surfaces details).
+          const rows = await engine.executeRaw<{
+            id: number;
+            page_slug: string;
+            claim: string;
+            weight: number;
+            since_date: string;
+          }>(
+            `SELECT id, page_slug, claim, weight, since_date
              FROM takes
              WHERE active = true AND resolved_at IS NULL AND superseded_by IS NULL
                AND weight >= 0.7
                AND since_date::date < (now() - INTERVAL '12 months')
              ORDER BY since_date ASC
-             LIMIT 5`,
-        );
-        const now = new Date();
-        const threads = rows.map(r => {
-          const since = new Date((r.since_date.length === 7 ? r.since_date + '-15' : r.since_date));
-          const monthsSilent = Math.max(0, Math.floor((now.getTime() - since.getTime()) / (1000 * 60 * 60 * 24 * 30)));
-          return {
-            takeId: r.id,
-            pageSlug: r.page_slug,
-            claim: r.claim,
-            monthsSilent,
-            conviction: r.weight,
-          };
-        });
-        return res.send(renderAbandonedThreadsCard(threads));
+             LIMIT 5`
+          );
+          const now = new Date();
+          const threads = rows.map((r) => {
+            const since = new Date(r.since_date.length === 7 ? r.since_date + "-15" : r.since_date);
+            const monthsSilent = Math.max(
+              0,
+              Math.floor((now.getTime() - since.getTime()) / (1000 * 60 * 60 * 24 * 30))
+            );
+            return {
+              takeId: r.id,
+              pageSlug: r.page_slug,
+              claim: r.claim,
+              monthsSilent,
+              conviction: r.weight,
+            };
+          });
+          return res.send(renderAbandonedThreadsCard(threads));
+        }
+        res
+          .status(400)
+          .json({
+            error: "unknown_chart_type",
+            supported: ["brier-trend", "domain-bars", "pattern-statements", "abandoned-threads"],
+          });
+        return;
+      } catch (err) {
+        res.status(500).json({ error: err instanceof Error ? err.message : "unknown" });
+        return;
       }
-      res.status(400).json({ error: 'unknown_chart_type', supported: ['brier-trend', 'domain-bars', 'pattern-statements', 'abandoned-threads'] });
-      return;
-    } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : 'unknown' });
-      return;
     }
-  });
+  );
 
-  app.get('/admin/api/requests', requireAdmin, async (req: Request, res: Response) => {
+  app.get("/admin/api/requests", requireAdmin, async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = 50;
@@ -1613,19 +1797,19 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       // by the driver, no sql.unsafe.
       const filters: string[] = [];
       const params: (string | number)[] = [];
-      if (agent && agent !== 'all') {
+      if (agent && agent !== "all") {
         filters.push(`AND token_name = $${params.length + 1}`);
         params.push(agent);
       }
-      if (operation && operation !== 'all') {
+      if (operation && operation !== "all") {
         filters.push(`AND operation = $${params.length + 1}`);
         params.push(operation);
       }
-      if (status && status !== 'all') {
+      if (status && status !== "all") {
         filters.push(`AND status = $${params.length + 1}`);
         params.push(status);
       }
-      const filterSql = filters.join(' ');
+      const filterSql = filters.join(" ");
       const limitParam = `$${params.length + 1}`;
       const offsetParam = `$${params.length + 2}`;
 
@@ -1635,21 +1819,26 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
          FROM mcp_request_log
          WHERE 1=1 ${filterSql}
          ORDER BY created_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
-        [...params, limit, offset],
+        [...params, limit, offset]
       );
       const [countResult] = await engine.executeRaw<{ total: number }>(
         `SELECT count(*)::int as total FROM mcp_request_log
          WHERE 1=1 ${filterSql}`,
-        params,
+        params
       );
-      res.json({ rows, total: countResult.total, page, pages: Math.ceil(countResult.total / limit) });
+      res.json({
+        rows,
+        total: countResult.total,
+        page,
+        pages: Math.ceil(countResult.total / limit),
+      });
     } catch {
-      res.status(503).json({ error: 'service_unavailable' });
+      res.status(503).json({ error: "service_unavailable" });
     }
   });
 
   // Legacy API keys (access_tokens table)
-  app.get('/admin/api/api-keys', requireAdmin, async (_req: Request, res: Response) => {
+  app.get("/admin/api/api-keys", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const keys = await sql`
         SELECT id, name, created_at, last_used_at,
@@ -1658,133 +1847,184 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       `;
       res.json(keys);
     } catch (e) {
-      res.status(503).json({ error: 'service_unavailable' });
+      res.status(503).json({ error: "service_unavailable" });
     }
   });
 
-  app.post('/admin/api/api-keys', requireAdmin, express.json(), async (req: Request, res: Response) => {
-    try {
-      const { name } = req.body;
-      if (!name) { res.status(400).json({ error: 'Name required' }); return; }
-      const { generateToken, hashToken } = await import('../core/utils.ts');
-      const token = generateToken('gbrain_');
-      const hash = hashToken(token);
-      const id = (await import('crypto')).randomUUID();
-      await sql`INSERT INTO access_tokens (id, name, token_hash) VALUES (${id}, ${name}, ${hash})`;
-      res.json({ name, token, id });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Failed to create API key' });
+  app.post(
+    "/admin/api/api-keys",
+    requireAdmin,
+    express.json(),
+    async (req: Request, res: Response) => {
+      try {
+        const { name } = req.body;
+        if (!name) {
+          res.status(400).json({ error: "Name required" });
+          return;
+        }
+        const { generateToken, hashToken } = await import("../core/utils.ts");
+        const token = generateToken("gbrain_");
+        const hash = hashToken(token);
+        const id = (await import("crypto")).randomUUID();
+        await sql`INSERT INTO access_tokens (id, name, token_hash) VALUES (${id}, ${name}, ${hash})`;
+        res.json({ name, token, id });
+      } catch (e) {
+        res
+          .status(500)
+          .json({ error: e instanceof Error ? e.message : "Failed to create API key" });
+      }
     }
-  });
+  );
 
-  app.post('/admin/api/api-keys/revoke', requireAdmin, express.json(), async (req: Request, res: Response) => {
-    try {
-      const { name } = req.body;
-      if (!name) { res.status(400).json({ error: 'Name required' }); return; }
-      await sql`UPDATE access_tokens SET revoked_at = now() WHERE name = ${name} AND revoked_at IS NULL`;
-      res.json({ revoked: true });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Revoke failed' });
+  app.post(
+    "/admin/api/api-keys/revoke",
+    requireAdmin,
+    express.json(),
+    async (req: Request, res: Response) => {
+      try {
+        const { name } = req.body;
+        if (!name) {
+          res.status(400).json({ error: "Name required" });
+          return;
+        }
+        await sql`UPDATE access_tokens SET revoked_at = now() WHERE name = ${name} AND revoked_at IS NULL`;
+        res.json({ revoked: true });
+      } catch (e) {
+        res.status(500).json({ error: e instanceof Error ? e.message : "Revoke failed" });
+      }
     }
-  });
+  );
 
   // Register client from admin dashboard
-  app.post('/admin/api/register-client', requireAdmin, express.json(), async (req: Request, res: Response) => {
-    try {
-      // v0.39.3.0 WARN-9 + CV12: accept BOTH `scopes` (admin SPA convention)
-      // AND `scope` (OAuth wire-format convention, singular). The pre-fix
-      // code destructured only `scopes` and used `scopes || 'read'` which:
-      //   - Silently ignored `scope` requests (always defaulted to 'read')
-      //   - Threw on array input because registerClientManual's parseScopeString
-      //     calls .split(' ') which arrays don't have
-      //   - Accepted `['read write']` (space-in-element bug shape codex flagged)
-      //     and other malformed inputs
-      // normalizeScopesInput handles all four valid shapes (string, string[],
-      // missing, empty) and rejects the rest with a structured 400.
-      const { name, tokenTtl, grantTypes, redirectUris, tokenEndpointAuthMethod } = req.body;
-      const rawScopes = (req.body as Record<string, unknown>).scopes ?? (req.body as Record<string, unknown>).scope;
-      if (!name) { res.status(400).json({ error: 'Name required' }); return; }
-      let scopeString: string;
+  app.post(
+    "/admin/api/register-client",
+    requireAdmin,
+    express.json(),
+    async (req: Request, res: Response) => {
       try {
-        scopeString = normalizeScopesInput(rawScopes);
+        // v0.39.3.0 WARN-9 + CV12: accept BOTH `scopes` (admin SPA convention)
+        // AND `scope` (OAuth wire-format convention, singular). The pre-fix
+        // code destructured only `scopes` and used `scopes || 'read'` which:
+        //   - Silently ignored `scope` requests (always defaulted to 'read')
+        //   - Threw on array input because registerClientManual's parseScopeString
+        //     calls .split(' ') which arrays don't have
+        //   - Accepted `['read write']` (space-in-element bug shape codex flagged)
+        //     and other malformed inputs
+        // normalizeScopesInput handles all four valid shapes (string, string[],
+        // missing, empty) and rejects the rest with a structured 400.
+        const { name, tokenTtl, grantTypes, redirectUris, tokenEndpointAuthMethod } = req.body;
+        const rawScopes =
+          (req.body as Record<string, unknown>).scopes ??
+          (req.body as Record<string, unknown>).scope;
+        if (!name) {
+          res.status(400).json({ error: "Name required" });
+          return;
+        }
+        let scopeString: string;
+        try {
+          scopeString = normalizeScopesInput(rawScopes);
+        } catch (e) {
+          res.status(400).json({
+            error: "invalid_scopes",
+            message: e instanceof Error ? e.message : String(e),
+          });
+          return;
+        }
+        const grants =
+          Array.isArray(grantTypes) && grantTypes.length > 0 ? grantTypes : ["client_credentials"];
+        const uris = Array.isArray(redirectUris) ? redirectUris : [];
+        // v0.41.3 (T1+T4): validate token_endpoint_auth_method via shared
+        // ALLOWED_TOKEN_ENDPOINT_AUTH_METHODS before reaching the provider.
+        // Pre-v0.41.3 this endpoint did INSERT (confidential) → UPDATE (NULL
+        // out secret_hash) for the 'none' case, which left a confidential
+        // row stranded if the UPDATE failed (codex F4). Atomic now: pass the
+        // method to registerClientManual and let it INSERT the correct row
+        // in a single statement.
+        let validatedAuthMethod: string | undefined;
+        try {
+          validatedAuthMethod = validateTokenEndpointAuthMethod(tokenEndpointAuthMethod);
+        } catch (e) {
+          res.status(400).json({
+            error: "invalid_token_endpoint_auth_method",
+            message: e instanceof Error ? e.message : String(e),
+          });
+          return;
+        }
+        const result = await oauthProvider.registerClientManual(
+          name,
+          grants,
+          scopeString,
+          uris,
+          "default",
+          undefined,
+          validatedAuthMethod
+        );
+        // Set per-client TTL if specified
+        if (tokenTtl && Number(tokenTtl) > 0) {
+          await sql`UPDATE oauth_clients SET token_ttl = ${Number(tokenTtl)} WHERE client_id = ${result.clientId}`;
+        }
+        res.json({ ...result, tokenTtl: tokenTtl ? Number(tokenTtl) : null });
       } catch (e) {
-        res.status(400).json({
-          error: 'invalid_scopes',
-          message: e instanceof Error ? e.message : String(e),
-        });
-        return;
+        res.status(500).json({ error: e instanceof Error ? e.message : "Registration failed" });
       }
-      const grants = Array.isArray(grantTypes) && grantTypes.length > 0 ? grantTypes : ['client_credentials'];
-      const uris = Array.isArray(redirectUris) ? redirectUris : [];
-      // v0.41.3 (T1+T4): validate token_endpoint_auth_method via shared
-      // ALLOWED_TOKEN_ENDPOINT_AUTH_METHODS before reaching the provider.
-      // Pre-v0.41.3 this endpoint did INSERT (confidential) → UPDATE (NULL
-      // out secret_hash) for the 'none' case, which left a confidential
-      // row stranded if the UPDATE failed (codex F4). Atomic now: pass the
-      // method to registerClientManual and let it INSERT the correct row
-      // in a single statement.
-      let validatedAuthMethod: string | undefined;
-      try {
-        validatedAuthMethod = validateTokenEndpointAuthMethod(tokenEndpointAuthMethod);
-      } catch (e) {
-        res.status(400).json({
-          error: 'invalid_token_endpoint_auth_method',
-          message: e instanceof Error ? e.message : String(e),
-        });
-        return;
-      }
-      const result = await oauthProvider.registerClientManual(
-        name, grants, scopeString, uris, 'default', undefined, validatedAuthMethod,
-      );
-      // Set per-client TTL if specified
-      if (tokenTtl && Number(tokenTtl) > 0) {
-        await sql`UPDATE oauth_clients SET token_ttl = ${Number(tokenTtl)} WHERE client_id = ${result.clientId}`;
-      }
-      res.json({ ...result, tokenTtl: tokenTtl ? Number(tokenTtl) : null });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Registration failed' });
     }
-  });
+  );
 
   // Update client TTL
-  app.post('/admin/api/update-client-ttl', requireAdmin, express.json(), async (req: Request, res: Response) => {
-    try {
-      const { clientId, tokenTtl } = req.body;
-      if (!clientId) { res.status(400).json({ error: 'clientId required' }); return; }
-      const ttl = tokenTtl === null || tokenTtl === 0 ? null : Number(tokenTtl);
-      await sql`UPDATE oauth_clients SET token_ttl = ${ttl} WHERE client_id = ${clientId}`;
-      res.json({ updated: true, tokenTtl: ttl });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Update failed' });
+  app.post(
+    "/admin/api/update-client-ttl",
+    requireAdmin,
+    express.json(),
+    async (req: Request, res: Response) => {
+      try {
+        const { clientId, tokenTtl } = req.body;
+        if (!clientId) {
+          res.status(400).json({ error: "clientId required" });
+          return;
+        }
+        const ttl = tokenTtl === null || tokenTtl === 0 ? null : Number(tokenTtl);
+        await sql`UPDATE oauth_clients SET token_ttl = ${ttl} WHERE client_id = ${clientId}`;
+        res.json({ updated: true, tokenTtl: ttl });
+      } catch (e) {
+        res.status(500).json({ error: e instanceof Error ? e.message : "Update failed" });
+      }
     }
-  });
+  );
 
   // Revoke OAuth client
-  app.post('/admin/api/revoke-client', requireAdmin, express.json(), async (req: Request, res: Response) => {
-    try {
-      const { clientId } = req.body;
-      if (!clientId) { res.status(400).json({ error: 'clientId required' }); return; }
-      // Soft-delete the client
-      await sql`UPDATE oauth_clients SET deleted_at = now() WHERE client_id = ${clientId} AND deleted_at IS NULL`;
-      // Revoke all active tokens for this client
-      await sql`DELETE FROM oauth_tokens WHERE client_id = ${clientId}`;
-      res.json({ revoked: true });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : 'Revoke failed' });
+  app.post(
+    "/admin/api/revoke-client",
+    requireAdmin,
+    express.json(),
+    async (req: Request, res: Response) => {
+      try {
+        const { clientId } = req.body;
+        if (!clientId) {
+          res.status(400).json({ error: "clientId required" });
+          return;
+        }
+        // Soft-delete the client
+        await sql`UPDATE oauth_clients SET deleted_at = now() WHERE client_id = ${clientId} AND deleted_at IS NULL`;
+        // Revoke all active tokens for this client
+        await sql`DELETE FROM oauth_tokens WHERE client_id = ${clientId}`;
+        res.json({ revoked: true });
+      } catch (e) {
+        res.status(500).json({ error: e instanceof Error ? e.message : "Revoke failed" });
+      }
     }
-  });
+  );
 
   // ---------------------------------------------------------------------------
   // SSE live activity feed
   // ---------------------------------------------------------------------------
-  app.get('/admin/events', requireAdmin, (req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+  app.get("/admin/events", requireAdmin, (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
 
     sseClients.add(res);
-    req.on('close', () => sseClients.delete(res));
+    req.on("close", () => sseClients.delete(res));
   });
 
   // ---------------------------------------------------------------------------
@@ -1802,17 +2042,21 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   //      instead of 404. Pre-fix the cwd-relative path was the ONLY
   //      resolution path, and every fresh install of the compiled binary
   //      hit 404 on /admin (issue #1090).
-  const path = await import('path');
-  const fs = await import('fs');
-  const adminDistPath = path.join(process.cwd(), 'admin', 'dist');
+  const path = await import("path");
+  const fs = await import("fs");
+  const adminDistPath = path.join(process.cwd(), "admin", "dist");
   const useDevPath = fs.existsSync(adminDistPath);
   if (useDevPath) {
-    app.use('/admin', express.static(adminDistPath));
-    app.get('/admin/{*path}', (req: Request, res: Response, next: NextFunction) => {
-      if (req.path.startsWith('/admin/api/') || req.path === '/admin/events' || req.path === '/admin/login') {
+    app.use("/admin", express.static(adminDistPath));
+    app.get("/admin/{*path}", (req: Request, res: Response, next: NextFunction) => {
+      if (
+        req.path.startsWith("/admin/api/") ||
+        req.path === "/admin/events" ||
+        req.path === "/admin/login"
+      ) {
         return next();
       }
-      res.sendFile(path.join(adminDistPath, 'index.html'));
+      res.sendFile(path.join(adminDistPath, "index.html"));
     });
   } else {
     // Embedded path. Read assets from the generated manifest. Cache the
@@ -1823,9 +2067,11 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     // /admin is optional. Degrade to 404 on /admin instead.
     let adminEmbedded: { ADMIN_ASSETS: any; ADMIN_INDEX_HTML: any } | null = null;
     try {
-      adminEmbedded = await import('../admin-embedded.ts');
+      adminEmbedded = await import("../admin-embedded.ts");
     } catch (e: any) {
-      console.warn(`[serve-http] admin SPA assets unavailable (${e?.message ?? e}) — /admin disabled, API unaffected`);
+      console.warn(
+        `[serve-http] admin SPA assets unavailable (${e?.message ?? e}) — /admin disabled, API unaffected`
+      );
     }
     if (adminEmbedded) {
       const { ADMIN_ASSETS, ADMIN_INDEX_HTML } = adminEmbedded;
@@ -1837,28 +2083,32 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         cache.set(asset.path, buf);
         return buf;
       }
-      app.get('/admin/{*path}', (req: Request, res: Response, next: NextFunction) => {
-        if (req.path.startsWith('/admin/api/') || req.path === '/admin/events' || req.path === '/admin/login') {
+      app.get("/admin/{*path}", (req: Request, res: Response, next: NextFunction) => {
+        if (
+          req.path.startsWith("/admin/api/") ||
+          req.path === "/admin/events" ||
+          req.path === "/admin/login"
+        ) {
           return next();
         }
         const hit = ADMIN_ASSETS[req.path];
         if (hit) {
-          res.setHeader('Content-Type', hit.mime);
+          res.setHeader("Content-Type", hit.mime);
           res.send(loadAsset(hit));
           return;
         }
         // SPA fallback — every unmatched /admin/* route resolves to index.html
         // so client-side routing takes over (login, dashboard, agents, ...).
         if (ADMIN_INDEX_HTML) {
-          res.setHeader('Content-Type', ADMIN_INDEX_HTML.mime);
+          res.setHeader("Content-Type", ADMIN_INDEX_HTML.mime);
           res.send(loadAsset(ADMIN_INDEX_HTML));
           return;
         }
-        res.status(404).send('admin SPA not available');
+        res.status(404).send("admin SPA not available");
       });
     } else {
-      app.get('/admin/{*path}', (_req: Request, res: Response) => {
-        res.status(404).send('admin SPA not available in this build');
+      app.get("/admin/{*path}", (_req: Request, res: Response) => {
+        res.status(404).send("admin SPA not available in this build");
       });
     }
   }
@@ -1866,7 +2116,7 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // ---------------------------------------------------------------------------
   // MCP tool calls (bearer auth + scope enforcement)
   // ---------------------------------------------------------------------------
-  const mcpOperations = operations.filter(op => !op.localOnly);
+  const mcpOperations = operations.filter((op) => !op.localOnly);
 
   // v0.36.x #1076: MCP Streamable HTTP spec — GET /mcp opens an optional SSE
   // backchannel for server-initiated messages. gbrain's transport is stateless
@@ -1874,296 +2124,343 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // (not 404) so probing clients (claude.ai, etc.) recognize this as an MCP
   // endpoint, not a missing route. Without this, clients display "endpoint not
   // found" instead of "endpoint exists but no SSE channel."
-  app.get('/mcp', (_req: Request, res: Response) => {
-    res.set('Allow', 'POST, DELETE');
-    res.status(405).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed' }, id: null });
+  app.get("/mcp", (_req: Request, res: Response) => {
+    res.set("Allow", "POST, DELETE");
+    res
+      .status(405)
+      .json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed" }, id: null });
   });
 
-  app.post('/mcp', requireBearerAuth({ verifier: oauthProvider }), async (req: Request, res: Response) => {
-    const startTime = Date.now();
-    const authInfo = (req as any).auth as AuthInfo;
+  app.post(
+    "/mcp",
+    requireBearerAuth({ verifier: oauthProvider }),
+    async (req: Request, res: Response) => {
+      const startTime = Date.now();
+      const authInfo = (req as any).auth as AuthInfo;
 
-    // Human-readable agent name is now threaded through AuthInfo by
-    // verifyAccessToken (which JOINs oauth_clients in its existing token
-    // SELECT). No per-request DB roundtrip needed. Falls back to clientId
-    // for legacy tokens or when the JOIN row's client_name is NULL.
-    const agentName = authInfo.clientName ?? authInfo.clientId;
+      // Human-readable agent name is now threaded through AuthInfo by
+      // verifyAccessToken (which JOINs oauth_clients in its existing token
+      // SELECT). No per-request DB roundtrip needed. Falls back to clientId
+      // for legacy tokens or when the JOIN row's client_name is NULL.
+      const agentName = authInfo.clientName ?? authInfo.clientId;
 
-    // Create a fresh MCP server per request (stateless)
-    const server = new Server(
-      { name: 'gbrain', version: VERSION },
-      { capabilities: { tools: {} } },
-    );
+      // Create a fresh MCP server per request (stateless)
+      const server = new Server(
+        { name: "gbrain", version: VERSION },
+        { capabilities: { tools: {} } }
+      );
 
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
-      // v0.28.10: log every JSON-RPC method, not just successful tools/call.
-      // Pre-fix, /admin/api/requests showed nothing for clients that only
-      // ever called tools/list, and the v0.26.3 persistence regression test
-      // asserting >= 2 rows after tools/list + tools/call was unreachable.
-      const latency = Date.now() - startTime;
-      try {
-        await executeRawJsonb(
-          engine,
-          `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
+      server.setRequestHandler(ListToolsRequestSchema, async () => {
+        // v0.28.10: log every JSON-RPC method, not just successful tools/call.
+        // Pre-fix, /admin/api/requests showed nothing for clients that only
+        // ever called tools/list, and the v0.26.3 persistence regression test
+        // asserting >= 2 rows after tools/list + tools/call was unreachable.
+        const latency = Date.now() - startTime;
+        try {
+          await executeRawJsonb(
+            engine,
+            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
            VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
-          [authInfo.clientId, agentName, 'tools/list', latency, 'success'],
-          [null],
-        );
-      } catch { /* best effort */ }
-      broadcastEvent({
-        agent: agentName,
-        operation: 'tools/list',
-        scopes: authInfo.scopes.join(','),
-        latency_ms: latency,
-        status: 'success',
-        timestamp: new Date().toISOString(),
-      });
-      return {
-        tools: mcpOperations.map(op => ({
-          name: op.name,
-          description: op.description,
-          inputSchema: {
-            type: 'object' as const,
-            properties: Object.fromEntries(
-              Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)]),
-            ),
-            required: Object.entries(op.params).filter(([, v]) => v.required).map(([k]) => k),
-          },
-        })),
-      };
-    });
-
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: params } = request.params;
-      const op = mcpOperations.find(o => o.name === name);
-      if (!op) {
-        // v0.28.10: persist unknown-op attempts. Operators investigating
-        // misbehaving agents need to see the full attempt log, not just
-        // valid-op success/error.
-        const latency = Date.now() - startTime;
-        try {
-          await executeRawJsonb(
-            engine,
-            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
-             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-            [authInfo.clientId, agentName, name, latency, 'error', `unknown_operation: ${name}`],
-            [null],
+            [authInfo.clientId, agentName, "tools/list", latency, "success"],
+            [null]
           );
-        } catch { /* best effort */ }
+        } catch {
+          /* best effort */
+        }
         broadcastEvent({
           agent: agentName,
-          operation: name,
-          scopes: authInfo.scopes.join(','),
+          operation: "tools/list",
+          scopes: authInfo.scopes.join(","),
           latency_ms: latency,
-          status: 'error',
-          error: { code: 'unknown_operation', message: `Unknown: ${name}` },
-          timestamp: new Date().toISOString(),
-        });
-        return { content: [{ type: 'text', text: JSON.stringify({ error: 'unknown_operation', message: `Unknown: ${name}` }) }], isError: true };
-      }
-
-      // Scope enforcement (v0.28: hasScope replaces exact-string-match so
-      // admin tokens satisfy any scope, write satisfies read, and the new
-      // sources_admin / users_admin scopes resolve through the same
-      // hierarchy. Plain string includes() at this site would have made
-      // sources_admin tokens look like they couldn't even read.)
-      const requiredScope = op.scope || 'read';
-      if (!hasScope(authInfo.scopes, requiredScope)) {
-        // v0.28.10: persist scope-rejected attempts. Same operator-visibility
-        // motivation as the unknown-op path — and it makes the v0.26.3
-        // persistence regression test reliable across both rejection paths.
-        const latency = Date.now() - startTime;
-        try {
-          await executeRawJsonb(
-            engine,
-            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
-             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-            [authInfo.clientId, agentName, name, latency, 'error', `insufficient_scope: requires '${requiredScope}'`],
-            [null],
-          );
-        } catch { /* best effort */ }
-        broadcastEvent({
-          agent: agentName,
-          operation: name,
-          scopes: authInfo.scopes.join(','),
-          latency_ms: latency,
-          status: 'error',
-          error: { code: 'insufficient_scope', message: `requires '${requiredScope}'` },
+          status: "success",
           timestamp: new Date().toISOString(),
         });
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              error: 'insufficient_scope',
-              message: `Operation ${name} requires '${requiredScope}' scope`,
-              your_scopes: authInfo.scopes,
-            }),
-          }],
-          isError: true,
+          tools: mcpOperations.map((op) => ({
+            name: op.name,
+            description: op.description,
+            inputSchema: {
+              type: "object" as const,
+              properties: Object.fromEntries(
+                Object.entries(op.params).map(([k, v]) => [k, paramDefToSchema(v)])
+              ),
+              required: Object.entries(op.params)
+                .filter(([, v]) => v.required)
+                .map(([k]) => k),
+            },
+          })),
         };
-      }
+      });
 
-      // F8: redact request payload by default (declared keys only via the
-      // op's `params` allow-list; values + attacker-controlled key names
-      // never written to mcp_request_log or the SSE feed). --log-full-params
-      // bypasses this for operators debugging on their own laptop, with the
-      // startup warning printed earlier.
-      //
-      // D1 (v0.31 wave): mcp_request_log.params is JSONB. Pre-v0.31 wrote
-      // a JSON-string into that JSONB column via the postgres.js template
-      // tag's loose typing — readable but semantically wrong (params->>'op'
-      // would return the encoded string, not the value). Post-v0.31 we
-      // pass the OBJECT through executeRawJsonb with an explicit ::jsonb
-      // cast, so reads return real objects and `params->>'op'` returns
-      // 'tools/list'. Pre-existing string-shaped rows are normalized by
-      // migration v41 in src/core/migrate.ts.
-      const safeParamsSummary = summarizeMcpParams(name, params);
-      const logParamsObj: unknown = logFullParams
-        ? (params || null)
-        : (safeParamsSummary || null);
-      const broadcastParams = logFullParams ? (params || {}) : safeParamsSummary;
+      server.setRequestHandler(CallToolRequestSchema, async (request) => {
+        const { name, arguments: params } = request.params;
+        const op = mcpOperations.find((o) => o.name === name);
+        if (!op) {
+          // v0.28.10: persist unknown-op attempts. Operators investigating
+          // misbehaving agents need to see the full attempt log, not just
+          // valid-op success/error.
+          const latency = Date.now() - startTime;
+          try {
+            await executeRawJsonb(
+              engine,
+              `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
+              [authInfo.clientId, agentName, name, latency, "error", `unknown_operation: ${name}`],
+              [null]
+            );
+          } catch {
+            /* best effort */
+          }
+          broadcastEvent({
+            agent: agentName,
+            operation: name,
+            scopes: authInfo.scopes.join(","),
+            latency_ms: latency,
+            status: "error",
+            error: { code: "unknown_operation", message: `Unknown: ${name}` },
+            timestamp: new Date().toISOString(),
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({ error: "unknown_operation", message: `Unknown: ${name}` }),
+              },
+            ],
+            isError: true,
+          };
+        }
 
-      // v0.31 (D12 / eE1): refactor the inlined op.handler call to go through
-      // src/mcp/dispatch.ts so HTTP MCP shares the same dispatch path as
-      // stdio MCP. The dispatcher does param validation, OperationContext
-      // build, error envelope unification, and (new) `_meta.brain_hot_memory`
-      // injection via the metaHook. HTTP-specific concerns (mcp_request_log
-      // persistence + SSE broadcast) stay here; the dispatcher returns the
-      // ToolResult and we read isError + _meta to pick the right branch.
-      const tokenAllowList = (authInfo as AuthInfo & { takesHoldersAllowList?: string[] }).takesHoldersAllowList
-        ?? ['world'];
-      // v0.34.1 (#861, D13): AuthInfo.sourceId is now a real typed field
-      // populated from oauth_clients.source_id (migration v60 backfilled
-      // NULL → 'default'). Pre-fix this site cast through AuthInfo and
-      // fell back to GBRAIN_SOURCE env / 'default' — the silent-fallback
-      // path codex flagged in plan review. Post-v60, every OAuth client
-      // has source_id set; legacy bearer tokens default to 'default' in
-      // verifyAccessToken. The env-fallback is gone.
-      const tokenSourceId = authInfo.sourceId ?? 'default';
+        // Scope enforcement (v0.28: hasScope replaces exact-string-match so
+        // admin tokens satisfy any scope, write satisfies read, and the new
+        // sources_admin / users_admin scopes resolve through the same
+        // hierarchy. Plain string includes() at this site would have made
+        // sources_admin tokens look like they couldn't even read.)
+        const requiredScope = op.scope || "read";
+        if (!hasScope(authInfo.scopes, requiredScope)) {
+          // v0.28.10: persist scope-rejected attempts. Same operator-visibility
+          // motivation as the unknown-op path — and it makes the v0.26.3
+          // persistence regression test reliable across both rejection paths.
+          const latency = Date.now() - startTime;
+          try {
+            await executeRawJsonb(
+              engine,
+              `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
+              [
+                authInfo.clientId,
+                agentName,
+                name,
+                latency,
+                "error",
+                `insufficient_scope: requires '${requiredScope}'`,
+              ],
+              [null]
+            );
+          } catch {
+            /* best effort */
+          }
+          broadcastEvent({
+            agent: agentName,
+            operation: name,
+            scopes: authInfo.scopes.join(","),
+            latency_ms: latency,
+            status: "error",
+            error: { code: "insufficient_scope", message: `requires '${requiredScope}'` },
+            timestamp: new Date().toISOString(),
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  error: "insufficient_scope",
+                  message: `Operation ${name} requires '${requiredScope}' scope`,
+                  your_scopes: authInfo.scopes,
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
 
-      let toolResult: Awaited<ReturnType<typeof dispatchToolCall>>;
-      try {
-        toolResult = await dispatchToolCall(engine, name, params as Record<string, unknown> | undefined, {
-          remote: true,
-          takesHoldersAllowList: tokenAllowList,
-          sourceId: tokenSourceId,
-          metaHook: getBrainHotMemoryMeta,
-          // v0.31 follow-up fix: thread auth so the whoami op (and any
-          // future scope-aware handlers) can introspect the caller. The
-          // original D12/eE1 refactor moved dispatch into dispatchToolCall
-          // but forgot to pass authInfo; whoami fell through to the
-          // unknown_transport throw because ctx.auth was undefined.
-          auth: authInfo,
-          logger: {
-            info: (msg: string) => console.error(`[INFO] ${msg}`),
-            warn: (msg: string) => console.error(`[WARN] ${msg}`),
-            error: (msg: string) => console.error(`[ERROR] ${msg}`),
-          },
-        });
-      } catch (e) {
-        // dispatchToolCall absorbs OperationError + Error and returns
-        // isError:true; only an unexpected throw lands here. Treat as the
-        // F15 unified envelope. v0.31 wave (D1): mcp_request_log.params is
-        // JSONB — write the object via executeRawJsonb so reads return a
-        // real object, not a JSON-encoded string.
+        // F8: redact request payload by default (declared keys only via the
+        // op's `params` allow-list; values + attacker-controlled key names
+        // never written to mcp_request_log or the SSE feed). --log-full-params
+        // bypasses this for operators debugging on their own laptop, with the
+        // startup warning printed earlier.
+        //
+        // D1 (v0.31 wave): mcp_request_log.params is JSONB. Pre-v0.31 wrote
+        // a JSON-string into that JSONB column via the postgres.js template
+        // tag's loose typing — readable but semantically wrong (params->>'op'
+        // would return the encoded string, not the value). Post-v0.31 we
+        // pass the OBJECT through executeRawJsonb with an explicit ::jsonb
+        // cast, so reads return real objects and `params->>'op'` returns
+        // 'tools/list'. Pre-existing string-shaped rows are normalized by
+        // migration v41 in src/core/migrate.ts.
+        const safeParamsSummary = summarizeMcpParams(name, params);
+        const logParamsObj: unknown = logFullParams ? params || null : safeParamsSummary || null;
+        const broadcastParams = logFullParams ? params || {} : safeParamsSummary;
+
+        // v0.31 (D12 / eE1): refactor the inlined op.handler call to go through
+        // src/mcp/dispatch.ts so HTTP MCP shares the same dispatch path as
+        // stdio MCP. The dispatcher does param validation, OperationContext
+        // build, error envelope unification, and (new) `_meta.brain_hot_memory`
+        // injection via the metaHook. HTTP-specific concerns (mcp_request_log
+        // persistence + SSE broadcast) stay here; the dispatcher returns the
+        // ToolResult and we read isError + _meta to pick the right branch.
+        const tokenAllowList = (authInfo as AuthInfo & { takesHoldersAllowList?: string[] })
+          .takesHoldersAllowList ?? ["world"];
+        // v0.34.1 (#861, D13): AuthInfo.sourceId is now a real typed field
+        // populated from oauth_clients.source_id (migration v60 backfilled
+        // NULL → 'default'). Pre-fix this site cast through AuthInfo and
+        // fell back to GBRAIN_SOURCE env / 'default' — the silent-fallback
+        // path codex flagged in plan review. Post-v60, every OAuth client
+        // has source_id set; legacy bearer tokens default to 'default' in
+        // verifyAccessToken. The env-fallback is gone.
+        const tokenSourceId = authInfo.sourceId ?? "default";
+
+        let toolResult: Awaited<ReturnType<typeof dispatchToolCall>>;
+        try {
+          toolResult = await dispatchToolCall(
+            engine,
+            name,
+            params as Record<string, unknown> | undefined,
+            {
+              remote: true,
+              takesHoldersAllowList: tokenAllowList,
+              sourceId: tokenSourceId,
+              metaHook: getBrainHotMemoryMeta,
+              // v0.31 follow-up fix: thread auth so the whoami op (and any
+              // future scope-aware handlers) can introspect the caller. The
+              // original D12/eE1 refactor moved dispatch into dispatchToolCall
+              // but forgot to pass authInfo; whoami fell through to the
+              // unknown_transport throw because ctx.auth was undefined.
+              auth: authInfo,
+              logger: {
+                info: (msg: string) => console.error(`[INFO] ${msg}`),
+                warn: (msg: string) => console.error(`[WARN] ${msg}`),
+                error: (msg: string) => console.error(`[ERROR] ${msg}`),
+              },
+            }
+          );
+        } catch (e) {
+          // dispatchToolCall absorbs OperationError + Error and returns
+          // isError:true; only an unexpected throw lands here. Treat as the
+          // F15 unified envelope. v0.31 wave (D1): mcp_request_log.params is
+          // JSONB — write the object via executeRawJsonb so reads return a
+          // real object, not a JSON-encoded string.
+          const latency = Date.now() - startTime;
+          const errorPayload = serializeError(e);
+          try {
+            await executeRawJsonb(
+              engine,
+              `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
+              [authInfo.clientId, agentName, name, latency, "error", errorPayload.message],
+              [logParamsObj]
+            );
+          } catch {
+            /* best effort */
+          }
+          broadcastEvent({
+            agent: agentName,
+            operation: name,
+            params: broadcastParams,
+            scopes: authInfo.scopes.join(","),
+            latency_ms: latency,
+            status: "error",
+            error: errorPayload,
+            timestamp: new Date().toISOString(),
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify({ error: errorPayload }) }],
+            isError: true,
+          };
+        }
+
         const latency = Date.now() - startTime;
-        const errorPayload = serializeError(e);
-        try {
-          await executeRawJsonb(
-            engine,
-            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
+        if (toolResult.isError) {
+          // dispatchToolCall serializes the error into the content text;
+          // for the audit log we re-extract a message string for the
+          // mcp_request_log error_message column. Best-effort parse.
+          let errMsg = "unknown_error";
+          try {
+            const parsed = JSON.parse(toolResult.content[0]?.text ?? "{}");
+            errMsg = parsed.error?.message ?? parsed.message ?? errMsg;
+          } catch {
+            /* ignore */
+          }
+          try {
+            await executeRawJsonb(
+              engine,
+              `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
              VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-            [authInfo.clientId, agentName, name, latency, 'error', errorPayload.message],
-            [logParamsObj],
-          );
-        } catch { /* best effort */ }
-        broadcastEvent({
-          agent: agentName,
-          operation: name,
-          params: broadcastParams,
-          scopes: authInfo.scopes.join(','),
-          latency_ms: latency,
-          status: 'error',
-          error: errorPayload,
-          timestamp: new Date().toISOString(),
-        });
-        return { content: [{ type: 'text', text: JSON.stringify({ error: errorPayload }) }], isError: true };
-      }
+              [authInfo.clientId, agentName, name, latency, "error", errMsg],
+              [logParamsObj]
+            );
+          } catch {
+            /* best effort */
+          }
+          broadcastEvent({
+            agent: agentName,
+            operation: name,
+            params: broadcastParams,
+            scopes: authInfo.scopes.join(","),
+            latency_ms: latency,
+            status: "error",
+            error: { code: "op_error", message: errMsg },
+            timestamp: new Date().toISOString(),
+          });
+          return toolResult;
+        }
 
-      const latency = Date.now() - startTime;
-      if (toolResult.isError) {
-        // dispatchToolCall serializes the error into the content text;
-        // for the audit log we re-extract a message string for the
-        // mcp_request_log error_message column. Best-effort parse.
-        let errMsg = 'unknown_error';
-        try {
-          const parsed = JSON.parse(toolResult.content[0]?.text ?? '{}');
-          errMsg = parsed.error?.message ?? parsed.message ?? errMsg;
-        } catch { /* ignore */ }
         try {
           await executeRawJsonb(
             engine,
-            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, error_message, params)
-             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-            [authInfo.clientId, agentName, name, latency, 'error', errMsg],
-            [logParamsObj],
+            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
+           VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+            [authInfo.clientId, agentName, name, latency, "success"],
+            [logParamsObj]
           );
-        } catch { /* best effort */ }
+        } catch {
+          /* best effort */
+        }
         broadcastEvent({
           agent: agentName,
           operation: name,
           params: broadcastParams,
-          scopes: authInfo.scopes.join(','),
+          scopes: authInfo.scopes.join(","),
           latency_ms: latency,
-          status: 'error',
-          error: { code: 'op_error', message: errMsg },
+          status: "success",
           timestamp: new Date().toISOString(),
         });
         return toolResult;
-      }
-
-      try {
-        await executeRawJsonb(
-          engine,
-          `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
-           VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
-          [authInfo.clientId, agentName, name, latency, 'success'],
-          [logParamsObj],
-        );
-      } catch { /* best effort */ }
-      broadcastEvent({
-        agent: agentName,
-        operation: name,
-        params: broadcastParams,
-        scopes: authInfo.scopes.join(','),
-        latency_ms: latency,
-        status: 'success',
-        timestamp: new Date().toISOString(),
       });
-      return toolResult;
-    });
 
-    // F14: wrap transport setup + handleRequest in try/catch. Without this,
-    // an SDK-level throw (e.g., schema parse failure on a malformed request)
-    // propagates to express's default error handler, which renders an HTML
-    // error page — clients expecting JSON-RPC envelopes break. On
-    // !res.headersSent we emit a minimal JSON 500 so the client at least
-    // gets parseable JSON back.
-    try {
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined as any });
-      await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
-    } catch (e) {
-      console.error('MCP request handler error:', e instanceof Error ? e.message : e);
-      if (!res.headersSent) {
-        res.status(500).json({
-          error: 'internal_error',
-          message: e instanceof Error ? e.message : 'Unknown error',
+      // F14: wrap transport setup + handleRequest in try/catch. Without this,
+      // an SDK-level throw (e.g., schema parse failure on a malformed request)
+      // propagates to express's default error handler, which renders an HTML
+      // error page — clients expecting JSON-RPC envelopes break. On
+      // !res.headersSent we emit a minimal JSON 500 so the client at least
+      // gets parseable JSON back.
+      try {
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined as any,
         });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (e) {
+        console.error("MCP request handler error:", e instanceof Error ? e.message : e);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: "internal_error",
+            message: e instanceof Error ? e.message : "Unknown error",
+          });
+        }
       }
     }
-  });
+  );
 
   // ---------------------------------------------------------------------------
   // v0.38 ingestion substrate — POST /ingest (webhook source)
@@ -2191,9 +2488,12 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   const ingestRateLimiter = rateLimit({
     windowMs: 10_000, // 10 seconds
     limit: 100, // 100 events per IP per window
-    standardHeaders: 'draft-7',
+    standardHeaders: "draft-7",
     legacyHeaders: false,
-    message: { error: 'rate_limit_exceeded', message: 'too many /ingest events; backoff and retry' },
+    message: {
+      error: "rate_limit_exceeded",
+      message: "too many /ingest events; backoff and retry",
+    },
   });
 
   // Maximum payload bytes for POST /ingest. Configurable via env. Default 1 MB.
@@ -2208,10 +2508,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // routes binary content_types with HTTP 415; a future wave + skillpack
   // processors will accept image/audio/video/pdf via a separate flow.
   const INGEST_ALLOWED_CONTENT_TYPES: ReadonlySet<IngestionContentType> = new Set([
-    'text/markdown',
-    'text/plain',
-    'text/html',
-    'application/json',
+    "text/markdown",
+    "text/plain",
+    "text/html",
+    "application/json",
   ]);
 
   // Single MinionQueue instance shared across POST /ingest invocations
@@ -2220,10 +2520,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   const ingestQueue = new MinionQueue(engine);
 
   app.post(
-    '/ingest',
+    "/ingest",
     ingestRateLimiter,
-    requireBearerAuth({ verifier: oauthProvider, requiredScopes: ['write'] }),
-    express.raw({ type: '*/*', limit: ingestMaxBytes }),
+    requireBearerAuth({ verifier: oauthProvider, requiredScopes: ["write"] }),
+    express.raw({ type: "*/*", limit: ingestMaxBytes }),
     async (req: Request, res: Response) => {
       const startTime = Date.now();
       const authInfo = (req as Request & { auth?: AuthInfo }).auth as AuthInfo;
@@ -2236,179 +2536,199 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       // guard (codex F#16) prevents a second-response attempt if the throw
       // happens after the inner queue.add try/catch already responded.
       try {
+        // v0.39.3.0 BUG-2: explicit null/undefined guard BEFORE body coercion.
+        // When the request has no body at all (no Content-Length header, no
+        // body-parser fed us anything), `req.body` is `undefined`. The pre-fix
+        // code's `else` branch called `Buffer.from(JSON.stringify(undefined),
+        // 'utf8')` — and `JSON.stringify(undefined) === undefined` (the
+        // literal, not the string), which makes `Buffer.from(undefined, 'utf8')`
+        // throw TypeError. Express's default error handler then served an HTML
+        // 500 page. Guard fires first to keep the response shape JSON.
+        if (req.body == null) {
+          res.status(400).json({
+            error: "empty_body",
+            message: "POST /ingest requires a non-empty body",
+          });
+          return;
+        }
 
-      // v0.39.3.0 BUG-2: explicit null/undefined guard BEFORE body coercion.
-      // When the request has no body at all (no Content-Length header, no
-      // body-parser fed us anything), `req.body` is `undefined`. The pre-fix
-      // code's `else` branch called `Buffer.from(JSON.stringify(undefined),
-      // 'utf8')` — and `JSON.stringify(undefined) === undefined` (the
-      // literal, not the string), which makes `Buffer.from(undefined, 'utf8')`
-      // throw TypeError. Express's default error handler then served an HTML
-      // 500 page. Guard fires first to keep the response shape JSON.
-      if (req.body == null) {
-        res.status(400).json({
-          error: 'empty_body',
-          message: 'POST /ingest requires a non-empty body',
-        });
-        return;
-      }
+        // Express raw() returns a Buffer. Decode as UTF-8; reject non-UTF-8
+        // bytes loudly so callers know their payload was garbled.
+        let body: Buffer;
+        if (Buffer.isBuffer(req.body)) {
+          body = req.body;
+        } else if (typeof req.body === "string") {
+          body = Buffer.from(req.body, "utf8");
+        } else {
+          // express.json or urlencoded fired earlier in the chain and parsed
+          // for us. Re-serialize so we can hash and forward. The null/undefined
+          // case is already guarded above so JSON.stringify produces a real
+          // string here (objects round-trip, primitives become their JSON form).
+          body = Buffer.from(JSON.stringify(req.body), "utf8");
+        }
 
-      // Express raw() returns a Buffer. Decode as UTF-8; reject non-UTF-8
-      // bytes loudly so callers know their payload was garbled.
-      let body: Buffer;
-      if (Buffer.isBuffer(req.body)) {
-        body = req.body;
-      } else if (typeof req.body === 'string') {
-        body = Buffer.from(req.body, 'utf8');
-      } else {
-        // express.json or urlencoded fired earlier in the chain and parsed
-        // for us. Re-serialize so we can hash and forward. The null/undefined
-        // case is already guarded above so JSON.stringify produces a real
-        // string here (objects round-trip, primitives become their JSON form).
-        body = Buffer.from(JSON.stringify(req.body), 'utf8');
-      }
+        if (body.length === 0) {
+          res
+            .status(400)
+            .json({ error: "empty_body", message: "POST /ingest requires a non-empty body" });
+          return;
+        }
 
-      if (body.length === 0) {
-        res.status(400).json({ error: 'empty_body', message: 'POST /ingest requires a non-empty body' });
-        return;
-      }
+        // Detect content_type. Caller can override via the X-Gbrain-Content-Type
+        // header for the JSON case (since the request's Content-Type would say
+        // application/json but the user might intend the body to be markdown).
+        const declared = (
+          req.header("x-gbrain-content-type") ||
+          req.header("content-type") ||
+          ""
+        ).toLowerCase();
+        let contentType: IngestionContentType;
+        if (declared.startsWith("text/markdown")) {
+          contentType = "text/markdown";
+        } else if (declared.startsWith("text/html")) {
+          contentType = "text/html";
+        } else if (declared.startsWith("text/plain")) {
+          contentType = "text/plain";
+        } else if (declared.startsWith("application/json")) {
+          contentType = "application/json";
+        } else if (declared.startsWith("text/")) {
+          // Unknown text/* sub-types pass through as text/plain.
+          contentType = "text/plain";
+        } else {
+          // Binary or unknown — rejected in v1.
+          res.status(415).json({
+            error: "unsupported_content_type",
+            message:
+              `content_type '${declared}' not supported. Use one of: ${[...INGEST_ALLOWED_CONTENT_TYPES].join(", ")}. ` +
+              "Binary content (image/audio/video/pdf) is not yet supported via POST /ingest — install a content-type processor skillpack.",
+          });
+          return;
+        }
 
-      // Detect content_type. Caller can override via the X-Gbrain-Content-Type
-      // header for the JSON case (since the request's Content-Type would say
-      // application/json but the user might intend the body to be markdown).
-      const declared = (req.header('x-gbrain-content-type') || req.header('content-type') || '').toLowerCase();
-      let contentType: IngestionContentType;
-      if (declared.startsWith('text/markdown')) {
-        contentType = 'text/markdown';
-      } else if (declared.startsWith('text/html')) {
-        contentType = 'text/html';
-      } else if (declared.startsWith('text/plain')) {
-        contentType = 'text/plain';
-      } else if (declared.startsWith('application/json')) {
-        contentType = 'application/json';
-      } else if (declared.startsWith('text/')) {
-        // Unknown text/* sub-types pass through as text/plain.
-        contentType = 'text/plain';
-      } else {
-        // Binary or unknown — rejected in v1.
-        res.status(415).json({
-          error: 'unsupported_content_type',
-          message: `content_type '${declared}' not supported. Use one of: ${[...INGEST_ALLOWED_CONTENT_TYPES].join(', ')}. ` +
-            'Binary content (image/audio/video/pdf) is not yet supported via POST /ingest — install a content-type processor skillpack.',
-        });
-        return;
-      }
+        if (!INGEST_ALLOWED_CONTENT_TYPES.has(contentType)) {
+          res.status(415).json({
+            error: "unsupported_content_type",
+            message: `content_type '${contentType}' is in the taxonomy but not currently accepted by POST /ingest`,
+          });
+          return;
+        }
 
-      if (!INGEST_ALLOWED_CONTENT_TYPES.has(contentType)) {
-        res.status(415).json({
-          error: 'unsupported_content_type',
-          message: `content_type '${contentType}' is in the taxonomy but not currently accepted by POST /ingest`,
-        });
-        return;
-      }
+        const content = body.toString("utf8");
+        const contentHash = computeContentHash(content);
+        const sourceUri = (
+          req.header("x-gbrain-source-uri") || `mcp-webhook:${authInfo.clientId}:${Date.now()}`
+        ).slice(0, 1024);
+        const sourceId = (req.header("x-gbrain-source-id") || `webhook-${authInfo.clientId}`).slice(
+          0,
+          256
+        );
+        const callerSlug = req.header("x-gbrain-slug");
 
-      const content = body.toString('utf8');
-      const contentHash = computeContentHash(content);
-      const sourceUri = (req.header('x-gbrain-source-uri') || `mcp-webhook:${authInfo.clientId}:${Date.now()}`).slice(0, 1024);
-      const sourceId = (req.header('x-gbrain-source-id') || `webhook-${authInfo.clientId}`).slice(0, 256);
-      const callerSlug = req.header('x-gbrain-slug');
-
-      const event: IngestionEvent = {
-        source_id: sourceId,
-        source_kind: 'webhook',
-        source_uri: sourceUri,
-        received_at: new Date().toISOString(),
-        content_type: contentType,
-        content,
-        content_hash: contentHash,
-        untrusted_payload: true, // ALWAYS true for network input
-        metadata: {
-          ip: req.ip,
-          user_agent: req.header('user-agent') ?? '',
-          client_id: authInfo.clientId,
-          ...(callerSlug ? { slug: callerSlug } : {}),
-        },
-      };
-
-      const validationErr = validateIngestionEvent(event);
-      if (validationErr) {
-        res.status(400).json({
-          error: 'invalid_event',
-          message: validationErr.message,
-          field: validationErr.field,
-        });
-        return;
-      }
-
-      try {
-        const job = await ingestQueue.add(
-          'ingest_capture',
-          {
-            event,
+        const event: IngestionEvent = {
+          source_id: sourceId,
+          source_kind: "webhook",
+          source_uri: sourceUri,
+          received_at: new Date().toISOString(),
+          content_type: contentType,
+          content,
+          content_hash: contentHash,
+          untrusted_payload: true, // ALWAYS true for network input
+          metadata: {
+            ip: req.ip,
+            user_agent: req.header("user-agent") ?? "",
+            client_id: authInfo.clientId,
             ...(callerSlug ? { slug: callerSlug } : {}),
           },
-          {
-            // Idempotency: same content from the same client within the
-            // queue's lifetime is a single job. Different content gets
-            // different jobs. Daemon-side dedup catches the 24h window;
-            // the queue-level idempotency catches simultaneous retries.
-            idempotency_key: `ingest:webhook:${authInfo.clientId}:${contentHash}`,
-            // Cap waiting jobs from a single client so a runaway integration
-            // can't fill the queue.
-            maxWaiting: 50,
-          },
-        );
+        };
 
-        const latency = Date.now() - startTime;
+        const validationErr = validateIngestionEvent(event);
+        if (validationErr) {
+          res.status(400).json({
+            error: "invalid_event",
+            message: validationErr.message,
+            field: validationErr.field,
+          });
+          return;
+        }
+
         try {
-          await executeRawJsonb(
-            engine,
-            `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
-             VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
-            [authInfo.clientId, agentName, 'webhook_ingest', latency, 'success'],
-            [{ content_type: contentType, content_hash: contentHash, bytes: body.length, job_id: job.id }],
+          const job = await ingestQueue.add(
+            "ingest_capture",
+            {
+              event,
+              ...(callerSlug ? { slug: callerSlug } : {}),
+            },
+            {
+              // Idempotency: same content from the same client within the
+              // queue's lifetime is a single job. Different content gets
+              // different jobs. Daemon-side dedup catches the 24h window;
+              // the queue-level idempotency catches simultaneous retries.
+              idempotency_key: `ingest:webhook:${authInfo.clientId}:${contentHash}`,
+              // Cap waiting jobs from a single client so a runaway integration
+              // can't fill the queue.
+              maxWaiting: 50,
+            }
           );
-        } catch { /* best effort */ }
-        broadcastEvent({
-          agent: agentName,
-          operation: 'webhook_ingest',
-          scopes: authInfo.scopes.join(','),
-          latency_ms: latency,
-          status: 'success',
-          timestamp: new Date().toISOString(),
-        });
 
-        res.status(202).json({
-          job_id: job.id,
-          content_hash: contentHash,
-          source_id: sourceId,
-          message: 'Accepted. Event queued for ingestion.',
-        });
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('POST /ingest queue submission error:', msg);
-        res.status(500).json({
-          error: 'queue_submission_failed',
-          message: msg,
-        });
-      }
+          const latency = Date.now() - startTime;
+          try {
+            await executeRawJsonb(
+              engine,
+              `INSERT INTO mcp_request_log (token_name, agent_name, operation, latency_ms, status, params)
+             VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+              [authInfo.clientId, agentName, "webhook_ingest", latency, "success"],
+              [
+                {
+                  content_type: contentType,
+                  content_hash: contentHash,
+                  bytes: body.length,
+                  job_id: job.id,
+                },
+              ]
+            );
+          } catch {
+            /* best effort */
+          }
+          broadcastEvent({
+            agent: agentName,
+            operation: "webhook_ingest",
+            scopes: authInfo.scopes.join(","),
+            latency_ms: latency,
+            status: "success",
+            timestamp: new Date().toISOString(),
+          });
 
-      // v0.39.3.0 BUG-2: outer try/catch close — anything that throws BEFORE
-      // the inner queue.add try/catch lands here. The headersSent guard
-      // (codex F#16) skips the second-response attempt if the inner block
-      // already wrote a response and then threw on a downstream line (e.g.
-      // a logging side-effect after `res.status(202).json(...)`).
+          res.status(202).json({
+            job_id: job.id,
+            content_hash: contentHash,
+            source_id: sourceId,
+            message: "Accepted. Event queued for ingestion.",
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("POST /ingest queue submission error:", msg);
+          res.status(500).json({
+            error: "queue_submission_failed",
+            message: msg,
+          });
+        }
+
+        // v0.39.3.0 BUG-2: outer try/catch close — anything that throws BEFORE
+        // the inner queue.add try/catch lands here. The headersSent guard
+        // (codex F#16) skips the second-response attempt if the inner block
+        // already wrote a response and then threw on a downstream line (e.g.
+        // a logging side-effect after `res.status(202).json(...)`).
       } catch (outerErr) {
         const msg = outerErr instanceof Error ? outerErr.message : String(outerErr);
-        console.error('POST /ingest unexpected handler error:', msg);
+        console.error("POST /ingest unexpected handler error:", msg);
         if (!res.headersSent) {
           res.status(500).json({
-            error: 'internal_error',
+            error: "internal_error",
             message: msg,
           });
         }
       }
-    },
+    }
   );
 
   // ---------------------------------------------------------------------------
@@ -2430,51 +2750,57 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   const githubWebhookLimiter = rateLimit({
     windowMs: 60_000,
     limit: 60,
-    standardHeaders: 'draft-7',
+    standardHeaders: "draft-7",
     legacyHeaders: false,
-    message: { error: 'rate_limit_exceeded', message: 'too many GitHub webhook requests' },
+    message: { error: "rate_limit_exceeded", message: "too many GitHub webhook requests" },
   });
 
   app.post(
-    '/webhooks/github',
+    "/webhooks/github",
     githubWebhookLimiter,
-    express.raw({ type: '*/*', limit: '1mb' }),
+    express.raw({ type: "*/*", limit: "1mb" }),
     async (req: Request, res: Response) => {
       // D3 pre-DB short-circuit: missing signature → 401 without any
       // source lookup. Bot probe traffic ends here.
-      const sigHeader = req.header('X-Hub-Signature-256');
+      const sigHeader = req.header("X-Hub-Signature-256");
       if (!sigHeader) {
-        res.status(401).json({ error: 'missing_signature', message: 'X-Hub-Signature-256 header is required' });
+        res
+          .status(401)
+          .json({ error: "missing_signature", message: "X-Hub-Signature-256 header is required" });
         return;
       }
 
       // D5: filter by event header. GitHub fires webhooks for every event
       // type. Anything other than 'push' is acknowledged with 202 + reason
       // so GitHub doesn't retry — but no source lookup or job submission.
-      const event = req.header('X-GitHub-Event') ?? '';
-      if (event !== 'push') {
-        res.status(202).json({ status: 'ignored', reason: `event=${event || '(missing)'}` });
+      const event = req.header("X-GitHub-Event") ?? "";
+      if (event !== "push") {
+        res.status(202).json({ status: "ignored", reason: `event=${event || "(missing)"}` });
         return;
       }
 
-      const payload = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body), 'utf8');
+      const payload = Buffer.isBuffer(req.body)
+        ? req.body
+        : Buffer.from(JSON.stringify(req.body), "utf8");
       if (payload.length === 0) {
-        res.status(400).json({ error: 'empty_body' });
+        res.status(400).json({ error: "empty_body" });
         return;
       }
 
       let parsed: { repository?: { full_name?: string }; ref?: string };
       try {
-        parsed = JSON.parse(payload.toString('utf8'));
+        parsed = JSON.parse(payload.toString("utf8"));
       } catch {
-        res.status(400).json({ error: 'malformed_json' });
+        res.status(400).json({ error: "malformed_json" });
         return;
       }
 
       const fullName = parsed.repository?.full_name;
       const ref = parsed.ref;
       if (!fullName || !ref) {
-        res.status(400).json({ error: 'missing_fields', message: 'repository.full_name and ref are required' });
+        res
+          .status(400)
+          .json({ error: "missing_fields", message: "repository.full_name and ref are required" });
         return;
       }
 
@@ -2482,32 +2808,34 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       // config->>'github_repo'. fast even on large brains.
       let source: { id: string; config: Record<string, unknown> | string } | null = null;
       try {
-        const rows = await engine.executeRaw<{ id: string; config: Record<string, unknown> | string }>(
-          `SELECT id, config FROM sources WHERE config->>'github_repo' = $1 LIMIT 1`,
-          [fullName],
-        );
+        const rows = await engine.executeRaw<{
+          id: string;
+          config: Record<string, unknown> | string;
+        }>(`SELECT id, config FROM sources WHERE config->>'github_repo' = $1 LIMIT 1`, [fullName]);
         source = rows[0] ?? null;
       } catch (err) {
-        console.error('webhook: source lookup error:', err);
-        res.status(500).json({ error: 'lookup_failed' });
+        console.error("webhook: source lookup error:", err);
+        res.status(500).json({ error: "lookup_failed" });
         return;
       }
       if (!source) {
-        res.status(404).json({ error: 'unknown_repo', repo: fullName });
+        res.status(404).json({ error: "unknown_repo", repo: fullName });
         return;
       }
 
-      const cfg = (typeof source.config === 'string' ? JSON.parse(source.config) : source.config) as {
+      const cfg = (
+        typeof source.config === "string" ? JSON.parse(source.config) : source.config
+      ) as {
         webhook_secret?: string;
         tracked_branch?: string;
       };
 
       // D5: ref must match the configured tracked branch (default 'main').
-      const trackedBranch = cfg.tracked_branch ?? 'main';
+      const trackedBranch = cfg.tracked_branch ?? "main";
       const expectedRef = `refs/heads/${trackedBranch}`;
       if (ref !== expectedRef) {
         res.status(202).json({
-          status: 'ignored',
+          status: "ignored",
           reason: `ref_mismatch`,
           received_ref: ref,
           tracked_branch: trackedBranch,
@@ -2516,8 +2844,13 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       }
 
       const secret = cfg.webhook_secret;
-      if (!secret || typeof secret !== 'string') {
-        res.status(401).json({ error: 'webhook_not_configured', message: 'Run: gbrain sources webhook set ' + source.id });
+      if (!secret || typeof secret !== "string") {
+        res
+          .status(401)
+          .json({
+            error: "webhook_not_configured",
+            message: "Run: gbrain sources webhook set " + source.id,
+          });
         return;
       }
 
@@ -2526,15 +2859,15 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       // truncates at the first non-hex char (the 's'), leaving both
       // operands as 0-byte buffers and making every signature "match".
       // Pinned by test/sources-webhook.test.ts tamper assertions.
-      const { createHmac } = await import('node:crypto');
-      const computedHex = createHmac('sha256', secret).update(payload).digest('hex');
-      const prefix = 'sha256=';
+      const { createHmac } = await import("node:crypto");
+      const computedHex = createHmac("sha256", secret).update(payload).digest("hex");
+      const prefix = "sha256=";
       if (!sigHeader.startsWith(prefix)) {
-        res.status(401).json({ error: 'signature_mismatch', message: 'expected sha256= prefix' });
+        res.status(401).json({ error: "signature_mismatch", message: "expected sha256= prefix" });
         return;
       }
       if (!safeHexEqual(sigHeader.slice(prefix.length), computedHex)) {
-        res.status(401).json({ error: 'signature_mismatch' });
+        res.status(401).json({ error: "signature_mismatch" });
         return;
       }
 
@@ -2542,25 +2875,25 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       try {
         const queue = new MinionQueue(engine);
         const job = await queue.add(
-          'sync',
+          "sync",
           {
             sourceId: source.id,
             auto_embed_backfill: true,
-            embed_reason: 'webhook',
+            embed_reason: "webhook",
           },
           {
             priority: -10,
             idempotency_key: `webhook:sync:${source.id}:${Math.floor(Date.now() / 30_000)}`,
             maxWaiting: 1,
-          },
+          }
         );
         res.status(202).json({ job_id: job.id, source_id: source.id });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error('webhook: queue submission error:', msg);
-        res.status(500).json({ error: 'queue_submission_failed', message: msg });
+        console.error("webhook: queue submission error:", msg);
+        res.status(500).json({ error: "queue_submission_failed", message: msg });
       }
-    },
+    }
   );
 
   // ---------------------------------------------------------------------------
@@ -2571,48 +2904,57 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // The endpoint acks immediately (Google needs < 10s response) and
   // triggers sync asynchronously.
   // ---------------------------------------------------------------------------
-  app.post('/webhooks/google-drive', express.raw({ type: '*/*', limit: '64kb' }), async (req: Request, res: Response) => {
-    const channelId = req.header('X-Goog-Channel-ID');
-    const resourceState = req.header('X-Goog-Resource-State') ?? 'change';
-    const resourceId = req.header('X-Goog-Resource-ID');
+  app.post(
+    "/webhooks/google-drive",
+    express.raw({ type: "*/*", limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      const channelId = req.header("X-Goog-Channel-ID");
+      const resourceState = req.header("X-Goog-Resource-State") ?? "change";
+      const resourceId = req.header("X-Goog-Resource-ID");
 
-    if (!channelId) {
-      res.status(400).json({ error: 'missing_channel_id', message: 'X-Goog-Channel-ID header is required' });
-      return;
-    }
-
-    // Always acknowledge quickly. Google Drive expects a 200 within ~10s.
-    res.status(200).json({ status: 'received', channel: channelId, state: resourceState });
-
-    // The initial "sync" notification is just a handshake; no action needed.
-    if (resourceState === 'sync') return;
-
-    // Fire-and-forget sync trigger.
-    (async () => {
-      try {
-        const { ConnectorManager } = await import('../core/ingestion/connectors/manager.ts');
-        const { GoogleDriveConnector } = await import('../core/ingestion/connectors/google-drive.ts');
-        const { readFileSync, existsSync } = await import('node:fs');
-        const { join } = await import('node:path');
-        const { homedir } = await import('node:os');
-
-        // Load connector state directly to verify channel ID match.
-        const statePath = join(homedir(), '.gbrain', 'connectors', 'google-drive.json');
-        if (!existsSync(statePath)) return;
-
-        const state = JSON.parse(readFileSync(statePath, 'utf-8')) as Record<string, unknown>;
-        if (state.webhook_channel_id !== channelId) return;
-
-        // Instantiate connector with persisted config and trigger one-shot sync.
-        const cfg = (state.config ?? {}) as Record<string, unknown>;
-        const connector = new GoogleDriveConnector(cfg);
-        connector['_state'] = state as any;
-        await connector.sync();
-      } catch (err) {
-        console.error(`[webhook] Google Drive sync trigger failed: ${err instanceof Error ? err.message : String(err)}`);
+      if (!channelId) {
+        res
+          .status(400)
+          .json({ error: "missing_channel_id", message: "X-Goog-Channel-ID header is required" });
+        return;
       }
-    })().catch(() => {});
-  });
+
+      // Always acknowledge quickly. Google Drive expects a 200 within ~10s.
+      res.status(200).json({ status: "received", channel: channelId, state: resourceState });
+
+      // The initial "sync" notification is just a handshake; no action needed.
+      if (resourceState === "sync") return;
+
+      // Fire-and-forget sync trigger.
+      (async () => {
+        try {
+          const { ConnectorManager } = await import("../core/ingestion/connectors/manager.ts");
+          const { GoogleDriveConnector } =
+            await import("../core/ingestion/connectors/google-drive.ts");
+          const { readFileSync, existsSync } = await import("node:fs");
+          const { join } = await import("node:path");
+          const { homedir } = await import("node:os");
+
+          // Load connector state directly to verify channel ID match.
+          const statePath = join(homedir(), ".gbrain", "connectors", "google-drive.json");
+          if (!existsSync(statePath)) return;
+
+          const state = JSON.parse(readFileSync(statePath, "utf-8")) as Record<string, unknown>;
+          if (state.webhook_channel_id !== channelId) return;
+
+          // Instantiate connector with persisted config and trigger one-shot sync.
+          const cfg = (state.config ?? {}) as Record<string, unknown>;
+          const connector = new GoogleDriveConnector(cfg);
+          connector["_state"] = state as any;
+          await connector.sync();
+        } catch (err) {
+          console.error(
+            `[webhook] Google Drive sync trigger failed: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+      })().catch(() => {});
+    }
+  );
 
   // ---------------------------------------------------------------------------
   // v0.42+ Connector ingestion daemon — auto-starts enabled connectors
@@ -2620,17 +2962,17 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   // ---------------------------------------------------------------------------
   let connectorDaemon: Awaited<ReturnType<typeof startConnectorIngestion>> | undefined;
   try {
-    const dispatch: import('../core/ingestion/daemon.ts').IngestionDispatcher = async (event) => {
+    const dispatch: import("../core/ingestion/daemon.ts").IngestionDispatcher = async (event) => {
       const queue = new MinionQueue(engine);
       const job = await queue.add(
-        'ingest_capture',
+        "ingest_capture",
         { event },
         {
           idempotency_key: `ingest:${event.source_kind}:${event.content_hash}`,
           maxWaiting: 100,
-        },
+        }
       );
-      return { kind: 'queued', jobId: job.id };
+      return { kind: "queued", jobId: job.id };
     };
     const logger = {
       info: (msg: string) => console.error(`[connector] ${msg}`),
@@ -2639,7 +2981,9 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
     };
     connectorDaemon = await startConnectorIngestion(engine, logger as any, dispatch);
   } catch (err) {
-    console.error(`[connector] Daemon startup failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `[connector] Daemon startup failed (non-blocking): ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -2654,37 +2998,43 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
 ╠══════════════════════════════════════════════════════╣
 ║  Port:      ${String(port).padEnd(40)}║
 ║  Bind:      ${bind.padEnd(40)}║
-║  Engine:    ${(config.engine || 'pglite').padEnd(40)}║
+║  Engine:    ${(config.engine || "pglite").padEnd(40)}║
 ║  Issuer:    ${issuerUrl.origin.padEnd(40)}║
 ║  Clients:   ${String((clientCount[0] as any).count).padEnd(40)}║
-║  DCR:       ${(enableDcr ? 'enabled' : 'disabled').padEnd(40)}║
-║  Connectors:${String(connectorDaemon ? 'active' : 'none').padEnd(40)}║
+║  DCR:       ${(enableDcr ? "enabled" : "disabled").padEnd(40)}║
+║  Connectors:${String(connectorDaemon ? "active" : "none").padEnd(40)}║
 ║  Skills:    ${skillStatus.bannerValue.padEnd(40)}║
-║  Token TTL: ${(tokenTtl + 's').padEnd(40)}║
+║  Token TTL: ${(tokenTtl + "s").padEnd(40)}║
 ╠══════════════════════════════════════════════════════╣
-║  Admin:     http://localhost:${port}/admin${' '.repeat(Math.max(0, 19 - String(port).length))}║
-║  MCP:       http://localhost:${port}/mcp${' '.repeat(Math.max(0, 21 - String(port).length))}║
-║  Health:    http://localhost:${port}/health${' '.repeat(Math.max(0, 18 - String(port).length))}║
+║  Admin:     http://localhost:${port}/admin${" ".repeat(Math.max(0, 19 - String(port).length))}║
+║  MCP:       http://localhost:${port}/mcp${" ".repeat(Math.max(0, 21 - String(port).length))}║
+║  Health:    http://localhost:${port}/health${" ".repeat(Math.max(0, 18 - String(port).length))}║
 ╠══════════════════════════════════════════════════════╣
-${suppressBootstrapPrint
-  ? '║  Admin Token: suppressed (--suppress-bootstrap-token) ║\n╚══════════════════════════════════════════════════════╝'
-  : bootstrapFromEnv
-    ? '║  Admin Token: from $GBRAIN_ADMIN_BOOTSTRAP_TOKEN     ║\n╚══════════════════════════════════════════════════════╝'
-    : `║  Admin Token (paste into /admin login):              ║\n║  ${bootstrapToken.substring(0, 50)}  ║\n║  ${bootstrapToken.substring(50).padEnd(50)}  ║\n╚══════════════════════════════════════════════════════╝`}
+${
+  suppressBootstrapPrint
+    ? "║  Admin Token: suppressed (--suppress-bootstrap-token) ║\n╚══════════════════════════════════════════════════════╝"
+    : bootstrapFromEnv
+      ? "║  Admin Token: from $GBRAIN_ADMIN_BOOTSTRAP_TOKEN     ║\n╚══════════════════════════════════════════════════════╝"
+      : `║  Admin Token (paste into /admin login):              ║\n║  ${bootstrapToken.substring(0, 50)}  ║\n║  ${bootstrapToken.substring(50).padEnd(50)}  ║\n╚══════════════════════════════════════════════════════╝`
+}
 `);
   });
 
   // Graceful shutdown: stop connector daemon before closing server.
   const gracefulShutdown = async () => {
-    console.error('[serve] Shutting down connector daemon...');
+    console.error("[serve] Shutting down connector daemon...");
     if (connectorDaemon) {
-      try { await connectorDaemon.stop(); } catch { /* non-fatal */ }
+      try {
+        await connectorDaemon.stop();
+      } catch {
+        /* non-fatal */
+      }
     }
     server.close(() => {
-      console.error('[serve] Server closed.');
+      console.error("[serve] Server closed.");
       process.exit(0);
     });
   };
-  process.on('SIGTERM', gracefulShutdown);
-  process.on('SIGINT', gracefulShutdown);
+  process.on("SIGTERM", gracefulShutdown);
+  process.on("SIGINT", gracefulShutdown);
 }

@@ -146,7 +146,7 @@ export function engineHeadersForBrain(brainId: string): Record<string, string> {
  * Used by the WhatsApp path (legal-chat/actions.ts) after the caller's
  * identity has been verified via resolveSenderIdentity(). The matter scope
  * is encoded in a signed identity token (HMAC-SHA256) and sent as
- * x-sigmabrain-identity-token — the engine verifies the signature before
+ * x-subsumio-identity-token — the engine verifies the signature before
  * trusting the scope claim.
  *
  * This is the ONLY function that should be called for WhatsApp callers.
@@ -159,7 +159,7 @@ export function engineHeadersForBrainWithMatterScope(
 ): Record<string, string> {
   const headers = engineHeadersForBrain(brainId);
   const token = createSignedIdentityToken(brainId, matterScope);
-  if (token) headers["x-sigmabrain-identity-token"] = token;
+  if (token) headers["x-subsumio-identity-token"] = token;
   return headers;
 }
 

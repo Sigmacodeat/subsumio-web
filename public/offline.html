@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,30 +12,50 @@
       text-align: center; padding: 24px;
     }
     .logo {
-      width: 64px; height: 64px; border-radius: 16px; background: #7c3aed;
+      width: 64px; height: 64px; border-radius: 30%; margin: 0 auto 24px;
+      background: linear-gradient(150deg, #20d3c2 0%, #2f6bff 52%, #8b5cf6 100%);
       display: flex; align-items: center; justify-content: center;
-      font-size: 36px; font-weight: 800; color: #fff; margin: 0 auto 24px;
+      box-shadow: 0 4px 24px rgba(47, 107, 255, 0.35), 0 0 0 1px rgba(255,255,255,0.12);
     }
-    h1 { font-size: 24px; margin: 0 0 8px; }
+    .logo svg { width: 36px; height: 36px; color: #fff; }
+    .wordmark {
+      font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px;
+      color: #e8e8f0;
+    }
+    .wordmark .dot { color: #20d3c2; }
+    .subtitle {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.22em; color: #8888aa;
+      text-transform: uppercase; margin: 0 0 28px;
+    }
+    h1 { font-size: 22px; margin: 0 0 8px; }
     p { color: #8888aa; font-size: 15px; line-height: 1.6; max-width: 380px; margin: 0 auto 24px; }
     button {
-      background: #7c3aed; color: #fff; border: 0; border-radius: 10px;
+      background: linear-gradient(135deg, #2f6bff, #4f80ff); color: #fff; border: 0; border-radius: 10px;
       padding: 12px 28px; font-size: 15px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 2px 12px rgba(47, 107, 255, 0.3);
     }
-    button:hover { background: #8b5cf6; }
+    button:hover { filter: brightness(1.1); }
   </style>
 </head>
 <body>
   <main>
-    <div class="logo" aria-hidden="true">Σ</div>
-    <h1>You're offline</h1>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 16l3-8 3 8c-2-1.5-4-1.5-6 0z"/>
+        <path d="M2 16l3-8 3 8c-2-1.5-4-1.5-6 0z"/>
+        <path d="M7 21h10"/>
+        <path d="M12 3v18"/>
+        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+      </svg>
+    </div>
+    <div class="wordmark">Subsum<span class="dot">•</span>io</div>
+    <div class="subtitle">Legal Intelligence</div>
+    <h1>Du bist offline</h1>
     <p>
-      Subsumio needs a connection to reach your brain.
-      Your data is safe — reconnect and pick up where you left off.<br /><br />
-      <em>Du bist offline. Subsumio braucht eine Verbindung zu deinem Brain.
-      Deine Daten sind sicher — verbinde dich neu und mach genau dort weiter.</em>
+      Subsumio braucht eine Verbindung zu deinem Brain.
+      Deine Daten sind sicher — verbinde dich neu und mach genau dort weiter.
     </p>
-    <button onclick="location.reload()">Retry / Erneut versuchen</button>
+    <button onclick="location.reload()">Erneut versuchen</button>
   </main>
 </body>
 </html>

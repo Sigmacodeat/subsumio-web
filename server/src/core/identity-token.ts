@@ -2,7 +2,7 @@
  * Signed identity token for engine-side matter-scope enforcement.
  *
  * PROBLEM: The engine's web-api has a single shared API key. Self-asserted
- * headers (x-sigmabrain-matter-scope) are trivially spoofed by anyone with
+ * headers (x-subsumio-matter-scope) are trivially spoofed by anyone with
  * that key. MCP calls bypass the web-api entirely.
  *
  * SOLUTION: The web-app creates a short-lived HMAC-signed token after
@@ -29,7 +29,7 @@ export interface IdentityTokenPayload {
   orgId?: string;
   /** User ID for audit logging. */
   userId?: string;
-  /** Brain/source ID — redundant with x-sigmabrain-source but included for integrity. */
+  /** Brain/source ID — redundant with x-subsumio-source but included for integrity. */
   sourceId: string;
   /** Matter scope: "all" or array of allowed case-slug prefixes. */
   matterScope: MatterScope;
