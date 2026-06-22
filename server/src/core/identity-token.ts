@@ -125,8 +125,8 @@ export function verifyIdentityToken(token: string, secret: string): IdentityToke
 
 /**
  * Filter search/think results by verified matter scope.
- * Pages whose slug starts with an allowed prefix pass through.
- * "all" or empty array = no filtering (trusted local caller).
+ * Pages whose slug is exactly in scope or below an allowed matter path pass
+ * through. Empty arrays deny all.
  */
 export function filterResultsByMatterScope<T extends { slug?: string }>(
   results: T[],
@@ -137,6 +137,6 @@ export function filterResultsByMatterScope<T extends { slug?: string }>(
   if (scope.length === 0) return [];
   return results.filter((r) => {
     const slug = r.slug ?? "";
-    return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+    return scope.some((prefix) => slug === prefix || slug.startsWith(`${prefix}/`));
   });
 }

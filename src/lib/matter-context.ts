@@ -150,7 +150,7 @@ export async function buildMatterContext(
   const permissions = buildPermissionSummary(fm.permissions);
 
   // 10. Check coverage
-  const coverage = await checkCoverage(engineUrl, engineHeaders, fm);
+  const coverage = await checkCoverage(engineUrl, engineHeaders, fm, documents);
 
   // 11. Detect gaps
   const gaps = detectGaps(
@@ -193,7 +193,8 @@ export async function buildMatterContext(
 export async function checkCoverage(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  caseFrontmatter?: CaseFrontmatter
+  caseFrontmatter?: CaseFrontmatter,
+  matterDocuments?: MatterDocumentSummary[]
 ): Promise<MatterCoverageStatus> {
   const warnings: string[] = [];
   const sources: SourceCoverageEntry[] = [];
@@ -234,16 +235,21 @@ export async function checkCoverage(
   const communicationSources = checkCommunicationSources(caseFrontmatter);
   sources.push(...communicationSources);
 
-  // 4. Upload source (always connected if engine is reachable)
+  // 4. Upload source. Do not mark this as fully fresh/OCR-complete unless
+  // the matter's actual document statuses support that claim.
+  const uploadDocuments =
+    matterDocuments ?? buildDocumentSummaries(caseFrontmatter?.documents ?? []);
+  const uploadHealth = summarizeUploadHealth(uploadDocuments);
   sources.push({
     source_id: "upload",
     source_label: "Datei-Upload",
     source_type: "upload",
     connected: true,
     last_sync_at: null,
-    document_count: caseFrontmatter?.documents?.length ?? 0,
-    index_fresh: true,
-    ocr_complete: true,
+    document_count: uploadDocuments.length,
+    index_fresh: uploadHealth.indexFresh,
+    ocr_complete: uploadHealth.ocrComplete,
+    error: uploadHealth.error,
   });
 
   // Calculate aggregates
@@ -924,6 +930,40 @@ export function buildDocumentSummaries(documents: DocumentEntry[]): MatterDocume
     ocr_status: inferOcrStatus(d),
     extraction_status: inferInitialExtractionStatus(d.name, d.kind ?? ""),
   }));
+}
+
+export function summarizeUploadHealth(documents: MatterDocumentSummary[]): {
+  indexFresh: boolean;
+  ocrComplete: boolean;
+  error?: string;
+} {
+  if (documents.length === 0) {
+    return { indexFresh: true, ocrComplete: true };
+  }
+
+  const pendingIndex = documents.filter((doc) =>
+    ["uploaded", "processing", "ocr_needed", "ocr_processing"].includes(doc.extraction_status ?? "")
+  );
+  const failed = documents.filter((doc) =>
+    ["error", "ocr_failed"].includes(doc.extraction_status ?? "")
+  );
+  const ocrIncomplete = documents.filter((doc) => {
+    if (
+      doc.extraction_status &&
+      ["ready", "text_layer", "ocr_complete"].includes(doc.extraction_status)
+    ) {
+      return false;
+    }
+    return doc.ocr_status === "unknown" || doc.ocr_status === "ocr_needed";
+  });
+
+  return {
+    indexFresh: pendingIndex.length === 0 && failed.length === 0,
+    ocrComplete: ocrIncomplete.length === 0,
+    ...(failed.length > 0
+      ? { error: `${failed.length} Upload-Dokument(e) mit fehlgeschlagener Extraktion/OCR` }
+      : {}),
+  };
 }
 
 export async function buildDocumentRequestSummaries(

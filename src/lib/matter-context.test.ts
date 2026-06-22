@@ -16,6 +16,7 @@ import {
   buildCommunications,
   buildPermissionSummary,
   buildDocumentRequestSummaries,
+  summarizeUploadHealth,
 } from "@/lib/matter-context";
 import type {
   MatterCoverageStatus,
@@ -294,6 +295,55 @@ describe("buildDocumentSummaries", () => {
     expect(result[0].slug).toBe("docs/contract");
     expect(result[0].name).toBe("contract.pdf");
     expect(result[0].size).toBe(1024);
+  });
+});
+
+// ── summarizeUploadHealth ────────────────────────────────────────────
+
+describe("summarizeUploadHealth", () => {
+  it("marks ready/text-layer documents as fresh and OCR-complete", () => {
+    const result = summarizeUploadHealth([
+      {
+        slug: "d1",
+        name: "Vertrag.docx",
+        uploaded_at: "2024-06-01",
+        extraction_status: "text_layer",
+      },
+      {
+        slug: "d2",
+        name: "Scan.pdf",
+        uploaded_at: "2024-06-01",
+        extraction_status: "ready",
+      },
+    ]);
+    expect(result).toEqual({ indexFresh: true, ocrComplete: true });
+  });
+
+  it("does not claim freshness or OCR completeness for pending scan documents", () => {
+    const result = summarizeUploadHealth([
+      {
+        slug: "d1",
+        name: "Scan.pdf",
+        uploaded_at: "2024-06-01",
+        extraction_status: "ocr_needed",
+        ocr_status: "unknown",
+      },
+    ]);
+    expect(result.indexFresh).toBe(false);
+    expect(result.ocrComplete).toBe(false);
+  });
+
+  it("surfaces failed extraction as upload coverage error", () => {
+    const result = summarizeUploadHealth([
+      {
+        slug: "d1",
+        name: "Kaputter Scan.pdf",
+        uploaded_at: "2024-06-01",
+        extraction_status: "ocr_failed",
+      },
+    ]);
+    expect(result.indexFresh).toBe(false);
+    expect(result.error).toContain("fehlgeschlagener");
   });
 });
 

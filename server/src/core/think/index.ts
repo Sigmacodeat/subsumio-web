@@ -344,16 +344,16 @@ export async function runThink(engine: BrainEngine, opts: RunThinkOpts): Promise
   // P0-SECR-002: Filter gathered pages by verified matter scope.
   // This prevents the LLM from seeing pages outside the caller's allowed matter.
   const scope = opts.matterScope;
-  if (scope && scope !== "all" && scope.length > 0) {
+  if (scope && scope !== "all") {
+    const inScope = (slug: string) =>
+      scope.some((prefix) => slug === prefix || slug.startsWith(`${prefix}/`));
     gather = {
       ...gather,
       pages: gather.pages.filter((p) => {
         const slug = (p as unknown as { slug?: string }).slug ?? "";
-        return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+        return inScope(slug);
       }),
-      graphSlugs: gather.graphSlugs.filter((slug) =>
-        scope.some((prefix) => slug.startsWith(prefix) || slug === prefix)
-      ),
+      graphSlugs: gather.graphSlugs.filter((slug) => inScope(slug)),
     };
   }
 

@@ -25,20 +25,20 @@
  * client registration (see SECURITY.md).
  */
 
-import { createHash } from 'crypto';
-import type { BrainEngine } from '../core/engine.ts';
-import { buildToolDefs } from './tool-defs.ts';
-import { operations } from '../core/operations.ts';
-import type { AuthInfo } from '../core/operations.ts';
-import { VERSION } from '../version.ts';
-import { dispatchToolCall } from './dispatch.ts';
-import { buildDefaultLimiters, type RateLimiter } from './rate-limit.ts';
-import { sqlQueryForEngine } from '../core/sql-query.ts';
+import { createHash } from "crypto";
+import type { BrainEngine } from "../core/engine.ts";
+import { buildToolDefs } from "./tool-defs.ts";
+import { operations } from "../core/operations.ts";
+import type { AuthInfo } from "../core/operations.ts";
+import { VERSION } from "../version.ts";
+import { dispatchToolCall } from "./dispatch.ts";
+import { buildDefaultLimiters, type RateLimiter } from "./rate-limit.ts";
+import { sqlQueryForEngine } from "../core/sql-query.ts";
 
 const DEFAULT_BODY_CAP = 1024 * 1024; // 1 MiB
 
 function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+  return createHash("sha256").update(token).digest("hex");
 }
 
 function envInt(name: string, fallback: number): number {
@@ -51,7 +51,12 @@ function envInt(name: string, fallback: number): number {
 function parseCorsAllowlist(): Set<string> | null {
   const v = process.env.GBRAIN_HTTP_CORS_ORIGIN;
   if (!v) return null;
-  return new Set(v.split(',').map(s => s.trim()).filter(Boolean));
+  return new Set(
+    v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
 }
 
 interface HttpTransportOptions {
@@ -92,30 +97,35 @@ interface AuthResult {
  * behavior). NEVER widened to "all": an empty/garbage value keeps the 'default'
  * floor and no federated grant.
  */
-export function parseLegacyTokenScope(rawSource: unknown): { sourceId: string; allowedSources?: string[] } {
+export function parseLegacyTokenScope(rawSource: unknown): {
+  sourceId: string;
+  allowedSources?: string[];
+} {
   if (Array.isArray(rawSource)) {
-    const allowedSources = (rawSource as unknown[]).filter(s => typeof s === 'string' && s.length > 0) as string[];
+    const allowedSources = (rawSource as unknown[]).filter(
+      (s) => typeof s === "string" && s.length > 0
+    ) as string[];
     if (allowedSources.length > 0) {
       // Scalar floor: the first granted source (write authority); reads span the array.
       return { sourceId: allowedSources[0], allowedSources };
     }
-    return { sourceId: 'default' };
+    return { sourceId: "default" };
   }
-  if (typeof rawSource === 'string' && rawSource.length > 0) {
+  if (typeof rawSource === "string" && rawSource.length > 0) {
     return { sourceId: rawSource };
   }
-  return { sourceId: 'default' };
+  return { sourceId: "default" };
 }
 
 /** Read up to `cap` bytes off req.body. Returns null if cap exceeded. */
 async function readBodyWithCap(req: Request, cap: number): Promise<string | null> {
-  const cl = req.headers.get('content-length');
+  const cl = req.headers.get("content-length");
   if (cl) {
     const n = parseInt(cl, 10);
     if (Number.isFinite(n) && n > cap) return null;
   }
   const reader = req.body?.getReader();
-  if (!reader) return '';
+  if (!reader) return "";
   const chunks: Uint8Array[] = [];
   let total = 0;
   while (true) {
@@ -124,7 +134,11 @@ async function readBodyWithCap(req: Request, cap: number): Promise<string | null
     if (!value) continue;
     total += value.byteLength;
     if (total > cap) {
-      try { await reader.cancel(); } catch { /* noop */ }
+      try {
+        await reader.cancel();
+      } catch {
+        /* noop */
+      }
       return null;
     }
     chunks.push(value);
@@ -140,18 +154,21 @@ async function readBodyWithCap(req: Request, cap: number): Promise<string | null
 }
 
 /** Resolve client IP. Honors X-Forwarded-For only when GBRAIN_HTTP_TRUST_PROXY=1. */
-function resolveClientIp(req: Request, server: { requestIP: (r: Request) => { address: string } | null }): string {
-  if (process.env.GBRAIN_HTTP_TRUST_PROXY === '1') {
-    const xff = req.headers.get('x-forwarded-for');
+function resolveClientIp(
+  req: Request,
+  server: { requestIP: (r: Request) => { address: string } | null }
+): string {
+  if (process.env.GBRAIN_HTTP_TRUST_PROXY === "1") {
+    const xff = req.headers.get("x-forwarded-for");
     if (xff) {
-      const first = xff.split(',')[0]?.trim();
+      const first = xff.split(",")[0]?.trim();
       if (first) return first;
     }
-    const xRealIp = req.headers.get('x-real-ip');
+    const xRealIp = req.headers.get("x-real-ip");
     if (xRealIp) return xRealIp.trim();
   }
   const sock = server.requestIP(req);
-  return sock?.address || 'unknown';
+  return sock?.address || "unknown";
 }
 
 export async function startHttpTransport(opts: HttpTransportOptions) {
@@ -164,7 +181,7 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
   const sql = sqlQueryForEngine(engine);
 
   const limiters = opts.limiters || buildDefaultLimiters();
-  const bodyCap = envInt('GBRAIN_HTTP_MAX_BODY_BYTES', DEFAULT_BODY_CAP);
+  const bodyCap = envInt("GBRAIN_HTTP_MAX_BODY_BYTES", DEFAULT_BODY_CAP);
   const corsAllowlist = parseCorsAllowlist();
   const tools = buildToolDefs(operations);
 
@@ -193,18 +210,18 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
     const headers: Record<string, string> = { ...extra };
     const allowed = corsAllowlist && origin && corsAllowlist.has(origin);
     if (allowed) {
-      headers['Access-Control-Allow-Origin'] = origin;
-      headers['Vary'] = 'Origin';
+      headers["Access-Control-Allow-Origin"] = origin;
+      headers["Vary"] = "Origin";
       if (preflight) {
-        headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS';
-        headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept';
+        headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+        headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept";
       }
     }
     return headers;
   }
 
   async function validateToken(authHeader: string | null): Promise<AuthResult> {
-    if (!authHeader?.startsWith('Bearer ')) return { ok: false };
+    if (!authHeader?.startsWith("Bearer ")) return { ok: false };
     const token = authHeader.slice(7);
     const hash = hashToken(token);
     try {
@@ -220,25 +237,34 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
       sql`UPDATE access_tokens
           SET last_used_at = now()
           WHERE id = ${rowId}
-            AND (last_used_at IS NULL OR last_used_at < now() - interval '60 seconds')`
-        .catch(() => { /* fire-and-forget */ });
+            AND (last_used_at IS NULL OR last_used_at < now() - interval '60 seconds')`.catch(
+        () => {
+          /* fire-and-forget */
+        }
+      );
       // v0.28: extract per-token takes-holder allow-list. Fail-safe default
       // is ['world'] — a token with no permissions row sees public claims only.
-      const perms = (row as { permissions?: { takes_holders?: unknown; source_id?: unknown; matter_scope?: unknown } }).permissions;
+      const perms = (
+        row as {
+          permissions?: { takes_holders?: unknown; source_id?: unknown; matter_scope?: unknown };
+        }
+      ).permissions;
       const allowList = Array.isArray(perms?.takes_holders)
-        ? (perms!.takes_holders as unknown[]).filter(h => typeof h === 'string') as string[]
-        : ['world'];
+        ? ((perms!.takes_holders as unknown[]).filter((h) => typeof h === "string") as string[])
+        : ["world"];
       // #1336: honor the operator-set source grant stored on the token.
       const { sourceId, allowedSources } = parseLegacyTokenScope(perms?.source_id);
       // Subsumio P0-SECR-002: honor per-token matter scope. Stored as
       // permissions.matter_scope: "all" or string[] of allowed case-slug prefixes.
       // Undefined = no enforcement (legacy tokens, non-Subsumio deployments).
-      let matterScope: string[] | 'all' | undefined;
-      if (perms?.matter_scope === 'all') {
-        matterScope = 'all';
+      let matterScope: string[] | "all" | undefined;
+      if (perms?.matter_scope === "all") {
+        matterScope = "all";
       } else if (Array.isArray(perms?.matter_scope)) {
-        const scopes = (perms!.matter_scope as unknown[]).filter(s => typeof s === 'string' && s.length > 0) as string[];
-        matterScope = scopes.length > 0 ? scopes : undefined;
+        const scopes = (perms!.matter_scope as unknown[]).filter(
+          (s) => typeof s === "string" && s.length > 0
+        ) as string[];
+        matterScope = scopes;
       }
       const auth: AuthInfo = {
         token,
@@ -264,10 +290,16 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
     }
   }
 
-  function logRequest(tokenName: string | null, operation: string, status: string, latencyMs: number) {
+  function logRequest(
+    tokenName: string | null,
+    operation: string,
+    status: string,
+    latencyMs: number
+  ) {
     sql`INSERT INTO mcp_request_log (token_name, operation, latency_ms, status)
-        VALUES (${tokenName}, ${operation}, ${latencyMs}, ${status})`
-      .catch(() => { /* best-effort */ });
+        VALUES (${tokenName}, ${operation}, ${latencyMs}, ${status})`.catch(() => {
+      /* best-effort */
+    });
   }
 
   const server = Bun.serve({
@@ -276,35 +308,44 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
       const startedMs = Date.now();
       const url = new URL(req.url);
       const path = url.pathname;
-      const origin = req.headers.get('origin');
+      const origin = req.headers.get("origin");
 
       // CORS preflight
-      if (req.method === 'OPTIONS') {
+      if (req.method === "OPTIONS") {
         return new Response(null, { headers: corsHeaders(origin, { preflight: true }) });
       }
 
       // Health check — no auth, no rate limit. Probes the DB so orchestration
       // doesn't see "ok" while clients are getting misleading 401s during a DB outage.
-      if (path === '/health') {
+      if (path === "/health") {
         try {
           await sql`SELECT 1`;
           return Response.json(
-            { status: 'ok', version: VERSION, transport: 'http', db: 'ok' },
-            { headers: corsHeaders(origin) },
+            { status: "ok", version: VERSION, transport: "http", db: "ok" },
+            { headers: corsHeaders(origin) }
           );
         } catch (e: any) {
           return Response.json(
-            { status: 'unhealthy', version: VERSION, transport: 'http', db: 'unreachable', error: e?.message ?? 'unknown' },
-            { status: 503, headers: corsHeaders(origin) },
+            {
+              status: "unhealthy",
+              version: VERSION,
+              transport: "http",
+              db: "unreachable",
+              error: e?.message ?? "unknown",
+            },
+            { status: 503, headers: corsHeaders(origin) }
           );
         }
       }
 
-      if (path !== '/mcp') {
-        return Response.json({ error: 'not_found' }, { status: 404, headers: corsHeaders(origin) });
+      if (path !== "/mcp") {
+        return Response.json({ error: "not_found" }, { status: 404, headers: corsHeaders(origin) });
       }
-      if (req.method !== 'POST') {
-        return Response.json({ error: 'method_not_allowed' }, { status: 405, headers: corsHeaders(origin) });
+      if (req.method !== "POST") {
+        return Response.json(
+          { error: "method_not_allowed" },
+          { status: 405, headers: corsHeaders(origin) }
+        );
       }
 
       const ip = resolveClientIp(req, server);
@@ -312,46 +353,53 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
       // Pre-auth IP rate limit. Fires BEFORE the DB lookup so we actually limit brute-force load.
       const ipCheck = limiters.ip.check(ip);
       if (!ipCheck.allowed) {
-        logRequest(null, 'unknown', 'rate_limited', Date.now() - startedMs);
+        logRequest(null, "unknown", "rate_limited", Date.now() - startedMs);
         return Response.json(
-          { error: 'rate_limited', message: 'Too many requests' },
+          { error: "rate_limited", message: "Too many requests" },
           {
             status: 429,
-            headers: corsHeaders(origin, { extra: { 'Retry-After': String(ipCheck.retryAfter ?? 60) } }),
-          },
+            headers: corsHeaders(origin, {
+              extra: { "Retry-After": String(ipCheck.retryAfter ?? 60) },
+            }),
+          }
         );
       }
 
       // Body cap (stream-counted; chunked transfers caught here, not at req.json).
       const bodyText = await readBodyWithCap(req, bodyCap);
       if (bodyText === null) {
-        logRequest(null, 'unknown', 'body_too_large', Date.now() - startedMs);
+        logRequest(null, "unknown", "body_too_large", Date.now() - startedMs);
         return Response.json(
-          { error: 'payload_too_large', message: `Request body exceeds ${bodyCap} bytes` },
-          { status: 413, headers: corsHeaders(origin) },
+          { error: "payload_too_large", message: `Request body exceeds ${bodyCap} bytes` },
+          { status: 413, headers: corsHeaders(origin) }
         );
       }
 
       // Auth.
-      const auth = await validateToken(req.headers.get('Authorization'));
+      const auth = await validateToken(req.headers.get("Authorization"));
       if (!auth.ok) {
-        logRequest(null, 'unknown', 'auth_failed', Date.now() - startedMs);
+        logRequest(null, "unknown", "auth_failed", Date.now() - startedMs);
         return Response.json(
-          { error: 'invalid_token', message: 'Bearer token required. Create one: gbrain auth create <name>' },
-          { status: 401, headers: corsHeaders(origin) },
+          {
+            error: "invalid_token",
+            message: "Bearer token required. Create one: gbrain auth create <name>",
+          },
+          { status: 401, headers: corsHeaders(origin) }
         );
       }
 
       // Post-auth token-id rate limit. Limits runaway authed clients.
       const tokCheck = limiters.token.check(auth.tokenId!);
       if (!tokCheck.allowed) {
-        logRequest(auth.tokenName!, 'unknown', 'rate_limited', Date.now() - startedMs);
+        logRequest(auth.tokenName!, "unknown", "rate_limited", Date.now() - startedMs);
         return Response.json(
-          { error: 'rate_limited', message: 'Too many requests for this token' },
+          { error: "rate_limited", message: "Too many requests for this token" },
           {
             status: 429,
-            headers: corsHeaders(origin, { extra: { 'Retry-After': String(tokCheck.retryAfter ?? 60) } }),
-          },
+            headers: corsHeaders(origin, {
+              extra: { "Retry-After": String(tokCheck.retryAfter ?? 60) },
+            }),
+          }
         );
       }
 
@@ -360,49 +408,49 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
       try {
         body = JSON.parse(bodyText);
       } catch (e: any) {
-        logRequest(auth.tokenName!, 'unknown', 'parse_error', Date.now() - startedMs);
+        logRequest(auth.tokenName!, "unknown", "parse_error", Date.now() - startedMs);
         return Response.json(
-          { error: 'parse_error', message: e?.message ?? 'invalid JSON' },
-          { status: 400, headers: corsHeaders(origin) },
+          { error: "parse_error", message: e?.message ?? "invalid JSON" },
+          { status: 400, headers: corsHeaders(origin) }
         );
       }
 
       const { method, params, id } = body;
 
       // initialize
-      if (method === 'initialize') {
-        logRequest(auth.tokenName!, 'initialize', 'success', Date.now() - startedMs);
+      if (method === "initialize") {
+        logRequest(auth.tokenName!, "initialize", "success", Date.now() - startedMs);
         return Response.json(
           {
             result: {
-              protocolVersion: '2025-03-26',
-              serverInfo: { name: 'gbrain', version: VERSION },
+              protocolVersion: "2025-03-26",
+              serverInfo: { name: "gbrain", version: VERSION },
               capabilities: { tools: {} },
             },
-            jsonrpc: '2.0',
+            jsonrpc: "2.0",
             id,
           },
-          { headers: corsHeaders(origin) },
+          { headers: corsHeaders(origin) }
         );
       }
 
       // notifications/initialized — acknowledge with 204
-      if (method === 'notifications/initialized') {
+      if (method === "notifications/initialized") {
         return new Response(null, { status: 204, headers: corsHeaders(origin) });
       }
 
       // tools/list
-      if (method === 'tools/list') {
-        logRequest(auth.tokenName!, 'tools/list', 'success', Date.now() - startedMs);
+      if (method === "tools/list") {
+        logRequest(auth.tokenName!, "tools/list", "success", Date.now() - startedMs);
         return Response.json(
-          { result: { tools }, jsonrpc: '2.0', id },
-          { headers: corsHeaders(origin) },
+          { result: { tools }, jsonrpc: "2.0", id },
+          { headers: corsHeaders(origin) }
         );
       }
 
       // tools/call — dispatch through shared dispatch.ts (parity with stdio)
-      if (method === 'tools/call') {
-        const toolName: string = params?.name ?? 'unknown';
+      if (method === "tools/call") {
+        const toolName: string = params?.name ?? "unknown";
         const args: Record<string, unknown> = params?.arguments ?? {};
         // v0.28: thread per-token takes-holder allow-list so takes_list /
         // takes_search / query (when it returns takes) can server-side filter.
@@ -421,18 +469,15 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
           // matter scope the same way as web-api calls.
           ...(auth.auth?.matterScope ? { matterScope: auth.auth.matterScope } : {}),
         });
-        const status = result.isError ? 'error' : 'success';
+        const status = result.isError ? "error" : "success";
         logRequest(auth.tokenName!, `tools/call:${toolName}`, status, Date.now() - startedMs);
-        return Response.json(
-          { result, jsonrpc: '2.0', id },
-          { headers: corsHeaders(origin) },
-        );
+        return Response.json({ result, jsonrpc: "2.0", id }, { headers: corsHeaders(origin) });
       }
 
-      logRequest(auth.tokenName!, method ?? 'unknown', 'unknown_method', Date.now() - startedMs);
+      logRequest(auth.tokenName!, method ?? "unknown", "unknown_method", Date.now() - startedMs);
       return Response.json(
-        { error: 'unknown_method', message: `Unknown method: ${method}` },
-        { status: 400, headers: corsHeaders(origin) },
+        { error: "unknown_method", message: `Unknown method: ${method}` },
+        { status: 400, headers: corsHeaders(origin) }
       );
     },
   });
@@ -442,13 +487,15 @@ export async function startHttpTransport(opts: HttpTransportOptions) {
   console.error(`  MCP:    http://localhost:${port}/mcp`);
   console.error(`  Auth:   Bearer token required (create with: gbrain auth create <name>)`);
   if (!corsAllowlist) {
-    console.error('  CORS:   default-deny. Set GBRAIN_HTTP_CORS_ORIGIN=https://your.app to allow browser clients.');
+    console.error(
+      "  CORS:   default-deny. Set GBRAIN_HTTP_CORS_ORIGIN=https://your.app to allow browser clients."
+    );
   } else {
-    console.error(`  CORS:   allowlist = ${[...corsAllowlist].join(', ')}`);
+    console.error(`  CORS:   allowlist = ${[...corsAllowlist].join(", ")}`);
   }
-  console.error('');
-  console.error('⚠️  Do NOT use open OAuth registration for remote MCP access.');
-  console.error('   Tokens are managed via: gbrain auth create/list/revoke');
+  console.error("");
+  console.error("⚠️  Do NOT use open OAuth registration for remote MCP access.");
+  console.error("   Tokens are managed via: gbrain auth create/list/revoke");
 
   return server;
 }

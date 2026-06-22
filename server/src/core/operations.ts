@@ -526,12 +526,11 @@ function isMatterScopeMatch(
   if (!scope) return true;
   if (scope === "all") return true;
   if (scope.length === 0) return false;
-  return scope.some(
-    (prefix) =>
-      slug.startsWith(prefix) ||
-      slug === prefix ||
-      (caseSlug !== undefined && (caseSlug.startsWith(prefix) || caseSlug === prefix))
-  );
+  return scope.some((prefix) => {
+    const matches = (candidate: string) =>
+      candidate === prefix || candidate.startsWith(`${prefix}/`);
+    return matches(slug) || (caseSlug !== undefined && matches(caseSlug));
+  });
 }
 
 export function matterScopeFilter<
@@ -782,25 +781,10 @@ const get_page: Operation = {
     const slug = p.slug as string;
     const fuzzy = (p.fuzzy as boolean) || false;
     const includeDeleted = (p.include_deleted as boolean) === true;
-    // Subsumio P0-SECR-002: Reject access to pages outside the caller's
-    // verified matter scope BEFORE any DB lookup. This is the engine-side
-    // enforcement that prevents cross-matter data leakage.
-    //
-    // Deliberately thrown as the SAME error code/shape as the genuine
-    // "page not found" case below (not a distinct `matter_scope_denied`
-    // code) — a denied caller must not be able to distinguish "this slug
-    // doesn't exist" from "this slug exists but is outside your scope".
-    // Matches the leak-guard contract already established at the app layer
-    // (src/lib/legal-chat/actions.ts's resolveAuthorizedCase / caseLookupHelp).
-    if (!isSlugInMatterScope(slug, ctx)) {
-      throw new OperationError(
-        "page_not_found",
-        `Page not found: ${slug}`,
-        includeDeleted
-          ? "Check the slug or use fuzzy: true"
-          : "Page may be soft-deleted; pass include_deleted: true to verify"
-      );
-    }
+    // Subsumio P0-SECR-002: matter scope is enforced after the source-scoped
+    // DB lookup so pages outside the case slug tree can still be allowed when
+    // their canonical frontmatter.case_slug binds them to the caller's matter.
+    // Denials deliberately use the same error shape as genuine not-found.
     // #1393: route BOTH the exact-match read and the fuzzy resolveSlugs through
     // the canonical precedence ladder (federated array > scalar > nothing). The
     // exact path previously used scalar `ctx.sourceId` only, so a remote client
@@ -824,6 +808,18 @@ const get_page: Operation = {
     }
 
     if (!page) {
+      throw new OperationError(
+        "page_not_found",
+        `Page not found: ${slug}`,
+        includeDeleted
+          ? "Check the slug or use fuzzy: true"
+          : "Page may be soft-deleted; pass include_deleted: true to verify"
+      );
+    }
+    if (
+      matterScopeFilter([{ slug: page.slug, frontmatter: page.frontmatter ?? {} }], ctx).length ===
+      0
+    ) {
       throw new OperationError(
         "page_not_found",
         `Page not found: ${slug}`,
@@ -1705,6 +1701,8 @@ const list_pages: Operation = {
       ...(includeFrontmatter ? { frontmatter: pg.frontmatter ?? {} } : {}),
     }));
 
+    result = matterScopeFilter(result, ctx);
+
     // Subsumio R3: Filter by document-level ACLs.
     if (ctx.aclGroups && ctx.aclGroups !== "all" && ctx.aclGroups.length > 0 && pages.length > 0) {
       const { filterPagesByACL } = await import("./acl.ts");
@@ -1715,7 +1713,11 @@ const list_pages: Operation = {
           ctx.aclGroups
         )
       );
-      result = result.filter((_, i) => accessibleIds.has(pages[i]!.id));
+      const pageIdBySlug = new Map(pages.map((pg) => [pg.slug, pg.id]));
+      result = result.filter((pg) => {
+        const pageId = pageIdBySlug.get(pg.slug);
+        return pageId === undefined || accessibleIds.has(pageId);
+      });
     }
 
     return result;

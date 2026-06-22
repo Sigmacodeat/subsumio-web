@@ -352,11 +352,13 @@ function mapStats(raw: Record<string, unknown>) {
   };
 }
 
-function readCaseSlug(record: Record<string, unknown>): string | undefined {
-  if (typeof record.case_slug === "string" && record.case_slug.length > 0) {
-    return record.case_slug;
+function readCaseSlug(record: unknown): string | undefined {
+  if (!record || typeof record !== "object") return undefined;
+  const obj = record as Record<string, unknown>;
+  if (typeof obj.case_slug === "string" && obj.case_slug.length > 0) {
+    return obj.case_slug;
   }
-  const frontmatter = record.frontmatter;
+  const frontmatter = obj.frontmatter;
   if (frontmatter && typeof frontmatter === "object") {
     const raw = (frontmatter as Record<string, unknown>).case_slug;
     if (typeof raw === "string" && raw.length > 0) return raw;
@@ -489,8 +491,8 @@ function verifiedMatterScope(req: Request, apiKey: string | undefined): string[]
 
 /**
  * P0-SECR-002: Filter search/think results to only include pages whose slug
- * starts with one of the allowed matter prefixes. When scope is "all" or empty,
- * no filtering is applied (preserves existing behavior for non-WhatsApp callers).
+ * is exactly in scope or below an in-scope matter path. Empty arrays deny all:
+ * callers with a verified-but-empty scope must not silently widen to "all".
  */
 function isMatterScoped(
   scope: string[] | "all" | undefined,
@@ -498,19 +500,19 @@ function isMatterScoped(
   caseSlug?: string
 ): boolean {
   if (scope === undefined || scope === "all") return true;
-  if (scope.length === 0) return true;
-  return scope.some(
-    (prefix) =>
-      slug.startsWith(prefix) ||
-      slug === prefix ||
-      (caseSlug !== undefined && (caseSlug.startsWith(prefix) || caseSlug === prefix))
-  );
+  if (scope.length === 0) return false;
+  return scope.some((prefix) => {
+    const matches = (candidate: string) =>
+      candidate === prefix || candidate.startsWith(`${prefix}/`);
+    return matches(slug) || (caseSlug !== undefined && matches(caseSlug));
+  });
 }
 
 function filterByMatterScope<
   T extends { slug?: string; case_slug?: string; frontmatter?: Record<string, unknown> },
 >(results: T[], scope: string[] | "all"): T[] {
-  if (scope === "all" || scope.length === 0) return results;
+  if (scope === "all") return results;
+  if (scope.length === 0) return [];
   return results.filter((r) => {
     const slug = r.slug ?? "";
     const caseSlug = r.case_slug ?? readCaseSlug(r as Record<string, unknown>);
@@ -679,26 +681,35 @@ async function enrichCitations(
   citations: Array<{ page_slug: string }>,
   sourceId: string,
   allowedSources?: string[]
-): Promise<Array<{ slug: string; title: string; quote: string; confidence: number }>> {
+): Promise<
+  Array<{ slug: string; title: string; quote: string; confidence: number; case_slug?: string }>
+> {
   if (citations.length === 0) return [];
   const slugs = [...new Set(citations.map((c) => c.page_slug))];
   // Match the federated read scope used for retrieval, so a cited statute page
   // in a shared source (law-at) resolves its title too — not just tenant pages.
   const scopes = allowedSources && allowedSources.length > 0 ? allowedSources : [sourceId];
   const rows = await engine
-    .executeRaw<{ slug: string; title: string }>(
-      `SELECT slug, title FROM pages WHERE slug = ANY($1::text[])
+    .executeRaw<{ slug: string; title: string; case_slug?: string }>(
+      `SELECT slug, title, frontmatter->>'case_slug' AS case_slug FROM pages WHERE slug = ANY($1::text[])
        AND deleted_at IS NULL
        AND ($2::text[] @> ARRAY['default'] OR source_id = ANY($2::text[]))`,
       [slugs, scopes]
     )
-    .catch(() => [] as Array<{ slug: string; title: string }>);
+    .catch(() => [] as Array<{ slug: string; title: string; case_slug?: string }>);
   const titleMap = new Map(rows.map((r) => [r.slug, r.title]));
+  const caseSlugMap = new Map<string, string>();
+  for (const row of rows) {
+    if (typeof row.case_slug === "string" && row.case_slug.length > 0) {
+      caseSlugMap.set(row.slug, row.case_slug);
+    }
+  }
   return citations.map((c) => ({
     slug: c.page_slug,
     title: titleMap.get(c.page_slug) ?? c.page_slug.split("/").pop() ?? c.page_slug,
     quote: "",
     confidence: 0.85,
+    ...(caseSlugMap.has(c.page_slug) ? { case_slug: caseSlugMap.get(c.page_slug)! } : {}),
   }));
 }
 
@@ -913,7 +924,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 typeof g === "object" && g !== null
                   ? ((g as Record<string, unknown>)?.slug as string | undefined)
                   : undefined;
-              return !gSlug || matterScope.some((p) => gSlug.startsWith(p) || gSlug === p);
+              return !gSlug || isMatterScoped(matterScope, gSlug);
             })
           : (result.gaps ?? []);
       res.write(`data: ${JSON.stringify({ citations, gaps })}\n\n`);
@@ -947,7 +958,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           res.status(400).json({ error: "missing_slug" });
           return;
         }
-        assertMatterScope(req.matterScope, slug);
+        const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+        assertMatterScope(req.matterScope, slug, readCaseSlug(pageForScope));
         const { analyzeDocument } = await import("../core/legal/analyze-document.ts");
         const federated = readSourcesFor(req);
         const analysis = await analyzeDocument(engine, {
@@ -1447,10 +1459,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const { resolveEntity } = await import("../core/matter-scope.ts");
         const result = await resolveEntity(engine, mention, requestSourceId(req));
         const scope = req.matterScope ?? "all";
-        const inScope =
-          scope === "all" ||
-          !result.resolved_slug ||
-          scope.some((p) => result.resolved_slug!.startsWith(p) || result.resolved_slug === p);
+        const inScope = !result.resolved_slug || isMatterScoped(scope, result.resolved_slug);
         res.json(
           inScope ? result : { mention, resolved_slug: null, confidence: 0, entity_type: null }
         );
@@ -1479,9 +1488,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const scope = req.matterScope ?? "all";
         const scoped = results.map((r) => {
           if (!r.resolved_slug) return r;
-          const inScope =
-            scope === "all" ||
-            scope.some((p) => r.resolved_slug!.startsWith(p) || r.resolved_slug === p);
+          const inScope = isMatterScoped(scope, r.resolved_slug);
           return inScope
             ? r
             : { mention: r.mention, resolved_slug: null, confidence: 0, entity_type: null };
@@ -1543,7 +1550,6 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     try {
       const slugParam = req.params.slug;
       const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
-      assertMatterScope(req.matterScope, slug);
       const pageRaw = await invokeOp(
         engine,
         "get_page",
@@ -1579,7 +1585,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.status(400).json({ error: "missing_slug" });
         return;
       }
-      assertMatterScope(req.matterScope, slug);
+      const pageForScope = await engine.getPage(slug, { sourceId: requestSourceId(req) });
+      assertMatterScope(req.matterScope, slug, readCaseSlug(pageForScope));
 
       const { readStoredFile } = await import("../core/file-store.ts");
       const stored = await readStoredFile(slug, requestSourceId(req), ctx(req).config.storage);
