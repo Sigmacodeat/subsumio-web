@@ -5,6 +5,7 @@ import { configureGateway } from "../src/core/ai/gateway.ts";
 import { embedBatch } from "../src/core/embedding.ts";
 
 const cfg = loadConfig();
+if (!cfg) throw new Error("No gbrain config found — run `gbrain init` first");
 configureGateway(buildGatewayConfig(cfg));
 const eng = await createEngine(toEngineConfig(cfg));
 await eng.connect(toEngineConfig(cfg));

@@ -14,6 +14,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Mock use-lang to avoid QueryClientProvider requirement
+vi.mock("@/lib/use-lang", () => ({
+  useLang: () => ({ lang: "de", t: (k: string) => k, setLang: () => {} }),
+}));
+
 describe("CitationPanel", () => {
   const baseData: CitationPanelData = {
     citations: [{ slug: "bgb/433", title: "§ 433 BGB" }],
