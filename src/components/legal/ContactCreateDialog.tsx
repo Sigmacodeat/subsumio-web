@@ -14,8 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Plus, AlertTriangle, UserCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { isOnline, enqueueMutation } from "@/lib/offline-store";
-import { contactFormSchema, type ContactFormData } from "@/lib/schemas/contact";
+import { contactFormSchema } from "@/lib/schemas/contact";
 import type { ContactFrontmatter } from "@/lib/legal-types";
+import {
+  checkContactConflict,
+  type ContactRef,
+  type ConflictCheckResult,
+} from "@/lib/contact-conflict";
 
 type ContactRole = NonNullable<ContactFrontmatter["role"]>;
 
@@ -53,10 +58,6 @@ function slugifyContact(name: string): string {
     .replace(/^-|-$/g, "")}-${Date.now()}`;
 }
 
-function normalizeForCompare(s: string): string {
-  return s.toLowerCase().trim().replace(/\s+/g, " ");
-}
-
 export function ContactCreateDialog({
   open,
   onOpenChange,
@@ -74,10 +75,7 @@ export function ContactCreateDialog({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicate, setDuplicate] = useState<{
-    slug: string;
-    name: string;
-  } | null>(null);
+  const [conflict, setConflict] = useState<ConflictCheckResult | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -89,27 +87,33 @@ export function ContactCreateDialog({
       setAddress("");
       setNotes("");
       setError(null);
-      setDuplicate(null);
+      setConflict(null);
     }
   }, [open, defaultName, defaultRole]);
 
-  // P2.2: Duplicate detection — check existing contacts by normalized name/email/phone
-  const checkDuplicate = useCallback(
-    (fieldName: string, fieldValue: string) => {
-      if (!fieldValue.trim()) {
-        setDuplicate(null);
+  // P2.2: Conflict re-check — uses the § 43a BRAO-aware checkContactConflict util.
+  // Detects exact/fuzzy name matches, company matches AND critical role conflicts
+  // (e.g. creating an opponent who already exists as a client).
+  const runConflictCheck = useCallback(
+    (candidateName: string, candidateRole: ContactRole, candidateCompany: string) => {
+      if (!candidateName.trim()) {
+        setConflict(null);
         return;
       }
-      const normalized = normalizeForCompare(fieldValue);
-      const match = existingContacts.find((c) => {
-        if (fieldName === "name" && normalizeForCompare(c.name) === normalized) return true;
-        if (fieldName === "email" && c.email && normalizeForCompare(c.email) === normalized)
-          return true;
-        if (fieldName === "phone" && c.phone && normalizeForCompare(c.phone) === normalized)
-          return true;
-        return false;
-      });
-      setDuplicate(match ? { slug: match.slug, name: match.name } : null);
+      const existingRefs: ContactRef[] = existingContacts.map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        role: (c.role as ContactRef["role"]) ?? "other",
+      }));
+      const result = checkContactConflict(
+        {
+          name: candidateName.trim(),
+          role: candidateRole,
+          company: candidateCompany.trim() || undefined,
+        },
+        existingRefs
+      );
+      setConflict(result.hasConflict ? result : null);
     },
     [existingContacts]
   );
@@ -174,8 +178,9 @@ export function ContactCreateDialog({
   }
 
   function useExistingContact() {
-    if (!duplicate) return;
-    const existing = existingContacts.find((c) => c.slug === duplicate.slug);
+    const topHit = conflict?.hits[0];
+    if (!topHit?.contact.slug) return;
+    const existing = existingContacts.find((c) => c.slug === topHit.contact.slug);
     if (!existing) return;
     onCreated({
       slug: existing.slug,
@@ -201,21 +206,43 @@ export function ContactCreateDialog({
           </div>
         )}
 
-        {duplicate && (
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs">
-            <div className="flex items-center gap-2 text-amber-700">
-              <AlertTriangle size={14} />
-              <span>Kontakt &quot;{duplicate.name}&quot; existiert bereits.</span>
+        {conflict && (
+          <div
+            role="alert"
+            className={
+              conflict.severity === "critical"
+                ? "space-y-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2.5 text-xs"
+                : "space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-xs"
+            }
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div
+                className={
+                  conflict.severity === "critical"
+                    ? "flex items-center gap-2 font-medium text-red-700"
+                    : "flex items-center gap-2 font-medium text-amber-700"
+                }
+              >
+                <AlertTriangle size={14} className="shrink-0" />
+                <span>{conflict.warning}</span>
+              </div>
+              {conflict.hits[0]?.contact.slug && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={useExistingContact}
+                  className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-surface-2)]"
+                >
+                  <UserCheck size={13} /> Verwenden
+                </Button>
+              )}
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={useExistingContact}
-              className="shrink-0 gap-1.5 text-xs text-amber-700 hover:bg-amber-500/10"
-            >
-              <UserCheck size={13} /> Verwenden
-            </Button>
+            {conflict.hits.slice(0, 3).map((hit, i) => (
+              <p key={i} className="pl-6 text-[color:var(--ds-text-muted)]">
+                {hit.reason}
+              </p>
+            ))}
           </div>
         )}
 
@@ -226,7 +253,7 @@ export function ContactCreateDialog({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                checkDuplicate("name", e.target.value);
+                runConflictCheck(e.target.value, role, company);
               }}
               placeholder="Vor- und Nachname"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
@@ -238,7 +265,11 @@ export function ContactCreateDialog({
             <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">Rolle</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as ContactRole)}
+              onChange={(e) => {
+                const next = e.target.value as ContactRole;
+                setRole(next);
+                runConflictCheck(name, next, company);
+              }}
               className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             >
               <option value="client">Mandant</option>
@@ -256,7 +287,10 @@ export function ContactCreateDialog({
               </label>
               <Input
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) => {
+                  setCompany(e.target.value);
+                  runConflictCheck(name, role, e.target.value);
+                }}
                 placeholder="Firma"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
@@ -266,10 +300,7 @@ export function ContactCreateDialog({
               <Input
                 type="email"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  checkDuplicate("email", e.target.value);
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="email@beispiel.at"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
@@ -282,7 +313,6 @@ export function ContactCreateDialog({
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
-                checkDuplicate("phone", e.target.value);
               }}
               placeholder="+43…"
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"

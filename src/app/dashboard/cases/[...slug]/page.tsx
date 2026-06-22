@@ -56,6 +56,11 @@ import {
   ContactCreateDialog,
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
+import {
+  checkInternalConflict,
+  type ContactRef,
+  type ConflictCheckResult,
+} from "@/lib/contact-conflict";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import {
@@ -282,6 +287,9 @@ export default function CaseDetailPage() {
     "client" | "opponent" | "court" | "lawyer" | "other"
   >("client");
   const [contactDialogName, setContactDialogName] = useState<string | undefined>(undefined);
+
+  // P2.2: Interessenkollision re-check when client + opponent are assigned
+  const [contactConflict, setContactConflict] = useState<ConflictCheckResult | null>(null);
 
   // Evidence CRUD state
   const [evidenceList, setEvidenceList] = useState<EvidenceEntry[]>([]);
@@ -561,6 +569,27 @@ export default function CaseDetailPage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
+
+  // P2.2: Re-check Interessenkollision whenever client/opponent assignment changes
+  useEffect(() => {
+    const refs: ContactRef[] = [];
+    if (caseData?.clientName?.trim()) {
+      refs.push({ slug: caseData.clientSlug, name: caseData.clientName.trim(), role: "client" });
+    }
+    if (caseData?.opponentName?.trim()) {
+      refs.push({
+        slug: (caseData.opponentSlugs ?? [])[0],
+        name: caseData.opponentName.trim(),
+        role: "opponent",
+      });
+    }
+    if (refs.length < 2) {
+      setContactConflict(null);
+      return;
+    }
+    const result = checkInternalConflict(refs);
+    setContactConflict(result.hasConflict ? result : null);
+  }, [caseData?.clientName, caseData?.clientSlug, caseData?.opponentName, caseData?.opponentSlugs]);
 
   // Live sync: poll every 30s and warn if version changed
   useEffect(() => {
@@ -1308,6 +1337,32 @@ export default function CaseDetailPage() {
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
                 {t("cases.detail_stammdaten")}
               </h3>
+              {/* P2.2: Interessenkollision warning */}
+              {contactConflict && (
+                <div
+                  role="alert"
+                  className={cn(
+                    "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-xs",
+                    contactConflict.severity === "critical"
+                      ? "border-red-500/30 bg-red-500/5 text-red-600"
+                      : "border-amber-500/30 bg-amber-500/5 text-amber-600"
+                  )}
+                >
+                  {contactConflict.severity === "critical" ? (
+                    <ShieldAlert size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  )}
+                  <div className="space-y-1">
+                    <p className="font-semibold">{contactConflict.warning}</p>
+                    {contactConflict.hits.slice(0, 3).map((hit, i) => (
+                      <p key={i} className="opacity-90">
+                        {hit.reason}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {/* Client */}
                 <div className="space-y-1">

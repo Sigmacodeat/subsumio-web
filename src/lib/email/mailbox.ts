@@ -394,6 +394,8 @@ export async function storeInboundResendEmail(
         raw: raw as Record<string, unknown>,
         createdAt,
         updatedAt: new Date().toISOString(),
+        folder: "inbox",
+        isRead: false,
       };
   if (existing) {
     next.raw = raw as Record<string, unknown>;
