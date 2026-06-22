@@ -5286,6 +5286,26 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_pp_group ON page_permissions(group_id);
     `,
   },
+  {
+    version: 117,
+    name: "links_bi_temporal_columns",
+    // v0.43.0: bi-temporal edge support (pbrain v0.3.0 port).
+    // PGLite schema (pglite-schema.ts) and schema-embedded.ts already have
+    // these columns, but existing Postgres databases created before this
+    // migration are missing them, causing "column l.valid_from does not
+    // exist" errors in add_link/supersede_link/get_links operations.
+    idempotent: true,
+    sql: `
+      ALTER TABLE links ADD COLUMN IF NOT EXISTS valid_from TIMESTAMPTZ NOT NULL DEFAULT now();
+      ALTER TABLE links ADD COLUMN IF NOT EXISTS valid_to TIMESTAMPTZ;
+      ALTER TABLE links ADD COLUMN IF NOT EXISTS superseded_by INTEGER REFERENCES links(id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_links_current
+        ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
+      CREATE INDEX IF NOT EXISTS idx_links_history
+        ON links(from_page_id, valid_from, valid_to);
+    `,
+  },
 ];
 
 export const LATEST_VERSION =

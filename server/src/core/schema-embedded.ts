@@ -453,6 +453,10 @@ CREATE TABLE IF NOT EXISTS links (
   -- extraction time. NULL for legacy/manual/frontmatter edges.
   resolution_type TEXT   CHECK (resolution_type IS NULL OR resolution_type IN ('qualified', 'unqualified')),
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- v0.43.0: bi-temporal edge support (pbrain v0.3.0 port)
+  valid_from     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  valid_to       TIMESTAMPTZ,
+  superseded_by  INTEGER REFERENCES links(id) ON DELETE SET NULL,
   -- NULLS NOT DISTINCT (PG15+) so two rows with link_source IS NULL or
   -- origin_page_id IS NULL collide as expected. Without this, every row with
   -- NULL origin_page_id (markdown/manual edges) would be treated as unique.
@@ -464,6 +468,10 @@ CREATE INDEX IF NOT EXISTS idx_links_from ON links(from_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_to ON links(to_page_id);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(link_source);
 CREATE INDEX IF NOT EXISTS idx_links_origin ON links(origin_page_id);
+-- v0.43.0: partial index for current bi-temporal edges (valid_to IS NULL)
+CREATE INDEX IF NOT EXISTS idx_links_current ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
+-- v0.43.0: index for historical link lookups
+CREATE INDEX IF NOT EXISTS idx_links_history ON links(from_page_id, valid_from, valid_to);
 
 -- ============================================================
 -- tags
