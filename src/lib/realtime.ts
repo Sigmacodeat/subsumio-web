@@ -100,15 +100,23 @@ class RealtimeClient {
     }
     this.mode = "sse";
     this.status = "connecting";
+    let openTime = 0;
     try {
       this.es = new EventSource(SSE_URL);
       this.es.onopen = () => {
         this.status = "open";
-        this.reconnectAttempt = 0;
+        openTime = Date.now();
       };
       this.es.onerror = (e) => {
         console.warn("[realtime] SSE error:", e);
         this.status = "error";
+        // Only reset reconnect counter if the connection was stable (>10s).
+        // On Vercel, serverless functions timeout after ~60s, causing the
+        // SSE stream to close. Without this guard, the counter resets on
+        // every reconnect, creating an infinite reconnect loop.
+        if (openTime > 0 && Date.now() - openTime > 10_000) {
+          this.reconnectAttempt = 0;
+        }
         this.es?.close();
         this.scheduleReconnect();
       };

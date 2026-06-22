@@ -67,7 +67,7 @@ describe("sendMail", () => {
       new Response(JSON.stringify({ id: "email-123" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
     const result = await sendMail({ to: "test@example.com", subject: "Test", text: "Hello" });
     expect(result.sent).toBe(true);
@@ -77,7 +77,7 @@ describe("sendMail", () => {
   test("returns sent:false on non-200 response", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Bad Request", { status: 400 }),
+      new Response("Bad Request", { status: 400 })
     );
     const result = await sendMail({ to: "test@example.com", subject: "Test", text: "Hello" });
     expect(result.sent).toBe(false);
@@ -94,9 +94,9 @@ describe("sendMail", () => {
 
   test("sends HTML body when provided", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({ to: "test@example.com", subject: "Test", html: "<p>Hello</p>" });
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.html).toBe("<p>Hello</p>");
@@ -104,9 +104,9 @@ describe("sendMail", () => {
 
   test("does not include text when only html is provided", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({ to: "test@example.com", subject: "Test", html: "<p>Hello world</p>" });
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.html).toBe("<p>Hello world</p>");
@@ -115,9 +115,9 @@ describe("sendMail", () => {
 
   test("includes derived text when neither text nor html is provided", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({ to: "test@example.com", subject: "Test" });
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.text).toBe("");
@@ -125,9 +125,9 @@ describe("sendMail", () => {
 
   test("includes cc, bcc, and replyTo when provided", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({
       to: "a@example.com",
       cc: "b@example.com",
@@ -144,9 +144,9 @@ describe("sendMail", () => {
 
   test("handles array recipients", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({ to: ["a@example.com", "b@example.com"], subject: "Test", text: "Hello" });
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.to).toEqual(["a@example.com", "b@example.com"]);
@@ -154,9 +154,9 @@ describe("sendMail", () => {
 
   test("includes custom headers when provided", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: "email-1" }), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
     await sendMail({
       to: "a@example.com",
       subject: "Test",
@@ -165,5 +165,64 @@ describe("sendMail", () => {
     });
     const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     expect(callBody.headers).toEqual({ "X-Custom": "value" });
+  });
+
+  test("injects tracking pixel when trackingId is set with HTML", async () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
+    await sendMail({
+      to: "test@example.com",
+      subject: "Test",
+      html: '<p>Hello <a href="https://example.com">link</a></p>',
+      trackingId: "trk_test123",
+    });
+    const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    expect(callBody.html).toContain("api/email/track/o/trk_test123.png");
+    expect(callBody.html).toContain("api/email/track/c/trk_test123");
+    expect(callBody.html).not.toContain('href="https://example.com"');
+  });
+
+  test("returns trackingId in result when set", async () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "email-1" }), { status: 200 })
+    );
+    const result = await sendMail({
+      to: "test@example.com",
+      subject: "Test",
+      text: "Hello",
+      trackingId: "trk_test456",
+    });
+    expect(result.trackingId).toBe("trk_test456");
+  });
+
+  test("returns trackingId in result even when not configured", async () => {
+    delete process.env.RESEND_API_KEY;
+    const result = await sendMail({
+      to: "test@example.com",
+      subject: "Test",
+      text: "Hello",
+      trackingId: "trk_test789",
+    });
+    expect(result.sent).toBe(false);
+    expect(result.trackingId).toBe("trk_test789");
+  });
+
+  test("does not inject tracking when no HTML", async () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "email-1" }), { status: 200 }));
+    await sendMail({
+      to: "test@example.com",
+      subject: "Test",
+      text: "Hello",
+      trackingId: "trk_test",
+    });
+    const callBody = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    expect(callBody.text).toBe("Hello");
+    expect(callBody.html).toBeUndefined();
   });
 });

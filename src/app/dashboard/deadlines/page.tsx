@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, getCache, setCache } from "@/lib/offline-store";
@@ -644,7 +644,7 @@ export default function DeadlinesPage() {
         }
         emptyIcon={CalendarClock}
         onRowClick={(d) =>
-          d.caseSlug && router.push(`/dashboard/cases/${encodeURIComponent(d.caseSlug)}`)
+          d.caseSlug && router.push(`/dashboard/cases/${encodeSlugPath(d.caseSlug)}`)
         }
         rowKey={(d) => d.id}
         pageSize={20}

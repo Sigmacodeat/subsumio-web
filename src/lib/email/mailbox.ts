@@ -5,10 +5,13 @@ import { Webhook } from "svix";
 import { getSharedPgPool, type PublicUser } from "@/lib/auth/store";
 import { externalFetchTimeout } from "@/lib/retry";
 import { sendMail, type MailInput } from "@/lib/mail";
+import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
 
 export type MailDirection = "inbound" | "outbound";
 export type MailStatus = "received" | "sent" | "failed";
+
+export type TrackingStatus = "sent" | "delivered" | "opened" | "clicked" | "bounced" | "complained";
 
 export interface MailMessage {
   id: string;
@@ -30,6 +33,13 @@ export interface MailMessage {
   raw: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  trackingId?: string | null;
+  trackingStatus?: TrackingStatus;
+  firstOpenedAt?: string | null;
+  lastOpenedAt?: string | null;
+  openCount?: number;
+  clickCount?: number;
+  forwarded?: boolean;
 }
 
 export interface MailDraftInput {
@@ -167,6 +177,13 @@ function rowToMessage(row: Record<string, unknown>): MailMessage {
     raw: (row.raw && typeof row.raw === "object" ? row.raw : {}) as Record<string, unknown>,
     createdAt: new Date(String(row.created_at)).toISOString(),
     updatedAt: new Date(String(row.updated_at)).toISOString(),
+    trackingId: row.tracking_id ? String(row.tracking_id) : null,
+    trackingStatus: row.tracking_status as TrackingStatus | undefined,
+    firstOpenedAt: row.first_opened_at ? new Date(String(row.first_opened_at)).toISOString() : null,
+    lastOpenedAt: row.last_opened_at ? new Date(String(row.last_opened_at)).toISOString() : null,
+    openCount: typeof row.open_count === "number" ? row.open_count : undefined,
+    clickCount: typeof row.click_count === "number" ? row.click_count : undefined,
+    forwarded: typeof row.forwarded === "boolean" ? row.forwarded : undefined,
   };
 }
 
@@ -270,7 +287,6 @@ export async function storeInboundResendEmail(
 ): Promise<MailMessage | null> {
   if (event.type !== "email.received") return null;
   await ensureMailboxReady();
-
   const emailId = event.data?.email_id;
   const full = emailId ? await fetchReceivedEmail(emailId) : null;
   const from = parseAddress(full?.from ?? event.data?.from);
@@ -419,6 +435,8 @@ export async function sendMailboxMessage(
   const headers: Record<string, string> = {};
   if (parent?.messageId) headers["In-Reply-To"] = parent.messageId;
 
+  const trackingId = generateTrackingId();
+
   const mailInput: MailInput = {
     to: input.to,
     cc: input.cc,
@@ -428,6 +446,7 @@ export async function sendMailboxMessage(
     html: input.html,
     replyTo: process.env.MAIL_REPLY_TO || process.env.MAIL_FROM,
     headers: Object.keys(headers).length > 0 ? headers : undefined,
+    trackingId,
   };
   const result = await sendMail(mailInput);
 
@@ -455,10 +474,11 @@ export async function sendMailboxMessage(
       inReplyTo: parent?.messageId ?? null,
       userId: user.id,
       brainId: user.brainId,
-      raw: { provider: "resend", result },
+      raw: { provider: "resend", result, trackingId },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    } as MailMessage & { trackingId?: string };
+    (next as unknown as Record<string, unknown>).trackingId = trackingId;
     messages.push(next);
     await persistLocalMailbox(messages);
     return next;
@@ -466,8 +486,8 @@ export async function sendMailboxMessage(
   const { rows } = await pool.query(
     `INSERT INTO subsumio_mail_messages
       (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
-       subject, text_body, html_body, in_reply_to, user_id, brain_id, raw, created_at, updated_at)
-     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,now(),now())
+       subject, text_body, html_body, in_reply_to, user_id, brain_id, tracking_id, raw, created_at, updated_at)
+     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,now(),now())
      RETURNING *`,
     [
       randomUUID(),
@@ -484,8 +504,78 @@ export async function sendMailboxMessage(
       parent?.messageId ?? null,
       user.id,
       user.brainId,
-      JSON.stringify({ provider: "resend", result }),
+      trackingId,
+      JSON.stringify({ provider: "resend", result, trackingId }),
     ]
   );
   return rowToMessage(rows[0]);
+}
+
+/**
+ * Handle Resend webhook events for tracking (delivered, bounced, complained).
+ * Returns true if the event was processed, false if it was not a tracking event.
+ */
+export async function handleResendTrackingEvent(event: ResendWebhookEvent): Promise<boolean> {
+  const type = event.type;
+  if (type !== "email.delivered" && type !== "email.bounced" && type !== "email.complained") {
+    return false;
+  }
+
+  const emailId = event.data?.email_id ?? null;
+  const subject = event.data?.subject ?? "";
+  const to = event.data?.to ?? [];
+  const createdAt = event.data?.created_at ?? event.created_at ?? new Date().toISOString();
+
+  // Look up the message by provider_id to get the tracking_id
+  const pool = getSharedPgPool();
+  if (!pool) {
+    console.log(`[email-tracking] Resend webhook ${type} for ${emailId} (no DB — skipping)`);
+    return true;
+  }
+
+  await ensureMailboxReady();
+
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, tracking_id FROM subsumio_mail_messages WHERE provider_id = $1",
+      [emailId]
+    );
+
+    const messageId = rows[0]?.id ?? null;
+    const trackingId = rows[0]?.tracking_id ?? null;
+
+    const eventType =
+      type === "email.delivered"
+        ? "delivered"
+        : type === "email.bounced"
+          ? "bounced"
+          : "complained";
+
+    if (trackingId) {
+      await logTrackingEvent({
+        messageId: messageId ?? undefined,
+        trackingId,
+        eventType,
+        raw: { source: "resend_webhook", event, subject, to, emailId, createdAt },
+      });
+    } else {
+      // No tracking_id found — still update the message status
+      if (messageId) {
+        await pool.query(
+          "UPDATE subsumio_mail_messages SET tracking_status = $2, updated_at = now() WHERE id = $1",
+          [messageId, eventType]
+        );
+      }
+      console.log(
+        `[email-tracking] Resend webhook ${type} for ${emailId} — no tracking_id found, status updated only`
+      );
+    }
+
+    return true;
+  } catch (err) {
+    console.error(
+      `[email-tracking] failed to handle Resend webhook ${type}: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return true; // Still return true to avoid re-processing
+  }
 }

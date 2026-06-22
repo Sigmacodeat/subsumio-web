@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
@@ -415,7 +415,7 @@ export default function CasesPage() {
         emptyIcon={Briefcase}
         emptyActionLabel={cases.length === 0 ? t("cases.empty_create") : undefined}
         onEmptyAction={cases.length === 0 ? () => router.push("/dashboard/cases/new") : undefined}
-        onRowClick={(c) => router.push(`/dashboard/cases/${encodeURIComponent(c.slug)}`)}
+        onRowClick={(c) => router.push(`/dashboard/cases/${encodeSlugPath(c.slug)}`)}
         rowKey={(c) => c.slug}
         pageSize={20}
         selectable

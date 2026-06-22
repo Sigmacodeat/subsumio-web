@@ -3,6 +3,7 @@ import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { api } from "@/lib/api";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
 const sendSchema = z.object({
   invoiceSlug: z.string().min(1, "invoiceSlug_required"),
@@ -61,11 +62,20 @@ export const POST = createHandler(
         );
       const invoiceNumber = esc(fm.invoice_number ?? body.invoiceSlug);
       const subject = `Rechnung ${invoiceNumber} – ${settings.kanzleiName || "Ihre Kanzlei"}`;
-      const html = `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
+      const trackingId = generateTrackingId();
+      const rawHtml = `<p>Sehr geehrte${client ? ` ${esc(client)}` : ""},</p>
 <p>anbei finden Sie die Rechnung <strong>${invoiceNumber}</strong>.</p>
 <p>Mit freundlichen Grüßen<br/>${esc(settings.anwaltName || settings.kanzleiName || "")}</p>`;
+      const html = injectTracking(rawHtml, trackingId);
 
       await transporter.sendMail({ from: fromAddr, to: recipient, subject, html });
+
+      // Log tracking event for the outbound email
+      void logTrackingEvent({
+        trackingId,
+        eventType: "delivered",
+        raw: { source: "smtp", route: "invoice.send", recipient },
+      });
 
       await api.brain.updatePage({
         slug: body.invoiceSlug,

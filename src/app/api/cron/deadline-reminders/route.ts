@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { createCronHandler } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -122,16 +123,25 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       const subject = `Fristen-Erinnerung — Akte ${esc(fm.case_number ?? page.slug)}`;
       const stageLabel = (stage: number) =>
         stage === 0 ? "HEUTE fällig" : stage === 1 ? "morgen fällig" : `in ${stage} Tagen fällig`;
-      const html = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
+      const trackingId = generateTrackingId();
+      const rawHtml = `<p>Sehr geehrte/r ${esc(settings.anwaltName || "Anwalt")},</p>
 <p>folgende Fristen stehen an:</p>
 <ul>
 ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong> — ${esc(dd)} (${stageLabel(stage)})</li>`).join("\n")}
 </ul>
 <p>Akte: ${esc(fm.case_number ?? page.slug)} — ${esc(fm.title ?? page.title ?? "")}</p>
 <p>Subsumio Kanzlei-OS</p>`;
+      const html = injectTracking(rawHtml, trackingId);
 
       try {
         await transporter.sendMail({ from: fromAddr, to: toEmail, subject, html });
+
+        // Log tracking event for the outbound email
+        void logTrackingEvent({
+          trackingId,
+          eventType: "delivered",
+          raw: { source: "smtp", route: "deadline-reminders", recipient: toEmail },
+        });
 
         const stageByDeadline = new Map(due.map(({ d, stage }) => [d, stage]));
         const updatedDeadlines = deadlines.map((d) => {

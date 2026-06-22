@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { encodeSlugPath } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { OFFLINE_KEYS, isOnline, enqueueMutation, getCache, setCache } from "@/lib/offline-store";
@@ -688,7 +689,7 @@ export default function ContactsPage() {
                     {linked.map((c) => (
                       <Link
                         key={c.slug}
-                        href={`/dashboard/cases/${encodeURIComponent(c.slug)}`}
+                        href={`/dashboard/cases/${encodeSlugPath(c.slug)}`}
                         className="brand-text block truncate text-xs hover:underline"
                       >
                         {c.caseNumber} — {c.title}

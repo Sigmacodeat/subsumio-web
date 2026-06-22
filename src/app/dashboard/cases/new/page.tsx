@@ -11,12 +11,13 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import { enqueueMutation, isOnline } from "@/lib/offline-store";
+import { cn, encodeSlugPath } from "@/lib/utils";
+import { enqueueMutation, isOnline, setCache, getCache, OFFLINE_KEYS } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
 import type { ContactFrontmatter } from "@/lib/legal-types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
@@ -134,11 +135,18 @@ interface ContactSelectProps {
 function ContactSelect({ id, label, value, options, onChange, disabled }: ContactSelectProps) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger id={id} className="mt-2 h-9 text-xs" aria-label={label}>
+      <SelectTrigger id={id} className="mt-1.5" aria-label={label}>
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">{label}</SelectItem>
+        {options.length > 0 && (
+          <>
+            <SelectItem value="" className="text-[color:var(--ds-text-muted)]">
+              {label}
+            </SelectItem>
+            <SelectSeparator />
+          </>
+        )}
         {options.map((c) => (
           <SelectItem key={c.slug} value={c.slug}>
             {c.name}
@@ -228,8 +236,24 @@ export default function NewCasePage() {
         }
       } else {
         await enqueueMutation({ type: "createPage", payload: pagePayload });
+        // Cache the page locally so the detail page can load it offline
+        const now = new Date().toISOString();
+        const fakePage: BrainPage = {
+          slug,
+          title: pagePayload.title,
+          content: pagePayload.content || "",
+          frontmatter: pagePayload.frontmatter || {},
+          created_at: now,
+          updated_at: now,
+        };
+        await setCache(`page:${slug}`, fakePage);
+        // Also add to cases list cache so it appears in the list
+        const cachedCases = await getCache<unknown[]>(OFFLINE_KEYS.cases);
+        if (cachedCases) {
+          await setCache(OFFLINE_KEYS.cases, [...cachedCases, fakePage]);
+        }
       }
-      router.push(`/dashboard/cases/${encodeURIComponent(slug)}`);
+      router.push(`/dashboard/cases/${encodeSlugPath(slug)}`);
     },
   });
 
@@ -342,7 +366,9 @@ export default function NewCasePage() {
       <form onSubmit={form.handleSubmit} className="space-y-5">
         {/* Basic info */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Grunddaten</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Grunddaten
+          </h2>
 
           <div>
             <Label htmlFor="case-title" className="mb-1.5 block text-xs">
@@ -352,7 +378,6 @@ export default function NewCasePage() {
               id="case-title"
               {...register("title")}
               placeholder="z.B. Musterfall GmbH vs. Schuldner AG"
-              className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
             {f.formState.errors.title && (
               <p className="mt-1 text-xs text-red-600">{f.formState.errors.title.message}</p>
@@ -364,12 +389,7 @@ export default function NewCasePage() {
               <Label htmlFor="case-number" className="mb-1.5 block text-xs">
                 Aktenzeichen
               </Label>
-              <Input
-                id="case-number"
-                {...register("caseNumber")}
-                placeholder="z.B. 2026-001"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
-              />
+              <Input id="case-number" {...register("caseNumber")} placeholder="z.B. 2026-001" />
             </div>
             <div>
               <Label htmlFor="case-status" className="mb-1.5 block text-xs">
@@ -403,7 +423,6 @@ export default function NewCasePage() {
                 {...register("legalArea")}
                 list="legal-area-suggestions"
                 placeholder="z.B. Zivilrecht"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <datalist id="legal-area-suggestions">
                 {LEGAL_AREA_SUGGESTIONS.map((area) => (
@@ -420,7 +439,6 @@ export default function NewCasePage() {
                 {...register("subArea")}
                 list="sub-area-suggestions"
                 placeholder="z.B. Vertragsrecht"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <datalist id="sub-area-suggestions">
                 {(SUB_AREA_SUGGESTIONS[legalArea ?? ""] ?? []).map((sub) => (
@@ -479,7 +497,9 @@ export default function NewCasePage() {
 
         {/* Parties */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Beteiligte</h2>
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Beteiligte
+          </h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -494,7 +514,6 @@ export default function NewCasePage() {
                   },
                 })}
                 placeholder="Name des Mandanten"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <ContactSelect
                 id="case-client-select"
@@ -517,7 +536,6 @@ export default function NewCasePage() {
                   },
                 })}
                 placeholder="Name der Gegenseite"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <ContactSelect
                 id="case-opponent-select"
@@ -543,7 +561,6 @@ export default function NewCasePage() {
                   },
                 })}
                 placeholder="z.B. LG Wien"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <ContactSelect
                 id="case-court-select"
@@ -566,7 +583,6 @@ export default function NewCasePage() {
                   },
                 })}
                 placeholder="Name des Anwalts"
-                className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
               <ContactSelect
                 id="case-lawyer-select"
@@ -582,28 +598,27 @@ export default function NewCasePage() {
 
         {/* Facts */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            <Label htmlFor="case-facts">Sachverhalt</Label>
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Sachverhalt
           </h2>
           <textarea
             id="case-facts"
             {...register("facts")}
             rows={6}
             placeholder="Beschreibe den Sachverhalt…"
-            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-colors duration-150 placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[color:var(--brand-primary)]/20 focus:outline-none"
           />
         </div>
 
         {/* Tags */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            <Label htmlFor="case-tags">Tags</Label>
+          <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
+            Tags
           </h2>
           <Input
             id="case-tags"
             {...register("tags")}
             placeholder="Komma-getrennte Tags: z.B. Vertragsbruch, Schadensersatz"
-            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </div>
 
@@ -613,7 +628,7 @@ export default function NewCasePage() {
               type="checkbox"
               {...register("portalEnabled")}
               checked={portalEnabled}
-              className="mt-1"
+              className="mt-0.5 h-4 w-4 rounded accent-[color:var(--brand-primary)]"
             />
             <span>
               <span className="block text-sm font-semibold text-[color:var(--ds-text)]">

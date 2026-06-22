@@ -14,6 +14,11 @@ import {
   AlertTriangle,
   Calendar,
   Loader2,
+  Eye,
+  MousePointerClick,
+  Forward,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { csrfFetch } from "@/lib/csrf";
@@ -32,6 +37,12 @@ export interface MailMessageView {
   text: string | null;
   html: string | null;
   createdAt: string;
+  trackingStatus?: string;
+  openCount?: number;
+  clickCount?: number;
+  forwarded?: boolean;
+  firstOpenedAt?: string | null;
+  lastOpenedAt?: string | null;
 }
 
 type Filter = "all" | "inbound" | "outbound";
@@ -252,9 +263,19 @@ export default function MailboxClient({
                     <p className="truncate text-xs [color:var(--mk-text-muted)]">
                       {m.subject || "(kein Betreff)"}
                     </p>
-                    <p className="mt-0.5 text-xs [color:var(--mk-text-subtle)]">
-                      {fmt(m.createdAt, lang)}
-                    </p>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <p className="text-xs [color:var(--mk-text-subtle)]">
+                        {fmt(m.createdAt, lang)}
+                      </p>
+                      {m.direction === "outbound" && m.trackingStatus && (
+                        <TrackingBadge
+                          status={m.trackingStatus}
+                          openCount={m.openCount}
+                          clickCount={m.clickCount}
+                          forwarded={m.forwarded}
+                        />
+                      )}
+                    </div>
                   </button>
                 </li>
               ))}
@@ -387,6 +408,17 @@ function MessageDetail({ message, onSent }: { message: MailMessageView; onSent: 
           <p className="text-sm [color:var(--mk-text-subtle)]">Kein Inhalt.</p>
         )}
       </div>
+
+      {message.direction === "outbound" && message.trackingStatus && (
+        <TrackingTimeline
+          status={message.trackingStatus}
+          openCount={message.openCount}
+          clickCount={message.clickCount}
+          forwarded={message.forwarded}
+          firstOpenedAt={message.firstOpenedAt}
+          lastOpenedAt={message.lastOpenedAt}
+        />
+      )}
 
       {replyOpen && (
         <ReplyForm
@@ -557,6 +589,163 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: () => 
             {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Senden
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TrackingBadge({
+  status,
+  openCount,
+  clickCount,
+  forwarded,
+}: {
+  status: string;
+  openCount?: number;
+  clickCount?: number;
+  forwarded?: boolean;
+}) {
+  const config: Record<string, { icon: typeof Eye; color: string; label: string }> = {
+    sent: { icon: Send, color: "text-slate-400", label: "Gesendet" },
+    delivered: { icon: CheckCircle2, color: "text-emerald-400", label: "Zugestellt" },
+    opened: { icon: Eye, color: "text-blue-400", label: "Geöffnet" },
+    clicked: { icon: MousePointerClick, color: "text-violet-400", label: "Geklickt" },
+    bounced: { icon: XCircle, color: "text-red-400", label: "Bounce" },
+    complained: { icon: AlertTriangle, color: "text-amber-400", label: "Spam" },
+  };
+
+  const cfg = config[status] ?? config.sent;
+  const Icon = cfg.icon;
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs ${cfg.color}`}>
+      <Icon size={11} />
+      {cfg.label}
+      {openCount && openCount > 0 ? ` (${openCount}x)` : ""}
+      {forwarded && (
+        <span className="inline-flex items-center gap-0.5 text-amber-400" title="Weitergeleitet">
+          <Forward size={10} />
+        </span>
+      )}
+    </span>
+  );
+}
+
+function TrackingTimeline({
+  status,
+  openCount,
+  clickCount,
+  forwarded,
+  firstOpenedAt,
+  lastOpenedAt,
+}: {
+  status: string;
+  openCount?: number;
+  clickCount?: number;
+  forwarded?: boolean;
+  firstOpenedAt?: string | null;
+  lastOpenedAt?: string | null;
+}) {
+  const { lang } = useLang();
+
+  const steps: { label: string; done: boolean; icon: typeof Eye; color: string }[] = [
+    { label: "Gesendet", done: true, icon: Send, color: "text-slate-400" },
+    {
+      label: "Zugestellt",
+      done: ["delivered", "opened", "clicked"].includes(status),
+      icon: CheckCircle2,
+      color: "text-emerald-400",
+    },
+    {
+      label: "Geöffnet",
+      done: ["opened", "clicked"].includes(status),
+      icon: Eye,
+      color: "text-blue-400",
+    },
+    {
+      label: "Geklickt",
+      done: status === "clicked",
+      icon: MousePointerClick,
+      color: "text-violet-400",
+    },
+  ];
+
+  if (status === "bounced" || status === "complained") {
+    steps.length = 0;
+  }
+
+  return (
+    <div className="border-t [border-color:var(--mk-border)] px-5 py-4 [background:var(--mk-surface-2)]">
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-xs font-semibold [color:var(--mk-text)]">Tracking</h3>
+        {status === "bounced" && (
+          <span className="inline-flex items-center gap-1 rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-300">
+            <XCircle size={11} /> Email gebounct
+          </span>
+        )}
+        {status === "complained" && (
+          <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">
+            <AlertTriangle size={11} /> Spam-Beschwerde
+          </span>
+        )}
+        {forwarded && (
+          <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-xs text-amber-300">
+            <Forward size={11} /> Weitergeleitet
+          </span>
+        )}
+      </div>
+
+      {steps.length > 0 ? (
+        <div className="flex items-center gap-1">
+          {steps.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <div key={step.label} className="flex items-center gap-1">
+                <div
+                  className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs ${
+                    step.done ? step.color : "text-[color:var(--mk-text-subtle)] opacity-50"
+                  }`}
+                >
+                  <Icon size={12} />
+                  {step.label}
+                </div>
+                {i < steps.length - 1 && (
+                  <div
+                    className={`h-px w-4 ${step.done ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--mk-border)]"}`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="mt-3 grid gap-1 text-xs [color:var(--mk-text-muted)]">
+        {openCount !== undefined && openCount > 0 && (
+          <div className="flex items-center gap-1.5">
+            <Eye size={11} className="text-blue-400" />
+            <span>{openCount}x geöffnet</span>
+            {firstOpenedAt && (
+              <span className="[color:var(--mk-text-subtle)]">
+                — zuerst {fmt(firstOpenedAt, lang)}
+              </span>
+            )}
+            {lastOpenedAt && lastOpenedAt !== firstOpenedAt && (
+              <span className="[color:var(--mk-text-subtle)]">
+                — zuletzt {fmt(lastOpenedAt, lang)}
+              </span>
+            )}
+          </div>
+        )}
+        {clickCount !== undefined && clickCount > 0 && (
+          <div className="flex items-center gap-1.5">
+            <MousePointerClick size={11} className="text-violet-400" />
+            <span>{clickCount}x geklickt</span>
+          </div>
+        )}
+        {openCount === 0 && clickCount === 0 && status !== "bounced" && status !== "complained" && (
+          <p className="[color:var(--mk-text-subtle)]">Noch keine Interaktion erfasst.</p>
+        )}
       </div>
     </div>
   );

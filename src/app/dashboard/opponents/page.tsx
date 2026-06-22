@@ -7,7 +7,7 @@ import { ShieldAlert, Loader2, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
@@ -265,7 +265,7 @@ export default function OpponentsPage() {
                     return (
                       <Link
                         key={c.slug}
-                        href={`/dashboard/cases/${encodeURIComponent(c.slug)}`}
+                        href={`/dashboard/cases/${encodeSlugPath(c.slug)}`}
                         className="group flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]"
                       >
                         <span className="text-sm text-[color:var(--ds-text)]">{c.title}</span>

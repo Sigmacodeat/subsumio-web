@@ -20,6 +20,7 @@ export const POST = createHandler(
     action: "presence.update",
     rateTier: "standard",
     body: presenceSchema,
+    skipCsrf: true,
   },
   async (ctx, body) => {
     const { page, action = "heartbeat" } = body;

@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 
@@ -407,7 +407,7 @@ export default function IntakePage() {
                   )}
                   {item.frontmatter.converted_case_slug && (
                     <a
-                      href={`/dashboard/cases/${encodeURIComponent(item.frontmatter.converted_case_slug)}`}
+                      href={`/dashboard/cases/${encodeSlugPath(item.frontmatter.converted_case_slug)}`}
                       className="inline-flex items-center gap-1 font-mono text-emerald-600 hover:underline"
                     >
                       <ChevronRight size={12} />

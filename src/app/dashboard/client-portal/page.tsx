@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { encodeSlugPath } from "@/lib/utils";
 import { caseFrontmatter, type DeadlineEntry } from "@/lib/legal-types";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -235,7 +236,7 @@ export default function ClientPortalPage() {
               </div>
 
               <div className="flex gap-2">
-                <Link href={`/dashboard/cases/${encodeURIComponent(c.slug)}`} className="flex-1">
+                <Link href={`/dashboard/cases/${encodeSlugPath(c.slug)}`} className="flex-1">
                   <Button
                     variant="secondary"
                     className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"

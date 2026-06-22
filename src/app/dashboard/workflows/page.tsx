@@ -29,7 +29,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useRealtime, ensureRealtime } from "@/lib/realtime";
-import { cn } from "@/lib/utils";
+import { cn, encodeSlugPath } from "@/lib/utils";
 import {
   WORKFLOW_TEMPLATES,
   getTemplate,
@@ -533,7 +533,7 @@ function WorkflowCard({
               <>
                 <span>·</span>
                 <a
-                  href={`/dashboard/cases/${encodeURIComponent(fm.case_slug)}`}
+                  href={`/dashboard/cases/${encodeSlugPath(fm.case_slug)}`}
                   className="brand-text font-mono hover:underline"
                 >
                   {fm.case_slug}

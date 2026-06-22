@@ -45,7 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
-import { isOnline, enqueueMutation } from "@/lib/offline-store";
+import { isOnline, enqueueMutation, getCache } from "@/lib/offline-store";
 import { usePresence } from "@/lib/use-presence";
 import type { BrainPage } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
@@ -216,7 +216,7 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
 export default function CaseDetailPage() {
   const { t, lang } = useLang();
   const params = useParams();
-  const slug = decodeURIComponent(params.slug as string);
+  const slug = Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string);
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
@@ -479,6 +479,21 @@ export default function CaseDetailPage() {
           "[case-detail] failed to load case:",
           err instanceof Error ? err.message : String(err)
         );
+        // Offline fallback: try loading from cache (e.g. case created offline)
+        try {
+          const cached = await getCache<BrainPage>(`page:${slug}`);
+          if (cached && !cancelled) {
+            const detail = parseCaseDetail(cached);
+            setCaseData(detail);
+            setTasks(detail.tasks);
+            setTimeEntries(detail.timeEntries);
+            setExpensesList(detail.expenses);
+            setEvidenceList(detail.evidence || []);
+            setDeadlinesList(detail.deadlines || []);
+          }
+        } catch {
+          // cache miss — leave caseData as null (shows "Akte nicht gefunden")
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -548,21 +563,22 @@ export default function CaseDetailPage() {
 
       const frontmatter: Record<string, unknown> = {
         type: "legal_case",
-        case_number: caseData.caseNumber,
-        status: caseData.status,
-        legal_area: caseData.legalArea,
-        priority: caseData.priority,
-        opponent_name: caseData.opponentName,
+        case_number: updates.caseNumber ?? caseData.caseNumber,
+        status: updates.status ?? caseData.status,
+        legal_area: updates.legalArea ?? caseData.legalArea,
+        sub_area: updates.subArea ?? caseData.subArea,
+        priority: updates.priority ?? caseData.priority,
+        opponent_name: updates.opponentName ?? caseData.opponentName,
         opponent_slugs: updates.opponentSlugs ?? caseData.opponentSlugs,
-        client_name: caseData.clientName,
+        client_name: updates.clientName ?? caseData.clientName,
         client_slug: updates.clientSlug ?? caseData.clientSlug,
-        court_name: caseData.courtName,
+        court_name: updates.courtName ?? caseData.courtName,
         court_slug: updates.courtSlug ?? caseData.courtSlug,
-        own_lawyer_name: caseData.ownLawyerName,
+        own_lawyer_name: updates.ownLawyerName ?? caseData.ownLawyerName,
         own_lawyer_slug: updates.ownLawyerSlug ?? caseData.ownLawyerSlug,
-        claims: caseData.claims,
-        defenses: caseData.defenses,
-        tags: caseData.tags,
+        claims: updates.claims ?? caseData.claims,
+        defenses: updates.defenses ?? caseData.defenses,
+        tags: updates.tags ?? caseData.tags,
         tasks: updates.tasks ?? tasks,
         time_entries: updates.timeEntries ?? timeEntries,
         expenses: updates.expenses ?? expensesList,

@@ -219,7 +219,12 @@ export function createHandler<
     req: NextRequest
   ) => Promise<Response>
 ): (req: NextRequest) => Promise<Response> {
-  return async (req: NextRequest) => {
+  return async (req: NextRequest, routeContext?: { params?: Promise<Record<string, unknown>> }) => {
+    // Attach params from Next.js route context to req so handlers can access them
+    if (routeContext?.params) {
+      (req as unknown as { params: Promise<Record<string, unknown>> }).params = routeContext.params;
+    }
+
     // 0. CORS preflight
     const corsResponse = handleCors(req, options.cors ?? false);
     if (corsResponse) return corsResponse;

@@ -5,9 +5,8 @@ import { logAudit } from "@/lib/audit";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
 
 function buildPath(slug: string[]): string | null {
-  const path = slug.join("/");
-  if (path.includes("..")) return null;
-  return path;
+  if (slug.some((s) => s.includes(".."))) return null;
+  return slug.map(encodeURIComponent).join("/");
 }
 
 const patchSchema = z
@@ -28,7 +27,7 @@ export const GET = createHandler(
     if (!path) return apiError("invalid_slug", "Invalid slug", 400);
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(path)}`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: ctx.headers,
       });
       if (res.status === 404) return apiNotFound("not_found");
@@ -69,7 +68,7 @@ export const PATCH = createHandler(
     const ifMatch = req.headers.get("if-match");
     if (ifMatch) {
       try {
-        const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(path)}`, {
+        const getRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
           headers: ctx.headers,
         });
         if (getRes.ok) {
@@ -104,7 +103,7 @@ export const PATCH = createHandler(
     }
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(path)}`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(patchBody),
@@ -145,7 +144,7 @@ export const DELETE = createHandler(
     if (!path) return apiError("invalid_slug", "Invalid slug", 400);
 
     try {
-      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(path)}`, {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         method: "DELETE",
         headers: ctx.headers,
       });

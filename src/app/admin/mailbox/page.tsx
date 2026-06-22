@@ -47,6 +47,12 @@ export default async function MailboxPage() {
       text: m.text,
       html: m.html,
       createdAt: m.createdAt,
+      trackingStatus: m.trackingStatus,
+      openCount: m.openCount,
+      clickCount: m.clickCount,
+      forwarded: m.forwarded,
+      firstOpenedAt: m.firstOpenedAt,
+      lastOpenedAt: m.lastOpenedAt,
     }));
   } catch (err) {
     loadError = err instanceof Error ? err.message : String(err);

@@ -17,11 +17,14 @@ export interface MailInput {
   html?: string;
   replyTo?: string | string[];
   headers?: Record<string, string>;
+  /** Tracking ID for open/click tracking. When set, tracking pixel and link rewriting are injected into HTML. */
+  trackingId?: string;
 }
 
 export interface MailResult {
   sent: boolean;
   id?: string;
+  trackingId?: string;
   error?: string;
 }
 
@@ -38,6 +41,7 @@ export async function sendMail({
   html,
   replyTo,
   headers,
+  trackingId,
 }: MailInput): Promise<MailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.MAIL_FROM || "Subsumio <hello@subsum.io>";
@@ -48,6 +52,18 @@ export async function sendMail({
       .replace(/\s+/g, " ")
       .trim() ??
     "";
+
+  // Inject tracking pixel and link rewriting into HTML if trackingId is set
+  let trackedHtml = html;
+  if (trackingId && html) {
+    try {
+      const { injectTracking } = await import("@/lib/email/tracking");
+      trackedHtml = injectTracking(html, trackingId);
+    } catch {
+      // Tracking injection must never block sending
+      trackedHtml = html;
+    }
+  }
 
   if (!apiKey) {
     console.log(
@@ -60,7 +76,7 @@ export async function sendMail({
         "└────────────────────────────────────────────────────────────────┘",
       ].join("\n")
     );
-    return { sent: false, error: "mail_not_configured" };
+    return { sent: false, trackingId, error: "mail_not_configured" };
   }
 
   try {
@@ -77,8 +93,8 @@ export async function sendMail({
         ...(bcc ? { bcc } : {}),
         subject,
         ...(text ? { text } : {}),
-        ...(html ? { html } : {}),
-        ...(!text && !html ? { text: bodyText } : {}),
+        ...(trackedHtml ? { html: trackedHtml } : {}),
+        ...(!text && !trackedHtml ? { text: bodyText } : {}),
         ...(replyTo ? { reply_to: replyTo } : {}),
         ...(headers ? { headers } : {}),
       }),
@@ -90,7 +106,7 @@ export async function sendMail({
       return { sent: false, error: `provider_${res.status}` };
     }
     const data = await res.json().catch(() => ({}) as { id?: string });
-    return { sent: true, id: typeof data.id === "string" ? data.id : undefined };
+    return { sent: true, id: typeof data.id === "string" ? data.id : undefined, trackingId };
   } catch (err) {
     console.error(`[mail] send failed: ${err instanceof Error ? err.message : String(err)}`);
     return { sent: false, error: "network" };
