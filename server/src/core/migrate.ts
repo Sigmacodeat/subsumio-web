@@ -1101,9 +1101,9 @@ export const MIGRATIONS: Migration[] = [
       CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS $fn$
       BEGIN
         NEW.search_vector :=
-          setweight(to_tsvector('english', COALESCE(NEW.doc_comment, '')), 'A') ||
-          setweight(to_tsvector('english', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
-          setweight(to_tsvector('english', COALESCE(NEW.chunk_text, '')), 'B');
+          setweight(to_tsvector('german', COALESCE(NEW.doc_comment, '')), 'A') ||
+          setweight(to_tsvector('german', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
+          setweight(to_tsvector('german', COALESCE(NEW.chunk_text, '')), 'B');
         RETURN NEW;
       END;
       $fn$ LANGUAGE plpgsql;
@@ -1140,9 +1140,9 @@ export const MIGRATIONS: Migration[] = [
     sql: `
       UPDATE content_chunks
       SET search_vector =
-        setweight(to_tsvector('english', COALESCE(doc_comment, '')), 'A') ||
-        setweight(to_tsvector('english', COALESCE(symbol_name_qualified, '')), 'A') ||
-        setweight(to_tsvector('english', COALESCE(chunk_text, '')), 'B')
+        setweight(to_tsvector('german', COALESCE(doc_comment, '')), 'A') ||
+        setweight(to_tsvector('german', COALESCE(symbol_name_qualified, '')), 'A') ||
+        setweight(to_tsvector('german', COALESCE(chunk_text, '')), 'B')
       WHERE search_vector IS NULL;
     `,
   },
@@ -5304,6 +5304,57 @@ export const MIGRATIONS: Migration[] = [
         ON links(from_page_id, to_page_id, link_type) WHERE valid_to IS NULL;
       CREATE INDEX IF NOT EXISTS idx_links_history
         ON links(from_page_id, valid_from, valid_to);
+    `,
+  },
+  {
+    version: 118,
+    name: "fts_config_german",
+    // Switch all FTS trigger functions from 'english'/'simple' to 'german'
+    // for proper German legal text stemming. German config handles German
+    // word forms (Haftung/Haftungen, Geschäftsführer/Geschäftsführerin)
+    // while leaving English terms as exact tokens.
+    idempotent: true,
+    sql: `
+      CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS $fn$
+      BEGIN
+        NEW.search_vector :=
+          setweight(to_tsvector('german', COALESCE(NEW.doc_comment, '')), 'A') ||
+          setweight(to_tsvector('german', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
+          setweight(to_tsvector('german', COALESCE(NEW.chunk_text, '')), 'B');
+        RETURN NEW;
+      END;
+      $fn$ LANGUAGE plpgsql;
+
+      CREATE OR REPLACE FUNCTION update_page_search_vector() RETURNS trigger AS $$
+      DECLARE
+        timeline_text TEXT;
+      BEGIN
+        SELECT coalesce(string_agg(summary || ' ' || detail, ' '), '')
+        INTO timeline_text
+        FROM timeline_entries
+        WHERE page_id = NEW.id;
+
+        NEW.search_vector :=
+          setweight(to_tsvector('german', coalesce(NEW.title, '')), 'A') ||
+          setweight(to_tsvector('german', coalesce(NEW.compiled_truth, '')), 'B') ||
+          setweight(to_tsvector('german', coalesce(NEW.timeline, '')), 'C') ||
+          setweight(to_tsvector('german', coalesce(timeline_text, '')), 'C');
+
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      -- Backfill: rebuild all search vectors with new config
+      UPDATE content_chunks
+      SET search_vector =
+        setweight(to_tsvector('german', COALESCE(doc_comment, '')), 'A') ||
+        setweight(to_tsvector('german', COALESCE(symbol_name_qualified, '')), 'A') ||
+        setweight(to_tsvector('german', COALESCE(chunk_text, '')), 'B');
+
+      UPDATE pages p SET search_vector =
+        setweight(to_tsvector('german', coalesce(p.title, '')), 'A') ||
+        setweight(to_tsvector('german', coalesce(p.compiled_truth, '')), 'B') ||
+        setweight(to_tsvector('german', coalesce(p.timeline, '')), 'C');
     `,
   },
 ];

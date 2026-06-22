@@ -346,9 +346,9 @@ CREATE INDEX IF NOT EXISTS content_chunks_stale_idx
 CREATE OR REPLACE FUNCTION update_chunk_search_vector() RETURNS TRIGGER AS \$fn\$
 BEGIN
   NEW.search_vector :=
-    setweight(to_tsvector('simple', COALESCE(NEW.doc_comment, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(NEW.chunk_text, '')), 'B');
+    setweight(to_tsvector('german', COALESCE(NEW.doc_comment, '')), 'A') ||
+    setweight(to_tsvector('german', COALESCE(NEW.symbol_name_qualified, '')), 'A') ||
+    setweight(to_tsvector('german', COALESCE(NEW.chunk_text, '')), 'B');
   RETURN NEW;
 END;
 \$fn\$ LANGUAGE plpgsql;
@@ -772,10 +772,10 @@ BEGIN
 
   -- Build weighted tsvector
   NEW.search_vector :=
-    setweight(to_tsvector('simple', coalesce(NEW.title, '')), 'A') ||
-    setweight(to_tsvector('simple', coalesce(NEW.compiled_truth, '')), 'B') ||
-    setweight(to_tsvector('simple', coalesce(NEW.timeline, '')), 'C') ||
-    setweight(to_tsvector('simple', coalesce(timeline_text, '')), 'C');
+    setweight(to_tsvector('german', coalesce(NEW.title, '')), 'A') ||
+    setweight(to_tsvector('german', coalesce(NEW.compiled_truth, '')), 'B') ||
+    setweight(to_tsvector('german', coalesce(NEW.timeline, '')), 'C') ||
+    setweight(to_tsvector('german', coalesce(timeline_text, '')), 'C');
 
   RETURN NEW;
 END;
