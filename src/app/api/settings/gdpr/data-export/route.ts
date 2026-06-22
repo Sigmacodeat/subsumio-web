@@ -3,7 +3,7 @@ import { getStore } from "@/lib/auth/store";
 import { getApiKeyStore } from "@/lib/api-key-store";
 import { decrypt } from "@/lib/encryption";
 import { logAudit } from "@/lib/audit";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 export const GET = createHandler(
@@ -27,7 +27,8 @@ export const GET = createHandler(
 
     let brainPages: unknown[] = [];
     try {
-      brainPages = await api.brain.listPages({ limit: 10000 });
+      const brain = createServerBrainClient(ctx.headers);
+      brainPages = await brain.listPages({ limit: 10000 });
     } catch {
       // Brain may not be available
     }
@@ -80,5 +81,5 @@ export const GET = createHandler(
         "Cache-Control": "no-store",
       },
     });
-  },
+  }
 );

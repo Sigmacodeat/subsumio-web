@@ -10,15 +10,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,box-shadow,transform] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:translate-y-0 active:scale-[0.98]",
+          "bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,box-shadow] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:bg-[color:var(--brand-primary-hover)]",
         secondary:
           "border border-[color:var(--mk-border)] bg-transparent text-[color:var(--mk-text-muted)] hover:border-[color:var(--mk-border-strong)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         ghost:
           "bg-transparent text-[color:var(--mk-text-muted)] hover:bg-[color:var(--mk-surface-2)] hover:text-[color:var(--mk-text)]",
         danger:
-          "border border-red-500/20 bg-red-500/10 text-red-400 hover:border-red-500/40 hover:bg-red-500/20",
-        success: "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500",
-        glow: "bg-[color:var(--brand-primary)] text-white shadow-md transition-[background-color,box-shadow,transform] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:translate-y-0 active:scale-[0.98]",
+          "border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] text-[color:var(--ds-danger-text)] hover:border-[color:var(--ds-danger-border)] hover:bg-[color:var(--ds-danger-bg)] hover:opacity-80",
+        success: "bg-[color:var(--ds-success-text)] text-white shadow-sm hover:opacity-90",
+        glow: "bg-[color:var(--brand-primary)] text-white shadow-md transition-[background-color,box-shadow] duration-200 hover:bg-[color:var(--brand-primary-hover)] hover:shadow-lg active:bg-[color:var(--brand-primary-hover)]",
         outline: "brand-border brand-text hover:brand-border-strong hover:brand-soft border",
       },
       size: {

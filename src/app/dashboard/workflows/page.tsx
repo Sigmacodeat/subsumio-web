@@ -104,7 +104,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 export default function WorkflowsPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const pagesQuery = usePages({ type: "workflow", limit: 200 });
   const meQuery = useMe();
   const createMutation = useCreatePage();

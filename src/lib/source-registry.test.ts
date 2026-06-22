@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   calculateFreshness,
   hashContent,
@@ -9,7 +9,6 @@ import {
   findSourceForCitation,
   provenanceFromEntry,
   type SourceRegistryEntry,
-  type CorpusDiffEntry,
 } from "@/lib/source-registry";
 
 // ── calculateFreshness ────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 import { executeApprovedAction } from "@/lib/approval-execution";
-import { sendWhatsAppText } from "@/lib/whatsapp/send";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
 export const dynamic = "force-dynamic";
 
@@ -25,26 +25,33 @@ export const POST = createHandler(
   },
   async (ctx, body) => {
     try {
-      const result = await executeApprovedAction({
-        brainId: ctx.brainId,
-        getPage: api.brain.getPage,
-        createPage: api.brain.createPage,
-        updatePage: api.brain.updatePage,
-        sendWhatsAppText,
-      }, {
-        actionSlug: body.id,
-        executedBy: ctx.user.email,
-        force: body.force === true,
-      });
+      const brain = createServerBrainClient(ctx.headers);
+      const result = await executeApprovedAction(
+        {
+          brainId: ctx.brainId,
+          getPage: brain.getPage,
+          createPage: brain.createPage,
+          updatePage: brain.updatePage,
+          sendProactiveWhatsApp: sendProactiveMessage,
+        },
+        {
+          actionSlug: body.id,
+          executedBy: ctx.user.email,
+          force: body.force === true,
+        }
+      );
 
       return Response.json({ ok: true, result });
     } catch (err) {
-      console.error("[approvals/execute] failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[approvals/execute] failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError(
         "approval_execution_failed",
         err instanceof Error ? err.message : "Freigabe konnte nicht ausgefuehrt werden",
         400
       );
     }
-  },
+  }
 );

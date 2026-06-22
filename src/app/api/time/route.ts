@@ -1,6 +1,5 @@
-
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
@@ -17,22 +16,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const timeQuerySchema = z.object({
-  caseSlug: z.string().optional(),
-  case_slug: z.string().optional(),
-  billable: z.string().optional(),
-  unbilled: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
-  lawyer: z.string().optional(),
-  limit: z.string().optional(),
-  billing_summary: z.string().optional(),
-}).passthrough();
+const timeQuerySchema = z
+  .object({
+    caseSlug: z.string().optional(),
+    case_slug: z.string().optional(),
+    billable: z.string().optional(),
+    unbilled: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    lawyer: z.string().optional(),
+    limit: z.string().optional(),
+    billing_summary: z.string().optional(),
+  })
+  .passthrough();
 
 const timePostSchema = z.object({
   case_slug: z.string().min(1, "case_slug_required"),
   description: z.string().min(1, "description_required").max(500),
-  minutes: z.union([z.number(), z.string()]).transform((v) => typeof v === "number" ? Math.round(v) : parseInt(String(v), 10)).pipe(z.number().positive("minutes_required_positive")),
+  minutes: z
+    .union([z.number(), z.string()])
+    .transform((v) => (typeof v === "number" ? Math.round(v) : parseInt(String(v), 10)))
+    .pipe(z.number().positive("minutes_required_positive")),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date_required_iso"),
   rate: z.number().min(0).optional(),
   billable: z.boolean().default(true),
@@ -40,13 +44,15 @@ const timePostSchema = z.object({
   lawyer: z.string().max(100).optional(),
 });
 
-const timePatchSchema = z.object({
-  case_slug: z.string().min(1, "case_slug_and_id_required"),
-  id: z.string().min(1, "case_slug_and_id_required"),
-  mark_billed: z.boolean().optional(),
-  entry_ids: z.array(z.string().min(1)).optional(),
-  invoice_number: z.string().min(1).optional(),
-}).passthrough();
+const timePatchSchema = z
+  .object({
+    case_slug: z.string().min(1, "case_slug_and_id_required"),
+    id: z.string().min(1, "case_slug_and_id_required"),
+    mark_billed: z.boolean().optional(),
+    entry_ids: z.array(z.string().min(1)).optional(),
+    invoice_number: z.string().min(1).optional(),
+  })
+  .passthrough();
 
 const timeDeleteSchema = z.object({
   case_slug: z.string().min(1, "case_slug_and_id_required"),
@@ -60,6 +66,7 @@ export const GET = createHandler(
     query: timeQuerySchema,
   },
   async (ctx, _body, query, _req) => {
+    const brain = createServerBrainClient(ctx.headers);
     const caseSlug = query.caseSlug || query.case_slug || "";
     const from = query.from || undefined;
     const to = query.to || undefined;
@@ -71,14 +78,14 @@ export const GET = createHandler(
       let entries: TimeEntryWithCase[] = [];
 
       if (caseSlug) {
-        const casePage = await api.brain.getPage(caseSlug).catch(() => null);
+        const casePage = await brain.getPage(caseSlug).catch(() => null);
         if (casePage) {
           const fm = casePage.frontmatter as Record<string, unknown>;
-          const raw = Array.isArray(fm.time_entries) ? fm.time_entries as TimeEntry[] : [];
+          const raw = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
           entries = raw.map((e) => ({ ...e, case_slug: caseSlug }));
         }
       } else {
-        const pages = await api.brain.listPages({ type: "time_entry", limit });
+        const pages = await brain.listPages({ type: "time_entry", limit });
         entries = pages.map((p) => {
           const fm = p.frontmatter as Record<string, unknown>;
           return {
@@ -109,7 +116,12 @@ export const GET = createHandler(
 
       if (wantBillingSummary) {
         const billingSummary = computeBillingSummary(filtered);
-        return apiSuccess({ entries: filtered, total: filtered.length, summary, billing: billingSummary });
+        return apiSuccess({
+          entries: filtered,
+          total: filtered.length,
+          summary,
+          billing: billingSummary,
+        });
       }
 
       return apiSuccess({ entries: filtered, total: filtered.length, summary });
@@ -117,7 +129,7 @@ export const GET = createHandler(
       console.error("[time] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Zeiterfassung konnte nicht geladen werden", 500);
     }
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -129,10 +141,15 @@ export const POST = createHandler(
       action: "case.update" as const,
       entityType: "time_entry",
       entityId: body.case_slug,
-      details: { minutes: body.minutes, billable: body.billable, description: body.description.slice(0, 80) },
+      details: {
+        minutes: body.minutes,
+        billable: body.billable,
+        description: body.description.slice(0, 80),
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
+    const brain = createServerBrainClient(ctx.headers);
     const entry = createTimeEntry({
       description: body.description,
       minutes: body.minutes,
@@ -143,22 +160,25 @@ export const POST = createHandler(
       activity_type: body.activity_type,
     });
 
-    const casePage = await api.brain.getPage(body.case_slug).catch(() => null);
+    const casePage = await brain.getPage(body.case_slug).catch(() => null);
     if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     const fm = casePage.frontmatter as Record<string, unknown>;
-    const existing = Array.isArray(fm.time_entries) ? fm.time_entries as TimeEntry[] : [];
+    const existing = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
     existing.push(entry);
 
-    await api.brain.updatePage({
+    await brain.updatePage({
       slug: body.case_slug,
       frontmatter: { ...fm, time_entries: existing },
     });
 
-    broadcastSseEvent(ctx.brainId, "time.entry.created", { case_slug: body.case_slug, entry_id: entry.id });
+    broadcastSseEvent(ctx.brainId, "time.entry.created", {
+      case_slug: body.case_slug,
+      entry_id: entry.id,
+    });
 
     return apiSuccess({ entry, case_slug: body.case_slug }, undefined, 201);
-  },
+  }
 );
 
 export const PATCH = createHandler(
@@ -173,15 +193,19 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const casePage = await api.brain.getPage(body.case_slug).catch(() => null);
+    const brain = createServerBrainClient(ctx.headers);
+    const casePage = await brain.getPage(body.case_slug).catch(() => null);
     if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     const fm = casePage.frontmatter as Record<string, unknown>;
-    const entries = Array.isArray(fm.time_entries) ? fm.time_entries as TimeEntry[] : [];
+    const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
 
     // ── Bulk mark-billed mode ──
     if (body.mark_billed && body.entry_ids && body.invoice_number) {
-      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({ ...e, case_slug: body.case_slug }));
+      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({
+        ...e,
+        case_slug: body.case_slug,
+      }));
       const result = markEntriesBilled(entriesWithCase, body.entry_ids, body.invoice_number);
 
       if (result.updated === 0) {
@@ -189,7 +213,7 @@ export const PATCH = createHandler(
       }
 
       const updatedEntries = result.entries.map(({ case_slug: _cs, ...e }) => e);
-      await api.brain.updatePage({
+      await brain.updatePage({
         slug: body.case_slug,
         frontmatter: { ...fm, time_entries: updatedEntries },
       });
@@ -209,7 +233,17 @@ export const PATCH = createHandler(
 
     // ── Single entry update mode ──
     const allowedUpdates: Partial<TimeEntry> = {};
-    const allowed: (keyof TimeEntry)[] = ["description", "minutes", "date", "rate", "billable", "billed", "lawyer", "activity_type", "invoice_number"];
+    const allowed: (keyof TimeEntry)[] = [
+      "description",
+      "minutes",
+      "date",
+      "rate",
+      "billable",
+      "billed",
+      "lawyer",
+      "activity_type",
+      "invoice_number",
+    ];
     for (const key of allowed) {
       if (body[key] !== undefined) {
         (allowedUpdates as Record<string, unknown>)[key] = body[key];
@@ -219,12 +253,18 @@ export const PATCH = createHandler(
     const result = updateEntry(entries, body.id, allowedUpdates);
     if (!result.found) return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
 
-    await api.brain.updatePage({ slug: body.case_slug, frontmatter: { ...fm, time_entries: result.entries } });
+    await brain.updatePage({
+      slug: body.case_slug,
+      frontmatter: { ...fm, time_entries: result.entries },
+    });
 
-    broadcastSseEvent(ctx.brainId, "time.entry.updated", { case_slug: body.case_slug, entry_id: body.id });
+    broadcastSseEvent(ctx.brainId, "time.entry.updated", {
+      case_slug: body.case_slug,
+      entry_id: body.id,
+    });
 
     return apiSuccess({ entry: result.updated });
-  },
+  }
 );
 
 export const DELETE = createHandler(
@@ -239,18 +279,25 @@ export const DELETE = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
-    const casePage = await api.brain.getPage(body.case_slug).catch(() => null);
+    const brain = createServerBrainClient(ctx.headers);
+    const casePage = await brain.getPage(body.case_slug).catch(() => null);
     if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
     const fm = casePage.frontmatter as Record<string, unknown>;
-    const entries = Array.isArray(fm.time_entries) ? fm.time_entries as TimeEntry[] : [];
+    const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
     const result = deleteEntry(entries, body.id);
     if (!result.found) return apiError("time_entry_not_found", "Zeiteintrag nicht gefunden", 404);
 
-    await api.brain.updatePage({ slug: body.case_slug, frontmatter: { ...fm, time_entries: result.entries } });
+    await brain.updatePage({
+      slug: body.case_slug,
+      frontmatter: { ...fm, time_entries: result.entries },
+    });
 
-    broadcastSseEvent(ctx.brainId, "time.entry.deleted", { case_slug: body.case_slug, entry_id: body.id });
+    broadcastSseEvent(ctx.brainId, "time.entry.deleted", {
+      case_slug: body.case_slug,
+      entry_id: body.id,
+    });
 
     return apiSuccess({ ok: true });
-  },
+  }
 );

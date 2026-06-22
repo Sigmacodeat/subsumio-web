@@ -22,7 +22,10 @@ export const maxDuration = 300;
 
 const WATCHLIST_SLUG = "monitoring/case-law-watchlist";
 
-interface WatchTerm { query: string; jurisdiction: "at" | "de" | "ch" | "all"; }
+interface WatchTerm {
+  query: string;
+  jurisdiction: "at" | "de" | "ch" | "all";
+}
 
 async function readWatchlist(brainId: string): Promise<WatchTerm[]> {
   try {
@@ -34,10 +37,12 @@ async function readWatchlist(brainId: string): Promise<WatchTerm[]> {
     const terms = page.frontmatter?.terms;
     if (!Array.isArray(terms)) return [];
     return terms
-      .map((t) => (t && typeof t === "object" ? t as Record<string, unknown> : {}))
+      .map((t) => (t && typeof t === "object" ? (t as Record<string, unknown>) : {}))
       .map((t) => ({
         query: String(t.query ?? "").trim(),
-        jurisdiction: (["at", "de", "ch", "all"].includes(String(t.jurisdiction)) ? String(t.jurisdiction) : "all") as WatchTerm["jurisdiction"],
+        jurisdiction: (["at", "de", "ch", "all"].includes(String(t.jurisdiction))
+          ? String(t.jurisdiction)
+          : "all") as WatchTerm["jurisdiction"],
       }))
       .filter((t) => t.query);
   } catch {
@@ -47,7 +52,10 @@ async function readWatchlist(brainId: string): Promise<WatchTerm[]> {
 
 /** Dedup-Tabelle: ein Treffer (brain + hit-id) wird nur einmal gemeldet. */
 async function filterNewHits(brainId: string, hits: JudgementHit[]): Promise<JudgementHit[]> {
-  const freshIndices = await filterNewHitIds(brainId, hits.map((h) => h.id));
+  const freshIndices = await filterNewHitIds(
+    brainId,
+    hits.map((h) => h.id)
+  );
   return hits.filter((_, i) => freshIndices.has(i));
 }
 
@@ -84,14 +92,19 @@ async function persistHitsAsPages(brainId: string, hits: JudgementHit[]) {
   }
 }
 
-function renderDigest(hitsByTerm: { term: string; hits: JudgementHit[] }[], appUrl: string): { subject: string; text: string } {
+function renderDigest(
+  hitsByTerm: { term: string; hits: JudgementHit[] }[],
+  appUrl: string
+): { subject: string; text: string } {
   const total = hitsByTerm.reduce((n, t) => n + t.hits.length, 0);
   const parts: string[] = [`${total} neue Entscheidung(en) zu Ihren beobachteten Themen:`, ""];
   for (const { term, hits } of hitsByTerm) {
     if (hits.length === 0) continue;
     parts.push(`▸ "${term}":`);
     for (const h of hits) {
-      parts.push(`  • ${h.date?.slice(0, 10) || "—"} — ${h.court} ${h.caseNumber}${h.ecli ? ` (${h.ecli})` : ""}`);
+      parts.push(
+        `  • ${h.date?.slice(0, 10) || "—"} — ${h.court} ${h.caseNumber}${h.ecli ? ` (${h.ecli})` : ""}`
+      );
       if (h.url) parts.push(`    ${h.url}`);
     }
     parts.push("");
@@ -102,7 +115,7 @@ function renderDigest(hitsByTerm: { term: string; hits: JudgementHit[] }[], appU
   return { subject: `⚖️ ${total} neue Entscheidung(en) zu Ihren Themen`, text: parts.join("\n") };
 }
 
-export const GET = createCronHandler(async (req: NextRequest) => {
+export const GET = createCronHandler(async (_req: NextRequest) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
   const from = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
@@ -120,7 +133,12 @@ export const GET = createCronHandler(async (req: NextRequest) => {
     const hitsByTerm: { term: string; hits: JudgementHit[] }[] = [];
     const allFreshHits: JudgementHit[] = [];
     for (const term of watchlist.slice(0, 20)) {
-      const { results } = await searchJudgements({ q: term.query, jurisdiction: term.jurisdiction, from, limit: 20 });
+      const { results } = await searchJudgements({
+        q: term.query,
+        jurisdiction: term.jurisdiction,
+        from,
+        limit: 20,
+      });
       const fresh = await filterNewHits(brainId, results);
       if (fresh.length > 0) {
         hitsByTerm.push({ term: term.query, hits: fresh });
@@ -143,5 +161,10 @@ export const GET = createCronHandler(async (req: NextRequest) => {
     }
   }
 
-  return Response.json({ ok: true, brains_checked: brainsChecked, brains_with_hits: brainsWithHits, mails_sent: mailsSent });
+  return Response.json({
+    ok: true,
+    brains_checked: brainsChecked,
+    brains_with_hits: brainsWithHits,
+    mails_sent: mailsSent,
+  });
 });

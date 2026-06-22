@@ -1,15 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   NotificationBellManager,
-  DEFAULT_BELL_CONFIG,
-  SSEConnectionManager,
   buildPushPayload,
   buildBellAriaLabel,
   getBellIconState,
   getBellBadgeColor,
   getBellBadgeText,
   handleBellKeyboard,
-  type BellIconState,
 } from "@/lib/notification-bell";
 import {
   InMemoryNotificationStore,
@@ -31,7 +28,10 @@ function createTestNotification(overrides: Partial<NotificationRecord> = {}): No
   };
 }
 
-function createStoreWithNotifications(count: number, unread: number = count): InMemoryNotificationStore {
+function createStoreWithNotifications(
+  count: number,
+  unread: number = count
+): InMemoryNotificationStore {
   const store = new InMemoryNotificationStore();
   for (let i = 0; i < count; i++) {
     const notif = createTestNotification({ id: `n${i}` });
@@ -66,11 +66,13 @@ describe("Notification Bell — Manager State", () => {
 
   it("refresh sets error on failure", async () => {
     const store = new InMemoryNotificationStore();
-    const manager = new NotificationBellManager(store, "user-1", "brain-1");
+    const _manager = new NotificationBellManager(store, "user-1", "brain-1");
     // Simulate error by using a broken store
     const brokenStore = {
       ...store,
-      list: async () => { throw new Error("DB connection failed"); },
+      list: async () => {
+        throw new Error("DB connection failed");
+      },
       getUnreadCount: async () => 0,
     } as unknown as InMemoryNotificationStore;
     const brokenManager = new NotificationBellManager(brokenStore, "user-1", "brain-1");
@@ -182,8 +184,11 @@ describe("Notification Bell — Subscribe", () => {
   it("subscribe receives state updates", () => {
     const store = new InMemoryNotificationStore();
     const manager = new NotificationBellManager(store, "user-1", "brain-1");
-    let lastState: NotificationBellManager["getState"] extends () => infer S ? S : never | null = null;
-    manager.subscribe((state) => { lastState = state; });
+    let lastState: NotificationBellManager["getState"] extends () => infer S ? S : never | null =
+      null;
+    manager.subscribe((state) => {
+      lastState = state;
+    });
     manager.openDropdown();
     expect(lastState).not.toBeNull();
     expect(lastState!.dropdown_open).toBe(true);
@@ -193,7 +198,9 @@ describe("Notification Bell — Subscribe", () => {
     const store = new InMemoryNotificationStore();
     const manager = new NotificationBellManager(store, "user-1", "brain-1");
     let callCount = 0;
-    const unsub = manager.subscribe(() => { callCount++; });
+    const unsub = manager.subscribe(() => {
+      callCount++;
+    });
     manager.openDropdown();
     const countAfterFirst = callCount;
     unsub();
@@ -313,85 +320,55 @@ describe("Notification Bell — Accessibility", () => {
 
 describe("Notification Bell — Keyboard Navigation", () => {
   it("Enter opens bell when closed", () => {
-    const result = handleBellKeyboard(
-      { key: "Enter" } as KeyboardEvent,
-      false, 0, 0,
-    );
+    const result = handleBellKeyboard({ key: "Enter" } as KeyboardEvent, false, 0, 0);
     expect(result?.action).toBe("open");
   });
 
   it("Escape closes bell when open", () => {
-    const result = handleBellKeyboard(
-      { key: "Escape" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "Escape" } as KeyboardEvent, true, 5, 2);
     expect(result?.action).toBe("close");
     expect(result?.newSelectedIndex).toBe(-1);
   });
 
   it("ArrowDown moves to next notification", () => {
-    const result = handleBellKeyboard(
-      { key: "ArrowDown" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "ArrowDown" } as KeyboardEvent, true, 5, 2);
     expect(result?.action).toBe("next");
     expect(result?.newSelectedIndex).toBe(3);
   });
 
   it("ArrowDown does not exceed bounds", () => {
-    const result = handleBellKeyboard(
-      { key: "ArrowDown" } as KeyboardEvent,
-      true, 5, 4,
-    );
+    const result = handleBellKeyboard({ key: "ArrowDown" } as KeyboardEvent, true, 5, 4);
     expect(result?.newSelectedIndex).toBe(4);
   });
 
   it("ArrowUp moves to previous notification", () => {
-    const result = handleBellKeyboard(
-      { key: "ArrowUp" } as KeyboardEvent,
-      true, 5, 3,
-    );
+    const result = handleBellKeyboard({ key: "ArrowUp" } as KeyboardEvent, true, 5, 3);
     expect(result?.action).toBe("previous");
     expect(result?.newSelectedIndex).toBe(2);
   });
 
   it("ArrowUp does not go below 0", () => {
-    const result = handleBellKeyboard(
-      { key: "ArrowUp" } as KeyboardEvent,
-      true, 5, 0,
-    );
+    const result = handleBellKeyboard({ key: "ArrowUp" } as KeyboardEvent, true, 5, 0);
     expect(result?.newSelectedIndex).toBe(0);
   });
 
   it("r marks current as read", () => {
-    const result = handleBellKeyboard(
-      { key: "r" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "r" } as KeyboardEvent, true, 5, 2);
     expect(result?.action).toBe("mark_read");
   });
 
   it("R marks all as read", () => {
-    const result = handleBellKeyboard(
-      { key: "R" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "R" } as KeyboardEvent, true, 5, 2);
     expect(result?.action).toBe("mark_all_read");
   });
 
   it("a archives current", () => {
-    const result = handleBellKeyboard(
-      { key: "a" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "a" } as KeyboardEvent, true, 5, 2);
     expect(result?.action).toBe("archive");
   });
 
   it("unknown key returns null", () => {
-    const result = handleBellKeyboard(
-      { key: "x" } as KeyboardEvent,
-      true, 5, 2,
-    );
+    const result = handleBellKeyboard({ key: "x" } as KeyboardEvent, true, 5, 2);
     expect(result).toBeNull();
   });
 });

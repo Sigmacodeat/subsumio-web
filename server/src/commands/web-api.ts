@@ -9,7 +9,7 @@
 import express from "express";
 import type { Application, Request, Response, NextFunction } from "express";
 import { readdirSync, readFileSync, statSync } from "fs";
-import { join, dirname } from "path";
+import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
@@ -74,6 +74,34 @@ function maxUploadBytes(): number {
   const raw = process.env.GBRAIN_MAX_UPLOAD_BYTES;
   const parsed = raw ? Number(raw) : NaN;
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1024 * 1024 * 1024;
+}
+
+/**
+ * Persist the original upload bytes through the binary-storage SSOT
+ * (`persistFileBuffer` → `files` table + StorageBackend). Best-effort: a storage
+ * failure must not fail the upload, since the extracted markdown already landed.
+ */
+async function persistUploadBytes(
+  file: { filename: string; data: Buffer; mimeType?: string },
+  pageSlug: string,
+  sourceId: string,
+  storageConfig: unknown
+): Promise<void> {
+  try {
+    const { persistFileBuffer } = await import("../core/file-store.ts");
+    await persistFileBuffer({
+      data: file.data,
+      filename: file.filename,
+      pageSlug,
+      mimeType: file.mimeType,
+      sourceId,
+      storageConfig,
+    });
+  } catch (err) {
+    console.error(
+      `[web-api] original-file persistence failed for ${pageSlug}: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 }
 
 interface ParsedMultipart {
@@ -195,7 +223,8 @@ async function buildMarkdownFromUpload(
   engine: BrainEngine,
   filename: string,
   data: Buffer,
-  title?: string
+  title?: string,
+  extraFrontmatter: Record<string, unknown> = {}
 ): Promise<string> {
   const lower = filename.toLowerCase();
   const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".")) : "";
@@ -204,6 +233,7 @@ async function buildMarkdownFromUpload(
   if (isDocumentFilePath(filename)) {
     const extracted = await extractDocumentText(data, ext, { filename });
     if (title) extracted.frontmatter.title = title;
+    Object.assign(extracted.frontmatter, extraFrontmatter);
     return synthesizeDocumentMarkdown(filename, extracted);
   }
 
@@ -214,16 +244,25 @@ async function buildMarkdownFromUpload(
     const { text } = await ocrImageBuffer(engine, data, ext);
     if (text.trim()) {
       const body = withUnverifiedBanner(text, "ocr_vision");
-      return `---\ntitle: ${JSON.stringify(t)}\ntype: image\nextraction_method: "ocr_vision"\nextraction_unverified: "true"\n---\n\n${body}\n`;
+      return withUploadFrontmatter(body, {
+        title: t,
+        type: "image",
+        extraction_method: "ocr_vision",
+        extraction_unverified: "true",
+        ...extraFrontmatter,
+      });
     }
     // OCR off/unavailable/empty: store an honest placeholder, never garbage.
-    return `---\ntitle: ${JSON.stringify(t)}\ntype: image\n---\n\n> ⚠️ Bild gespeichert, aber kein Text erkannt (OCR deaktiviert oder kein lesbarer Text). Inhalt ist nicht durchsuchbar — ggf. als PDF mit Textebene erneut hochladen.\n`;
+    return withUploadFrontmatter(
+      "> ⚠️ Bild gespeichert, aber kein Text erkannt (OCR deaktiviert oder kein lesbarer Text). Inhalt ist nicht durchsuchbar — ggf. als PDF mit Textebene erneut hochladen.\n",
+      { title: t, type: "image", ...extraFrontmatter }
+    );
   }
 
   if (ext === ".json") {
     const parsed = JSON.parse(data.toString("utf8"));
     const body = "```json\n" + JSON.stringify(parsed, null, 2) + "\n```";
-    return `---\ntitle: ${JSON.stringify(t)}\ntype: document\n---\n\n${body}\n`;
+    return withUploadFrontmatter(body, { title: t, type: "document", ...extraFrontmatter });
   }
 
   if (UNSUPPORTED_UPLOAD_EXTS.has(ext)) {
@@ -234,7 +273,7 @@ async function buildMarkdownFromUpload(
   }
 
   const text = data.toString("utf8");
-  if (text.startsWith("---")) return text;
+  if (text.startsWith("---")) return mergeUploadFrontmatter(text, extraFrontmatter);
   // Backstop: an unrecognized binary (no extension match, but NUL bytes) would
   // otherwise be stored as mojibake. Reject with the same actionable message.
   if (looksBinary(data)) {
@@ -243,7 +282,52 @@ async function buildMarkdownFromUpload(
         `(Foto/Scan als JPG/PNG/HEIC wird per OCR ausgelesen).`
     );
   }
-  return `---\ntitle: ${JSON.stringify(t)}\ntype: document\n---\n\n${text}\n`;
+  return withUploadFrontmatter(`${text}\n`, { title: t, type: "document", ...extraFrontmatter });
+}
+
+function cleanFrontmatter(input: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined && value !== null && value !== "") out[key] = value;
+  }
+  return out;
+}
+
+async function dumpFrontmatter(frontmatter: Record<string, unknown>): Promise<string> {
+  const { dump } = await import("js-yaml");
+  return dump(cleanFrontmatter(frontmatter), { lineWidth: -1, noRefs: true }).trimEnd();
+}
+
+async function withUploadFrontmatter(
+  body: string,
+  frontmatter: Record<string, unknown>
+): Promise<string> {
+  const yamlBlock = await dumpFrontmatter(frontmatter);
+  return `---\n${yamlBlock}\n---\n\n${body}`;
+}
+
+async function mergeUploadFrontmatter(
+  markdown: string,
+  extraFrontmatter: Record<string, unknown>
+): Promise<string> {
+  if (Object.keys(cleanFrontmatter(extraFrontmatter)).length === 0) return markdown;
+  const close = markdown.indexOf("\n---", 3);
+  if (close === -1) return withUploadFrontmatter(markdown, extraFrontmatter);
+
+  const rawYaml = markdown.slice(3, close).trim();
+  const body = markdown.slice(close + "\n---".length).replace(/^\s*\n/, "");
+  let existing: Record<string, unknown> = {};
+  try {
+    const { load } = await import("js-yaml");
+    const parsed = load(rawYaml);
+    existing =
+      parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {};
+  } catch {
+    existing = {};
+  }
+  return withUploadFrontmatter(body, { ...existing, ...extraFrontmatter });
 }
 
 function mapStats(raw: Record<string, unknown>) {
@@ -268,6 +352,18 @@ function mapStats(raw: Record<string, unknown>) {
   };
 }
 
+function readCaseSlug(record: Record<string, unknown>): string | undefined {
+  if (typeof record.case_slug === "string" && record.case_slug.length > 0) {
+    return record.case_slug;
+  }
+  const frontmatter = record.frontmatter;
+  if (frontmatter && typeof frontmatter === "object") {
+    const raw = (frontmatter as Record<string, unknown>).case_slug;
+    if (typeof raw === "string" && raw.length > 0) return raw;
+  }
+  return undefined;
+}
+
 function mapSearchResults(results: Array<Record<string, unknown>>) {
   return results.map((r) => ({
     slug: String(r.slug ?? ""),
@@ -275,6 +371,7 @@ function mapSearchResults(results: Array<Record<string, unknown>>) {
     snippet: String(r.chunk_text ?? r.snippet ?? "").slice(0, 300),
     score: Number(r.score ?? 0),
     source: r.source_id ? String(r.source_id) : undefined,
+    case_slug: readCaseSlug(r),
     created_at: undefined,
   }));
 }
@@ -395,14 +492,29 @@ function verifiedMatterScope(req: Request, apiKey: string | undefined): string[]
  * starts with one of the allowed matter prefixes. When scope is "all" or empty,
  * no filtering is applied (preserves existing behavior for non-WhatsApp callers).
  */
-function filterByMatterScope<T extends { slug?: string }>(
-  results: T[],
-  scope: string[] | "all"
-): T[] {
+function isMatterScoped(
+  scope: string[] | "all" | undefined,
+  slug: string,
+  caseSlug?: string
+): boolean {
+  if (scope === undefined || scope === "all") return true;
+  if (scope.length === 0) return true;
+  return scope.some(
+    (prefix) =>
+      slug.startsWith(prefix) ||
+      slug === prefix ||
+      (caseSlug !== undefined && (caseSlug.startsWith(prefix) || caseSlug === prefix))
+  );
+}
+
+function filterByMatterScope<
+  T extends { slug?: string; case_slug?: string; frontmatter?: Record<string, unknown> },
+>(results: T[], scope: string[] | "all"): T[] {
   if (scope === "all" || scope.length === 0) return results;
   return results.filter((r) => {
     const slug = r.slug ?? "";
-    return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+    const caseSlug = r.case_slug ?? readCaseSlug(r as Record<string, unknown>);
+    return isMatterScoped(scope, slug, caseSlug);
   });
 }
 
@@ -410,10 +522,12 @@ function filterByMatterScope<T extends { slug?: string }>(
  * P0-SECR-002: Fail-closed single-slug check. Throws a not-found style error
  * so callers cannot distinguish "does not exist" from "exists but out of scope".
  */
-function assertMatterScope(scope: string[] | "all" | undefined, slug: string): void {
-  if (scope === undefined || scope === "all" || scope.length === 0) return;
-  const inScope = scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
-  if (!inScope) {
+function assertMatterScope(
+  scope: string[] | "all" | undefined,
+  slug: string,
+  caseSlug?: string
+): void {
+  if (!isMatterScoped(scope, slug, caseSlug)) {
     throw new EngineNotFoundError(
       `Page ${slug} is outside the caller's matter scope. This is intentionally indistinguishable from not found.`
     );
@@ -1454,6 +1568,42 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  // Download the ORIGINAL uploaded file (unaltered bytes) for a document page.
+  // Tenant- and matter-scoped: a caller may only fetch files for cases inside
+  // their matterScope, mirroring the upload-side confidentiality check.
+  app.get("/api/files/{*slug}", async (req: Request, res: Response) => {
+    try {
+      const slugParam = req.params.slug;
+      const slug = Array.isArray(slugParam) ? slugParam.join("/") : String(slugParam ?? "");
+      if (!slug) {
+        res.status(400).json({ error: "missing_slug" });
+        return;
+      }
+      assertMatterScope(req.matterScope, slug);
+
+      const { readStoredFile } = await import("../core/file-store.ts");
+      const stored = await readStoredFile(slug, requestSourceId(req), ctx(req).config.storage);
+      if (!stored) {
+        res.status(404).json({ error: "file_not_found" });
+        return;
+      }
+
+      res.setHeader("Content-Type", stored.mimeType || "application/octet-stream");
+      res.setHeader("Content-Length", String(stored.data.byteLength));
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${stored.filename.replace(/[^a-zA-Z0-9._-]/g, "_")}"`
+      );
+      res.end(stored.data);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      // Out-of-scope throws EngineNotFoundError — intentionally indistinguishable
+      // from a missing file (don't reveal that the document exists).
+      const status = e instanceof EngineNotFoundError ? 404 : 500;
+      res.status(status).json({ error: "file_download_failed", message: msg });
+    }
+  });
+
   // DSGVO Art. 20 (Datenübertragbarkeit): vollständiger Export aller Seiten
   // der Tenant-Source inkl. Volltext + Frontmatter + Tags. Streng auf die
   // anfragende Source gescopt — auch im lokalen 'default'-Modus.
@@ -1986,6 +2136,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 source_kind: "web_upload",
                 source_uri: `sigmabrain-upload:${beaSlug}`,
               });
+              await persistUploadBytes(file, beaSlug, tenantSource, opCtx.config.storage);
               assertMatterScope(req.matterScope, beaSlug);
               const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
               res.json({ slug: beaSlug, title: beaPage?.title ?? item.title });
@@ -2005,7 +2156,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const caseSlug = fields.case_slug?.trim();
         if (caseSlug) assertMatterScope(req.matterScope, caseSlug);
 
-        const markdown = await buildMarkdownFromUpload(engine, file.filename, file.data, title);
+        const uploadFrontmatter: Record<string, unknown> = {
+          source: "upload",
+          source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
+          ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+        };
+        const markdown = await buildMarkdownFromUpload(
+          engine,
+          file.filename,
+          file.data,
+          title,
+          uploadFrontmatter
+        );
 
         await importFromContent(engine, slug, markdown, {
           noEmbed,
@@ -2015,8 +2177,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           source_uri: `sigmabrain-upload:${slug}`,
         });
 
-        // Stamp case_slug into the document frontmatter so every uploaded
-        // document is traceable to its case (§ 43e BRAO, GoBD).
+        // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
+        // can be downloaded unaltered later (§ 147 AO / GoBD). Best-effort: the
+        // extracted markdown is the searchable record; byte retention is additive.
+        await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
+
+        // Defense-in-depth: case_slug is already part of the initial markdown
+        // import above. This merge keeps older engine versions/routes aligned
+        // if they imported before atomic upload frontmatter existed.
         if (caseSlug) {
           try {
             await invokeOp(

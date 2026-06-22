@@ -18,13 +18,14 @@ interface CalendarEvent {
   id: string;
   title: string;
   date: string;
+  time?: string;
   description?: string;
-  type: "deadline" | "hearing" | "meeting" | "reminder";
+  type: "deadline" | "hearing" | "meeting" | "reminder" | "appointment";
   caseNumber?: string;
   location?: string;
 }
 
-function generateIcal(events: CalendarEvent[], lang: Lang = "de"): string {
+function generateIcal(events: CalendarEvent[], _lang: Lang = "de"): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -41,8 +42,20 @@ function generateIcal(events: CalendarEvent[], lang: Lang = "de"): string {
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${uid}`);
-    lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
-    lines.push(`DTEND;VALUE=DATE:${dateStr}`);
+    // Appointments have a time — use DATETIME format with Europe/Berlin timezone
+    if (ev.type === "appointment" && ev.time) {
+      const timeStr = ev.time.replace(/:/g, "").padStart(4, "0").slice(0, 4);
+      const dtStart = `${dateStr}T${timeStr}00`;
+      lines.push(`DTSTART;TZID=Europe/Berlin:${dtStart}`);
+      // Default 1 hour duration for appointments
+      const [h, m] = ev.time.split(":").map(Number);
+      const endH = (h ?? 9) + 1;
+      const endTimeStr = `${String(endH).padStart(2, "0")}${String(m ?? 0).padStart(2, "0")}`;
+      lines.push(`DTEND;TZID=Europe/Berlin:${dateStr}T${endTimeStr}00`);
+    } else {
+      lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
+      lines.push(`DTEND;VALUE=DATE:${dateStr}`);
+    }
     lines.push(`SUMMARY:${escapeIcalText(ev.title)}`);
     if (ev.description) lines.push(`DESCRIPTION:${escapeIcalText(ev.description)}`);
     if (ev.location) lines.push(`LOCATION:${escapeIcalText(ev.location)}`);
@@ -63,7 +76,9 @@ export default function CalendarExportPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "deadline" | "hearing" | "meeting">("all");
+  const [filter, setFilter] = useState<"all" | "deadline" | "hearing" | "meeting" | "appointment">(
+    "all"
+  );
 
   useEffect(() => {
     loadEvents();
@@ -71,9 +86,10 @@ export default function CalendarExportPage() {
 
   async function loadEvents() {
     try {
-      const [pages, casePages] = await Promise.all([
+      const [pages, casePages, appointmentPages] = await Promise.all([
         api.brain.listPages({ type: "legal_deadline", limit: 200 }),
         api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => [] as BrainPage[]),
+        api.brain.listPages({ type: "appointment", limit: 200 }).catch(() => [] as BrainPage[]),
       ]);
       const loaded: CalendarEvent[] = pages.map((p) => {
         const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
@@ -118,6 +134,25 @@ export default function CalendarExportPage() {
         }
       }
 
+      // Also load appointment pages (from WhatsApp-created appointments)
+      for (const appt of appointmentPages) {
+        const fm = (appt.frontmatter ?? {}) as Record<string, unknown>;
+        const date = String(fm.date ?? "");
+        if (!date) continue;
+        const status = String(fm.status ?? "");
+        if (status === "cancelled" || status === "completed") continue;
+        loaded.push({
+          id: String(appt.slug || ""),
+          title: String(fm.title ?? appt.title ?? "Termin"),
+          date,
+          time: String(fm.time ?? ""),
+          description: String(appt.content?.slice(0, 200) ?? ""),
+          type: "appointment",
+          caseNumber: fm.case_title ? String(fm.case_title) : undefined,
+          location: fm.location ? String(fm.location) : undefined,
+        });
+      }
+
       setEvents(loaded.sort((a, b) => a.date.localeCompare(b.date)));
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Termine konnten nicht geladen werden.");
@@ -152,6 +187,7 @@ export default function CalendarExportPage() {
     hearing: "blue",
     meeting: "violet",
     reminder: "emerald",
+    appointment: "blue",
   };
 
   return (
@@ -187,7 +223,7 @@ export default function CalendarExportPage() {
 
       {/* Filter */}
       <div className="flex gap-2">
-        {(["all", "deadline", "hearing", "meeting"] as const).map((f) => (
+        {(["all", "deadline", "hearing", "meeting", "appointment"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -203,7 +239,9 @@ export default function CalendarExportPage() {
                 ? "Fristen"
                 : f === "hearing"
                   ? "Verhandlungen"
-                  : "Besprechungen"}
+                  : f === "meeting"
+                    ? "Besprechungen"
+                    : "Termine"}
           </button>
         ))}
       </div>

@@ -2,12 +2,7 @@
 
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { createHmac } from "node:crypto";
-import {
-  verifyDocusignConnectSignature,
-  isConfigured,
-  getAuthUrl,
-  type EnvelopeRequest,
-} from "./docusign";
+import { verifyDocusignConnectSignature, type EnvelopeRequest } from "./docusign";
 
 describe("verifyDocusignConnectSignature", () => {
   const secret = "test-connect-secret";
@@ -161,9 +156,7 @@ describe("EnvelopeRequest type", () => {
     const req: EnvelopeRequest = {
       emailSubject: "Please sign",
       emailBlurb: "Review and sign",
-      documents: [
-        { documentBase64: "base64data", name: "contract.pdf", documentId: "1" },
-      ],
+      documents: [{ documentBase64: "base64data", name: "contract.pdf", documentId: "1" }],
       recipients: {
         signers: [
           {

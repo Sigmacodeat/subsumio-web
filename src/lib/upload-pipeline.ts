@@ -16,8 +16,8 @@
  *   // result.file, result.buffer, result.cleanName are ready to use
  */
 
-import { validateUpload, sanitizeFilename, type UploadValidation } from "@/lib/upload-validation";
-import { scanFile, type ScanResult } from "@/lib/virus-scan";
+import { validateUpload, sanitizeFilename } from "@/lib/upload-validation";
+import { scanFile } from "@/lib/virus-scan";
 import { createHash } from "crypto";
 
 export interface DuplicateCheckResult {
@@ -63,9 +63,11 @@ export async function scanUpload(file: unknown): Promise<UploadPipelineResult> {
   const validation = validateUpload(file);
   if (!validation.ok) {
     const status =
-      validation.error === "file_required" ? 400
-      : validation.error === "file_too_large" ? 413
-      : 415;
+      validation.error === "file_required"
+        ? 400
+        : validation.error === "file_too_large"
+          ? 413
+          : 415;
     const messages: Record<string, string> = {
       file_required: "Keine Datei übermittelt.",
       file_too_large: `Datei überschreitet das Limit von ${Math.round((validation.maxSize ?? 0) / 1024 / 1024)} MB.`,
@@ -138,7 +140,7 @@ export function computeSHA256(buffer: ArrayBuffer): string {
  */
 export async function checkDuplicate(
   sha256: string,
-  store: DuplicateStore,
+  store: DuplicateStore
 ): Promise<DuplicateCheckResult> {
   const existing = await store.lookup(sha256);
   if (existing) {
@@ -159,7 +161,7 @@ export async function recordDuplicate(
   sha256: string,
   slug: string,
   name: string,
-  store: DuplicateStore,
+  store: DuplicateStore
 ): Promise<void> {
   await store.record(sha256, slug, name);
 }
@@ -170,7 +172,7 @@ export async function recordDuplicate(
  */
 export async function scanUploadWithDuplicateCheck(
   file: unknown,
-  store: DuplicateStore,
+  store: DuplicateStore
 ): Promise<UploadPipelineResult> {
   const base = await scanUpload(file);
   if (!base.ok) return base;

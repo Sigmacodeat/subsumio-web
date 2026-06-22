@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
-import { Section, SectionHeading, ICONS, accentTile, type Tone } from "./chrome";
+import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
 
 /** Per-vertical hero motif: a small floating constellation built from this

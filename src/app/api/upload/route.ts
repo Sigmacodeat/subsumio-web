@@ -10,12 +10,16 @@ import { brainDuplicateStore } from "@/lib/duplicate-store";
 // Throttled client-side by the staggered upload pool, so few run at once.
 export const maxDuration = 600;
 
+function encodeSlug(slug: string): string {
+  return slug.split("/").map(encodeURIComponent).join("/");
+}
+
 async function validateCaseSlug(
   headers: Record<string, string>,
   caseSlug: string
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(caseSlug)}`, { headers });
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(caseSlug)}`, { headers });
     if (!res.ok) return false;
     const page = (await res.json()) as { type?: string };
     return page.type === "legal_case";
@@ -108,28 +112,50 @@ export const POST = createHandler(
             void duplicateStore.record(result.sha256, uploadResult.slug, result.cleanName);
           }
 
+          let reconciliation:
+            | { attempted: true; ok: boolean; error?: string }
+            | { attempted: false } = { attempted: false };
           // P1.2: Reconcile — add the uploaded document to the case's documents array
           // so the case frontmatter stays in sync with the case_slug on the document page.
           if (caseSlugStr && uploadResult.slug) {
-            void reconcileCaseDocuments(ctx.headers, caseSlugStr, {
-              id: Date.now().toString(),
-              slug: uploadResult.slug,
-              name: uploadResult.title ?? result.cleanName,
-              url: uploadResult.slug,
-              uploadedAt: new Date().toISOString(),
-              size: result.buffer.byteLength,
-              kind: (formData.get("document_type") as string) || undefined,
-            }).catch(() => {
-              /* best effort — the document is imported, stamping is enrichment */
-            });
+            try {
+              await reconcileCaseDocuments(ctx.headers, caseSlugStr, {
+                id: Date.now().toString(),
+                slug: uploadResult.slug,
+                name: uploadResult.title ?? result.cleanName,
+                url: uploadResult.slug,
+                uploadedAt: new Date().toISOString(),
+                size: result.buffer.byteLength,
+                kind: (formData.get("document_type") as string) || undefined,
+              });
+              reconciliation = { attempted: true, ok: true };
+            } catch (err) {
+              const message = err instanceof Error ? err.message : String(err);
+              console.error("[upload] case reconciliation failed:", message);
+              reconciliation = { attempted: true, ok: false, error: message };
+            }
           }
-          const enriched = JSON.stringify({
-            ...uploadResult,
-            extraction_status: initialStatus,
-            extraction_metadata: initialMeta,
-          });
+          let analysisStatus: "pending" | "queued" | "failed" = "pending";
           const internalSecret = env("SUBSUMIO_INTERNAL_SECRET");
           if (internalSecret && uploadResult.slug) {
+            const docSlug = uploadResult.slug;
+            analysisStatus = "queued";
+            // Set analysis_status on the document frontmatter so the cockpit
+            // can surface documents with pending/failed analysis.
+            void fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", ...ctx.headers },
+              body: JSON.stringify({
+                frontmatter: {
+                  analysis_status: "pending",
+                  analysis_queued_at: new Date().toISOString(),
+                },
+                merge: true,
+              }),
+            }).catch(() => {
+              /* non-fatal: frontmatter enrichment is best-effort */
+            });
+            // Fire analysis and track outcome on the document.
             void fetch(`${req.nextUrl.origin}/api/legal/analyze`, {
               method: "POST",
               headers: {
@@ -137,19 +163,62 @@ export const POST = createHandler(
                 "x-internal-secret": internalSecret,
               },
               body: JSON.stringify({
-                document_slug: uploadResult.slug,
+                document_slug: docSlug,
                 brain_id: ctx.brainId,
               }),
-            }).catch(() => {
-              /* silent: analysis is best-effort */
-            });
+            })
+              .then(async (res) => {
+                if (!res.ok) {
+                  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", ...ctx.headers },
+                    body: JSON.stringify({
+                      frontmatter: {
+                        analysis_status: "failed",
+                        analysis_error: `HTTP ${res.status}`,
+                        analysis_failed_at: new Date().toISOString(),
+                      },
+                      merge: true,
+                    }),
+                  }).catch(() => {});
+                }
+              })
+              .catch(async () => {
+                await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json", ...ctx.headers },
+                  body: JSON.stringify({
+                    frontmatter: {
+                      analysis_status: "failed",
+                      analysis_error: "fetch_error",
+                      analysis_failed_at: new Date().toISOString(),
+                    },
+                    merge: true,
+                  }),
+                }).catch(() => {});
+              });
           }
-          return new Response(enriched, {
+          return Response.json(
+            {
+              ...uploadResult,
+              extraction_status: initialStatus,
+              extraction_metadata: initialMeta,
+              case_reconciliation: reconciliation,
+              analysis_status: analysisStatus,
+            },
+            {
+              status: reconciliation.attempted && !reconciliation.ok ? 207 : upstream.status,
+            }
+          );
+        } catch (err) {
+          console.error(
+            "[upload] upstream response parsing failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+          return new Response(text, {
             status: upstream.status,
             headers: { "Content-Type": "application/json" },
           });
-        } catch {
-          // JSON parse failed — return original text
         }
       }
       return new Response(text, {
@@ -187,7 +256,7 @@ async function reconcileCaseDocuments(
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
-    if (!getRes.ok) return;
+    if (!getRes.ok) throw new Error(`case_fetch_failed_${getRes.status}`);
     const casePage = (await getRes.json()) as {
       frontmatter?: Record<string, unknown>;
     };
@@ -215,7 +284,7 @@ async function reconcileCaseDocuments(
       // Version conflict — another writer updated the case. Retry with fresh state.
       continue;
     }
-    // Non-retryable error or out of retries — give up (best-effort)
-    return;
+    throw new Error(`case_patch_failed_${patchRes.status}`);
   }
+  throw new Error("case_patch_conflict_retries_exhausted");
 }

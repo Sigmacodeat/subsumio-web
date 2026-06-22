@@ -7,7 +7,7 @@
  */
 export function CappedResultsNotice({ limit }: { limit: number }) {
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-700">
+    <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3 text-sm text-[color:var(--ds-warning-text)]">
       Es werden nur die ersten {limit} Einträge angezeigt. Es könnten weitere vorhanden sein, die
       hier nicht aufgeführt sind — bitte nutze die Suche, um gezielt nach weiteren Einträgen zu
       filtern.

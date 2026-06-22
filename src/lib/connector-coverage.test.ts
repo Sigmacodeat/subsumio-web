@@ -86,7 +86,6 @@ describe("Connector Coverage Matrix — Lookup", () => {
   it("getPlannedConnectors returns only planned", () => {
     const planned = getPlannedConnectors();
     expect(planned.every((c) => c.status === "planned")).toBe(true);
-    expect(planned.length).toBeGreaterThan(0);
   });
 
   it("getConnectorsByAuthMethod filters correctly", () => {
@@ -147,7 +146,7 @@ describe("Connector Coverage Matrix — Full Matrix", () => {
     const matrix = getCoverageMatrix();
     const totalFromCategories = Object.values(matrix.by_category).reduce(
       (sum, arr) => sum + arr.length,
-      0,
+      0
     );
     expect(totalFromCategories).toBe(CONNECTOR_COVERAGE_MATRIX.length);
   });
@@ -156,25 +155,27 @@ describe("Connector Coverage Matrix — Full Matrix", () => {
     const matrix = getCoverageMatrix();
     const totalFromStatus = Object.values(matrix.by_status).reduce(
       (sum, arr) => sum + arr.length,
-      0,
+      0
     );
     expect(totalFromStatus).toBe(CONNECTOR_COVERAGE_MATRIX.length);
   });
 });
 
 describe("Connector Coverage Matrix — Coverage Gaps", () => {
-  it("identifies Microsoft 365 as coverage gap (all planned)", () => {
+  it("identifies Microsoft 365 as beta integration gap", () => {
     const matrix = getCoverageMatrix();
     const ms365Gap = matrix.coverage_gaps.find((g) => g.category === "microsoft_365");
     expect(ms365Gap).toBeDefined();
-    expect(ms365Gap!.severity).toBe("high");
+    expect(ms365Gap!.severity).toBe("medium");
+    expect(ms365Gap!.missing_connectors).toHaveLength(0);
   });
 
-  it("identifies DATEV as coverage gap (planned)", () => {
+  it("identifies DATEV as file-based limitation, not missing implementation", () => {
     const matrix = getCoverageMatrix();
     const datevGap = matrix.coverage_gaps.find((g) => g.category === "datev");
     expect(datevGap).toBeDefined();
-    expect(datevGap!.severity).toBe("high");
+    expect(datevGap!.severity).toBe("medium");
+    expect(datevGap!.missing_connectors).toHaveLength(0);
   });
 
   it("identifies DMS push notification gap", () => {
@@ -191,10 +192,9 @@ describe("Connector Coverage Matrix — Coverage Gaps", () => {
     expect(beaGap!.severity).toBe("low");
   });
 
-  it("coverage gaps include missing connector ids", () => {
+  it("has no high-severity connector gap after DATEV and Microsoft 365 hardening", () => {
     const matrix = getCoverageMatrix();
-    const ms365Gap = matrix.coverage_gaps.find((g) => g.category === "microsoft_365");
-    expect(ms365Gap!.missing_connectors.length).toBeGreaterThan(0);
+    expect(matrix.coverage_gaps.filter((g) => g.severity === "high")).toHaveLength(0);
   });
 });
 
@@ -324,7 +324,7 @@ describe("Connector Coverage Matrix — Summary", () => {
     const matrix = getCoverageMatrix();
     const summary = getCoverageSummary();
     expect(summary.high_severity_gaps).toBe(
-      matrix.coverage_gaps.filter((g) => g.severity === "high").length,
+      matrix.coverage_gaps.filter((g) => g.severity === "high").length
     );
   });
 });
@@ -358,14 +358,16 @@ describe("Connector Coverage Matrix — Specific Connector Checks", () => {
     expect(imanager!.gobd_relevant).toBe(true);
   });
 
-  it("DATEV is planned", () => {
+  it("DATEV import is available as file-based import", () => {
     const datev = getConnectorById("datev-import");
-    expect(datev!.status).toBe("planned");
+    expect(datev!.status).toBe("available");
+    expect(datev!.auth_method).toBe("manual_upload");
     expect(datev!.category).toBe("datev");
   });
 
-  it("Microsoft 365 connectors are planned", () => {
+  it("Microsoft 365 connectors are beta engine connectors", () => {
     const ms365 = getConnectorsByCategory("microsoft_365");
-    expect(ms365.every((c) => c.status === "planned")).toBe(true);
+    expect(ms365.every((c) => c.status === "beta")).toBe(true);
+    expect(ms365.every((c) => c.engine_service?.startsWith("ms365-"))).toBe(true);
   });
 });

@@ -1,19 +1,19 @@
-import { createHash, randomBytes } from 'crypto';
-import type { Page, PageInput, PageType, Chunk, SearchResult, StalePageRow } from './types.ts';
-import type { Take, TakeKind } from './engine.ts';
+import { createHash, randomBytes } from "crypto";
+import type { Page, PageInput, PageType, Chunk, SearchResult, StalePageRow } from "./types.ts";
+import type { Take, TakeKind } from "./engine.ts";
 
 /**
  * SHA-256 hash a token/secret for storage. Never store plaintext tokens.
  */
 export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+  return createHash("sha256").update(token).digest("hex");
 }
 
 /**
  * Generate a cryptographically random token with a prefix.
  */
 export function generateToken(prefix: string): string {
-  return `${prefix}${randomBytes(32).toString('hex')}`;
+  return `${prefix}${randomBytes(32).toString("hex")}`;
 }
 
 /**
@@ -22,7 +22,9 @@ export function generateToken(prefix: string): string {
  */
 export function validateSlug(slug: string): string {
   if (!slug || /(^|\/)\.\.($|\/)/.test(slug) || /^\//.test(slug)) {
-    throw new Error(`Invalid slug: "${slug}". Slugs cannot be empty, start with /, or contain path traversal.`);
+    throw new Error(
+      `Invalid slug: "${slug}". Slugs cannot be empty, start with /, or contain path traversal.`
+    );
   }
   return slug.toLowerCase();
 }
@@ -32,15 +34,17 @@ export function validateSlug(slug: string): string {
  * Hashes all PageInput fields to match importFromContent's hash algorithm.
  */
 export function contentHash(page: PageInput): string {
-  return createHash('sha256')
-    .update(JSON.stringify({
-      title: page.title,
-      type: page.type,
-      compiled_truth: page.compiled_truth,
-      timeline: page.timeline || '',
-      frontmatter: page.frontmatter || {},
-    }))
-    .digest('hex');
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        title: page.title,
+        type: page.type,
+        compiled_truth: page.compiled_truth,
+        timeline: page.timeline || "",
+        frontmatter: page.frontmatter || {},
+      })
+    )
+    .digest("hex");
 }
 
 /**
@@ -60,7 +64,7 @@ export function contentHash(page: PageInput): string {
  * Re-exported here for back-compat with the pre-v0.38 `validateSourceId`
  * import. New code should import directly from `source-id.ts`.
  */
-export { assertValidSourceId as validateSourceId } from './source-id.ts';
+export { assertValidSourceId as validateSourceId } from "./source-id.ts";
 
 function readOptionalDate(raw: unknown): Date | null | undefined {
   // Three-state read for columns that may or may not be in the SELECT
@@ -75,7 +79,9 @@ export function rowToPage(row: Record<string, unknown>): Page {
   const deletedAt = readOptionalDate(row.deleted_at);
   const effectiveDate = readOptionalDate(row.effective_date);
   const salienceTouchedAt = readOptionalDate(row.salience_touched_at);
-  const effectiveDateSource = row.effective_date_source as Page['effective_date_source'] | undefined;
+  const effectiveDateSource = row.effective_date_source as
+    | Page["effective_date_source"]
+    | undefined;
   const importFilename = row.import_filename as string | null | undefined;
   // v0.39.3.0 CV5 — three-state read for provenance columns. Matches the
   // v0.26.5 deleted_at pattern: undefined when the SELECT projection didn't
@@ -83,7 +89,8 @@ export function rowToPage(row: Record<string, unknown>): Page {
   // (historical pre-v0.38 row); populated when v0.38+ ingestion stamped it.
   const sourceKind = row.source_kind === undefined ? undefined : (row.source_kind as string | null);
   const sourceUri = row.source_uri === undefined ? undefined : (row.source_uri as string | null);
-  const ingestedVia = row.ingested_via === undefined ? undefined : (row.ingested_via as string | null);
+  const ingestedVia =
+    row.ingested_via === undefined ? undefined : (row.ingested_via as string | null);
   const ingestedAt = readOptionalDate(row.ingested_at);
   return {
     id: row.id as number,
@@ -92,7 +99,9 @@ export function rowToPage(row: Record<string, unknown>): Page {
     title: row.title as string,
     compiled_truth: row.compiled_truth as string,
     timeline: row.timeline as string,
-    frontmatter: (typeof row.frontmatter === 'string' ? JSON.parse(row.frontmatter) : row.frontmatter) as Record<string, unknown>,
+    frontmatter: (typeof row.frontmatter === "string"
+      ? JSON.parse(row.frontmatter)
+      : row.frontmatter) as Record<string, unknown>,
     content_hash: row.content_hash as string | undefined,
     // v0.29 (column added in migration v40). Old brains pre-migration return undefined.
     emotional_weight: row.emotional_weight == null ? undefined : Number(row.emotional_weight),
@@ -117,7 +126,7 @@ export function rowToPage(row: Record<string, unknown>): Page {
     // Fail-loud default to 'default' if the row genuinely lacks it (would mean
     // an upstream caller bypassed the projection check; better to surface than
     // silently mis-attribute).
-    source_id: (row.source_id as string | undefined) ?? 'default',
+    source_id: (row.source_id as string | undefined) ?? "default",
   };
 }
 
@@ -132,20 +141,24 @@ export function rowToStalePage(row: Record<string, unknown>): StalePageRow {
   return {
     id: row.id as number,
     slug: row.slug as string,
-    source_id: (row.source_id as string | undefined) ?? 'default',
+    source_id: (row.source_id as string | undefined) ?? "default",
     type: row.type as string,
-    title: (row.title as string | null) ?? '',
-    compiled_truth: (row.compiled_truth as string | null) ?? '',
-    timeline: (row.timeline as string | null) ?? '',
-    frontmatter: (fm == null ? {} : (typeof fm === 'string' ? JSON.parse(fm) : fm)) as Record<string, unknown>,
+    title: (row.title as string | null) ?? "",
+    compiled_truth: (row.compiled_truth as string | null) ?? "",
+    timeline: (row.timeline as string | null) ?? "",
+    frontmatter: (fm == null ? {} : typeof fm === "string" ? JSON.parse(fm) : fm) as Record<
+      string,
+      unknown
+    >,
     updated_at: new Date(row.updated_at as string),
     // #1768: full-µs UTC string projected by the SELECT (`updated_at_iso`).
     // Fallback derives an ISO string from the Date — NEVER String(Date), which
     // yields "Mon Jun 02 2026 …" that `::timestamptz` misparses. Pre-#1768
     // callers that don't project the column still get a valid (ms) ISO value.
-    updated_at_iso: row.updated_at_iso != null
-      ? String(row.updated_at_iso)
-      : new Date(row.updated_at as string).toISOString(),
+    updated_at_iso:
+      row.updated_at_iso != null
+        ? String(row.updated_at_iso)
+        : new Date(row.updated_at as string).toISOString(),
   };
 }
 
@@ -167,20 +180,20 @@ export function parseEmbedding(value: unknown): Float32Array | null {
   if (value instanceof Float32Array) return value;
   if (Array.isArray(value)) {
     if (value.length === 0) return new Float32Array(0);
-    if (typeof value[0] !== 'number') {
+    if (typeof value[0] !== "number") {
       throw new Error(`parseEmbedding: array contains non-numeric element (${typeof value[0]})`);
     }
     return Float32Array.from(value as number[]);
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
     // Plain non-vector strings: treat as "no embedding here", return null.
     // Strings that LOOK like vector literals but contain garbage: throw,
     // because that's a real corruption signal worth surfacing loudly.
-    if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) return null;
+    if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null;
     const inner = trimmed.slice(1, -1).trim();
     if (inner.length === 0) return new Float32Array(0);
-    const parts = inner.split(',');
+    const parts = inner.split(",");
     const out = new Float32Array(parts.length);
     for (let i = 0; i < parts.length; i++) {
       const n = Number(parts[i].trim());
@@ -213,12 +226,15 @@ export function parseEmbedding(value: unknown): Float32Array | null {
  * Anything else falls through and the caller MUST re-throw.
  */
 export function isUndefinedColumnError(error: unknown, column: string): boolean {
-  const code = typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code?: unknown }).code)
-    : '';
-  if (code === '42703') return true;
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+  if (code === "42703") return true;
   const message = error instanceof Error ? error.message : String(error);
-  return message.includes(column) && /does not exist|no such column|undefined column/i.test(message);
+  return (
+    message.includes(column) && /does not exist|no such column|undefined column/i.test(message)
+  );
 }
 
 /**
@@ -232,10 +248,11 @@ export function isUndefinedColumnError(error: unknown, column: string): boolean 
  * Anything else falls through and caller MUST re-throw.
  */
 export function isUndefinedTableError(error: unknown): boolean {
-  const code = typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code?: unknown }).code)
-    : '';
-  if (code === '42P01') return true;
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+  if (code === "42P01") return true;
   const message = error instanceof Error ? error.message : String(error);
   return /relation .* does not exist|no such table|undefined table/i.test(message);
 }
@@ -277,7 +294,9 @@ export function tryParseEmbedding(value: unknown): Float32Array | null {
     if (!_tryParseEmbeddingWarned) {
       _tryParseEmbeddingWarned = true;
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`tryParseEmbedding: skipping corrupt embedding row (${msg}). Further warnings suppressed this session.`);
+      console.warn(
+        `tryParseEmbedding: skipping corrupt embedding row (${msg}). Further warnings suppressed this session.`
+      );
     }
     return null;
   }
@@ -289,7 +308,7 @@ export function rowToChunk(row: Record<string, unknown>, includeEmbedding = fals
     page_id: row.page_id as number,
     chunk_index: row.chunk_index as number,
     chunk_text: row.chunk_text as string,
-    chunk_source: row.chunk_source as 'compiled_truth' | 'timeline' | 'fenced_code',
+    chunk_source: row.chunk_source as "compiled_truth" | "timeline" | "fenced_code",
     embedding: includeEmbedding ? parseEmbedding(row.embedding) : null,
     model: row.model as string,
     token_count: row.token_count as number | null,
@@ -314,7 +333,7 @@ export function rowToSearchResult(row: Record<string, unknown>): SearchResult {
     title: row.title as string,
     type: row.type as string,
     chunk_text: row.chunk_text as string,
-    chunk_source: row.chunk_source as 'compiled_truth' | 'timeline',
+    chunk_source: row.chunk_source as "compiled_truth" | "timeline",
     chunk_id: row.chunk_id as number,
     chunk_index: row.chunk_index as number,
     score: Number(row.score),
@@ -324,8 +343,11 @@ export function rowToSearchResult(row: Record<string, unknown>): SearchResult {
   // SELECTs. Keep the field optional so pre-v0.17 engines that didn't
   // join sources don't crash on the absent column — rowToSearchResult
   // is shared by both paths.
-  if (typeof row.source_id === 'string') {
+  if (typeof row.source_id === "string") {
     result.source_id = row.source_id;
+  }
+  if (typeof row.case_slug === "string" && row.case_slug.length > 0) {
+    result.case_slug = row.case_slug;
   }
   // v0.34: effective_date / effective_date_source carried through from the
   // pages join. Same three-state read as readOptionalDate elsewhere: the
@@ -335,23 +357,23 @@ export function rowToSearchResult(row: Record<string, unknown>): SearchResult {
   // returns Date objects via postgres.js; PGLite returns strings. Normalize
   // to date-only ISO so downstream prompt-builders don't see noise from
   // midnight-UTC timestamps.
-  if ('effective_date' in row) {
+  if ("effective_date" in row) {
     const raw = row.effective_date;
     if (raw === null) {
       result.effective_date = null;
     } else if (raw instanceof Date) {
       result.effective_date = raw.toISOString().slice(0, 10);
-    } else if (typeof raw === 'string' && raw) {
+    } else if (typeof raw === "string" && raw) {
       // Postgres TIMESTAMPTZ already serializes as "YYYY-MM-DD ..." — slice
       // the date portion. PGLite returns the same shape via its parser.
       result.effective_date = raw.slice(0, 10);
     }
   }
-  if ('effective_date_source' in row) {
+  if ("effective_date_source" in row) {
     const raw = row.effective_date_source;
     if (raw === null) {
       result.effective_date_source = null;
-    } else if (typeof raw === 'string' && raw) {
+    } else if (typeof raw === "string" && raw) {
       result.effective_date_source = raw;
     }
   }
@@ -378,7 +400,7 @@ export function takeRowToTake(row: Record<string, unknown>): Take {
   return {
     id: Number(row.id),
     page_id: Number(row.page_id),
-    page_slug: String(row.page_slug ?? ''),
+    page_slug: String(row.page_slug ?? ""),
     row_num: Number(row.row_num),
     claim: String(row.claim),
     kind: row.kind as string,
@@ -391,14 +413,15 @@ export function takeRowToTake(row: Record<string, unknown>): Take {
     active: Boolean(row.active),
     resolved_at: isoOrNull(row.resolved_at),
     resolved_outcome: row.resolved_outcome == null ? null : Boolean(row.resolved_outcome),
-    resolved_quality: row.resolved_quality == null
-      ? null
-      : (String(row.resolved_quality) as 'correct' | 'incorrect' | 'partial' | 'unresolvable'),
+    resolved_quality:
+      row.resolved_quality == null
+        ? null
+        : (String(row.resolved_quality) as "correct" | "incorrect" | "partial" | "unresolvable"),
     resolved_value: row.resolved_value == null ? null : Number(row.resolved_value),
     resolved_unit: row.resolved_unit == null ? null : String(row.resolved_unit),
     resolved_source: row.resolved_source == null ? null : String(row.resolved_source),
     resolved_by: row.resolved_by == null ? null : String(row.resolved_by),
-    created_at: isoOrNull(row.created_at) ?? '',
-    updated_at: isoOrNull(row.updated_at) ?? '',
+    created_at: isoOrNull(row.created_at) ?? "",
+    updated_at: isoOrNull(row.updated_at) ?? "",
   };
 }

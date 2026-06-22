@@ -20,16 +20,26 @@ describe("diffWords", () => {
   });
 
   test("simple addition", () => {
-    const { left, right } = diffWords("hello world", "hello beautiful world");
+    const { right } = diffWords("hello world", "hello beautiful world");
     expect(tokenText(right)).toBe("hello beautiful world");
     const added = right.filter((t) => t.type === "added");
-    expect(added.map((t) => t.text).join("").trim()).toBe("beautiful");
+    expect(
+      added
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("beautiful");
   });
 
   test("simple removal", () => {
-    const { left, right } = diffWords("hello beautiful world", "hello world");
+    const { left } = diffWords("hello beautiful world", "hello world");
     const removed = left.filter((t) => t.type === "removed");
-    expect(removed.map((t) => t.text).join("").trim()).toBe("beautiful");
+    expect(
+      removed
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("beautiful");
   });
 
   test("complete replacement", () => {
@@ -70,16 +80,36 @@ describe("diffWords", () => {
     expect(tokenText(right)).toBe("line one\nline three");
     const removed = left.filter((t) => t.type === "removed" && t.text.trim());
     const added = right.filter((t) => t.type === "added" && t.text.trim());
-    expect(removed.map((t) => t.text).join("").trim()).toBe("two");
-    expect(added.map((t) => t.text).join("").trim()).toBe("three");
+    expect(
+      removed
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("two");
+    expect(
+      added
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("three");
   });
 
   test("unicode text", () => {
     const { left, right } = diffWords("Müller läßt", "Müller lässt");
     const removed = left.filter((t) => t.type === "removed" && t.text.trim());
     const added = right.filter((t) => t.type === "added" && t.text.trim());
-    expect(removed.map((t) => t.text).join("").trim()).toBe("läßt");
-    expect(added.map((t) => t.text).join("").trim()).toBe("lässt");
+    expect(
+      removed
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("läßt");
+    expect(
+      added
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("lässt");
   });
 
   test("long text with multiple changes", () => {
@@ -94,8 +124,18 @@ describe("diffWords", () => {
     const { left, right } = diffWords("foo bar baz", "foo BAR baz");
     const removed = left.filter((t) => t.type === "removed" && t.text.trim());
     const added = right.filter((t) => t.type === "added" && t.text.trim());
-    expect(removed.map((t) => t.text).join("").trim()).toBe("bar");
-    expect(added.map((t) => t.text).join("").trim()).toBe("BAR");
+    expect(
+      removed
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("bar");
+    expect(
+      added
+        .map((t) => t.text)
+        .join("")
+        .trim()
+    ).toBe("BAR");
   });
 });
 
@@ -138,9 +178,7 @@ describe("buildAcceptedText", () => {
   });
 
   test("undefined accepted defaults to original", () => {
-    const clauses = [
-      { original: "keep", revised: "change" },
-    ];
+    const clauses = [{ original: "keep", revised: "change" }];
     expect(buildAcceptedText(clauses)).toBe("keep");
   });
 

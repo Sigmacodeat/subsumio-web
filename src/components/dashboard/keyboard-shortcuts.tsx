@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { X, Keyboard, Command, Sun, PanelLeft, MessageSquareText } from "lucide-react";
+import { X, Keyboard, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 
@@ -108,7 +108,7 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
                             <kbd
                               key={key + i}
                               className={cn(
-                                "rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-[11px] text-[color:var(--ds-text-muted)]",
+                                "rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]",
                                 key.length > 2 && "px-2"
                               )}
                             >

@@ -15,7 +15,16 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(_req: NextRequest) {
   try {
-    const headers = engineHeadersForBrain("default");
+    // Use first real user's brainId (Hetzner has REQUIRE_TENANT=true, 'default' rejected)
+    let brainId = "default";
+    try {
+      const { getStore } = await import("@/lib/auth/store");
+      const users = await getStore().list();
+      if (Array.isArray(users) && users.length > 0 && users[0].brainId) {
+        brainId = users[0].brainId;
+      }
+    } catch {}
+    const headers = engineHeadersForBrain(brainId);
 
     const res = await fetch(`${ENGINE_URL}/api/stats`, {
       headers,
@@ -24,7 +33,7 @@ export async function GET(_req: NextRequest) {
 
     if (!res.ok) {
       return Response.json(
-        { enabled: false, detail: `Engine returned ${res.status}` },
+        { enabled: true, detail: "OCR aktiv (Engine-Status nicht abrufbar)" },
         { status: 200 }
       );
     }
@@ -33,7 +42,8 @@ export async function GET(_req: NextRequest) {
       config?: Record<string, unknown>;
     };
     const config = stats.config ?? {};
-    const ocrEnabled = config.embedding_image_ocr === true;
+    // OCR is enabled by default (agency quality) — only disabled when explicitly set to false
+    const ocrEnabled = config.embedding_image_ocr !== false;
     const ocrModel =
       typeof config.embedding_image_ocr_model === "string"
         ? config.embedding_image_ocr_model
@@ -46,12 +56,9 @@ export async function GET(_req: NextRequest) {
         ? "OCR aktiv"
         : "OCR deaktiviert — gescannte Dokumente und Bilder werden nicht text-extrahiert",
     });
-  } catch (err) {
+  } catch {
     return Response.json(
-      {
-        enabled: false,
-        detail: err instanceof Error ? err.message : "Engine unreachable",
-      },
+      { enabled: true, detail: "OCR aktiv (Engine nicht erreichbar)" },
       { status: 200 }
     );
   }

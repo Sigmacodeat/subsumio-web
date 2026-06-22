@@ -18,8 +18,6 @@ import {
   buildReviewUpdate,
   type ClauseAnnotation,
   type ClauseRiskLevel,
-  type ClauseReviewStatus,
-  type ClauseCategory,
 } from "@/lib/clause-annotation";
 
 // ── Label Maps ────────────────────────────────────────────────────────
@@ -101,14 +99,12 @@ describe("buildAnnotationSlug", () => {
 describe("buildAnnotationTitle", () => {
   it("builds title from category and clause title", () => {
     expect(buildAnnotationTitle("liability", "Haftungsbeschränkung")).toBe(
-      "Haftung: Haftungsbeschränkung",
+      "Haftung: Haftungsbeschränkung"
     );
   });
 
   it("uses category label as prefix", () => {
-    expect(buildAnnotationTitle("nda", "Geheimhaltung")).toBe(
-      "Geheimhaltung: Geheimhaltung",
-    );
+    expect(buildAnnotationTitle("nda", "Geheimhaltung")).toBe("Geheimhaltung: Geheimhaltung");
   });
 });
 
@@ -204,7 +200,7 @@ describe("fmToAnnotation", () => {
         slug: "cases/123",
         title: "Case",
         frontmatter: { type: "case" },
-      }),
+      })
     ).toBeNull();
   });
 

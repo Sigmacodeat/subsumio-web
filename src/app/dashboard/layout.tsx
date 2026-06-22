@@ -12,7 +12,6 @@ import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
-import { OcrWarningBanner } from "@/components/dashboard/ocr-warning-banner";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { cn } from "@/lib/utils";
@@ -191,7 +190,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Skip-to-content link for keyboard users */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--brand-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-[color:var(--ds-text)] focus:shadow-lg"
       >
         {t("layout.skip_to_content")}
       </a>
@@ -232,13 +231,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onCopilotToggle={() => setCopilotOpen((v) => !v)}
         />
 
-        <OcrWarningBanner />
         <main
           id="main-content"
           role="main"
           className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0"
         >
-          {children}
+          <div key={pathname} className="widget-fade-in flex min-h-0 flex-1 flex-col">
+            {children}
+          </div>
         </main>
       </div>
 

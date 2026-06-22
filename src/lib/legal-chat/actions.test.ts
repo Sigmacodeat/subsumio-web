@@ -278,9 +278,75 @@ describe("parseIntent — deadline", () => {
     expect(r.dueDate).toBe("2026-03-15");
   });
 
+  test("'termin akt 2026-014: 15.07.2026 14:00 LG München' → appointment, not deadline", () => {
+    const r = parseIntent("termin akt 2026-014: 15.07.2026 14:00 LG München");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.caseRef).toBe("2026-014");
+    expect(r.date).toBe("2026-07-15");
+    expect(r.time).toBe("14:00");
+    expect(r.title).toBe("LG München");
+  });
+
   test("deadline without date → free_text", () => {
     const r = parseIntent("frist akt 2026-014: irgendwann");
     expect(r.kind).toBe("free_text");
+  });
+});
+
+describe("parseIntent — workflow updates", () => {
+  test("task reschedule command", () => {
+    const r = parseIntent("aufgabe verschieben akt 2026-014: klageentwurf auf 2026-07-03");
+    expect(r.kind).toBe("update_task");
+    if (r.kind !== "update_task") return;
+    expect(r.caseRef).toBe("2026-014");
+    expect(r.query).toBe("klageentwurf");
+    expect(r.dueDate).toBe("2026-07-03");
+  });
+
+  test("task delegate command", () => {
+    const r = parseIntent("aufgabe delegieren akt 2026-014: klageentwurf an Anna");
+    expect(r.kind).toBe("delegate_task");
+    if (r.kind !== "delegate_task") return;
+    expect(r.assignee).toBe("Anna");
+  });
+
+  test("deadline reschedule and cancel commands", () => {
+    const move = parseIntent("frist verschieben akt 2026-014: Berufung auf 08.07.2026");
+    expect(move.kind).toBe("update_deadline");
+    if (move.kind !== "update_deadline") return;
+    expect(move.dueDate).toBe("2026-07-08");
+
+    const cancel = parseIntent("frist streichen akt 2026-014: Berufung");
+    expect(cancel.kind).toBe("cancel_deadline");
+  });
+
+  test("appointment reschedule and cancel commands", () => {
+    const move = parseIntent("termin verschieben akt 2026-014: Verhandlung auf 16.07.2026 09:30");
+    expect(move.kind).toBe("update_appointment");
+    if (move.kind !== "update_appointment") return;
+    expect(move.date).toBe("2026-07-16");
+    expect(move.time).toBe("09:30");
+
+    const cancel = parseIntent("termin absagen akt 2026-014: Verhandlung");
+    expect(cancel.kind).toBe("cancel_appointment");
+  });
+
+  test("document status and review commands", () => {
+    const status = parseIntent("dokumente status akt 2026-014");
+    expect(status.kind).toBe("document_status");
+
+    const review = parseIntent("dokument geprüft akt 2026-014: Klageentwurf");
+    expect(review.kind).toBe("review_document");
+    if (review.kind !== "review_document") return;
+    expect(review.status).toBe("confirmed");
+  });
+
+  test("beA and DATEV status commands", () => {
+    expect(parseIntent("bea").kind).toBe("bea_status");
+    expect(parseIntent("posteingang").kind).toBe("bea_status");
+    expect(parseIntent("datev").kind).toBe("datev_status");
+    expect(parseIntent("datev export").kind).toBe("datev_status");
   });
 });
 
@@ -1076,5 +1142,78 @@ describe("parseIntent — edge cases", () => {
     expect(r.kind).toBe("close_case");
     if (r.kind !== "close_case") return;
     expect(r.caseRef).toBe("2026-014");
+  });
+});
+
+// ─── G1: Appointment Intent ───────────────────────────────────────────────────
+
+describe("parseIntent — appointment", () => {
+  test("'termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung' → appointment", () => {
+    const r = parseIntent("termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.caseRef).toBe("2026-014");
+    expect(r.date).toBe("2026-07-15");
+    expect(r.time).toBe("14:00");
+    expect(r.title).toBe("LG München Verhandlung");
+  });
+
+  test("'termin 15.07.2026 9:00 Besprechung' → appointment (no case)", () => {
+    const r = parseIntent("termin 15.07.2026 9:00 Besprechung");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.caseRef).toBe("");
+    expect(r.date).toBe("2026-07-15");
+    expect(r.time).toBe("09:00");
+    expect(r.title).toBe("Besprechung");
+  });
+
+  test("'gerichtstermin akt 2026-003: 01.08.2026 10:30 OLG Stuttgart' → appointment", () => {
+    const r = parseIntent("gerichtstermin akt 2026-003: 01.08.2026 10:30 OLG Stuttgart");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.caseRef).toBe("2026-003");
+    expect(r.date).toBe("2026-08-01");
+    expect(r.time).toBe("10:30");
+    expect(r.title).toBe("OLG Stuttgart");
+  });
+
+  test("'besprechung 20.07.2026 14.00 Telefonat Mandant' → appointment (dot in time)", () => {
+    const r = parseIntent("besprechung 20.07.2026 14.00 Telefonat Mandant");
+    expect(r.kind).toBe("appointment");
+    if (r.kind !== "appointment") return;
+    expect(r.time).toBe("14:00");
+    expect(r.title).toBe("Telefonat Mandant");
+  });
+
+  test("appointment takes priority over deadline for 'termin' prefix with time", () => {
+    const r = parseIntent("termin 15.07.2026 14:00 Verhandlung");
+    expect(r.kind).toBe("appointment");
+    expect(r.kind).not.toBe("deadline");
+  });
+
+  test("'termin' without time falls through to deadline", () => {
+    const r = parseIntent("termin 15.07.2026 Klageerwiderung");
+    expect(r.kind).toBe("deadline");
+  });
+});
+
+// ─── G1: List Appointments ────────────────────────────────────────────────────
+
+describe("parseIntent — list_appointments", () => {
+  test("'termine' → list_appointments", () => {
+    expect(parseIntent("termine")).toEqual({ kind: "list_appointments" });
+  });
+
+  test("'anstehende termine' → list_appointments", () => {
+    expect(parseIntent("anstehende termine")).toEqual({ kind: "list_appointments" });
+  });
+
+  test("'kalender' → list_appointments", () => {
+    expect(parseIntent("kalender")).toEqual({ kind: "list_appointments" });
+  });
+
+  test("'terminkalender' → list_appointments", () => {
+    expect(parseIntent("terminkalender")).toEqual({ kind: "list_appointments" });
   });
 });

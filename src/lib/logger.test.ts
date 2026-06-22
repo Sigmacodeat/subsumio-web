@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, test, expect, vi, afterEach } from "vitest";
 import { logger, setRequestId, getRequestId } from "./logger";
 
 describe("setRequestId / getRequestId", () => {

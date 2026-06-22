@@ -12,7 +12,6 @@ import {
   checkSloCompliance,
   createLoadTestResult,
   DEFAULT_REGRESSION_CONFIG,
-  type LoadTestScenario,
   type LoadTestResult,
   type RegressionBaseline,
 } from "@/lib/loadtest-scenarios";
@@ -107,7 +106,7 @@ describe("generateAllK6Scripts", () => {
 
   it("each script is non-empty", () => {
     const scripts = generateAllK6Scripts();
-    for (const [id, script] of Object.entries(scripts)) {
+    for (const [script] of Object.entries(scripts)) {
       expect(script.length).toBeGreaterThan(100);
     }
   });
@@ -195,8 +194,22 @@ describe("evaluateScenarioResult", () => {
 
 describe("detectRegressions", () => {
   const baseline: RegressionBaseline[] = [
-    { route: "/api/think", method: "POST", p95_ms: 3000, p99_ms: 5000, error_rate: 0.02, recorded_at: "2024-01-01T00:00:00Z" },
-    { route: "/api/search", method: "POST", p95_ms: 2000, p99_ms: 4000, error_rate: 0.01, recorded_at: "2024-01-01T00:00:00Z" },
+    {
+      route: "/api/think",
+      method: "POST",
+      p95_ms: 3000,
+      p99_ms: 5000,
+      error_rate: 0.02,
+      recorded_at: "2024-01-01T00:00:00Z",
+    },
+    {
+      route: "/api/search",
+      method: "POST",
+      p95_ms: 2000,
+      p99_ms: 4000,
+      error_rate: 0.01,
+      recorded_at: "2024-01-01T00:00:00Z",
+    },
   ];
 
   it("detects no regression when metrics are same", () => {

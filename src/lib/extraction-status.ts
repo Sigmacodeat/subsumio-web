@@ -56,14 +56,9 @@ export function canTransition(from: ExtractionStatus, to: ExtractionStatus): boo
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
-export function transition(
-  current: ExtractionStatus,
-  next: ExtractionStatus,
-): ExtractionStatus {
+export function transition(current: ExtractionStatus, next: ExtractionStatus): ExtractionStatus {
   if (!canTransition(current, next)) {
-    throw new Error(
-      `Invalid extraction status transition: ${current} → ${next}`,
-    );
+    throw new Error(`Invalid extraction status transition: ${current} → ${next}`);
   }
   return next;
 }
@@ -84,47 +79,65 @@ export function isFailed(status: ExtractionStatus): boolean {
   return status === "error" || status === "ocr_failed";
 }
 
-const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".tif", ".tiff", ".heic", ".avif", ".webp", ".bmp", ".gif"];
-const TEXT_EXTENSIONS = [".docx", ".doc", ".txt", ".md", ".mdx", ".rtf", ".odt", ".html", ".htm", ".csv", ".xlsx", ".xls"];
+const IMAGE_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".tif",
+  ".tiff",
+  ".heic",
+  ".avif",
+  ".webp",
+  ".bmp",
+  ".gif",
+];
+const TEXT_EXTENSIONS = [
+  ".docx",
+  ".doc",
+  ".txt",
+  ".md",
+  ".mdx",
+  ".rtf",
+  ".odt",
+  ".html",
+  ".htm",
+  ".csv",
+  ".xlsx",
+  ".xls",
+];
 
-export function inferInitialExtractionStatus(
-  filename: string,
-  mimeType: string,
-): ExtractionStatus {
+export function inferInitialExtractionStatus(filename: string, mimeType: string): ExtractionStatus {
   const ext = filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[0] ?? "";
   const isImage = IMAGE_EXTENSIONS.includes(ext) || mimeType.startsWith("image/");
   const isPdf = ext === ".pdf" || mimeType === "application/pdf";
 
   if (isPdf) return "processing";
   if (isImage) return "ocr_needed";
-  if (TEXT_EXTENSIONS.includes(ext) || mimeType.startsWith("text/") || mimeType.includes("document") || mimeType.includes("spreadsheet")) {
+  if (
+    TEXT_EXTENSIONS.includes(ext) ||
+    mimeType.startsWith("text/") ||
+    mimeType.includes("document") ||
+    mimeType.includes("spreadsheet")
+  ) {
     return "processing";
   }
   return "processing";
 }
 
-export function inferExtractionMethod(
-  status: ExtractionStatus,
-  hadOcr: boolean,
-): ExtractionMethod {
+export function inferExtractionMethod(status: ExtractionStatus, hadOcr: boolean): ExtractionMethod {
   if (status === "ocr_complete" || (hadOcr && status === "ready")) return "ocr_vision";
   if (status === "text_layer" || status === "ready") return "text_layer";
   return "none";
 }
 
-export function createInitialMetadata(
-  filename: string,
-  mimeType: string,
-): ExtractionMetadata {
+export function createInitialMetadata(_filename: string, _mimeType: string): ExtractionMetadata {
   return {
     status: "uploaded",
     uploaded_at: new Date().toISOString(),
   };
 }
 
-export function updateMetadataForOcrStart(
-  meta: ExtractionMetadata,
-): ExtractionMetadata {
+export function updateMetadataForOcrStart(meta: ExtractionMetadata): ExtractionMetadata {
   return {
     ...meta,
     status: "ocr_processing",
@@ -135,7 +148,7 @@ export function updateMetadataForOcrStart(
 
 export function updateMetadataForOcrComplete(
   meta: ExtractionMetadata,
-  result: { char_count?: number; page_count?: number; language?: string },
+  result: { char_count?: number; page_count?: number; language?: string }
 ): ExtractionMetadata {
   return {
     ...meta,
@@ -151,7 +164,7 @@ export function updateMetadataForOcrComplete(
 
 export function updateMetadataForOcrFailure(
   meta: ExtractionMetadata,
-  error: string,
+  error: string
 ): ExtractionMetadata {
   return {
     ...meta,
@@ -163,7 +176,7 @@ export function updateMetadataForOcrFailure(
 
 export function updateMetadataForTextLayer(
   meta: ExtractionMetadata,
-  result: { char_count?: number; page_count?: number; language?: string },
+  result: { char_count?: number; page_count?: number; language?: string }
 ): ExtractionMetadata {
   return {
     ...meta,

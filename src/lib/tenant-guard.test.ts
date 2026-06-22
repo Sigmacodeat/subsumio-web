@@ -1,12 +1,7 @@
 // @vitest-environment node
 
-import { describe, test, expect, expectTypeOf } from "vitest";
-import {
-  createTenantGuard,
-  TenantViolationError,
-  type TenantGuard,
-  type ScopedResult,
-} from "@/lib/tenant-guard";
+import { describe, test, expect } from "vitest";
+import { createTenantGuard, TenantViolationError, type ScopedResult } from "@/lib/tenant-guard";
 import type { MatterPermissionSummary } from "@/lib/matter-context-types";
 
 // ── Fixtures ──────────────────────────────────────────────────────────
@@ -62,7 +57,7 @@ const permConfidential: MatterPermissionSummary = {
 function makeResult(
   brainId: string,
   orgId: string,
-  overrides: Partial<ScopedResult> = {},
+  overrides: Partial<ScopedResult> = {}
 ): ScopedResult {
   return { brain_id: brainId, org_id: orgId, ...overrides };
 }
@@ -159,8 +154,14 @@ describe("Matter-Level Isolation", () => {
   });
 
   test("assertMatter throws when user is blocked by ethical wall", () => {
-    const guardBlocked = createTenantGuard({ brainId: BRAIN_A, orgId: ORG_A, userId: USER_BLOCKED });
-    expect(() => guardBlocked.assertMatter("cases/1", permEthicalWall)).toThrow(TenantViolationError);
+    const guardBlocked = createTenantGuard({
+      brainId: BRAIN_A,
+      orgId: ORG_A,
+      userId: USER_BLOCKED,
+    });
+    expect(() => guardBlocked.assertMatter("cases/1", permEthicalWall)).toThrow(
+      TenantViolationError
+    );
     try {
       guardBlocked.assertMatter("cases/1", permEthicalWall);
     } catch (e) {
@@ -182,12 +183,20 @@ describe("Matter-Level Isolation", () => {
   });
 
   test("isMatterAccessible returns false for blocked matter", () => {
-    const guardBlocked = createTenantGuard({ brainId: BRAIN_A, orgId: ORG_A, userId: USER_BLOCKED });
+    const guardBlocked = createTenantGuard({
+      brainId: BRAIN_A,
+      orgId: ORG_A,
+      userId: USER_BLOCKED,
+    });
     expect(guardBlocked.isMatterAccessible("cases/1", permEthicalWall)).toBe(false);
   });
 
   test("ethical wall blocks even if user is in allowed_users", () => {
-    const guardBlocked = createTenantGuard({ brainId: BRAIN_A, orgId: ORG_A, userId: USER_BLOCKED });
+    const guardBlocked = createTenantGuard({
+      brainId: BRAIN_A,
+      orgId: ORG_A,
+      userId: USER_BLOCKED,
+    });
     expect(permEthicalWall.allowed_users).toContain(USER_BLOCKED);
     expect(permEthicalWall.blocked_users).toContain(USER_BLOCKED);
     expect(guardBlocked.isMatterAccessible("cases/1", permEthicalWall)).toBe(false);
@@ -202,19 +211,27 @@ describe("assertScope (Combined)", () => {
   });
 
   test("throws for different org", () => {
-    expect(() => guardA.assertScope({ brain_id: BRAIN_A, org_id: ORG_B })).toThrow(TenantViolationError);
+    expect(() => guardA.assertScope({ brain_id: BRAIN_A, org_id: ORG_B })).toThrow(
+      TenantViolationError
+    );
   });
 
   test("throws for different brain without cross-brain flag", () => {
-    expect(() => guardA.assertScope({ brain_id: BRAIN_B, org_id: ORG_A })).toThrow(TenantViolationError);
+    expect(() => guardA.assertScope({ brain_id: BRAIN_B, org_id: ORG_A })).toThrow(
+      TenantViolationError
+    );
   });
 
   test("passes for different brain with allowCrossBrain within same org", () => {
-    expect(() => guardA.assertScope({ brain_id: BRAIN_A2, org_id: ORG_A }, { allowCrossBrain: true })).not.toThrow();
+    expect(() =>
+      guardA.assertScope({ brain_id: BRAIN_A2, org_id: ORG_A }, { allowCrossBrain: true })
+    ).not.toThrow();
   });
 
   test("throws for cross-brain across different orgs even with flag", () => {
-    expect(() => guardA.assertScope({ brain_id: BRAIN_B, org_id: ORG_B }, { allowCrossBrain: true })).toThrow(TenantViolationError);
+    expect(() =>
+      guardA.assertScope({ brain_id: BRAIN_B, org_id: ORG_B }, { allowCrossBrain: true })
+    ).toThrow(TenantViolationError);
   });
 
   test("throws for invalid scope (empty brain_id)", () => {
@@ -222,15 +239,17 @@ describe("assertScope (Combined)", () => {
   });
 
   test("throws for invalid scope (empty org_id)", () => {
-    expect(() => guardA.assertScope({ brain_id: BRAIN_A, org_id: "" })).toThrow(TenantViolationError);
+    expect(() => guardA.assertScope({ brain_id: BRAIN_A, org_id: "" })).toThrow(
+      TenantViolationError
+    );
   });
 
   test("source check included in assertScope", () => {
     expect(() =>
       guardA.assertScope(
         { brain_id: BRAIN_A, org_id: ORG_A, source: "whatsapp" },
-        { allowedSources: ["dms", "email"] },
-      ),
+        { allowedSources: ["dms", "email"] }
+      )
     ).toThrow(TenantViolationError);
   });
 
@@ -238,8 +257,8 @@ describe("assertScope (Combined)", () => {
     expect(() =>
       guardA.assertScope(
         { brain_id: BRAIN_A, org_id: ORG_A, source: "dms" },
-        { allowedSources: ["dms", "email"] },
-      ),
+        { allowedSources: ["dms", "email"] }
+      )
     ).not.toThrow();
   });
 
@@ -381,11 +400,15 @@ describe("assertExportScope", () => {
   });
 
   test("throws for cross-brain (export never allows cross-brain)", () => {
-    expect(() => guardA.assertExportScope({ brain_id: BRAIN_A2, org_id: ORG_A })).toThrow(TenantViolationError);
+    expect(() => guardA.assertExportScope({ brain_id: BRAIN_A2, org_id: ORG_A })).toThrow(
+      TenantViolationError
+    );
   });
 
   test("throws for cross-org", () => {
-    expect(() => guardA.assertExportScope({ brain_id: BRAIN_B, org_id: ORG_B })).toThrow(TenantViolationError);
+    expect(() => guardA.assertExportScope({ brain_id: BRAIN_B, org_id: ORG_B })).toThrow(
+      TenantViolationError
+    );
   });
 });
 
@@ -463,7 +486,9 @@ describe("Edge Cases", () => {
   test("confidential + privileged matter only for allowed user", () => {
     const guardOther = createTenantGuard({ brainId: BRAIN_A, orgId: ORG_A, userId: USER_2 });
     expect(() => guardA.assertMatter("cases/1", permConfidential)).not.toThrow();
-    expect(() => guardOther.assertMatter("cases/1", permConfidential)).toThrow(TenantViolationError);
+    expect(() => guardOther.assertMatter("cases/1", permConfidential)).toThrow(
+      TenantViolationError
+    );
   });
 
   test("TenantViolationError has correct shape", () => {
@@ -507,7 +532,11 @@ describe("Source Leakage Prevention", () => {
   });
 
   test("ethical wall blocks all results for blocked user", () => {
-    const guardBlocked = createTenantGuard({ brainId: BRAIN_A, orgId: ORG_A, userId: USER_BLOCKED });
+    const guardBlocked = createTenantGuard({
+      brainId: BRAIN_A,
+      orgId: ORG_A,
+      userId: USER_BLOCKED,
+    });
     expect(guardBlocked.isMatterAccessible("cases/1", permEthicalWall)).toBe(false);
     expect(guardBlocked.isMatterAccessible("cases/2", permEthicalWall)).toBe(false);
   });

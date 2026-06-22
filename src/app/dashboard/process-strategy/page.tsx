@@ -20,12 +20,10 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
-import type { BrainPage } from "@/lib/types";
 
 type WizardStep = "select" | "analyze" | "strategy" | "drafts";
 
@@ -73,7 +71,7 @@ export default function ProcessStrategyPage() {
   const [selectedSlug, setSelectedSlug] = useState("");
   const [loadingCases, setLoadingCases] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
-  const [generatingStrategy, setGeneratingStrategy] = useState(false);
+  const [_generatingStrategy, _setGeneratingStrategy] = useState(false);
   const [generatingDrafts, setGeneratingDrafts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [strategy, setStrategy] = useState<StrategyResult | null>(null);

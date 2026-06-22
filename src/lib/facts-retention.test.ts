@@ -11,7 +11,7 @@
  *   7. facts-decay.ts — computeDecayedConfidence, applyDecay, batchDecay, getDecayStats
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   forgetFact,
   decayFact,
@@ -26,7 +26,6 @@ import {
   createFactRecord,
   FactAuditLog,
   DEFAULT_CONFIG,
-  type FactRecord,
   type ForgetDecayConfig,
 } from "@/lib/facts-retention";
 import {
@@ -45,7 +44,12 @@ describe("forgetFact", () => {
   it("soft-deletes an active fact without PII", () => {
     const fact = createFactRecord({ has_pii: false });
     const auditLog = new FactAuditLog();
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "user_request", requested_by: "user-1" }, DEFAULT_CONFIG, auditLog);
+    const result = forgetFact(
+      fact,
+      { fact_id: fact.id, reason: "user_request", requested_by: "user-1" },
+      DEFAULT_CONFIG,
+      auditLog
+    );
     expect(result.success).toBe(true);
     expect(result.action).toBe("forgotten");
     expect(fact.status).toBe("forgotten");
@@ -54,8 +58,15 @@ describe("forgetFact", () => {
   });
 
   it("anonymizes PII facts instead of deleting", () => {
-    const fact = createFactRecord({ has_pii: true, content: "Contact: max@example.com, Tel: 0301234567" });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "gdpr_article_17", requested_by: "user-1" });
+    const fact = createFactRecord({
+      has_pii: true,
+      content: "Contact: max@example.com, Tel: 0301234567",
+    });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "gdpr_article_17",
+      requested_by: "user-1",
+    });
     expect(result.success).toBe(true);
     expect(result.action).toBe("anonymized");
     expect(fact.status).toBe("anonymized");
@@ -65,7 +76,11 @@ describe("forgetFact", () => {
 
   it("blocks forget when legal_hold is active", () => {
     const fact = createFactRecord({ legal_hold: true });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "user_request", requested_by: "user-1" });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "user_request",
+      requested_by: "user-1",
+    });
     expect(result.success).toBe(false);
     expect(result.action).toBe("blocked_legal_hold");
     expect(fact.status).toBe("active");
@@ -76,7 +91,11 @@ describe("forgetFact", () => {
       created_at: new Date().toISOString(),
       retention: { retention: "P10Y", action: "keep", legal_basis: "§ 147 AO" },
     });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "user_request", requested_by: "user-1" });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "user_request",
+      requested_by: "user-1",
+    });
     expect(result.success).toBe(false);
     expect(result.action).toBe("blocked_retention");
   });
@@ -85,7 +104,12 @@ describe("forgetFact", () => {
     const fact = createFactRecord({
       retention: { retention: "P10Y", action: "keep", legal_basis: "§ 147 AO" },
     });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "manual", requested_by: "admin", force: true });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "manual",
+      requested_by: "admin",
+      force: true,
+    });
     expect(result.success).toBe(true);
     expect(result.action).toBe("forgotten");
   });
@@ -95,13 +119,22 @@ describe("forgetFact", () => {
       created_at: "2020-01-01T00:00:00Z",
       retention: { retention: "P1Y", action: "delete", legal_basis: "GDPR Art. 17" },
     });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "retention_expired", requested_by: "system" });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "retention_expired",
+      requested_by: "system",
+    });
     expect(result.success).toBe(true);
   });
 
   it("legal_hold blocks even with force=true", () => {
     const fact = createFactRecord({ legal_hold: true });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "manual", requested_by: "admin", force: true });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "manual",
+      requested_by: "admin",
+      force: true,
+    });
     expect(result.success).toBe(false);
     expect(result.action).toBe("blocked_legal_hold");
   });
@@ -109,7 +142,12 @@ describe("forgetFact", () => {
   it("audits every forget action", () => {
     const fact = createFactRecord();
     const auditLog = new FactAuditLog();
-    forgetFact(fact, { fact_id: fact.id, reason: "user_request", requested_by: "user-1" }, DEFAULT_CONFIG, auditLog);
+    forgetFact(
+      fact,
+      { fact_id: fact.id, reason: "user_request", requested_by: "user-1" },
+      DEFAULT_CONFIG,
+      auditLog
+    );
     const entries = auditLog.getEntries(fact.id);
     expect(entries).toHaveLength(1);
     expect(entries[0].action).toBe("forget");
@@ -120,7 +158,12 @@ describe("forgetFact", () => {
   it("audits blocked legal_hold attempt", () => {
     const fact = createFactRecord({ legal_hold: true });
     const auditLog = new FactAuditLog();
-    forgetFact(fact, { fact_id: fact.id, reason: "user_request", requested_by: "user-1" }, DEFAULT_CONFIG, auditLog);
+    forgetFact(
+      fact,
+      { fact_id: fact.id, reason: "user_request", requested_by: "user-1" },
+      DEFAULT_CONFIG,
+      auditLog
+    );
     const entries = auditLog.getEntries(fact.id);
     expect(entries).toHaveLength(1);
     expect(entries[0].details?.blocked_by).toBe("legal_hold");
@@ -235,9 +278,14 @@ describe("restoreFact", () => {
   });
 
   it("updates last_accessed_at on restore", () => {
-    const fact = createFactRecord({ status: "forgotten", last_accessed_at: "2020-01-01T00:00:00Z" });
+    const fact = createFactRecord({
+      status: "forgotten",
+      last_accessed_at: "2020-01-01T00:00:00Z",
+    });
     restoreFact(fact, "admin-1");
-    expect(new Date(fact.last_accessed_at).getTime()).toBeGreaterThan(new Date("2020-01-01T00:00:00Z").getTime());
+    expect(new Date(fact.last_accessed_at).getTime()).toBeGreaterThan(
+      new Date("2020-01-01T00:00:00Z").getTime()
+    );
   });
 });
 
@@ -271,7 +319,12 @@ describe("Legal Hold Management", () => {
 
   it("legal hold prevents forget even with force", () => {
     const fact = createFactRecord({ legal_hold: true });
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "manual", requested_by: "admin", force: true });
+    const result = forgetFact(fact, {
+      fact_id: fact.id,
+      reason: "manual",
+      requested_by: "admin",
+      force: true,
+    });
     expect(result.success).toBe(false);
     expect(result.action).toBe("blocked_legal_hold");
   });
@@ -282,7 +335,13 @@ describe("Legal Hold Management", () => {
 describe("FactAuditLog", () => {
   it("logs entries with id and timestamp", () => {
     const log = new FactAuditLog();
-    const entry = log.log({ action: "forget", fact_id: "f1", actor: "user", reason: "test", reversible: true });
+    const entry = log.log({
+      action: "forget",
+      fact_id: "f1",
+      actor: "user",
+      reason: "test",
+      reversible: true,
+    });
     expect(entry.id).toBeTruthy();
     expect(entry.timestamp).toBeTruthy();
   });
@@ -379,24 +438,42 @@ describe("anonymizeContent", () => {
 describe("facts-decay: computeDecayedConfidence", () => {
   it("returns 0 for forgotten facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: new Date().toISOString(), confidence: 0.9, legal_hold: false, forgotten: true,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: new Date().toISOString(),
+      confidence: 0.9,
+      legal_hold: false,
+      forgotten: true,
     };
     expect(computeDecayedConfidence(fact)).toBe(0);
   });
 
   it("returns original confidence for legal hold facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: "2020-01-01T00:00:00Z", confidence: 0.9, legal_hold: true, forgotten: false,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: "2020-01-01T00:00:00Z",
+      confidence: 0.9,
+      legal_hold: true,
+      forgotten: false,
     };
     expect(computeDecayedConfidence(fact)).toBe(0.9);
   });
 
   it("reduces confidence for old facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: "2020-01-01T00:00:00Z", confidence: 1.0, legal_hold: false, forgotten: false,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: "2020-01-01T00:00:00Z",
+      confidence: 1.0,
+      legal_hold: false,
+      forgotten: false,
     };
     const decayed = computeDecayedConfidence(fact, new Date("2024-01-01T00:00:00Z"));
     expect(decayed).toBeLessThan(1.0);
@@ -405,8 +482,14 @@ describe("facts-decay: computeDecayedConfidence", () => {
 
   it("respects min_confidence floor", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "ai_run",
-      created_at: "2020-01-01T00:00:00Z", confidence: 1.0, legal_hold: false, forgotten: false,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "ai_run",
+      created_at: "2020-01-01T00:00:00Z",
+      confidence: 1.0,
+      legal_hold: false,
+      forgotten: false,
     };
     const decayed = computeDecayedConfidence(fact, new Date("2024-01-01T00:00:00Z"));
     expect(decayed).toBeGreaterThanOrEqual(DECAY_CONFIGS.ai_run.min_confidence);
@@ -416,8 +499,14 @@ describe("facts-decay: computeDecayedConfidence", () => {
 describe("facts-decay: applyDecay", () => {
   it("returns reason=forgotten for forgotten facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: new Date().toISOString(), confidence: 0.9, legal_hold: false, forgotten: true,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: new Date().toISOString(),
+      confidence: 0.9,
+      legal_hold: false,
+      forgotten: true,
     };
     const result = applyDecay(fact);
     expect(result.reason).toBe("forgotten");
@@ -426,8 +515,14 @@ describe("facts-decay: applyDecay", () => {
 
   it("returns reason=legal_hold_active for legal hold facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: new Date().toISOString(), confidence: 0.9, legal_hold: true, forgotten: false,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: new Date().toISOString(),
+      confidence: 0.9,
+      legal_hold: true,
+      forgotten: false,
     };
     const result = applyDecay(fact);
     expect(result.reason).toBe("legal_hold_active");
@@ -436,8 +531,14 @@ describe("facts-decay: applyDecay", () => {
 
   it("applies decay for old facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "cases/test", content: "test", entity_class: "brain_page",
-      created_at: "2020-01-01T00:00:00Z", confidence: 1.0, legal_hold: false, forgotten: false,
+      id: "f1",
+      slug: "cases/test",
+      content: "test",
+      entity_class: "brain_page",
+      created_at: "2020-01-01T00:00:00Z",
+      confidence: 1.0,
+      legal_hold: false,
+      forgotten: false,
     };
     const result = applyDecay(fact, new Date("2024-01-01T00:00:00Z"));
     expect(result.applied).toBe(true);
@@ -448,8 +549,26 @@ describe("facts-decay: applyDecay", () => {
 describe("facts-decay: batchDecay", () => {
   it("processes multiple facts and updates confidence", () => {
     const facts: DecayableFact[] = [
-      { id: "f1", slug: "c", content: "t", entity_class: "brain_page", created_at: "2020-01-01T00:00:00Z", confidence: 1.0, legal_hold: false, forgotten: false },
-      { id: "f2", slug: "c", content: "t", entity_class: "brain_page", created_at: new Date().toISOString(), confidence: 1.0, legal_hold: false, forgotten: false },
+      {
+        id: "f1",
+        slug: "c",
+        content: "t",
+        entity_class: "brain_page",
+        created_at: "2020-01-01T00:00:00Z",
+        confidence: 1.0,
+        legal_hold: false,
+        forgotten: false,
+      },
+      {
+        id: "f2",
+        slug: "c",
+        content: "t",
+        entity_class: "brain_page",
+        created_at: new Date().toISOString(),
+        confidence: 1.0,
+        legal_hold: false,
+        forgotten: false,
+      },
     ];
     const { results, updated } = batchDecay(facts, new Date("2024-01-01T00:00:00Z"));
     expect(results).toHaveLength(2);
@@ -461,24 +580,42 @@ describe("facts-decay: batchDecay", () => {
 describe("facts-decay: getDecayEligibility", () => {
   it("returns eligible=false for forgotten", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "c", content: "t", entity_class: "brain_page", created_at: new Date().toISOString(),
-      confidence: 0.9, legal_hold: false, forgotten: true,
+      id: "f1",
+      slug: "c",
+      content: "t",
+      entity_class: "brain_page",
+      created_at: new Date().toISOString(),
+      confidence: 0.9,
+      legal_hold: false,
+      forgotten: true,
     };
     expect(getDecayEligibility(fact).eligible).toBe(false);
   });
 
   it("returns eligible=false for legal hold", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "c", content: "t", entity_class: "brain_page", created_at: new Date().toISOString(),
-      confidence: 0.9, legal_hold: true, forgotten: false,
+      id: "f1",
+      slug: "c",
+      content: "t",
+      entity_class: "brain_page",
+      created_at: new Date().toISOString(),
+      confidence: 0.9,
+      legal_hold: true,
+      forgotten: false,
     };
     expect(getDecayEligibility(fact).eligible).toBe(false);
   });
 
   it("returns eligible=true for old facts", () => {
     const fact: DecayableFact = {
-      id: "f1", slug: "c", content: "t", entity_class: "brain_page", created_at: "2020-01-01T00:00:00Z",
-      confidence: 1.0, legal_hold: false, forgotten: false,
+      id: "f1",
+      slug: "c",
+      content: "t",
+      entity_class: "brain_page",
+      created_at: "2020-01-01T00:00:00Z",
+      confidence: 1.0,
+      legal_hold: false,
+      forgotten: false,
     };
     expect(getDecayEligibility(fact, new Date("2024-01-01T00:00:00Z")).eligible).toBe(true);
   });
@@ -487,9 +624,36 @@ describe("facts-decay: getDecayEligibility", () => {
 describe("facts-decay: getDecayStats", () => {
   it("computes stats correctly", () => {
     const facts: DecayableFact[] = [
-      { id: "f1", slug: "c", content: "t", entity_class: "brain_page", created_at: "2020-01-01T00:00:00Z", confidence: 1.0, legal_hold: false, forgotten: false },
-      { id: "f2", slug: "c", content: "t", entity_class: "brain_page", created_at: new Date().toISOString(), confidence: 0.8, legal_hold: true, forgotten: false },
-      { id: "f3", slug: "c", content: "t", entity_class: "brain_page", created_at: new Date().toISOString(), confidence: 0.5, legal_hold: false, forgotten: true },
+      {
+        id: "f1",
+        slug: "c",
+        content: "t",
+        entity_class: "brain_page",
+        created_at: "2020-01-01T00:00:00Z",
+        confidence: 1.0,
+        legal_hold: false,
+        forgotten: false,
+      },
+      {
+        id: "f2",
+        slug: "c",
+        content: "t",
+        entity_class: "brain_page",
+        created_at: new Date().toISOString(),
+        confidence: 0.8,
+        legal_hold: true,
+        forgotten: false,
+      },
+      {
+        id: "f3",
+        slug: "c",
+        content: "t",
+        entity_class: "brain_page",
+        created_at: new Date().toISOString(),
+        confidence: 0.5,
+        legal_hold: false,
+        forgotten: true,
+      },
     ];
     const stats = getDecayStats(facts, new Date("2024-01-01T00:00:00Z"));
     expect(stats.total).toBe(3);
@@ -519,7 +683,11 @@ describe("Edge Cases", () => {
   it("forgetFact with anonymize_pii=false deletes PII fact", () => {
     const fact = createFactRecord({ has_pii: true });
     const config: ForgetDecayConfig = { ...DEFAULT_CONFIG, anonymize_pii: false };
-    const result = forgetFact(fact, { fact_id: fact.id, reason: "manual", requested_by: "u" }, config);
+    const result = forgetFact(
+      fact,
+      { fact_id: fact.id, reason: "manual", requested_by: "u" },
+      config
+    );
     expect(result.action).toBe("forgotten");
     expect(fact.status).toBe("forgotten");
   });

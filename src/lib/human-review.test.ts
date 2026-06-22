@@ -1,12 +1,7 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, afterEach } from "vitest";
-import {
-  summarizeFeedback,
-  promoteToFixture,
-  type HumanReviewFeedback,
-  type ReviewVerdict,
-} from "./human-review";
+import { describe, test, expect } from "vitest";
+import { summarizeFeedback, promoteToFixture, type HumanReviewFeedback } from "./human-review";
 
 function makeFeedback(overrides: Partial<HumanReviewFeedback> = {}): HumanReviewFeedback {
   return {
@@ -71,10 +66,7 @@ describe("summarizeFeedback — counts", () => {
   });
 
   test("accuracy_rate is 1.0 when all correct", () => {
-    const feedback = [
-      makeFeedback({ verdict: "correct" }),
-      makeFeedback({ verdict: "correct" }),
-    ];
+    const feedback = [makeFeedback({ verdict: "correct" }), makeFeedback({ verdict: "correct" })];
     const summary = summarizeFeedback(feedback);
     expect(summary.accuracy_rate).toBe(1);
   });
@@ -83,7 +75,7 @@ describe("summarizeFeedback — counts", () => {
 describe("summarizeFeedback — recent", () => {
   test("returns up to 20 recent items", () => {
     const feedback = Array.from({ length: 25 }, (_, i) =>
-      makeFeedback({ id: `review-${i}`, reviewed_at: new Date(2024, 0, i + 1).toISOString() }),
+      makeFeedback({ id: `review-${i}`, reviewed_at: new Date(2024, 0, i + 1).toISOString() })
     );
     const summary = summarizeFeedback(feedback);
     expect(summary.recent).toHaveLength(20);

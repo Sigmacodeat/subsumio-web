@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth/server";
 import { SESSION_COOKIE, revokeAllSessions } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   // Try to get the user for audit and session revocation
   const user = await getSession();
 

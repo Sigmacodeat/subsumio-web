@@ -9,13 +9,21 @@ vi.mock("@/lib/retry", () => ({
 
 vi.mock("@/lib/errors", () => ({
   JudgementsSearchError: class JudgementsSearchError extends Error {
-    constructor(msg: string, public opts?: Record<string, unknown>) {
+    constructor(
+      msg: string,
+      public opts?: Record<string, unknown>
+    ) {
       super(msg);
     }
   },
 }));
 
-import { searchRisOgd, searchOpenLegalData, searchOpenCaseLaw, searchJudgements } from "./judgements";
+import {
+  searchRisOgd,
+  searchOpenLegalData,
+  searchOpenCaseLaw,
+  searchJudgements,
+} from "./judgements";
 
 function makeJsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -29,7 +37,7 @@ describe("searchRisOgd", () => {
 
   test("returns empty array when no results", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } }),
+      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } })
     );
     const hits = await searchRisOgd({ q: "test" });
     expect(hits).toEqual([]);
@@ -57,7 +65,7 @@ describe("searchRisOgd", () => {
             },
           },
         },
-      }),
+      })
     );
     const hits = await searchRisOgd({ q: "Schadenersatz" });
     expect(hits).toHaveLength(1);
@@ -86,14 +94,17 @@ describe("searchRisOgd", () => {
                 Data: {
                   Metadaten: {
                     Technisch: { ID: "T002" },
-                    Judikatur: { Justiz: { Gericht: "OLG Wien" }, Entscheidungsdatum: "2024-04-01" },
+                    Judikatur: {
+                      Justiz: { Gericht: "OLG Wien" },
+                      Entscheidungsdatum: "2024-04-01",
+                    },
                   },
                 },
               },
             ],
           },
         },
-      }),
+      })
     );
     const hits = await searchRisOgd({ q: "test" });
     expect(hits).toHaveLength(2);
@@ -112,7 +123,7 @@ describe("searchRisOgd", () => {
             ],
           },
         },
-      }),
+      })
     );
     const hits = await searchRisOgd({ q: "test" });
     expect(hits).toHaveLength(1);
@@ -125,7 +136,7 @@ describe("searchRisOgd", () => {
 
   test("respects limit parameter", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } }),
+      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } })
     );
     await searchRisOgd({ q: "test", limit: 5 });
     const url = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
@@ -156,7 +167,7 @@ describe("searchOpenLegalData", () => {
             type: "Urteil",
           },
         ],
-      }),
+      })
     );
     const hits = await searchOpenLegalData({ q: "test" });
     expect(hits).toHaveLength(1);
@@ -170,7 +181,7 @@ describe("searchOpenLegalData", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       makeJsonResponse({
         results: [{ id: 42, slug: "case-42", court: { name: "LG" } }],
-      }),
+      })
     );
     const hits = await searchOpenLegalData({ q: "test" });
     expect(hits[0].id).toBe("old-42");
@@ -206,7 +217,7 @@ describe("searchOpenCaseLaw", () => {
             regeste: "Wichtiger Entscheid",
           },
         ],
-      }),
+      })
     );
     const hits = await searchOpenCaseLaw({ q: "test" });
     expect(hits).toHaveLength(1);
@@ -227,7 +238,7 @@ describe("searchJudgements", () => {
 
   test("searches only AT when jurisdiction=at", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } }),
+      makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } })
     );
     const { results, errors } = await searchJudgements({ q: "test", jurisdiction: "at" });
     expect(results).toEqual([]);
@@ -236,9 +247,7 @@ describe("searchJudgements", () => {
   });
 
   test("searches only DE when jurisdiction=de", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      makeJsonResponse({ results: [] }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(makeJsonResponse({ results: [] }));
     const { results, errors } = await searchJudgements({ q: "test", jurisdiction: "de" });
     expect(results).toEqual([]);
     expect(errors).toEqual([]);
@@ -250,7 +259,7 @@ describe("searchJudgements", () => {
       .mockResolvedValueOnce(makeJsonResponse({ OgdSearchResult: { OgdDocumentResults: {} } }))
       .mockResolvedValueOnce(makeJsonResponse({ results: [] }))
       .mockResolvedValueOnce(makeJsonResponse({ results: [] }));
-    const { results, errors } = await searchJudgements({ q: "test", jurisdiction: "all" });
+    const { errors } = await searchJudgements({ q: "test", jurisdiction: "all" });
     expect(errors).toEqual([]);
     expect(globalThis.fetch).toHaveBeenCalledTimes(3);
   });
@@ -271,17 +280,22 @@ describe("searchJudgements", () => {
           OgdSearchResult: {
             OgdDocumentResults: {
               OgdDocumentReference: {
-                Data: { Metadaten: { Technisch: { ID: "AT1" }, Judikatur: { Justiz: { Gericht: "OGH" } } } },
+                Data: {
+                  Metadaten: {
+                    Technisch: { ID: "AT1" },
+                    Judikatur: { Justiz: { Gericht: "OGH" } },
+                  },
+                },
               },
             },
           },
-        }),
+        })
       )
       // DE source
       .mockResolvedValueOnce(
         makeJsonResponse({
           results: [{ id: 1, court: { name: "BGH" }, slug: "de-1" }],
-        }),
+        })
       )
       // CH source
       .mockResolvedValueOnce(makeJsonResponse({ results: [] }));

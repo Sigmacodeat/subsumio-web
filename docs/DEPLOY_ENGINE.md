@@ -135,6 +135,36 @@ Operational notes for big files:
   out of the box, so 1 GB uploads pass through. If you front the engine with nginx
   instead, set `client_max_body_size 1024m;`.
 
+### Original-file storage (download / GoBD retention)
+
+Every uploaded document's **original bytes** are persisted (not just the extracted
+text), so the file can be downloaded unaltered later (§ 147 AO / GoBD). This uses
+the engine's pluggable `StorageBackend` — the single source of truth for binary
+files (`files` table + `src/core/storage.ts`):
+
+- **Default — local volume (zero-config).** When no storage backend is configured,
+  files are written under `${GBRAIN_HOME}/files` (i.e. on the `/data` volume).
+  **Include `/data` in your backups** — it now holds the original case documents.
+- **Object storage (S3 / MinIO / R2).** Set the `storage:` block in the engine's
+  config (`gbrain.yml` / `config.storage`) with `backend: s3`, `bucket`, `endpoint`,
+  and credentials. No code change — the upload + download paths pick it up.
+- **Download** goes through the matter-scoped web route `/api/files/<slug>` →
+  engine `/api/files/<slug>`; bytes are streamed and access is checked against the
+  caller's matter scope (out-of-scope is indistinguishable from not-found).
+
+### Scanned-PDF OCR
+
+PDFs **with** a text layer, DOCX, EML, XLSX extract with no system deps. **Scanned
+(image-only) PDFs** are rasterized + vision-OCR'd as a fallback:
+
+- Requires `GBRAIN_EMBEDDING_IMAGE_OCR=true` **and** a vision-capable model key.
+  Without OCR, scanned PDFs store a placeholder and aren't searchable.
+- System deps `graphicsmagick`, `ghostscript`, `poppler-utils` are baked into the
+  engine image (Dockerfile). If you run the engine outside that image, install them.
+- `GBRAIN_OCR_MAX_PAGES` (default 100) caps how many pages are OCR'd synchronously
+  per document, so a huge scanned bundle can't time out the upload. Pages beyond
+  the cap aren't searchable (a note is added to the extracted text).
+
 ---
 
 ## Smoke test

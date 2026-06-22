@@ -15,9 +15,9 @@ interface CommentThreadProps {
 
 export default function CommentThread({
   parentSlug,
-  parentType,
-  currentUserId,
-  currentUserName,
+  parentType: _parentType,
+  currentUserId: _currentUserId,
+  currentUserName: _currentUserName,
 }: CommentThreadProps) {
   const { lang } = useLang();
   const [comments, setComments] = useState<Comment[]>([]);

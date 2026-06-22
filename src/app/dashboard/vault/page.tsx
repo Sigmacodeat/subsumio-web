@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useFieldArray } from "react-hook-form";
 import {
@@ -16,7 +16,12 @@ import {
   Clock,
   Tag,
   AlertTriangle,
+  Briefcase,
+  BookOpen,
+  Upload,
+  FolderInput,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -135,11 +140,7 @@ export default function VaultPage() {
     name: "questions",
   });
 
-  useEffect(() => {
-    loadDocs();
-  }, []);
-
-  async function loadDocs() {
+  const loadDocs = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
@@ -159,7 +160,11 @@ export default function VaultPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    void loadDocs();
+  }, [loadDocs]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -290,6 +295,48 @@ export default function VaultPage() {
           ) : undefined
         }
       />
+
+      {/* Prominente Upload-CTAs: Dokument zu Akte / Kanzleiwissen importieren */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/dashboard/upload?mode=case"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-primary)]/10">
+            <Briefcase size={18} className="brand-text" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("vault.cta_case_upload")}
+              </span>
+              <Upload size={12} className="text-[color:var(--ds-text-subtle)]" />
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              {t("vault.cta_case_upload_desc")}
+            </p>
+          </div>
+        </Link>
+        <Link
+          href="/dashboard/upload?mode=knowledge"
+          className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+            <BookOpen size={18} className="text-emerald-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                {t("vault.cta_knowledge_import")}
+              </span>
+              <FolderInput size={12} className="text-[color:var(--ds-text-subtle)]" />
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+              {t("vault.cta_knowledge_import_desc")}
+            </p>
+          </div>
+        </Link>
+      </div>
 
       {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
 

@@ -4,10 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Brain,
   Database,
-  TrendingUp,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
   Clock,
   Loader2,
   RefreshCw,
@@ -16,7 +14,6 @@ import {
   GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { csrfFetch } from "@/lib/csrf";
 import type { BrainQualitySummary } from "@/lib/matter-context-types";

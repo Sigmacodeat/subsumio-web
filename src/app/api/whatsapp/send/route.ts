@@ -1,20 +1,29 @@
 import { z } from "zod";
 import { createHandler, apiError } from "@/lib/api-handler";
-import {
-  sendWhatsAppText,
-  sendWhatsAppTemplate,
-  sendWhatsAppInteractive,
-  sendWhatsAppMedia,
-} from "@/lib/whatsapp/send";
+import { sendWhatsAppInteractive, sendWhatsAppMedia } from "@/lib/whatsapp/send";
 import { sendWhatsAppFlow } from "@/lib/whatsapp/flow-send";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders, resolveSender, phoneHash } from "@/lib/whatsapp/verify";
 import { getWhatsAppIdentityStore } from "@/lib/whatsapp/identity-store";
-import { normalizePhone } from "@/lib/whatsapp/types";
+import { normalizePhone, type WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
+import type { OutboundScope } from "@/lib/whatsapp/outbound-gate";
 
 const sendSchema = z
   .object({
     to: z.string().min(1, "recipient_required"),
     type: z.enum(["text", "template", "interactive", "media", "flow"]).default("text"),
+    scope: z
+      .enum([
+        "daily_briefing",
+        "deadline_alert",
+        "approval_request",
+        "conflict_alert",
+        "new_document",
+        "client_reminder",
+        "appointment_reminder",
+      ])
+      .default("client_reminder"),
+    urgent: z.boolean().optional(),
 
     // text
     message: z.string().min(1, "message_required").max(3900, "message_too_long").optional(),
@@ -137,12 +146,38 @@ export const POST = createHandler(
       switch (body.type) {
         case "text": {
           if (!body.message) return apiError("message_required", "Text-Nachricht fehlt", 400);
-          await sendWhatsAppText(normalizedTo, body.message);
+          const result = await sendProactiveMessage({
+            to: normalizedTo,
+            brainId: ctx.brainId,
+            scope: body.scope as OutboundScope,
+            freeform: body.message,
+            urgent: body.urgent === true,
+          });
+          if (!result.sent) {
+            return apiError(
+              "whatsapp_blocked",
+              `WhatsApp-Versand geblockt: ${result.decision.reason ?? "blocked"}`,
+              403
+            );
+          }
           return Response.json({ ok: true, type: "text", sentTo: normalizedTo.slice(-4) });
         }
         case "template": {
           if (!body.template) return apiError("template_required", "Template fehlt", 400);
-          const result = await sendWhatsAppTemplate(normalizedTo, body.template as never);
+          const result = await sendProactiveMessage({
+            to: normalizedTo,
+            brainId: ctx.brainId,
+            scope: body.scope as OutboundScope,
+            template: body.template as WhatsAppTemplateMessage,
+            urgent: body.urgent === true,
+          });
+          if (!result.sent) {
+            return apiError(
+              "whatsapp_blocked",
+              `WhatsApp-Versand geblockt: ${result.decision.reason ?? "blocked"}`,
+              403
+            );
+          }
           return Response.json({
             ok: true,
             type: "template",

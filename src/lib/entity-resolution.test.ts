@@ -12,7 +12,6 @@ import {
   mergeContact,
   ENTITY_TYPE_LABELS,
   type EntityType,
-  type UnresolvedEntity,
 } from "@/lib/entity-resolution";
 
 describe("normalizeName", () => {
@@ -115,7 +114,7 @@ describe("mergeContact", () => {
   test("prefers first non-undefined values", () => {
     const merged = mergeContact(
       { email: "a@test.com", phone: undefined },
-      { email: "b@test.com", phone: "123" },
+      { email: "b@test.com", phone: "123" }
     );
     expect(merged.email).toBe("a@test.com");
     expect(merged.phone).toBe("123");
@@ -129,7 +128,17 @@ describe("mergeContact", () => {
 
 describe("ENTITY_TYPE_LABELS", () => {
   test("all 9 types have labels", () => {
-    const types: EntityType[] = ["person", "company", "client", "opponent", "lawyer", "judge", "court", "witness", "third_party"];
+    const types: EntityType[] = [
+      "person",
+      "company",
+      "client",
+      "opponent",
+      "lawyer",
+      "judge",
+      "court",
+      "witness",
+      "third_party",
+    ];
     for (const type of types) {
       expect(ENTITY_TYPE_LABELS[type].label).toBeTruthy();
       expect(ENTITY_TYPE_LABELS[type].description).toBeTruthy();

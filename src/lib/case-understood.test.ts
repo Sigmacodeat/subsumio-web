@@ -13,7 +13,6 @@ import {
   buildCaseUnderstoodPanel,
   RISK_LEVEL_LABELS,
   ASSESSMENT_LABELS,
-  type CaseAssessment,
 } from "@/lib/case-understood";
 import type { MatterContextBundle, MatterGap, MatterFactEntry } from "@/lib/matter-context-types";
 
@@ -120,10 +119,7 @@ describe("buildFactSummary", () => {
   });
 
   it("counts superseded facts", () => {
-    const facts = [
-      makeFact({ id: "f1", superseded_by: "f2" }),
-      makeFact({ id: "f2" }),
-    ];
+    const facts = [makeFact({ id: "f1", superseded_by: "f2" }), makeFact({ id: "f2" })];
     const summary = buildFactSummary(facts);
     expect(summary.superseded).toBe(1);
   });
@@ -211,14 +207,16 @@ describe("buildRiskIndicators", () => {
 
   it("overdue deadline → critical risk", () => {
     const bundle = makeBundle({
-      deadlines: [{
-        id: "d1",
-        title: "Berufungsfrist",
-        date: "2026-01-01",
-        status: "open",
-        urgency: "overdue",
-        source: "engine",
-      }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "Berufungsfrist",
+          date: "2026-01-01",
+          status: "open",
+          urgency: "overdue",
+          source: "engine",
+        },
+      ],
     });
     const risks = buildRiskIndicators(bundle);
     expect(risks).toHaveLength(1);
@@ -228,14 +226,16 @@ describe("buildRiskIndicators", () => {
 
   it("critical urgency deadline → high risk", () => {
     const bundle = makeBundle({
-      deadlines: [{
-        id: "d2",
-        title: "Frist",
-        date: "2026-07-01",
-        status: "open",
-        urgency: "critical",
-        source: "engine",
-      }],
+      deadlines: [
+        {
+          id: "d2",
+          title: "Frist",
+          date: "2026-07-01",
+          status: "open",
+          urgency: "critical",
+          source: "engine",
+        },
+      ],
     });
     const risks = buildRiskIndicators(bundle);
     expect(risks).toHaveLength(1);
@@ -244,14 +244,16 @@ describe("buildRiskIndicators", () => {
 
   it("normal urgency deadline → no risk", () => {
     const bundle = makeBundle({
-      deadlines: [{
-        id: "d3",
-        title: "Frist",
-        date: "2026-12-01",
-        status: "open",
-        urgency: "normal",
-        source: "engine",
-      }],
+      deadlines: [
+        {
+          id: "d3",
+          title: "Frist",
+          date: "2026-12-01",
+          status: "open",
+          urgency: "normal",
+          source: "engine",
+        },
+      ],
     });
     const risks = buildRiskIndicators(bundle);
     expect(risks).toHaveLength(0);
@@ -298,7 +300,9 @@ describe("buildRiskIndicators", () => {
       ],
     });
     const risks = buildRiskIndicators(bundle);
-    const factRisk = risks.find((r) => r.category === "fact_quality" && r.source === "facts:low_confidence");
+    const factRisk = risks.find(
+      (r) => r.category === "fact_quality" && r.source === "facts:low_confidence"
+    );
     expect(factRisk).toBeDefined();
     expect(factRisk!.level).toBe("medium");
     expect(factRisk!.title).toContain("2");
@@ -306,10 +310,7 @@ describe("buildRiskIndicators", () => {
 
   it("contradicted facts → medium risk", () => {
     const bundle = makeBundle({
-      facts: [
-        makeFact({ id: "f1", contradicts: ["f2"] }),
-        makeFact({ id: "f2" }),
-      ],
+      facts: [makeFact({ id: "f1", contradicts: ["f2"] }), makeFact({ id: "f2" })],
     });
     const risks = buildRiskIndicators(bundle);
     const contradictedRisk = risks.find((r) => r.source === "facts:contradicted");
@@ -341,14 +342,16 @@ describe("buildRiskIndicators", () => {
   it("risks sorted by severity (critical first)", () => {
     const bundle = makeBundle({
       gaps: [makeGap({ severity: "high", title: "Gap High" })],
-      deadlines: [{
-        id: "d1",
-        title: "Overdue",
-        date: "2026-01-01",
-        status: "open",
-        urgency: "overdue",
-        source: "engine",
-      }],
+      deadlines: [
+        {
+          id: "d1",
+          title: "Overdue",
+          date: "2026-01-01",
+          status: "open",
+          urgency: "overdue",
+          source: "engine",
+        },
+      ],
       coverage: {
         ...makeBundle().coverage,
         stale_sources: 2,
@@ -376,8 +379,26 @@ describe("buildFreshnessSummary", () => {
   it("computes oldest sync from sources", () => {
     const coverage = {
       sources: [
-        { source_id: "s1", source_label: "Source 1", source_type: "upload" as const, connected: true, last_sync_at: "2026-06-15T10:00:00Z", document_count: 5, index_fresh: true, ocr_complete: true },
-        { source_id: "s2", source_label: "Source 2", source_type: "dms" as const, connected: true, last_sync_at: "2026-06-10T10:00:00Z", document_count: 3, index_fresh: false, ocr_complete: true },
+        {
+          source_id: "s1",
+          source_label: "Source 1",
+          source_type: "upload" as const,
+          connected: true,
+          last_sync_at: "2026-06-15T10:00:00Z",
+          document_count: 5,
+          index_fresh: true,
+          ocr_complete: true,
+        },
+        {
+          source_id: "s2",
+          source_label: "Source 2",
+          source_type: "dms" as const,
+          connected: true,
+          last_sync_at: "2026-06-10T10:00:00Z",
+          document_count: 3,
+          index_fresh: false,
+          ocr_complete: true,
+        },
       ],
       total_sources: 2,
       connected_sources: 2,
@@ -406,8 +427,26 @@ describe("buildFreshnessSummary", () => {
   it("null sync dates are filtered", () => {
     const coverage = {
       sources: [
-        { source_id: "s1", source_label: "S1", source_type: "upload" as const, connected: true, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: true },
-        { source_id: "s2", source_label: "S2", source_type: "dms" as const, connected: true, last_sync_at: "2026-06-12T10:00:00Z", document_count: 1, index_fresh: true, ocr_complete: true },
+        {
+          source_id: "s1",
+          source_label: "S1",
+          source_type: "upload" as const,
+          connected: true,
+          last_sync_at: null,
+          document_count: 0,
+          index_fresh: false,
+          ocr_complete: true,
+        },
+        {
+          source_id: "s2",
+          source_label: "S2",
+          source_type: "dms" as const,
+          connected: true,
+          last_sync_at: "2026-06-12T10:00:00Z",
+          document_count: 1,
+          index_fresh: true,
+          ocr_complete: true,
+        },
       ],
       total_sources: 2,
       connected_sources: 2,
@@ -437,8 +476,26 @@ describe("buildRecentSourcesSummary", () => {
   it("sources sorted by last_sync_at descending", () => {
     const coverage = {
       sources: [
-        { source_id: "old", source_label: "Old", source_type: "dms" as const, connected: true, last_sync_at: "2026-01-01T00:00:00Z", document_count: 1, index_fresh: false, ocr_complete: true },
-        { source_id: "new", source_label: "New", source_type: "upload" as const, connected: true, last_sync_at: "2026-06-01T00:00:00Z", document_count: 5, index_fresh: true, ocr_complete: true },
+        {
+          source_id: "old",
+          source_label: "Old",
+          source_type: "dms" as const,
+          connected: true,
+          last_sync_at: "2026-01-01T00:00:00Z",
+          document_count: 1,
+          index_fresh: false,
+          ocr_complete: true,
+        },
+        {
+          source_id: "new",
+          source_label: "New",
+          source_type: "upload" as const,
+          connected: true,
+          last_sync_at: "2026-06-01T00:00:00Z",
+          document_count: 5,
+          index_fresh: true,
+          ocr_complete: true,
+        },
       ],
       total_sources: 2,
       connected_sources: 2,
@@ -458,8 +515,26 @@ describe("buildRecentSourcesSummary", () => {
   it("null sync dates sort last", () => {
     const coverage = {
       sources: [
-        { source_id: "never", source_label: "Never", source_type: "email" as const, connected: false, last_sync_at: null, document_count: 0, index_fresh: false, ocr_complete: true },
-        { source_id: "synced", source_label: "Synced", source_type: "upload" as const, connected: true, last_sync_at: "2026-06-01T00:00:00Z", document_count: 3, index_fresh: true, ocr_complete: true },
+        {
+          source_id: "never",
+          source_label: "Never",
+          source_type: "email" as const,
+          connected: false,
+          last_sync_at: null,
+          document_count: 0,
+          index_fresh: false,
+          ocr_complete: true,
+        },
+        {
+          source_id: "synced",
+          source_label: "Synced",
+          source_type: "upload" as const,
+          connected: true,
+          last_sync_at: "2026-06-01T00:00:00Z",
+          document_count: 3,
+          index_fresh: true,
+          ocr_complete: true,
+        },
       ],
       total_sources: 2,
       connected_sources: 1,
@@ -534,7 +609,10 @@ describe("computeAssessment", () => {
 
   it("critical gap → score drops significantly", () => {
     const facts = buildFactSummary([makeFact({ id: "f1", confidence: "high" })]);
-    const gaps = buildGapSummary([makeGap({ severity: "critical" }), makeGap({ severity: "medium" })]);
+    const gaps = buildGapSummary([
+      makeGap({ severity: "critical" }),
+      makeGap({ severity: "medium" }),
+    ]);
     const risks: ReturnType<typeof buildRiskIndicators> = [];
     const freshness: Parameters<typeof computeAssessment>[3] = {
       overall: "fresh",
@@ -651,8 +729,26 @@ describe("buildCaseUnderstoodPanel", () => {
     const bundle = makeBundle({
       coverage: {
         sources: [
-          { source_id: "s1", source_label: "Upload", source_type: "upload", connected: true, last_sync_at: "2026-06-19T10:00:00Z", document_count: 10, index_fresh: true, ocr_complete: true },
-          { source_id: "s2", source_label: "DMS", source_type: "dms", connected: true, last_sync_at: "2026-06-18T10:00:00Z", document_count: 5, index_fresh: true, ocr_complete: true },
+          {
+            source_id: "s1",
+            source_label: "Upload",
+            source_type: "upload",
+            connected: true,
+            last_sync_at: "2026-06-19T10:00:00Z",
+            document_count: 10,
+            index_fresh: true,
+            ocr_complete: true,
+          },
+          {
+            source_id: "s2",
+            source_label: "DMS",
+            source_type: "dms",
+            connected: true,
+            last_sync_at: "2026-06-18T10:00:00Z",
+            document_count: 5,
+            index_fresh: true,
+            ocr_complete: true,
+          },
         ],
         total_sources: 2,
         connected_sources: 2,

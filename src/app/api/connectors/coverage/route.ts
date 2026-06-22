@@ -1,13 +1,5 @@
 import { createHandler, apiSuccess } from "@/lib/api-handler";
-import {
-  getCoverageMatrix,
-  getCoverageSummary,
-  getConnectorById,
-  getConnectorsByCategory,
-  getAvailableConnectors,
-  getPlannedConnectors,
-  validateMatrix,
-} from "@/lib/connector-coverage";
+import { getCoverageMatrix, getCoverageSummary, validateMatrix } from "@/lib/connector-coverage";
 
 export const GET = createHandler(
   {
@@ -31,5 +23,5 @@ export const GET = createHandler(
       connectors: matrix.connectors,
       validation,
     });
-  },
+  }
 );

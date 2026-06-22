@@ -14,8 +14,8 @@ interface CaseSuggestion {
 
 const API_BASE = "https://subsum.eu";
 let token = "";
-const tokenName = "";
-let connected = false;
+const _tokenName = "";
+let _connected = false;
 let currentMode: "conservative" | "balanced" | "tokenmax" = "balanced";
 let currentMail: { subject: string; from: string; body: string; date?: string } | null = null;
 
@@ -36,7 +36,10 @@ function hideStatus() {
 async function connect() {
   const input = document.getElementById("token") as HTMLInputElement;
   token = input.value.trim();
-  if (!token) { showStatus("Bitte API-Key eingeben (sk_live_...).", "err"); return; }
+  if (!token) {
+    showStatus("Bitte API-Key eingeben (sk_live_...).", "err");
+    return;
+  }
 
   if (!token.startsWith("sk_live_")) {
     showStatus("API-Key muss mit 'sk_live_' beginnen.", "err");
@@ -53,7 +56,7 @@ async function connect() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showStatus("Verbunden.", "ok");
-    connected = true;
+    _connected = true;
     localStorage.setItem("subsumio_api_key", token);
     document.getElementById("mainSection")!.style.display = "block";
     document.getElementById("authSection")!.style.display = "none";
@@ -69,7 +72,7 @@ async function connect() {
 
 function disconnect() {
   token = "";
-  connected = false;
+  _connected = false;
   localStorage.removeItem("subsumio_api_key");
   document.getElementById("mainSection")!.style.display = "none";
   document.getElementById("authSection")!.style.display = "block";
@@ -91,7 +94,11 @@ async function loadCurrentMail() {
     const item = Office.context.mailbox.item;
 
     const subject = item.subject || "(Kein Betreff)";
-    const from = item.from ? item.from.emailAddress : (item.sender ? item.sender.emailAddress : "unbekannt@absender.de");
+    const from = item.from
+      ? item.from.emailAddress
+      : item.sender
+        ? item.sender.emailAddress
+        : "unbekannt@absender.de";
     const date = item.dateTimeCreated ? new Date(item.dateTimeCreated).toISOString() : undefined;
 
     currentMail = { subject, from, body: "", date };
@@ -103,7 +110,8 @@ async function loadCurrentMail() {
       item.body.getAsync("text", (asyncResult: { status: string; value: string }) => {
         if (asyncResult.status === "succeeded") {
           currentMail!.body = asyncResult.value;
-          document.getElementById("mailBody")!.textContent = asyncResult.value.substring(0, 500) + (asyncResult.value.length > 500 ? "…" : "");
+          document.getElementById("mailBody")!.textContent =
+            asyncResult.value.substring(0, 500) + (asyncResult.value.length > 500 ? "…" : "");
         } else {
           currentMail!.body = "(Text konnte nicht geladen werden)";
           document.getElementById("mailBody")!.textContent = currentMail!.body;
@@ -119,7 +127,10 @@ async function loadCurrentMail() {
 }
 
 async function importMail() {
-  if (!currentMail) { showStatus("Keine E-Mail geladen.", "err"); return; }
+  if (!currentMail) {
+    showStatus("Keine E-Mail geladen.", "err");
+    return;
+  }
 
   const btn = document.getElementById("importBtn") as HTMLButtonElement;
   const btnText = document.getElementById("importBtnText")!;
@@ -206,7 +217,10 @@ async function importToSpecificCase(slug: string) {
 async function runQuery() {
   const input = document.getElementById("queryInput") as HTMLTextAreaElement;
   const query = input.value.trim();
-  if (!query) { showStatus("Bitte eine Frage eingeben.", "err"); return; }
+  if (!query) {
+    showStatus("Bitte eine Frage eingeben.", "err");
+    return;
+  }
 
   const btn = document.getElementById("queryBtn") as HTMLButtonElement;
   const btnText = document.getElementById("queryBtnText")!;

@@ -69,10 +69,10 @@ test.describe("Accessibility (axe-core)", () => {
       await page.goto(url, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
       const accessibilityScanResults = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
         .analyze();
       const critical = accessibilityScanResults.violations.filter(
-        (v) => v.impact === "critical" || v.impact === "serious",
+        (v) => v.impact === "critical" || v.impact === "serious"
       );
       expect(critical).toHaveLength(0);
     }
@@ -88,7 +88,9 @@ test.describe("Accessibility (axe-core)", () => {
       await page.locator('input[name="email"]').fill(email);
       await page.locator('input[name="password"]').fill(TEST_USER.password);
       await page.locator('form button[type="submit"]').click();
-      await page.waitForFunction(() => window.location.pathname === "/dashboard", { timeout: 45_000 });
+      await page.waitForFunction(() => window.location.pathname === "/dashboard", {
+        timeout: 45_000,
+      });
       await page.context().storageState({ path: "/tmp/a11y-auth-state.json" });
       await page.close();
     });
@@ -103,10 +105,10 @@ test.describe("Accessibility (axe-core)", () => {
           await page.goto(route, { waitUntil: "load" });
           await page.waitForLoadState("networkidle");
           const accessibilityScanResults = await new AxeBuilder({ page })
-            .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+            .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
             .analyze();
           const critical = accessibilityScanResults.violations.filter(
-            (v) => v.impact === "critical" || v.impact === "serious",
+            (v) => v.impact === "critical" || v.impact === "serious"
           );
           expect(critical).toHaveLength(0);
         } finally {

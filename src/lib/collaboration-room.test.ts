@@ -14,7 +14,7 @@ import {
   type CollaborationRoom,
 } from "@/lib/collaboration-room";
 
-function createTestRoom(overrides: Partial<CollaborationRoom> = {}): CollaborationRoom {
+function createTestRoom(_overrides: Partial<CollaborationRoom> = {}): CollaborationRoom {
   return createCollaborationRoom({
     title: "Test Room",
     case_slug: "legal/cases/123",
@@ -66,7 +66,12 @@ describe("Collaboration Room — Participants", () => {
 
   it("updateParticipantRole changes role", () => {
     const room = createTestRoom();
-    const updated = updateParticipantRole(room, room.participants[0].user_id, "editor", "admin@test");
+    const updated = updateParticipantRole(
+      room,
+      room.participants[0].user_id,
+      "editor",
+      "admin@test"
+    );
     expect(updated.participants[0].role).toBe("editor");
   });
 });
@@ -97,7 +102,7 @@ describe("Collaboration Room — External Sharing", () => {
       "external@test.com",
       "viewer",
       "lawyer@test",
-      new Date(Date.now() + 86400000).toISOString(),
+      new Date(Date.now() + 86400000).toISOString()
     );
     expect(updated.external_shares).toHaveLength(1);
     expect(updated.external_shares[0].status).toBe("active");
@@ -110,7 +115,7 @@ describe("Collaboration Room — External Sharing", () => {
       "external@test.com",
       "viewer",
       "lawyer@test",
-      new Date(Date.now() + 86400000).toISOString(),
+      new Date(Date.now() + 86400000).toISOString()
     );
     const updated = revokeExternalShare(withShare, withShare.external_shares[0].id, "lawyer@test");
     expect(updated.external_shares[0].status).toBe("revoked");
@@ -123,7 +128,7 @@ describe("Collaboration Room — External Sharing", () => {
       "external@test.com",
       "viewer",
       "lawyer@test",
-      new Date(Date.now() + 86400000).toISOString(),
+      new Date(Date.now() + 86400000).toISOString()
     );
     expect(getActiveShares(withShare)).toHaveLength(1);
   });
@@ -135,7 +140,7 @@ describe("Collaboration Room — External Sharing", () => {
       "external@test.com",
       "viewer",
       "lawyer@test",
-      new Date(Date.now() - 86400000).toISOString(),
+      new Date(Date.now() - 86400000).toISOString()
     );
     expect(getActiveShares(withShare)).toHaveLength(0);
   });

@@ -163,7 +163,7 @@ async function executeSearchCases(
         })),
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Search failed",
@@ -218,7 +218,7 @@ async function executeSearchDeadlines(
         })),
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Search failed",
@@ -260,7 +260,7 @@ async function executeSearchKnowledge(
         })),
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Search failed",
@@ -322,7 +322,7 @@ async function executeCreateCase(
         message: `Die Akte wurde erfolgreich angelegt. Mandant: ${safeClientName ?? "—"}, Gegenseite: ${safeOpponentName ?? "—"}`,
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Create failed",
@@ -367,7 +367,7 @@ async function executeCaseSummary(
         ],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Summary failed",
@@ -437,7 +437,7 @@ async function executeEmailDraft(
         ],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Email draft failed",
@@ -489,7 +489,7 @@ async function executeDeadlineExtract(
         items: [{ label: "Dokument", value: page.title, href: `/dashboard/brain/${page.slug}` }],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Deadline extraction failed",
@@ -536,7 +536,7 @@ async function executeDocumentSummary(
         items: [{ label: "Dokument", value: page.title, href: `/dashboard/brain/${page.slug}` }],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Summary failed",
@@ -585,7 +585,7 @@ async function executeConflictCheck(
         })),
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Conflict check failed",
@@ -652,7 +652,7 @@ async function executeTimeEntry(
         ],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Time entry failed",
@@ -721,7 +721,7 @@ async function executeClientUpdate(
         ],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Client update failed",
@@ -771,7 +771,7 @@ async function executeMeetingTasks(
           : [],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Meeting task extraction failed",
@@ -869,7 +869,7 @@ async function executeIntakeCreate(
         ],
       },
     };
-  } catch (err) {
+  } catch (_err) {
     return {
       success: false,
       error: "Intake failed",

@@ -35,7 +35,7 @@ export function FilterChip({
             e.stopPropagation();
             onRemove();
           }}
-          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-colors hover:text-red-500"
+          className="-mr-0.5 ml-0.5 cursor-pointer rounded p-0.5 transition-colors hover:text-[color:var(--ds-danger-text)]"
           role="button"
           aria-label={`Filter ${label} entfernen`}
         >

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { GitCompare, Loader2, X, Cpu, Zap, Clock, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { GitCompare, Loader2, Cpu, Zap, Clock, ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { AI_MODELS, formatCost } from "@/lib/model-config";
 import { ModelSelector } from "@/components/dashboard/model-selector";
@@ -58,7 +57,7 @@ export function ModelComparison() {
     // Run both queries in parallel for true side-by-side comparison
     await Promise.all(
       [modelA, modelB].map(async (modelId, i) => {
-        const modelName = AI_MODELS.find((m) => m.id === modelId)?.name ?? modelId;
+        const _modelName = AI_MODELS.find((m) => m.id === modelId)?.name ?? modelId;
         try {
           const result: QueryResponse = await api.query.think(trimmed, {
             mode: "balanced",

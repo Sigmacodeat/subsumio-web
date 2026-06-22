@@ -4,7 +4,7 @@ import { getStore } from "@/lib/auth/store";
 import { getApiKeyStore } from "@/lib/api-key-store";
 import { revokeAllSessions, SESSION_COOKIE } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError } from "@/lib/api-handler";
 
 const deletionSchema = z.object({
@@ -23,19 +23,16 @@ export const POST = createHandler(
     if (!user) return apiError("user_not_found", "User not found", 404);
 
     try {
-      const pages = await api.brain.listPages({ limit: 10000 });
-      await Promise.all(
-        pages.map((p) => api.brain.deletePage(p.slug).catch(() => {})),
-      );
+      const brain = createServerBrainClient(ctx.headers);
+      const pages = await brain.listPages({ limit: 10000 });
+      await Promise.all(pages.map((p) => brain.deletePage(p.slug).catch(() => {})));
     } catch {
       // Brain may not be available
     }
 
     const apiKeyStore = getApiKeyStore();
     const apiKeys = await apiKeyStore.listByOwner(ctx.user.id);
-    await Promise.all(
-      apiKeys.map((k) => apiKeyStore.delete(k.id).catch(() => {})),
-    );
+    await Promise.all(apiKeys.map((k) => apiKeyStore.delete(k.id).catch(() => {})));
 
     await revokeAllSessions(ctx.user.id);
 
@@ -69,5 +66,5 @@ export const POST = createHandler(
     const res = NextResponse.json({ ok: true, deleted: true });
     res.cookies.delete(SESSION_COOKIE);
     return res;
-  },
+  }
 );

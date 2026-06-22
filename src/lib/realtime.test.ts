@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 describe("realtime", () => {
   beforeEach(() => {
@@ -72,7 +72,7 @@ describe("realtime", () => {
 
   describe("ensureRealtime", () => {
     test("does not connect in Node environment", async () => {
-      const { ensureRealtime, realtime } = await import("./realtime");
+      const { ensureRealtime } = await import("./realtime");
       // In jsdom, window exists but WS_URL is empty and EventSource may not exist
       // ensureRealtime should not throw
       expect(() => ensureRealtime("token")).not.toThrow();

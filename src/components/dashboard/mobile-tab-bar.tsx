@@ -17,6 +17,8 @@ import {
   Moon,
   HelpCircle,
   Settings,
+  Mail,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -127,7 +129,8 @@ export function MobileTabBar({
         aria-label="Mehr Aktionen"
         aria-modal={moreOpen ? "true" : undefined}
         aria-hidden={!moreOpen}
-        inert={!moreOpen || undefined}
+        tabIndex={-1}
+        style={!moreOpen ? { pointerEvents: "none" } : undefined}
       >
         <div className="max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
           {/* Grab handle */}
@@ -193,6 +196,13 @@ export function MobileTabBar({
                 label={t("nav.chat")}
               />
               <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+              <MoreSheetLink href="/dashboard/bea" icon={Mail} label={t("nav.bea")} />
+              <MoreSheetLink href="/dashboard/vault" icon={FolderOpen} label={t("nav.vault")} />
+              <MoreSheetLink
+                href="/dashboard/deadlines"
+                icon={CalendarClock}
+                label={t("nav.deadlines")}
+              />
               <MoreSheetLink href="/dashboard/settings" icon={Settings} label={t("nav.settings")} />
             </div>
           </div>
@@ -204,11 +214,12 @@ export function MobileTabBar({
         className="fixed right-0 bottom-0 left-0 z-40 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Mobile Navigation"
         role="tablist"
+        aria-orientation="horizontal"
       >
         {/* Active indicator bar */}
-        <div className="relative h-0.5">
+        <div className="relative h-1">
           <div
-            className="brand-bg absolute top-0 h-0.5 transition-[width,left] duration-300 ease-[var(--ds-ease-smooth)]"
+            className="brand-bg absolute top-0 h-1 transition-[width,left] duration-300 ease-[var(--ds-ease-smooth)]"
             style={{
               width: `${100 / 6}%`,
               left: `${(activeTab >= 0 ? activeTab : 0) * (100 / 6)}%`,
@@ -229,6 +240,11 @@ export function MobileTabBar({
                 aria-label={t(tab.labelKey)}
                 role="tab"
                 aria-selected={active}
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                    navigator.vibrate(10);
+                  }
+                }}
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
                   active
@@ -237,7 +253,7 @@ export function MobileTabBar({
                 )}
               >
                 <Icon size={22} className="shrink-0" strokeWidth={active ? 2.5 : 2} />
-                <span className="text-[10px] leading-none font-medium">{t(tab.labelKey)}</span>
+                <span className="text-xs leading-none font-medium">{t(tab.labelKey)}</span>
               </Link>
             );
           })}
@@ -246,7 +262,6 @@ export function MobileTabBar({
           <button
             onClick={onCopilotToggle}
             aria-label="Copilot"
-            aria-pressed={copilotActive}
             role="tab"
             aria-selected={copilotActive}
             className={cn(
@@ -266,7 +281,7 @@ export function MobileTabBar({
                 <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
               )}
             </div>
-            <span className="text-[10px] leading-none font-medium">Copilot</span>
+            <span className="text-xs leading-none font-medium">Copilot</span>
           </button>
 
           {/* More tab — opens more-sheet */}
@@ -284,7 +299,7 @@ export function MobileTabBar({
             )}
           >
             <MoreHorizontal size={22} className="shrink-0" strokeWidth={moreOpen ? 2.5 : 2} />
-            <span className="text-[10px] leading-none font-medium">Mehr</span>
+            <span className="text-xs leading-none font-medium">Mehr</span>
           </button>
         </div>
       </nav>
@@ -316,7 +331,7 @@ function MoreSheetButton({
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--ds-surface-2)]">
         <Icon size={20} />
       </div>
-      <span className="text-[11px] leading-none font-medium">{label}</span>
+      <span className="text-xs leading-none font-medium">{label}</span>
     </button>
   );
 }
@@ -338,7 +353,7 @@ function MoreSheetLink({
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)]">
         <Icon size={17} />
       </div>
-      <span className="text-[11px] leading-none font-medium">{label}</span>
+      <span className="text-xs leading-none font-medium">{label}</span>
     </Link>
   );
 }

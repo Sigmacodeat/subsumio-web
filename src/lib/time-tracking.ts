@@ -57,7 +57,7 @@ export interface MarkBilledResult {
 
 export function filterEntries(
   entries: TimeEntryWithCase[],
-  opts: TimeQueryFilters,
+  opts: TimeQueryFilters
 ): TimeEntryWithCase[] {
   let result = [...entries];
   if (opts.billable !== undefined) {
@@ -74,9 +74,7 @@ export function filterEntries(
   }
   if (opts.lawyer) {
     const lower = opts.lawyer.toLowerCase();
-    result = result.filter(
-      (e) => e.lawyer?.toLowerCase().includes(lower),
-    );
+    result = result.filter((e) => e.lawyer?.toLowerCase().includes(lower));
   }
   return result;
 }
@@ -84,10 +82,7 @@ export function filterEntries(
 // ── Summary ───────────────────────────────────────────────────────────
 
 export function computeSummary(entries: TimeEntry[]): TimeSummary {
-  const totalMinutes = entries.reduce(
-    (sum, e) => sum + (e.minutes || 0),
-    0,
-  );
+  const totalMinutes = entries.reduce((sum, e) => sum + (e.minutes || 0), 0);
   const totalAmount = entries.reduce((sum, e) => {
     if (!e.billable) return sum;
     const hours = (e.minutes || 0) / 60;
@@ -128,7 +123,7 @@ export function createTimeEntry(input: {
 export function updateEntry(
   entries: TimeEntry[],
   id: string,
-  updates: Partial<TimeEntry>,
+  updates: Partial<TimeEntry>
 ): { found: boolean; entries: TimeEntry[]; updated?: TimeEntry } {
   const idx = entries.findIndex((e) => e.id === id);
   if (idx === -1) return { found: false, entries };
@@ -140,7 +135,7 @@ export function updateEntry(
 
 export function deleteEntry(
   entries: TimeEntry[],
-  id: string,
+  id: string
 ): { found: boolean; entries: TimeEntry[] } {
   const filtered = entries.filter((e) => e.id !== id);
   return {
@@ -157,11 +152,9 @@ export function deleteEntry(
  */
 export function computeBillingSummary(
   entries: TimeEntryWithCase[],
-  defaultRate?: number,
+  defaultRate?: number
 ): BillingSummary {
-  const unbilled = entries.filter(
-    (e) => e.billable !== false && !e.billed,
-  );
+  const unbilled = entries.filter((e) => e.billable !== false && !e.billed);
 
   const byCaseMap = new Map<string, TimeEntryWithCase[]>();
   for (const entry of unbilled) {
@@ -192,14 +185,8 @@ export function computeBillingSummary(
 
   by_case.sort((a, b) => b.billable_amount - a.billable_amount);
 
-  const totalUnbilledMinutes = unbilled.reduce(
-    (sum, e) => sum + (e.minutes || 0),
-    0,
-  );
-  const totalUnbilledAmount = by_case.reduce(
-    (sum, c) => sum + c.billable_amount,
-    0,
-  );
+  const totalUnbilledMinutes = unbilled.reduce((sum, e) => sum + (e.minutes || 0), 0);
+  const totalUnbilledAmount = by_case.reduce((sum, c) => sum + c.billable_amount, 0);
 
   return {
     total_unbilled_entries: unbilled.length,
@@ -219,7 +206,7 @@ export function markEntriesBilled(
   entries: TimeEntryWithCase[],
   ids: string[],
   invoiceNumber: string,
-  at?: Date,
+  _at?: Date
 ): MarkBilledResult {
   const idSet = new Set(ids);
   const notFound: string[] = [];
@@ -255,9 +242,7 @@ export function markEntriesBilled(
  * Gruppiert aktualisierte Einträge nach case_slug für
  * Brain-Page-Updates (eine Update-Anfrage pro Akte).
  */
-export function groupByCase(
-  entries: TimeEntryWithCase[],
-): Map<string, TimeEntry[]> {
+export function groupByCase(entries: TimeEntryWithCase[]): Map<string, TimeEntry[]> {
   const byCase = new Map<string, TimeEntry[]>();
   for (const entry of entries) {
     const caseSlug = entry.case_slug ?? "_unknown";

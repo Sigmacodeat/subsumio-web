@@ -1,16 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Calculator,
-  Euro,
-  Info,
-  AlertTriangle,
-  CheckCircle2,
-  Save,
-  Loader2,
-  Briefcase,
-} from "lucide-react";
+import { Calculator, Euro, Info, AlertTriangle, CheckCircle2, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";

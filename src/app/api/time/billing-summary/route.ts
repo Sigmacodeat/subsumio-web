@@ -1,11 +1,7 @@
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
-import {
-  filterEntries,
-  computeBillingSummary,
-  type TimeEntryWithCase,
-} from "@/lib/time-tracking";
+import { filterEntries, computeBillingSummary, type TimeEntryWithCase } from "@/lib/time-tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +18,10 @@ export const GET = createHandler(
     rateTier: "standard",
     query: billingSummarySchema,
   },
-  async (_ctx, _body, query, _req) => {
+  async (ctx, _body, query, _req) => {
     try {
-      const pages = await api.brain.listPages({ type: "time_entry", limit: 500 });
+      const brain = createServerBrainClient(ctx.headers);
+      const pages = await brain.listPages({ type: "time_entry", limit: 500 });
       const entries: TimeEntryWithCase[] = pages.map((p) => {
         const fm = p.frontmatter as Record<string, unknown>;
         return {
@@ -53,8 +50,11 @@ export const GET = createHandler(
 
       return apiSuccess(summary);
     } catch (err) {
-      console.error("[time] billing-summary failed:", err instanceof Error ? err.message : String(err));
+      console.error(
+        "[time] billing-summary failed:",
+        err instanceof Error ? err.message : String(err)
+      );
       return apiError("internal_error", "Billing-Summary konnte nicht geladen werden", 500);
     }
-  },
+  }
 );

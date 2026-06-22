@@ -387,7 +387,7 @@ export function Topbar({
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] md:px-6">
-      <div className="flex max-w-sm min-w-0 flex-1 items-center gap-3 md:max-w-md lg:max-w-lg">
+      <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-md">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
           className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
@@ -441,7 +441,7 @@ export function Topbar({
             aria-controls="topbar-search-results"
             role="combobox"
             autoComplete="off"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-3 pr-16 pl-9 text-sm text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-3 pr-16 pl-9 text-sm text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:w-full focus:max-w-md focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
           <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
@@ -563,7 +563,7 @@ export function Topbar({
             <Bell size={16} />
             {unreadCount > 0 && (
               <span
-                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
+                className="absolute top-1.5 right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[color:var(--ds-danger-text)] px-1 text-xs leading-none font-bold text-white ring-2 ring-[var(--ds-surface)]"
                 aria-hidden
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -585,7 +585,7 @@ export function Topbar({
                     <button
                       onClick={markAllRead}
                       disabled={loadingNotifs}
-                      className="text-xs text-[color:var(--brand-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
+                      className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
                     >
                       {t("topbar.mark_all_read")}
                     </button>
@@ -617,7 +617,7 @@ export function Topbar({
                       key={n.id}
                       role="menuitem"
                       tabIndex={0}
-                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-amber-500/20 bg-amber-500/5" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-blue-500/20 bg-blue-500/5" : n.type === "reply" ? "border-purple-500/20 bg-purple-500/5" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -680,7 +680,13 @@ export function Topbar({
             aria-haspopup="menu"
           >
             <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
-              <User size={15} className="brand-text" />
+              {userName ? (
+                <span className="brand-text text-xs font-bold uppercase">
+                  {userName.slice(0, 2)}
+                </span>
+              ) : (
+                <User size={15} className="brand-text" />
+              )}
             </div>
             <ChevronDown size={14} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
           </button>
@@ -764,7 +770,7 @@ export function Topbar({
                 </div>
                 <button
                   onClick={logout}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-red-500/10 hover:text-red-600"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                   role="menuitem"
                 >
                   <LogOut size={15} className="shrink-0" />

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { sendWhatsAppText } from "@/lib/whatsapp/send";
+import { sendWhatsAppText, sendWhatsAppInteractive } from "@/lib/whatsapp/send";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { isMessageProcessed, markMessageProcessed } from "@/lib/whatsapp/dedup";
 import {
@@ -16,6 +16,8 @@ import { buildWhatsAppMessageBody } from "@/lib/whatsapp-event-bus";
 import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import { logAudit } from "@/lib/audit";
 import { createWebhookHandler } from "@/lib/api-handler";
+import type { ActionType } from "@/lib/approval";
+import type { BrainPage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -69,8 +71,14 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
     await getWhatsAppWindowStore().touch(phoneHash(message.from));
 
     try {
-      const result = await orchestrateWhatsAppMessage(message, sender);
-      if (result.reply) {
+      const result = await orchestrateWhatsAppMessage(message, sender, {
+        listPendingApprovals,
+        updateApprovalStatus,
+        approvalExecutionDeps: executionDepsForBrain(sender.brainId),
+      });
+      if (result.interactive) {
+        await sendWhatsAppInteractive(message.from, result.interactive);
+      } else if (result.reply) {
         await sendWhatsAppText(message.from, result.reply);
       }
 
@@ -79,26 +87,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       // send a proactive WhatsApp message to the lawyer with the approval summary.
       if (result.status === "pending_approval" && result.actionSlug) {
         try {
-          const approvalPageRes = await fetch(
-            `${ENGINE_URL}/api/pages/${encodeURIComponent(`legal/chat/actions/${result.actionSlug}`)}`,
-            { headers: engineHeadersForBrain(sender.brainId) }
-          );
-          if (approvalPageRes.ok) {
-            const approvalPage = await approvalPageRes.json();
-            const fm = approvalPage.frontmatter ?? {};
-            if (fm._notificationEvent) {
-              const event = fm._notificationEvent;
-              const messageBody = buildWhatsAppMessageBody(event);
-              if (event.recipient_phone && messageBody) {
-                await sendProactiveMessage({
-                  to: event.recipient_phone,
-                  brainId: sender.brainId,
-                  scope: "approval_request",
-                  freeform: messageBody,
-                  urgent: true,
-                });
-              }
-            }
+          const event = result.notificationEvent;
+          const messageBody = event ? buildWhatsAppMessageBody(event) : "";
+          if (event?.recipient_phone && messageBody) {
+            await sendProactiveMessage({
+              to: event.recipient_phone,
+              brainId: sender.brainId,
+              scope: "approval_request",
+              freeform: messageBody,
+              urgent: true,
+            });
           }
         } catch {
           // Non-blocking: notification dispatch is best-effort
@@ -168,4 +166,101 @@ async function processMessageStatuses(statuses: WhatsAppMessageStatus[]): Promis
       );
     }
   }
+}
+
+async function listPendingApprovals(
+  brainId: string,
+  _senderId: string
+): Promise<Array<{ action_slug: string; action_type: ActionType }>> {
+  const res = await fetch(`${ENGINE_URL}/api/pages?type=agent_action&limit=100`, {
+    headers: engineHeadersForBrain(brainId),
+  });
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => ({}));
+  const pages: Array<{ slug?: unknown; frontmatter?: Record<string, unknown> }> = Array.isArray(
+    data.pages
+  )
+    ? data.pages
+    : Array.isArray(data.items)
+      ? data.items
+      : [];
+  const pending: Array<{ action_slug: string; action_type: ActionType }> = [];
+  for (const page of pages) {
+    const actionSlug = typeof page.slug === "string" ? page.slug : "";
+    const actionType = page.frontmatter?.action_type as ActionType | undefined;
+    if (actionSlug && actionType && page.frontmatter?.status === "pending") {
+      pending.push({ action_slug: actionSlug, action_type: actionType });
+    }
+  }
+  return pending;
+}
+
+async function updateApprovalStatus(
+  brainId: string,
+  actionSlug: string,
+  status: "approved" | "rejected",
+  decidedBy: string,
+  rejectReason?: string
+): Promise<boolean> {
+  const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(actionSlug)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...engineHeadersForBrain(brainId),
+    },
+    body: JSON.stringify({
+      frontmatter: {
+        status,
+        decided_at: new Date().toISOString(),
+        decided_by: decidedBy,
+        ...(status === "rejected" && rejectReason ? { reject_reason: rejectReason } : {}),
+      },
+      merge: true,
+    }),
+  });
+  return res.ok;
+}
+
+function executionDepsForBrain(brainId: string) {
+  const headers = engineHeadersForBrain(brainId);
+  return {
+    brainId,
+    getPage: async (slug: string): Promise<BrainPage> => {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, { headers });
+      if (!res.ok) throw new Error(`approval_page_not_found:${res.status}`);
+      return (await res.json()) as BrainPage;
+    },
+    createPage: async (page: {
+      slug: string;
+      title: string;
+      type?: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    }) => {
+      const res = await fetch(`${ENGINE_URL}/api/pages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(page),
+      });
+      if (!res.ok) throw new Error(`approval_effect_create_failed:${res.status}`);
+      return { slug: page.slug };
+    },
+    updatePage: async (page: {
+      slug: string;
+      title?: string;
+      type?: string;
+      content?: string;
+      frontmatter?: Record<string, unknown>;
+    }) => {
+      const { slug, ...patch } = page;
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({ ...patch, merge: true }),
+      });
+      if (!res.ok) throw new Error(`approval_effect_update_failed:${res.status}`);
+      return { slug, success: true };
+    },
+    sendProactiveWhatsApp: sendProactiveMessage,
+  };
 }

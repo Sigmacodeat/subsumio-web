@@ -193,7 +193,7 @@ export class NotificationBellManager {
     await this.refresh();
   }
 
-  async enablePush(subscription: PushSubscription): Promise<void> {
+  async enablePush(_subscription: PushSubscription): Promise<void> {
     this.setState({ push_subscribed: true });
   }
 

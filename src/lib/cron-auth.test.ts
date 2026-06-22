@@ -2,7 +2,7 @@
 // Verifies validateCronAuth's timing-safe Bearer check AND that every
 // /api/cron/* route actually wires it in (no unprotected cron endpoint).
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { NextRequest } from "next/server";
@@ -65,11 +65,12 @@ describe("cron route coverage guard", () => {
       const src = readFileSync(file, "utf8");
       // Routes can either call validateCronAuth directly or use createCronHandler
       // (which wraps validateCronAuth internally in api-handler.ts).
-      const usesDirectAuth = src.includes('from "@/lib/cron-auth"') && src.includes("validateCronAuth(");
+      const usesDirectAuth =
+        src.includes('from "@/lib/cron-auth"') && src.includes("validateCronAuth(");
       const usesCronHandler = src.includes("createCronHandler");
       expect(
         usesDirectAuth || usesCronHandler,
-        `${file} must either import+call validateCronAuth or use createCronHandler`,
+        `${file} must either import+call validateCronAuth or use createCronHandler`
       ).toBe(true);
     }
   });

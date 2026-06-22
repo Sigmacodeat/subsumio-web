@@ -21,21 +21,21 @@ import type { PrivilegeLevel, ConfidentialityLevel } from "@/lib/privilege-label
 // ── Knowledge Asset Types ─────────────────────────────────────────────
 
 export type KnowledgeAssetType =
-  | "precedent"        // Präzedenzfall / Urteilsauszug
-  | "clause"           // Klausel-Bibliothek
-  | "playbook"         // Vorgehensmodell / Checkliste für Workflow
-  | "checklist"        // Prüfliste
-  | "memo"             // Memo / Aktennotiz / Rechercheergebnis
+  | "precedent" // Präzedenzfall / Urteilsauszug
+  | "clause" // Klausel-Bibliothek
+  | "playbook" // Vorgehensmodell / Checkliste für Workflow
+  | "checklist" // Prüfliste
+  | "memo" // Memo / Aktennotiz / Rechercheergebnis
   | "after_action_review" // After-Action Review
-  | "template"         // Dokumentvorlage
-  | "guideline";       // Richtlinie / Handbuch
+  | "template" // Dokumentvorlage
+  | "guideline"; // Richtlinie / Handbuch
 
 export type KnowledgeAssetStatus =
-  | "draft"            // In Bearbeitung
-  | "in_review"        // In Freigabeprüfung
-  | "approved"         // Freigegeben (autoritativ)
-  | "deprecated"       // Veraltet (nicht mehr autoritativ)
-  | "archived";        // Archiviert
+  | "draft" // In Bearbeitung
+  | "in_review" // In Freigabeprüfung
+  | "approved" // Freigegeben (autoritativ)
+  | "deprecated" // Veraltet (nicht mehr autoritativ)
+  | "archived"; // Archiviert
 
 export type KnowledgeAssetCategory =
   | "litigation"
@@ -141,15 +141,24 @@ export const DEFAULT_GOVERNANCE_POLICY: GovernancePolicy = {
   min_rating_for_approved: 3.0,
 };
 
-export function canSubmitForReview(role: string, policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY): boolean {
+export function canSubmitForReview(
+  role: string,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
+): boolean {
   return policy.can_submit_roles.includes(role);
 }
 
-export function canApprove(role: string, policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY): boolean {
+export function canApprove(
+  role: string,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
+): boolean {
   return policy.can_approve_roles.includes(role);
 }
 
-export function canDeprecate(role: string, policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY): boolean {
+export function canDeprecate(
+  role: string,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
+): boolean {
   return policy.can_deprecate_roles.includes(role);
 }
 
@@ -157,7 +166,7 @@ export function submitForReview(
   asset: KnowledgeAsset,
   actor: string,
   role: string,
-  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
 ): { asset: KnowledgeAsset; action: GovernanceAction } | { error: string } {
   if (!canSubmitForReview(role, policy)) {
     return { error: `Role ${role} cannot submit for review` };
@@ -192,7 +201,7 @@ export function approveAsset(
   asset: KnowledgeAsset,
   actor: string,
   role: string,
-  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
 ): { asset: KnowledgeAsset; action: GovernanceAction } | { error: string } {
   if (!canApprove(role, policy)) {
     return { error: `Role ${role} cannot approve assets` };
@@ -227,7 +236,7 @@ export function approveAsset(
 export function rejectAsset(
   asset: KnowledgeAsset,
   actor: string,
-  reason: string,
+  reason: string
 ): { asset: KnowledgeAsset; action: GovernanceAction } {
   const previousStatus = asset.status;
   const updatedAsset: KnowledgeAsset = {
@@ -255,7 +264,7 @@ export function deprecateAsset(
   role: string,
   reason: string,
   successorId?: string,
-  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY,
+  policy: GovernancePolicy = DEFAULT_GOVERNANCE_POLICY
 ): { asset: KnowledgeAsset; action: GovernanceAction } | { error: string } {
   if (!canDeprecate(role, policy)) {
     return { error: `Role ${role} cannot deprecate assets` };
@@ -293,7 +302,7 @@ export function createNewVersion(
   asset: KnowledgeAsset,
   newContent: string,
   changelog: string,
-  actor: string,
+  _actor: string
 ): KnowledgeAsset {
   const versionParts = asset.version.split(".").map(Number);
   const newVersion = `${versionParts[0]}.${versionParts[1]}.${(versionParts[2] ?? 0) + 1}`;
@@ -323,7 +332,7 @@ function simpleHash(content: string): string {
   let hash = 0;
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash |= 0;
   }
   return `h${Math.abs(hash).toString(16)}`;
@@ -348,7 +357,7 @@ export function searchKnowledgeAssets(
     authoritative_only?: boolean;
     min_rating?: number;
     limit?: number;
-  },
+  }
 ): SearchResult[] {
   const authoritativeOnly = opts?.authoritative_only ?? true;
   const minRating = opts?.min_rating ?? 0;
@@ -478,7 +487,7 @@ export interface DraftingReference {
 export function createDraftingReference(
   asset: KnowledgeAsset,
   actor: string,
-  context: string,
+  context: string
 ): DraftingReference {
   return {
     asset_id: asset.id,
@@ -500,11 +509,17 @@ export function filterDeprecatedAssets(assets: KnowledgeAsset[]): KnowledgeAsset
   return assets.filter((a) => a.status === "deprecated");
 }
 
-export function getAssetsByType(assets: KnowledgeAsset[], type: KnowledgeAssetType): KnowledgeAsset[] {
+export function getAssetsByType(
+  assets: KnowledgeAsset[],
+  type: KnowledgeAssetType
+): KnowledgeAsset[] {
   return assets.filter((a) => a.type === type);
 }
 
-export function getAssetsByCategory(assets: KnowledgeAsset[], category: KnowledgeAssetCategory): KnowledgeAsset[] {
+export function getAssetsByCategory(
+  assets: KnowledgeAsset[],
+  category: KnowledgeAssetCategory
+): KnowledgeAsset[] {
   return assets.filter((a) => a.category === category);
 }
 
@@ -524,7 +539,10 @@ export function createKnowledgeAsset(params: {
   brain_id: string;
   org_id: string;
 }): KnowledgeAsset {
-  const slug = `km/${params.type}/${params.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 60)}`;
+  const slug = `km/${params.type}/${params.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 60)}`;
   return {
     id: `ka-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     slug,

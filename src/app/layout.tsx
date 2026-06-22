@@ -13,19 +13,21 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import MarketingShell from "@/components/marketing/marketing-shell";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 // next/font self-hosts at build time — zero runtime requests to Google
 // (GDPR: no visitor IP ever reaches fonts.googleapis.com) and no
 // render-blocking CSS @import.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "optional" });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",
-  display: "swap",
+  display: "optional",
 });
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
-  display: "swap",
+  display: "optional",
 });
 
 export const metadata: Metadata = {

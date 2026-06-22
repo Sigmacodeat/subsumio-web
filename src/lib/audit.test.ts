@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 // Audit module falls back to brain pages in dev mode (no Postgres pool).
 // We mock the `api` module to capture brain-page calls.
@@ -143,8 +143,16 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
 
   test("filters by entityType", async () => {
     mockListPages.mockResolvedValueOnce([
-      { slug: "a1", frontmatter: { action: "x", entity_type: "user", timestamp: "2024-01-01" }, content: "{}" },
-      { slug: "a2", frontmatter: { action: "y", entity_type: "case", timestamp: "2024-01-01" }, content: "{}" },
+      {
+        slug: "a1",
+        frontmatter: { action: "x", entity_type: "user", timestamp: "2024-01-01" },
+        content: "{}",
+      },
+      {
+        slug: "a2",
+        frontmatter: { action: "y", entity_type: "case", timestamp: "2024-01-01" },
+        content: "{}",
+      },
     ]);
     const result = await listAuditLogs({ brainId: "b1", entityType: "case" });
     expect(result).toHaveLength(1);
@@ -153,9 +161,21 @@ describe("listAuditLogs (dev fallback — brain pages)", () => {
 
   test("filters by date range (from/to)", async () => {
     mockListPages.mockResolvedValueOnce([
-      { slug: "a1", frontmatter: { action: "x", entity_type: "y", timestamp: "2024-01-01" }, content: "{}" },
-      { slug: "a2", frontmatter: { action: "x", entity_type: "y", timestamp: "2024-06-01" }, content: "{}" },
-      { slug: "a3", frontmatter: { action: "x", entity_type: "y", timestamp: "2024-12-01" }, content: "{}" },
+      {
+        slug: "a1",
+        frontmatter: { action: "x", entity_type: "y", timestamp: "2024-01-01" },
+        content: "{}",
+      },
+      {
+        slug: "a2",
+        frontmatter: { action: "x", entity_type: "y", timestamp: "2024-06-01" },
+        content: "{}",
+      },
+      {
+        slug: "a3",
+        frontmatter: { action: "x", entity_type: "y", timestamp: "2024-12-01" },
+        content: "{}",
+      },
     ]);
     const result = await listAuditLogs({ brainId: "b1", from: "2024-03-01", to: "2024-09-01" });
     expect(result).toHaveLength(1);

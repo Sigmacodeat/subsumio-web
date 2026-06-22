@@ -44,6 +44,8 @@ export interface TimelineEntry {
   description?: string;
   type?: string;
   status?: string;
+  actor?: string;
+  timestamp?: string;
 }
 
 export interface TaskEntry {
@@ -90,6 +92,10 @@ export interface DocumentEntry {
   slug?: string;
   source?: string;
   kind?: string;
+  extraction_status?: string;
+  ocr_status?: string;
+  extraction_method?: string;
+  extraction_unverified?: boolean;
 }
 
 export interface EvidenceEntry {

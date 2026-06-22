@@ -8,7 +8,6 @@ import {
   BLOCKING_IMPACTS,
   ALL_IMPACTS,
   IMPACT_SEVERITY,
-  KNOWN_ISSUES,
   AUDIT_RULES,
   buildBaselineReport,
   isKnownIssue,
@@ -143,7 +142,12 @@ describe("A11y Baseline — Report Builder", () => {
   it("builds report with violations", () => {
     const violations = [
       createViolation({ id: "v1", impact: "critical", page: "/dashboard", rule_id: "button-name" }),
-      createViolation({ id: "v2", impact: "serious", page: "/dashboard", rule_id: "color-contrast" }),
+      createViolation({
+        id: "v2",
+        impact: "serious",
+        page: "/dashboard",
+        rule_id: "color-contrast",
+      }),
       createViolation({ id: "v3", impact: "moderate", page: "/", rule_id: "heading-order" }),
     ];
     const report = buildBaselineReport(violations, ["/", "/dashboard"]);
@@ -158,9 +162,7 @@ describe("A11y Baseline — Report Builder", () => {
   });
 
   it("report fails when blocking violations exist", () => {
-    const violations = [
-      createViolation({ id: "v1", impact: "critical" }),
-    ];
+    const violations = [createViolation({ id: "v1", impact: "critical" })];
     const report = buildBaselineReport(violations, ["/dashboard"]);
     expect(report.passed).toBe(false);
   });
@@ -176,10 +178,22 @@ describe("A11y Baseline — Report Builder", () => {
 
   it("report excludes known issues from new_violations", () => {
     const knownIssues: KnownIssue[] = [
-      { id: "k1", page: "/dashboard", rule_id: "color-contrast", impact: "serious", reason: "Design system limitation", accepted_until: null },
+      {
+        id: "k1",
+        page: "/dashboard",
+        rule_id: "color-contrast",
+        impact: "serious",
+        reason: "Design system limitation",
+        accepted_until: null,
+      },
     ];
     const violations = [
-      createViolation({ id: "v1", impact: "serious", page: "/dashboard", rule_id: "color-contrast" }),
+      createViolation({
+        id: "v1",
+        impact: "serious",
+        page: "/dashboard",
+        rule_id: "color-contrast",
+      }),
     ];
     const report = buildBaselineReport(violations, ["/dashboard"], knownIssues);
     expect(report.new_violations).toBe(0);
@@ -191,7 +205,14 @@ describe("A11y Baseline — Report Builder", () => {
 describe("A11y Baseline — Helpers", () => {
   it("isKnownIssue detects known issues", () => {
     const knownIssues: KnownIssue[] = [
-      { id: "k1", page: "/dashboard", rule_id: "color-contrast", impact: "serious", reason: "Test", accepted_until: null },
+      {
+        id: "k1",
+        page: "/dashboard",
+        rule_id: "color-contrast",
+        impact: "serious",
+        reason: "Test",
+        accepted_until: null,
+      },
     ];
     const violation = createViolation({ page: "/dashboard", rule_id: "color-contrast" });
     expect(isKnownIssue(violation, knownIssues)).toBe(true);

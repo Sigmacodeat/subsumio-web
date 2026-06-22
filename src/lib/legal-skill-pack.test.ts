@@ -24,8 +24,6 @@ import {
   findMissingSkillPaths,
   getPackVersion,
   getPackSummary,
-  type LegalSkillEntry,
-  type SkillCategory,
   type SkillSeverity,
 } from "@/lib/legal-skill-pack";
 

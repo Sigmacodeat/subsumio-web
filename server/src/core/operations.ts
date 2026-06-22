@@ -512,17 +512,39 @@ export function sourceScopeOpts(ctx: OperationContext): {
  * caller. This is the engine-side enforcement that closes the gap between
  * the web-app's resolveAuthorizedCase() and the engine's retrieval layer.
  */
-export function matterScopeFilter<T extends { slug?: string }>(
-  results: T[],
-  ctx: OperationContext
-): T[] {
+function frontmatterCaseSlug(frontmatter: unknown): string | undefined {
+  if (!frontmatter || typeof frontmatter !== "object") return undefined;
+  const raw = (frontmatter as Record<string, unknown>).case_slug;
+  return typeof raw === "string" && raw.length > 0 ? raw : undefined;
+}
+
+function isMatterScopeMatch(
+  scope: string[] | "all" | undefined,
+  slug: string,
+  caseSlug?: string
+): boolean {
+  if (!scope) return true;
+  if (scope === "all") return true;
+  if (scope.length === 0) return false;
+  return scope.some(
+    (prefix) =>
+      slug.startsWith(prefix) ||
+      slug === prefix ||
+      (caseSlug !== undefined && (caseSlug.startsWith(prefix) || caseSlug === prefix))
+  );
+}
+
+export function matterScopeFilter<
+  T extends { slug?: string; case_slug?: string; frontmatter?: Record<string, unknown> },
+>(results: T[], ctx: OperationContext): T[] {
   const scope = ctx.matterScope;
   if (!scope) return results;
   if (scope === "all") return results;
   if (scope.length === 0) return [];
   return results.filter((r) => {
     const slug = r.slug ?? "";
-    return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+    const caseSlug = r.case_slug ?? frontmatterCaseSlug(r.frontmatter);
+    return isMatterScopeMatch(scope, slug, caseSlug);
   });
 }
 
@@ -537,11 +559,7 @@ export function matterScopeFilter<T extends { slug?: string }>(
  * - slug starts with one of the allowed prefixes
  */
 export function isSlugInMatterScope(slug: string, ctx: OperationContext): boolean {
-  const scope = ctx.matterScope;
-  if (!scope) return true;
-  if (scope === "all") return true;
-  if (scope.length === 0) return false;
-  return scope.some((prefix) => slug.startsWith(prefix) || slug === prefix);
+  return isMatterScopeMatch(ctx.matterScope, slug);
 }
 
 /**
@@ -3115,9 +3133,8 @@ const file_upload: Operation = {
   handler: async (ctx, p) => {
     if (ctx.dryRun) return { dry_run: true, action: "file_upload", path: p.path };
 
-    const { readFileSync, statSync } = await import("fs");
-    const { basename, extname } = await import("path");
-    const { createHash } = await import("crypto");
+    const { readFileSync } = await import("fs");
+    const { basename } = await import("path");
 
     const filePath = p.path as string;
     const pageSlug = (p.page_slug as string) || null;
@@ -3132,76 +3149,30 @@ const file_upload: Operation = {
     const filename = basename(filePath);
     validateFilename(filename);
 
-    const stat = statSync(filePath);
     const content = readFileSync(filePath);
-    const hash = createHash("sha256").update(content).digest("hex");
-    const storagePath = pageSlug
-      ? `${pageSlug}/${filename}`
-      : `unsorted/${hash.slice(0, 8)}-${filename}`;
 
-    const MIME_TYPES: Record<string, string> = {
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-      ".svg": "image/svg+xml",
-      ".pdf": "application/pdf",
-      ".mp4": "video/mp4",
-      ".mp3": "audio/mpeg",
-      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ".eml": "message/rfc822",
-      ".csv": "text/csv",
-      ".tsv": "text/tab-separated-values",
-    };
-    const mimeType = MIME_TYPES[extname(filePath).toLowerCase()] || null;
-
-    const sql = db.getConnection();
-    const existing =
-      await sql`SELECT id FROM files WHERE content_hash = ${hash} AND storage_path = ${storagePath}`;
-    if (existing.length > 0) {
-      return { status: "already_exists", storage_path: storagePath };
-    }
-
-    // Upload to storage backend if configured
-    if (ctx.config.storage) {
-      const { createStorage } = await import("./storage.ts");
-      const storage = await createStorage(ctx.config.storage as any);
-      try {
-        await storage.upload(storagePath, content, mimeType || undefined);
-      } catch (uploadErr) {
-        throw new OperationError(
-          "storage_error",
-          `Upload failed: ${uploadErr instanceof Error ? uploadErr.message : String(uploadErr)}`
-        );
-      }
-    }
-
+    // Bytes + DB row go through the shared persist helper (the binary-storage
+    // SSOT). Keep returning the historical { status, storage_path, size_bytes }.
+    const { persistFileBuffer, FileStoreError } = await import("./file-store.ts");
     try {
-      await sql`
-        INSERT INTO files (page_slug, filename, storage_path, mime_type, size_bytes, content_hash, metadata)
-        VALUES (${pageSlug}, ${filename}, ${storagePath}, ${mimeType}, ${stat.size}, ${hash}, ${"{}"}::jsonb)
-        ON CONFLICT (storage_path) DO UPDATE SET
-          content_hash = EXCLUDED.content_hash,
-          size_bytes = EXCLUDED.size_bytes,
-          mime_type = EXCLUDED.mime_type
-      `;
-    } catch (dbErr) {
-      // Rollback: clean up storage if DB write failed
-      if (ctx.config.storage) {
-        try {
-          const { createStorage } = await import("./storage.ts");
-          const storage = await createStorage(ctx.config.storage as any);
-          await storage.delete(storagePath);
-        } catch {
-          /* best effort cleanup */
-        }
+      const result = await persistFileBuffer({
+        data: content,
+        filename,
+        pageSlug,
+        sourceId: ctx.sourceId ?? "default",
+        storageConfig: ctx.config.storage,
+      });
+      return {
+        status: result.status,
+        storage_path: result.storage_path,
+        size_bytes: result.size_bytes,
+      };
+    } catch (err) {
+      if (err instanceof FileStoreError) {
+        throw new OperationError("storage_error", err.message);
       }
-      throw dbErr;
+      throw err;
     }
-
-    return { status: "uploaded", storage_path: storagePath, size_bytes: stat.size };
   },
 };
 

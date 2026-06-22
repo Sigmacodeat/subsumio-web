@@ -1,0 +1,357 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  Plus,
+  Trash2,
+  Edit3,
+  Save,
+  X,
+  FileText,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { cn } from "@/lib/utils";
+
+interface WhatsAppTemplate {
+  slug: string;
+  name: string;
+  language: string;
+  category: string;
+  body: string;
+  status: string;
+  createdAt?: string;
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  draft: "bg-gray-500/10 text-gray-600 border-gray-500/20",
+  pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  approved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  rejected: "bg-red-500/10 text-red-600 border-red-500/20",
+};
+
+const STATUS_ICONS: Record<string, typeof FileText> = {
+  draft: FileText,
+  pending: Clock,
+  approved: CheckCircle2,
+  rejected: AlertCircle,
+};
+
+export default function WhatsAppTemplatesPage() {
+  const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<WhatsAppTemplate | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({
+    name: "",
+    language: "de",
+    category: "UTILITY",
+    body: "",
+  });
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/whatsapp/templates");
+      if (!res.ok) throw new Error("Failed to load templates");
+      const data = await res.json();
+      setTemplates(data.templates ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Laden");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
+
+  async function createTemplate() {
+    if (!newTemplate.name.trim() || !newTemplate.body.trim()) return;
+    try {
+      const res = await fetch("/api/whatsapp/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTemplate),
+      });
+      if (!res.ok) throw new Error("Failed to create template");
+      setCreating(false);
+      setNewTemplate({ name: "", language: "de", category: "UTILITY", body: "" });
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Erstellen");
+    }
+  }
+
+  async function updateTemplate() {
+    if (!editing) return;
+    try {
+      const res = await fetch("/api/whatsapp/templates", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editing),
+      });
+      if (!res.ok) throw new Error("Failed to update template");
+      setEditing(null);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Speichern");
+    }
+  }
+
+  async function deleteTemplate(slug: string) {
+    if (!confirm("Template wirklich löschen?")) return;
+    try {
+      await fetch("/api/whatsapp/templates", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Löschen");
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+      <PageHeader
+        title="WhatsApp Templates"
+        description="Vorlagen für proaktive Nachrichten außerhalb des 24h-Fensters"
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "WhatsApp", href: "/dashboard/whatsapp" },
+          { label: "Templates" },
+        ]}
+        actions={
+          <Button
+            variant="primary"
+            className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+            onClick={() => setCreating(true)}
+          >
+            <Plus size={14} />
+            Neues Template
+          </Button>
+        }
+      />
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Laden...</div>
+      ) : (
+        <>
+          {/* Info box */}
+          <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+            <p className="text-sm text-blue-600">
+              <strong>Wichtig:</strong> WhatsApp-Templates müssen von Meta genehmigt werden, bevor
+              sie außerhalb des 24h-Fensters gesendet werden können. Genehmigte Templates können im
+              Meta Business Manager eingereicht werden. Hier gespeicherte Templates dienen als
+              Vorlagen für das Kanzlei-OS.
+            </p>
+          </div>
+
+          {/* Create form */}
+          {creating && (
+            <div className="space-y-3 rounded-xl border border-blue-500/30 bg-blue-600/5 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Neues Template
+                </h3>
+                <button
+                  onClick={() => setCreating(false)}
+                  className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Template-Name (z.B. termin_erinnerung)"
+                value={newTemplate.name}
+                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={newTemplate.language}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, language: e.target.value })}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                >
+                  <option value="de">Deutsch</option>
+                  <option value="en">Englisch</option>
+                </select>
+                <select
+                  value={newTemplate.category}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                >
+                  <option value="UTILITY">Utility</option>
+                  <option value="MARKETING">Marketing</option>
+                  <option value="AUTHENTICATION">Authentication</option>
+                </select>
+              </div>
+              <textarea
+                placeholder="Template-Inhalt mit Platzhaltern: Hallo {{1}}, Ihr Termin am {{2}}..."
+                value={newTemplate.body}
+                onChange={(e) => setNewTemplate({ ...newTemplate, body: e.target.value })}
+                rows={4}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+              />
+              <Button
+                variant="primary"
+                className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+                onClick={createTemplate}
+              >
+                <Save size={14} />
+                Speichern
+              </Button>
+            </div>
+          )}
+
+          {/* Template list */}
+          {templates.length === 0 && !creating ? (
+            <div className="py-20 text-center">
+              <FileText size={32} className="mx-auto mb-3 text-[color:var(--ds-text-muted)]" />
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                Noch keine Templates. Klicke auf &quot;Neues Template&quot; um eine Vorlage zu
+                erstellen.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {templates.map((template) => {
+                const isEditing = editing?.slug === template.slug;
+                const StatusIcon = STATUS_ICONS[template.status] ?? FileText;
+                return (
+                  <div
+                    key={template.slug}
+                    className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+                  >
+                    {isEditing ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                            Template bearbeiten
+                          </h3>
+                          <button
+                            onClick={() => setEditing(null)}
+                            className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={editing.name}
+                          onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                        />
+                        <div className="flex gap-2">
+                          <select
+                            value={editing.language}
+                            onChange={(e) => setEditing({ ...editing, language: e.target.value })}
+                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                          >
+                            <option value="de">Deutsch</option>
+                            <option value="en">Englisch</option>
+                          </select>
+                          <select
+                            value={editing.category}
+                            onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                          >
+                            <option value="UTILITY">Utility</option>
+                            <option value="MARKETING">Marketing</option>
+                            <option value="AUTHENTICATION">Authentication</option>
+                          </select>
+                          <select
+                            value={editing.status}
+                            onChange={(e) => setEditing({ ...editing, status: e.target.value })}
+                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                          >
+                            <option value="draft">Draft</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                        </div>
+                        <textarea
+                          value={editing.body}
+                          onChange={(e) => setEditing({ ...editing, body: e.target.value })}
+                          rows={4}
+                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                        />
+                        <Button
+                          variant="primary"
+                          className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
+                          onClick={updateTemplate}
+                        >
+                          <Save size={14} />
+                          Speichern
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <StatusIcon size={14} className="text-[color:var(--ds-text-muted)]" />
+                            <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                              {template.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="default"
+                              className={cn(
+                                "border text-xs capitalize",
+                                STATUS_STYLES[template.status] ?? STATUS_STYLES.draft
+                              )}
+                            >
+                              {template.status}
+                            </Badge>
+                            <button
+                              onClick={() => setEditing(template)}
+                              className="text-[color:var(--ds-text-muted)] hover:text-blue-600"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              onClick={() => deleteTemplate(template.slug)}
+                              className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                          <span>{template.language.toUpperCase()}</span>
+                          <span>·</span>
+                          <span>{template.category}</span>
+                        </div>
+                        <p className="rounded-lg bg-[color:var(--ds-surface-hover)] px-3 py-2 text-xs text-[color:var(--ds-text)]">
+                          {template.body}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

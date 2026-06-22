@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 vi.mock("./store", () => ({
   getSharedPgPool: vi.fn(() => null),

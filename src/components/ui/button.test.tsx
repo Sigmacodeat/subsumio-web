@@ -15,6 +15,6 @@ describe("Button", () => {
 
   it("applies variant classes", () => {
     const { container } = render(<Button variant="danger">Delete</Button>);
-    expect(container.querySelector("button")).toHaveClass("bg-red-500/10");
+    expect(container.querySelector("button")).toHaveClass("bg-[color:var(--ds-danger-bg)]");
   });
 });

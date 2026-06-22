@@ -13,8 +13,6 @@
  *   - DSGVO-konform: keine Leistungs-Scores, keine Ranking-Positionen, keine Vergleichbarkeit
  */
 
-import type { SkillCategory } from "@/lib/legal-skill-pack";
-
 // ── Types ─────────────────────────────────────────────────────────────
 
 export type ExperienceLevel = "beginner" | "intermediate" | "advanced" | "expert";
@@ -176,7 +174,10 @@ export function levelLabel(level: ExperienceLevel): string {
 
 // ── Profile Helpers ───────────────────────────────────────────────────
 
-export function getPracticeArea(profile: ExperienceProfile, area: string): PracticeArea | undefined {
+export function getPracticeArea(
+  profile: ExperienceProfile,
+  area: string
+): PracticeArea | undefined {
   return profile.practice_areas.find((pa) => pa.area === area);
 }
 
@@ -184,11 +185,17 @@ export function getActiveMatters(profile: ExperienceProfile): MatterExperienceEn
   return profile.matter_history.filter((m) => m.active);
 }
 
-export function getMattersByArea(profile: ExperienceProfile, area: string): MatterExperienceEntry[] {
+export function getMattersByArea(
+  profile: ExperienceProfile,
+  area: string
+): MatterExperienceEntry[] {
   return profile.matter_history.filter((m) => m.practice_area === area);
 }
 
-export function getEndorsementsForSkill(profile: ExperienceProfile, skillId: string): SkillEndorsement[] {
+export function getEndorsementsForSkill(
+  profile: ExperienceProfile,
+  skillId: string
+): SkillEndorsement[] {
   return profile.endorsements.filter((e) => e.skill_id === skillId);
 }
 
@@ -203,7 +210,7 @@ export function isProfileVisible(
   viewerOrgId: string,
   viewerIsLawyer: boolean,
   viewerIsManagement: boolean,
-  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY,
+  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY
 ): boolean {
   // Tenant isolation: only same org
   if (profile.org_id !== viewerOrgId) return false;
@@ -234,19 +241,19 @@ export function whoKnows(
   viewerOrgId: string,
   viewerIsLawyer: boolean,
   viewerIsManagement: boolean,
-  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY,
+  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY
 ): WhoKnowsResult[] {
   const results: WhoKnowsResult[] = [];
 
   // When query.include_external is set, override policy.show_external so
   // isProfileVisible doesn't block externals before we get to the include_external check.
-  const effectivePolicy = query.include_external
-    ? { ...policy, show_external: true }
-    : policy;
+  const effectivePolicy = query.include_external ? { ...policy, show_external: true } : policy;
 
   for (const profile of profiles) {
     // Visibility check with effective policy
-    if (!isProfileVisible(profile, viewerOrgId, viewerIsLawyer, viewerIsManagement, effectivePolicy)) {
+    if (
+      !isProfileVisible(profile, viewerOrgId, viewerIsLawyer, viewerIsManagement, effectivePolicy)
+    ) {
       continue;
     }
 
@@ -323,7 +330,7 @@ export interface SanitizedProfile {
 
 export function sanitizeProfile(
   profile: ExperienceProfile,
-  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY,
+  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY
 ): SanitizedProfile {
   return {
     user_id: profile.user_id,
@@ -348,7 +355,10 @@ export function sanitizeProfile(
 
 // ── Policy Validation ─────────────────────────────────────────────────
 
-export function validatePolicy(policy: FirmExperiencePolicy): { valid: boolean; violations: string[] } {
+export function validatePolicy(policy: FirmExperiencePolicy): {
+  valid: boolean;
+  violations: string[];
+} {
   const violations: string[] = [];
 
   // Rankings and performance scores are NEVER allowed
@@ -356,7 +366,9 @@ export function validatePolicy(policy: FirmExperiencePolicy): { valid: boolean; 
     violations.push("allow_rankings must be false — rankings are prohibited by policy");
   }
   if (policy.allow_performance_scores) {
-    violations.push("allow_performance_scores must be false — performance scores are prohibited by policy");
+    violations.push(
+      "allow_performance_scores must be false — performance scores are prohibited by policy"
+    );
   }
 
   return { valid: violations.length === 0, violations };
@@ -401,7 +413,7 @@ export function getLayerSummary(
   viewerOrgId: string,
   viewerIsLawyer: boolean,
   viewerIsManagement: boolean,
-  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY,
+  policy: FirmExperiencePolicy = DEFAULT_FIRM_POLICY
 ): ExperienceLayerSummary {
   const byRole: Record<string, number> = {};
   const byArea: Record<string, number> = {};
@@ -412,7 +424,8 @@ export function getLayerSummary(
   let totalActiveMatters = 0;
 
   for (const profile of profiles) {
-    if (!isProfileVisible(profile, viewerOrgId, viewerIsLawyer, viewerIsManagement, policy)) continue;
+    if (!isProfileVisible(profile, viewerOrgId, viewerIsLawyer, viewerIsManagement, policy))
+      continue;
     visible++;
 
     byRole[profile.org_role] = (byRole[profile.org_role] ?? 0) + 1;

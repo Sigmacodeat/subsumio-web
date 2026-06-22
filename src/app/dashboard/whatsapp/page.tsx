@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -62,7 +62,7 @@ function text(value: unknown): string {
 }
 
 export default function WhatsAppDashboardPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [events, setEvents] = useState<BrainPage[]>([]);
   const [approvals, setApprovals] = useState<BrainPage[]>([]);
@@ -77,7 +77,7 @@ export default function WhatsAppDashboardPage() {
   );
   const [savingIdentity, setSavingIdentity] = useState(false);
 
-  async function reload() {
+  const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -114,7 +114,7 @@ export default function WhatsAppDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +125,7 @@ export default function WhatsAppDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reload]);
 
   async function addIdentity() {
     if (!phone.trim()) return;
@@ -493,7 +493,7 @@ function WorkflowPanel({
   intakes: BrainPage[];
   documentRequests: BrainPage[];
 }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const rows = [
     ...approvals.map((page) => ({
       page,
@@ -568,17 +568,71 @@ function WorkflowPanel({
 
 function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
   const { t, lang } = useLang();
+  const [viewMode, setViewMode] = useState<"flat" | "threads">("flat");
+  const [selectedThread, setSelectedThread] = useState<string | null>(null);
+
   const sorted = [...pages]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 20);
+    .slice(0, 50);
+
+  // Group by sender_phone_hash for thread view
+  const threads = useMemo(() => {
+    const map = new Map<
+      string,
+      { senderHash: string; senderName: string; events: BrainPage[]; lastAt: string }
+    >();
+    for (const page of sorted) {
+      const fm = front(page);
+      const senderHash = text(fm.sender_phone_hash) || text(fm.from_phone_hash) || "unknown";
+      const senderName = text(fm.sender_name) || text(fm.sender) || `****${senderHash.slice(-4)}`;
+      const existing = map.get(senderHash);
+      if (existing) {
+        existing.events.push(page);
+        if (new Date(page.created_at) > new Date(existing.lastAt)) {
+          existing.lastAt = page.created_at;
+        }
+      } else {
+        map.set(senderHash, { senderHash, senderName, events: [page], lastAt: page.created_at });
+      }
+    }
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime()
+    );
+  }, [sorted]);
+
   return (
     <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
-      <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewMode("flat")}
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              viewMode === "flat"
+                ? "bg-blue-600/15 text-blue-600"
+                : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            }`}
+          >
+            Liste
+          </button>
+          <button
+            onClick={() => setViewMode("threads")}
+            className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              viewMode === "threads"
+                ? "bg-blue-600/15 text-blue-600"
+                : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            }`}
+          >
+            Threads
+          </button>
+        </div>
+      </div>
+
       {sorted.length === 0 ? (
         <p className="py-6 text-sm text-[color:var(--ds-text-muted)]">{t("whatsapp.no_entries")}</p>
-      ) : (
+      ) : viewMode === "flat" ? (
         <div className="space-y-2">
-          {sorted.map((page) => {
+          {sorted.slice(0, 20).map((page) => {
             const fm = front(page);
             const status = text(fm.status) || text(fm.intent) || "received";
             return (
@@ -615,6 +669,87 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="flex gap-3" style={{ minHeight: "300px" }}>
+          {/* Thread list */}
+          <div className="w-1/2 space-y-1 overflow-y-auto" style={{ maxHeight: "400px" }}>
+            {threads.map((thread) => (
+              <button
+                key={thread.senderHash}
+                onClick={() => setSelectedThread(thread.senderHash)}
+                className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                  selectedThread === thread.senderHash
+                    ? "border-blue-500/30 bg-blue-600/10"
+                    : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] hover:bg-[color:var(--ds-surface-hover)]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                    {thread.senderName}
+                  </span>
+                  <span className="shrink-0 text-xs text-[color:var(--ds-text-muted)]">
+                    {thread.events.length}
+                  </span>
+                </div>
+                <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+                  {new Date(thread.lastAt).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Thread messages */}
+          <div className="w-1/2 space-y-2 overflow-y-auto" style={{ maxHeight: "400px" }}>
+            {selectedThread ? (
+              (() => {
+                const thread = threads.find((t) => t.senderHash === selectedThread);
+                if (!thread) return null;
+                return thread.events
+                  .sort(
+                    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                  )
+                  .map((page) => {
+                    const fm = front(page);
+                    const status = text(fm.status) || text(fm.intent) || "received";
+                    return (
+                      <div
+                        key={page.slug}
+                        className="space-y-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <Badge
+                            variant="default"
+                            className="brand-border brand-soft brand-text border text-xs"
+                          >
+                            {status}
+                          </Badge>
+                          <span className="text-xs text-[color:var(--ds-text-muted)]">
+                            {new Date(page.created_at).toLocaleTimeString(
+                              lang === "en" ? "en-GB" : "de-DE"
+                            )}
+                          </span>
+                        </div>
+                        {page.content && (
+                          <p className="text-xs text-[color:var(--ds-text)]">
+                            {page.content.slice(0, 200)}
+                          </p>
+                        )}
+                        {text(fm.intent) && (
+                          <div className="text-xs text-[color:var(--ds-text-muted)]">
+                            Intent: {text(fm.intent)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+              })()
+            ) : (
+              <p className="py-6 text-center text-xs text-[color:var(--ds-text-muted)]">
+                Thread auswählen
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

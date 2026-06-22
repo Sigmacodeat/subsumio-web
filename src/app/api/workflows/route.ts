@@ -8,11 +8,9 @@ import {
   buildWorkflowFrontmatter,
   buildWorkflowSlug,
   buildWorkflowTitle,
-  buildWorkflowSteps,
   buildWorkflowEvent,
   fmToWorkflowInstance,
   inferWorkflowStatus,
-  advanceStep,
   advanceStepIdempotent,
   type WorkflowInstance,
 } from "@/lib/workflow";
@@ -112,7 +110,6 @@ export const POST = createHandler(
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
         return apiError("workflow_create_failed", "Workflow konnte nicht erstellt werden", 502);
       }
 
@@ -218,7 +215,6 @@ export const PATCH = createHandler(
       });
 
       if (!updateRes.ok) {
-        const text = await updateRes.text().catch(() => "");
         return apiError("workflow_update_failed", "Workflow konnte nicht aktualisiert werden", 502);
       }
 

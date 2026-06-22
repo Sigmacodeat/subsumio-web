@@ -45,10 +45,12 @@ function depsFor(page: BrainPage): ApprovalExecutionDeps & {
 
 describe("executeApprovedAction", () => {
   it("creates a legal case from an approved case_create action", async () => {
-    const deps = depsFor(actionPage({
-      action_type: "case_create",
-      payload: { title: "Muster ./. Beispiel", client_name: "Max" },
-    }));
+    const deps = depsFor(
+      actionPage({
+        action_type: "case_create",
+        payload: { title: "Muster ./. Beispiel", client_name: "Max" },
+      })
+    );
 
     const result = await executeApprovedAction(deps, {
       actionSlug: "agent-action/1",
@@ -71,11 +73,13 @@ describe("executeApprovedAction", () => {
   });
 
   it("skips an already executed action unless force is set", async () => {
-    const deps = depsFor(actionPage({
-      action_type: "case_create",
-      execution_status: "executed",
-      payload: { title: "Schon erledigt" },
-    }));
+    const deps = depsFor(
+      actionPage({
+        action_type: "case_create",
+        execution_status: "executed",
+        payload: { title: "Schon erledigt" },
+      })
+    );
 
     const result = await executeApprovedAction(deps, {
       actionSlug: "agent-action/1",
@@ -90,10 +94,12 @@ describe("executeApprovedAction", () => {
   it("sends an approved client WhatsApp message when a sender is attached", async () => {
     const sendWhatsAppText = vi.fn(async () => ({ ok: true }));
     const deps = {
-      ...depsFor(actionPage({
-        action_type: "client_message_send",
-        payload: { channel: "whatsapp", to: "+491701234567", message: "Hallo" },
-      })),
+      ...depsFor(
+        actionPage({
+          action_type: "client_message_send",
+          payload: { channel: "whatsapp", to: "+491701234567", message: "Hallo" },
+        })
+      ),
       sendWhatsAppText,
     };
 
@@ -106,16 +112,61 @@ describe("executeApprovedAction", () => {
     expect(result.effects).toContainEqual({ kind: "whatsapp_sent", message: "Sent to 4567" });
   });
 
-  it("marks document requests as sent and creates one when target is missing", async () => {
-    const deps = depsFor(actionPage({
-      action_type: "document_request_send",
-      source_event_slug: "legal/conversations/whatsapp/wamid",
-      payload: {
-        case_slug: "legal/cases/2026-001",
-        items: ["Vollmacht", "Bescheid"],
-        message: "Bitte senden",
+  it("fails a guarded WhatsApp approval when proactive compliance blocks it", async () => {
+    const sendProactiveWhatsApp = vi.fn(async () => ({
+      sent: false,
+      decision: {
+        decision: "block" as const,
+        mustUseTemplate: true,
+        reason: "template_required" as const,
       },
     }));
+    const deps = {
+      ...depsFor(
+        actionPage({
+          action_type: "client_message_send",
+          payload: { channel: "whatsapp", to: "+491701234567", message: "Hallo" },
+        })
+      ),
+      brainId: "brain-1",
+      sendProactiveWhatsApp,
+    };
+
+    await expect(
+      executeApprovedAction(deps, {
+        actionSlug: "agent-action/1",
+        executedBy: "lawyer@test",
+      })
+    ).rejects.toThrow("whatsapp_blocked:template_required");
+
+    expect(sendProactiveWhatsApp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        brainId: "brain-1",
+        scope: "client_reminder",
+        freeform: "Hallo",
+      })
+    );
+    expect(deps.updated.at(-1)).toMatchObject({
+      slug: "agent-action/1",
+      frontmatter: {
+        execution_status: "failed",
+        execution_error: "whatsapp_blocked:template_required",
+      },
+    });
+  });
+
+  it("marks document requests as sent and creates one when target is missing", async () => {
+    const deps = depsFor(
+      actionPage({
+        action_type: "document_request_send",
+        source_event_slug: "legal/conversations/whatsapp/wamid",
+        payload: {
+          case_slug: "legal/cases/2026-001",
+          items: ["Vollmacht", "Bescheid"],
+          message: "Bitte senden",
+        },
+      })
+    );
 
     const result = await executeApprovedAction(deps, {
       actionSlug: "agent-action/1",
@@ -127,23 +178,70 @@ describe("executeApprovedAction", () => {
       "document_request_sent",
     ]);
     expect(deps.created[0]).toMatchObject({ type: "document_request" });
-    expect(deps.updated.some((u) => {
-      const update = u as { frontmatter?: Record<string, unknown> };
-      return update.frontmatter?.status === "sent";
-    })).toBe(true);
+    expect(
+      deps.updated.some((u) => {
+        const update = u as { frontmatter?: Record<string, unknown> };
+        return update.frontmatter?.status === "sent";
+      })
+    ).toBe(true);
+  });
+
+  it("does not mark a document request as sent when guarded WhatsApp send is blocked", async () => {
+    const deps = {
+      ...depsFor(
+        actionPage({
+          action_type: "document_request_send",
+          source_event_slug: "legal/conversations/whatsapp/wamid",
+          payload: {
+            case_slug: "legal/cases/2026-001",
+            items: ["Vollmacht"],
+            to: "+491701234567",
+            message: "Bitte senden",
+          },
+        })
+      ),
+      brainId: "brain-1",
+      sendProactiveWhatsApp: vi.fn(async () => ({
+        sent: false,
+        decision: {
+          decision: "block" as const,
+          mustUseTemplate: false,
+          reason: "no_consent" as const,
+        },
+      })),
+    };
+
+    await expect(
+      executeApprovedAction(deps, {
+        actionSlug: "agent-action/1",
+        executedBy: "lawyer@test",
+      })
+    ).rejects.toThrow("whatsapp_blocked:no_consent");
+
+    expect(deps.created[0]).toMatchObject({ type: "document_request" });
+    expect(
+      deps.updated.some((u) => {
+        const update = u as { frontmatter?: Record<string, unknown> };
+        return update.frontmatter?.status === "sent";
+      })
+    ).toBe(false);
   });
 
   it("fails unapproved actions and does not execute them", async () => {
-    const deps = depsFor(actionPage({
-      action_type: "case_create",
-      status: "pending",
-      payload: { title: "Nicht freigegeben" },
-    }));
+    const deps = depsFor(
+      actionPage({
+        action_type: "case_create",
+        status: "pending",
+        payload: { title: "Nicht freigegeben" },
+      })
+    );
 
-    await expect(executeApprovedAction(deps, {
-      actionSlug: "agent-action/1",
-      executedBy: "lawyer@test",
-    })).rejects.toThrow("action_not_approved");
+    await expect(
+      executeApprovedAction(deps, {
+        actionSlug: "agent-action/1",
+        executedBy: "lawyer@test",
+      })
+    ).rejects.toThrow("action_not_approved");
     expect(deps.createPage).not.toHaveBeenCalled();
   });
 });

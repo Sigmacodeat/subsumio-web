@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   NotificationEventBus,
-  DEFAULT_WHATSAPP_HANDLER_CONFIG,
   eventToScope,
   eventToTemplate,
   buildWhatsAppMessageBody,
@@ -15,14 +14,15 @@ import {
   createNewDocumentEvent,
   validateNotificationEvent,
   type NotificationEvent,
-  type NotificationEventType,
   type NotificationHandler,
   type DispatchResult,
 } from "@/lib/whatsapp-event-bus";
 
 // ── Mock Handler ──────────────────────────────────────────────────────
 
-function createMockHandler(channel: "whatsapp" | "email" | "dashboard" | "push" = "whatsapp"): NotificationHandler {
+function createMockHandler(
+  channel: "whatsapp" | "email" | "dashboard" | "push" = "whatsapp"
+): NotificationHandler {
   return {
     channel,
     async handle(event: NotificationEvent): Promise<DispatchResult> {
@@ -122,15 +122,17 @@ describe("Notification Event Bus", () => {
     bus.registerHandler(createMockHandler());
 
     for (let i = 0; i < 3; i++) {
-      bus.publish(createNotificationEvent({
-        type: "deadline_alert",
-        title: `Test ${i}`,
-        body: "Body",
-        brain_id: "brain-1",
-        org_id: "org-1",
-        recipient_user_ids: ["user-1"],
-        recipient_phone: "+491701234567",
-      }));
+      bus.publish(
+        createNotificationEvent({
+          type: "deadline_alert",
+          title: `Test ${i}`,
+          body: "Body",
+          brain_id: "brain-1",
+          org_id: "org-1",
+          recipient_user_ids: ["user-1"],
+          recipient_phone: "+491701234567",
+        })
+      );
     }
 
     const count = await bus.dispatchAll();
@@ -158,14 +160,16 @@ describe("Notification Event Bus", () => {
   it("returns stats", () => {
     const bus = new NotificationEventBus();
     bus.registerHandler(createMockHandler());
-    bus.publish(createNotificationEvent({
-      type: "deadline_alert",
-      title: "Test",
-      body: "Body",
-      brain_id: "brain-1",
-      org_id: "org-1",
-      recipient_user_ids: ["user-1"],
-    }));
+    bus.publish(
+      createNotificationEvent({
+        type: "deadline_alert",
+        title: "Test",
+        body: "Body",
+        brain_id: "brain-1",
+        org_id: "org-1",
+        recipient_user_ids: ["user-1"],
+      })
+    );
     const stats = bus.getStats();
     expect(stats.total_events).toBe(1);
     expect(stats.pending).toBe(1);
@@ -460,32 +464,45 @@ describe("Notification Event Factory", () => {
 
   it("createDeadlineAlertEvent sets urgency based on days remaining", () => {
     const overdue = createDeadlineAlertEvent({
-      brain_id: "b1", org_id: "o1", case_slug: "c1",
-      deadline_date: "2026-06-01", deadline_description: "Klage",
-      days_remaining: 0, recipient_user_ids: ["u1"],
+      brain_id: "b1",
+      org_id: "o1",
+      case_slug: "c1",
+      deadline_date: "2026-06-01",
+      deadline_description: "Klage",
+      days_remaining: 0,
+      recipient_user_ids: ["u1"],
     });
     expect(overdue.priority).toBe("urgent");
     expect(overdue.type).toBe("deadline_overdue");
 
     const soon = createDeadlineAlertEvent({
-      brain_id: "b1", org_id: "o1", case_slug: "c1",
-      deadline_date: "2026-07-01", deadline_description: "Klage",
-      days_remaining: 2, recipient_user_ids: ["u1"],
+      brain_id: "b1",
+      org_id: "o1",
+      case_slug: "c1",
+      deadline_date: "2026-07-01",
+      deadline_description: "Klage",
+      days_remaining: 2,
+      recipient_user_ids: ["u1"],
     });
     expect(soon.priority).toBe("high");
     expect(soon.type).toBe("deadline_alert");
 
     const future = createDeadlineAlertEvent({
-      brain_id: "b1", org_id: "o1", case_slug: "c1",
-      deadline_date: "2026-08-01", deadline_description: "Klage",
-      days_remaining: 30, recipient_user_ids: ["u1"],
+      brain_id: "b1",
+      org_id: "o1",
+      case_slug: "c1",
+      deadline_date: "2026-08-01",
+      deadline_description: "Klage",
+      days_remaining: 30,
+      recipient_user_ids: ["u1"],
     });
     expect(future.priority).toBe("normal");
   });
 
   it("createApprovalRequestEvent sets action fields", () => {
     const event = createApprovalRequestEvent({
-      brain_id: "b1", org_id: "o1",
+      brain_id: "b1",
+      org_id: "o1",
       action_slug: "agent-action/123",
       action_type: "document_finalize",
       summary: "Schriftsatz freigeben",
@@ -499,7 +516,9 @@ describe("Notification Event Factory", () => {
 
   it("createConflictAlertEvent has urgent priority", () => {
     const event = createConflictAlertEvent({
-      brain_id: "b1", org_id: "o1", case_slug: "c1",
+      brain_id: "b1",
+      org_id: "o1",
+      case_slug: "c1",
       conflict_description: "Gegner ist Mandant",
       recipient_user_ids: ["u1"],
     });
@@ -509,7 +528,9 @@ describe("Notification Event Factory", () => {
 
   it("createNewDocumentEvent has normal priority", () => {
     const event = createNewDocumentEvent({
-      brain_id: "b1", org_id: "o1", case_slug: "c1",
+      brain_id: "b1",
+      org_id: "o1",
+      case_slug: "c1",
       document_title: "Klage.pdf",
       document_type: "klage",
       recipient_user_ids: ["u1"],

@@ -10,11 +10,17 @@
  *   4. SLO-Durchsetzung — p95/p99/error_rate gegen API_SLOS aus P0-PERF-001
  */
 
-import { API_SLOS, evaluateCwv, type ApiSloEntry } from "@/lib/performance-budgets";
+import { API_SLOS } from "@/lib/performance-budgets";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-export type ScenarioType = "bulk_upload" | "parallel_review" | "sse_streams" | "mixed_workload" | "spike" | "soak";
+export type ScenarioType =
+  | "bulk_upload"
+  | "parallel_review"
+  | "sse_streams"
+  | "mixed_workload"
+  | "spike"
+  | "soak";
 
 export interface LoadTestScenario {
   id: string;
@@ -171,7 +177,7 @@ export const LOAD_TEST_SCENARIOS: LoadTestScenario[] = [
     duration_seconds: 30,
     ramp_down_seconds: 5,
     expected_status: [200],
-    slo: { p95_ms: 8000, p99_ms: 15000, error_rate: 0.10 },
+    slo: { p95_ms: 8000, p99_ms: 15000, error_rate: 0.1 },
     tags: ["spike", "p0"],
   },
   {
@@ -284,7 +290,7 @@ export const DEFAULT_REGRESSION_CONFIG: RegressionGateConfig = {
  */
 export function evaluateScenarioResult(
   scenario: LoadTestScenario,
-  result: LoadTestResult,
+  result: LoadTestResult
 ): { passed: boolean; violations: string[] } {
   const violations: string[] = [];
 
@@ -295,7 +301,9 @@ export function evaluateScenarioResult(
     violations.push(`p99 ${result.p99_ms}ms exceeds SLO ${scenario.slo.p99_ms}ms`);
   }
   if (result.error_rate > scenario.slo.error_rate) {
-    violations.push(`error_rate ${(result.error_rate * 100).toFixed(2)}% exceeds SLO ${(scenario.slo.error_rate * 100).toFixed(2)}%`);
+    violations.push(
+      `error_rate ${(result.error_rate * 100).toFixed(2)}% exceeds SLO ${(scenario.slo.error_rate * 100).toFixed(2)}%`
+    );
   }
   if (result.total_requests < 1) {
     violations.push("No requests were made");
@@ -309,8 +317,14 @@ export function evaluateScenarioResult(
  */
 export function detectRegressions(
   baseline: RegressionBaseline[],
-  current: Array<{ route: string; method: string; p95_ms: number; p99_ms: number; error_rate: number }>,
-  config: RegressionGateConfig = DEFAULT_REGRESSION_CONFIG,
+  current: Array<{
+    route: string;
+    method: string;
+    p95_ms: number;
+    p99_ms: number;
+    error_rate: number;
+  }>,
+  config: RegressionGateConfig = DEFAULT_REGRESSION_CONFIG
 ): RegressionResult {
   const details: RegressionResult["details"] = [];
   let regressions = 0;
@@ -318,9 +332,7 @@ export function detectRegressions(
   let unchanged = 0;
 
   for (const current_ of current) {
-    const base = baseline.find(
-      (b) => b.route === current_.route && b.method === current_.method,
-    );
+    const base = baseline.find((b) => b.route === current_.route && b.method === current_.method);
     if (!base) continue;
 
     // p95 regression
@@ -360,9 +372,8 @@ export function detectRegressions(
     }
 
     // error rate regression
-    const errorChangePct = base.error_rate > 0
-      ? ((current_.error_rate - base.error_rate) / base.error_rate) * 100
-      : 0;
+    const errorChangePct =
+      base.error_rate > 0 ? ((current_.error_rate - base.error_rate) / base.error_rate) * 100 : 0;
     if (Math.abs(errorChangePct) > 1) {
       const isRegression = errorChangePct > config.max_error_rate_regression_pct;
       details.push({
@@ -394,15 +405,19 @@ export function detectRegressions(
  * Check SLO compliance for all API routes.
  */
 export function checkSloCompliance(
-  measurements: Array<{ route: string; method: string; p95_ms: number; p99_ms: number; error_rate: number }>,
+  measurements: Array<{
+    route: string;
+    method: string;
+    p95_ms: number;
+    p99_ms: number;
+    error_rate: number;
+  }>
 ): { compliant: boolean; violations: string[]; checked: number } {
   const violations: string[] = [];
   let checked = 0;
 
   for (const m of measurements) {
-    const slo = API_SLOS.find(
-      (s) => s.route === m.route && s.method === m.method,
-    );
+    const slo = API_SLOS.find((s) => s.route === m.route && s.method === m.method);
     if (!slo) continue;
 
     checked++;
@@ -414,7 +429,9 @@ export function checkSloCompliance(
       violations.push(`${m.method} ${m.route}: p99 ${m.p99_ms}ms > target ${slo.p99_target_ms}ms`);
     }
     if (m.error_rate > slo.error_rate_target) {
-      violations.push(`${m.method} ${m.route}: error_rate ${(m.error_rate * 100).toFixed(2)}% > max ${(slo.error_rate_target * 100).toFixed(2)}%`);
+      violations.push(
+        `${m.method} ${m.route}: error_rate ${(m.error_rate * 100).toFixed(2)}% > max ${(slo.error_rate_target * 100).toFixed(2)}%`
+      );
     }
   }
 
@@ -441,14 +458,10 @@ export function createLoadTestResult(
     min_ms: number;
     max_ms: number;
     duration_seconds: number;
-  },
+  }
 ): LoadTestResult {
-  const errorRate = metrics.total_requests > 0
-    ? metrics.failed / metrics.total_requests
-    : 1;
-  const rps = metrics.duration_seconds > 0
-    ? metrics.total_requests / metrics.duration_seconds
-    : 0;
+  const errorRate = metrics.total_requests > 0 ? metrics.failed / metrics.total_requests : 1;
+  const rps = metrics.duration_seconds > 0 ? metrics.total_requests / metrics.duration_seconds : 0;
 
   const scenario = LOAD_TEST_SCENARIOS.find((s) => s.id === scenarioId);
   let violations: string[] = [];

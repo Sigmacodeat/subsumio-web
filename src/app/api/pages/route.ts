@@ -26,6 +26,38 @@ const pagesPostSchema = z
   })
   .passthrough();
 
+type ConflictMatch = { name: string; slug: string; type: string };
+
+async function checkLegalCaseConflicts(
+  headers: Record<string, string>,
+  frontmatter: Record<string, unknown> | undefined
+): Promise<{ checked: boolean; matches?: ConflictMatch[] }> {
+  const namesToCheck = [frontmatter?.client_name, frontmatter?.opponent_name].filter(
+    (n): n is string => typeof n === "string" && n.trim().length > 0
+  );
+  if (namesToCheck.length === 0) return { checked: true };
+
+  const conflicts: ConflictMatch[] = [];
+  for (const name of namesToCheck) {
+    const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ name }),
+    });
+    if (!checkRes.ok) {
+      throw new Error(`Conflict check failed: HTTP ${checkRes.status}`);
+    }
+    const checkData = (await checkRes.json()) as { matches?: ConflictMatch[] };
+    if (checkData.matches?.length) {
+      conflicts.push(
+        ...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
+      );
+    }
+  }
+
+  return { checked: true, matches: conflicts.length > 0 ? conflicts : undefined };
+}
+
 export const GET = createHandler(
   {
     action: "brain.read",
@@ -68,11 +100,57 @@ export const POST = createHandler(
       action: "case.create" as const,
       entityType: "page",
       entityId: body.slug,
-      details: { title: body.title, type: body.type },
+      details: {
+        title: body.title,
+        type: body.type,
+        conflict_status: body.frontmatter?.conflict_status,
+        conflict_waiver_reason: body.frontmatter?.conflict_waiver_reason,
+      },
     }),
   },
   async (ctx, body, _query, _req) => {
     try {
+      let conflictWarning:
+        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
+        | undefined;
+      if (body.type === "legal_case") {
+        try {
+          conflictWarning = await checkLegalCaseConflicts(ctx.headers, body.frontmatter);
+        } catch (err) {
+          console.error(
+            "[pages] conflict check failed:",
+            err instanceof Error ? err.message : String(err)
+          );
+          return apiError(
+            "conflict_check_unavailable",
+            "Kollisionsprüfung nicht verfügbar. Akte wurde nicht angelegt.",
+            503
+          );
+        }
+
+        const waiverReason =
+          typeof body.frontmatter?.conflict_waiver_reason === "string"
+            ? body.frontmatter.conflict_waiver_reason.trim()
+            : "";
+        if (conflictWarning.matches?.length && waiverReason.length === 0) {
+          return Response.json(
+            {
+              error: "conflict_detected",
+              message: "Kollisionsprüfung hat Treffer gefunden. Akte wurde nicht angelegt.",
+              conflictWarning,
+            },
+            { status: 409 }
+          );
+        }
+
+        if (conflictWarning.checked && !conflictWarning.matches?.length) {
+          body.frontmatter = {
+            ...body.frontmatter,
+            conflict_status: "conflict_cleared",
+          };
+        }
+      }
+
       const res = await fetch(`${ENGINE_URL}/api/pages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...ctx.headers },
@@ -87,45 +165,6 @@ export const POST = createHandler(
         at: new Date().toISOString(),
         action: "created",
       });
-
-      // Auto-conflict-check for legal_case pages
-      let conflictWarning:
-        | { checked: boolean; matches?: Array<{ name: string; slug: string; type: string }> }
-        | undefined;
-      if (body.type === "legal_case") {
-        const fm = body.frontmatter ?? {};
-        const namesToCheck = [fm.client_name, fm.opponent_name].filter(
-          (n): n is string => typeof n === "string" && n.trim().length > 0
-        );
-        if (namesToCheck.length > 0) {
-          try {
-            const conflicts: Array<{ name: string; slug: string; type: string }> = [];
-            for (const name of namesToCheck) {
-              const checkRes = await fetch(`${ENGINE_URL}/api/legal/conflict-check`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", ...ctx.headers },
-                body: JSON.stringify({ name }),
-              });
-              if (checkRes.ok) {
-                const checkData = (await checkRes.json()) as {
-                  matches?: Array<{ name: string; slug: string; type: string }>;
-                };
-                if (checkData.matches?.length) {
-                  conflicts.push(
-                    ...checkData.matches.map((m) => ({ name: m.name, slug: m.slug, type: m.type }))
-                  );
-                }
-              }
-            }
-            conflictWarning = {
-              checked: true,
-              matches: conflicts.length > 0 ? conflicts : undefined,
-            };
-          } catch {
-            conflictWarning = { checked: false };
-          }
-        }
-      }
 
       return Response.json({ ...result, conflictWarning });
     } catch (e) {

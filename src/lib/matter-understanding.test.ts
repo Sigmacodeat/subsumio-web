@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from "vitest";
 import { buildUnderstandingPanel } from "@/lib/matter-context";
-import type { MatterContextBundle, MatterUnderstandingPanel } from "@/lib/matter-context-types";
+import type { MatterContextBundle } from "@/lib/matter-context-types";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -28,19 +28,13 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
       { slug: "contacts/client-1", name: "Max Mustermann", role: "client" },
       { slug: "contacts/opponent-1", name: "Anna Schmidt", role: "opponent" },
     ],
-    deadlines: [
-      { id: "d1", title: "Klageantwort", date: "2024-08-15", urgency: "upcoming" },
-    ],
+    deadlines: [{ id: "d1", title: "Klageantwort", date: "2024-08-15", urgency: "upcoming" }],
     documents: [
       { slug: "docs/1", name: "Vertrag.pdf", ocr_status: "ocr_complete" },
       { slug: "docs/2", name: "Klage.pdf", ocr_status: "text_layer" },
     ],
-    recent_activity: [
-      { at: "2024-07-01T10:00:00Z", action: "document_uploaded", actor: "lawyer" },
-    ],
-    facts: [
-      { id: "f1", fact: "Schadensersatz claim", source: "strategy", confidence: "high" },
-    ],
+    recent_activity: [{ at: "2024-07-01T10:00:00Z", action: "document_uploaded", actor: "lawyer" }],
+    facts: [{ id: "f1", fact: "Schadensersatz claim", source: "strategy", confidence: "high" }],
     communications: [],
     permissions: {
       visibility: "full",
@@ -53,15 +47,34 @@ function makeBundle(overrides: Partial<MatterContextBundle> = {}): MatterContext
     coverage: {
       completeness_score: 0.75,
       sources: [
-        { source_id: "upload", source_type: "upload", connected: true, index_fresh: true, document_count: 5, last_sync_at: "2024-07-01T10:00:00Z" },
-        { source_id: "email", source_type: "email", connected: true, index_fresh: false, document_count: 3, last_sync_at: "2024-06-15T08:00:00Z" },
+        {
+          source_id: "upload",
+          source_type: "upload",
+          connected: true,
+          index_fresh: true,
+          document_count: 5,
+          last_sync_at: "2024-07-01T10:00:00Z",
+        },
+        {
+          source_id: "email",
+          source_type: "email",
+          connected: true,
+          index_fresh: false,
+          document_count: 3,
+          last_sync_at: "2024-06-15T08:00:00Z",
+        },
       ],
       stale_sources: 1,
       fresh_sources: 1,
       total_sources: 2,
     },
     gaps: [
-      { type: "missing_power_of_attorney", severity: "high", title: "Vollmacht fehlt", recommendation: "Vollmacht anfordern." },
+      {
+        type: "missing_power_of_attorney",
+        severity: "high",
+        title: "Vollmacht fehlt",
+        recommendation: "Vollmacht anfordern.",
+      },
     ],
     generated_at: "2024-07-01T12:00:00Z",
     engine_reachable: true,
@@ -89,7 +102,9 @@ describe("buildUnderstandingPanel — Basic Structure", () => {
   });
 
   it("preserves case_slug and case_title from bundle", () => {
-    const panel = buildUnderstandingPanel(makeBundle({ case_slug: "cases/2024-xyz", case_title: "Complex Litigation" }));
+    const panel = buildUnderstandingPanel(
+      makeBundle({ case_slug: "cases/2024-xyz", case_title: "Complex Litigation" })
+    );
     expect(panel.case_slug).toBe("cases/2024-xyz");
     expect(panel.case_title).toBe("Complex Litigation");
   });
@@ -124,7 +139,12 @@ describe("deriveRisks", () => {
   it("derives risks from critical and high gaps", () => {
     const bundle = makeBundle({
       gaps: [
-        { type: "missing_power_of_attorney", severity: "high", title: "Vollmacht fehlt", recommendation: "Anfordern." },
+        {
+          type: "missing_power_of_attorney",
+          severity: "high",
+          title: "Vollmacht fehlt",
+          recommendation: "Anfordern.",
+        },
         { type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" },
         { type: "missing_client_info", severity: "low", title: "Klient info fehlt" },
       ],
@@ -148,9 +168,7 @@ describe("deriveRisks", () => {
 
   it("derives risk from overdue deadlines", () => {
     const bundle = makeBundle({
-      deadlines: [
-        { id: "d1", title: "Berufungsfrist", date: "2024-01-01", urgency: "overdue" },
-      ],
+      deadlines: [{ id: "d1", title: "Berufungsfrist", date: "2024-01-01", urgency: "overdue" }],
     });
     const panel = buildUnderstandingPanel(bundle);
     const deadlineRisk = panel.risks.find((r) => r.source === "deadline_monitor");
@@ -161,9 +179,7 @@ describe("deriveRisks", () => {
 
   it("does not derive risk from non-overdue deadlines", () => {
     const bundle = makeBundle({
-      deadlines: [
-        { id: "d1", title: "Klageantwort", date: "2024-12-01", urgency: "upcoming" },
-      ],
+      deadlines: [{ id: "d1", title: "Klageantwort", date: "2024-12-01", urgency: "upcoming" }],
     });
     const panel = buildUnderstandingPanel(bundle);
     expect(panel.risks.find((r) => r.source === "deadline_monitor")).toBeUndefined();
@@ -200,7 +216,12 @@ describe("deriveRisks", () => {
   it("carries recommendation from gaps to risks", () => {
     const bundle = makeBundle({
       gaps: [
-        { type: "missing_power_of_attorney", severity: "high", title: "Vollmacht", recommendation: "Sofort anfordern." },
+        {
+          type: "missing_power_of_attorney",
+          severity: "high",
+          title: "Vollmacht",
+          recommendation: "Sofort anfordern.",
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -217,9 +238,27 @@ describe("assessFreshness", () => {
       coverage: {
         completeness_score: 0.8,
         sources: [
-          { source_id: "s1", source_type: "upload", connected: true, index_fresh: true, document_count: 1 },
-          { source_id: "s2", source_type: "email", connected: true, index_fresh: true, document_count: 1 },
-          { source_id: "s3", source_type: "dms", connected: true, index_fresh: false, document_count: 1 },
+          {
+            source_id: "s1",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
+          {
+            source_id: "s2",
+            source_type: "email",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
+          {
+            source_id: "s3",
+            source_type: "dms",
+            connected: true,
+            index_fresh: false,
+            document_count: 1,
+          },
         ],
         stale_sources: 1,
         fresh_sources: 2,
@@ -238,10 +277,34 @@ describe("assessFreshness", () => {
       coverage: {
         completeness_score: 0.3,
         sources: [
-          { source_id: "s1", source_type: "upload", connected: true, index_fresh: false, document_count: 1 },
-          { source_id: "s2", source_type: "email", connected: true, index_fresh: false, document_count: 1 },
-          { source_id: "s3", source_type: "dms", connected: true, index_fresh: false, document_count: 1 },
-          { source_id: "s4", source_type: "portal", connected: true, index_fresh: true, document_count: 1 },
+          {
+            source_id: "s1",
+            source_type: "upload",
+            connected: true,
+            index_fresh: false,
+            document_count: 1,
+          },
+          {
+            source_id: "s2",
+            source_type: "email",
+            connected: true,
+            index_fresh: false,
+            document_count: 1,
+          },
+          {
+            source_id: "s3",
+            source_type: "dms",
+            connected: true,
+            index_fresh: false,
+            document_count: 1,
+          },
+          {
+            source_id: "s4",
+            source_type: "portal",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
         ],
         stale_sources: 3,
         fresh_sources: 1,
@@ -307,9 +370,30 @@ describe("deriveRecentlyChangedSources", () => {
       coverage: {
         completeness_score: 0.5,
         sources: [
-          { source_id: "old", source_type: "email", connected: true, index_fresh: false, document_count: 2, last_sync_at: "2024-01-01T00:00:00Z" },
-          { source_id: "new", source_type: "upload", connected: true, index_fresh: true, document_count: 5, last_sync_at: "2024-07-01T00:00:00Z" },
-          { source_id: "mid", source_type: "dms", connected: true, index_fresh: true, document_count: 3, last_sync_at: "2024-04-01T00:00:00Z" },
+          {
+            source_id: "old",
+            source_type: "email",
+            connected: true,
+            index_fresh: false,
+            document_count: 2,
+            last_sync_at: "2024-01-01T00:00:00Z",
+          },
+          {
+            source_id: "new",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 5,
+            last_sync_at: "2024-07-01T00:00:00Z",
+          },
+          {
+            source_id: "mid",
+            source_type: "dms",
+            connected: true,
+            index_fresh: true,
+            document_count: 3,
+            last_sync_at: "2024-04-01T00:00:00Z",
+          },
         ],
         stale_sources: 1,
         fresh_sources: 2,
@@ -350,8 +434,21 @@ describe("deriveRecentlyChangedSources", () => {
       coverage: {
         completeness_score: 0.5,
         sources: [
-          { source_id: "with-sync", source_type: "upload", connected: true, index_fresh: true, document_count: 1, last_sync_at: "2024-07-01T00:00:00Z" },
-          { source_id: "no-sync", source_type: "email", connected: true, index_fresh: true, document_count: 1 },
+          {
+            source_id: "with-sync",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+            last_sync_at: "2024-07-01T00:00:00Z",
+          },
+          {
+            source_id: "no-sync",
+            source_type: "email",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
         ],
         stale_sources: 0,
         fresh_sources: 2,
@@ -368,7 +465,13 @@ describe("deriveRecentlyChangedSources", () => {
       coverage: {
         completeness_score: 0,
         sources: [
-          { source_id: "s1", source_type: "upload", connected: true, index_fresh: true, document_count: 0 },
+          {
+            source_id: "s1",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 0,
+          },
         ],
         stale_sources: 0,
         fresh_sources: 1,
@@ -390,8 +493,22 @@ describe("deriveRecentlyChangedSources", () => {
       coverage: {
         completeness_score: 0.5,
         sources: [
-          { source_id: "fresh", source_type: "upload", connected: true, index_fresh: true, document_count: 1, last_sync_at: "2024-07-01T00:00:00Z" },
-          { source_id: "stale", source_type: "email", connected: true, index_fresh: false, document_count: 1, last_sync_at: "2024-06-01T00:00:00Z" },
+          {
+            source_id: "fresh",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+            last_sync_at: "2024-07-01T00:00:00Z",
+          },
+          {
+            source_id: "stale",
+            source_type: "email",
+            connected: true,
+            index_fresh: false,
+            document_count: 1,
+            last_sync_at: "2024-06-01T00:00:00Z",
+          },
         ],
         stale_sources: 1,
         fresh_sources: 1,
@@ -415,7 +532,13 @@ describe("calculateUnderstandingScore", () => {
       documents: [],
       facts: [],
       communications: [],
-      coverage: { completeness_score: 0, sources: [], stale_sources: 0, fresh_sources: 0, total_sources: 0 },
+      coverage: {
+        completeness_score: 0,
+        sources: [],
+        stale_sources: 0,
+        fresh_sources: 0,
+        total_sources: 0,
+      },
       gaps: [],
     });
     const fullPanel = buildUnderstandingPanel(fullBundle);
@@ -425,14 +548,13 @@ describe("calculateUnderstandingScore", () => {
 
   it("penalizes critical risks", () => {
     const bundleWithCriticalGap = makeBundle({
-      gaps: [
-        { type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" },
-      ],
-      deadlines: [
-        { id: "d1", title: "Overdue", date: "2024-01-01", urgency: "overdue" },
-      ],
+      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist abgelaufen" }],
+      deadlines: [{ id: "d1", title: "Overdue", date: "2024-01-01", urgency: "overdue" }],
     });
-    const bundleWithoutGaps = makeBundle({ gaps: [], deadlines: [{ id: "d1", title: "OK", date: "2024-12-01", urgency: "upcoming" }] });
+    const bundleWithoutGaps = makeBundle({
+      gaps: [],
+      deadlines: [{ id: "d1", title: "OK", date: "2024-12-01", urgency: "upcoming" }],
+    });
     const withRisk = buildUnderstandingPanel(bundleWithCriticalGap);
     const withoutRisk = buildUnderstandingPanel(bundleWithoutGaps);
     expect(withoutRisk.understanding_score).toBeGreaterThan(withRisk.understanding_score);
@@ -460,7 +582,13 @@ describe("calculateUnderstandingScore", () => {
       documents: [],
       facts: [],
       communications: [],
-      coverage: { completeness_score: 0, sources: [], stale_sources: 0, fresh_sources: 0, total_sources: 0 },
+      coverage: {
+        completeness_score: 0,
+        sources: [],
+        stale_sources: 0,
+        fresh_sources: 0,
+        total_sources: 0,
+      },
       gaps: [],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -473,8 +601,31 @@ describe("calculateUnderstandingScore", () => {
       deadlines: [{ id: "d1", title: "F", date: "2024-12-01", urgency: "upcoming" }],
       documents: [{ slug: "d1", name: "Doc", ocr_status: "ocr_complete" }],
       facts: [{ id: "f1", fact: "F", source: "strategy", confidence: "high" }],
-      communications: [{ id: "comm1", channel: "email", direction: "incoming", subject: "S", timestamp: "2024-07-01", privileged: false }],
-      coverage: { completeness_score: 1, sources: [{ source_id: "s1", source_type: "upload", connected: true, index_fresh: true, document_count: 1 }], stale_sources: 0, fresh_sources: 1, total_sources: 1 },
+      communications: [
+        {
+          id: "comm1",
+          channel: "email",
+          direction: "incoming",
+          subject: "S",
+          timestamp: "2024-07-01",
+          privileged: false,
+        },
+      ],
+      coverage: {
+        completeness_score: 1,
+        sources: [
+          {
+            source_id: "s1",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
+        ],
+        stale_sources: 0,
+        fresh_sources: 1,
+        total_sources: 1,
+      },
       gaps: [],
       engine_reachable: true,
     });
@@ -498,7 +649,14 @@ describe("buildSummary", () => {
   it("includes communications count when present", () => {
     const bundle = makeBundle({
       communications: [
-        { id: "c1", channel: "email", direction: "incoming", subject: "Test", timestamp: "2024-07-01", privileged: false },
+        {
+          id: "c1",
+          channel: "email",
+          direction: "incoming",
+          subject: "Test",
+          timestamp: "2024-07-01",
+          privileged: false,
+        },
       ],
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -507,9 +665,7 @@ describe("buildSummary", () => {
 
   it("includes critical gaps count when present", () => {
     const bundle = makeBundle({
-      gaps: [
-        { type: "overdue_deadline", severity: "critical", title: "Frist" },
-      ],
+      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist" }],
     });
     const panel = buildUnderstandingPanel(bundle);
     expect(panel.summary).toContain("kritische Lücke");
@@ -532,7 +688,21 @@ describe("buildSummary", () => {
       deadlines: [{ id: "d1", title: "F", date: "2024-12-01", urgency: "upcoming" }],
       documents: [{ slug: "d1", name: "Doc", ocr_status: "ocr_complete" }],
       facts: [{ id: "f1", fact: "F", source: "strategy", confidence: "high" }],
-      coverage: { completeness_score: 1, sources: [{ source_id: "s1", source_type: "upload", connected: true, index_fresh: true, document_count: 1 }], stale_sources: 0, fresh_sources: 1, total_sources: 1 },
+      coverage: {
+        completeness_score: 1,
+        sources: [
+          {
+            source_id: "s1",
+            source_type: "upload",
+            connected: true,
+            index_fresh: true,
+            document_count: 1,
+          },
+        ],
+        stale_sources: 0,
+        fresh_sources: 1,
+        total_sources: 1,
+      },
       gaps: [],
       engine_reachable: true,
     });
@@ -547,10 +717,14 @@ describe("buildSummary", () => {
       documents: [],
       facts: [],
       communications: [],
-      coverage: { completeness_score: 0, sources: [], stale_sources: 0, fresh_sources: 0, total_sources: 0 },
-      gaps: [
-        { type: "overdue_deadline", severity: "critical", title: "Frist" },
-      ],
+      coverage: {
+        completeness_score: 0,
+        sources: [],
+        stale_sources: 0,
+        fresh_sources: 0,
+        total_sources: 0,
+      },
+      gaps: [{ type: "overdue_deadline", severity: "critical", title: "Frist" }],
       engine_reachable: true,
     });
     const panel = buildUnderstandingPanel(bundle);
@@ -568,7 +742,13 @@ describe("Edge Cases", () => {
       documents: [],
       facts: [],
       communications: [],
-      coverage: { completeness_score: 0, sources: [], stale_sources: 0, fresh_sources: 0, total_sources: 0 },
+      coverage: {
+        completeness_score: 0,
+        sources: [],
+        stale_sources: 0,
+        fresh_sources: 0,
+        total_sources: 0,
+      },
       gaps: [],
       recent_activity: [],
     });

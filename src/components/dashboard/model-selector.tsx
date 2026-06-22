@@ -151,7 +151,7 @@ export function ModelSelector({
               <p
                 className={cn(
                   "mt-0.5 text-[color:var(--ds-text-muted)]",
-                  isCompact ? "text-[10px]" : "text-xs"
+                  isCompact ? "text-xs" : "text-xs"
                 )}
               >
                 Engine wählt automatisch das optimale Modell
@@ -189,13 +189,13 @@ export function ModelSelector({
                     <span
                       className={cn(
                         "shrink-0 font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase",
-                        isCompact ? "text-[9px]" : "text-xs"
+                        isCompact ? "text-[10px]" : "text-xs"
                       )}
                     >
                       {getProviderLabel(model.provider as never)}
                     </span>
                     {"dataResidency" in model && model.dataResidency === "eu" && (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1 py-0.5 text-[9px] font-medium text-emerald-600">
+                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-success-text)]">
                         <Globe size={7} />
                         EU
                       </span>
@@ -204,7 +204,7 @@ export function ModelSelector({
                   <p
                     className={cn(
                       "mt-0.5 line-clamp-2 text-[color:var(--ds-text-muted)]",
-                      isCompact ? "text-[10px]" : "text-xs"
+                      isCompact ? "text-xs" : "text-xs"
                     )}
                   >
                     {model.description}
@@ -212,7 +212,7 @@ export function ModelSelector({
                   <div
                     className={cn(
                       "mt-1.5 flex items-center gap-2.5 text-[color:var(--ds-text-subtle)]",
-                      isCompact ? "text-[10px]" : "text-xs"
+                      isCompact ? "text-xs" : "text-xs"
                     )}
                   >
                     <span className="flex items-center gap-0.5" title="Context Window">

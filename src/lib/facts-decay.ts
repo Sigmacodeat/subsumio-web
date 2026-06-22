@@ -12,9 +12,6 @@
  */
 
 import type { EntityClass } from "@/lib/data-classification";
-import {
-  parseDurationToMs,
-} from "@/lib/data-classification";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -58,10 +55,7 @@ export const DECAY_CONFIGS: Record<EntityClass, DecayConfig> = {
 
 // ── Decay Logic ───────────────────────────────────────────────────────
 
-export function computeDecayedConfidence(
-  fact: DecayableFact,
-  now: Date = new Date(),
-): number {
+export function computeDecayedConfidence(fact: DecayableFact, now: Date = new Date()): number {
   // Forgotten facts have 0 confidence
   if (fact.forgotten) return 0;
 
@@ -82,11 +76,8 @@ export function computeDecayedConfidence(
   return Math.max(config.min_confidence, Math.min(config.max_confidence, decayed));
 }
 
-export function applyDecay(
-  fact: DecayableFact,
-  now: Date = new Date(),
-): DecayResult {
-  const config = DECAY_CONFIGS[fact.entity_class];
+export function applyDecay(fact: DecayableFact, now: Date = new Date()): DecayResult {
+  const _config = DECAY_CONFIGS[fact.entity_class];
   const oldConfidence = fact.confidence;
 
   if (fact.forgotten) {
@@ -126,7 +117,7 @@ export function applyDecay(
 
 export function batchDecay(
   facts: DecayableFact[],
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { results: DecayResult[]; updated: DecayableFact[] } {
   const results: DecayResult[] = [];
   const updated: DecayableFact[] = [];
@@ -151,7 +142,7 @@ export function batchDecay(
 
 export function getDecayEligibility(
   fact: DecayableFact,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { eligible: boolean; reason: string; current_confidence: number } {
   if (fact.forgotten) {
     return { eligible: false, reason: "forgotten", current_confidence: 0 };
@@ -169,7 +160,10 @@ export function getDecayEligibility(
   return { eligible: true, reason: "decay_eligible", current_confidence: decayed };
 }
 
-export function getDecayStats(facts: DecayableFact[], now: Date = new Date()): {
+export function getDecayStats(
+  facts: DecayableFact[],
+  now: Date = new Date()
+): {
   total: number;
   decayed: number;
   frozen: number;

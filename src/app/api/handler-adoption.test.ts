@@ -10,6 +10,9 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // Mock next/headers cookies() — returns empty jar (no session)
 vi.mock("next/headers", () => ({
@@ -27,6 +30,27 @@ vi.mock("@/lib/auth/session", () => ({
 }));
 
 describe("API handler adoption — createHandler / createPublicHandler", () => {
+  it("keeps server route handlers off the browser API client", () => {
+    const apiDir = dirname(fileURLToPath(import.meta.url));
+    const routeFiles: string[] = [];
+    const visit = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const fullPath = join(dir, entry);
+        if (statSync(fullPath).isDirectory()) {
+          visit(fullPath);
+        } else if (entry === "route.ts") {
+          routeFiles.push(fullPath);
+        }
+      }
+    };
+    visit(apiDir);
+
+    const offenders = routeFiles.filter((file) =>
+      readFileSync(file, "utf8").includes('from "@/lib/api"')
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("auth/me route exports createHandler-wrapped GET and PATCH", async () => {
     const mod = await import("./auth/me/route");
     expect(typeof mod.GET).toBe("function");
@@ -40,9 +64,11 @@ describe("API handler adoption — createHandler / createPublicHandler", () => {
   it("auth/2fa/setup route exports createHandler-wrapped POST", async () => {
     const mod = await import("./auth/2fa/setup/route");
     expect(typeof mod.POST).toBe("function");
-    const res = await mod.POST(new Request("http://localhost/api/auth/2fa/setup", {
-      method: "POST",
-    }) as never);
+    const res = await mod.POST(
+      new Request("http://localhost/api/auth/2fa/setup", {
+        method: "POST",
+      }) as never
+    );
     expect(res).toBeInstanceOf(Response);
     expect(res.status).toBe(401);
   });
@@ -50,11 +76,13 @@ describe("API handler adoption — createHandler / createPublicHandler", () => {
   it("auth/2fa/verify route exports createHandler-wrapped POST", async () => {
     const mod = await import("./auth/2fa/verify/route");
     expect(typeof mod.POST).toBe("function");
-    const res = await mod.POST(new Request("http://localhost/api/auth/2fa/verify", {
-      method: "POST",
-      body: JSON.stringify({ token: "123456" }),
-      headers: { "Content-Type": "application/json" },
-    }) as never);
+    const res = await mod.POST(
+      new Request("http://localhost/api/auth/2fa/verify", {
+        method: "POST",
+        body: JSON.stringify({ token: "123456" }),
+        headers: { "Content-Type": "application/json" },
+      }) as never
+    );
     expect(res).toBeInstanceOf(Response);
     expect(res.status).toBe(401);
   });
@@ -62,9 +90,11 @@ describe("API handler adoption — createHandler / createPublicHandler", () => {
   it("auth/2fa/disable route exports createHandler-wrapped POST", async () => {
     const mod = await import("./auth/2fa/disable/route");
     expect(typeof mod.POST).toBe("function");
-    const res = await mod.POST(new Request("http://localhost/api/auth/2fa/disable", {
-      method: "POST",
-    }) as never);
+    const res = await mod.POST(
+      new Request("http://localhost/api/auth/2fa/disable", {
+        method: "POST",
+      }) as never
+    );
     expect(res).toBeInstanceOf(Response);
     expect(res.status).toBe(401);
   });

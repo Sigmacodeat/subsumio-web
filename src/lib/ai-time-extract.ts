@@ -241,7 +241,7 @@ function estimateMinutes(
   let baseMinutes = ACTIVITY_BASE_MINUTES[primaryActivity] ?? 15;
 
   // Adjust based on conversation length
-  const totalWords = messages.reduce(
+  const _totalWords = messages.reduce(
     (sum, m) => sum + (m.word_count ?? m.text.split(/\s+/).length),
     0
   );

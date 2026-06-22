@@ -17,7 +17,6 @@ import {
   type PermissionInfo,
 } from "@/lib/ethical-wall";
 import type { ModelEntry } from "@/lib/model-config";
-import type { PrivilegeLevel, ConfidentialityLevel } from "@/lib/privilege-labels";
 
 // ── Fixtures ──────────────────────────────────────────────────────────
 

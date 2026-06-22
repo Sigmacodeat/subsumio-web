@@ -99,6 +99,15 @@ export const PATCH = createHandler(
     if (patchBody.frontmatter) {
       const fm = patchBody.frontmatter as Record<string, unknown>;
       const isRestore = !!fm.restored_at && fm.status !== "archived";
+
+      // RBAC: Restore requires admin or lawyer role (brain.delete level)
+      if (isRestore && ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
+        return Response.json(
+          { error: "forbidden", message: "Nur Admins und Anwälte können Akten wiederherstellen." },
+          { status: 403 }
+        );
+      }
+
       if (!isRestore) {
         try {
           const checkRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
@@ -164,13 +173,29 @@ export const PATCH = createHandler(
 
       // Restore cascade: if the PATCH sets status to a non-archived value
       // and includes restored_at, un-tombstone all linked documents.
+      let restoreCascade:
+        | {
+            attempted: true;
+            matched: number;
+            succeeded: number;
+            failed: Array<{ slug: string; status?: number; error?: string }>;
+          }
+        | { attempted: false } = { attempted: false };
+
       const patchedFm = (patchBody.frontmatter ?? {}) as Record<string, unknown>;
       if (patchedFm.restored_at && patchedFm.status && patchedFm.status !== "archived") {
         try {
           const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
             headers: ctx.headers,
           });
-          if (docsRes.ok) {
+          if (!docsRes.ok) {
+            restoreCascade = {
+              attempted: true,
+              matched: 0,
+              succeeded: 0,
+              failed: [{ slug: "*", status: docsRes.status }],
+            };
+          } else {
             const raw = await docsRes.json();
             const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> =
               Array.isArray(raw)
@@ -186,33 +211,57 @@ export const PATCH = createHandler(
                 caseSlugForms.has((d.frontmatter ?? {}).case_slug as string) &&
                 (d.frontmatter ?? {}).status === "tombstoned"
             );
-            await Promise.all(
-              tombstoned.map((doc) =>
-                fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json", ...ctx.headers },
-                  body: JSON.stringify({
-                    frontmatter: {
-                      status: "active",
-                      tombstoned_at: null,
-                      tombstone_reason: null,
-                    },
-                    merge: true,
-                  }),
-                }).catch((err) => {
-                  console.error(
-                    `[pages/...slug] untombstone failed for ${doc.slug}:`,
-                    err instanceof Error ? err.message : String(err)
+            const untombstones = await Promise.all(
+              tombstoned.map(async (doc) => {
+                try {
+                  const untombstoneRes = await fetch(
+                    `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                    {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", ...ctx.headers },
+                      body: JSON.stringify({
+                        frontmatter: {
+                          status: "active",
+                          tombstoned_at: null,
+                          tombstone_reason: null,
+                        },
+                        merge: true,
+                      }),
+                    }
                   );
-                })
-              )
+                  return untombstoneRes.ok
+                    ? { slug: doc.slug, ok: true as const }
+                    : { slug: doc.slug, ok: false as const, status: untombstoneRes.status };
+                } catch (err) {
+                  return {
+                    slug: doc.slug,
+                    ok: false as const,
+                    error: err instanceof Error ? err.message : String(err),
+                  };
+                }
+              })
             );
+            const failed = untombstones
+              .filter((r) => !r.ok)
+              .map(({ slug, status, error }) => ({ slug, status, error }));
+            restoreCascade = {
+              attempted: true,
+              matched: tombstoned.length,
+              succeeded: untombstones.length - failed.length,
+              failed,
+            };
           }
         } catch (err) {
           console.error(
             "[pages/...slug] restore cascade failed:",
             err instanceof Error ? err.message : String(err)
           );
+          restoreCascade = {
+            attempted: true,
+            matched: 0,
+            succeeded: 0,
+            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
+          };
         }
       }
 
@@ -283,7 +332,11 @@ export const PATCH = createHandler(
           at: new Date().toISOString(),
         });
       }
-      return Response.json({ ...result, conflictWarning });
+      const partialFailure = restoreCascade.attempted && restoreCascade.failed.length > 0;
+      return Response.json(
+        { ...result, conflictWarning, restoreCascade },
+        { status: partialFailure ? 207 : 200 }
+      );
     } catch (err) {
       console.error(
         "[pages/...slug] patch failed:",
@@ -312,6 +365,15 @@ export const DELETE = createHandler(
     const slugArr = (await (req as unknown as { params: Promise<{ slug: string[] }> }).params).slug;
     const path = buildPath(slugArr);
     if (!path) return apiError("invalid_slug", "Invalid slug", 400);
+
+    // RBAC: only admin and lawyer can archive cases
+    if (ctx.user.role !== "admin" && ctx.user.role !== "lawyer") {
+      return Response.json(
+        { error: "forbidden", message: "Sie haben keine Berechtigung, Akten zu archivieren." },
+        { status: 403 }
+      );
+    }
+
     // Engine stamps the raw (decoded) slug as case_slug on documents; path is URL-encoded.
     const decodedSlug = slugArr.join("/");
 
@@ -333,10 +395,27 @@ export const DELETE = createHandler(
       // Fall back to fm.type for engine versions that mirror it into frontmatter.
       const pageType = casePage.type ?? (fm.type as string | undefined);
       const currentVersion = (fm.version as number) || 0;
+
+      // Guard: already archived — return 409 to prevent double-archive
+      if (pageType === "legal_case" && fm.status === "archived") {
+        return Response.json(
+          { error: "already_archived", message: "Akte ist bereits archiviert." },
+          { status: 409 }
+        );
+      }
+
       // Set of slug forms that documents may reference as their case_slug.
       const caseSlugForms = new Set(
         [casePage.slug, decodedSlug, path].filter((s): s is string => !!s)
       );
+      let cascade:
+        | {
+            attempted: true;
+            matched: number;
+            succeeded: number;
+            failed: Array<{ slug: string; status?: number; error?: string }>;
+          }
+        | { attempted: false } = { attempted: false };
 
       if (pageType === "legal_case") {
         // Build timeline event for archive
@@ -383,7 +462,14 @@ export const DELETE = createHandler(
           const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
             headers: ctx.headers,
           });
-          if (docsRes.ok) {
+          if (!docsRes.ok) {
+            cascade = {
+              attempted: true,
+              matched: 0,
+              succeeded: 0,
+              failed: [{ slug: "*", status: docsRes.status }],
+            };
+          } else {
             const raw = await docsRes.json();
             const allDocs: Array<{ slug: string; frontmatter?: Record<string, unknown> }> =
               Array.isArray(raw)
@@ -396,33 +482,57 @@ export const DELETE = createHandler(
             const matched = allDocs.filter((d) =>
               caseSlugForms.has((d.frontmatter ?? {}).case_slug as string)
             );
-            await Promise.all(
-              matched.map((doc) =>
-                fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json", ...ctx.headers },
-                  body: JSON.stringify({
-                    frontmatter: {
-                      status: "tombstoned",
-                      tombstoned_at: new Date().toISOString(),
-                      tombstone_reason: "case_archived",
-                    },
-                    merge: true,
-                  }),
-                }).catch((err) => {
-                  console.error(
-                    `[pages/...slug] tombstone failed for ${doc.slug}:`,
-                    err instanceof Error ? err.message : String(err)
+            const tombstones = await Promise.all(
+              matched.map(async (doc) => {
+                try {
+                  const tombstoneRes = await fetch(
+                    `${ENGINE_URL}/api/pages/${encodeURIComponent(doc.slug)}`,
+                    {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", ...ctx.headers },
+                      body: JSON.stringify({
+                        frontmatter: {
+                          status: "tombstoned",
+                          tombstoned_at: new Date().toISOString(),
+                          tombstone_reason: "case_archived",
+                        },
+                        merge: true,
+                      }),
+                    }
                   );
-                })
-              )
+                  return tombstoneRes.ok
+                    ? { slug: doc.slug, ok: true as const }
+                    : { slug: doc.slug, ok: false as const, status: tombstoneRes.status };
+                } catch (err) {
+                  return {
+                    slug: doc.slug,
+                    ok: false as const,
+                    error: err instanceof Error ? err.message : String(err),
+                  };
+                }
+              })
             );
+            const failed = tombstones
+              .filter((result) => !result.ok)
+              .map(({ slug, status, error }) => ({ slug, status, error }));
+            cascade = {
+              attempted: true,
+              matched: matched.length,
+              succeeded: tombstones.length - failed.length,
+              failed,
+            };
           }
         } catch (err) {
           console.error(
             "[pages/...slug] cascade tombstone failed:",
             err instanceof Error ? err.message : String(err)
           );
+          cascade = {
+            attempted: true,
+            matched: 0,
+            succeeded: 0,
+            failed: [{ slug: "*", error: err instanceof Error ? err.message : String(err) }],
+          };
         }
       } else {
         // Non-case pages: hard delete as before
@@ -434,7 +544,7 @@ export const DELETE = createHandler(
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);
       }
 
-      void logAudit("document.delete", "page", {
+      void logAudit(pageType === "legal_case" ? "case.delete" : "document.delete", "page", {
         entityId: path,
         details: {
           userId: ctx.user.id,
@@ -447,10 +557,14 @@ export const DELETE = createHandler(
         at: new Date().toISOString(),
         method: pageType === "legal_case" ? "archived" : "deleted",
       });
-      return Response.json({
-        ok: true,
-        method: pageType === "legal_case" ? "archived" : "deleted",
-      });
+      return Response.json(
+        {
+          ok: !cascade.attempted || cascade.failed.length === 0,
+          method: pageType === "legal_case" ? "archived" : "deleted",
+          cascade,
+        },
+        { status: cascade.attempted && cascade.failed.length > 0 ? 207 : 200 }
+      );
     } catch (e) {
       console.error("[pages/...slug] delete failed:", e instanceof Error ? e.message : String(e));
       return apiError("engine_unreachable", "Seite nicht löschbar", 503);

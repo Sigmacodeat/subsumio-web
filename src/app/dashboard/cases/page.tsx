@@ -36,6 +36,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useRealtime } from "@/lib/realtime";
 import { useLang } from "@/lib/use-lang";
+import { useMe } from "@/lib/queries/auth";
 import type { DashboardKey } from "@/content/dashboard";
 
 interface LegalCaseItem {
@@ -99,8 +100,12 @@ export default function CasesPage() {
   const { addToast } = useToast();
   const confirm = useConfirm();
   const { t, lang } = useLang();
+  const meQuery = useMe();
+  const userRole = meQuery.data?.user?.role ?? "lawyer";
+  const canArchive = userRole === "admin" || userRole === "lawyer";
   const [cases, setCases] = useState<LegalCaseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -206,24 +211,46 @@ export default function CasesPage() {
     });
     if (!confirmed) return;
 
+    setBulkLoading(true);
     const next = cases.filter((c) => !slugs.includes(c.slug));
     const backup = cases;
     setCases(next);
     await setCache(OFFLINE_KEYS.cases, next);
 
     try {
+      let succeeded = 0;
+      let failed = 0;
       for (const slug of slugs) {
-        if (isOnline()) {
-          await api.brain.deletePage(slug);
-        } else {
-          await enqueueMutation({ type: "deletePage", payload: { slug } });
+        try {
+          if (isOnline()) {
+            await api.brain.deletePage(slug);
+          } else {
+            await enqueueMutation({ type: "deletePage", payload: { slug } });
+          }
+          succeeded++;
+        } catch {
+          failed++;
         }
       }
-      addToast({
-        type: "success",
-        title: `${slugs.length} ${t("cases.toast_bulk_deleted")}`,
-        duration: 6000,
-      });
+      if (failed === 0) {
+        addToast({
+          type: "success",
+          title: `${succeeded} ${t("cases.toast_bulk_deleted")}`,
+          duration: 6000,
+        });
+      } else {
+        setCases(backup);
+        await setCache(OFFLINE_KEYS.cases, backup);
+        void loadCases();
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Partial archive failure" : "Teilweise fehlgeschlagen",
+          description:
+            lang === "en"
+              ? `${succeeded} archived, ${failed} failed. Please reload.`
+              : `${succeeded} archiviert, ${failed} fehlgeschlagen. Bitte neu laden.`,
+        });
+      }
     } catch (err) {
       setCases(backup);
       await setCache(OFFLINE_KEYS.cases, backup);
@@ -232,6 +259,8 @@ export default function CasesPage() {
         title: t("cases.toast_bulk_fail"),
         description: err instanceof Error ? err.message : t("cases.unknown_error"),
       });
+    } finally {
+      setBulkLoading(false);
     }
   }
 
@@ -276,6 +305,15 @@ export default function CasesPage() {
           title: lang === "en" ? "Case restored" : "Akte wiederhergestellt",
           description: caseItem?.title,
         });
+      } else if (res.status === 403) {
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Access denied" : "Zugriff verweigert",
+          description:
+            lang === "en"
+              ? "You don't have permission to restore this case."
+              : "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
+        });
       } else if (res.status === 409) {
         addToast({
           type: "error",
@@ -316,14 +354,17 @@ export default function CasesPage() {
     });
     if (!confirmed) return;
 
+    setBulkLoading(true);
     const backup = cases;
     try {
       const next = cases.map((c) => (slugs.includes(c.slug) ? { ...c, status: "open" } : c));
       setCases(next);
       await setCache(OFFLINE_KEYS.cases, next);
+      let succeeded = 0;
+      let failed = 0;
       for (const row of selectedRows) {
         const slugPath = row.slug.split("/").map(encodeURIComponent).join("/");
-        await csrfFetch(`/api/pages/${slugPath}`, {
+        const res = await csrfFetch(`/api/pages/${slugPath}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -339,15 +380,34 @@ export default function CasesPage() {
             merge: true,
           }),
         });
+        if (res.ok) {
+          succeeded++;
+        } else {
+          failed++;
+        }
       }
-      addToast({
-        type: "success",
-        title: lang === "en" ? "Cases restored" : "Akten wiederhergestellt",
-        description:
-          lang === "en"
-            ? `${slugs.length} case(s) restored from archive.`
-            : `${slugs.length} Akte(n) wiederhergestellt.`,
-      });
+      if (failed === 0) {
+        addToast({
+          type: "success",
+          title: lang === "en" ? "Cases restored" : "Akten wiederhergestellt",
+          description:
+            lang === "en"
+              ? `${succeeded} case(s) restored from archive.`
+              : `${succeeded} Akte(n) wiederhergestellt.`,
+        });
+      } else {
+        setCases(backup);
+        await setCache(OFFLINE_KEYS.cases, backup);
+        void loadCases();
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Partial restore failure" : "Teilweise fehlgeschlagen",
+          description:
+            lang === "en"
+              ? `${succeeded} restored, ${failed} failed. Please reload.`
+              : `${succeeded} wiederhergestellt, ${failed} fehlgeschlagen. Bitte neu laden.`,
+        });
+      }
     } catch (err) {
       setCases(backup);
       await setCache(OFFLINE_KEYS.cases, backup);
@@ -356,6 +416,8 @@ export default function CasesPage() {
         title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
         description: err instanceof Error ? err.message : t("cases.unknown_error"),
       });
+    } finally {
+      setBulkLoading(false);
     }
   }
 
@@ -495,7 +557,7 @@ export default function CasesPage() {
       width: "w-10",
       cell: (c) => (
         <div className="flex items-center gap-1">
-          {c.status === "archived" ? (
+          {canArchive && c.status === "archived" ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -507,7 +569,7 @@ export default function CasesPage() {
             >
               <RotateCcw size={14} />
             </button>
-          ) : (
+          ) : canArchive ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -519,7 +581,7 @@ export default function CasesPage() {
             >
               <Trash2 size={14} />
             </button>
-          )}
+          ) : null}
           <ChevronRight size={14} className="text-[color:var(--ds-text-subtle)]" />
         </div>
       ),
@@ -601,16 +663,21 @@ export default function CasesPage() {
         onRowClick={(c) => router.push(`/dashboard/cases/${encodeSlugPath(c.slug)}`)}
         rowKey={(c) => c.slug}
         pageSize={20}
-        selectable
-        onBulkAction={statusFilter === "archived" ? bulkRestore : bulkDelete}
+        selectable={canArchive}
+        onBulkAction={
+          canArchive ? (statusFilter === "archived" ? bulkRestore : bulkDelete) : undefined
+        }
         bulkActionLabel={
-          statusFilter === "archived"
-            ? lang === "en"
-              ? "Restore selected"
-              : "Ausgewählte wiederherstellen"
-            : t("cases.bulk_delete")
+          canArchive
+            ? statusFilter === "archived"
+              ? lang === "en"
+                ? "Restore selected"
+                : "Ausgewählte wiederherstellen"
+              : t("cases.bulk_delete")
+            : undefined
         }
         bulkActionIcon={statusFilter === "archived" ? RotateCcw : Trash2}
+        bulkActionLoading={bulkLoading}
       />
     </div>
   );

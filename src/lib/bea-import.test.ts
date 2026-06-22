@@ -3,7 +3,7 @@
  */
 
 import { test, expect, describe } from "vitest";
-import { parseBeaXml, parseBeaXmlBatch } from "@/lib/bea-import";
+import { buildBeaImportBundle, parseBeaXml, parseBeaXmlBatch } from "@/lib/bea-import";
 
 const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <message id="bea-12345">
@@ -144,5 +144,47 @@ describe("parseBeaXmlBatch", () => {
     const result = parseBeaXmlBatch([]);
     expect(result.messages.length).toBe(0);
     expect(result.total_count).toBe(0);
+  });
+});
+
+describe("buildBeaImportBundle", () => {
+  test("builds an import page and message pages", () => {
+    const result = parseBeaXmlBatch([
+      { filename: "msg1.xml", content: SAMPLE_XML },
+      { filename: "msg2.xml", content: SAMPLE_XML_2 },
+    ]);
+    const bundle = buildBeaImportBundle(result, {
+      filename: "bea-export.zip",
+      importedAt: "2026-06-22T11:00:00.000Z",
+      importedBy: "anwalt@example.test",
+    });
+
+    expect(bundle.importPage.slug).toBe("legal/bea-imports/20260622110000-bea-export-zip");
+    expect(bundle.importPage.type).toBe("bea_import");
+    expect(bundle.importPage.frontmatter.valid_count).toBe(2);
+    expect(bundle.importPage.frontmatter.message_slugs).toHaveLength(2);
+    expect(bundle.messagePages).toHaveLength(2);
+    expect(bundle.messagePages[0].type).toBe("bea_message");
+    expect(bundle.messagePages[0].frontmatter.import_slug).toBe(bundle.importPage.slug);
+    expect(bundle.messagePages[0].frontmatter.case_ref).toBe("2026-014");
+    expect(bundle.messagePages[0].content).toContain("klageerwiderung.pdf");
+  });
+
+  test("keeps import errors on the import page", () => {
+    const result = {
+      messages: [parseBeaXml(SAMPLE_XML, "msg1.xml")!],
+      errors: [{ file: "bad.xml", error: "Failed to parse beA XML" }],
+      total_count: 2,
+      valid_count: 1,
+      error_count: 1,
+    };
+    const bundle = buildBeaImportBundle(result, {
+      filename: "mixed.xml",
+      importedAt: "2026-06-22T11:00:00.000Z",
+    });
+
+    expect(bundle.importPage.frontmatter.error_count).toBe(1);
+    expect(bundle.importPage.frontmatter.errors).toEqual(result.errors);
+    expect(bundle.importPage.content).toContain("bad.xml");
   });
 });

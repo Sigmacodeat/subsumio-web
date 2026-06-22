@@ -225,7 +225,7 @@ interface Me {
 }
 
 function BillingInner() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const params = useSearchParams();
   const status = params.get("status");
   const meQuery = useMe();

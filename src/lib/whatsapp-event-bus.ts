@@ -108,7 +108,11 @@ export class NotificationEventBus {
       event_id: event.id,
       action: "published",
       timestamp: new Date().toISOString(),
-      details: { type: event.type, priority: event.priority, recipients: event.recipient_user_ids.length },
+      details: {
+        type: event.type,
+        priority: event.priority,
+        recipients: event.recipient_user_ids.length,
+      },
     });
   }
 
@@ -252,7 +256,7 @@ export function eventToScope(type: NotificationEventType): OutboundScope {
     case "new_document":
       return "new_document";
     case "client_message":
-      return "client_message_send" as OutboundScope;
+      return "client_reminder";
     case "daily_briefing":
     case "fristen_briefing":
       return "daily_briefing";
@@ -266,7 +270,7 @@ export function eventToScope(type: NotificationEventType): OutboundScope {
  */
 export function eventToTemplate(
   type: NotificationEventType,
-  config: WhatsAppHandlerConfig = DEFAULT_WHATSAPP_HANDLER_CONFIG,
+  config: WhatsAppHandlerConfig = DEFAULT_WHATSAPP_HANDLER_CONFIG
 ): string | undefined {
   switch (type) {
     case "approval_request":
@@ -287,15 +291,9 @@ export function eventToTemplate(
  */
 export function buildWhatsAppMessageBody(event: NotificationEvent): string {
   const priorityPrefix =
-    event.priority === "urgent" ? "🚨 " :
-    event.priority === "high" ? "⚠️ " :
-    "";
+    event.priority === "urgent" ? "🚨 " : event.priority === "high" ? "⚠️ " : "";
 
-  const lines: string[] = [
-    `${priorityPrefix}${event.title}`,
-    "",
-    event.body,
-  ];
+  const lines: string[] = [`${priorityPrefix}${event.title}`, "", event.body];
 
   if (event.case_slug) {
     lines.push("", `Akte: ${event.case_slug}`);
@@ -370,10 +368,20 @@ export function parseApprovalResponse(message: string): ParsedApprovalResponse {
 
   // Check for emoji-only messages
   if (trimmed.includes("✅")) {
-    return { response: "approve", action_slug: actionSlug, raw_message: message, parsed_at: parsedAt };
+    return {
+      response: "approve",
+      action_slug: actionSlug,
+      raw_message: message,
+      parsed_at: parsedAt,
+    };
   }
   if (trimmed.includes("❌")) {
-    return { response: "reject", action_slug: actionSlug, raw_message: message, parsed_at: parsedAt };
+    return {
+      response: "reject",
+      action_slug: actionSlug,
+      raw_message: message,
+      parsed_at: parsedAt,
+    };
   }
 
   return {
@@ -388,7 +396,7 @@ export function parseApprovalResponse(message: string): ParsedApprovalResponse {
  */
 export function matchApprovalByReference(
   parsed: ParsedApprovalResponse,
-  pendingApprovals: Array<{ action_slug: string; action_type: ActionType }>,
+  pendingApprovals: Array<{ action_slug: string; action_type: ActionType }>
 ): { action_slug: string; action_type: ActionType } | null {
   if (!parsed.action_slug) return null;
   const ref = parsed.action_slug.toLowerCase();
@@ -404,7 +412,7 @@ export function matchApprovalByReference(
  * Converts a parsed approval response to an approval decision.
  */
 export function responseToApprovalDecision(
-  parsed: ParsedApprovalResponse,
+  parsed: ParsedApprovalResponse
 ): { status: ApprovalStatus; reject_reason?: string } | null {
   switch (parsed.response) {
     case "approve":
@@ -465,16 +473,15 @@ export function createDeadlineAlertEvent(params: {
   recipient_phone?: string;
 }): NotificationEvent {
   const priority: NotificationPriority =
-    params.days_remaining <= 0 ? "urgent" :
-    params.days_remaining <= 3 ? "high" :
-    "normal";
+    params.days_remaining <= 0 ? "urgent" : params.days_remaining <= 3 ? "high" : "normal";
 
   return createNotificationEvent({
     type: params.days_remaining <= 0 ? "deadline_overdue" : "deadline_alert",
     priority,
-    title: params.days_remaining <= 0
-      ? `Frist abgelaufen: ${params.deadline_description}`
-      : `Frist in ${params.days_remaining} Tag(en): ${params.deadline_description}`,
+    title:
+      params.days_remaining <= 0
+        ? `Frist abgelaufen: ${params.deadline_description}`
+        : `Frist in ${params.days_remaining} Tag(en): ${params.deadline_description}`,
     body: `Fristdatum: ${params.deadline_date}\nAkte: ${params.case_slug}`,
     brain_id: params.brain_id,
     org_id: params.org_id,
@@ -582,8 +589,14 @@ export function validateNotificationEvent(event: NotificationEvent): Notificatio
     errors.push("Approval request events must have an action_type");
   }
 
-  if (event.priority === "urgent" && event.type !== "deadline_overdue" && event.type !== "conflict_alert") {
-    warnings.push("Urgent priority is typically reserved for overdue deadlines and conflict alerts");
+  if (
+    event.priority === "urgent" &&
+    event.type !== "deadline_overdue" &&
+    event.type !== "conflict_alert"
+  ) {
+    warnings.push(
+      "Urgent priority is typically reserved for overdue deadlines and conflict alerts"
+    );
   }
 
   if (!event.recipient_phone && event.dispatch_results.some((r) => r.channel === "whatsapp")) {

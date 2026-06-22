@@ -8,31 +8,29 @@
  * registered; on shutdown, all are stopped gracefully.
  */
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { homedir } from 'node:os';
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { homedir } from "node:os";
+import { type IngestionSource, type IngestionSourceContext } from "../types.ts";
+import { BaseConnector, type ConnectorConfig, type ConnectorState } from "./base.ts";
+import { GoogleDriveConnector } from "./google-drive.ts";
+import { GmailConnector } from "./gmail.ts";
+import { NotionConnector } from "./notion.ts";
+import { GitHubConnector } from "./github.ts";
+import { SlackConnector } from "./slack.ts";
+import { CalendarConnector } from "./calendar.ts";
+import { DropboxConnector } from "./dropbox.ts";
+import { AsanaConnector } from "./asana.ts";
+import { JiraConnector } from "./jira.ts";
+import { LegalJudgementsConnector } from "./legal-judgements.ts";
+import { SwissJudgementsConnector } from "./swiss-judgements.ts";
+import { BeaImportConnector } from "./bea-import.ts";
 import {
-  type IngestionSource,
-  type IngestionSourceContext,
-} from '../types.ts';
-import {
-  BaseConnector,
-  type ConnectorConfig,
-  type ConnectorState,
-} from './base.ts';
-import { GoogleDriveConnector } from './google-drive.ts';
-import { GmailConnector } from './gmail.ts';
-import { NotionConnector } from './notion.ts';
-import { GitHubConnector } from './github.ts';
-import { SlackConnector } from './slack.ts';
-import { CalendarConnector } from './calendar.ts';
-import { DropboxConnector } from './dropbox.ts';
-import { AsanaConnector } from './asana.ts';
-import { JiraConnector } from './jira.ts';
-import { LegalJudgementsConnector } from './legal-judgements.ts';
-import { SwissJudgementsConnector } from './swiss-judgements.ts';
-import { BeaImportConnector } from './bea-import.ts';
+  MicrosoftOneDriveConnector,
+  MicrosoftOutlookConnector,
+  MicrosoftSharePointConnector,
+} from "./microsoft-365.ts";
 
 /** Registry entry: one line per active connector. */
 interface ConnectorRegistryEntry {
@@ -43,18 +41,21 @@ interface ConnectorRegistryEntry {
 
 /** Maps service name → constructor. Add new connectors here. */
 export const CONNECTOR_REGISTRY: Record<string, new (cfg: ConnectorConfig) => BaseConnector> = {
-  'google-drive': GoogleDriveConnector,
-  'gmail': GmailConnector,
-  'notion': NotionConnector,
-  'github': GitHubConnector,
-  'slack': SlackConnector,
-  'calendar': CalendarConnector,
-  'dropbox': DropboxConnector,
-  'asana': AsanaConnector,
-  'jira': JiraConnector,
-  'legal-judgements': LegalJudgementsConnector,
-  'swiss-judgements': SwissJudgementsConnector,
-  'bea-import': BeaImportConnector,
+  "google-drive": GoogleDriveConnector,
+  gmail: GmailConnector,
+  notion: NotionConnector,
+  github: GitHubConnector,
+  slack: SlackConnector,
+  calendar: CalendarConnector,
+  dropbox: DropboxConnector,
+  asana: AsanaConnector,
+  jira: JiraConnector,
+  "legal-judgements": LegalJudgementsConnector,
+  "swiss-judgements": SwissJudgementsConnector,
+  "bea-import": BeaImportConnector,
+  "ms365-outlook": MicrosoftOutlookConnector,
+  "ms365-onedrive": MicrosoftOneDriveConnector,
+  "ms365-sharepoint": MicrosoftSharePointConnector,
 };
 
 export const SUPPORTED_CONNECTORS = Object.keys(CONNECTOR_REGISTRY);
@@ -65,7 +66,7 @@ export class ConnectorManager {
   constructor(private readonly baseDir?: string) {}
 
   private _registryPath(): string {
-    return join(this.baseDir ?? homedir(), '.gbrain', 'connectors.json');
+    return join(this.baseDir ?? homedir(), ".gbrain", "connectors.json");
   }
 
   /**
@@ -88,7 +89,9 @@ export class ConnectorManager {
         this.connectors.set(connector.id, connector);
         sources.push(connector);
       } catch (err) {
-        console.warn(`[gbrain] Failed to instantiate ${entry.service}: ${err instanceof Error ? err.message : String(err)}`);
+        console.warn(
+          `[gbrain] Failed to instantiate ${entry.service}: ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
     return sources;
@@ -100,7 +103,9 @@ export class ConnectorManager {
    */
   async add(service: string, config: ConnectorConfig): Promise<BaseConnector> {
     if (!SUPPORTED_CONNECTORS.includes(service)) {
-      throw new Error(`Unsupported connector: ${service}. Supported: ${SUPPORTED_CONNECTORS.join(', ')}`);
+      throw new Error(
+        `Unsupported connector: ${service}. Supported: ${SUPPORTED_CONNECTORS.join(", ")}`
+      );
     }
     const ctor = CONNECTOR_REGISTRY[service];
     const connector = new ctor(config);
@@ -109,10 +114,10 @@ export class ConnectorManager {
     const state: ConnectorState = {
       connector_id: connector.id,
       service,
-      access_token: config.api_key ?? '',
+      access_token: config.api_key ?? "",
       config: config as Record<string, unknown>,
     };
-    const statePath = join(homedir(), '.gbrain', 'connectors', `${service}.json`);
+    const statePath = join(homedir(), ".gbrain", "connectors", `${service}.json`);
     await mkdir(dirname(statePath), { recursive: true });
     await writeFile(statePath, JSON.stringify(state, null, 2));
 
@@ -136,9 +141,9 @@ export class ConnectorManager {
       await this._saveRegistry(entries);
     }
     // Delete state file.
-    const statePath = join(homedir(), '.gbrain', 'connectors', `${service}.json`);
+    const statePath = join(homedir(), ".gbrain", "connectors", `${service}.json`);
     if (existsSync(statePath)) {
-      await import('node:fs/promises').then((fs) => fs.unlink(statePath));
+      await import("node:fs/promises").then((fs) => fs.unlink(statePath));
     }
     this.connectors.delete(service);
   }
@@ -153,7 +158,9 @@ export class ConnectorManager {
   }
 
   /** List all registered connectors with status. */
-  async list(): Promise<Array<{ service: string; enabled: boolean; connected: boolean; hasCredentials: boolean }>> {
+  async list(): Promise<
+    Array<{ service: string; enabled: boolean; connected: boolean; hasCredentials: boolean }>
+  > {
     const entries = await this._loadRegistry();
     return entries.map((e) => ({
       service: e.service,
@@ -169,10 +176,10 @@ export class ConnectorManager {
     if (!connector) throw new Error(`Connector not running: ${service}`);
     await connector.sync();
     // Persist last_sync_at into state file.
-    const statePath = join(this.baseDir ?? homedir(), '.gbrain', 'connectors', `${service}.json`);
+    const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
     if (existsSync(statePath)) {
-      const { readFileSync, writeFileSync } = await import('node:fs');
-      const raw = readFileSync(statePath, 'utf-8');
+      const { readFileSync, writeFileSync } = await import("node:fs");
+      const raw = readFileSync(statePath, "utf-8");
       const state = JSON.parse(raw) as Record<string, unknown>;
       state.last_sync_at = Date.now();
       writeFileSync(statePath, JSON.stringify(state, null, 2));
@@ -188,10 +195,10 @@ export class ConnectorManager {
 
   /** Get last successful sync timestamp from the connector state file. */
   async getLastSync(service: string): Promise<number | null> {
-    const statePath = join(this.baseDir ?? homedir(), '.gbrain', 'connectors', `${service}.json`);
+    const statePath = join(this.baseDir ?? homedir(), ".gbrain", "connectors", `${service}.json`);
     if (!existsSync(statePath)) return null;
     try {
-      const raw = await readFile(statePath, 'utf-8');
+      const raw = await readFile(statePath, "utf-8");
       const state = JSON.parse(raw) as { last_sync_at?: number };
       return state.last_sync_at ?? null;
     } catch {
@@ -205,7 +212,7 @@ export class ConnectorManager {
     const path = this._registryPath();
     if (!existsSync(path)) return [];
     try {
-      const raw = await readFile(path, 'utf-8');
+      const raw = await readFile(path, "utf-8");
       return JSON.parse(raw) as ConnectorRegistryEntry[];
     } catch {
       return [];

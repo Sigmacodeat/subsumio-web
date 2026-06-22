@@ -3,7 +3,12 @@
  */
 
 import { test, expect, describe } from "vitest";
-import { parseDatevCsv, validateDatevImport, type DatevImportResult } from "@/lib/datev-import";
+import {
+  buildDatevImportBundle,
+  parseDatevCsv,
+  validateDatevImport,
+  type DatevImportResult,
+} from "@/lib/datev-import";
 
 const VALID_CSV = `USt-ID;Datum;Belegnr;Buchungstext;Konto;Gegenkonto;Betrag;Steuerkennzeichen;Kostenstelle;Mandant;Stunden;Typ;Berater;Mandant-Nr
 DE123456789;01.06.2026;R-2026-0001;Beratung Vertragsrecht;8400;1776;500,00;19;1300;Acme GmbH;2,50;Honorar;12345;67890
@@ -152,6 +157,44 @@ DE123;01.06.2026;R-001;Storno;8400;1776;-100,00;19;1300;Acme;0,00;Honorar;12345;
     const result = parseDatevCsv(csv);
     const validation = validateDatevImport(result);
     expect(validation.warnings.some((w: string) => w.includes("negative"))).toBe(true);
+  });
+});
+
+describe("buildDatevImportBundle", () => {
+  test("builds import page and one booking page per valid entry", () => {
+    const result = parseDatevCsv(VALID_CSV);
+    const bundle = buildDatevImportBundle(result, {
+      filename: "DATEV Juni 2026.csv",
+      source: "upload",
+      importedAt: "2026-06-22T10:30:00.000Z",
+      importedBy: "anwalt@example.test",
+    });
+
+    expect(bundle.importPage.slug).toBe("legal/datev-imports/20260622103000-datev-juni-2026-csv");
+    expect(bundle.importPage.type).toBe("datev_import");
+    expect(bundle.importPage.frontmatter.valid_count).toBe(3);
+    expect(bundle.importPage.frontmatter.total_amount).toBe(775.5);
+    expect(bundle.importPage.frontmatter.booking_slugs).toHaveLength(3);
+    expect(bundle.bookingPages).toHaveLength(3);
+    expect(bundle.bookingPages[0].slug).toContain("/booking-0001-r-2026-0001");
+    expect(bundle.bookingPages[0].frontmatter.import_slug).toBe(bundle.importPage.slug);
+    expect(bundle.bookingPages[0].frontmatter.betrag).toBe(500);
+  });
+
+  test("keeps parser errors and warnings on import page frontmatter", () => {
+    const csv = `${EXPECTED_HEADER_JOIN()}
+DE123;01.06.2026;R-001;Valid;8400;1776;500,00;19;1300;Acme;2,00;Honorar;12345;67890
+DE123;bad-date;R-002;Invalid;8400;1776;100,00;19;1300;Acme;0,00;Honorar;12345;67890`;
+    const result = parseDatevCsv(csv);
+    const bundle = buildDatevImportBundle(result, {
+      filename: "mixed.csv",
+      importedAt: "2026-06-22T10:30:00.000Z",
+    });
+
+    expect(bundle.bookingPages).toHaveLength(1);
+    expect(bundle.warnings.some((warning) => warning.includes("parsing errors"))).toBe(true);
+    expect(bundle.importPage.frontmatter.error_count).toBe(1);
+    expect(bundle.importPage.frontmatter.errors).toEqual(result.errors);
   });
 });
 

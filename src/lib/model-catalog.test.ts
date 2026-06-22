@@ -15,7 +15,6 @@ import {
   isGdprRelevant,
   getCatalogSummary,
   type DomainName,
-  type ModelFieldSpec,
 } from "@/lib/model-catalog";
 
 // ── DOMAIN_LABELS ─────────────────────────────────────────────────────
@@ -66,7 +65,17 @@ describe("DOMAIN_MODELS", () => {
   });
 
   it("every field has valid type and cardinality", () => {
-    const validTypes = ["string", "text", "number", "boolean", "date", "enum", "json", "ref", "slug"];
+    const validTypes = [
+      "string",
+      "text",
+      "number",
+      "boolean",
+      "date",
+      "enum",
+      "json",
+      "ref",
+      "slug",
+    ];
     const validCardinalities = ["one", "many", "optional"];
     for (const domain of Object.keys(DOMAIN_MODELS) as DomainName[]) {
       for (const field of DOMAIN_MODELS[domain].fields) {

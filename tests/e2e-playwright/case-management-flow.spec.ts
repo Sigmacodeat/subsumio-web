@@ -300,6 +300,114 @@ test.describe("Case Management: Soft-Delete + Tombstone Cascade", () => {
     expect(caseAfterBody.title).toBe("403-Guard Test");
     expect(caseAfterBody.frontmatter.status).toBe("archived");
   });
+
+  test("double-archive returns 409", async ({ page }) => {
+    const caseSlug = `test/e2e-double-archive-${Date.now()}`;
+
+    // Create + archive the case
+    await createCaseViaApi(page, { slug: caseSlug, title: "Double Archive Test" });
+    const csrf = await getCsrfToken(page);
+    await page.context().request.delete(`/api/pages/${encodeURIComponent(caseSlug)}`, {
+      headers: csrf ? { "x-csrf-token": csrf } : {},
+    });
+
+    // Attempt to archive again
+    const secondDelete = await page
+      .context()
+      .request.delete(`/api/pages/${encodeURIComponent(caseSlug)}`, {
+        headers: csrf ? { "x-csrf-token": csrf } : {},
+      });
+    expect(secondDelete.status()).toBe(409);
+
+    // Verify case is still archived (not corrupted)
+    const caseAfter = await page
+      .context()
+      .request.get(`/api/pages/${encodeURIComponent(caseSlug)}`);
+    const caseAfterBody = await caseAfter.json();
+    expect(caseAfterBody.frontmatter.status).toBe("archived");
+  });
+
+  test("archived case detail page has disabled UI elements", async ({ page }) => {
+    const caseSlug = `test/e2e-ui-disabled-${Date.now()}`;
+
+    // Create + archive the case
+    await createCaseViaApi(page, { slug: caseSlug, title: "UI Disabled Test" });
+    const csrf = await getCsrfToken(page);
+    await page.context().request.delete(`/api/pages/${encodeURIComponent(caseSlug)}`, {
+      headers: csrf ? { "x-csrf-token": csrf } : {},
+    });
+
+    // Navigate to case detail page
+    await page.goto(`/dashboard/cases/${encodeURIComponent(caseSlug)}`);
+
+    // Wait for page to load
+    await page.waitForSelector('text="UI Disabled Test"', { timeout: 10000 });
+
+    // Verify archive banner is visible
+    await expect(page.locator("text=/Archiviert|Archived/")).toBeVisible();
+
+    // Verify query input is disabled
+    const queryInput = page.locator('input[aria-label*="Frage"], input[aria-label*="ask"]');
+    if ((await queryInput.count()) > 0) {
+      await expect(queryInput.first()).toBeDisabled();
+    }
+
+    // Verify task input is disabled
+    const taskInput = page.locator('input[aria-label*="Aufgabe"], input[aria-label*="task"]');
+    if ((await taskInput.count()) > 0) {
+      await expect(taskInput.first()).toBeDisabled();
+    }
+
+    // Verify portal toggle button is disabled
+    const portalBtn = page.locator('button:has-text("Portal"), button:has-text("portal")');
+    if ((await portalBtn.count()) > 0) {
+      await expect(portalBtn.first()).toBeDisabled();
+    }
+
+    // Verify status change button is disabled
+    const statusBtn = page.locator('button:has-text("Status"), button:has-text("status")');
+    if ((await statusBtn.count()) > 0) {
+      await expect(statusBtn.first()).toBeDisabled();
+    }
+
+    // Verify upload dropzone is disabled (pointer-events-none)
+    const dropzone = page.locator('[role="button"][aria-label="Dateien hochladen"]');
+    if ((await dropzone.count()) > 0) {
+      await expect(dropzone).toHaveAttribute("aria-disabled", "true");
+    }
+
+    // Verify "Vorhandenes verknüpfen" link button is disabled
+    const linkBtn = page.locator('button:has-text("verknüpfen"), button:has-text("link")');
+    if ((await linkBtn.count()) > 0) {
+      await expect(linkBtn.first()).toBeDisabled();
+    }
+
+    // Navigate to deadlines tab and verify submit button is disabled
+    const deadlinesTab = page
+      .locator('button:has-text("Fristen"), button:has-text("Deadlines")')
+      .first();
+    if ((await deadlinesTab.count()) > 0) {
+      await deadlinesTab.click();
+      await page.waitForTimeout(500);
+      const addDeadlineBtn = page.locator('button:has-text("Hinzufügen"), button:has-text("Add")');
+      if ((await addDeadlineBtn.count()) > 0) {
+        await expect(addDeadlineBtn.first()).toBeDisabled();
+      }
+    }
+
+    // Navigate to evidence tab and verify add button is disabled
+    const evidenceTab = page
+      .locator('button:has-text("Beweise"), button:has-text("Evidence")')
+      .first();
+    if ((await evidenceTab.count()) > 0) {
+      await evidenceTab.click();
+      await page.waitForTimeout(500);
+      const addEvidenceBtn = page.locator('button:has-text("Beleg"), button:has-text("evidence")');
+      if ((await addEvidenceBtn.count()) > 0) {
+        await expect(addEvidenceBtn.first()).toBeDisabled();
+      }
+    }
+  });
 });
 
 test.describe("Case Management: Conflict-Check on PATCH", () => {

@@ -5,7 +5,6 @@ import {
   isBillingConfigured,
   stripePriceId,
   planForPriceId,
-  type BillablePlan,
 } from "./plans";
 
 describe("BILLABLE_PLANS", () => {

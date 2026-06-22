@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { assessGroundedness, type Groundedness } from "./groundedness";
+import { assessGroundedness } from "./groundedness";
 
 describe("assessGroundedness — low (no citations)", () => {
   test("returns 'low' when no citations and no gaps", () => {
@@ -36,10 +36,7 @@ describe("assessGroundedness — low (no citations)", () => {
 
 describe("assessGroundedness — partial (citations + gaps)", () => {
   test("returns 'partial' when citations exist and gaps exist", () => {
-    const result = assessGroundedness(
-      [{ slug: "doc1" }, { slug: "doc2" }],
-      ["gap1"],
-    );
+    const result = assessGroundedness([{ slug: "doc1" }, { slug: "doc2" }], ["gap1"]);
     expect(result.level).toBe("partial");
     expect(result.label).toBe("Teilweise gestützt");
     expect(result.citationCount).toBe(2);
@@ -56,7 +53,7 @@ describe("assessGroundedness — partial (citations + gaps)", () => {
   test("hint mentions citation count and gap count", () => {
     const result = assessGroundedness(
       [{ slug: "a" }, { slug: "b" }, { slug: "c" }],
-      ["gap1", "gap2"],
+      ["gap1", "gap2"]
     );
     expect(result.hint).toContain("3");
     expect(result.hint).toContain("2");
@@ -86,7 +83,7 @@ describe("assessGroundedness — high (citations, no gaps)", () => {
   test("returns 'high' with multiple citations and no gaps", () => {
     const result = assessGroundedness(
       [{ slug: "a" }, { slug: "b" }, { slug: "c" }, { slug: "d" }],
-      [],
+      []
     );
     expect(result.level).toBe("high");
     expect(result.citationCount).toBe(4);

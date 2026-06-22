@@ -155,7 +155,7 @@ export function ContractRedlineViewer({
   const [perspective, setPerspective] = useState<"client" | "counterparty" | "neutral">("client");
   const [copied, setCopied] = useState(false);
   const [activeClause, setActiveClause] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
+  const _abortRef = useRef<AbortController | null>(null);
   const clauseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Keyboard navigation between clauses

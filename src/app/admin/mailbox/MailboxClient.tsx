@@ -287,6 +287,7 @@ export default function MailboxClient({
         showToast("Aktion fehlgeschlagen");
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [folder, search, fetchMessages]
   );
 

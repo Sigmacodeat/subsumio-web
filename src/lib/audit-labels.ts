@@ -25,6 +25,7 @@ export type AuditAction =
   | "invoice.send"
   | "invoice.remind"
   | "document.upload"
+  | "document.download"
   | "document.delete"
   | "deadline.create"
   | "deadline.update"
@@ -95,6 +96,7 @@ const ACTION_LABELS: Record<string, string> = {
   "invoice.send": "Rechnung versendet",
   "invoice.remind": "Zahlungserinnerung",
   "document.upload": "Dokument hochgeladen",
+  "document.download": "Dokument heruntergeladen",
   "document.delete": "Dokument gelöscht",
   "deadline.create": "Frist erstellt",
   "deadline.update": "Frist aktualisiert",

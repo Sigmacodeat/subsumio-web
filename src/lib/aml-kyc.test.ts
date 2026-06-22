@@ -13,7 +13,7 @@ import {
   type RiskFactor,
 } from "@/lib/aml-kyc";
 
-function createTestProfile(overrides: Partial<KYCCustomerProfile> = {}): KYCCustomerProfile {
+function createTestProfile(_overrides: Partial<KYCCustomerProfile> = {}): KYCCustomerProfile {
   return createKYCProfile({
     case_slug: "legal/cases/123",
     brain_id: "brain-1",
@@ -48,7 +48,12 @@ describe("AML/KYC — Factory", () => {
 describe("AML/KYC — Risk Scoring", () => {
   it("calculates risk score from factors", () => {
     const factors: RiskFactor[] = [
-      { category: "high_risk_country", description: "Customer from high-risk country", weight: 30, score: 100 },
+      {
+        category: "high_risk_country",
+        description: "Customer from high-risk country",
+        weight: 30,
+        score: 100,
+      },
       { category: "new_customer", description: "New customer", weight: 5, score: 100 },
     ];
     const score = calculateRiskScore(factors);
@@ -87,13 +92,15 @@ describe("AML/KYC — Validation", () => {
   it("validates a correct profile", () => {
     const profile = createTestProfile();
     profile.date_of_birth = "1990-01-01";
-    profile.identity_documents = [{
-      type: "passport",
-      number: "P12345",
-      issuing_country: "AT",
-      issued_at: "2020-01-01",
-      verified: true,
-    }];
+    profile.identity_documents = [
+      {
+        type: "passport",
+        number: "P12345",
+        issuing_country: "AT",
+        issued_at: "2020-01-01",
+        verified: true,
+      },
+    ];
     const result = validateKYCProfile(profile);
     expect(result.valid).toBe(true);
   });

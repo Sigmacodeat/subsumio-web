@@ -1,16 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import {
-  History,
-  Loader2,
-  AlertTriangle,
-  Search,
-  FileText,
-  User,
-  Clock,
-  ChevronRight,
-} from "lucide-react";
+import { useState, useCallback } from "react";
+import { History, Loader2, AlertTriangle, Search, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

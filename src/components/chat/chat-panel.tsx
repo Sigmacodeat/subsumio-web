@@ -10,14 +10,13 @@ import {
   useImperativeHandle,
 } from "react";
 import { Reply, X, ArrowDown } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useLang } from "@/lib/use-lang";
 import { buildSafePrompt } from "@/lib/prompt-sanitizer";
 import { buildPromptContext, processStreamingChunk } from "@/components/chat/system-prompt";
-import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
+import { type QueryMode } from "@/lib/matter-context-types";
 import type { BrainPage } from "@/lib/types";
 import { caseFrontmatter } from "@/lib/legal-types";
 import {
@@ -30,7 +29,6 @@ import {
   type Jurisdiction,
   type ThinkMode,
   type ToolCall,
-  type ToolResult,
   type ToolType,
   DESTRUCTIVE_TOOLS,
 } from "@/components/chat/chat-types";
@@ -44,7 +42,6 @@ import {
   listSessions,
   loadMessages,
   saveMessage,
-  clearAllSessions,
   pinSession,
   unpinSession,
   setSessionTags,
@@ -358,7 +355,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 ) {
   const { t, lang } = useLang();
   const confirm = useConfirm();
-  const router = useRouter();
 
   const resolvedFeatures = useMemo(() => ({ ...DEFAULT_FEATURES, ...features }), [features]);
 
@@ -525,7 +521,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         msgs[0]?.role === "user" ? autoTitleFromQuery(msgs[0].content) : (title ?? t("chat.title")),
     });
     refreshSessions();
-  }, [activeSessionId, messages.length, persistHistory, refreshSessions, title, t]);
+  }, [activeSessionId, persistHistory, refreshSessions, title, t]);
 
   useEffect(() => {
     if (messages.length > 0 && persistHistory) {
@@ -711,6 +707,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       selectedCaseSlug,
       t,
       isStreaming,
+      setMessages,
     ]
   );
 
@@ -797,7 +794,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
       }
     },
-    [persistHistory, activeSessionId]
+    [persistHistory, activeSessionId, setMessages]
   );
 
   const handleToolCancel = useCallback(
@@ -870,7 +867,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
       }
     },
-    [persistHistory, activeSessionId]
+    [persistHistory, activeSessionId, setMessages]
   );
 
   // ── Retry failed tool calls ──
@@ -933,7 +930,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }
       }
     },
-    [persistHistory, activeSessionId]
+    [persistHistory, activeSessionId, setMessages]
   );
 
   // Clear chat
@@ -977,6 +974,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     refreshSessions,
     selectedCaseSlug,
     isStreaming,
+    setMessages,
   ]);
 
   // New session
@@ -1000,7 +998,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     setSessionTokens(0);
     setError(null);
     refreshSessions();
-  }, [t, context, refreshSessions, selectedCaseSlug, isStreaming]);
+  }, [t, context, refreshSessions, selectedCaseSlug, isStreaming, setMessages]);
 
   // Select session
   const handleSelectSession = useCallback(
@@ -1013,7 +1011,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       setSessionTokens(sanitizedMsgs.reduce((sum, m) => sum + (m.tokensUsed ?? 0), 0));
       setError(null);
     },
-    [isStreaming]
+    [isStreaming, setMessages]
   );
 
   // Delete session
@@ -1055,6 +1053,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       isStreaming,
       context,
       selectedCaseSlug,
+      setMessages,
     ]
   );
 
@@ -1228,6 +1227,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       queryMode,
       t,
       isStreaming,
+      setMessages,
     ]
   );
 
@@ -1261,7 +1261,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       });
       handleSend(editedContent, editedAttachments);
     },
-    [handleSend, isStreaming, confirm]
+    [handleSend, isStreaming, confirm, setMessages, t]
   );
 
   // Quote-reply to a message

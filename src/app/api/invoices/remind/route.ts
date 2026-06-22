@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import nodemailer from "nodemailer";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -34,12 +34,13 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
+      const brain = createServerBrainClient(ctx.headers);
       const settings = await loadKanzleiSettings();
       if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
         return apiError("smtp_not_configured", "SMTP nicht konfiguriert", 400);
       }
 
-      const page = await api.brain.getPage(body.invoiceSlug);
+      const page = await brain.getPage(body.invoiceSlug);
       const fm = page.frontmatter as Record<string, unknown>;
       const status = String(fm.status ?? "draft");
       if (status !== "sent" && status !== "overdue") {
@@ -57,7 +58,7 @@ export const POST = createHandler(
       let recipient: string | undefined;
       if (clientSlug) {
         try {
-          const contactPage = await api.brain.getPage(clientSlug);
+          const contactPage = await brain.getPage(clientSlug);
           const cfm = contactPage.frontmatter as Record<string, unknown>;
           recipient = String(cfm.email ?? "");
         } catch {
@@ -100,7 +101,7 @@ export const POST = createHandler(
 
       const sentAt = new Date().toISOString();
       const prevSent = Array.isArray(fm.reminder_sent_at) ? fm.reminder_sent_at : [];
-      await api.brain.updatePage({
+      await brain.updatePage({
         slug: body.invoiceSlug,
         frontmatter: {
           ...fm,

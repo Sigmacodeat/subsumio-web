@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import { parseEml, type ParsedEmail } from "./email-parser";
+import { parseEml } from "./email-parser";
 
 function makeEml(opts: {
   from?: string;
@@ -292,9 +292,7 @@ describe("parseEml — multipart edge cases", () => {
     const eml = makeEml({
       subject: "Test",
       boundary: "boundary456",
-      parts: [
-        { contentType: "text/html", body: "<p>HTML only content</p>" },
-      ],
+      parts: [{ contentType: "text/html", body: "<p>HTML only content</p>" }],
     });
     const parsed = parseEml(eml);
     // Should fall back to text/html since it starts with text/ and no text/plain was found

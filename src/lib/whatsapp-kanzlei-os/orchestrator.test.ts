@@ -194,4 +194,95 @@ describe("orchestrateWhatsAppMessage", () => {
       expect(result.reply).toBe("Gespeichert: Zeiteintrag.");
     });
   });
+
+  // ─── G3: Interactive Buttons ───────────────────────────────────────────────
+
+  describe("G3: Interactive confirmation buttons", () => {
+    it("returns interactive buttons when reply contains 'Antworte mit JA'", async () => {
+      const handleText = vi.fn(
+        async () =>
+          "Erkannt: Termin anlegen\nDatum: 2026-07-15\nUhrzeit: 14:00\nAntworte mit JA zum Bestätigen."
+      );
+      const message: WhatsAppTextMessage = {
+        id: "wamid.BUTTON1",
+        from: "+491701234567",
+        type: "text",
+        text: "termin 15.07.2026 14:00 Verhandlung",
+      };
+
+      const result = await orchestrateWhatsAppMessage(message, identity("lawyer"), {
+        fetchImpl: okFetch() as unknown as typeof fetch,
+        handleText,
+      });
+
+      expect(result.interactive).toBeDefined();
+      expect(result.interactive?.type).toBe("button");
+      expect(result.interactive?.action?.buttons).toHaveLength(2);
+      expect(result.interactive?.action?.buttons?.[0]?.reply?.id).toBe("confirm_yes");
+      expect(result.interactive?.action?.buttons?.[1]?.reply?.id).toBe("confirm_no");
+    });
+
+    it("does NOT return interactive when reply has no confirmation pattern", async () => {
+      const handleText = vi.fn(async () => "Gespeichert: Zeiteintrag.");
+      const message: WhatsAppTextMessage = {
+        id: "wamid.BUTTON2",
+        from: "+491701234567",
+        type: "text",
+        text: "zeit 0.5",
+      };
+
+      const result = await orchestrateWhatsAppMessage(message, identity("lawyer"), {
+        fetchImpl: okFetch() as unknown as typeof fetch,
+        handleText,
+      });
+
+      expect(result.interactive).toBeUndefined();
+      expect(result.reply).toBe("Gespeichert: Zeiteintrag.");
+    });
+
+    it("maps button_reply confirm_yes to 'ja' for downstream processing", async () => {
+      const handleText = vi.fn(async () => "Bestätigt und gespeichert.");
+      const message = {
+        id: "wamid.BUTTON3",
+        from: "+491701234567",
+        type: "button_reply" as const,
+        buttonId: "confirm_yes",
+        buttonText: "Ja, speichern",
+      };
+
+      const result = await orchestrateWhatsAppMessage(
+        message as unknown as WhatsAppTextMessage,
+        identity("lawyer"),
+        {
+          fetchImpl: okFetch() as unknown as typeof fetch,
+          handleText,
+        }
+      );
+
+      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "ja" }));
+      expect(result.reply).toBe("Bestätigt und gespeichert.");
+    });
+
+    it("maps button_reply confirm_no to 'nein' for downstream processing", async () => {
+      const handleText = vi.fn(async () => "Abgebrochen.");
+      const message = {
+        id: "wamid.BUTTON4",
+        from: "+491701234567",
+        type: "button_reply" as const,
+        buttonId: "confirm_no",
+        buttonText: "Nein, verwerfen",
+      };
+
+      const _result = await orchestrateWhatsAppMessage(
+        message as unknown as WhatsAppTextMessage,
+        identity("lawyer"),
+        {
+          fetchImpl: okFetch() as unknown as typeof fetch,
+          handleText,
+        }
+      );
+
+      expect(handleText).toHaveBeenCalledWith(expect.objectContaining({ text: "nein" }));
+    });
+  });
 });

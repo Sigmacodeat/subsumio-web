@@ -2,10 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   DEFAULT_FIRM_POLICY,
   type ExperienceProfile,
-  type ExperienceLevel,
-  type VisibilityPolicy,
   type FirmExperiencePolicy,
-  type WhoKnowsQuery,
   levelRank,
   meetsMinLevel,
   levelLabel,
@@ -41,12 +38,40 @@ const PROFILE_LAWYER_1 = makeProfile({
   is_lawyer: true,
   is_external: false,
   practice_areas: [
-    { area: "litigation", label: "Litigation", level: "expert", years: 15, matter_count: 50, verified: true },
-    { area: "contract", label: "Vertragsrecht", level: "advanced", years: 10, matter_count: 30, verified: true },
+    {
+      area: "litigation",
+      label: "Litigation",
+      level: "expert",
+      years: 15,
+      matter_count: 50,
+      verified: true,
+    },
+    {
+      area: "contract",
+      label: "Vertragsrecht",
+      level: "advanced",
+      years: 10,
+      matter_count: 30,
+      verified: true,
+    },
   ],
   matter_history: [
-    { case_slug: "cases/2026-001", role: "lead", practice_area: "litigation", joined_at: "2026-01-01T00:00:00Z", left_at: null, active: true },
-    { case_slug: "cases/2026-002", role: "lead", practice_area: "contract", joined_at: "2026-02-01T00:00:00Z", left_at: null, active: true },
+    {
+      case_slug: "cases/2026-001",
+      role: "lead",
+      practice_area: "litigation",
+      joined_at: "2026-01-01T00:00:00Z",
+      left_at: null,
+      active: true,
+    },
+    {
+      case_slug: "cases/2026-002",
+      role: "lead",
+      practice_area: "contract",
+      joined_at: "2026-02-01T00:00:00Z",
+      left_at: null,
+      active: true,
+    },
   ],
   endorsements: [
     { skill_id: "legal-subsumption", endorsed_by: "user-3", endorsed_at: NOW },
@@ -64,14 +89,26 @@ const PROFILE_LAWYER_2 = makeProfile({
   is_lawyer: true,
   is_external: false,
   practice_areas: [
-    { area: "tax", label: "Steuerrecht", level: "intermediate", years: 5, matter_count: 15, verified: false },
+    {
+      area: "tax",
+      label: "Steuerrecht",
+      level: "intermediate",
+      years: 5,
+      matter_count: 15,
+      verified: false,
+    },
   ],
   matter_history: [
-    { case_slug: "cases/2026-003", role: "associate", practice_area: "tax", joined_at: "2026-03-01T00:00:00Z", left_at: null, active: true },
+    {
+      case_slug: "cases/2026-003",
+      role: "associate",
+      practice_area: "tax",
+      joined_at: "2026-03-01T00:00:00Z",
+      left_at: null,
+      active: true,
+    },
   ],
-  endorsements: [
-    { skill_id: "steuer-subsumption", endorsed_by: "user-1", endorsed_at: NOW },
-  ],
+  endorsements: [{ skill_id: "steuer-subsumption", endorsed_by: "user-1", endorsed_at: NOW }],
   languages: ["de"],
   qualifications: ["Rechtsanwalt"],
   visibility: "all_members",
@@ -84,7 +121,14 @@ const PROFILE_EXTERNAL = makeProfile({
   is_lawyer: true,
   is_external: true,
   practice_areas: [
-    { area: "compliance", label: "Compliance", level: "expert", years: 20, matter_count: 100, verified: true },
+    {
+      area: "compliance",
+      label: "Compliance",
+      level: "expert",
+      years: 20,
+      matter_count: 100,
+      verified: true,
+    },
   ],
   matter_history: [],
   endorsements: [],
@@ -100,7 +144,14 @@ const PROFILE_HIDDEN = makeProfile({
   is_lawyer: true,
   is_external: false,
   practice_areas: [
-    { area: "litigation", label: "Litigation", level: "advanced", years: 8, matter_count: 20, verified: true },
+    {
+      area: "litigation",
+      label: "Litigation",
+      level: "advanced",
+      years: 8,
+      matter_count: 20,
+      verified: true,
+    },
   ],
   matter_history: [],
   endorsements: [],
@@ -116,7 +167,14 @@ const PROFILE_MANAGEMENT_ONLY = makeProfile({
   is_lawyer: true,
   is_external: false,
   practice_areas: [
-    { area: "corporate", label: "Corporate", level: "expert", years: 25, matter_count: 80, verified: true },
+    {
+      area: "corporate",
+      label: "Corporate",
+      level: "expert",
+      years: 25,
+      matter_count: 80,
+      verified: true,
+    },
   ],
   matter_history: [],
   endorsements: [],
@@ -125,7 +183,13 @@ const PROFILE_MANAGEMENT_ONLY = makeProfile({
   visibility: "management_only",
 });
 
-const ALL_PROFILES = [PROFILE_LAWYER_1, PROFILE_LAWYER_2, PROFILE_EXTERNAL, PROFILE_HIDDEN, PROFILE_MANAGEMENT_ONLY];
+const ALL_PROFILES = [
+  PROFILE_LAWYER_1,
+  PROFILE_LAWYER_2,
+  PROFILE_EXTERNAL,
+  PROFILE_HIDDEN,
+  PROFILE_MANAGEMENT_ONLY,
+];
 
 // ── Tests ─────────────────────────────────────────────────────────────
 
@@ -234,7 +298,7 @@ describe("Experience Layer — Who Knows Query", () => {
       { practice_area: "litigation", min_level: "expert" },
       "org-1",
       true,
-      false,
+      false
     );
     expect(results.every((r) => r.practice_area?.level === "expert")).toBe(true);
   });
@@ -250,7 +314,7 @@ describe("Experience Layer — Who Knows Query", () => {
       { practice_area: "compliance", include_external: true },
       "org-1",
       true,
-      false,
+      false
     );
     expect(results).toHaveLength(1);
     expect(results[0].user_id).toBe("user-3");
@@ -267,7 +331,7 @@ describe("Experience Layer — Who Knows Query", () => {
       { language: "fr", include_external: true },
       "org-1",
       true,
-      false,
+      false
     );
     expect(results).toHaveLength(1);
     expect(results[0].user_id).toBe("user-3");
@@ -292,7 +356,9 @@ describe("Experience Layer — Who Knows Query", () => {
   it("sorts by matter count in area (descending)", () => {
     const results = whoKnows(ALL_PROFILES, { practice_area: "litigation" }, "org-1", true, false);
     for (let i = 1; i < results.length; i++) {
-      expect(results[i - 1].matter_count_in_area).toBeGreaterThanOrEqual(results[i].matter_count_in_area);
+      expect(results[i - 1].matter_count_in_area).toBeGreaterThanOrEqual(
+        results[i].matter_count_in_area
+      );
     }
   });
 
@@ -354,14 +420,18 @@ describe("Experience Layer — Policy Validation", () => {
     const policy: FirmExperiencePolicy = { ...DEFAULT_FIRM_POLICY, allow_rankings: true };
     const result = validatePolicy(policy);
     expect(result.valid).toBe(false);
-    expect(result.violations).toContain("allow_rankings must be false — rankings are prohibited by policy");
+    expect(result.violations).toContain(
+      "allow_rankings must be false — rankings are prohibited by policy"
+    );
   });
 
   it("rejects policy with allow_performance_scores = true", () => {
     const policy: FirmExperiencePolicy = { ...DEFAULT_FIRM_POLICY, allow_performance_scores: true };
     const result = validatePolicy(policy);
     expect(result.valid).toBe(false);
-    expect(result.violations).toContain("allow_performance_scores must be false — performance scores are prohibited by policy");
+    expect(result.violations).toContain(
+      "allow_performance_scores must be false — performance scores are prohibited by policy"
+    );
   });
 });
 

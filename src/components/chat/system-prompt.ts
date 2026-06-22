@@ -37,7 +37,7 @@ export async function buildPromptContext(
     selectedCaseSlug,
     cases,
     contextType,
-    contextCaseSlug,
+    contextCaseSlug: _contextCaseSlug,
     pageSlug,
     attachments,
     replyTo,

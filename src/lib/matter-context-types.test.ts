@@ -5,7 +5,6 @@ import {
   type MatterParty,
   type MatterDeadlineSummary,
   type MatterDocumentSummary,
-  type MatterActivityEntry,
   type MatterFactEntry,
   type MatterCommunicationEntry,
   type MatterPermissionSummary,

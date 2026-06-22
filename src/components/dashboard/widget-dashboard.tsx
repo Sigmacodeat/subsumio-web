@@ -75,6 +75,7 @@ function useKanzleiCockpitData() {
   const intakeQuery = usePages({ type: "intake_request", limit: 20 });
   const beaQuery = usePages({ type: "bea_draft", limit: 20 });
   const reviewQuery = usePages({ type: "review_item", limit: 20 });
+  const docsQuery = usePages({ type: "document", limit: 100 });
 
   const cases = Array.isArray(casesQuery.data) ? (casesQuery.data as DashboardPageLike[]) : [];
   const deadlines = Array.isArray(deadlinesQuery.data)
@@ -86,6 +87,7 @@ function useKanzleiCockpitData() {
   const intake = Array.isArray(intakeQuery.data) ? (intakeQuery.data as DashboardPageLike[]) : [];
   const bea = Array.isArray(beaQuery.data) ? (beaQuery.data as DashboardPageLike[]) : [];
   const reviews = Array.isArray(reviewQuery.data) ? (reviewQuery.data as DashboardPageLike[]) : [];
+  const docs = Array.isArray(docsQuery.data) ? (docsQuery.data as DashboardPageLike[]) : [];
   const recent = (recentQuery.data ?? []) as RecentQuery[];
   const stats = (statsQuery.data ?? null) as BrainStats | null;
 
@@ -108,6 +110,25 @@ function useKanzleiCockpitData() {
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
   const criticalDeadlines = deadlineItems.filter((item) => item.overdue || item.critical);
+  const unassignedDocs = docs.filter((d) => {
+    const fm = d.frontmatter ?? {};
+    return !fm.case_slug && fm.assignment_status !== "assigned";
+  });
+  const reviewGaps = docs.filter((d) => {
+    const fm = d.frontmatter ?? {};
+    const es = fm.extraction_status;
+    const as = fm.analysis_status;
+    return (
+      es === "ocr_needed" ||
+      es === "ocr_failed" ||
+      es === "uploaded" ||
+      es === "processing" ||
+      es === "ocr_processing" ||
+      fm.extraction_unverified === true ||
+      as === "failed" ||
+      as === "pending"
+    );
+  });
   const inboxItems = [...intake, ...bea].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
@@ -130,6 +151,8 @@ function useKanzleiCockpitData() {
     activeCases,
     deadlines: deadlineItems,
     criticalDeadlines,
+    unassignedDocs,
+    reviewGaps,
     inboxItems,
     openInvoices,
     pendingReviews,
@@ -144,10 +167,11 @@ function useKanzleiCockpitData() {
   };
 }
 
-function EmptyLine({ text }: { text: string }) {
+function EmptyLine({ text, icon: Icon = Inbox }: { text: string; icon?: typeof Inbox }) {
   return (
-    <div className="rounded-md border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-5 text-center text-sm text-[color:var(--ds-text-muted)]">
-      {text}
+    <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-6 text-center">
+      <Icon size={20} className="text-[color:var(--ds-text-subtle)]" />
+      <p className="text-sm text-[color:var(--ds-text-muted)]">{text}</p>
     </div>
   );
 }
@@ -170,7 +194,9 @@ function QueuePanel({
       <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <Icon size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-          <h2 className="truncate text-sm font-semibold text-[color:var(--ds-text)]">{title}</h2>
+          <h2 className="truncate text-[15px] font-semibold text-[color:var(--ds-text)]">
+            {title}
+          </h2>
         </div>
         <Link
           href={href}
@@ -208,15 +234,17 @@ function QueueRow({
       className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
     >
       <div
-        className={`flex h-8 w-8 items-center justify-center rounded-md border ${
+        className={`flex h-9 w-9 items-center justify-center rounded-md border ${
           urgent
-            ? "border-amber-500/30 bg-amber-500/10"
+            ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
         }`}
       >
         <Icon
           size={15}
-          className={urgent ? "text-amber-600" : "text-[color:var(--ds-text-muted)]"}
+          className={
+            urgent ? "text-[color:var(--ds-warning-text)]" : "text-[color:var(--ds-text-muted)]"
+          }
         />
       </div>
       <div className="min-w-0">
@@ -285,7 +313,7 @@ function TodayList({
   inboxCount: number;
   reviewCount: number;
 }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const tasks = [
     {
       href: "/dashboard/deadlines",
@@ -384,7 +412,7 @@ function InboxList({ items }: { items: DashboardPageLike[] }) {
 }
 
 function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   return (
     <QueuePanel
       icon={Briefcase}
@@ -418,7 +446,7 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
 }
 
 function QuickActions() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const actions = [
     {
       href: "/dashboard/cases/new",
@@ -524,15 +552,15 @@ function MetricRail({
                 size={15}
                 className={
                   item.tone === "danger"
-                    ? "text-red-600"
+                    ? "text-[color:var(--ds-danger-text)]"
                     : item.tone === "warning"
-                      ? "text-amber-600"
+                      ? "text-[color:var(--ds-warning-text)]"
                       : "group-hover:brand-text text-[color:var(--ds-text-subtle)]"
                 }
               />
             </div>
             <div className="mt-2 flex items-end gap-2">
-              <span className="text-2xl leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
+              <span className="text-[2rem] leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
                 {loading ? "—" : item.value}
               </span>
               <span className="pb-0.5 text-xs text-[color:var(--ds-text-muted)]">
@@ -595,12 +623,17 @@ export function WidgetDashboard() {
   return (
     <div className="space-y-6">
       {data.degraded && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+        <div className="rounded-xl border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-700" />
+            <AlertTriangle
+              size={17}
+              className="mt-0.5 shrink-0 text-[color:var(--ds-warning-text)]"
+            />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-amber-800">{t("cockpit.degraded_title")}</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-amber-800/80">
+              <p className="text-sm font-semibold text-[color:var(--ds-warning-text)]">
+                {t("cockpit.degraded_title")}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
                 {t("cockpit.degraded_desc")}
               </p>
             </div>
@@ -619,6 +652,64 @@ export function WidgetDashboard() {
         />
         <DeadlineList items={data.deadlines} />
       </div>
+
+      {/* Review-Lücken & Unzugeordnete Dokumente — höher priorisiert als generische Metriken */}
+      {(data.unassignedDocs.length > 0 || data.reviewGaps.length > 0) && (
+        <QueuePanel
+          icon={AlertTriangle}
+          title={t("cockpit.gaps_title")}
+          href="/dashboard/vault"
+          action={t("cockpit.open")}
+        >
+          <div className="space-y-2 p-4">
+            {data.unassignedDocs.length > 0 && (
+              <Link
+                href="/dashboard/vault"
+                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2.5 transition-colors hover:opacity-80"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <FileText size={15} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {t("cockpit.gaps_unassigned")}
+                    </p>
+                    <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cockpit.gaps_unassigned_desc")}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="warning" className="shrink-0">
+                  {data.unassignedDocs.length}
+                </Badge>
+              </Link>
+            )}
+            {data.reviewGaps.length > 0 && (
+              <Link
+                href="/dashboard/review-queue"
+                className="flex items-center justify-between rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-3 py-2.5 transition-colors hover:opacity-80"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <AlertTriangle
+                    size={15}
+                    className="shrink-0 text-[color:var(--ds-danger-text)]"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {t("cockpit.gaps_review")}
+                    </p>
+                    <p className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cockpit.gaps_review_desc")}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="danger" className="shrink-0">
+                  {data.reviewGaps.length}
+                </Badge>
+              </Link>
+            )}
+          </div>
+        </QueuePanel>
+      )}
 
       <QuickActions />
 

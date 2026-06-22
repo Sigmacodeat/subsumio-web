@@ -23,7 +23,7 @@ vi.mock("./index", () => ({
 }));
 
 import { iManageConnector } from "./imanager";
-import { dmsAuthHeaders, isDmsConfigured } from "./index";
+import { isDmsConfigured } from "./index";
 
 describe("iManageConnector", () => {
   beforeEach(() => {

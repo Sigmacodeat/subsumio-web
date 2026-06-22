@@ -10,9 +10,9 @@
  * - Enforcement-Punkte: API-Routes, AI-Prompt-Erstellung, Export
  */
 
-import type { RouteAction, } from "@/lib/permissions";
+import type { RouteAction } from "@/lib/permissions";
 import type { ModelEntry, ModelProvider } from "@/lib/model-config";
-import { AI_MODELS, getModelById } from "@/lib/model-config";
+import { AI_MODELS } from "@/lib/model-config";
 import type { PermissionInfo } from "@/lib/legal-types";
 import type { PrivilegeLevel, ConfidentialityLevel } from "@/lib/privilege-labels";
 
@@ -97,7 +97,13 @@ export interface AiProviderPolicyResult {
 }
 
 const EU_PROVIDERS: ModelProvider[] = ["mistral"];
-const GDPR_COMPLIANT_PROVIDERS: ModelProvider[] = ["anthropic", "openai", "google", "mistral", "zero-entropy"];
+const GDPR_COMPLIANT_PROVIDERS: ModelProvider[] = [
+  "anthropic",
+  "openai",
+  "google",
+  "mistral",
+  "zero-entropy",
+];
 
 export function enforceAiProviderPolicy(ctx: AiProviderPolicyContext): AiProviderPolicyResult {
   const blockedProviders = new Set<ModelProvider>();
@@ -105,7 +111,13 @@ export function enforceAiProviderPolicy(ctx: AiProviderPolicyContext): AiProvide
 
   // Data residency enforcement
   if (ctx.data_residency === "eu_only") {
-    for (const provider of ["anthropic", "openai", "google", "meta", "zero-entropy"] as ModelProvider[]) {
+    for (const provider of [
+      "anthropic",
+      "openai",
+      "google",
+      "meta",
+      "zero-entropy",
+    ] as ModelProvider[]) {
       if (!EU_PROVIDERS.includes(provider)) {
         blockedProviders.add(provider);
       }
@@ -124,7 +136,14 @@ export function enforceAiProviderPolicy(ctx: AiProviderPolicyContext): AiProvide
   // unless data residency is ensured
   if (ctx.privilege === "attorney_client" && ctx.data_residency === "any") {
     reasons.push("attorney_client privilege requires GDPR-compliant data residency");
-    for (const provider of ["anthropic", "openai", "google", "mistral", "meta", "zero-entropy"] as ModelProvider[]) {
+    for (const provider of [
+      "anthropic",
+      "openai",
+      "google",
+      "mistral",
+      "meta",
+      "zero-entropy",
+    ] as ModelProvider[]) {
       if (!GDPR_COMPLIANT_PROVIDERS.includes(provider)) {
         blockedProviders.add(provider);
       }
@@ -136,7 +155,13 @@ export function enforceAiProviderPolicy(ctx: AiProviderPolicyContext): AiProvide
     if (ctx.data_residency !== "eu_only") {
       reasons.push("restricted confidentiality requires EU-only data residency");
     }
-    for (const provider of ["anthropic", "openai", "google", "meta", "zero-entropy"] as ModelProvider[]) {
+    for (const provider of [
+      "anthropic",
+      "openai",
+      "google",
+      "meta",
+      "zero-entropy",
+    ] as ModelProvider[]) {
       if (!EU_PROVIDERS.includes(provider)) {
         blockedProviders.add(provider);
       }
@@ -146,7 +171,14 @@ export function enforceAiProviderPolicy(ctx: AiProviderPolicyContext): AiProvide
   // PII with no data residency → block all non-GDPR
   if (ctx.includes_pii && ctx.data_residency === "any") {
     reasons.push("PII data requires GDPR-compliant provider");
-    for (const provider of ["anthropic", "openai", "google", "mistral", "meta", "zero-entropy"] as ModelProvider[]) {
+    for (const provider of [
+      "anthropic",
+      "openai",
+      "google",
+      "mistral",
+      "meta",
+      "zero-entropy",
+    ] as ModelProvider[]) {
       if (!GDPR_COMPLIANT_PROVIDERS.includes(provider)) {
         blockedProviders.add(provider);
       }
@@ -203,7 +235,10 @@ export function enforceAll(ctx: EnforcementContext): EnforcementResult {
 
   // AI provider policy check (for AI-related actions)
   if (ctx.privilege && ctx.confidentiality) {
-    const isAiAction = ctx.action.startsWith("query.") || ctx.action.startsWith("legal.") || ctx.action === "brain.write";
+    const isAiAction =
+      ctx.action.startsWith("query.") ||
+      ctx.action.startsWith("legal.") ||
+      ctx.action === "brain.write";
     if (isAiAction) {
       aiPolicy = enforceAiProviderPolicy({
         privilege: ctx.privilege,
@@ -230,7 +265,7 @@ export function enforceAll(ctx: EnforcementContext): EnforcementResult {
 
 export function selectModelForContext(
   policy: AiProviderPolicyResult,
-  preferredModelId?: string,
+  preferredModelId?: string
 ): ModelEntry | null {
   if (policy.allowed_models.length === 0) return null;
 
@@ -257,7 +292,7 @@ export interface EthicsAuditEntry {
 
 export function createEthicsAuditEntry(
   ctx: EnforcementContext,
-  result: EnforcementResult,
+  result: EnforcementResult
 ): EthicsAuditEntry {
   return {
     timestamp: new Date().toISOString(),
@@ -266,6 +301,11 @@ export function createEthicsAuditEntry(
     case_slug: ctx.case_slug,
     result: result.allowed ? "allowed" : "denied",
     reason: result.reasons.join("; ") || "allowed",
-    enforcement_type: result.ethical_wall && result.ai_policy ? "combined" : result.ethical_wall ? "ethical_wall" : "ai_provider_policy",
+    enforcement_type:
+      result.ethical_wall && result.ai_policy
+        ? "combined"
+        : result.ethical_wall
+          ? "ethical_wall"
+          : "ai_provider_policy",
   };
 }

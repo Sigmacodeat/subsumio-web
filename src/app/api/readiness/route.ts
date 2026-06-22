@@ -35,6 +35,15 @@ export async function GET(_req: NextRequest) {
     const headers: Record<string, string> = {};
     if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 
+    // Use first real user's brainId as tenant header (Hetzner has REQUIRE_TENANT=true)
+    try {
+      const { getStore } = await import("@/lib/auth/store");
+      const users = await getStore().list();
+      if (Array.isArray(users) && users.length > 0 && users[0].brainId) {
+        headers["x-subsumio-source"] = users[0].brainId;
+      }
+    } catch {}
+
     const res = await fetch(`${ENGINE_URL}/api/stats`, {
       headers,
       signal: AbortSignal.timeout(4_000),
@@ -96,14 +105,8 @@ export async function GET(_req: NextRequest) {
     ? { status: "ok" }
     : { status: "degraded", detail: "RESEND_API_KEY not set" };
 
-  // 5. OCR — degraded (not down) when disabled
-  checks.ocr =
-    process.env.GBRAIN_EMBEDDING_IMAGE_OCR === "true"
-      ? { status: "ok" }
-      : {
-          status: "degraded",
-          detail: "GBRAIN_EMBEDDING_IMAGE_OCR not set — scanned docs won't be text-extracted",
-        };
+  // 5. OCR — enabled by default (agency quality)
+  checks.ocr = { status: "ok" };
 
   // 6. SMTP — degraded (not down) when not configured (in-app notification fallback active)
   try {

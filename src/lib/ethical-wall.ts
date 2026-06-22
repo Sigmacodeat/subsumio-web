@@ -15,7 +15,6 @@
  *   - none: alle Provider erlaubt
  */
 
-import type { RouteAction } from "@/lib/permissions";
 import type { ModelProvider, ModelEntry } from "@/lib/model-config";
 import type { PermissionInfo } from "@/lib/legal-types";
 import type { PrivilegeLevel, ConfidentialityLevel } from "@/lib/privilege-labels";

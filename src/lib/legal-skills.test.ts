@@ -9,8 +9,21 @@ import {
   type SkillStep,
 } from "@/lib/legal-skills";
 
-function makeStep(id: string, next: string[] = [], inputs: string[] = [], outputs: string[] = []): SkillStep {
-  return { id, name: `Step ${id}`, description: "", action: "test", inputs, outputs, next_steps: next };
+function makeStep(
+  id: string,
+  next: string[] = [],
+  inputs: string[] = [],
+  outputs: string[] = []
+): SkillStep {
+  return {
+    id,
+    name: `Step ${id}`,
+    description: "",
+    action: "test",
+    inputs,
+    outputs,
+    next_steps: next,
+  };
 }
 
 function makeSkill(overrides: Partial<LegalSkill> = {}): LegalSkill {
@@ -47,17 +60,6 @@ describe("checkResolvability", () => {
   });
 
   test("unreachable step → error", () => {
-    // s3 is only reachable through s1, but s1 → s2 (not s3)
-    // s3 is not referenced by any next_steps, so it's an entry point
-    // To make truly unreachable: s3 references itself only (self-loop)
-    // and is not referenced by any other step
-    const skill = makeSkill({
-      steps: [
-        makeStep("s1", ["s2"]),
-        makeStep("s2"),
-        makeStep("s3", ["s3"]), // self-loop only, not referenced by others
-      ],
-    });
     // s3 is an entry point (not referenced by others) but only reaches itself
     // Actually s3 IS reachable as an entry point. The algorithm considers
     // entry points as reachable. So let's test broken_next_step instead.
@@ -70,7 +72,9 @@ describe("checkResolvability", () => {
     });
     const result = checkResolvability(skill2);
     expect(result.resolvable).toBe(false);
-    expect(result.errors.some((e) => e.type === "broken_next_step" && e.step_id === "s3")).toBe(true);
+    expect(result.errors.some((e) => e.type === "broken_next_step" && e.step_id === "s3")).toBe(
+      true
+    );
   });
 
   test("broken next_step → error", () => {
@@ -84,9 +88,7 @@ describe("checkResolvability", () => {
 
   test("missing input → error", () => {
     const skill = makeSkill({
-      steps: [
-        makeStep("s1", [], ["undeclared_input"], []),
-      ],
+      steps: [makeStep("s1", [], ["undeclared_input"], [])],
       inputs: [{ name: "case_slug", type: "case_slug", required: true, description: "" }],
     });
     const result = checkResolvability(skill);
@@ -96,10 +98,7 @@ describe("checkResolvability", () => {
 
   test("circular dependency → error", () => {
     const skill = makeSkill({
-      steps: [
-        makeStep("s1", ["s2"]),
-        makeStep("s2", ["s1"]),
-      ],
+      steps: [makeStep("s1", ["s2"]), makeStep("s2", ["s1"])],
     });
     const result = checkResolvability(skill);
     expect(result.resolvable).toBe(false);
@@ -108,10 +107,7 @@ describe("checkResolvability", () => {
 
   test("duplicate step name → warning (DRY)", () => {
     const skill = makeSkill({
-      steps: [
-        makeStep("s1"),
-        makeStep("s2"),
-      ],
+      steps: [makeStep("s1"), makeStep("s2")],
     });
     skill.steps[0].name = "Same Name";
     skill.steps[1].name = "Same Name";
@@ -122,9 +118,7 @@ describe("checkResolvability", () => {
 
   test("unused output → warning", () => {
     const skill = makeSkill({
-      steps: [
-        makeStep("s1", [], [], ["unused_output"]),
-      ],
+      steps: [makeStep("s1", [], [], ["unused_output"])],
       outputs: [{ name: "declared_output", type: "document", description: "" }],
     });
     const result = checkResolvability(skill);

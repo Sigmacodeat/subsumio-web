@@ -9,10 +9,10 @@ for (const path of CRITICAL_PAGES) {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(1000);
     const accessibilityScanResults = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
     const critical = accessibilityScanResults.violations.filter(
-      (v) => v.impact === "critical" || v.impact === "serious",
+      (v) => v.impact === "critical" || v.impact === "serious"
     );
     expect(critical).toHaveLength(0);
   });

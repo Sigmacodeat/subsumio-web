@@ -23,7 +23,8 @@ export type OutboundScope =
   | "approval_request"
   | "conflict_alert"
   | "new_document"
-  | "client_reminder";
+  | "client_reminder"
+  | "appointment_reminder";
 
 export type OutboundMessageKind = "freeform" | "template";
 

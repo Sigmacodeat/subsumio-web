@@ -12,11 +12,7 @@
  */
 
 import type { EntityClass } from "@/lib/data-classification";
-import {
-  calculateRetentionExpiry,
-  isRetentionExpired,
-  getRetentionAction,
-} from "@/lib/data-classification";
+import { isRetentionExpired, getRetentionAction } from "@/lib/data-classification";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -76,7 +72,7 @@ export function isLegalHoldActive(fact: FactEntry): boolean {
  */
 export function canForget(
   fact: FactEntry,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { allowed: boolean; reason: string } {
   if (isLegalHoldActive(fact)) {
     return { allowed: false, reason: "legal_hold_active" };
@@ -102,19 +98,13 @@ export function canForget(
  * Führt das Forget aus. In der Produktion würde dies ein Soft-Delete
  * + Audit-Log-Eintrag sein. Hier wird das Ergebnis simuliert.
  */
-export function forgetFact(
-  fact: FactEntry,
-  actor: string,
-  now: Date = new Date(),
-): ForgetResult {
+export function forgetFact(fact: FactEntry, actor: string, now: Date = new Date()): ForgetResult {
   const check = canForget(fact, now);
 
   if (!check.allowed) {
     return {
       fact_id: fact.id,
-      action: check.reason === "legal_hold_active"
-        ? "skipped_legal_hold"
-        : "skipped_not_expired",
+      action: check.reason === "legal_hold_active" ? "skipped_legal_hold" : "skipped_not_expired",
       audited: true,
       reversible: check.reason === "legal_hold_active",
       timestamp: now.toISOString(),
@@ -138,7 +128,7 @@ export function forgetFact(
 export function restoreFact(
   fact: FactEntry,
   actor: string,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { restored: boolean; fact_id: string; timestamp: string } {
   return {
     restored: true,
@@ -157,7 +147,7 @@ export function restoreFact(
 const DECAY_ORDER: FactEntry["confidence"][] = ["high", "medium", "low"];
 
 export function nextDecayedConfidence(
-  current: FactEntry["confidence"],
+  current: FactEntry["confidence"]
 ): FactEntry["confidence"] | null {
   const idx = DECAY_ORDER.indexOf(current);
   if (idx === -1 || idx === DECAY_ORDER.length - 1) return null;
@@ -167,10 +157,7 @@ export function nextDecayedConfidence(
 /**
  * Berechnet die Tage seit letztem Zugriff.
  */
-export function daysSinceLastAccess(
-  fact: FactEntry,
-  now: Date = new Date(),
-): number {
+export function daysSinceLastAccess(fact: FactEntry, now: Date = new Date()): number {
   const ref = fact.last_accessed_at ?? fact.created_at;
   const diffMs = now.getTime() - new Date(ref).getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -194,7 +181,7 @@ export const DECAY_THRESHOLDS = {
  */
 export function shouldDecay(
   fact: FactEntry,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { decay: boolean; newConfidence: FactEntry["confidence"] | null; reason: string } {
   if (isLegalHoldActive(fact)) {
     return { decay: false, newConfidence: null, reason: "legal_hold_active" };
@@ -211,9 +198,8 @@ export function shouldDecay(
     return { decay: false, newConfidence: null, reason: "already_at_low" };
   }
 
-  const threshold = fact.confidence === "high"
-    ? DECAY_THRESHOLDS.high_to_medium
-    : DECAY_THRESHOLDS.medium_to_low;
+  const threshold =
+    fact.confidence === "high" ? DECAY_THRESHOLDS.high_to_medium : DECAY_THRESHOLDS.medium_to_low;
 
   if (days >= threshold) {
     return { decay: true, newConfidence: next, reason: `days_${days}_threshold_${threshold}` };
@@ -225,10 +211,7 @@ export function shouldDecay(
 /**
  * Führt Decay aus. Gibt das Ergebnis mit vorheriger/neuer Confidence zurück.
  */
-export function decayFact(
-  fact: FactEntry,
-  now: Date = new Date(),
-): DecayResult {
+export function decayFact(fact: FactEntry, now: Date = new Date()): DecayResult {
   const check = shouldDecay(fact, now);
   const timestamp = now.toISOString();
 
@@ -266,7 +249,7 @@ export interface BatchForgetResult {
 export function batchForget(
   facts: FactEntry[],
   actor: string,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): BatchForgetResult {
   const forgotten: string[] = [];
   const skipped: string[] = [];
@@ -293,16 +276,17 @@ export function batchForget(
 }
 
 export interface BatchDecayResult {
-  decayed: Array<{ fact_id: string; previous: FactEntry["confidence"]; new: FactEntry["confidence"] }>;
+  decayed: Array<{
+    fact_id: string;
+    previous: FactEntry["confidence"];
+    new: FactEntry["confidence"];
+  }>;
   skipped: string[];
   legal_hold_blocked: string[];
   total: number;
 }
 
-export function batchDecay(
-  facts: FactEntry[],
-  now: Date = new Date(),
-): BatchDecayResult {
+export function batchDecay(facts: FactEntry[], now: Date = new Date()): BatchDecayResult {
   const decayed: BatchDecayResult["decayed"] = [];
   const skipped: string[] = [];
   const legalHoldBlocked: string[] = [];
@@ -337,7 +321,7 @@ export function createAuditEntry(
   action: ForgetAuditEntry["action"],
   actor: string,
   now: Date = new Date(),
-  reason?: string,
+  reason?: string
 ): ForgetAuditEntry {
   return {
     id: `audit-${fact.id}-${now.getTime()}`,

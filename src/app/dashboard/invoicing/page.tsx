@@ -314,7 +314,7 @@ export default function InvoicingPage() {
     }
   }
 
-  async function loadCases() {
+  async function _loadCases() {
     try {
       const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
       const loadedCases = pages.map((p) => {
@@ -1132,7 +1132,7 @@ export default function InvoicingPage() {
 }
 
 function RvgDialog() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<RvgResult | null>(null);

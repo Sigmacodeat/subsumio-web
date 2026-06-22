@@ -399,7 +399,7 @@ function RunDialog({
           <button
             onClick={() => onRun(input.trim() || undefined)}
             disabled={isRunning}
-            className="brand-bg brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
+            className="brand-bg flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
           >
             {isRunning ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
             {isRunning ? "Starte..." : "Starten"}
@@ -709,7 +709,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 <button
                   onClick={handleSave}
                   disabled={savePending}
-                  className="brand-bg brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
+                  className="brand-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-40"
                 >
                   {savePending ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -763,7 +763,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
               </p>
               <button
                 onClick={handleNew}
-                className="brand-bg brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90"
+                className="brand-bg inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90"
               >
                 <Plus size={16} />
                 Erstes Template erstellen
@@ -1084,7 +1084,7 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
 
       {/* Run Error Toast */}
       {runError && (
-        <div className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm text-white shadow-2xl">
+        <div className="fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-xl bg-[color:var(--ds-danger-text)] px-4 py-3 text-sm text-white shadow-2xl">
           <AlertCircle size={16} />
           {runError}
           <button onClick={() => setRunError(null)} className="ml-2 hover:opacity-70">

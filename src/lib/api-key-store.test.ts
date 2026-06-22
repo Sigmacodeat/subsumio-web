@@ -9,7 +9,7 @@ import type { StoredApiKey, ApiKeyStore } from "./api-key-store";
 // In dev mode (no DATABASE_URL), getApiKeyStore() returns a FileApiKeyStore.
 
 const TEST_DIR = path.join(process.cwd(), ".data-test-api-key-store");
-const TEST_FILE = path.join(TEST_DIR, "api-keys.json");
+const _TEST_FILE = path.join(TEST_DIR, "api-keys.json");
 
 function makeKey(overrides: Partial<StoredApiKey> = {}): StoredApiKey {
   return {
@@ -31,7 +31,9 @@ describe("FileApiKeyStore (dev mode)", () => {
 
   beforeEach(async () => {
     // Clean up any previous test data
-    try { await fs.rm(TEST_DIR, { recursive: true, force: true }); } catch {}
+    try {
+      await fs.rm(TEST_DIR, { recursive: true, force: true });
+    } catch {}
     process.env.SUBSUMIO_DATA_DIR = TEST_DIR;
     process.env.NODE_ENV = "development";
     delete process.env.DATABASE_URL;
@@ -46,7 +48,9 @@ describe("FileApiKeyStore (dev mode)", () => {
   });
 
   afterEach(async () => {
-    try { await fs.rm(TEST_DIR, { recursive: true, force: true }); } catch {}
+    try {
+      await fs.rm(TEST_DIR, { recursive: true, force: true });
+    } catch {}
     (globalThis as Record<string, unknown>).__subsumioApiKeyStore = undefined;
   });
 

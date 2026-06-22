@@ -25,7 +25,6 @@ vi.mock("pg", () => ({
 
 import {
   generateReferralCode,
-  buildNewUser,
   buildNewOrg,
   toPublic,
   getStore,

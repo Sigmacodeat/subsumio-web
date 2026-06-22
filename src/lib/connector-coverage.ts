@@ -132,7 +132,12 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     status: "available",
     engine_service: null,
     dms_provider: "imanager",
-    content_types: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/markdown", "unknown"],
+    content_types: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/markdown",
+      "unknown",
+    ],
     sync_mode: "manual",
     auth_method: "api_key",
     rate_limit: { capacity: 100, window_ms: 60_000 },
@@ -146,8 +151,12 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "medium",
     required_config: ["DMS_BASE_URL", "DMS_API_KEY"],
     optional_config: ["DMS_CLIENT_ID", "DMS_CLIENT_SECRET"],
-    description: "iManage Document Management System — Such- und Import-Schnittstelle für Kanzleien mit iManage.",
-    limitations: ["Kein Push/Webhook — manuelle Synchronisation", "Volltext-Suche benötigt iManage Search API"],
+    description:
+      "iManage Document Management System — Such- und Import-Schnittstelle für Kanzleien mit iManage.",
+    limitations: [
+      "Kein Push/Webhook — manuelle Synchronisation",
+      "Volltext-Suche benötigt iManage Search API",
+    ],
   },
   {
     id: "dms-netdocuments",
@@ -156,7 +165,12 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     status: "available",
     engine_service: null,
     dms_provider: "netdocuments",
-    content_types: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/markdown", "unknown"],
+    content_types: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/markdown",
+      "unknown",
+    ],
     sync_mode: "manual",
     auth_method: "api_key",
     rate_limit: { capacity: 100, window_ms: 60_000 },
@@ -170,7 +184,8 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "medium",
     required_config: ["DMS_BASE_URL", "DMS_API_KEY"],
     optional_config: [],
-    description: "NetDocuments DMS — Such- und Import-Schnittstelle für Kanzleien mit NetDocuments.",
+    description:
+      "NetDocuments DMS — Such- und Import-Schnittstelle für Kanzleien mit NetDocuments.",
     limitations: ["Kein Push/Webhook — manuelle Synchronisation"],
   },
 
@@ -179,10 +194,16 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     id: "ms365-sharepoint",
     name: "Microsoft SharePoint",
     category: "microsoft_365",
-    status: "planned",
-    engine_service: null,
+    status: "beta",
+    engine_service: "ms365-sharepoint",
     dms_provider: null,
-    content_types: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/html", "unknown"],
+    content_types: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/html",
+      "unknown",
+    ],
     sync_mode: "delta",
     auth_method: "oauth2",
     rate_limit: { capacity: 1000, window_ms: 60_000 },
@@ -196,17 +217,27 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "hard",
     required_config: ["MS365_CLIENT_ID", "MS365_CLIENT_SECRET", "MS365_TENANT_ID"],
     optional_config: ["MS365_SHAREPOINT_SITE"],
-    description: "Microsoft SharePoint Online — Delta-Sync von Dokumentbibliotheken mit Microsoft Graph API.",
-    limitations: ["Noch nicht implementiert — Microsoft Graph API Integration ausstehend"],
+    description:
+      "Microsoft SharePoint Online — Delta-Sync von Dokumentbibliotheken mit Microsoft Graph API.",
+    limitations: [
+      "Microsoft Graph Delta-Sync im Engine-Connector vorhanden",
+      "Live-Tenant-Consent, Webhook-Erneuerung und Provider-E2E noch offen",
+    ],
   },
   {
     id: "ms365-onedrive",
     name: "Microsoft OneDrive",
     category: "microsoft_365",
-    status: "planned",
-    engine_service: null,
+    status: "beta",
+    engine_service: "ms365-onedrive",
     dms_provider: null,
-    content_types: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/*", "unknown"],
+    content_types: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/*",
+      "unknown",
+    ],
     sync_mode: "delta",
     auth_method: "oauth2",
     rate_limit: { capacity: 1000, window_ms: 60_000 },
@@ -220,15 +251,20 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "medium",
     required_config: ["MS365_CLIENT_ID", "MS365_CLIENT_SECRET", "MS365_TENANT_ID"],
     optional_config: ["MS365_ONEDRIVE_FOLDER"],
-    description: "Microsoft OneDrive — Persönliche Dokumente und geteilte Ordner via Microsoft Graph API.",
-    limitations: ["Noch nicht implementiert", "Kein Matter-Scope (persönliche Ablage)"],
+    description:
+      "Microsoft OneDrive — Persönliche Dokumente und geteilte Ordner via Microsoft Graph API.",
+    limitations: [
+      "Microsoft Graph Delta-Sync im Engine-Connector vorhanden",
+      "Kein Matter-Scope ohne manuelle Zuordnung",
+      "Live-Tenant-Consent und Provider-E2E noch offen",
+    ],
   },
   {
     id: "ms365-outlook",
     name: "Microsoft Outlook (Exchange)",
     category: "microsoft_365",
-    status: "planned",
-    engine_service: null,
+    status: "beta",
+    engine_service: "ms365-outlook",
     dms_provider: null,
     content_types: ["text/html", "text/plain", "application/pdf", "unknown"],
     sync_mode: "delta",
@@ -244,8 +280,13 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "hard",
     required_config: ["MS365_CLIENT_ID", "MS365_CLIENT_SECRET", "MS365_TENANT_ID"],
     optional_config: ["MS365_OUTLOOK_FOLDER"],
-    description: "Microsoft Outlook/Exchange — E-Mail-Import mit Delta-Sync via Microsoft Graph API.",
-    limitations: ["Noch nicht implementiert", "Kein Matter-Scope ohne manuelle Zuordnung"],
+    description:
+      "Microsoft Outlook/Exchange — E-Mail-Import mit Delta-Sync via Microsoft Graph API.",
+    limitations: [
+      "Microsoft Graph Messages-Delta im Engine-Connector vorhanden",
+      "Kein Matter-Scope ohne manuelle Zuordnung",
+      "Live-Tenant-Consent und Provider-E2E noch offen",
+    ],
   },
 
   // ── Google Workspace ─────────────────────────────────────────────────
@@ -256,7 +297,15 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     status: "available",
     engine_service: "google-drive",
     dms_provider: null,
-    content_types: ["application/pdf", "application/vnd.google-apps.document", "application/vnd.google-apps.spreadsheet", "text/markdown", "text/html", "image/*", "unknown"],
+    content_types: [
+      "application/pdf",
+      "application/vnd.google-apps.document",
+      "application/vnd.google-apps.spreadsheet",
+      "text/markdown",
+      "text/html",
+      "image/*",
+      "unknown",
+    ],
     sync_mode: "delta",
     auth_method: "oauth2",
     rate_limit: { capacity: 1000, window_ms: 100_000 },
@@ -271,7 +320,10 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     required_config: ["client_id", "client_secret"],
     optional_config: ["filters.folder", "webhook_url", "poll_interval_ms"],
     description: "Google Drive — Delta-Sync via Drive API mit OAuth2 und optionalen Push-Webhooks.",
-    limitations: ["Kein Matter-Scope ohne manuelle Zuordnung", "Google Workspace native Formate werden als Text exportiert"],
+    limitations: [
+      "Kein Matter-Scope ohne manuelle Zuordnung",
+      "Google Workspace native Formate werden als Text exportiert",
+    ],
   },
   {
     id: "google-gmail",
@@ -295,7 +347,10 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     required_config: ["client_id", "client_secret"],
     optional_config: ["filters.labels", "poll_interval_ms"],
     description: "Google Gmail — E-Mail-Import mit Label-Filter und Delta-Sync via Gmail API.",
-    limitations: ["Kein Push-Webhook (Gmail API unterstützt nur Polling)", "Kein Matter-Scope ohne manuelle Zuordnung"],
+    limitations: [
+      "Kein Push-Webhook (Gmail API unterstützt nur Polling)",
+      "Kein Matter-Scope ohne manuelle Zuordnung",
+    ],
   },
   {
     id: "google-calendar",
@@ -344,8 +399,12 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "easy",
     required_config: ["filters.watch_dir"],
     optional_config: [],
-    description: "beA-Import — Überwacht ein Verzeichnis auf beA-Export-XML-Dateien und importiert Nachrichten mit Metadaten.",
-    limitations: ["Keine direkte beA-API — XML-Exporte müssen manuell heruntergeladen werden", "Kein Push-Webhook"],
+    description:
+      "beA-Import — Überwacht ein Verzeichnis auf beA-Export-XML-Dateien und importiert Nachrichten mit Metadaten.",
+    limitations: [
+      "Keine direkte beA-API — XML-Exporte müssen manuell heruntergeladen werden",
+      "Kein Push-Webhook",
+    ],
   },
 
   // ── DATEV ────────────────────────────────────────────────────────────
@@ -353,12 +412,18 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     id: "datev-import",
     name: "DATEV (Buchhaltung/Steuer)",
     category: "datev",
-    status: "planned",
+    status: "available",
     engine_service: null,
     dms_provider: null,
-    content_types: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/xml", "application/pdf", "unknown"],
+    content_types: [
+      "text/plain",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/xml",
+      "application/pdf",
+      "unknown",
+    ],
     sync_mode: "manual",
-    auth_method: "file_watch",
+    auth_method: "manual_upload",
     rate_limit: { capacity: 100, window_ms: 60_000 },
     tenant_isolated: true,
     matter_scope: true,
@@ -368,10 +433,14 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     full_text_search: false,
     version_history: true,
     setup_difficulty: "medium",
-    required_config: ["DATEV_WATCH_DIR"],
-    optional_config: ["DATEV_CLIENT_ID"],
-    description: "DATEV-Import — Überwacht ein Verzeichnis auf DATEV-Export-Dateien (Buchungsstapel, Belege) für Steuer- und Buchhaltungsdaten.",
-    limitations: ["Noch nicht implementiert — DATEV-Format-Parser ausstehend", "Keine direkte DATEV-API — Datei-basierter Import"],
+    required_config: [],
+    optional_config: ["DATEV_WATCH_DIR", "DATEV_CLIENT_ID"],
+    description:
+      "DATEV-Import — Importiert DATEV-Buchungsstapel-CSV als Importlauf und einzelne Buchungen ins Kanzlei-OS.",
+    limitations: [
+      "Keine direkte DATEV-API — Datei-basierter Import",
+      "Beleg-PDFs und DATEV-Export werden noch nicht zurueckgeschrieben",
+    ],
   },
 
   // ── Local Folders ────────────────────────────────────────────────────
@@ -382,7 +451,15 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     status: "available",
     engine_service: null,
     dms_provider: null,
-    content_types: ["text/markdown", "text/html", "text/plain", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/*", "unknown"],
+    content_types: [
+      "text/markdown",
+      "text/html",
+      "text/plain",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/*",
+      "unknown",
+    ],
     sync_mode: "delta",
     auth_method: "file_watch",
     rate_limit: { capacity: 10000, window_ms: 1000 },
@@ -396,8 +473,12 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "easy",
     required_config: ["LOCAL_FOLDER_PATH"],
     optional_config: ["LOCAL_FOLDER_GLOB", "LOCAL_FOLDER_RECURSIVE"],
-    description: "Lokaler Ordner — Überwacht ein Verzeichnis auf Dateiänderungen (Watch-API) und importiert automatisch.",
-    limitations: ["Kein Matter-Scope ohne manuelle Zuordnung", "Keine Volltext-Suche auf Quell-Ebene"],
+    description:
+      "Lokaler Ordner — Überwacht ein Verzeichnis auf Dateiänderungen (Watch-API) und importiert automatisch.",
+    limitations: [
+      "Kein Matter-Scope ohne manuelle Zuordnung",
+      "Keine Volltext-Suche auf Quell-Ebene",
+    ],
   },
 
   // ── Uploads ──────────────────────────────────────────────────────────
@@ -408,7 +489,20 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     status: "available",
     engine_service: null,
     dms_provider: null,
-    content_types: ["text/markdown", "text/html", "text/plain", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/*", "audio/*", "video/*", "application/json", "text/xml", "unknown"],
+    content_types: [
+      "text/markdown",
+      "text/html",
+      "text/plain",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/*",
+      "audio/*",
+      "video/*",
+      "application/json",
+      "text/xml",
+      "unknown",
+    ],
     sync_mode: "manual",
     auth_method: "manual_upload",
     rate_limit: { capacity: 100, window_ms: 60_000 },
@@ -422,7 +516,8 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "easy",
     required_config: [],
     optional_config: [],
-    description: "Manueller Datei-Upload — Benutzer lädt Dateien direkt über das Dashboard hoch. Unterstützt alle gängigen Formate.",
+    description:
+      "Manueller Datei-Upload — Benutzer lädt Dateien direkt über das Dashboard hoch. Unterstützt alle gängigen Formate.",
     limitations: ["Keine automatische Synchronisation — manuell ausgelöst"],
   },
 
@@ -448,7 +543,8 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "easy",
     required_config: [],
     optional_config: [],
-    description: "Deutsche Gerichtsentscheidungen — Import von öffentlich verfügbaren Urteilen über juris/DIPPER etc.",
+    description:
+      "Deutsche Gerichtsentscheidungen — Import von öffentlich verfügbaren Urteilen über juris/DIPPER etc.",
     limitations: ["Keine Tenant-Isolation (öffentliche Daten)", "Quellenabhängige Verfügbarkeit"],
   },
   {
@@ -472,7 +568,8 @@ export const CONNECTOR_COVERAGE_MATRIX: ConnectorCoverageEntry[] = [
     setup_difficulty: "easy",
     required_config: [],
     optional_config: [],
-    description: "Schweizer Gerichtsentscheidungen — Import von Bundesgerichts- und kantonalen Urteilen.",
+    description:
+      "Schweizer Gerichtsentscheidungen — Import von Bundesgerichts- und kantonalen Urteilen.",
     limitations: ["Keine Tenant-Isolation (öffentliche Daten)"],
   },
 
@@ -595,7 +692,7 @@ export function getCoverageMatrix(): CoverageMatrix {
 }
 
 function groupByCategory(
-  connectors: ConnectorCoverageEntry[],
+  connectors: ConnectorCoverageEntry[]
 ): Record<ConnectorCategory, ConnectorCoverageEntry[]> {
   const groups: Record<string, ConnectorCoverageEntry[]> = {};
   for (const c of connectors) {
@@ -606,7 +703,7 @@ function groupByCategory(
 }
 
 function groupByStatus(
-  connectors: ConnectorCoverageEntry[],
+  connectors: ConnectorCoverageEntry[]
 ): Record<ConnectorStatus, ConnectorCoverageEntry[]> {
   const groups: Record<string, ConnectorCoverageEntry[]> = {};
   for (const c of connectors) {
@@ -617,11 +714,11 @@ function groupByStatus(
 }
 
 function identifyCoverageGaps(
-  byCategory: Record<ConnectorCategory, ConnectorCoverageEntry[]>,
+  byCategory: Record<ConnectorCategory, ConnectorCoverageEntry[]>
 ): CoverageGap[] {
   const gaps: CoverageGap[] = [];
 
-  // Check: Microsoft 365 — all planned
+  // Check: Microsoft 365 — no implemented connector or beta-only integration
   const ms365 = byCategory["microsoft_365"] ?? [];
   if (ms365.length > 0 && ms365.every((c) => c.status === "planned")) {
     gaps.push({
@@ -631,15 +728,39 @@ function identifyCoverageGaps(
       severity: "high",
     });
   }
+  if (ms365.length > 0 && ms365.some((c) => c.status === "beta")) {
+    gaps.push({
+      category: "microsoft_365",
+      description:
+        "Microsoft 365 Connectoren sind als Graph-Delta-Sync beta implementiert; Live-Tenant-Consent, Webhooks und Provider-E2E fehlen noch.",
+      missing_connectors: ms365.filter((c) => c.status === "planned").map((c) => c.id),
+      severity: ms365.some((c) => c.status === "planned") ? "high" : "medium",
+    });
+  }
 
-  // Check: DATEV — planned
+  // Check: DATEV — no implemented import path
   const datev = byCategory["datev"] ?? [];
   if (datev.length > 0 && datev.every((c) => c.status === "planned")) {
     gaps.push({
       category: "datev",
-      description: "DATEV-Connector ist noch nicht implementiert (planned). Steuer- und Buchhaltungsdaten können nicht importiert werden.",
+      description:
+        "DATEV-Connector ist noch nicht implementiert (planned). Steuer- und Buchhaltungsdaten können nicht importiert werden.",
       missing_connectors: datev.map((c) => c.id),
       severity: "high",
+    });
+  }
+
+  if (
+    datev.length > 0 &&
+    datev.some((c) => c.status === "available") &&
+    datev.every((c) => !c.push_notifications)
+  ) {
+    gaps.push({
+      category: "datev",
+      description:
+        "DATEV-Import ist verfuegbar, aber dateibasiert. Direkte DATEV-API und Rueckexport sind noch offen.",
+      missing_connectors: [],
+      severity: "medium",
     });
   }
 
@@ -648,7 +769,8 @@ function identifyCoverageGaps(
   if (dms.length > 0 && dms.every((c) => !c.push_notifications)) {
     gaps.push({
       category: "dms",
-      description: "DMS-Connectoren unterstützen keine Push-Benachrichtigungen — nur manuelle Synchronisation.",
+      description:
+        "DMS-Connectoren unterstützen keine Push-Benachrichtigungen — nur manuelle Synchronisation.",
       missing_connectors: [],
       severity: "medium",
     });
@@ -659,7 +781,8 @@ function identifyCoverageGaps(
   if (bea.length > 0 && bea.every((c) => c.auth_method === "file_watch")) {
     gaps.push({
       category: "bea",
-      description: "beA-Import ist dateibasiert (XML-Export) — keine direkte API-Anbindung verfügbar.",
+      description:
+        "beA-Import ist dateibasiert (XML-Export) — keine direkte API-Anbindung verfügbar.",
       missing_connectors: [],
       severity: "low",
     });
@@ -716,14 +839,23 @@ export function getConnectorByDmsProvider(provider: string): ConnectorCoverageEn
 
 // ── Validation ────────────────────────────────────────────────────────
 
-export function validateConnectorEntry(entry: ConnectorCoverageEntry): { valid: boolean; errors: string[] } {
+export function validateConnectorEntry(entry: ConnectorCoverageEntry): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (!entry.id || entry.id.trim().length === 0) errors.push("id is required");
   if (!entry.name || entry.name.trim().length === 0) errors.push("name is required");
-  if (!entry.description || entry.description.trim().length === 0) errors.push("description is required");
+  if (!entry.description || entry.description.trim().length === 0)
+    errors.push("description is required");
   if (entry.content_types.length === 0) errors.push("content_types must not be empty");
-  if (entry.required_config.length === 0 && entry.status === "available" && entry.auth_method !== "none" && entry.auth_method !== "manual_upload") {
+  if (
+    entry.required_config.length === 0 &&
+    entry.status === "available" &&
+    entry.auth_method !== "none" &&
+    entry.auth_method !== "manual_upload"
+  ) {
     errors.push("available connectors with auth must have required_config");
   }
 

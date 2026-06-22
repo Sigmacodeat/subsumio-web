@@ -1,4 +1,4 @@
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 import {
   listNotifications,
   markNotificationRead,

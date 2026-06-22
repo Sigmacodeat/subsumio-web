@@ -170,7 +170,7 @@ function NormsPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [initialSearchQuery]);
+  }, [initialSearchQuery, t]);
 
   useEffect(() => {
     if (!selectedNorm) {

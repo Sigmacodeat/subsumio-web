@@ -1,13 +1,12 @@
 // @vitest-environment node
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect } from "vitest";
 import {
   signPortalToken,
   verifyPortalToken,
   revokePortalToken,
   isPortalTokenRevoked,
   getPortalSecret,
-  type PortalTokenPayload,
 } from "./portal-token";
 
 describe("Portal Token — Secret Management", () => {
@@ -79,7 +78,7 @@ describe("Portal Token — Sign + Verify Roundtrip", () => {
 
   test("verifyPortalToken rejects tampered signature", async () => {
     const token = await signPortalToken("case-sig-tamper");
-    const [body, sig] = token.split(".");
+    const [body] = token.split(".");
     // Replace entire signature with a different valid-base64 string
     const tamperedSig = btoa("X".repeat(32)).replace(/=/g, "");
     const tampered = `${body}.${tamperedSig}`;
@@ -303,11 +302,14 @@ describe("Portal Token — Production Secret Enforcement", () => {
 describe("Portal Token — Payload Validation", () => {
   test("payload missing case_slug is rejected", async () => {
     const token = await signPortalToken("case-valid");
-    const [body, sig] = token.split(".");
+    const [body] = token.split(".");
     // Decode payload, remove case_slug, re-encode
     const decoded = JSON.parse(atob(body.replace(/-/g, "+").replace(/_/g, "/")));
     delete decoded.case_slug;
-    const tamperedBody = btoa(JSON.stringify(decoded)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const tamperedBody = btoa(JSON.stringify(decoded))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
     // Re-sign with current secret
     const { hmacKey, b64url } = await import("./auth/session");
     const key = await hmacKey(getPortalSecret());
@@ -320,10 +322,13 @@ describe("Portal Token — Payload Validation", () => {
 
   test("payload missing exp is rejected", async () => {
     const token = await signPortalToken("case-no-exp");
-    const [body, sig] = token.split(".");
+    const [body] = token.split(".");
     const decoded = JSON.parse(atob(body.replace(/-/g, "+").replace(/_/g, "/")));
     delete decoded.exp;
-    const tamperedBody = btoa(JSON.stringify(decoded)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const tamperedBody = btoa(JSON.stringify(decoded))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
     const { hmacKey, b64url } = await import("./auth/session");
     const key = await hmacKey(getPortalSecret());
     const enc = new TextEncoder();
@@ -335,11 +340,14 @@ describe("Portal Token — Payload Validation", () => {
 
   test("payload with extra fields still works (forward compat)", async () => {
     const token = await signPortalToken("case-extra");
-    const [body, sig] = token.split(".");
+    const [body] = token.split(".");
     const decoded = JSON.parse(atob(body.replace(/-/g, "+").replace(/_/g, "/")));
     decoded.extra_field = "hello";
     decoded.role = "viewer";
-    const tamperedBody = btoa(JSON.stringify(decoded)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const tamperedBody = btoa(JSON.stringify(decoded))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
     const { hmacKey, b64url } = await import("./auth/session");
     const key = await hmacKey(getPortalSecret());
     const enc = new TextEncoder();
@@ -353,10 +361,13 @@ describe("Portal Token — Payload Validation", () => {
 
   test("payload with non-numeric exp is rejected", async () => {
     const token = await signPortalToken("case-str-exp");
-    const [body, sig] = token.split(".");
+    const [body] = token.split(".");
     const decoded = JSON.parse(atob(body.replace(/-/g, "+").replace(/_/g, "/")));
     decoded.exp = "not-a-number";
-    const tamperedBody = btoa(JSON.stringify(decoded)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const tamperedBody = btoa(JSON.stringify(decoded))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
     const { hmacKey, b64url } = await import("./auth/session");
     const key = await hmacKey(getPortalSecret());
     const enc = new TextEncoder();
@@ -464,7 +475,7 @@ describe("Portal Token — Revocation Edge Cases", () => {
 
   test("multiple revocations are independent", async () => {
     const tokens = await Promise.all(
-      Array.from({ length: 5 }, (_, i) => signPortalToken(`case-multi-${i}`)),
+      Array.from({ length: 5 }, (_, i) => signPortalToken(`case-multi-${i}`))
     );
     await revokePortalToken(tokens[2]);
     expect(await verifyPortalToken(tokens[0])).not.toBeNull();

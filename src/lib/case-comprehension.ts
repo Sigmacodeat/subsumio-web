@@ -128,7 +128,7 @@ const CRITICAL_GAP_TYPES = new Set([
   "unprivileged_communication",
 ]);
 
-const HIGH_GAP_TYPES = new Set([
+const _HIGH_GAP_TYPES = new Set([
   "missing_document",
   "missing_attachment",
   "contradictory_facts",
@@ -140,7 +140,7 @@ const HIGH_GAP_TYPES = new Set([
 
 export function buildCaseComprehensionPanel(
   bundle: MatterContextBundle,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): CaseComprehensionPanel {
   const factsSummary = buildFactsSummary(bundle.facts, now);
   const gapsSummary = buildGapsSummary(bundle.gaps);
@@ -153,10 +153,11 @@ export function buildCaseComprehensionPanel(
     factsSummary,
     gapsSummary,
     risksSummary,
-    freshnessSummary,
+    freshnessSummary
   );
 
-  const understood = comprehensionScore >= 0.6 && gapsSummary.critical === 0 && factsSummary.total > 0;
+  const understood =
+    comprehensionScore >= 0.6 && gapsSummary.critical === 0 && factsSummary.total > 0;
 
   return {
     case_slug: bundle.case_slug,
@@ -175,7 +176,10 @@ export function buildCaseComprehensionPanel(
 
 // ── Facts Summary ─────────────────────────────────────────────────────
 
-function buildFactsSummary(facts: MatterFactEntry[], now: Date): CaseComprehensionPanel["facts_summary"] {
+function buildFactsSummary(
+  facts: MatterFactEntry[],
+  now: Date
+): CaseComprehensionPanel["facts_summary"] {
   const nowMs = now.getTime();
   const recentThresholdMs = RECENT_THRESHOLD_HOURS * 60 * 60 * 1000;
 
@@ -248,7 +252,7 @@ function buildGapsSummary(gaps: MatterGap[]): CaseComprehensionPanel["gaps_summa
 
 function buildRisksSummary(
   bundle: MatterContextBundle,
-  gapsSummary: CaseComprehensionPanel["gaps_summary"],
+  _gapsSummary: CaseComprehensionPanel["gaps_summary"]
 ): CaseComprehensionPanel["risks_summary"] {
   const riskFactors: CaseComprehensionRisk[] = [];
 
@@ -318,7 +322,7 @@ function buildRisksSummary(
   // Privilege risk
   let privilegeRisk: RiskLevel = "none";
   const privilegeGaps = bundle.gaps.filter(
-    (g) => g.type === "unprivileged_communication" || g.type === "ethical_wall_violation",
+    (g) => g.type === "unprivileged_communication" || g.type === "ethical_wall_violation"
   );
   if (privilegeGaps.length > 0) {
     privilegeRisk = "critical";
@@ -348,7 +352,7 @@ function buildRisksSummary(
   const riskOrder: Record<RiskLevel, number> = { critical: 4, high: 3, medium: 2, low: 1, none: 0 };
   const overallRisk = allRisks.reduce<RiskLevel>(
     (max, r) => (riskOrder[r] > riskOrder[max] ? r : max),
-    "none",
+    "none"
   );
 
   return {
@@ -366,24 +370,33 @@ function buildRisksSummary(
 function buildFreshnessSummary(
   coverage: MatterCoverageStatus,
   activity: MatterActivityEntry[],
-  now: Date,
+  now: Date
 ): CaseComprehensionPanel["freshness_summary"] {
-  const lastActivity = activity.length > 0
-    ? activity
-        .map((a) => a.at)
-        .sort()
-        .at(-1) ?? null
-    : null;
+  const lastActivity =
+    activity.length > 0
+      ? (activity
+          .map((a) => a.at)
+          .sort()
+          .at(-1) ?? null)
+      : null;
 
   let stalenessDays: number | null = null;
   if (lastActivity) {
-    stalenessDays = Math.floor((now.getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24));
+    stalenessDays = Math.floor(
+      (now.getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
+    );
   }
 
   let overallFreshness: FreshnessLevel = "unknown";
-  if (coverage.overall_freshness === "fresh" && (stalenessDays === null || stalenessDays < STALE_THRESHOLD_DAYS)) {
+  if (
+    coverage.overall_freshness === "fresh" &&
+    (stalenessDays === null || stalenessDays < STALE_THRESHOLD_DAYS)
+  ) {
     overallFreshness = "fresh";
-  } else if (coverage.overall_freshness === "stale" || (stalenessDays !== null && stalenessDays >= STALE_THRESHOLD_DAYS)) {
+  } else if (
+    coverage.overall_freshness === "stale" ||
+    (stalenessDays !== null && stalenessDays >= STALE_THRESHOLD_DAYS)
+  ) {
     overallFreshness = "stale";
   }
 
@@ -403,7 +416,7 @@ function buildFreshnessSummary(
 
 function buildRecentlyChangedSources(
   sources: SourceCoverageEntry[],
-  now: Date,
+  now: Date
 ): CaseComprehensionSourceChange[] {
   const nowMs = now.getTime();
   const recentMs = RECENT_THRESHOLD_HOURS * 60 * 60 * 1000;
@@ -420,7 +433,11 @@ function buildRecentlyChangedSources(
         last_sync_at: s.last_sync_at,
         is_fresh: s.index_fresh,
         document_count: s.document_count,
-        change_type: s.error ? "error" as const : isRecent ? "synced" as const : "updated" as const,
+        change_type: s.error
+          ? ("error" as const)
+          : isRecent
+            ? ("synced" as const)
+            : ("updated" as const),
       };
     })
     .sort((a, b) => {
@@ -436,7 +453,7 @@ function buildRecentlyChangedSources(
 function buildRecommendations(
   gaps: CaseComprehensionPanel["gaps_summary"],
   risks: CaseComprehensionPanel["risks_summary"],
-  freshness: CaseComprehensionPanel["freshness_summary"],
+  freshness: CaseComprehensionPanel["freshness_summary"]
 ): string[] {
   const recs: string[] = [];
 
@@ -476,7 +493,7 @@ function computeComprehensionScore(
   facts: CaseComprehensionPanel["facts_summary"],
   gaps: CaseComprehensionPanel["gaps_summary"],
   risks: CaseComprehensionPanel["risks_summary"],
-  freshness: CaseComprehensionPanel["freshness_summary"],
+  freshness: CaseComprehensionPanel["freshness_summary"]
 ): number {
   let score = 1.0;
 
@@ -487,7 +504,13 @@ function computeComprehensionScore(
   score -= gaps.low * 0.02;
 
   // Penalty for risks
-  const riskPenalty: Record<RiskLevel, number> = { critical: 0.2, high: 0.1, medium: 0.05, low: 0.02, none: 0 };
+  const riskPenalty: Record<RiskLevel, number> = {
+    critical: 0.2,
+    high: 0.1,
+    medium: 0.05,
+    low: 0.02,
+    none: 0,
+  };
   score -= riskPenalty[risks.overall_risk];
 
   // Penalty for low coverage

@@ -310,7 +310,7 @@ function StatsBar({ registry, t }: { registry: SourceRegistryResponse; t: TFunc 
 // ── Main Page ─────────────────────────────────────────────────────────
 
 export default function SourcesPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [registry, setRegistry] = useState<SourceRegistryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState<string | null>(null);
@@ -338,7 +338,7 @@ export default function SourcesPage() {
     } finally {
       setLoading(false);
     }
-  }, [jurisdictionFilter, typeFilter, statusFilter]);
+  }, [jurisdictionFilter, typeFilter, statusFilter, t]);
 
   useEffect(() => {
     loadSources();

@@ -6,9 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BookOpen,
-  Brain,
-  Network,
-  Upload,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -34,26 +31,26 @@ import {
   Gavel,
   CloudOff,
   BarChart3,
-  Building2,
-  Shield,
-  Key,
   FolderOpen,
   MessageSquareText,
   Globe,
   Search,
   ClipboardList,
-  Cpu,
   FileSearch,
   CheckSquare,
   Inbox,
   FileClock,
-  Smartphone,
   Award,
   Bot,
   Receipt,
   FileUp,
-  Gauge,
   UserCog,
+  Mail,
+  Scale,
+  FileCheck,
+  Library,
+  ClipboardCheck,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -91,7 +88,15 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
       { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
       { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-      { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
+      { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
+    ],
+  },
+  {
+    titleKey: "nav.section.communication",
+    items: [
+      { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
+      { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
+      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
     ],
   },
   {
@@ -102,17 +107,17 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
       { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
       { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+      { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
     ],
   },
   {
     titleKey: "nav.section.documents_drafting",
     items: [
-      { href: "/dashboard/upload", icon: Upload, labelKey: "nav.upload" },
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
       { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+      { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
+      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
       { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
       { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
     ],
@@ -125,6 +130,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
       { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
       { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
+      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
       { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
     ],
   },
@@ -134,16 +140,10 @@ export const BOTTOM_ITEMS: NavItem[] = [
   { href: "/dashboard/team", icon: UserCog, labelKey: "nav.team" },
   { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
   { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-  { href: "/dashboard/mobile", icon: Smartphone, labelKey: "nav.mobile" },
   { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
   { href: "/dashboard/audit", icon: ScrollText, labelKey: "nav.audit_log" },
-  { href: "/dashboard/rag-eval", icon: Gauge, labelKey: "nav.rag_eval" },
-  { href: "/dashboard/api-keys", icon: Key, labelKey: "nav.api_keys" },
   { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
   { href: "/dashboard/settings", icon: Settings, labelKey: "nav.settings" },
-  { href: "/dashboard/settings/ai-model", icon: Cpu, labelKey: "nav.ai_model" },
-  { href: "/dashboard/settings/kanzlei", icon: Building2, labelKey: "nav.kanzlei" },
-  { href: "/dashboard/settings/security", icon: Shield, labelKey: "nav.security" },
 ];
 
 const PRIMARY_ITEMS: NavItem[] = [
@@ -160,17 +160,25 @@ const ADMIN_SECTION: NavSection = {
 };
 
 const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
-  { href: "/dashboard/deadlines", section: "nav.section.inbox_deadlines" },
-  { href: "/dashboard/intake", section: "nav.section.inbox_deadlines" },
+  { href: "/dashboard/deadlines", section: "nav.section.cockpit" },
+  { href: "/dashboard/intake", section: "nav.section.cockpit" },
   { href: "/dashboard/cases", section: "nav.section.cases_clients" },
   { href: "/dashboard/contacts", section: "nav.section.cases_clients" },
+  { href: "/dashboard/kollisionspruefung", section: "nav.section.cases_clients" },
+  { href: "/dashboard/bea", section: "nav.section.communication" },
+  { href: "/dashboard/whatsapp", section: "nav.section.communication" },
+  { href: "/dashboard/email-import", section: "nav.section.communication" },
   { href: "/dashboard/vault", section: "nav.section.documents_drafting" },
   { href: "/dashboard/drafting", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/contracts", section: "nav.section.documents_drafting" },
+  { href: "/dashboard/clause-library", section: "nav.section.documents_drafting" },
   { href: "/dashboard/upload", section: "nav.section.documents_drafting" },
   { href: "/dashboard/research", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
   { href: "/dashboard/chat", section: "nav.section.cases_clients" },
   { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
   { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
   { href: "/dashboard/team", section: "nav.section.admin" },
   { href: "/dashboard/settings", section: "nav.section.admin" },
 ];
@@ -198,9 +206,9 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { t } = useLang();
   if (collapsed || pendingCount === 0) return null;
   return (
-    <div className="mx-3 mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+    <div className="mx-3 mt-2 rounded-lg border border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-3 py-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-amber-600">
+        <span className="text-xs font-medium text-[color:var(--ds-warning-text)]">
           {pendingCount} {t("sidebar.changes_pending")}
         </span>
         <button
@@ -223,7 +231,7 @@ export function NetworkStatusBadge() {
     <div
       role="status"
       aria-live="polite"
-      className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-xs font-medium text-red-600"
+      className="flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-2 py-1 text-xs font-medium text-[color:var(--ds-danger-text)]"
       title={t("sidebar.offline_tooltip")}
     >
       <CloudOff size={12} aria-hidden />
@@ -422,25 +430,25 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-label={`${t("sidebar.brain_status")}: ${brainStatusLabel}, ${pages} pages, ${entities} entities`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+              <span className="text-xs font-medium text-[color:var(--ds-text-subtle)]">
                 {t("sidebar.brain_status")}
               </span>
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
                     "h-1.5 w-1.5 rounded-full",
-                    brainReachable === true && "bg-emerald-500",
-                    brainReachable === false && "bg-red-500",
+                    brainReachable === true && "bg-[color:var(--ds-success-text)]",
+                    brainReachable === false && "bg-[color:var(--ds-danger-text)]",
                     brainReachable === undefined && "bg-[color:var(--ds-text-subtle)]"
                   )}
                   aria-hidden
                 />
-                <span className="text-[11px] font-medium text-[color:var(--ds-text-muted)]">
+                <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                   {brainStatusLabel}
                 </span>
               </div>
             </div>
-            <div className="mt-1 font-mono text-[10px] text-[color:var(--ds-text-subtle)] tabular-nums">
+            <div className="mt-1 font-mono text-xs text-[color:var(--ds-text-subtle)] tabular-nums">
               {pages} pages · {entities} entities
             </div>
           </div>
@@ -455,8 +463,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             <span
               className={cn(
                 "h-2 w-2 rounded-full",
-                brainReachable === true && "animate-pulse bg-emerald-500",
-                brainReachable === false && "bg-red-500",
+                brainReachable === true && "animate-pulse bg-[color:var(--ds-success-text)]",
+                brainReachable === false && "bg-[color:var(--ds-danger-text)]",
                 brainReachable === undefined && "animate-pulse bg-[color:var(--ds-text-subtle)]"
               )}
               role="status"
@@ -484,7 +492,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
                 aria-label={t("sidebar.filter_placeholder")}
               />
               {searchQuery && (
@@ -523,7 +531,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     className={cn(
                       "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       active
-                        ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
+                        ? "brand-soft brand-text"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
@@ -571,7 +579,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       className={cn(
                         "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                         active
-                          ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
+                          ? "brand-soft brand-text font-semibold"
                           : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                       )}
                     >
@@ -605,7 +613,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       isOpen
                         ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm"
                         : sectionActive
-                          ? "brand-border bg-[color:var(--ds-surface)] shadow-[inset_2px_0_0_var(--brand-primary)]"
+                          ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
                           : "hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
@@ -644,7 +652,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[350ms] ease-[var(--ds-ease-smooth)]",
+                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[220ms] ease-[var(--ds-ease-smooth)]",
                           isOpen && "rotate-180"
                         )}
                       />
@@ -652,7 +660,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       id={panelId}
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-[350ms] ease-[var(--ds-ease-smooth)] will-change-[grid-template-rows]",
+                        "grid transition-[grid-template-rows,opacity] duration-[220ms] ease-[var(--ds-ease-smooth)] will-change-[grid-template-rows]",
                         isOpen
                           ? "grid-rows-[1fr] opacity-100"
                           : "pointer-events-none grid-rows-[0fr] opacity-0"
@@ -687,10 +695,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                 href={item.href}
                                 aria-current={active ? "page" : undefined}
                                 onClick={() => setMobileOpen(false)}
+                                title={t(item.labelKey)}
                                 className={cn(
                                   "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                                   active
-                                    ? "brand-soft brand-text shadow-[inset_2px_0_0_var(--brand-primary)]"
+                                    ? "brand-soft brand-text font-semibold"
                                     : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                                 )}
                               >
@@ -710,37 +719,23 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             </div>
           </nav>
 
-          {/* Dream Cycle indicator */}
+          {/* Dream Cycle indicator — compact */}
           <div
             className={cn(
-              "mx-3 mt-2 mb-4 rounded-xl border px-3 py-3 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
+              "mx-3 mt-2 mb-1 flex items-center gap-1.5 rounded-md px-2 py-1 transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
               dreamCycle
-                ? "border-emerald-500/20 bg-emerald-500/[0.06]"
-                : "border-amber-500/20 bg-amber-500/[0.06]",
-              collapsed
-                ? "pointer-events-none h-0 overflow-hidden border-0 py-0 opacity-0"
-                : "opacity-100"
+                ? "text-[color:var(--ds-success-text)]"
+                : "text-[color:var(--ds-warning-text)]",
+              collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
             )}
-          >
-            <div className="flex items-center gap-2">
-              <Zap
-                size={12}
-                className={cn("shrink-0", dreamCycle ? "text-emerald-700" : "text-amber-700")}
-              />
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  dreamCycle ? "text-emerald-700" : "text-amber-700"
-                )}
-              >
-                {t("sidebar.dream_cycle")}
-              </span>
-            </div>
-            <p className="mt-1.5 text-xs leading-snug text-[color:var(--ds-text-muted)]">
-              {dreamCycle
+            title={
+              dreamCycle
                 ? `${t("sidebar.dream_last_run")} ${new Date(dreamCycle).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-                : t("sidebar.dream_not_scheduled")}
-            </p>
+                : t("sidebar.dream_not_scheduled")
+            }
+          >
+            <Zap size={11} className="shrink-0" />
+            <span className="text-xs font-medium">{t("sidebar.dream_cycle")}</span>
           </div>
 
           {/* User profile section */}
@@ -754,7 +749,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               )}
             >
               <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
-                <User size={15} className="brand-text" />
+                {userName ? (
+                  <span className="brand-text text-xs font-bold uppercase">
+                    {userName.slice(0, 2)}
+                  </span>
+                ) : (
+                  <User size={15} className="brand-text" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">

@@ -29,7 +29,6 @@ import {
   pageTypeBelongsTo,
   getClassificationSummary,
   type EntityClass,
-  type DataSensitivity,
   type TenantScope,
 } from "@/lib/data-classification";
 
@@ -382,40 +381,35 @@ describe("validateTenantScope", () => {
 
 describe("isSameOrg", () => {
   it("returns true for same org", () => {
-    expect(isSameOrg(
-      { brain_id: "b1", org_id: "o1" },
-      { brain_id: "b2", org_id: "o1" },
-    )).toBe(true);
+    expect(isSameOrg({ brain_id: "b1", org_id: "o1" }, { brain_id: "b2", org_id: "o1" })).toBe(
+      true
+    );
   });
 
   it("returns false for different org", () => {
-    expect(isSameOrg(
-      { brain_id: "b1", org_id: "o1" },
-      { brain_id: "b1", org_id: "o2" },
-    )).toBe(false);
+    expect(isSameOrg({ brain_id: "b1", org_id: "o1" }, { brain_id: "b1", org_id: "o2" })).toBe(
+      false
+    );
   });
 });
 
 describe("isSameBrain", () => {
   it("returns true for same brain and org", () => {
-    expect(isSameBrain(
-      { brain_id: "b1", org_id: "o1" },
-      { brain_id: "b1", org_id: "o1" },
-    )).toBe(true);
+    expect(isSameBrain({ brain_id: "b1", org_id: "o1" }, { brain_id: "b1", org_id: "o1" })).toBe(
+      true
+    );
   });
 
   it("returns false for different brain", () => {
-    expect(isSameBrain(
-      { brain_id: "b1", org_id: "o1" },
-      { brain_id: "b2", org_id: "o1" },
-    )).toBe(false);
+    expect(isSameBrain({ brain_id: "b1", org_id: "o1" }, { brain_id: "b2", org_id: "o1" })).toBe(
+      false
+    );
   });
 
   it("returns false for different org", () => {
-    expect(isSameBrain(
-      { brain_id: "b1", org_id: "o1" },
-      { brain_id: "b1", org_id: "o2" },
-    )).toBe(false);
+    expect(isSameBrain({ brain_id: "b1", org_id: "o1" }, { brain_id: "b1", org_id: "o2" })).toBe(
+      false
+    );
   });
 });
 
@@ -468,7 +462,8 @@ describe("calculateRetentionExpiry", () => {
   it("calculates expiry for P10Y (relational_table)", () => {
     const expiry = calculateRetentionExpiry("2026-01-01", "relational_table");
     expect(expiry).not.toBeNull();
-    const diffYears = (expiry!.getTime() - new Date("2026-01-01").getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+    const diffYears =
+      (expiry!.getTime() - new Date("2026-01-01").getTime()) / (365.25 * 24 * 60 * 60 * 1000);
     expect(diffYears).toBeCloseTo(10, 0);
   });
 });

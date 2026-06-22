@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, Brain, Globe, Heart, Mail } from "lucide-react";
+import { ArrowRight, Shield, Brain, Globe, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, AlertCircle, FileText, ShieldAlert, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";

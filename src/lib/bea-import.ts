@@ -39,6 +39,30 @@ export interface BeaImportResult {
   error_count: number;
 }
 
+export interface BeaImportBundleOptions {
+  filename?: string;
+  source?: "upload" | "watch_dir" | "manual";
+  importedAt?: string;
+  importedBy?: string;
+}
+
+export interface BeaImportPageBundle {
+  importPage: {
+    slug: string;
+    title: string;
+    type: "bea_import";
+    content: string;
+    frontmatter: Record<string, unknown>;
+  };
+  messagePages: Array<{
+    slug: string;
+    title: string;
+    type: "bea_message";
+    content: string;
+    frontmatter: Record<string, unknown>;
+  }>;
+}
+
 function extractText(xml: string, tag: string): string | undefined {
   const regex = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`, "i");
   const match = xml.match(regex);
@@ -84,7 +108,7 @@ function safeSlug(text: string, fallback: string): string {
   return slug || fallback;
 }
 
-export function parseBeaXml(xmlContent: string, filename?: string): BeaImportedMessage | null {
+export function parseBeaXml(xmlContent: string, _filename?: string): BeaImportedMessage | null {
   try {
     const subject =
       extractText(xmlContent, "subject") || extractText(xmlContent, "Subject") || "Ohne Betreff";
@@ -185,5 +209,110 @@ export function parseBeaXmlBatch(
     total_count: files.length,
     valid_count: messages.length,
     error_count: errors.length,
+  };
+}
+
+export function buildBeaImportBundle(
+  result: BeaImportResult,
+  options: BeaImportBundleOptions = {}
+): BeaImportPageBundle {
+  const importedAt = options.importedAt || new Date().toISOString();
+  const source = options.source || "upload";
+  const timestampPart = importedAt.replace(/[^0-9]/g, "").slice(0, 14);
+  const filenamePart = safeSlug(options.filename || "bea-import", "bea-import");
+  const importSlug = `legal/bea-imports/${timestampPart}-${filenamePart}`;
+
+  const messagePages = result.messages.map((message, index) => {
+    const slug = `${message.slug}-${String(index + 1).padStart(3, "0")}`;
+    const attachmentLines = (message.attachments || []).map(
+      (attachment) =>
+        `- ${attachment.filename}${attachment.mime_type ? ` (${attachment.mime_type})` : ""}${
+          typeof attachment.size === "number" ? `, ${attachment.size} Bytes` : ""
+        }`
+    );
+    const content = [
+      `# ${message.subject}`,
+      "",
+      `Von: ${message.sender}`,
+      `An: ${message.recipient}`,
+      `Gesendet: ${message.sent_date}`,
+      message.received_date ? `Empfangen: ${message.received_date}` : null,
+      message.case_ref ? `Aktenzeichen: ${message.case_ref}` : null,
+      message.delivery_status ? `Status: ${message.delivery_status}` : null,
+      "",
+      "## Nachricht",
+      "",
+      message.body_text || "",
+      attachmentLines.length > 0 ? "" : null,
+      attachmentLines.length > 0 ? "## Anlagen" : null,
+      ...attachmentLines,
+    ]
+      .filter((line): line is string => line !== null)
+      .join("\n");
+
+    return {
+      slug,
+      title: `beA: ${message.subject}`,
+      type: "bea_message" as const,
+      content,
+      frontmatter: {
+        type: "bea_message",
+        import_slug: importSlug,
+        source,
+        imported_at: importedAt,
+        subject: message.subject,
+        sender: message.sender,
+        sender_id: message.sender_id,
+        recipient: message.recipient,
+        recipient_id: message.recipient_id,
+        sent_date: message.sent_date,
+        received_date: message.received_date,
+        case_ref: message.case_ref,
+        bea_id: message.bea_id,
+        delivery_status: message.delivery_status,
+        attachments: message.attachments || [],
+      },
+    };
+  });
+
+  const content = [
+    `# beA Import ${options.filename || ""}`.trim(),
+    "",
+    `Quelle: ${source}`,
+    `Importiert am: ${importedAt}`,
+    options.importedBy ? `Importiert von: ${options.importedBy}` : null,
+    "",
+    "## Zusammenfassung",
+    "",
+    `- Dateien gesamt: ${result.total_count}`,
+    `- Gueltige Nachrichten: ${result.valid_count}`,
+    `- Fehlerhafte Dateien: ${result.error_count}`,
+    result.errors.length > 0 ? "" : null,
+    result.errors.length > 0 ? "## Fehler" : null,
+    ...result.errors.map((error) => `- ${error.file}: ${error.error}`),
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  return {
+    importPage: {
+      slug: importSlug,
+      title: `beA Import ${options.filename || timestampPart}`,
+      type: "bea_import",
+      content,
+      frontmatter: {
+        type: "bea_import",
+        filename: options.filename,
+        source,
+        imported_at: importedAt,
+        imported_by: options.importedBy,
+        total_count: result.total_count,
+        valid_count: result.valid_count,
+        error_count: result.error_count,
+        errors: result.errors,
+        message_slugs: messagePages.map((page) => page.slug),
+      },
+    },
+    messagePages,
   };
 }

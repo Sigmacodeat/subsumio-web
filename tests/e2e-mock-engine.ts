@@ -264,6 +264,13 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       if (!page) return sendJson(res, 404, { error: "not_found" });
       // Soft-delete: if legal_case, archive instead of delete
       if (page.type === "legal_case") {
+        // Guard: already archived
+        if (page.frontmatter?.status === "archived") {
+          return sendJson(res, 409, {
+            error: "already_archived",
+            message: "Akte ist bereits archiviert.",
+          });
+        }
         const existingTimeline =
           (page.frontmatter?.timeline_events as Array<Record<string, unknown>>) || [];
         page.frontmatter = {

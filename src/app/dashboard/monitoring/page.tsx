@@ -598,7 +598,7 @@ function AlertItem({
 // ─── Main Page ─────────────────────────────────────────────────────
 
 export default function MonitoringPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [monitors, setMonitors] = useState<RegulatoryMonitor[]>([]);
   const [alerts, setAlerts] = useState<RegulatoryAlert[]>([]);
   const [alertSlugs, setAlertSlugs] = useState<string[]>([]);
@@ -662,7 +662,7 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();

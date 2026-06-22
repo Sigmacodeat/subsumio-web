@@ -90,6 +90,7 @@ describe("auditLabel", () => {
       "invoice.send",
       "invoice.remind",
       "document.upload",
+      "document.download",
       "document.delete",
       "deadline.create",
       "deadline.update",

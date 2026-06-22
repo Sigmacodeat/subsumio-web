@@ -47,6 +47,20 @@ interface ThinkOptions {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LooseAuthResponse = Record<string, any>;
 
+export class ApiRequestError extends Error {
+  status: number;
+  code?: string;
+  data?: unknown;
+
+  constructor(message: string, status: number, code?: string, data?: unknown) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.code = code;
+    this.data = data;
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -60,7 +74,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const error = await res.text().catch(() => "");
-    throw new Error(error || `HTTP ${res.status}`);
+    if (error) {
+      try {
+        const parsed = JSON.parse(error) as { message?: unknown; error?: unknown };
+        const code = typeof parsed.error === "string" ? parsed.error : undefined;
+        const message = typeof parsed.message === "string" ? parsed.message : code ? code : "";
+        if (message) throw new ApiRequestError(message, res.status, code, parsed);
+      } catch (parseErr) {
+        if (parseErr instanceof ApiRequestError) throw parseErr;
+      }
+    }
+    throw new ApiRequestError(error || `HTTP ${res.status}`, res.status);
   }
 
   const text = await res.text();

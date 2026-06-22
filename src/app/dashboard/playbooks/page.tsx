@@ -106,9 +106,10 @@ export default function PlaybooksPage() {
   const { t } = useLang();
   const confirm = useConfirm();
 
-  const jurisdictionLabel = (j: string): string => t(`playbooks.jurisdiction_${j}` as DashboardKey);
-  const severityLabel = (s: string): string => t(`playbooks.severity_${s}` as DashboardKey);
-  const positionLabel = (p: string): string => t(`playbooks.position_${p}` as DashboardKey);
+  const _jurisdictionLabel = (j: string): string =>
+    t(`playbooks.jurisdiction_${j}` as DashboardKey);
+  const _severityLabel = (s: string): string => t(`playbooks.severity_${s}` as DashboardKey);
+  const _positionLabel = (p: string): string => t(`playbooks.position_${p}` as DashboardKey);
   const [playbooks, setPlaybooks] = useState<PlaybookItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

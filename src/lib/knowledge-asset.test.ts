@@ -16,7 +16,6 @@ import {
   canSubmitForReview,
   canApprove,
   canDeprecate,
-  DEFAULT_GOVERNANCE_POLICY,
   ASSET_TYPE_LABELS,
   ASSET_STATUS_LABELS,
   ASSET_CATEGORY_LABELS,
@@ -32,7 +31,8 @@ function createTestAsset(overrides: Partial<KnowledgeAsset> = {}): KnowledgeAsse
       category: "litigation",
       title: "Test Precedent",
       description: "A test precedent for litigation",
-      content: "This is the content of the test precedent. It discusses important legal principles.",
+      content:
+        "This is the content of the test precedent. It discusses important legal principles.",
       tags: ["frist", "klage"],
       practice_areas: ["litigation"],
       created_by: "lawyer@test",
@@ -58,7 +58,16 @@ describe("Knowledge Asset — Factory", () => {
 
 describe("Knowledge Asset — Labels", () => {
   it("has labels for all types", () => {
-    const types: KnowledgeAssetType[] = ["precedent", "clause", "playbook", "checklist", "memo", "after_action_review", "template", "guideline"];
+    const types: KnowledgeAssetType[] = [
+      "precedent",
+      "clause",
+      "playbook",
+      "checklist",
+      "memo",
+      "after_action_review",
+      "template",
+      "guideline",
+    ];
     for (const type of types) {
       expect(ASSET_TYPE_LABELS[type]).toBeTruthy();
     }
@@ -71,7 +80,18 @@ describe("Knowledge Asset — Labels", () => {
   });
 
   it("has labels for all categories", () => {
-    const cats: KnowledgeAssetCategory[] = ["litigation", "contract", "corporate", "tax", "compliance", "real_estate", "insurance", "employment", "ip", "general"];
+    const cats: KnowledgeAssetCategory[] = [
+      "litigation",
+      "contract",
+      "corporate",
+      "tax",
+      "compliance",
+      "real_estate",
+      "insurance",
+      "employment",
+      "ip",
+      "general",
+    ];
     for (const cat of cats) {
       expect(ASSET_CATEGORY_LABELS[cat]).toBeTruthy();
     }
@@ -217,9 +237,7 @@ describe("Knowledge Asset — Search", () => {
   });
 
   it("can search non-authoritative with flag", () => {
-    const assets = [
-      createTestAsset({ id: "a1", title: "Test Asset One" }),
-    ];
+    const assets = [createTestAsset({ id: "a1", title: "Test Asset One" })];
     const results = searchKnowledgeAssets(assets, "Test", { authoritative_only: false });
     expect(results.length).toBeGreaterThan(0);
   });
@@ -295,7 +313,12 @@ describe("Knowledge Asset — Search", () => {
   });
 
   it("returns matched fields", () => {
-    const asset = createTestAsset({ id: "a1", title: "Klage", description: "Important", tags: ["frist"] });
+    const asset = createTestAsset({
+      id: "a1",
+      title: "Klage",
+      description: "Important",
+      tags: ["frist"],
+    });
     asset.status = "approved";
     asset.is_authoritative = true;
     const results = searchKnowledgeAssets([asset], "Klage");
@@ -398,7 +421,10 @@ describe("Knowledge Asset — Validation", () => {
   });
 
   it("warns about privileged+public", () => {
-    const asset = createTestAsset({ privilege_level: "attorney_client", confidentiality_level: "public" });
+    const asset = createTestAsset({
+      privilege_level: "attorney_client",
+      confidentiality_level: "public",
+    });
     const result = validateKnowledgeAsset(asset);
     expect(result.warnings.some((w) => w.includes("public"))).toBe(true);
   });

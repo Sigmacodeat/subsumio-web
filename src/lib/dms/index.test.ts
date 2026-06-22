@@ -10,7 +10,6 @@ vi.mock("@/lib/engine", () => ({
 
 import {
   DMS_BASE,
-  DMS_API_KEY,
   dmsAuthHeaders,
   isDmsConfigured,
   importToBrainCommon,

@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod";
-import { createHandler, apiSuccess, apiError } from "@/lib/api-handler";
+import { createHandler, apiSuccess } from "@/lib/api-handler";
 import {
   extractTimeFromConversation,
   extractedToTimeEntry,
@@ -61,7 +61,7 @@ export const POST = createHandler(
       },
     }),
   },
-  async (ctx, body, req) => {
+  async (ctx, body, _req) => {
     const messages: ConversationMessage[] = body.messages.map((m) => ({
       role: m.role,
       text: m.text,

@@ -39,7 +39,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       {isFirstTime && (
-        <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-[color:var(--ds-surface)] p-5 md:p-6">
+        <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-gradient-to-br from-[color:var(--brand-glow)] to-transparent p-5 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-base font-bold text-[color:var(--ds-text)]">
@@ -94,7 +94,9 @@ export default function DashboardPage() {
                 className="text-xs"
               >
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${degraded ? "bg-amber-500" : "bg-emerald-500"}`}
+                  className={`h-1.5 w-1.5 rounded-full ${degraded ? "bg-[color:var(--ds-warning-text)]" : "bg-[color:var(--ds-success-text)]"}`}
+                  role="img"
+                  aria-label={degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
                 />
                 {degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
               </Badge>

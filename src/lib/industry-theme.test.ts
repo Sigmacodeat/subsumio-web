@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { styleForTheme, styleForIndustry, type BrandThemeStyle } from "./industry-theme";
+import { styleForTheme, styleForIndustry } from "./industry-theme";
 import { SUBSUMIO_THEME, themeForIndustry } from "./industry-pack";
 
 describe("styleForTheme", () => {

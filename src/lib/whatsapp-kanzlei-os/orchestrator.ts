@@ -8,7 +8,11 @@ import { buildIntakeRequest, writeIntakeRequest } from "@/lib/intake";
 import { downloadAndStoreWhatsAppMedia, type StoredWhatsAppMedia } from "@/lib/whatsapp/media";
 import { transcribeVoiceMessage } from "@/lib/whatsapp/transcribe";
 import { phoneHash } from "@/lib/whatsapp/verify";
-import type { WhatsAppIdentity, WhatsAppIncomingMessage } from "@/lib/whatsapp/types";
+import type {
+  WhatsAppIdentity,
+  WhatsAppIncomingMessage,
+  WhatsAppInteractiveButtonMessage,
+} from "@/lib/whatsapp/types";
 import { buildWhatsAppApproval, writeWhatsAppApproval } from "./approvals";
 import {
   buildConversationEvent,
@@ -23,10 +27,10 @@ import {
   matchApprovalByReference,
   responseToApprovalDecision,
   createApprovalRequestEvent,
-  type ParsedApprovalResponse,
+  type NotificationEvent,
 } from "@/lib/whatsapp-event-bus";
 import { executeApprovedAction, type ApprovalExecutionDeps } from "@/lib/approval-execution";
-import type { AgentActionFrontmatter, ActionType } from "@/lib/approval";
+import type { ActionType } from "@/lib/approval";
 
 /**
  * Briefing feedback was dead code (P1-SECR-006 followup): nothing ever
@@ -69,9 +73,11 @@ async function captureBriefingFeedbackIfApplicable(
 
 export interface OrchestrationResult {
   reply: string | null;
+  interactive?: WhatsAppInteractiveButtonMessage;
   eventSlug: string;
   workflowRunSlug?: string;
   actionSlug?: string;
+  notificationEvent?: NotificationEvent;
   status: ConversationEventStatus;
 }
 
@@ -124,6 +130,27 @@ function safeClientReply(): string {
 
 function isClientRole(role: WhatsAppIdentity["role"] | undefined): boolean {
   return role === "client" || role === "external" || role === "intake";
+}
+
+/**
+ * G3: If a reply text contains the "Antworte mit JA" confirmation pattern,
+ * convert it into an interactive button message with Ja/Nein buttons
+ * for a better UX — the lawyer can tap instead of typing.
+ */
+function buildConfirmationButtons(reply: string): WhatsAppInteractiveButtonMessage | null {
+  if (!/antworte\s+mit\s+ja/i.test(reply)) return null;
+  const bodyText = reply.replace(/\s*Antworte\s+mit\s+JA.*$/i, "").trim();
+  return {
+    type: "button",
+    body: { text: bodyText || "Bitte bestätigen:" },
+    action: {
+      buttons: [
+        { type: "reply", reply: { id: "confirm_yes", title: "Ja, speichern" } },
+        { type: "reply", reply: { id: "confirm_no", title: "Nein, verwerfen" } },
+      ],
+    },
+    footer: { text: "Tippen zum Bestätigen oder Verwerfen" },
+  };
 }
 
 /**
@@ -218,6 +245,13 @@ export async function orchestrateWhatsAppMessage(
   let normalizedText = confirmationText(message) ?? textFromWhatsAppMessage(message);
   let storedMedia: StoredWhatsAppMedia | null = null;
 
+  // G3: Map interactive button replies to confirmation intents
+  if (message.type === "button_reply") {
+    if (message.buttonId === "confirm_yes") normalizedText = "ja";
+    else if (message.buttonId === "confirm_no") normalizedText = "nein";
+    else normalizedText = message.buttonText || message.buttonId;
+  }
+
   if (message.type === "voice") {
     storedMedia = await downloadMedia(message);
     const transcription = await transcribeVoice(storedMedia);
@@ -310,8 +344,9 @@ export async function orchestrateWhatsAppMessage(
     // This makes the approval visible to the WhatsApp notification handler,
     // which will send a proactive WhatsApp message to the lawyer with the
     // approval summary and the reference code for the return channel.
+    let notificationEvent: NotificationEvent | undefined;
     try {
-      const approvalEvent = createApprovalRequestEvent({
+      notificationEvent = createApprovalRequestEvent({
         brain_id: sender.brainId,
         org_id: sender.orgId,
         case_slug: caseSlugFromText(normalizedText),
@@ -324,9 +359,6 @@ export async function orchestrateWhatsAppMessage(
       // The event bus is initialized and dispatched by the webhook route
       // or cron job — here we just make the event available via a side channel.
       // The webhook route can pick this up from the orchestrator result.
-      (
-        approvalRecord as unknown as { _notificationEvent?: typeof approvalEvent }
-      )._notificationEvent = approvalEvent;
     } catch {
       // Non-blocking: event bus is best-effort, not critical path
     }
@@ -335,6 +367,7 @@ export async function orchestrateWhatsAppMessage(
       reply: safeClientReply(),
       eventSlug: event.slug,
       actionSlug: approvalRecord.slug,
+      notificationEvent,
       status: "pending_approval",
     };
   }
@@ -359,7 +392,9 @@ export async function orchestrateWhatsAppMessage(
       text: normalizedText,
     });
     const feedbackReply = await captureBriefingFeedbackIfApplicable(sender, normalizedText, reply);
-    return { reply: feedbackReply ?? reply, eventSlug: event.slug, status: "executed" };
+    const finalReply = feedbackReply ?? reply;
+    const interactive = buildConfirmationButtons(finalReply) ?? undefined;
+    return { reply: finalReply, interactive, eventSlug: event.slug, status: "executed" };
   }
 
   if (isMediaMessage(message)) {

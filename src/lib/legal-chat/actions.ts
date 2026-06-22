@@ -47,6 +47,16 @@ type ParsedIntent =
   | { kind: "today" }
   | { kind: "case_lookup"; caseRef: string }
   | { kind: "mark_done"; caseRef: string; itemType: "task" | "deadline"; query: string }
+  | { kind: "update_task"; caseRef: string; query: string; dueDate: string }
+  | { kind: "delegate_task"; caseRef: string; query: string; assignee: string }
+  | { kind: "update_deadline"; caseRef: string; query: string; dueDate: string }
+  | { kind: "cancel_deadline"; caseRef: string; query: string }
+  | { kind: "update_appointment"; caseRef: string; query: string; date: string; time: string }
+  | { kind: "cancel_appointment"; caseRef: string; query: string }
+  | { kind: "document_status"; caseRef: string }
+  | { kind: "review_document"; caseRef: string; query: string; status: "confirmed" | "rejected" }
+  | { kind: "bea_status" }
+  | { kind: "datev_status" }
   | { kind: "search"; query: string }
   | { kind: "financial_overview" }
   | { kind: "case_activity"; caseRef: string }
@@ -60,6 +70,16 @@ type ParsedIntent =
   | { kind: "create_client"; name: string; phone?: string; email?: string; note?: string }
   | { kind: "close_case"; caseRef: string }
   | { kind: "create_invoice"; caseRef: string; amount: number; description: string }
+  | {
+      kind: "appointment";
+      caseRef: string;
+      title: string;
+      date: string;
+      time: string;
+      location?: string;
+      reminderHours: number;
+    }
+  | { kind: "list_appointments" }
   | { kind: "free_text"; text: string }
   | { kind: "unknown"; message: string };
 
@@ -135,7 +155,6 @@ function safeSlugPart(input: string): string {
 
 export function parseIntent(text: string): ParsedIntent {
   const trimmed = text.trim();
-  const lower = trimmed.toLowerCase();
   if (/^(ja|ok|okay|speichern|bestaetigen|bestätigen)$/i.test(trimmed)) return { kind: "confirm" };
   if (/^(nein|no|abbrechen|verwerfen|stopp|stop)$/i.test(trimmed)) return { kind: "cancel" };
   if (/^(hilfe|help|\?)$/i.test(trimmed)) return { kind: "help" };
@@ -224,6 +243,106 @@ export function parseIntent(text: string): ParsedIntent {
     };
   }
 
+  const updateTaskMatch = trimmed.match(
+    /^(?:aufgabe|task)\s+(?:verschieben|ändern|aendern)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+?)\s+(?:auf|bis|am)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})$/i
+  );
+  if (updateTaskMatch) {
+    return {
+      kind: "update_task",
+      caseRef: (updateTaskMatch[1] ?? "").trim(),
+      query: updateTaskMatch[2].trim(),
+      dueDate: normalizeDate(updateTaskMatch[3]),
+    };
+  }
+
+  const delegateTaskMatch = trimmed.match(
+    /^(?:aufgabe|task)\s+(?:delegieren|zuweisen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+?)\s+(?:an|zu)\s+(.+)$/i
+  );
+  if (delegateTaskMatch) {
+    return {
+      kind: "delegate_task",
+      caseRef: (delegateTaskMatch[1] ?? "").trim(),
+      query: delegateTaskMatch[2].trim(),
+      assignee: delegateTaskMatch[3].trim(),
+    };
+  }
+
+  const updateDeadlineMatch = trimmed.match(
+    /^(?:frist|deadline)\s+(?:verschieben|ändern|aendern)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+?)\s+(?:auf|bis|am)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})$/i
+  );
+  if (updateDeadlineMatch) {
+    return {
+      kind: "update_deadline",
+      caseRef: (updateDeadlineMatch[1] ?? "").trim(),
+      query: updateDeadlineMatch[2].trim(),
+      dueDate: normalizeDate(updateDeadlineMatch[3]),
+    };
+  }
+
+  const cancelDeadlineMatch = trimmed.match(
+    /^(?:frist|deadline)\s+(?:streichen|stornieren|löschen|loeschen|absagen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
+  if (cancelDeadlineMatch) {
+    return {
+      kind: "cancel_deadline",
+      caseRef: (cancelDeadlineMatch[1] ?? "").trim(),
+      query: cancelDeadlineMatch[2].trim(),
+    };
+  }
+
+  const updateAppointmentMatch = trimmed.match(
+    /^(?:termin|gerichtstermin|verhandlung|besprechung)\s+(?:verschieben|ändern|aendern)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+?)\s+(?:auf|am)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{2,4})\s+(\d{1,2}[:.]\d{2})$/i
+  );
+  if (updateAppointmentMatch) {
+    const timeRaw = updateAppointmentMatch[4].replace(".", ":");
+    return {
+      kind: "update_appointment",
+      caseRef: (updateAppointmentMatch[1] ?? "").trim(),
+      query: updateAppointmentMatch[2].trim(),
+      date: normalizeDate(updateAppointmentMatch[3]),
+      time: timeRaw.length === 4 ? `0${timeRaw}` : timeRaw,
+    };
+  }
+
+  const cancelAppointmentMatch = trimmed.match(
+    /^(?:termin|gerichtstermin|verhandlung|besprechung)\s+(?:absagen|stornieren|löschen|loeschen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
+  if (cancelAppointmentMatch) {
+    return {
+      kind: "cancel_appointment",
+      caseRef: (cancelAppointmentMatch[1] ?? "").trim(),
+      query: cancelAppointmentMatch[2].trim(),
+    };
+  }
+
+  const documentStatusMatch = trimmed.match(
+    /^(?:unterlagen|dokumente?|document)\s+(?:status|stand)\s+(?:(?:akt|akte)\s+)?(.+)$/i
+  );
+  if (documentStatusMatch) {
+    return { kind: "document_status", caseRef: documentStatusMatch[1].trim() };
+  }
+
+  if (/^(?:bea|beA|bea\s+eingang|bea\s+status|posteingang)$/i.test(trimmed)) {
+    return { kind: "bea_status" };
+  }
+
+  if (/^(?:datev|datev\s+status|datev\s+export|steuerberater)$/i.test(trimmed)) {
+    return { kind: "datev_status" };
+  }
+
+  const reviewDocumentMatch = trimmed.match(
+    /^(?:dokument|unterlage)\s+(?:geprüft|geprueft|freigeben|ablehnen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
+  );
+  if (reviewDocumentMatch) {
+    const negative = /(?:ablehnen|abgelehnt)/i.test(trimmed);
+    return {
+      kind: "review_document",
+      caseRef: (reviewDocumentMatch[1] ?? "").trim(),
+      query: reviewDocumentMatch[2].trim(),
+      status: negative ? "rejected" : "confirmed",
+    };
+  }
+
   // Mark task/deadline as done: "erledigt akt 2026-014: klageentwurf" or "aufgabe erledigt akt X: ..."
   // Must be checked BEFORE the deadline/task matchers to avoid being swallowed
   const doneMatch = trimmed.match(
@@ -254,6 +373,28 @@ export function parseIntent(text: string): ParsedIntent {
       caseRef: (taskMatch[1] ?? "").trim(),
       title: taskText.replace(dateMatch?.[0] ?? "", "").trim(),
       dueDate: dateMatch ? normalizeDate(dateMatch[1]) : undefined,
+    };
+  }
+
+  // Appointment: "termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung"
+  // Must be checked before the generic deadline matcher, which also accepts "termin".
+  const appointmentMatch = trimmed.match(
+    /^(?:termin|gerichtstermin|verhandlung|besprechung)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(\d{1,2}\.\d{1,2}\.\d{2,4})\s+(\d{1,2}[:.]\d{2})\s*(.*)$/i
+  );
+  if (appointmentMatch) {
+    const caseRef = (appointmentMatch[1] ?? "").trim();
+    const dateStr = normalizeDate(appointmentMatch[2]);
+    const timeRaw = appointmentMatch[3].replace(".", ":");
+    const time = timeRaw.length === 4 ? `0${timeRaw}` : timeRaw;
+    const rest = (appointmentMatch[4] ?? "").trim();
+    return {
+      kind: "appointment",
+      caseRef,
+      title: rest || "Termin",
+      date: dateStr,
+      time,
+      location: undefined,
+      reminderHours: 24,
     };
   }
 
@@ -486,6 +627,11 @@ export function parseIntent(text: string): ParsedIntent {
     return { kind: "standalone_note", note: standaloneNoteMatch[1].trim() };
   }
 
+  // List appointments: "termine" or "anstehende termine"
+  if (/^(?:termine|anstehende\s+termine|kalender|terminkalender)$/i.test(trimmed)) {
+    return { kind: "list_appointments" };
+  }
+
   // ─── Fallback ───
 
   // Free text fallback — treat as a natural language question to the brain
@@ -510,6 +656,44 @@ function fm(page: BrainPage): Record<string, unknown> {
 
 function str(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function itemLabel(item: Record<string, unknown>): string {
+  return (
+    str(item.title) ||
+    str(item.description) ||
+    str(item.text) ||
+    str(item.filename) ||
+    str(item.name) ||
+    "Eintrag"
+  );
+}
+
+function findItemIndex(items: Array<Record<string, unknown>>, query: string): number {
+  const needle = query.toLowerCase();
+  return items.findIndex((item) => itemLabel(item).toLowerCase().includes(needle));
+}
+
+function appendAudit(
+  frontmatter: Record<string, unknown>,
+  ctx: ChatContext,
+  field: string,
+  note: string
+): Array<Record<string, unknown>> {
+  const current = Array.isArray(frontmatter.audit_log)
+    ? (frontmatter.audit_log as Array<Record<string, unknown>>)
+    : [];
+  return [
+    ...current,
+    {
+      id: randomUUID(),
+      at: new Date().toISOString(),
+      action: "updated",
+      actor: ctx.sender.name || "WhatsApp",
+      field,
+      note,
+    },
+  ];
 }
 
 interface CaseCandidate {
@@ -706,7 +890,9 @@ async function createMediaVaultPage(
     content: [
       `WhatsApp-${media.kind} von ${ctx.sender.name || "erlaubtem Sender"}.`,
       ctx.caption ? `Beschriftung: ${ctx.caption}` : "",
-      hasCase ? `Zugeordnet zu Akte: ${target!.title}` : "Wartet auf Akten-Zuordnung — Dokument ist gesperrt bis eine Akte zugewiesen wird.",
+      hasCase
+        ? `Zugeordnet zu Akte: ${target!.title}`
+        : "Wartet auf Akten-Zuordnung — Dokument ist gesperrt bis eine Akte zugewiesen wird.",
       `Speicherpfad: ${media.storagePath}`,
     ]
       .filter(Boolean)
@@ -792,7 +978,15 @@ async function createPendingAction(
         | "create_case"
         | "close_case"
         | "create_invoice"
-        | "mark_done";
+        | "mark_done"
+        | "appointment"
+        | "update_task"
+        | "delegate_task"
+        | "update_deadline"
+        | "cancel_deadline"
+        | "update_appointment"
+        | "cancel_appointment"
+        | "review_document";
     }
   >,
   target?: BrainPage
@@ -816,7 +1010,23 @@ async function createPendingAction(
                   ? "Akte abschließen bestätigen"
                   : intent.kind === "create_invoice"
                     ? "Rechnung bestätigen"
-                    : "Erledigt markieren bestätigen";
+                    : intent.kind === "appointment"
+                      ? "Termin bestätigen"
+                      : intent.kind === "mark_done"
+                        ? "Erledigt markieren bestätigen"
+                        : intent.kind === "update_task"
+                          ? "Aufgabe verschieben bestätigen"
+                          : intent.kind === "delegate_task"
+                            ? "Aufgabe delegieren bestätigen"
+                            : intent.kind === "update_deadline"
+                              ? "Frist verschieben bestätigen"
+                              : intent.kind === "cancel_deadline"
+                                ? "Frist streichen bestätigen"
+                                : intent.kind === "update_appointment"
+                                  ? "Termin verschieben bestätigen"
+                                  : intent.kind === "cancel_appointment"
+                                    ? "Termin absagen bestätigen"
+                                    : "Dokument-Review bestätigen";
   await putPage(ctx.sender.brainId, {
     slug,
     title,
@@ -1100,6 +1310,199 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     return `✅ ${itemType === "deadlines" ? "Frist" : "Aufgabe"} "${doneTitle}" in "${casePage.title}" als erledigt markiert.`;
   }
 
+  if (front.intent === "update_task" || front.intent === "delegate_task") {
+    const tasks = Array.isArray(caseFm.tasks)
+      ? [...(caseFm.tasks as Array<Record<string, unknown>>)]
+      : [];
+    const matchIdx = findItemIndex(tasks, str(payload.query));
+    if (matchIdx === -1) {
+      await markAction(ctx, action, "failed", "task not found");
+      return `Keine Aufgabe in "${casePage.title}" passend zu "${str(payload.query)}" gefunden.`;
+    }
+    const title = itemLabel(tasks[matchIdx]);
+    if (front.intent === "update_task") {
+      const dueDate = str(payload.dueDate);
+      tasks[matchIdx].due_date = dueDate;
+      tasks[matchIdx].dueDate = dueDate;
+      tasks[matchIdx].updated_at = new Date().toISOString();
+    } else {
+      tasks[matchIdx].assignee = str(payload.assignee);
+      tasks[matchIdx].assigned_to = str(payload.assignee);
+      tasks[matchIdx].updated_at = new Date().toISOString();
+    }
+    await putPage(ctx.sender.brainId, {
+      slug: casePage.slug,
+      title: casePage.title,
+      type: "legal_case",
+      frontmatter: {
+        tasks,
+        updated_at: new Date().toISOString(),
+        audit_log: appendAudit(
+          caseFm,
+          ctx,
+          "tasks",
+          front.intent === "update_task"
+            ? `Aufgabe via WhatsApp verschoben: ${title} -> ${str(payload.dueDate)}`
+            : `Aufgabe via WhatsApp delegiert: ${title} -> ${str(payload.assignee)}`
+        ),
+      },
+      merge: true,
+    });
+    await markAction(ctx, action, "executed");
+    return front.intent === "update_task"
+      ? `✅ Aufgabe "${title}" in "${casePage.title}" auf ${str(payload.dueDate)} verschoben.`
+      : `✅ Aufgabe "${title}" in "${casePage.title}" an ${str(payload.assignee)} delegiert.`;
+  }
+
+  if (front.intent === "update_deadline" || front.intent === "cancel_deadline") {
+    const deadlines = Array.isArray(caseFm.deadlines)
+      ? [...(caseFm.deadlines as Array<Record<string, unknown>>)]
+      : [];
+    const matchIdx = findItemIndex(deadlines, str(payload.query));
+    if (matchIdx === -1) {
+      await markAction(ctx, action, "failed", "deadline not found");
+      return `Keine Frist in "${casePage.title}" passend zu "${str(payload.query)}" gefunden.`;
+    }
+    const title = itemLabel(deadlines[matchIdx]);
+    if (front.intent === "update_deadline") {
+      const dueDate = str(payload.dueDate);
+      deadlines[matchIdx].due_date = dueDate;
+      deadlines[matchIdx].date = dueDate;
+      deadlines[matchIdx].review_status = "unreviewed";
+      deadlines[matchIdx].updated_at = new Date().toISOString();
+    } else {
+      deadlines[matchIdx].status = "cancelled";
+      deadlines[matchIdx].cancelled_at = new Date().toISOString();
+    }
+    await putPage(ctx.sender.brainId, {
+      slug: casePage.slug,
+      title: casePage.title,
+      type: "legal_case",
+      frontmatter: {
+        deadlines,
+        updated_at: new Date().toISOString(),
+        audit_log: appendAudit(
+          caseFm,
+          ctx,
+          "deadlines",
+          front.intent === "update_deadline"
+            ? `Frist via WhatsApp verschoben: ${title} -> ${str(payload.dueDate)}`
+            : `Frist via WhatsApp gestrichen: ${title}`
+        ),
+      },
+      merge: true,
+    });
+    await markAction(ctx, action, "executed");
+    return front.intent === "update_deadline"
+      ? `✅ Frist "${title}" in "${casePage.title}" auf ${str(payload.dueDate)} verschoben. Bitte fachlich prüfen.`
+      : `✅ Frist "${title}" in "${casePage.title}" gestrichen.`;
+  }
+
+  if (front.intent === "update_appointment" || front.intent === "cancel_appointment") {
+    const appointments = Array.isArray(caseFm.appointments)
+      ? [...(caseFm.appointments as Array<Record<string, unknown>>)]
+      : [];
+    const matchIdx = findItemIndex(appointments, str(payload.query));
+    if (matchIdx === -1) {
+      await markAction(ctx, action, "failed", "appointment not found");
+      return `Kein Termin in "${casePage.title}" passend zu "${str(payload.query)}" gefunden.`;
+    }
+    const title = itemLabel(appointments[matchIdx]);
+    const appointmentSlug = str(appointments[matchIdx].slug);
+    if (front.intent === "update_appointment") {
+      const date = str(payload.date);
+      const time = str(payload.time);
+      appointments[matchIdx].date = date;
+      appointments[matchIdx].time = time;
+      appointments[matchIdx].reminder_sent = false;
+      appointments[matchIdx].updated_at = new Date().toISOString();
+      if (appointmentSlug) {
+        await putPage(ctx.sender.brainId, {
+          slug: appointmentSlug,
+          title: `Termin: ${date} ${time} — ${title}`,
+          type: "appointment",
+          frontmatter: {
+            date,
+            time,
+            reminder_sent: false,
+            updated_at: new Date().toISOString(),
+          },
+          merge: true,
+        });
+      }
+    } else {
+      appointments[matchIdx].status = "cancelled";
+      appointments[matchIdx].cancelled_at = new Date().toISOString();
+      if (appointmentSlug) {
+        await putPage(ctx.sender.brainId, {
+          slug: appointmentSlug,
+          title: `Termin abgesagt: ${title}`,
+          type: "appointment",
+          frontmatter: {
+            status: "cancelled",
+            cancelled_at: new Date().toISOString(),
+          },
+          merge: true,
+        });
+      }
+    }
+    await putPage(ctx.sender.brainId, {
+      slug: casePage.slug,
+      title: casePage.title,
+      type: "legal_case",
+      frontmatter: {
+        appointments,
+        updated_at: new Date().toISOString(),
+        audit_log: appendAudit(
+          caseFm,
+          ctx,
+          "appointments",
+          front.intent === "update_appointment"
+            ? `Termin via WhatsApp verschoben: ${title} -> ${str(payload.date)} ${str(payload.time)}`
+            : `Termin via WhatsApp abgesagt: ${title}`
+        ),
+      },
+      merge: true,
+    });
+    await markAction(ctx, action, "executed");
+    return front.intent === "update_appointment"
+      ? `✅ Termin "${title}" in "${casePage.title}" auf ${str(payload.date)} ${str(payload.time)} verschoben.`
+      : `✅ Termin "${title}" in "${casePage.title}" abgesagt.`;
+  }
+
+  if (front.intent === "review_document") {
+    const documents = Array.isArray(caseFm.documents)
+      ? [...(caseFm.documents as Array<Record<string, unknown>>)]
+      : [];
+    const matchIdx = findItemIndex(documents, str(payload.query));
+    if (matchIdx === -1) {
+      await markAction(ctx, action, "failed", "document not found");
+      return `Kein Dokument in "${casePage.title}" passend zu "${str(payload.query)}" gefunden.`;
+    }
+    const title = itemLabel(documents[matchIdx]);
+    documents[matchIdx].review_status = str(payload.status) || "confirmed";
+    documents[matchIdx].reviewed_at = new Date().toISOString();
+    documents[matchIdx].reviewed_by = ctx.sender.name || "WhatsApp";
+    await putPage(ctx.sender.brainId, {
+      slug: casePage.slug,
+      title: casePage.title,
+      type: "legal_case",
+      frontmatter: {
+        documents,
+        updated_at: new Date().toISOString(),
+        audit_log: appendAudit(
+          caseFm,
+          ctx,
+          "documents",
+          `Dokument via WhatsApp ${str(payload.status) === "rejected" ? "abgelehnt" : "geprüft"}: ${title}`
+        ),
+      },
+      merge: true,
+    });
+    await markAction(ctx, action, "executed");
+    return `✅ Dokument "${title}" in "${casePage.title}" wurde als ${str(payload.status) === "rejected" ? "abgelehnt" : "geprüft"} markiert.`;
+  }
+
   if (front.intent === "time_entry") {
     const entry = {
       id: randomUUID(),
@@ -1293,6 +1696,111 @@ async function executeAction(ctx: ChatContext, action: BrainPage): Promise<strin
     });
     await markAction(ctx, action, "executed");
     return `Gespeichert: Frist ${deadline.due_date} zu ${casePage.title}. Bitte im Fristenkalender fachlich prüfen.`;
+  }
+
+  if (front.intent === "appointment") {
+    const payload = front.payload as Record<string, unknown> | undefined;
+    if (!payload) throw new Error("appointment: missing payload");
+    const appointmentId = randomUUID();
+    const appointmentSlug = `legal/appointments/${appointmentId}`;
+    const date = str(payload.date);
+    const time = str(payload.time);
+    const title = str(payload.title) || "Termin";
+    const location = str(payload.location);
+    const reminderHours = Number(payload.reminderHours) || 24;
+    const reminderAt = new Date(`${date}T${time}:00`);
+    reminderAt.setHours(reminderAt.getHours() - reminderHours);
+    const hasCase = !!targetSlug;
+    const casePage = hasCase ? await getPage(ctx.sender.brainId, targetSlug!) : null;
+    const caseFm = casePage ? fm(casePage) : {};
+    const audit = Array.isArray(caseFm.audit_log) ? caseFm.audit_log : [];
+    const appointments = Array.isArray(caseFm.appointments) ? caseFm.appointments : [];
+
+    await putPage(ctx.sender.brainId, {
+      slug: appointmentSlug,
+      title: `Termin: ${date} ${time} — ${title}`,
+      type: "appointment",
+      content: [
+        `## Termin`,
+        ``,
+        `**Datum:** ${date}`,
+        `**Uhrzeit:** ${time}`,
+        `**Thema:** ${title}`,
+        location ? `**Ort:** ${location}` : "",
+        hasCase ? `**Akte:** ${casePage!.title}` : "",
+        `**Quelle:** WhatsApp`,
+        ``,
+        `### Erinnerung`,
+        `${reminderHours}h vor dem Termin wird eine WhatsApp-Erinnerung gesendet.`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      frontmatter: {
+        type: "appointment",
+        appointment_id: appointmentId,
+        date,
+        time,
+        title,
+        location: location || undefined,
+        case_slug: targetSlug || undefined,
+        case_title: casePage?.title,
+        status: "confirmed",
+        reminder_hours: reminderHours,
+        reminder_at: reminderAt.toISOString(),
+        reminder_sent: false,
+        created_via: "whatsapp",
+        created_at: new Date().toISOString(),
+      },
+    });
+
+    if (hasCase && casePage) {
+      await putPage(ctx.sender.brainId, {
+        slug: casePage.slug,
+        title: casePage.title,
+        content: casePage.content,
+        frontmatter: {
+          appointments: [
+            ...appointments,
+            {
+              id: appointmentId,
+              slug: appointmentSlug,
+              date,
+              time,
+              title,
+              location: location || undefined,
+              status: "confirmed",
+              reminder_hours: reminderHours,
+              created_via: "whatsapp",
+            },
+          ],
+          audit_log: [
+            ...audit,
+            {
+              id: randomUUID(),
+              at: new Date().toISOString(),
+              action: "updated",
+              actor: ctx.sender.name || "WhatsApp",
+              field: "appointments",
+              note: `Termin via WhatsApp angelegt: ${date} ${time} ${title}`,
+            },
+          ],
+        },
+        merge: true,
+      });
+    }
+
+    await markAction(ctx, action, "executed");
+    return [
+      `✅ Termin bestätigt:`,
+      `Datum: ${date}`,
+      `Uhrzeit: ${time}`,
+      `Thema: ${title}`,
+      location ? `Ort: ${location}` : "",
+      hasCase ? `Akte: ${casePage!.title}` : "",
+      `Erinnerung: ${reminderHours}h vorher via WhatsApp`,
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   throw new Error(`unsupported action intent: ${String(front.intent)}`);
@@ -1528,9 +2036,21 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
       "  notiz akt 2026-014: gegner bietet 8000 eur",
       "  notiz: Müller angerufen, bittet Rückruf — ohne Akte",
       "  aufgabe akt 2026-014: klageentwurf prüfen bis 2026-07-01",
+      "  aufgabe verschieben akt 2026-014: klageentwurf auf 2026-07-03",
+      "  aufgabe delegieren akt 2026-014: klageentwurf an Anna",
       "  frist akt 2026-014: Berufung 2026-07-01",
+      "  frist verschieben akt 2026-014: Berufung auf 2026-07-08",
+      "  frist streichen akt 2026-014: Berufung",
       "  erledigt akt 2026-014: klageentwurf — als erledigt markieren",
       "  rechnung akt 2026-014: 2500 eur für Klageentwurf",
+      "  termin akt 2026-014: 15.07.2026 14:00 LG München Verhandlung",
+      "  termin verschieben akt 2026-014: Verhandlung auf 16.07.2026 09:30",
+      "  termin absagen akt 2026-014: Verhandlung",
+      "  termine — alle anstehenden Termine auflisten",
+      "  dokumente status akt 2026-014 — Unterlagen-/Review-Status",
+      "  dokument geprüft akt 2026-014: Klageentwurf",
+      "  bea — beA-Eingänge/Entwürfe/Filing-Status",
+      "  datev — DATEV-fähige Buchungen/Rechnungsstatus",
       "",
       "🔍 Abfragen:",
       "  heute — was steht heute an (Fristen + Aufgaben)",
@@ -1928,6 +2448,178 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
     return `Erkannt: ${intent.itemType === "deadline" ? "Frist" : "Aufgabe"} "${itemTitle}" in "${target.title}" als erledigt markieren. Antworte mit JA zum Bestätigen.`;
   }
 
+  if (intent.kind === "update_task" || intent.kind === "delegate_task") {
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich die Aufgabe ändern? Beispiel: `aufgabe verschieben akt 2026-014: klageentwurf auf 2026-07-03`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const tasks = Array.isArray(fm(target).tasks)
+      ? (fm(target).tasks as Array<Record<string, unknown>>)
+      : [];
+    const matchIdx = findItemIndex(tasks, intent.query);
+    if (matchIdx === -1)
+      return `Keine Aufgabe in "${target.title}" passend zu "${intent.query}" gefunden.`;
+    await createPendingAction(ctx, intent, target);
+    return intent.kind === "update_task"
+      ? `Erkannt: Aufgabe "${itemLabel(tasks[matchIdx])}" in "${target.title}" auf ${intent.dueDate} verschieben. Antworte mit JA.`
+      : `Erkannt: Aufgabe "${itemLabel(tasks[matchIdx])}" in "${target.title}" an ${intent.assignee} delegieren. Antworte mit JA.`;
+  }
+
+  if (intent.kind === "update_deadline" || intent.kind === "cancel_deadline") {
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich die Frist ändern? Beispiel: `frist verschieben akt 2026-014: Berufung auf 2026-07-08`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const deadlines = Array.isArray(fm(target).deadlines)
+      ? (fm(target).deadlines as Array<Record<string, unknown>>)
+      : [];
+    const matchIdx = findItemIndex(deadlines, intent.query);
+    if (matchIdx === -1)
+      return `Keine Frist in "${target.title}" passend zu "${intent.query}" gefunden.`;
+    await createPendingAction(ctx, intent, target);
+    return intent.kind === "update_deadline"
+      ? `Erkannt: Frist "${itemLabel(deadlines[matchIdx])}" in "${target.title}" auf ${intent.dueDate} verschieben. Antworte mit JA.`
+      : `Erkannt: Frist "${itemLabel(deadlines[matchIdx])}" in "${target.title}" streichen. Antworte mit JA.`;
+  }
+
+  if (intent.kind === "update_appointment" || intent.kind === "cancel_appointment") {
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich den Termin ändern? Beispiel: `termin verschieben akt 2026-014: Verhandlung auf 2026-07-16 09:30`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const appointments = Array.isArray(fm(target).appointments)
+      ? (fm(target).appointments as Array<Record<string, unknown>>)
+      : [];
+    const matchIdx = findItemIndex(appointments, intent.query);
+    if (matchIdx === -1)
+      return `Kein Termin in "${target.title}" passend zu "${intent.query}" gefunden.`;
+    await createPendingAction(ctx, intent, target);
+    return intent.kind === "update_appointment"
+      ? `Erkannt: Termin "${itemLabel(appointments[matchIdx])}" in "${target.title}" auf ${intent.date} ${intent.time} verschieben. Antworte mit JA.`
+      : `Erkannt: Termin "${itemLabel(appointments[matchIdx])}" in "${target.title}" absagen. Antworte mit JA.`;
+  }
+
+  if (intent.kind === "bea_status") {
+    const [drafts, messages, filings] = await Promise.all([
+      listPages(ctx.sender.brainId, "bea_draft", 20).catch(() => []),
+      listPages(ctx.sender.brainId, "bea_message", 20).catch(() => []),
+      listPages(ctx.sender.brainId, "filing_package", 20).catch(() => []),
+    ]);
+    const draftRows = drafts.slice(0, 5).map((page) => {
+      const front = fm(page);
+      return `• Entwurf: ${str(front.subject) || page.title} -> ${str(front.recipient) || "Empfänger offen"} [${str(front.status) || "draft"}]`;
+    });
+    const inboxRows = messages.slice(0, 5).map((page) => {
+      const front = fm(page);
+      return `• Eingang: ${str(front.subject) || page.title} von ${str(front.sender) || "unbekannt"} ${str(front.sent_date) ? `(${str(front.sent_date).split("T")[0]})` : ""}`;
+    });
+    const filingRows = filings.slice(0, 5).map((page) => {
+      const front = fm(page);
+      const pkg =
+        front.package && typeof front.package === "object"
+          ? (front.package as Record<string, unknown>)
+          : {};
+      return `• Filing: ${page.title} [${str(pkg.status) || str(front.status) || "offen"}]`;
+    });
+    if (draftRows.length + inboxRows.length + filingRows.length === 0) {
+      return "Keine beA-Eingänge, Entwürfe oder Filing-Pakete im Brain gefunden.";
+    }
+    return [
+      "📬 beA-Status:",
+      ...inboxRows,
+      ...draftRows,
+      ...filingRows,
+      "",
+      "Hinweis: Versand/Freigabe bitte im beA-Dashboard final prüfen.",
+    ].join("\n");
+  }
+
+  if (intent.kind === "datev_status") {
+    const [cases, invoices] = await Promise.all([
+      listPages(ctx.sender.brainId, "legal_case", 200).catch(() => []),
+      listPages(ctx.sender.brainId, "invoice", 100).catch(() => []),
+    ]);
+    let exportEntries = 0;
+    let exportAmount = 0;
+    for (const page of cases) {
+      const front = fm(page);
+      const timeEntries = Array.isArray(front.time_entries)
+        ? (front.time_entries as Array<Record<string, unknown>>)
+        : [];
+      const expenses = Array.isArray(front.expenses)
+        ? (front.expenses as Array<Record<string, unknown>>)
+        : [];
+      for (const entry of timeEntries) {
+        if (entry.billable === false || entry.billed !== true) continue;
+        const minutes = Number(entry.minutes) || 0;
+        const rate = Number(entry.rate) || 200;
+        exportEntries++;
+        exportAmount += (minutes / 60) * rate;
+      }
+      for (const expense of expenses) {
+        if (expense.billable === false || expense.billed !== true) continue;
+        exportEntries++;
+        exportAmount += Number(expense.amount) || 0;
+      }
+    }
+    const invoiceStats = invoices.reduce(
+      (acc, page) => {
+        const status = str(fm(page).status) || "draft";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+    const invoiceLine =
+      Object.entries(invoiceStats)
+        .map(([status, count]) => `${status}: ${count}`)
+        .join(", ") || "keine Rechnungen";
+    return [
+      "🧾 DATEV-/Rechnungsstatus:",
+      `DATEV-fähige Buchungen: ${exportEntries}`,
+      `Geschätzter Netto-Betrag: ${exportAmount.toFixed(2)} EUR`,
+      `Rechnungen: ${invoiceLine}`,
+      "",
+      "Export im Dashboard: /dashboard/datev-export",
+    ].join("\n");
+  }
+
+  if (intent.kind === "document_status") {
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const front = fm(target);
+    const documents = Array.isArray(front.documents)
+      ? (front.documents as Array<Record<string, unknown>>)
+      : [];
+    if (documents.length === 0) return `Keine Dokumente in "${target.title}" gefunden.`;
+    const rows = documents.slice(0, 20).map((doc) => {
+      const status =
+        str(doc.review_status) || str(doc.extraction_status) || str(doc.ocr_status) || "offen";
+      return `• ${itemLabel(doc)} — ${status}`;
+    });
+    return [`📎 Dokumentstatus "${target.title}":`, ...rows].join("\n");
+  }
+
+  if (intent.kind === "review_document") {
+    if (!intent.caseRef)
+      return "Zu welcher Akte soll ich das Dokument prüfen? Beispiel: `dokument geprüft akt 2026-014: Klageentwurf`.";
+    const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+    if (!resolved.ok) return resolved.message;
+    const target = resolved.page;
+    const documents = Array.isArray(fm(target).documents)
+      ? (fm(target).documents as Array<Record<string, unknown>>)
+      : [];
+    const matchIdx = findItemIndex(documents, intent.query);
+    if (matchIdx === -1)
+      return `Kein Dokument in "${target.title}" passend zu "${intent.query}" gefunden.`;
+    await createPendingAction(ctx, intent, target);
+    return `Erkannt: Dokument "${itemLabel(documents[matchIdx])}" in "${target.title}" als ${intent.status === "rejected" ? "abgelehnt" : "geprüft"} markieren. Antworte mit JA.`;
+  }
+
   if (intent.kind === "search") {
     const cases = await listPages(ctx.sender.brainId, "legal_case", 100);
     const needle = intent.query.toLowerCase();
@@ -2155,6 +2847,55 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
     ].join("\n");
   }
 
+  if (intent.kind === "appointment") {
+    let target: BrainPage | undefined;
+    if (intent.caseRef) {
+      const resolved = await resolveAuthorizedCase(ctx, intent.caseRef);
+      if (!resolved.ok) return resolved.message;
+      target = resolved.page;
+    }
+    await createPendingAction(ctx, intent, target);
+    return [
+      `Erkannt: Termin anlegen`,
+      `Datum: ${intent.date}`,
+      `Uhrzeit: ${intent.time}`,
+      `Thema: ${intent.title}`,
+      target ? `Akte: ${target.title}` : "(ohne Aktenbezug)",
+      `Antworte mit JA zum Bestätigen.`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  if (intent.kind === "list_appointments") {
+    const pages = await listPages(ctx.sender.brainId, "appointment", 100);
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = pages
+      .map((page) => {
+        const front = fm(page);
+        return {
+          date: str(front.date),
+          time: str(front.time),
+          title: str(front.title) || page.title,
+          location: str(front.location),
+          caseTitle: str(front.case_title),
+          status: str(front.status),
+        };
+      })
+      .filter((a) => a.date >= today && a.status !== "cancelled")
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    if (upcoming.length === 0) return "Keine anstehenden Termine. 📭";
+    return [
+      `📅 Anstehende Termine (${upcoming.length}):`,
+      ...upcoming
+        .slice(0, 15)
+        .map(
+          (a) =>
+            `• ${a.date} ${a.time} — ${a.title}${a.location ? ` @ ${a.location}` : ""}${a.caseTitle ? ` (${a.caseTitle})` : ""}`
+        ),
+    ].join("\n");
+  }
+
   if (intent.kind === "standalone_note") {
     const noteId = randomUUID();
     const noteSlug = `legal/notes/standalone/${noteId}`;
@@ -2213,6 +2954,7 @@ export async function handleLegalChatMedia(
 
   let target: BrainPage | null = null;
   let lookupHelp: string | null = null;
+  let autoAssigned = false;
   const caseRef = parseCaseRefFromText(ctx.caption || "");
   if (caseRef) {
     const resolved = await resolveAuthorizedCase(ctx, caseRef);
@@ -2220,11 +2962,24 @@ export async function handleLegalChatMedia(
     else lookupHelp = resolved.message;
   }
 
+  // G2: Smart Auto-Assignment — no explicit caseRef, try heuristics
+  if (!target && !caseRef) {
+    target = await smartAssignCase(ctx, media);
+    if (target) autoAssigned = true;
+  }
+
   const documentSlug = await createMediaVaultPage(ctx, media, target);
   let reply: string;
   if (target) {
     await attachMediaToCase(ctx, target, media, documentSlug);
-    reply = `Gespeichert: ${media.kind} "${media.filename}" wurde im Vault abgelegt und an "${target.title}" gehängt.`;
+    if (autoAssigned) {
+      reply = [
+        `Gespeichert: ${media.kind} "${media.filename}" wurde im Vault abgelegt und automatisch an "${target.title}" gehängt.`,
+        `Wenn das nicht die richtige Akte ist, bitte mit "akt <Aktenzeichen>" korrigieren.`,
+      ].join("\n");
+    } else {
+      reply = `Gespeichert: ${media.kind} "${media.filename}" wurde im Vault abgelegt und an "${target.title}" gehängt.`;
+    }
   } else if (caseRef) {
     reply = `Gespeichert im Vault, aber nicht eindeutig zugeordnet.\n${lookupHelp}`;
   } else {
@@ -2246,4 +3001,85 @@ export async function handleLegalChatMedia(
   });
 
   return reply;
+}
+
+/**
+ * G2: Smart document-to-case assignment heuristic.
+ * Tries multiple strategies in order:
+ * 1. Filename/caption keyword match against case titles, client names, opponent names
+ * 2. Sender's most recently active case (last chat_action or time_entry)
+ * 3. If only one case exists and sender has access, auto-assign
+ * Returns null if no confident match found.
+ */
+async function smartAssignCase(
+  ctx: MediaChatContext,
+  media: StoredWhatsAppMedia
+): Promise<BrainPage | null> {
+  const cases = await listPages(ctx.sender.brainId, "legal_case", 200);
+  const accessible = cases.filter((c) => identityCanAccessMatter(ctx.sender, c.slug));
+  if (accessible.length === 0) return null;
+
+  // Strategy 1: Keyword match against filename/caption
+  const searchText = `${media.filename} ${ctx.caption || ""}`.toLowerCase();
+  if (searchText.trim()) {
+    const scored = accessible
+      .map((page) => {
+        const front = fm(page);
+        const hay = [
+          page.title,
+          str(front.case_number),
+          str(front.client_name),
+          str(front.opponent_name),
+        ]
+          .join(" ")
+          .toLowerCase();
+        let score = 0;
+        // Check if any word from the filename appears in the case data
+        const words = searchText.split(/[\s._\-]+/).filter((w) => w.length > 2);
+        for (const word of words) {
+          if (hay.includes(word)) score += 10;
+        }
+        // Strong match: case_number appears in filename
+        const caseNum = str(front.case_number).toLowerCase();
+        if (caseNum && searchText.includes(caseNum)) score += 50;
+        return { page, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+    if (scored.length > 0 && scored[0].score >= 20) {
+      return scored[0].page;
+    }
+  }
+
+  // Strategy 2: Most recently active case for this sender
+  try {
+    const actions = await listPages(ctx.sender.brainId, "chat_action", 20);
+    const senderHash = phoneHash(ctx.fromPhone);
+    const recentAction = actions
+      .filter((a) => {
+        const front = fm(a);
+        return (
+          str(front.from_phone_hash) === senderHash &&
+          str(front.status) === "executed" &&
+          str(front.target_slug)
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(str(fm(b).created_at) || 0).getTime() -
+          new Date(str(fm(a).created_at) || 0).getTime()
+      )[0];
+    if (recentAction) {
+      const targetSlug = str(fm(recentAction).target_slug);
+      const match = accessible.find((c) => c.slug === targetSlug);
+      if (match) return match;
+    }
+  } catch {
+    // Non-blocking
+  }
+
+  // Strategy 3: If only one accessible case, auto-assign
+  if (accessible.length === 1) return accessible[0];
+
+  return null;
 }

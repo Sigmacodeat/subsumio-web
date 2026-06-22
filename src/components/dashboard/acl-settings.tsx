@@ -153,7 +153,7 @@ export function AclSettings() {
                     e.stopPropagation();
                     handleDeleteGroup(group.id);
                   }}
-                  className="text-red-500 hover:text-red-600"
+                  className="text-[color:var(--ds-danger-text)] hover:opacity-80"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -226,7 +226,7 @@ export function AclSettings() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleRemoveMember(m.user_id)}
-                              className="text-red-500 hover:text-red-600"
+                              className="text-[color:var(--ds-danger-text)] hover:opacity-80"
                             >
                               <UserMinus className="h-4 w-4" />
                             </Button>

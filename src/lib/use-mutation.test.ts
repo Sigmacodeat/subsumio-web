@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 
 // Mock offline-store
 vi.mock("./offline-store", () => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLang } from "@/lib/use-lang";
 import { useDropzone } from "react-dropzone";
 import {
@@ -66,6 +66,8 @@ const ACCEPTED_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
   "image/tiff": [".tif", ".tiff"],
 };
+const FOLDER_ACCEPT_RE = /\.(md|txt|pdf|json|docx?|rtf|html?|png|jpe?g|tiff?)$/i;
+const FOLDER_MAX_BYTES = MAX_FILE_SIZE;
 
 function FileIcon({ name }: { name: string }) {
   const ext = name.split(".").pop()?.toLowerCase();
@@ -104,7 +106,10 @@ export default function UploadPage() {
   const router = useRouter();
   const { t } = useLang();
   const [files, setFiles] = useState<UploadFile[]>([]);
-  const [mode, setMode] = useState<UploadMode>("case");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<UploadMode>(
+    (searchParams.get("mode") as UploadMode) === "knowledge" ? "knowledge" : "case"
+  );
   const [source, setSource] = useState("kanzleiwissen");
   const [tags, setTags] = useState("");
   const [cases, setCases] = useState<BrainPage[]>([]);
@@ -198,9 +203,8 @@ export default function UploadPage() {
         };
       });
       setFiles((prev) => [...prev, ...newFiles]);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [cases]
+    [cases, mode, selectedCaseSlug, source, tags]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -212,8 +216,6 @@ export default function UploadPage() {
   // Walk a chosen local folder (recursively, like an IDE "open folder") and pull
   // every supported file into the same upload queue. No server round-trip until
   // the user clicks "Upload" — the files stay client-side until then.
-  const ACCEPT_RE = /\.(md|txt|pdf|json|docx?|rtf|html?|png|jpe?g|tiff?)$/i;
-  const MAX_BYTES = MAX_FILE_SIZE;
   const pickFolder = useCallback(async () => {
     interface FsHandle {
       kind: "file" | "directory";
@@ -235,7 +237,7 @@ export default function UploadPage() {
         for await (const entry of handle.values()) {
           if (entry.kind === "file" && entry.getFile) {
             const f = await entry.getFile();
-            if (ACCEPT_RE.test(f.name) && f.size <= MAX_BYTES) out.push(f);
+            if (FOLDER_ACCEPT_RE.test(f.name) && f.size <= FOLDER_MAX_BYTES) out.push(f);
           } else if (entry.kind === "directory") {
             await walk(entry, depth + 1);
           }
@@ -248,7 +250,6 @@ export default function UploadPage() {
     } finally {
       setScanning(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addFiles]);
 
   const removeFile = (id: string) => {

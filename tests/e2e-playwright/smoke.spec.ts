@@ -72,7 +72,7 @@ test.describe("Smoke: Auth Flow", () => {
 
   test("login page renders", async ({ page }) => {
     await page.goto("/de/login", { waitUntil: "domcontentloaded" });
-    await expect(page.locator('button:has-text("Anmelden")')).toBeVisible();
+    await expect(page.getByRole("main").getByRole("button", { name: "Anmelden" })).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
   });
@@ -197,20 +197,24 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     await expect(page.getByRole("heading", { name: /Kanzlei-Cockpit|Firm Cockpit/i })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText(/Critical Deadlines|Kritische Fristen/i)).toBeVisible();
-    await expect(page.getByText(/Open Cases|Offene Akten/i)).toBeVisible();
-    await expect(page.getByText(/Inbox|Eingang/i)).toBeVisible();
-    await expect(page.getByText(/Reviews/i)).toBeVisible();
-    await expect(page.getByText(/Billing|Abrechnung/i)).toBeVisible();
+    await expect(page.getByText(/Critical Deadlines|Kritische Fristen/i).first()).toBeVisible();
+    await expect(page.getByText(/Open Cases|Offene Akten/i).first()).toBeVisible();
+    await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
+    await expect(page.getByText(/Reviews/i).first()).toBeVisible();
+    await expect(page.getByText(/Billing|Abrechnung/i).first()).toBeVisible();
 
     const nav = page.getByRole("navigation", { name: /Main navigation|Hauptnavigation/i });
     if ((await nav.isVisible().catch(() => false)) === false) {
       await page.getByRole("button", { name: /Open menu|Menü öffnen/i }).click();
     }
-    await expect(nav.getByText(/Firm Cockpit|Kanzlei-Cockpit/i)).toBeVisible();
-    await expect(nav.getByText(/Cases & Clients|Akten & Mandanten/i)).toBeVisible();
-    await expect(nav.getByText(/Inbox & Deadlines|Eingang & Fristen/i)).toBeVisible();
-    await expect(nav.getByText(/Documents & Drafting|Dokumente & Drafting/i)).toBeVisible();
+    await expect(nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })).toBeVisible();
+    await expect(
+      nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i })
+    ).toBeVisible();
+    await expect(nav.getByRole("button", { name: /Communication|Kommunikation/i })).toBeVisible();
+    await expect(
+      nav.getByRole("button", { name: /Documents & Drafting|Dokumente & Drafting/i })
+    ).toBeVisible();
     await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
     await expect(
       nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })
@@ -225,15 +229,16 @@ test.describe("Smoke: Dashboard Pages Render", () => {
     await nav.getByRole("button", { name: /Cases & Clients|Akten & Mandanten/i }).click();
     await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(0);
 
-    await nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i }).click();
+    await nav.getByRole("button", { name: /Communication|Kommunikation/i }).click();
     await expect(nav.locator('button[aria-expanded="true"]')).toHaveCount(1);
-    await expect(
-      nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i })
-    ).toHaveAttribute("aria-expanded", "true");
+    await expect(nav.getByRole("button", { name: /Communication|Kommunikation/i })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
 
     await page.goto("/dashboard/deadlines", { waitUntil: "domcontentloaded" });
     await expect(
-      nav.getByRole("button", { name: /Inbox & Deadlines|Eingang & Fristen/i })
+      nav.getByRole("button", { name: /Firm Cockpit|Kanzlei-Cockpit/i })
     ).toHaveAttribute("aria-expanded", "true");
     await expect(
       page.getByText(/Failed to load brain status|Brain-Status konnte nicht geladen werden/i)

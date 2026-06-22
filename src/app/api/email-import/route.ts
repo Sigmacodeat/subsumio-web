@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { createHandler, apiError } from "@/lib/api-handler";
 
@@ -18,7 +18,8 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 500 });
+      const brain = createServerBrainClient(ctx.headers);
+      const pages = await brain.listPages({ type: "legal_case", limit: 500 });
       const cases = pages.map((p) => ({ slug: p.slug, title: p.title, ...caseFrontmatter(p) }));
 
       let matchedCase = cases.find((c) => {
@@ -88,7 +89,7 @@ export const POST = createHandler(
         notes: `Von: ${body.from}\n\n${body.body.substring(0, 2000)}`,
       };
 
-      await api.brain.updatePage({
+      await brain.updatePage({
         slug: matchedCase.slug,
         frontmatter: {
           documents: [...existingDocs, documentEntry],

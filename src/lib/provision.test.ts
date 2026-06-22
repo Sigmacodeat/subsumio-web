@@ -8,10 +8,12 @@ vi.mock("@/lib/engine", () => ({
 }));
 
 vi.mock("@/lib/industry-pack", () => ({
-  packForIndustry: vi.fn((industry?: string | null) => industry === "legal" ? "subsumio-legal" : null),
+  packForIndustry: vi.fn((industry?: string | null) =>
+    industry === "legal" ? "subsumio-legal" : null
+  ),
 }));
 
-import { provisionBrain, provisionBrainAsync, type ProvisionResult } from "./provision";
+import { provisionBrain, provisionBrainAsync } from "./provision";
 
 describe("provisionBrain", () => {
   beforeEach(() => {
@@ -24,18 +26,14 @@ describe("provisionBrain", () => {
   });
 
   test("returns ok:true on successful stats call", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("{}", { status: 200 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("{}", { status: 200 }));
     const result = await provisionBrain("brain-1");
     expect(result.ok).toBe(true);
     expect(result.brainId).toBe("brain-1");
   });
 
   test("returns ok:true on 404 (source not yet created)", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("not found", { status: 404 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("not found", { status: 404 }));
     const result = await provisionBrain("brain-1");
     expect(result.ok).toBe(true);
   });
@@ -68,9 +66,7 @@ describe("provisionBrain", () => {
   });
 
   test("returns ok:false on non-200/non-404 after retries", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("error", { status: 500 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("error", { status: 500 }));
     const promise = provisionBrain("brain-1");
     await vi.runAllTimersAsync();
     const result = await promise;
@@ -102,9 +98,7 @@ describe("provisionBrainAsync", () => {
   });
 
   test("returns void immediately (fire-and-forget)", () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("{}", { status: 200 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("{}", { status: 200 }));
     const result = provisionBrainAsync("brain-1");
     expect(result).toBeUndefined();
   });

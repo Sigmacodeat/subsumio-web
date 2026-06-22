@@ -50,13 +50,13 @@ export function OcrWarningBanner() {
   if (dismissed || !ocrStatus || ocrStatus.enabled) return null;
 
   return (
-    <div className="flex items-center gap-3 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2.5">
-      <AlertTriangle size={16} className="shrink-0 text-amber-600" />
-      <div className="min-w-0 flex-1 text-sm text-amber-900">
+    <div className="flex items-center gap-3 border-b border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)] px-4 py-2.5">
+      <AlertTriangle size={16} className="shrink-0 text-[color:var(--ds-warning-text)]" />
+      <div className="min-w-0 flex-1 text-sm text-[color:var(--ds-text)]">
         <span className="font-medium">OCR inaktiv</span>
-        <span className="ml-1.5 text-amber-700">
+        <span className="ml-1.5 text-[color:var(--ds-text-muted)]">
           Gescannte Dokumente und Bilder werden nicht text-extrahiert. Aktivieren Sie{" "}
-          <code className="rounded bg-amber-500/20 px-1 py-0.5 text-xs">
+          <code className="rounded bg-[color:var(--ds-surface-2)] px-1 py-0.5 text-xs text-[color:var(--ds-text)]">
             GBRAIN_EMBEDDING_IMAGE_OCR=true
           </code>{" "}
           in der Engine-Konfiguration.
@@ -69,7 +69,7 @@ export function OcrWarningBanner() {
             sessionStorage.setItem("ocr-warning-dismissed", "true");
           } catch {}
         }}
-        className="shrink-0 rounded p-1 text-amber-600 transition-colors hover:bg-amber-500/20"
+        className="shrink-0 rounded p-1 text-[color:var(--ds-warning-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
         aria-label="Warnung verwerfen"
       >
         <X size={14} />

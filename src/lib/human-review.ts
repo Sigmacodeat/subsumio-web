@@ -12,7 +12,6 @@
  * zusätzliche relationale Tabelle (Paket 0B-konform).
  */
 
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
 import type { EvalCategory } from "@/lib/rag-eval";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -72,7 +71,7 @@ interface FeedbackPage {
 
 export async function loadFeedback(
   engineUrl: string,
-  engineHeaders: Record<string, string>,
+  engineHeaders: Record<string, string>
 ): Promise<HumanReviewFeedback[]> {
   try {
     const res = await fetch(`${engineUrl}/api/pages/${FEEDBACK_SLUG}`, {
@@ -91,7 +90,7 @@ export async function loadFeedback(
 export async function saveFeedback(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  feedback: HumanReviewFeedback[],
+  feedback: HumanReviewFeedback[]
 ): Promise<void> {
   try {
     await fetch(`${engineUrl}/api/pages`, {
@@ -115,7 +114,7 @@ export async function saveFeedback(
 export async function submitFeedback(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  input: Omit<HumanReviewFeedback, "id" | "reviewed_at" | "promoted_to_fixture">,
+  input: Omit<HumanReviewFeedback, "id" | "reviewed_at" | "promoted_to_fixture">
 ): Promise<HumanReviewFeedback> {
   const existing = await loadFeedback(engineUrl, engineHeaders);
 
@@ -178,7 +177,7 @@ export interface PromotableFeedback {
  */
 export function promoteToFixture(
   feedback: HumanReviewFeedback,
-  expectedSlugs: string[],
+  expectedSlugs: string[]
 ): PromotableFeedback | null {
   if (feedback.verdict === "correct") return null;
   if (feedback.promoted_to_fixture) return null;
@@ -198,11 +197,11 @@ export function promoteToFixture(
 export async function markPromoted(
   engineUrl: string,
   engineHeaders: Record<string, string>,
-  feedbackId: string,
+  feedbackId: string
 ): Promise<void> {
   const existing = await loadFeedback(engineUrl, engineHeaders);
   const updated = existing.map((f) =>
-    f.id === feedbackId ? { ...f, promoted_to_fixture: true } : f,
+    f.id === feedbackId ? { ...f, promoted_to_fixture: true } : f
   );
   await saveFeedback(engineUrl, engineHeaders, updated);
 }

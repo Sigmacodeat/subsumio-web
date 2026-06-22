@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, afterEach } from "vitest";
 import {
   evaluateReleaseGate,
   DEFAULT_THRESHOLDS,
@@ -9,7 +9,6 @@ import {
   loadEvalHistory,
   appendEvalHistory,
   type GateThresholds,
-  type ReleaseGateResult,
 } from "./release-gate";
 import type { EvalSummary } from "./rag-eval";
 import type { AIQualityReport } from "./ai-quality";
@@ -111,7 +110,9 @@ describe("evaluateReleaseGate — absolute thresholds", () => {
     });
     const result = evaluateReleaseGate(makeSummary(), quality, null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "citation_verification_rate" && c.status === "fail")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "citation_verification_rate" && c.status === "fail")
+    ).toBe(true);
   });
 
   test("fails when false citation rate exceeds threshold", () => {
@@ -120,7 +121,9 @@ describe("evaluateReleaseGate — absolute thresholds", () => {
     });
     const result = evaluateReleaseGate(makeSummary(), quality, null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "false_citation_rate" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "false_citation_rate" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   test("warns when unsupported claim rate exceeds threshold", () => {
@@ -128,19 +131,25 @@ describe("evaluateReleaseGate — absolute thresholds", () => {
       claims: { ...makeQuality().claims, unsupported_claim_rate: 0.5 },
     });
     const result = evaluateReleaseGate(makeSummary(), quality, null);
-    expect(result.checks.some((c) => c.name === "unsupported_claim_rate" && c.status === "warn")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "unsupported_claim_rate" && c.status === "warn")
+    ).toBe(true);
   });
 
   test("fails when precision is below threshold", () => {
     const result = evaluateReleaseGate(makeSummary({ overallPrecision: 0.3 }), makeQuality(), null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   test("fails when recall is below threshold", () => {
     const result = evaluateReleaseGate(makeSummary({ overallRecall: 0.3 }), makeQuality(), null);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "recall_absolute" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "recall_absolute" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   test("warns when MRR is below threshold", () => {
@@ -162,7 +171,9 @@ describe("evaluateReleaseGate — absolute thresholds", () => {
       contract_issues: { ...makeQuality().contract_issues!, f1: 0.4 },
     });
     const result = evaluateReleaseGate(makeSummary(), quality, null);
-    expect(result.checks.some((c) => c.name === "contract_issue_f1" && c.status === "warn")).toBe(true);
+    expect(result.checks.some((c) => c.name === "contract_issue_f1" && c.status === "warn")).toBe(
+      true
+    );
   });
 
   test("skips deadline check when quality.deadlines is null", () => {
@@ -212,7 +223,9 @@ describe("evaluateReleaseGate — regression checks", () => {
   test("passes when current matches baseline", () => {
     const baseline = makeSummary();
     const result = evaluateReleaseGate(makeSummary(), makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")
+    ).toBe(true);
     expect(result.status).toBe("pass");
   });
 
@@ -220,7 +233,9 @@ describe("evaluateReleaseGate — regression checks", () => {
     const baseline = makeSummary({ overallPrecision: 0.8 });
     const current = makeSummary({ overallPrecision: 0.6 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "precision_regression" && c.status === "fail")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "precision_regression" && c.status === "fail")
+    ).toBe(true);
     expect(result.status).toBe("fail");
   });
 
@@ -228,28 +243,36 @@ describe("evaluateReleaseGate — regression checks", () => {
     const baseline = makeSummary({ overallPrecision: 0.7 });
     const current = makeSummary({ overallPrecision: 0.67 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")
+    ).toBe(true);
   });
 
   test("fails when recall drops more than allowed regression", () => {
     const baseline = makeSummary({ overallRecall: 0.7 });
     const current = makeSummary({ overallRecall: 0.5 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "recall_regression" && c.status === "fail")).toBe(true);
+    expect(result.checks.some((c) => c.name === "recall_regression" && c.status === "fail")).toBe(
+      true
+    );
   });
 
   test("warns when MRR drops more than allowed regression", () => {
     const baseline = makeSummary({ overallMrr: 0.6 });
     const current = makeSummary({ overallMrr: 0.4 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "mrr_regression" && c.status === "warn")).toBe(true);
+    expect(result.checks.some((c) => c.name === "mrr_regression" && c.status === "warn")).toBe(
+      true
+    );
   });
 
   test("passes when current is better than baseline", () => {
     const baseline = makeSummary({ overallPrecision: 0.5, overallRecall: 0.4, overallMrr: 0.3 });
     const current = makeSummary({ overallPrecision: 0.7, overallRecall: 0.6, overallMrr: 0.5 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
-    expect(result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "precision_regression" && c.status === "pass")
+    ).toBe(true);
     expect(result.status).toBe("pass");
   });
 });
@@ -263,17 +286,17 @@ describe("evaluateReleaseGate — overall status", () => {
   });
 
   test("status is 'fail' when any check fails", () => {
-    const result = evaluateReleaseGate(
-      makeSummary({ overallPrecision: 0.1 }),
-      makeQuality(),
-      null,
-    );
+    const result = evaluateReleaseGate(makeSummary({ overallPrecision: 0.1 }), makeQuality(), null);
     expect(result.status).toBe("fail");
   });
 
   test("status is 'warn' when checks warn but none fail", () => {
     const quality = makeQuality({
-      citation: { ...makeQuality().citation, citation_verification_rate: 0.9, false_citation_rate: 0.1 },
+      citation: {
+        ...makeQuality().citation,
+        citation_verification_rate: 0.9,
+        false_citation_rate: 0.1,
+      },
       claims: { ...makeQuality().claims, unsupported_claim_rate: 0.5 },
       deadlines: null,
       contract_issues: null,
@@ -285,7 +308,11 @@ describe("evaluateReleaseGate — overall status", () => {
 
   test("fail takes precedence over warn", () => {
     const quality = makeQuality({
-      citation: { ...makeQuality().citation, citation_verification_rate: 0.5, false_citation_rate: 0.1 },
+      citation: {
+        ...makeQuality().citation,
+        citation_verification_rate: 0.5,
+        false_citation_rate: 0.1,
+      },
       claims: { ...makeQuality().claims, unsupported_claim_rate: 0.5 },
       deadlines: null,
       contract_issues: null,
@@ -300,11 +327,7 @@ describe("evaluateReleaseGate — overall status", () => {
   });
 
   test("summary message for fail includes failed check names", () => {
-    const result = evaluateReleaseGate(
-      makeSummary({ overallPrecision: 0.1 }),
-      null,
-      null,
-    );
+    const result = evaluateReleaseGate(makeSummary({ overallPrecision: 0.1 }), null, null);
     expect(result.summary).toContain("fehlgeschlagen");
   });
 
@@ -364,11 +387,13 @@ describe("evaluateReleaseGate — result structure", () => {
       makeSummary({ overallPrecision: 0.05 }),
       makeQuality(),
       null,
-      custom,
+      custom
     );
     expect(result.thresholds).toBe(custom);
     // Should pass because 0.05 >= 0.01
-    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(true);
+    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(
+      true
+    );
   });
 });
 
@@ -382,7 +407,9 @@ describe("evaluateReleaseGate — custom thresholds", () => {
     };
     const result = evaluateReleaseGate(makeSummary(), makeQuality(), null, strict);
     expect(result.status).toBe("fail");
-    expect(result.checks.some((c) => c.name === "citation_verification_rate" && c.status === "fail")).toBe(true);
+    expect(
+      result.checks.some((c) => c.name === "citation_verification_rate" && c.status === "fail")
+    ).toBe(true);
   });
 
   test("lenient thresholds can turn failures into passes", () => {
@@ -396,9 +423,11 @@ describe("evaluateReleaseGate — custom thresholds", () => {
       makeSummary({ overallPrecision: 0.05, overallRecall: 0.05 }),
       makeQuality({ citation: { ...makeQuality().citation, citation_verification_rate: 0.05 } }),
       null,
-      lenient,
+      lenient
     );
-    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(true);
+    expect(result.checks.some((c) => c.name === "precision_absolute" && c.status === "pass")).toBe(
+      true
+    );
   });
 });
 
@@ -414,9 +443,7 @@ describe("loadBaseline", () => {
   });
 
   test("returns null when response is not ok", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Not found", { status: 404 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("Not found", { status: 404 }));
     const result = await loadBaseline("http://engine.test", {});
     expect(result).toBeNull();
   });
@@ -424,7 +451,7 @@ describe("loadBaseline", () => {
   test("returns baseline from frontmatter when response is ok", async () => {
     const baseline = makeSummary();
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: { baseline } }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: { baseline } }), { status: 200 })
     );
     const result = await loadBaseline("http://engine.test", {});
     expect(result).toEqual(baseline);
@@ -432,7 +459,7 @@ describe("loadBaseline", () => {
 
   test("returns null when frontmatter has no baseline", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: {} }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: {} }), { status: 200 })
     );
     const result = await loadBaseline("http://engine.test", {});
     expect(result).toBeNull();
@@ -465,9 +492,7 @@ describe("loadEvalHistory", () => {
   });
 
   test("returns empty array when response is not ok", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Not found", { status: 404 }),
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("Not found", { status: 404 }));
     const result = await loadEvalHistory("http://engine.test", {});
     expect(result).toEqual([]);
   });
@@ -475,7 +500,7 @@ describe("loadEvalHistory", () => {
   test("returns history array from frontmatter", async () => {
     const history = [makeSummary(), makeSummary({ overallPrecision: 0.8 })];
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: { history } }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: { history } }), { status: 200 })
     );
     const result = await loadEvalHistory("http://engine.test", {});
     expect(result).toEqual(history);
@@ -484,7 +509,7 @@ describe("loadEvalHistory", () => {
 
   test("returns empty array when history is not an array", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: { history: "not an array" } }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: { history: "not an array" } }), { status: 200 })
     );
     const result = await loadEvalHistory("http://engine.test", {});
     expect(result).toEqual([]);
@@ -492,7 +517,7 @@ describe("loadEvalHistory", () => {
 
   test("returns empty array when frontmatter has no history", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: {} }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: {} }), { status: 200 })
     );
     const result = await loadEvalHistory("http://engine.test", {});
     expect(result).toEqual([]);
@@ -509,7 +534,7 @@ describe("appendEvalHistory", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     // First call: loadEvalHistory
     fetchSpy.mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: { history: existing } }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: { history: existing } }), { status: 200 })
     );
     // Second call: save
     fetchSpy.mockResolvedValueOnce(new Response("ok", { status: 200 }));
@@ -525,13 +550,13 @@ describe("appendEvalHistory", () => {
 
   test("caps history at 50 entries", async () => {
     const existing = Array.from({ length: 50 }, (_, i) =>
-      makeSummary({ timestamp: `2026-06-${String(i + 1).padStart(2, "0")}T10:00:00Z` }),
+      makeSummary({ timestamp: `2026-06-${String(i + 1).padStart(2, "0")}T10:00:00Z` })
     );
     const newSummary = makeSummary({ timestamp: "2026-07-01T10:00:00Z" });
 
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     fetchSpy.mockResolvedValueOnce(
-      new Response(JSON.stringify({ frontmatter: { history: existing } }), { status: 200 }),
+      new Response(JSON.stringify({ frontmatter: { history: existing } }), { status: 200 })
     );
     fetchSpy.mockResolvedValueOnce(new Response("ok", { status: 200 }));
 
@@ -545,9 +570,7 @@ describe("appendEvalHistory", () => {
 
   test("does not throw on fetch error (non-fatal)", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network error"));
-    await expect(
-      appendEvalHistory("http://engine.test", {}, makeSummary()),
-    ).resolves.not.toThrow();
+    await expect(appendEvalHistory("http://engine.test", {}, makeSummary())).resolves.not.toThrow();
   });
 });
 
@@ -558,7 +581,7 @@ describe("evaluateReleaseGate — boundary values at exact threshold", () => {
     const result = evaluateReleaseGate(
       makeSummary({ overallPrecision: DEFAULT_THRESHOLDS.min_precision }),
       null,
-      null,
+      null
     );
     const check = result.checks.find((c) => c.name === "precision_absolute");
     expect(check?.status).toBe("pass");
@@ -568,7 +591,7 @@ describe("evaluateReleaseGate — boundary values at exact threshold", () => {
     const result = evaluateReleaseGate(
       makeSummary({ overallRecall: DEFAULT_THRESHOLDS.min_recall }),
       null,
-      null,
+      null
     );
     const check = result.checks.find((c) => c.name === "recall_absolute");
     expect(check?.status).toBe("pass");
@@ -578,7 +601,7 @@ describe("evaluateReleaseGate — boundary values at exact threshold", () => {
     const result = evaluateReleaseGate(
       makeSummary({ overallMrr: DEFAULT_THRESHOLDS.min_mrr }),
       null,
-      null,
+      null
     );
     const check = result.checks.find((c) => c.name === "mrr_absolute");
     expect(check?.status).toBe("pass");
@@ -650,7 +673,7 @@ describe("evaluateReleaseGate — boundary values at exact threshold", () => {
   test("precision regression exactly at allowed limit passes", () => {
     // Use exact arithmetic: baseline=0.85, drop=0.05, current=0.80
     const baseline = makeSummary({ overallPrecision: 0.85 });
-    const current = makeSummary({ overallPrecision: 0.80 });
+    const current = makeSummary({ overallPrecision: 0.8 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
     const check = result.checks.find((c) => c.name === "precision_regression");
     expect(check?.status).toBe("pass");
@@ -659,7 +682,7 @@ describe("evaluateReleaseGate — boundary values at exact threshold", () => {
   test("recall regression exactly at allowed limit passes", () => {
     // Use exact arithmetic: baseline=0.85, drop=0.05, current=0.80
     const baseline = makeSummary({ overallRecall: 0.85 });
-    const current = makeSummary({ overallRecall: 0.80 });
+    const current = makeSummary({ overallRecall: 0.8 });
     const result = evaluateReleaseGate(current, makeQuality(), baseline);
     const check = result.checks.find((c) => c.name === "recall_regression");
     expect(check?.status).toBe("pass");

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, afterEach } from "vitest";
 
 // Mock dependencies
 vi.mock("next/headers", () => ({

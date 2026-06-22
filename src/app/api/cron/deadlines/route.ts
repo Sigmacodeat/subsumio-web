@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { computeDeadlineStatus } from "@/lib/legal-deadlines";
 import { createCronHandler } from "@/lib/api-handler";
-import { type EnginePage, fetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
-import { sendWhatsAppText } from "@/lib/whatsapp/send";
+import { fetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
+import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -32,7 +33,10 @@ interface DeadlineItem {
 
 function classify(dueDate: string, doneFlag: unknown): DeadlineItem["status"] | null {
   if (doneFlag === "done") return null;
-  const status = computeDeadlineStatus(dueDate, typeof doneFlag === "string" ? doneFlag : undefined);
+  const status = computeDeadlineStatus(
+    dueDate,
+    typeof doneFlag === "string" ? doneFlag : undefined
+  );
   if (status === "overdue" || status === "critical" || status === "warning") return status;
   return null;
 }
@@ -95,7 +99,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
     parts.push(`${label}:`);
     for (const i of list) {
       parts.push(
-        `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`,
+        `  • ${i.dueDate} — ${i.title}${i.caseTitle ? ` (Akte: ${i.caseTitle})` : ""}${i.law ? ` [${i.law}]` : ""}`
       );
     }
     parts.push("");
@@ -112,7 +116,9 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
     overdue.length ? `${overdue.length} überfällig` : "",
     critical.length ? `${critical.length} kritisch` : "",
     warning.length ? `${warning.length} bald fällig` : "",
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return {
     subject: `⚖️ Fristen-Übersicht: ${headline}`,
@@ -131,6 +137,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
   let mailsSent = 0;
   let brainsWithDeadlines = 0;
   let whatsappSent = 0;
+  let whatsappBlocked = 0;
 
   const allowedSenders = loadAllowedSenders();
   const whatsappSendersByBrain = new Map<string, string[]>();
@@ -158,12 +165,36 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const waPhones = whatsappSendersByBrain.get(brainId);
     if (waPhones && waPhones.length > 0) {
       const waText = `⚖️ Fristen-Übersicht:\n\n${text}`;
+      const templateName = process.env.WHATSAPP_DEADLINE_TEMPLATE;
+      const template: WhatsAppTemplateMessage | undefined = templateName
+        ? {
+            name: templateName,
+            language: { code: "de" },
+            components: [
+              {
+                type: "body",
+                parameters: [{ type: "text", text: text.slice(0, 900) }],
+              },
+            ],
+          }
+        : undefined;
       for (const phone of waPhones) {
         try {
-          await sendWhatsAppText(phone, waText);
-          whatsappSent++;
+          const result = await sendProactiveMessage({
+            to: phone,
+            brainId,
+            scope: "deadline_alert",
+            freeform: waText,
+            template,
+            urgent: true,
+          });
+          if (result.sent) whatsappSent++;
+          else whatsappBlocked++;
         } catch (err) {
-          console.error(`[cron/deadlines] WhatsApp send to ${phone.slice(-4)} failed:`, err instanceof Error ? err.message : String(err));
+          console.error(
+            `[cron/deadlines] WhatsApp send to ${phone.slice(-4)} failed:`,
+            err instanceof Error ? err.message : String(err)
+          );
         }
       }
     }
@@ -175,5 +206,6 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     brains_with_deadlines: brainsWithDeadlines,
     mails_sent: mailsSent,
     whatsapp_sent: whatsappSent,
+    whatsapp_blocked: whatsappBlocked,
   });
 });

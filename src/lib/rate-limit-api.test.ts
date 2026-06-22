@@ -10,7 +10,7 @@ vi.mock("@/lib/auth/rate-limit", () => ({
   })),
 }));
 
-import { checkApiRate, requireApiRate, type RateTier } from "./rate-limit-api";
+import { checkApiRate, requireApiRate } from "./rate-limit-api";
 import { hit } from "@/lib/auth/rate-limit";
 
 describe("checkApiRate", () => {

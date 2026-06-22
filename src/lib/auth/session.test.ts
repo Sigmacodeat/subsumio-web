@@ -160,7 +160,7 @@ describe("Session Revocation Edge-Cases", () => {
     const userId = `u-double-${Date.now()}`;
 
     await revokeAllSessions(userId);
-    const min1 = await revokeAllSessions(userId); // second revoke
+    const _min1 = await revokeAllSessions(userId); // second revoke
 
     // Session with version = min1 should be invalid; need version > min1
     const token1 = await signSession(

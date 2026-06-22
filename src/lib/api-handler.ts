@@ -504,7 +504,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
  */
 export function createCronHandler(
   handler: (req: NextRequest) => Promise<Response>,
-  options?: { maxDuration?: number }
+  _options?: { maxDuration?: number }
 ): (req: NextRequest) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight

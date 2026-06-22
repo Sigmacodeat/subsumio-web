@@ -1,4 +1,4 @@
-import { EngineError } from './engine-errors.ts';
+import { EngineError } from "./engine-errors.ts";
 
 // Page types
 // v0.38: `PageType` opens from a closed 23-element union to `string`. The
@@ -43,23 +43,42 @@ export type PageType = string;
  * type-system exhaustiveness.
  */
 export const ALL_PAGE_TYPES: readonly string[] = [
-  'person', 'company', 'deal', 'yc', 'civic', 'project', 'concept',
-  'source', 'media', 'writing', 'analysis', 'guide', 'hardware',
-  'architecture', 'meeting', 'note', 'email', 'slack', 'calendar-event',
+  "person",
+  "company",
+  "deal",
+  "yc",
+  "civic",
+  "project",
+  "concept",
+  "source",
+  "media",
+  "writing",
+  "analysis",
+  "guide",
+  "hardware",
+  "architecture",
+  "meeting",
+  "note",
+  "email",
+  "slack",
+  "calendar-event",
   // v0.41.11+ — `conversation` (imported chat/transcript pages, lives
   // under conversations/) and `atom` (smallest extractable claim unit,
   // lives under atoms/). Both promoted into the gbrain-base seed list
   // so they share the universal validation surface with the rest of
   // the base types; their pack entries are declared in
   // src/core/schema-pack/base/gbrain-base.yaml.
-  'conversation', 'atom',
-  'code', 'image', 'synthesis',
+  "conversation",
+  "atom",
+  "code",
+  "image",
+  "synthesis",
   // v0.42 — `extract_receipt` pages record extraction-run outcomes as
   // first-class brain memory. Slug-prefix `extracts/`. Demoted in search
   // via DEFAULT_SOURCE_BOOSTS (factor 0.3) and excluded from extraction
   // loops via the dream_generated:true + type:extract_receipt belt-and-
   // suspenders pattern per plan D-EXTRACT-19.
-  'extract_receipt',
+  "extract_receipt",
 ] as const;
 
 /**
@@ -173,15 +192,10 @@ export interface Page {
   corpus_generation?: string | null;
 }
 
-export type EffectiveDateSource =
-  | 'event_date'
-  | 'date'
-  | 'published'
-  | 'filename'
-  | 'fallback';
+export type EffectiveDateSource = "event_date" | "date" | "published" | "filename" | "fallback";
 
 // `image` (v0.27.1): multimodal ingestion path, parallel to markdown + code.
-export type PageKind = 'markdown' | 'code' | 'image';
+export type PageKind = "markdown" | "code" | "image";
 
 /**
  * v0.40.3.0 — contextual retrieval tier ladder per `search.mode`.
@@ -196,12 +210,12 @@ export type PageKind = 'markdown' | 'code' | 'image';
  * id='default' is always trusted). See
  * `src/core/contextual-retrieval-resolver.ts`.
  */
-export const CR_MODES = ['none', 'title', 'per_chunk_synopsis'] as const;
-export type CRMode = typeof CR_MODES[number];
+export const CR_MODES = ["none", "title", "per_chunk_synopsis"] as const;
+export type CRMode = (typeof CR_MODES)[number];
 
 /** Type guard for parsing untrusted frontmatter / config values. */
 export function isCRMode(value: unknown): value is CRMode {
-  return typeof value === 'string' && (CR_MODES as readonly string[]).includes(value);
+  return typeof value === "string" && (CR_MODES as readonly string[]).includes(value);
 }
 
 export interface PageInput {
@@ -310,7 +324,7 @@ export interface PageFilters {
    * `created_desc`, `slug` (alphabetical, useful for stable pagination).
    * Whitelisted enum — no SQL-injection risk; engines map to literal SQL fragments.
    */
-  sort?: 'updated_desc' | 'updated_asc' | 'created_desc' | 'slug';
+  sort?: "updated_desc" | "updated_asc" | "created_desc" | "slug";
   /**
    * v0.31.12: filter to a specific source. When omitted, listPages returns
    * pages from all sources (pre-existing semantics). Use to scope embed/extract
@@ -343,11 +357,11 @@ export interface GetPageOpts {
 }
 
 /** v0.29: literal ORDER BY fragments for the PageFilters.sort enum. Whitelisted. */
-export const PAGE_SORT_SQL: Record<NonNullable<PageFilters['sort']>, string> = {
-  updated_desc: 'p.updated_at DESC',
-  updated_asc:  'p.updated_at ASC',
-  created_desc: 'p.created_at DESC',
-  slug:         'p.slug ASC',
+export const PAGE_SORT_SQL: Record<NonNullable<PageFilters["sort"]>, string> = {
+  updated_desc: "p.updated_at DESC",
+  updated_asc: "p.updated_at ASC",
+  created_desc: "p.created_at DESC",
+  slug: "p.slug ASC",
 };
 
 /**
@@ -424,7 +438,7 @@ export interface SalienceOpts {
    *     "recency-biased salience" — what's been mattering AND fresh.
    * Default preserves v0.29.0 ranking; 'on' is opt-in.
    */
-  recency_bias?: 'flat' | 'on';
+  recency_bias?: "flat" | "on";
 }
 
 export interface SalienceResult {
@@ -464,7 +478,7 @@ export interface EnrichCandidatesOpts {
   /** Body-length (chars) below which a page is "thin". */
   thinThreshold: number;
   /** Ordering signal. Whitelisted via ENRICH_ORDER_SQL. */
-  order: 'inbound-links' | 'updated' | 'salience';
+  order: "inbound-links" | "updated" | "salience";
   /** Max rows to return. */
   limit: number;
   /**
@@ -497,10 +511,10 @@ export interface EnrichCandidate {
  * fragments. Every fragment ends with the (source_id, slug) tiebreaker so
  * tied scores produce a deterministic order across engines and runs.
  */
-export const ENRICH_ORDER_SQL: Record<EnrichCandidatesOpts['order'], string> = {
-  'inbound-links': 'inbound_count DESC, p.source_id ASC, p.slug ASC',
-  'updated':       'p.updated_at DESC, p.source_id ASC, p.slug ASC',
-  'salience':      'p.emotional_weight DESC, inbound_count DESC, p.source_id ASC, p.slug ASC',
+export const ENRICH_ORDER_SQL: Record<EnrichCandidatesOpts["order"], string> = {
+  "inbound-links": "inbound_count DESC, p.source_id ASC, p.slug ASC",
+  updated: "p.updated_at DESC, p.source_id ASC, p.slug ASC",
+  salience: "p.emotional_weight DESC, inbound_count DESC, p.source_id ASC, p.slug ASC",
 };
 
 /**
@@ -519,7 +533,7 @@ export interface AnomaliesOpts {
 }
 
 export interface AnomalyResult {
-  cohort_kind: 'tag' | 'type';
+  cohort_kind: "tag" | "type";
   cohort_value: string;
   count: number;
   baseline_mean: number;
@@ -562,7 +576,7 @@ export interface Chunk {
   page_id: number;
   chunk_index: number;
   chunk_text: string;
-  chunk_source: 'compiled_truth' | 'timeline' | 'fenced_code';
+  chunk_source: "compiled_truth" | "timeline" | "fenced_code";
   embedding: Float32Array | null;
   model: string;
   token_count: number | null;
@@ -589,7 +603,7 @@ export interface StaleChunkRow {
   slug: string;
   chunk_index: number;
   chunk_text: string;
-  chunk_source: 'compiled_truth' | 'timeline';
+  chunk_source: "compiled_truth" | "timeline";
   model: string | null;
   token_count: number | null;
   /** v0.31.12: source_id so embed --stale can thread it through getChunks/upsertChunks. */
@@ -635,7 +649,7 @@ export interface ChunkInput {
    * alongside text/code chunks; modality='image' rows are filtered out of
    * searchKeyword by default so OCR text doesn't drown text-page search.
    */
-  chunk_source: 'compiled_truth' | 'timeline' | 'fenced_code' | 'image_asset';
+  chunk_source: "compiled_truth" | "timeline" | "fenced_code" | "image_asset";
   embedding?: Float32Array;
   model?: string;
   token_count?: number;
@@ -644,7 +658,7 @@ export interface ChunkInput {
    * in embedding_image (not embedding). Markdown + code chunks omit both
    * fields and inherit modality='text' via column DEFAULT.
    */
-  modality?: 'text' | 'image';
+  modality?: "text" | "image";
   embedding_image?: Float32Array;
   /**
    * v0.19.0: optional code-chunk metadata. Populated by importCodeFile from
@@ -673,7 +687,7 @@ export interface SearchResult {
   title: string;
   type: PageType;
   chunk_text: string;
-  chunk_source: 'compiled_truth' | 'timeline';
+  chunk_source: "compiled_truth" | "timeline";
   chunk_id: number;
   chunk_index: number;
   score: number;
@@ -696,13 +710,20 @@ export interface SearchResult {
    * mode results. Optional for back-compat with engines that don't project
    * the column (defaults to 'text' in renderers when absent).
    */
-  modality?: 'text' | 'image';
+  modality?: "text" | "image";
   /**
    * v0.18.0: the sources.id the page belongs to. Dedup composite-keys
    * on (source_id, slug) — see src/core/search/dedup.ts. Defaults to
    * 'default' for pre-v0.17 rows that lacked the column.
    */
   source_id?: string;
+  /**
+   * Subsumio matter binding. Search results may come from document slugs such
+   * as `documents/foo.pdf` while the caller is scoped to `legal/cases/...`.
+   * Carrying the canonical case_slug lets retrieval filters keep assigned
+   * matter documents without widening access by slug prefix alone.
+   */
+  case_slug?: string;
   /**
    * v0.34 — page-level effective_date (and its source) carried through from
    * the pages join. Format: YYYY-MM-DD (ISO date-only). Consumers (currently
@@ -806,7 +827,7 @@ export interface SearchResult {
    * exact_title_match > high_vector_match > keyword_exact > weak_semantic).
    * Computed by classifyEvidence at the end of the hybrid pipeline.
    */
-  evidence?: import('./search/evidence.ts').Evidence;
+  evidence?: import("./search/evidence.ts").Evidence;
   /**
    * T4 — derived "is this page already in the brain?" hint. The agent's
    * don't-write-a-duplicate decision keys off THIS, not a raw score:
@@ -814,7 +835,7 @@ export interface SearchResult {
    * 'unknown' = look closer. This is the contract that prevents the
    * incident's duplicate-stub class.
    */
-  create_safety?: import('./search/evidence.ts').CreateSafety;
+  create_safety?: import("./search/evidence.ts").CreateSafety;
 }
 
 /**
@@ -857,7 +878,7 @@ export interface EmbeddingColumnConfig {
   /** Dimensions of the stored vector. Must match actual DB column. */
   dimensions: number;
   /** pgvector type — drives the SQL cast at search time. */
-  type: 'vector' | 'halfvec';
+  type: "vector" | "halfvec";
 }
 
 /**
@@ -875,7 +896,7 @@ export interface ResolvedColumn {
   /** Column name in content_chunks (already validated against the registry). */
   name: string;
   /** pgvector type — `$N::vector` or `$N::halfvec(N)`. */
-  type: 'vector' | 'halfvec';
+  type: "vector" | "halfvec";
   /** Embedding dimensions — must match actual DB column dim. */
   dimensions: number;
   /** 'provider:model' identifier, e.g. 'voyage:voyage-3-large'. */
@@ -892,7 +913,7 @@ export interface SearchOpts {
    * cap (entity → tight, else → recall-preserving). Only fires when offset===0.
    * See src/core/search/return-policy.ts.
    */
-  adaptiveReturn?: import('./search/return-policy.ts').AdaptiveReturnInput;
+  adaptiveReturn?: import("./search/return-policy.ts").AdaptiveReturnInput;
   /**
    * v0.42.3.0 — autocut (score-discontinuity result-sizing). Default-ON in
    * reranked modes (the floor). Pass `false` to force the full top-K for breadth
@@ -900,7 +921,7 @@ export interface SearchOpts {
    * cross-encoder rerank-score cliff; no-op without a reranker. Only fires when
    * offset===0. See src/core/search/autocut.ts.
    */
-  autocut?: import('./search/autocut.ts').AutocutInput;
+  autocut?: import("./search/autocut.ts").AutocutInput;
   type?: PageType;
   /**
    * v0.33: multi-type filter. When set, search results are filtered to
@@ -926,7 +947,7 @@ export interface SearchOpts {
    * though they're hard-excluded by default.
    */
   include_slug_prefixes?: string[];
-  detail?: 'low' | 'medium' | 'high';
+  detail?: "low" | "medium" | "high";
   /**
    * v0.20.0 Cathedral II: filter by content_chunks.language (e.g., 'typescript',
    * 'python', 'ruby'). Used by `gbrain query --lang <lang>`. NULL/undefined
@@ -991,7 +1012,12 @@ export interface SearchOpts {
    * searchKeyword is unaffected — modality filtering on the keyword path
    * is independent.
    */
-  embeddingColumn?: 'embedding' | 'embedding_image' | 'embedding_multimodal' | string | ResolvedColumn;
+  embeddingColumn?:
+    | "embedding"
+    | "embedding_image"
+    | "embedding_multimodal"
+    | string
+    | ResolvedColumn;
   /**
    * @deprecated v0.29.1: use `since` instead. Removed in v0.30.
    * v0.27.0: filter results to pages updated/created after this date. ISO-8601 string.
@@ -1011,12 +1037,12 @@ export interface SearchOpts {
    * v0.29.1: salience boost on emotional_weight + take_count. Independent of recency.
    * 'off' (default) disables; 'on' applies a moderate boost; 'strong' more aggressive.
    */
-  salience?: 'off' | 'on' | 'strong';
+  salience?: "off" | "on" | "strong";
   /**
    * v0.29.1: recency boost on per-prefix age decay. Independent of salience.
    * 'off' (default) disables; 'on' applies the per-prefix decay map; 'strong' multiplies by 1.5.
    */
-  recency?: 'off' | 'on' | 'strong';
+  recency?: "off" | "on" | "strong";
   /**
    * v0.29.1: ISO-8601 date OR relative duration ('7d', '2w', '1y'). Filter to
    * pages whose effective_date >= this time. Replaces afterDate (kept as alias).
@@ -1068,7 +1094,14 @@ export interface SearchOpts {
     model?: string;
     timeoutMs?: number;
     // Test seam — never set in production code.
-    rerankerFn?: (input: { query: string; documents: string[]; topN?: number; model?: string; signal?: AbortSignal; timeoutMs?: number }) => Promise<{ index: number; relevanceScore: number }[]>;
+    rerankerFn?: (input: {
+      query: string;
+      documents: string[];
+      topN?: number;
+      model?: string;
+      signal?: AbortSignal;
+      timeoutMs?: number;
+    }) => Promise<{ index: number; relevanceScore: number }[]>;
   };
   /**
    * v0.35.6.0 — floor-ratio gate for metadata-axis boost stages.
@@ -1098,7 +1131,7 @@ export interface SearchOpts {
    * regardless of mode bundle. zerank-2 can't rerank image embeddings;
    * sending them produces garbage scores.
    */
-  crossModal?: 'text' | 'image' | 'both' | 'auto';
+  crossModal?: "text" | "image" | "both" | "auto";
   /**
    * v0.40.4 — per-call override for the graph-signals stage. Threads
    * through to PostFusionOpts.graphSignalsEnabled. When undefined,
@@ -1240,7 +1273,7 @@ export interface RelationalFanoutOpts {
   /** Edge types to traverse; null/empty = type-agnostic. */
   linkTypes?: string[] | null;
   /** Direction from each seed. Default 'both'. */
-  direction?: 'in' | 'out' | 'both';
+  direction?: "in" | "out" | "both";
   /** Max hops. Default 2, hard-capped at 3. */
   depth?: number;
   /** Include `link_source='mentions'` edges. Default false (typed edges only). */
@@ -1349,11 +1382,11 @@ export interface BrainHealth {
    * timeline_coverage above to avoid semantic collision (these reflect
    * whole-brain measures used in the score formula).
    */
-  embed_coverage_score: number;     // 0-35
-  link_density_score: number;        // 0-25
-  timeline_coverage_score: number;   // 0-15
-  no_orphans_score: number;          // 0-15
-  no_dead_links_score: number;       // 0-10
+  embed_coverage_score: number; // 0-35
+  link_density_score: number; // 0-25
+  timeline_coverage_score: number; // 0-15
+  no_orphans_score: number; // 0-15
+  no_dead_links_score: number; // 0-10
   /**
    * v0.30.1 (Cherry D7 + Codex C3): explicit migrations diagnostic surface
    * exposed to MCP get_health callers so remote agents can detect a wedged
@@ -1364,7 +1397,7 @@ export interface BrainHealth {
    * contract — clients should default-handle missing fields and never
    * assume removed ones.
    */
-  schema_version?: '1';
+  schema_version?: "1";
   migrations?: {
     schema: {
       /** Current numeric config.version. */
@@ -1379,7 +1412,7 @@ export interface BrainHealth {
       verify_drift?: string[];
     };
     orchestrator: {
-      pending: Array<{ version: string; name: string; status: 'pending' | 'partial' }>;
+      pending: Array<{ version: string; name: string; status: "pending" | "partial" }>;
       wedged: Array<{ version: string; name: string; consecutive_partials: number }>;
     };
   };
@@ -1412,7 +1445,7 @@ export interface IngestLogInput {
 // eval_capture_failures table records insert failures so gbrain doctor can
 // surface silent capture drops cross-process.
 export interface EvalCandidateInput {
-  tool_name: 'query' | 'search';
+  tool_name: "query" | "search";
   /** Already PII-scrubbed by captureEvalCandidate before this point. */
   query: string;
   retrieved_slugs: string[];
@@ -1421,9 +1454,9 @@ export interface EvalCandidateInput {
   /** Whether multi-query Haiku expansion was enabled on the call. Null for 'search'. */
   expand_enabled: boolean | null;
   /** The detail level the call requested (pre-auto-detect). */
-  detail: 'low' | 'medium' | 'high' | null;
+  detail: "low" | "medium" | "high" | null;
   /** What hybridSearch actually ran (post-auto-detect). Null for 'search'. */
-  detail_resolved: 'low' | 'medium' | 'high' | null;
+  detail_resolved: "low" | "medium" | "high" | null;
   /** True when vector search actually ran (false when OPENAI_API_KEY missing or embed failed). */
   vector_enabled: boolean;
   /** True when Haiku expansion actually fired. */
@@ -1454,11 +1487,11 @@ export interface EvalCandidate extends EvalCandidateInput {
 }
 
 export type EvalCaptureFailureReason =
-  | 'db_down'
-  | 'rls_reject'
-  | 'check_violation'
-  | 'scrubber_exception'
-  | 'other';
+  | "db_down"
+  | "rls_reject"
+  | "check_violation"
+  | "scrubber_exception"
+  | "other";
 
 export interface EvalCaptureFailure {
   id: number;
@@ -1477,7 +1510,7 @@ export interface HybridSearchMeta {
   /** True iff vector search actually ran. False when OPENAI_API_KEY missing or embed failed. */
   vector_enabled: boolean;
   /** Post-auto-detect detail level. */
-  detail_resolved: 'low' | 'medium' | 'high' | null;
+  detail_resolved: "low" | "medium" | "high" | null;
   /** True iff multi-query expansion (Haiku) actually fired and produced variants. */
   expansion_applied: boolean;
   /**
@@ -1486,18 +1519,18 @@ export interface HybridSearchMeta {
    * command can show "intent: temporal" alongside results to make the
    * weighting decision auditable.
    */
-  intent?: 'entity' | 'temporal' | 'event' | 'general';
+  intent?: "entity" | "temporal" | "event" | "general";
   /**
    * v0.42 — adaptive return-sizing decision (intent, cap, kept, total).
    * Omitted when the gate is off. Surfaced for `gbrain search --explain`.
    */
-  adaptive_return?: import('./search/return-policy.ts').AdaptiveReturnDecision;
+  adaptive_return?: import("./search/return-policy.ts").AdaptiveReturnDecision;
   /**
    * v0.42.3.0 — autocut decision (signal, cut point, kept/total, gapRatio).
    * Omitted when autocut didn't run (no reranker). Surfaced for
    * `gbrain search --explain`.
    */
-  autocut?: import('./search/autocut.ts').AutocutDecision;
+  autocut?: import("./search/autocut.ts").AutocutDecision;
   /**
    * v0.32.x (search-lite): token budget enforcement metadata. Omitted when
    * no budget was applied (backward-compatible with pre-search-lite
@@ -1516,7 +1549,7 @@ export interface HybridSearchMeta {
    */
   cache?: {
     /** 'hit' when results came from the cache; 'miss' when search ran fresh. */
-    status: 'hit' | 'miss' | 'disabled';
+    status: "hit" | "miss" | "disabled";
     /** Similarity of the cached query's embedding (0..1). Only set on hit. */
     similarity?: number;
     /** Age of the cached entry in seconds. Only set on hit. */
@@ -1529,7 +1562,7 @@ export interface HybridSearchMeta {
    * so observability sees what mode actually ran (which can differ from
    * the operator's `config.search.mode` setting if per-call overrides win).
    */
-  mode?: 'conservative' | 'balanced' | 'tokenmax';
+  mode?: "conservative" | "balanced" | "tokenmax";
   /**
    * v0.36 (D16 / CDX-10): the embedding column that actually ran this
    * search. Threaded through to eval_candidates capture so replay can
@@ -1544,7 +1577,7 @@ export interface HybridSearchMeta {
 export interface EngineConfig {
   database_url?: string;
   database_path?: string;
-  engine?: 'postgres' | 'pglite';
+  engine?: "postgres" | "pglite";
 }
 
 // Errors
@@ -1553,9 +1586,9 @@ export class GBrainError extends EngineError {
     public problem: string,
     public cause_description: string,
     public fix: string,
-    public docs_url?: string,
+    public docs_url?: string
   ) {
-    super('config', `${problem}: ${cause_description}. Fix: ${fix}`, { fix });
-    this.name = 'GBrainError';
+    super("config", `${problem}: ${cause_description}. Fix: ${fix}`, { fix });
+    this.name = "GBrainError";
   }
 }

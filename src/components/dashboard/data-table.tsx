@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Trash2,
   FileText,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +54,7 @@ interface DataTableProps<T> {
   onBulkAction?: (selectedRows: T[]) => void;
   bulkActionLabel?: string;
   bulkActionIcon?: LucideIcon;
+  bulkActionLoading?: boolean;
   bulkActions?: BulkAction[];
   rowKey?: (row: T, index: number) => string;
 }
@@ -75,6 +77,7 @@ export function DataTable<T>({
   onBulkAction,
   bulkActionLabel = "Auswahl löschen",
   bulkActionIcon: BulkIcon = Trash2,
+  bulkActionLoading = false,
   bulkActions,
   rowKey,
 }: DataTableProps<T>) {
@@ -219,7 +222,7 @@ export function DataTable<T>({
                     className={cn(
                       "gap-1.5 text-xs",
                       action.variant === "destructive"
-                        ? "text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                        ? "text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
@@ -233,9 +236,14 @@ export function DataTable<T>({
                 variant="ghost"
                 size="sm"
                 onClick={handleBulkAction}
-                className="gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                disabled={bulkActionLoading}
+                className="gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
               >
-                <BulkIcon size={13} />
+                {bulkActionLoading ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <BulkIcon size={13} />
+                )}
                 {bulkActionLabel}
               </Button>
             )}

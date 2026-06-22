@@ -143,7 +143,7 @@ function AgentDAG({
   selectedJob: number | null;
   onSelectJob: (id: number) => void;
 }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const rootJobs = useMemo(() => jobs.filter((j) => !j.parentId), [jobs]);
 
   return (
@@ -654,7 +654,7 @@ function JobDetail({
 // ── Main Page ────────────────────────────────────────────────
 
 export default function AgentsPage() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [tab, setTab] = useState<"jobs" | "builder">("jobs");
   const agentsQuery = useAgents();
   const submitMutation = useSubmitSupervisor();

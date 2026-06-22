@@ -1,13 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect, vi } from "vitest";
-import {
-  withRetry,
-  fetchWithRetry,
-  RetryableError,
-  PermanentError,
-  type RetryOptions,
-} from "./retry";
+import { withRetry, fetchWithRetry, RetryableError, PermanentError } from "./retry";
 
 describe("withRetry — success cases", () => {
   test("returns result on first success", async () => {
@@ -141,7 +135,9 @@ describe("withRetry — permanent errors", () => {
     const fn = vi.fn(async () => {
       throw new Error("something went wrong");
     });
-    await expect(withRetry(fn, { maxRetries: 3, baseDelayMs: 1 })).rejects.toThrow("something went wrong");
+    await expect(withRetry(fn, { maxRetries: 3, baseDelayMs: 1 })).rejects.toThrow(
+      "something went wrong"
+    );
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
@@ -177,7 +173,9 @@ describe("withRetry — onRetry callback", () => {
   });
 
   test("onRetry is not called on permanent error", async () => {
-    const fn = async () => { throw new PermanentError("nope"); };
+    const fn = async () => {
+      throw new PermanentError("nope");
+    };
     const onRetry = vi.fn();
     await expect(withRetry(fn, { onRetry })).rejects.toThrow("nope");
     expect(onRetry).not.toHaveBeenCalled();
@@ -220,8 +218,8 @@ describe("withRetry — maxRetries = 0", () => {
 
 describe("fetchWithRetry", () => {
   test("returns response on success", async () => {
-    global.fetch = vi.fn(async () =>
-      new Response("ok", { status: 200 }),
+    global.fetch = vi.fn(
+      async () => new Response("ok", { status: 200 })
     ) as unknown as typeof fetch;
     const res = await fetchWithRetry("https://example.com");
     expect(res.status).toBe(200);
@@ -254,8 +252,8 @@ describe("fetchWithRetry", () => {
   });
 
   test("does not retry on 400 status", async () => {
-    global.fetch = vi.fn(async () =>
-      new Response("bad", { status: 400 }),
+    global.fetch = vi.fn(
+      async () => new Response("bad", { status: 400 })
     ) as unknown as typeof fetch;
     await expect(fetchWithRetry("https://example.com")).rejects.toThrow("400");
   });
@@ -290,11 +288,11 @@ describe("fetchWithRetry", () => {
   });
 
   test("exhausts retries on persistent 500", async () => {
-    global.fetch = vi.fn(async () =>
-      new Response("err", { status: 500 }),
+    global.fetch = vi.fn(
+      async () => new Response("err", { status: 500 })
     ) as unknown as typeof fetch;
     await expect(
-      fetchWithRetry("https://example.com", undefined, { maxRetries: 2, baseDelayMs: 1 }),
+      fetchWithRetry("https://example.com", undefined, { maxRetries: 2, baseDelayMs: 1 })
     ).rejects.toThrow("500");
   });
 });
@@ -407,8 +405,8 @@ describe("fetchWithRetry — additional status codes", () => {
   });
 
   test("does not retry on 403 status", async () => {
-    global.fetch = vi.fn(async () =>
-      new Response("forbidden", { status: 403 }),
+    global.fetch = vi.fn(
+      async () => new Response("forbidden", { status: 403 })
     ) as unknown as typeof fetch;
     await expect(fetchWithRetry("https://example.com")).rejects.toThrow("403");
   });
@@ -444,12 +442,14 @@ describe("withRetry — delay options", () => {
       throw new RetryableError("retry");
     });
     const onRetry = (_a: number, _e: Error, delayMs: number) => delays.push(delayMs);
-    await expect(withRetry(fn, {
-      maxRetries: 1,
-      baseDelayMs: 50,
-      maxDelayMs: 10_000,
-      onRetry,
-    })).rejects.toThrow("retry");
+    await expect(
+      withRetry(fn, {
+        maxRetries: 1,
+        baseDelayMs: 50,
+        maxDelayMs: 10_000,
+        onRetry,
+      })
+    ).rejects.toThrow("retry");
     // First retry delay should be ~50 (base * 2^0 = 50 + jitter)
     expect(delays[0]).toBeGreaterThanOrEqual(50);
     expect(delays[0]).toBeLessThan(70); // 50 + 30% jitter = max 65

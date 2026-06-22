@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
@@ -22,15 +22,29 @@ vi.mock("./session", () => ({
 vi.mock("./store", () => ({
   getStore: vi.fn(() => ({
     getById: vi.fn(async (id: string) => ({
-      id, email: "test@example.com", name: "Max", role: "lawyer",
-      brainId: "brain-1", passwordHash: "hash", createdAt: "2024-01-01",
-      updatedAt: "2024-01-01", emailVerifiedAt: null, deactivatedAt: null,
-      scimExternalId: null, ssoProvider: null,
+      id,
+      email: "test@example.com",
+      name: "Max",
+      role: "lawyer",
+      brainId: "brain-1",
+      passwordHash: "hash",
+      createdAt: "2024-01-01",
+      updatedAt: "2024-01-01",
+      emailVerifiedAt: null,
+      deactivatedAt: null,
+      scimExternalId: null,
+      ssoProvider: null,
     })),
   })),
-  toPublic: vi.fn((user: { id: string; email: string; name: string; role: string; brainId: string }) => ({
-    id: user.id, email: user.email, name: user.name, role: user.role, brainId: user.brainId,
-  })),
+  toPublic: vi.fn(
+    (user: { id: string; email: string; name: string; role: string; brainId: string }) => ({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      brainId: user.brainId,
+    })
+  ),
 }));
 
 import { getSession, getSessionUser } from "./server";
@@ -65,7 +79,11 @@ describe("server auth helpers", () => {
 
   test("getSessionUser returns null when user not found", async () => {
     vi.mocked(verifySession).mockResolvedValueOnce({
-      uid: "nonexistent", email: "x@x.com", role: "lawyer", exp: 9999999999, v: 1,
+      uid: "nonexistent",
+      email: "x@x.com",
+      role: "lawyer",
+      exp: 9999999999,
+      v: 1,
     });
     vi.mocked(getStore).mockReturnValueOnce({
       getById: vi.fn(async () => null),

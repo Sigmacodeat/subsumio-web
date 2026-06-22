@@ -1,12 +1,9 @@
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import type { TimeEntry } from "@/lib/legal-types";
 import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import {
-  markEntriesBilled,
-  type TimeEntryWithCase,
-} from "@/lib/time-tracking";
+import { markEntriesBilled, type TimeEntryWithCase } from "@/lib/time-tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +27,17 @@ export const POST = createHandler(
   },
   async (ctx, body, _query, _req) => {
     try {
-      const casePage = await api.brain.getPage(body.case_slug).catch(() => null);
+      const brain = createServerBrainClient(ctx.headers);
+      const casePage = await brain.getPage(body.case_slug).catch(() => null);
       if (!casePage) return apiError("case_not_found", "Akte nicht gefunden", 404);
 
       const fm = casePage.frontmatter as Record<string, unknown>;
-      const entries = Array.isArray(fm.time_entries) ? fm.time_entries as TimeEntry[] : [];
+      const entries = Array.isArray(fm.time_entries) ? (fm.time_entries as TimeEntry[]) : [];
 
-      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({ ...e, case_slug: body.case_slug }));
+      const entriesWithCase: TimeEntryWithCase[] = entries.map((e) => ({
+        ...e,
+        case_slug: body.case_slug,
+      }));
       const result = markEntriesBilled(entriesWithCase, body.entry_ids, body.invoice_number);
 
       if (result.updated === 0) {
@@ -44,7 +45,7 @@ export const POST = createHandler(
       }
 
       const updatedEntries = result.entries.map(({ case_slug: _cs, ...e }) => e);
-      await api.brain.updatePage({
+      await brain.updatePage({
         slug: body.case_slug,
         frontmatter: { ...fm, time_entries: updatedEntries },
       });
@@ -62,7 +63,11 @@ export const POST = createHandler(
       });
     } catch (err) {
       console.error("[time] mark-billed failed:", err instanceof Error ? err.message : String(err));
-      return apiError("internal_error", "Einträge konnten nicht als abgerechnet markiert werden", 500);
+      return apiError(
+        "internal_error",
+        "Einträge konnten nicht als abgerechnet markiert werden",
+        500
+      );
     }
-  },
+  }
 );

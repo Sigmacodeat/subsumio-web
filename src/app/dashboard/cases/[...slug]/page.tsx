@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import Link from "next/link";
@@ -33,6 +33,8 @@ import {
   Receipt,
   Plus,
   Trash2,
+  Download,
+  FolderOpen,
   Landmark,
   User,
   Play,
@@ -293,6 +295,13 @@ export default function CaseDetailPage() {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<CaseStatus | null>(null);
 
+  // IDE-style folder import (Chromium File System Access API), feature-detected.
+  const [folderApi, setFolderApi] = useState(false);
+  const [scanningFolder, setScanningFolder] = useState(false);
+  useEffect(() => {
+    setFolderApi(typeof window !== "undefined" && "showDirectoryPicker" in window);
+  }, []);
+
   // Tasks state
   const [tasks, setTasks] = useState<
     Array<{ id: string; text: string; done: boolean; createdAt: string }>
@@ -347,6 +356,19 @@ export default function CaseDetailPage() {
     Array<{ title: string; date: string; type: string; confidence: number }>
   >([]);
 
+  const [aiEvidenceCards, setAiEvidenceCards] = useState<
+    Array<{
+      docName: string;
+      docSlug: string;
+      documentType: string;
+      keyFacts: string[];
+      parties: Array<{ name: string; role: string }>;
+      evidenceRefs: string[];
+      citedStatutes: string[];
+    }>
+  >([]);
+  const [aiEvidenceLoading, setAiEvidenceLoading] = useState(false);
+
   // RHF forms
   const deadlineForm = useForm<DeadlineFormData>({
     resolver: zodResolver(deadlineFormSchema),
@@ -389,113 +411,101 @@ export default function CaseDetailPage() {
       expenseForm.formState.isDirty
   );
 
-  const onDeadlineSubmit = useCallback(
-    (data: DeadlineFormData) => {
-      const date = data.due_date;
-      const entry: DeadlineEntry = {
-        ...withDeadlineAudit(
-          data as DeadlineEntry,
-          editingDeadlineIndex !== null ? "updated" : "created"
-        ),
-        id: data.id || `dl-${Date.now()}`,
-        due_date: date,
-        date,
-        status: computeDeadlineStatus(date, data.status),
-        review_status: data.review_status ?? "unreviewed",
-      };
-      let updated: DeadlineEntry[];
-      if (editingDeadlineIndex !== null) {
-        updated = deadlinesList.map((dl, i) => (i === editingDeadlineIndex ? entry : dl));
-        setEditingDeadlineIndex(null);
-      } else {
-        updated = [...deadlinesList, entry];
-      }
-      setDeadlinesList(updated);
-      deadlineForm.reset({
-        title: "",
-        due_date: "",
-        type: "deadline",
-        status: "pending",
+  function onDeadlineSubmit(data: DeadlineFormData) {
+    const date = data.due_date;
+    const entry: DeadlineEntry = {
+      ...withDeadlineAudit(
+        data as DeadlineEntry,
+        editingDeadlineIndex !== null ? "updated" : "created"
+      ),
+      id: data.id || `dl-${Date.now()}`,
+      due_date: date,
+      date,
+      status: computeDeadlineStatus(date, data.status),
+      review_status: data.review_status ?? "unreviewed",
+    };
+    let updated: DeadlineEntry[];
+    if (editingDeadlineIndex !== null) {
+      updated = deadlinesList.map((dl, i) => (i === editingDeadlineIndex ? entry : dl));
+      setEditingDeadlineIndex(null);
+    } else {
+      updated = [...deadlinesList, entry];
+    }
+    setDeadlinesList(updated);
+    deadlineForm.reset({
+      title: "",
+      due_date: "",
+      type: "deadline",
+      status: "pending",
+      description: "",
+    });
+    void saveCaseUpdate({ deadlines: updated });
+  }
+
+  function onEvidenceSubmit(data: EvidenceFormData) {
+    let updated: EvidenceEntry[];
+    if (editingEvidenceIndex !== null) {
+      updated = evidenceList.map((ev, i) => (i === editingEvidenceIndex ? data : ev));
+      setEditingEvidenceIndex(null);
+    } else {
+      updated = [...evidenceList, data as EvidenceEntry];
+    }
+    setEvidenceList(updated);
+    evidenceForm.reset({ title: "", type: "", description: "", source: "", weight: 0.5 });
+    setShowEvidenceForm(false);
+    void saveCaseUpdate({ evidence: updated });
+  }
+
+  function onTimeSubmit(data: TimeEntryFormData) {
+    const mins = parseInt(data.minutes, 10);
+    const rate = parseFloat(data.rate || "");
+    if (data.description.trim() && Number.isFinite(mins) && mins > 0) {
+      const updated: TimeEntry[] = [
+        ...timeEntries,
+        {
+          id: Date.now().toString(),
+          description: data.description.trim(),
+          minutes: mins,
+          date: new Date().toISOString(),
+          rate: Number.isFinite(rate) && rate > 0 ? rate : undefined,
+          billable: data.billable,
+          billed: false,
+          lawyer: data.lawyer?.trim() || undefined,
+          activity_type: data.activity_type,
+        },
+      ];
+      setTimeEntries(updated);
+      timeForm.reset({
         description: "",
+        minutes: "",
+        rate: "200",
+        lawyer: "",
+        activity_type: "Beratung",
+        billable: true,
       });
-      saveCaseUpdate({ deadlines: updated });
-    },
-    [deadlinesList, editingDeadlineIndex]
-  );
+      void saveCaseUpdate({ timeEntries: updated });
+    }
+  }
 
-  const onEvidenceSubmit = useCallback(
-    (data: EvidenceFormData) => {
-      let updated: EvidenceEntry[];
-      if (editingEvidenceIndex !== null) {
-        updated = evidenceList.map((ev, i) => (i === editingEvidenceIndex ? data : ev));
-        setEditingEvidenceIndex(null);
-      } else {
-        updated = [...evidenceList, data as EvidenceEntry];
-      }
-      setEvidenceList(updated);
-      evidenceForm.reset({ title: "", type: "", description: "", source: "", weight: 0.5 });
-      setShowEvidenceForm(false);
-      saveCaseUpdate({ evidence: updated });
-    },
-    [evidenceList, editingEvidenceIndex]
-  );
-
-  const onTimeSubmit = useCallback(
-    (data: TimeEntryFormData) => {
-      const mins = parseInt(data.minutes, 10);
-      const rate = parseFloat(data.rate || "");
-      if (data.description.trim() && Number.isFinite(mins) && mins > 0) {
-        const updated: TimeEntry[] = [
-          ...timeEntries,
-          {
-            id: Date.now().toString(),
-            description: data.description.trim(),
-            minutes: mins,
-            date: new Date().toISOString(),
-            rate: Number.isFinite(rate) && rate > 0 ? rate : undefined,
-            billable: data.billable,
-            billed: false,
-            lawyer: data.lawyer?.trim() || undefined,
-            activity_type: data.activity_type,
-          },
-        ];
-        setTimeEntries(updated);
-        timeForm.reset({
-          description: "",
-          minutes: "",
-          rate: "200",
-          lawyer: "",
-          activity_type: "Beratung",
-          billable: true,
-        });
-        saveCaseUpdate({ timeEntries: updated });
-      }
-    },
-    [timeEntries]
-  );
-
-  const onExpenseSubmit = useCallback(
-    (data: ExpenseFormData) => {
-      const amount = parseFloat(data.amount);
-      if (data.description.trim() && Number.isFinite(amount) && amount > 0) {
-        const updated: ExpenseEntry[] = [
-          ...expensesList,
-          {
-            id: Date.now().toString(),
-            description: data.description.trim(),
-            amount: Math.round(amount * 100) / 100,
-            date: new Date().toISOString(),
-            billable: data.billable,
-            billed: false,
-          },
-        ];
-        setExpensesList(updated);
-        expenseForm.reset({ description: "", amount: "", billable: true });
-        saveCaseUpdate({ expenses: updated });
-      }
-    },
-    [expensesList]
-  );
+  function onExpenseSubmit(data: ExpenseFormData) {
+    const amount = parseFloat(data.amount);
+    if (data.description.trim() && Number.isFinite(amount) && amount > 0) {
+      const updated: ExpenseEntry[] = [
+        ...expensesList,
+        {
+          id: Date.now().toString(),
+          description: data.description.trim(),
+          amount: Math.round(amount * 100) / 100,
+          date: new Date().toISOString(),
+          billable: data.billable,
+          billed: false,
+        },
+      ];
+      setExpensesList(updated);
+      expenseForm.reset({ description: "", amount: "", billable: true });
+      void saveCaseUpdate({ expenses: updated });
+    }
+  }
 
   // Live timer interval
   useEffect(() => {
@@ -786,6 +796,72 @@ export default function CaseDetailPage() {
     }
   });
 
+  // P3: Fetch KI-extrahierte Belege from auto_analysis when evidence tab is active
+  useEffect(() => {
+    if (!caseData || activeTab !== "evidence") return;
+    let cancelled = false;
+    (async () => {
+      const docsWithSlugs = caseData.documents.filter((d) => d.slug || d.url);
+      if (docsWithSlugs.length === 0) return;
+      setAiEvidenceLoading(true);
+      try {
+        const cards: typeof aiEvidenceCards = [];
+        await Promise.all(
+          docsWithSlugs.slice(0, 20).map(async (doc) => {
+            try {
+              const page = await api.brain.getPage(doc.slug || doc.url!);
+              const fm = page.frontmatter ?? {};
+              const meta = fm.meta as Record<string, unknown> | undefined;
+              const analysis = meta?.auto_analysis as Record<string, unknown> | undefined;
+              if (!analysis) return;
+              const keyFacts = Array.isArray(analysis.key_facts)
+                ? (analysis.key_facts as string[]).slice(0, 5)
+                : [];
+              const parties = Array.isArray(analysis.parties)
+                ? (analysis.parties as Array<Record<string, unknown>>)
+                    .map((p) => ({
+                      name: String(p.name ?? p.party ?? ""),
+                      role: String(p.role ?? ""),
+                    }))
+                    .filter((p) => p.name)
+                : [];
+              const evidenceRefs = Array.isArray(analysis.evidence_references)
+                ? (analysis.evidence_references as string[]).slice(0, 5)
+                : [];
+              const citedStatutes = Array.isArray(analysis.cited_statutes)
+                ? (analysis.cited_statutes as Array<Record<string, unknown>>)
+                    .map((c) => String(c.section ?? c.statute ?? ""))
+                    .filter(Boolean)
+                    .slice(0, 5)
+                : [];
+              const documentType = String(analysis.document_type ?? doc.kind ?? "");
+              if (keyFacts.length > 0 || evidenceRefs.length > 0 || parties.length > 0) {
+                cards.push({
+                  docName: doc.name,
+                  docSlug: doc.slug || doc.url || "",
+                  documentType,
+                  keyFacts,
+                  parties,
+                  evidenceRefs,
+                  citedStatutes,
+                });
+              }
+            } catch {
+              // skip individual doc errors
+            }
+          })
+        );
+        if (!cancelled) setAiEvidenceCards(cards);
+      } finally {
+        if (!cancelled) setAiEvidenceLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, caseData?.documents.length]);
+
   // P3.1/P3.5: Multi-file upload with progress + client-side validation
   async function handleMultiUpload(files: File[]) {
     if (!caseData) return;
@@ -922,6 +998,42 @@ export default function CaseDetailPage() {
     });
   }
 
+  // IDE-style "ganzen Ordner einlesen": recursively walk a chosen folder and feed
+  // every supported file into the same staggered upload queue as handleMultiUpload.
+  async function pickFolderForCase() {
+    interface FsHandle {
+      kind: "file" | "directory";
+      getFile?: () => Promise<File>;
+      values?: () => AsyncIterable<FsHandle>;
+    }
+    const picker = (window as unknown as { showDirectoryPicker?: () => Promise<FsHandle> })
+      .showDirectoryPicker;
+    if (!picker || !caseData) return;
+    const ACCEPT_RE = /\.(pdf|docx?|eml|jpe?g|png|heic|avif|tiff?|txt|rtf|html?)$/i;
+    try {
+      setScanningFolder(true);
+      const dir = await picker();
+      const out: File[] = [];
+      const walk = async (handle: FsHandle, depth: number) => {
+        if (depth > 5 || !handle.values) return;
+        for await (const entry of handle.values()) {
+          if (entry.kind === "file" && entry.getFile) {
+            const f = await entry.getFile();
+            if (ACCEPT_RE.test(f.name) && f.size <= MAX_FILE_SIZE) out.push(f);
+          } else if (entry.kind === "directory") {
+            await walk(entry, depth + 1);
+          }
+        }
+      };
+      await walk(dir, 0);
+      if (out.length > 0) await handleMultiUpload(out);
+    } catch {
+      // user dismissed the picker or the browser blocked it — no-op
+    } finally {
+      setScanningFolder(false);
+    }
+  }
+
   // Auto-save tasks and time entries back to brain page
   async function saveCaseUpdate(updates: Partial<CaseDetail>) {
     if (!caseData) return;
@@ -1028,6 +1140,17 @@ export default function CaseDetailPage() {
           setSaveError(null);
           return;
         }
+        if (res.status === 403) {
+          const data = await res.json().catch(() => ({}));
+          setSaveError(
+            data.message ||
+              (lang === "en"
+                ? "Case is archived — restore it first to make changes."
+                : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern.")
+          );
+          void refreshCaseData();
+          return;
+        }
         if (!res.ok) {
           const text = await res.text().catch(() => "");
           throw new Error(text || `HTTP ${res.status}`);
@@ -1131,6 +1254,15 @@ export default function CaseDetailPage() {
         });
         // Reload documents that were un-tombstoned by the restore cascade
         void refreshCaseData();
+      } else if (res.status === 403) {
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Access denied" : "Zugriff verweigert",
+          description:
+            lang === "en"
+              ? "You don't have permission to restore this case."
+              : "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
+        });
       } else if (res.status === 409) {
         setConflictWarning(
           lang === "en"
@@ -1222,6 +1354,42 @@ export default function CaseDetailPage() {
   );
   const evidenceSourceCount = evidenceDocuments.length + evidenceList.length;
 
+  function docProcessingStatus(doc: {
+    extraction_status?: string;
+    ocr_status?: string;
+    extraction_unverified?: boolean;
+  }) {
+    const es = doc.extraction_status;
+    if (es === "confirmed" || (es === "text_layer" && !doc.extraction_unverified))
+      return {
+        key: "confirmed",
+        color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+      };
+    if (es === "analyzed" || (es === "text_layer" && doc.extraction_unverified))
+      return { key: "review_open", color: "bg-amber-500/10 border-amber-500/20 text-amber-600" };
+    if (es === "ocr_complete")
+      return { key: "analyzed", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+    if (es === "ocr_processing")
+      return { key: "ocr_processing", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+    if (es === "ocr_needed" || es === "ocr_failed")
+      return { key: "ocr_needed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+    if (es === "processing")
+      return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+    if (es === "uploaded")
+      return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+    const ocr = doc.ocr_status;
+    if (ocr === "ocr_complete")
+      return { key: "analyzed", color: "bg-blue-500/10 border-blue-500/20 text-blue-600" };
+    if (ocr === "ocr_needed" || ocr === "unknown")
+      return { key: "ocr_needed", color: "bg-red-500/10 border-red-500/20 text-red-600" };
+    if (ocr === "text_layer")
+      return {
+        key: "text_layer",
+        color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
+      };
+    return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* Save errors must be visible (tasks/time entries would silently vanish) */}
@@ -1261,14 +1429,30 @@ export default function CaseDetailPage() {
                 ? `Archived${caseData.archivedAt ? ` on ${new Date(caseData.archivedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}`
                 : `Archiviert${caseData.archivedAt ? ` am ${new Date(caseData.archivedAt).toLocaleDateString("de-DE")}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}`}
             </span>
-            <button
-              onClick={() => handleRestore()}
-              disabled={restoring}
-              className="ml-auto flex items-center gap-1 text-xs font-medium text-gray-700 transition-colors hover:text-gray-900 disabled:opacity-50"
-            >
-              <RotateCcw size={12} />
-              {restoring ? "…" : lang === "en" ? "Restore" : "Wiederherstellen"}
-            </button>
+            {userRole === "admin" || userRole === "lawyer" ? (
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  onClick={() => handleRestore("open")}
+                  disabled={restoring}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-500/10 hover:text-gray-900 disabled:opacity-50"
+                >
+                  {restoring ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <RotateCcw size={12} />
+                  )}
+                  {lang === "en" ? "Restore as Open" : "Als Offen wiederherstellen"}
+                </button>
+                <button
+                  onClick={() => handleRestore("dormant")}
+                  disabled={restoring}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-500/10 hover:text-gray-900 disabled:opacity-50"
+                >
+                  <PauseCircle size={12} />
+                  {lang === "en" ? "as Dormant" : "als Ruhend"}
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -1449,6 +1633,7 @@ export default function CaseDetailPage() {
               </Button>
               <Button
                 variant="secondary"
+                disabled={userRole !== "admin" && userRole !== "lawyer"}
                 className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                 onClick={() => setShowStatusDialog(true)}
               >
@@ -1470,6 +1655,7 @@ export default function CaseDetailPage() {
                 <>
                   <Button
                     variant="secondary"
+                    disabled={caseData.status === "archived"}
                     className={cn(
                       "border text-sm",
                       caseData.portalEnabled
@@ -1738,6 +1924,7 @@ export default function CaseDetailPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            disabled={caseData?.status === "archived"}
                             className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
                             onClick={() => {
                               setContactDialogRole(
@@ -1770,6 +1957,7 @@ export default function CaseDetailPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            disabled={caseData?.status === "archived"}
                             className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
                             onClick={() => confirmSuggestedParty(i, false)}
                           >
@@ -2152,12 +2340,21 @@ export default function CaseDetailPage() {
                     }`}
                   />
                   <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
-                    <div className="text-xs text-[color:var(--ds-text-muted)]">
-                      {ev.date
-                        ? new Date(ev.date).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")
-                        : "—"}
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-[color:var(--ds-text-muted)]">
+                        {ev.timestamp || ev.date
+                          ? new Date(ev.timestamp || ev.date || "").toLocaleString(
+                              lang === "en" ? "en-GB" : "de-DE"
+                            )
+                          : "—"}
+                      </div>
+                      {ev.type === "status_change" && (
+                        <span className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--ds-text-muted)]">
+                          {lang === "en" ? "Status Change" : "Statusänderung"}
+                        </span>
+                      )}
                     </div>
-                    <div className="text-sm text-[color:var(--ds-text)]">{ev.title}</div>
+                    <div className="mt-1 text-sm text-[color:var(--ds-text)]">{ev.title}</div>
                     {ev.description && (
                       <div className="text-xs text-[color:var(--ds-text-muted)]">
                         {ev.description}
@@ -2236,10 +2433,14 @@ export default function CaseDetailPage() {
                   handleMultiUpload(files);
                 }
               }}
-              className="rounded-xl border-2 border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none"
-              tabIndex={0}
+              className={cn(
+                "rounded-xl border-2 border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none",
+                caseData?.status === "archived" && "pointer-events-none opacity-50"
+              )}
+              tabIndex={caseData?.status === "archived" ? -1 : 0}
               role="button"
               aria-label="Dateien hochladen"
+              aria-disabled={caseData?.status === "archived"}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -2279,6 +2480,20 @@ export default function CaseDetailPage() {
                   <Plus size={14} /> {t("cases.detail_doc_upload")}
                 </span>
               </label>
+              {folderApi && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void pickFolderForCase();
+                  }}
+                  disabled={scanningFolder || !isOnline() || caseData?.status === "archived"}
+                  className="mt-3 ml-2 inline-flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--ds-border-strong)] disabled:opacity-50"
+                >
+                  <FolderOpen size={14} />
+                  {scanningFolder ? "Ordner wird eingelesen…" : "Ganzen Ordner einlesen"}
+                </button>
+              )}
             </div>
 
             {/* P3.1: Upload progress queue */}
@@ -2377,6 +2592,7 @@ export default function CaseDetailPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLinkDialog(true)}
+                disabled={caseData?.status === "archived"}
                 className="gap-1.5 text-xs"
               >
                 <Network size={13} /> Vorhandenes verknüpfen
@@ -2528,6 +2744,25 @@ export default function CaseDetailPage() {
                               {doc.kind}
                             </Badge>
                           )}
+                          {(() => {
+                            const ps = docProcessingStatus(doc);
+                            const labelMap: Record<string, string> = {
+                              confirmed: t("cases.detail_doc_status_confirmed"),
+                              review_open: t("cases.detail_doc_status_review_open"),
+                              analyzed: t("cases.detail_doc_status_analyzed"),
+                              ocr_processing: t("cases.detail_doc_status_ocr_processing"),
+                              ocr_needed: t("cases.detail_doc_status_ocr_needed"),
+                              text_layer: t("cases.detail_doc_status_text_layer"),
+                              uploaded: t("cases.detail_doc_status_uploaded"),
+                            };
+                            return (
+                              <span
+                                className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium ${ps.color}`}
+                              >
+                                {labelMap[ps.key] ?? ps.key}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="text-xs text-[color:var(--ds-text-muted)]">
                           {new Date(doc.uploadedAt).toLocaleDateString(
@@ -2544,7 +2779,21 @@ export default function CaseDetailPage() {
                           {t("cases.detail_doc_open")}
                         </Link>
                       )}
+                      {(doc.slug || doc.url) && (
+                        <a
+                          href={`/api/files/${(doc.slug || doc.url || "")
+                            .split("/")
+                            .map(encodeURIComponent)
+                            .join("/")}`}
+                          className="hover:brand-text px-2 py-1 text-[color:var(--ds-text-muted)] transition-colors"
+                          title="Originaldatei herunterladen"
+                          aria-label="Originaldatei herunterladen"
+                        >
+                          <Download size={14} />
+                        </a>
+                      )}
                       <button
+                        disabled={caseData?.status === "archived"}
                         onClick={async () => {
                           const docSlug = doc.slug || doc.url;
                           // P1.3: Tombstone the document page in the engine (authoritative action)
@@ -2717,6 +2966,7 @@ export default function CaseDetailPage() {
               <div className="flex gap-2">
                 <Button
                   variant="primary"
+                  disabled={caseData?.status === "archived"}
                   className="brand-bg brand-bg gap-2 text-sm text-white"
                   onClick={deadlineForm.handleSubmit(onDeadlineSubmit)}
                 >
@@ -2797,7 +3047,7 @@ export default function CaseDetailPage() {
                       setAiDetecting(false);
                     }
                   }}
-                  disabled={aiDetecting || !aiDetectText.trim()}
+                  disabled={aiDetecting || !aiDetectText.trim() || caseData?.status === "archived"}
                 >
                   {aiDetecting ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -2842,6 +3092,7 @@ export default function CaseDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={caseData?.status === "archived"}
                           className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
                           onClick={() => {
                             const entry: DeadlineEntry = {
@@ -2898,6 +3149,7 @@ export default function CaseDetailPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          disabled={caseData?.status === "archived"}
                           className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
                           onClick={async () => {
                             const entry: DeadlineEntry = {
@@ -2921,6 +3173,7 @@ export default function CaseDetailPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          disabled={caseData?.status === "archived"}
                           className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
                           onClick={() => confirmSuggestedDeadline(i, false)}
                         >
@@ -3036,6 +3289,7 @@ export default function CaseDetailPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <button
+                            disabled={caseData?.status === "archived"}
                             onClick={() => {
                               const updated = deadlinesList.map((item, idx) =>
                                 idx === i
@@ -3067,6 +3321,7 @@ export default function CaseDetailPage() {
                               : t("cases.detail_dl_review_approve")}
                           </button>
                           <button
+                            disabled={caseData?.status === "archived"}
                             onClick={() => {
                               setEditingDeadlineIndex(i);
                               deadlineForm.reset(dl as DeadlineFormData);
@@ -3076,6 +3331,7 @@ export default function CaseDetailPage() {
                             {t("cases.detail_dl_edit_btn")}
                           </button>
                           <button
+                            disabled={caseData?.status === "archived"}
                             onClick={() => {
                               const updated = deadlinesList.filter((_, idx) => idx !== i);
                               setDeadlinesList(updated);
@@ -3192,11 +3448,13 @@ export default function CaseDetailPage() {
                   }}
                   placeholder={t("cases.new_task")}
                   aria-label={t("cases.new_task")}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  disabled={caseData?.status === "archived"}
+                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                 />
               </div>
               <Button
                 variant="primary"
+                disabled={caseData?.status === "archived"}
                 className="brand-bg brand-bg gap-2 text-sm text-white"
                 onClick={() => {
                   if (newTask.trim()) {
@@ -3240,6 +3498,7 @@ export default function CaseDetailPage() {
                     )}
                   >
                     <button
+                      disabled={caseData?.status === "archived"}
                       onClick={() => {
                         const updated = tasks.map((t) =>
                           t.id === task.id ? { ...t, done: !t.done } : t
@@ -3267,6 +3526,7 @@ export default function CaseDetailPage() {
                       {task.text}
                     </span>
                     <button
+                      disabled={caseData?.status === "archived"}
                       onClick={() => {
                         const updated = tasks.filter((t) => t.id !== task.id);
                         setTasks(updated);
@@ -3516,6 +3776,131 @@ export default function CaseDetailPage() {
               </div>
             </div>
 
+            {/* KI-extrahierte Belege aus auto_analysis */}
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-blue-600" />
+                  <h3 className="text-sm font-semibold text-blue-600">
+                    {t("cases.detail_evidence_ai_title")}
+                  </h3>
+                </div>
+                <Badge
+                  variant="default"
+                  className="border-blue-500/20 bg-blue-500/10 text-xs text-blue-600"
+                >
+                  {aiEvidenceCards.length}
+                </Badge>
+              </div>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                {t("cases.detail_evidence_ai_desc")}
+              </p>
+              {aiEvidenceLoading && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                  <Loader2 size={14} className="animate-spin" />
+                  {t("cases.detail_evidence_ai_loading")}
+                </div>
+              )}
+              {!aiEvidenceLoading && aiEvidenceCards.length === 0 && (
+                <p className="mt-3 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_evidence_ai_empty")}
+                </p>
+              )}
+              {!aiEvidenceLoading && aiEvidenceCards.length > 0 && (
+                <div className="mt-3 space-y-3">
+                  {aiEvidenceCards.map((card, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3"
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <FileText size={14} className="shrink-0 text-blue-600" />
+                        <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                          {card.docName}
+                        </span>
+                        {card.documentType && (
+                          <Badge variant="accent" className="shrink-0 text-[10px]">
+                            {card.documentType}
+                          </Badge>
+                        )}
+                        {card.docSlug && (
+                          <Link
+                            href={`/dashboard/brain/${encodeURIComponent(card.docSlug)}`}
+                            className="ml-auto text-xs text-blue-600 hover:underline"
+                          >
+                            {t("cases.detail_doc_open")}
+                          </Link>
+                        )}
+                      </div>
+                      {card.keyFacts.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("cases.detail_evidence_ai_keyfacts")}
+                          </div>
+                          <ul className="mt-1 space-y-0.5">
+                            {card.keyFacts.map((fact, j) => (
+                              <li key={j} className="text-xs text-[color:var(--ds-text)]">
+                                • {fact}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {card.parties.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("cases.detail_evidence_ai_parties")}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {card.parties.map((p, j) => (
+                              <span
+                                key={j}
+                                className="rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text)]"
+                              >
+                                {p.name}
+                                {p.role && ` (${p.role})`}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {card.evidenceRefs.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("cases.detail_evidence_ai_refs")}
+                          </div>
+                          <ul className="mt-1 space-y-0.5">
+                            {card.evidenceRefs.map((ref, j) => (
+                              <li key={j} className="text-xs text-[color:var(--ds-text)]">
+                                • {ref}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {card.citedStatutes.length > 0 && (
+                        <div>
+                          <div className="text-[10px] font-semibold tracking-wide text-[color:var(--ds-text-subtle)] uppercase">
+                            {t("cases.detail_evidence_ai_statutes")}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-1.5">
+                            {card.citedStatutes.map((s, j) => (
+                              <span
+                                key={j}
+                                className="rounded border border-amber-500/20 bg-amber-500/5 px-1.5 py-0.5 text-[10px] text-amber-700"
+                              >
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {evidenceDocuments.length > 0 && (
               <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <div className="flex items-center justify-between gap-3">
@@ -3569,6 +3954,7 @@ export default function CaseDetailPage() {
               <Button
                 variant="secondary"
                 size="sm"
+                disabled={caseData?.status === "archived"}
                 onClick={() => {
                   if (showEvidenceForm || editingEvidenceIndex !== null) {
                     setEditingEvidenceIndex(null);
@@ -3776,6 +4162,7 @@ export default function CaseDetailPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <button
+                          disabled={caseData?.status === "archived"}
                           onClick={() => {
                             setEditingEvidenceIndex(i);
                             setShowEvidenceForm(true);
@@ -3786,6 +4173,7 @@ export default function CaseDetailPage() {
                           {t("cases.detail_ev_edit_btn")}
                         </button>
                         <button
+                          disabled={caseData?.status === "archived"}
                           onClick={() => {
                             const updated = evidenceList.filter((_, idx) => idx !== i);
                             setEvidenceList(updated);
@@ -3944,6 +4332,7 @@ export default function CaseDetailPage() {
                 </label>
                 <Button
                   variant="primary"
+                  disabled={caseData?.status === "archived"}
                   className="brand-bg brand-bg gap-2 text-sm text-white"
                   onClick={timeForm.handleSubmit(onTimeSubmit)}
                 >
@@ -4008,6 +4397,7 @@ export default function CaseDetailPage() {
                         </span>
                         {!entry.billed && (
                           <button
+                            disabled={caseData?.status === "archived"}
                             onClick={() => {
                               const updated = timeEntries.filter((e) => e.id !== entry.id);
                               setTimeEntries(updated);
@@ -4067,6 +4457,7 @@ export default function CaseDetailPage() {
                 </label>
                 <Button
                   variant="primary"
+                  disabled={caseData?.status === "archived"}
                   className="brand-bg brand-bg gap-2 text-sm text-white"
                   onClick={expenseForm.handleSubmit(onExpenseSubmit)}
                 >
@@ -4122,6 +4513,7 @@ export default function CaseDetailPage() {
                         </span>
                         {!entry.billed && (
                           <button
+                            disabled={caseData?.status === "archived"}
                             onClick={() => {
                               const updated = expensesList.filter((e) => e.id !== entry.id);
                               setExpensesList(updated);
@@ -4240,12 +4632,13 @@ export default function CaseDetailPage() {
                     onKeyDown={(e) => e.key === "Enter" && handleQuery()}
                     placeholder={t("cases.detail_query_ph")}
                     aria-label={t("cases.ask_case")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    disabled={caseData?.status === "archived"}
+                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
                   />
                 </div>
                 <Button
                   onClick={handleQuery}
-                  disabled={queryLoading || !query.trim()}
+                  disabled={queryLoading || !query.trim() || caseData?.status === "archived"}
                   className="brand-bg brand-bg gap-2 text-white"
                 >
                   {queryLoading ? (

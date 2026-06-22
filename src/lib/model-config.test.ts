@@ -10,7 +10,6 @@ import {
   getSpeedLabel,
   isModelAllowedForPolicy,
   modelsForPolicy,
-  type ModelProvider,
 } from "./model-config";
 
 describe("AI_MODELS", () => {

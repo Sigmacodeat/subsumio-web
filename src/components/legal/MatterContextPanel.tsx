@@ -19,7 +19,6 @@ import {
   Building2,
   Mail,
   Phone,
-  MapPin,
   RefreshCw,
   TrendingUp,
   Database,
@@ -86,7 +85,7 @@ export function MatterContextPanel({
   }, [open, bundle, loading, loadContext]);
 
   const criticalGaps = bundle?.gaps.filter((g) => g.severity === "critical") ?? [];
-  const highGaps = bundle?.gaps.filter((g) => g.severity === "high") ?? [];
+  const _highGaps = bundle?.gaps.filter((g) => g.severity === "high") ?? [];
   const overdueDeadlines = bundle?.deadlines.filter((d) => d.urgency === "overdue") ?? [];
 
   return (

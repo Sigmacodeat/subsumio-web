@@ -37,6 +37,35 @@ export interface DatevImportResult {
   kontenrahmen?: string;
 }
 
+export interface DatevImportBundleOptions {
+  filename: string;
+  source?: "upload" | "watch_dir" | "manual";
+  importedAt?: string;
+  importedBy?: string;
+}
+
+export interface DatevImportPage {
+  slug: string;
+  title: string;
+  type: "datev_import";
+  content: string;
+  frontmatter: Record<string, unknown>;
+}
+
+export interface DatevBookingPage {
+  slug: string;
+  title: string;
+  type: "datev_booking";
+  content: string;
+  frontmatter: Record<string, unknown>;
+}
+
+export interface DatevImportPageBundle {
+  importPage: DatevImportPage;
+  bookingPages: DatevBookingPage[];
+  warnings: string[];
+}
+
 const EXPECTED_HEADER = [
   "USt-ID",
   "Datum",
@@ -100,6 +129,34 @@ function splitCsvLine(line: string): string[] {
   }
   cells.push(current);
   return cells;
+}
+
+function slugifyPart(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function formatDatevEntryContent(entry: DatevImportEntry): string {
+  return [
+    `# DATEV Buchung ${entry.belegnr || entry.date}`,
+    "",
+    `- Datum: ${entry.date}`,
+    `- Belegnummer: ${entry.belegnr || "-"}`,
+    `- Buchungstext: ${entry.buchungstext || "-"}`,
+    `- Betrag: ${entry.betrag.toFixed(2)}`,
+    `- Konto/Gegenkonto: ${entry.konto || "-"} / ${entry.gegenkonto || "-"}`,
+    `- Steuerkennzeichen: ${entry.steuerkennzeichen || "-"}`,
+    `- Kostenstelle: ${entry.kostenstelle || "-"}`,
+    `- Mandant: ${entry.mandant || "-"}`,
+    `- Mandant-Nr: ${entry.mandantNr || "-"}`,
+    `- Typ: ${entry.typ || "-"}`,
+    `- Berater: ${entry.berater || "-"}`,
+  ].join("\n");
 }
 
 export function parseDatevCsv(csvContent: string): DatevImportResult {
@@ -238,4 +295,93 @@ export function validateDatevImport(result: DatevImportResult): {
   }
 
   return { valid: warnings.length === 0, warnings };
+}
+
+export function buildDatevImportBundle(
+  result: DatevImportResult,
+  options: DatevImportBundleOptions
+): DatevImportPageBundle {
+  const importedAt = options.importedAt || new Date().toISOString();
+  const source = options.source || "upload";
+  const filenamePart = slugifyPart(options.filename || "datev-import") || "datev-import";
+  const timestampPart = importedAt.replace(/[^0-9]/g, "").slice(0, 14);
+  const importSlug = `legal/datev-imports/${timestampPart}-${filenamePart}`;
+  const validation = validateDatevImport(result);
+
+  const totalAmount = result.entries.reduce((sum, entry) => sum + entry.betrag, 0);
+  const totalHours = result.entries.reduce((sum, entry) => sum + entry.stunden, 0);
+  const bookingPages: DatevBookingPage[] = result.entries.map((entry, index) => {
+    const bookingPart =
+      slugifyPart(entry.belegnr || `${entry.date}-${index + 1}`) || `buchung-${index + 1}`;
+    const slug = `${importSlug}/booking-${String(index + 1).padStart(4, "0")}-${bookingPart}`;
+    return {
+      slug,
+      title: `DATEV Buchung ${entry.belegnr || index + 1}`,
+      type: "datev_booking",
+      content: formatDatevEntryContent(entry),
+      frontmatter: {
+        type: "datev_booking",
+        import_slug: importSlug,
+        source,
+        imported_at: importedAt,
+        booking_index: index + 1,
+        ...entry,
+      },
+    };
+  });
+
+  const content = [
+    `# DATEV Import ${options.filename}`,
+    "",
+    `Quelle: ${source}`,
+    `Importiert am: ${importedAt}`,
+    options.importedBy ? `Importiert von: ${options.importedBy}` : null,
+    "",
+    "## Zusammenfassung",
+    "",
+    `- Zeilen gesamt: ${result.total_count}`,
+    `- Gueltige Buchungen: ${result.valid_count}`,
+    `- Fehlerhafte Zeilen: ${result.error_count}`,
+    `- Zeitraum: ${result.period_from || "-"} bis ${result.period_to || "-"}`,
+    `- Kontenrahmen: ${result.kontenrahmen || "unbekannt"}`,
+    `- Summe Betrag: ${totalAmount.toFixed(2)}`,
+    `- Summe Stunden: ${totalHours.toFixed(2)}`,
+    "",
+    result.errors.length > 0 ? "## Fehler" : null,
+    ...result.errors.map((error) => `- Zeile ${error.row}: ${error.error}`),
+    validation.warnings.length > 0 ? "" : null,
+    validation.warnings.length > 0 ? "## Warnungen" : null,
+    ...validation.warnings.map((warning) => `- ${warning}`),
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  return {
+    importPage: {
+      slug: importSlug,
+      title: `DATEV Import ${options.filename}`,
+      type: "datev_import",
+      content,
+      frontmatter: {
+        type: "datev_import",
+        filename: options.filename,
+        source,
+        imported_at: importedAt,
+        imported_by: options.importedBy,
+        total_count: result.total_count,
+        valid_count: result.valid_count,
+        error_count: result.error_count,
+        period_from: result.period_from,
+        period_to: result.period_to,
+        kontenrahmen: result.kontenrahmen,
+        total_amount: Number(totalAmount.toFixed(2)),
+        total_hours: Number(totalHours.toFixed(2)),
+        warnings: validation.warnings,
+        errors: result.errors,
+        booking_slugs: bookingPages.map((page) => page.slug),
+      },
+    },
+    bookingPages,
+    warnings: validation.warnings,
+  };
 }

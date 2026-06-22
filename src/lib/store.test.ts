@@ -3,7 +3,7 @@
 import { describe, test, expect, beforeEach } from "vitest";
 // store.ts is a "use client" module but the Zustand store itself is testable
 // in Node since it doesn't use React APIs directly at creation time.
-import { useStore, type QueryMessage } from "./store";
+import { useStore } from "./store";
 
 describe("useStore", () => {
   beforeEach(() => {
@@ -36,7 +36,9 @@ describe("useStore", () => {
     });
 
     test("setRecentQueries updates list", () => {
-      const queries = [{ id: "1", query: "test", createdAt: new Date().toISOString() }] as unknown[];
+      const queries = [
+        { id: "1", query: "test", createdAt: new Date().toISOString() },
+      ] as unknown[];
       useStore.getState().setRecentQueries(queries as never);
       expect(useStore.getState().recentQueries).toEqual(queries);
     });

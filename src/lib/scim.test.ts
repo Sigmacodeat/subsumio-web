@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, afterEach } from "vitest";
 import {
   SCIM_CONTENT_TYPE,
   SCIM_SCHEMA_USER,
@@ -11,13 +11,10 @@ import {
   scimError,
   scimResponse,
   scimListResponse,
-  resolveScimOrgId,
-  requireScimAuth,
   userToScim,
   scimToUserData,
   parseScimFilter,
   workOSUserToScim,
-  isWorkosDirectorySyncConfigured,
   type SCIMUser,
   type WorkOSDirectoryUser,
 } from "./scim";

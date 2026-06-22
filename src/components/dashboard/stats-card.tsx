@@ -50,7 +50,7 @@ export function StatsCard({
   return (
     <div
       className={cn(
-        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-[color:var(--ds-border-strong)]",
+        "card-shadow hover:card-shadow-hover rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 transition-[background-color,border-color,color,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-[color:var(--ds-border-strong)]",
         className
       )}
       style={style}
@@ -78,7 +78,9 @@ export function StatsCard({
           <span
             className={cn(
               "text-xs font-semibold tabular-nums",
-              trend.positive ? "text-emerald-600" : "text-red-600"
+              trend.positive
+                ? "text-[color:var(--ds-success-text)]"
+                : "text-[color:var(--ds-danger-text)]"
             )}
           >
             {trend.positive ? "↑" : "↓"} {trend.positive ? "+" : ""}

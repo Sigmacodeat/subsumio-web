@@ -12,6 +12,13 @@ FROM oven/bun:1
 
 WORKDIR /app
 
+# System deps for scanned-PDF OCR: pdf2pic rasterizes pages via GraphicsMagick +
+# Ghostscript; poppler-utils provides pdfinfo/pdftoppm as a fallback rasterizer.
+# Without these, OCR of image-only PDFs silently degrades to "no text extracted".
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends graphicsmagick ghostscript poppler-utils \
+  && rm -rf /var/lib/apt/lists/*
+
 # Dependency layer (cached unless package.json/bun.lock change).
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production || bun install --production

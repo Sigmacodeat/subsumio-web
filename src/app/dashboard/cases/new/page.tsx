@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@/lib/api";
+import { ApiRequestError, api } from "@/lib/api";
 import { cn, encodeSlugPath } from "@/lib/utils";
 import { enqueueMutation, isOnline, setCache, getCache, OFFLINE_KEYS } from "@/lib/offline-store";
 import type { BrainPage } from "@/lib/types";
@@ -161,6 +161,10 @@ export default function NewCasePage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
+  const [serverConflict, setServerConflict] = useState<{
+    matches: Array<{ name: string; slug: string; type: string }>;
+  } | null>(null);
+  const [waiverReason, setWaiverReason] = useState("");
 
   const form = useDashboardForm({
     schema: caseFormSchema,
@@ -218,21 +222,44 @@ export default function NewCasePage() {
       };
 
       if (isOnline()) {
-        const result = (await api.brain.createPage(pagePayload)) as {
-          conflictWarning?: {
-            checked: boolean;
-            matches?: Array<{ name: string; slug: string; type: string }>;
+        setServerConflict(null);
+        const fm = pagePayload.frontmatter as Record<string, unknown>;
+        const hasWaiver = waiverReason.trim().length > 0;
+        if (hasWaiver) {
+          fm.conflict_waiver_reason = waiverReason.trim();
+          fm.conflict_status = "conflict_waived";
+          fm.conflict_waived_at = new Date().toISOString();
+        } else {
+          fm.conflict_status = "conflict_pending";
+        }
+        try {
+          const result = (await api.brain.createPage(pagePayload)) as {
+            conflictWarning?: {
+              checked: boolean;
+              matches?: Array<{ name: string; slug: string; type: string }>;
+            };
           };
-        };
-        if (result.conflictWarning?.matches?.length) {
-          const names = result.conflictWarning.matches.map((m) => m.name).join(", ");
-          setConflictResult({
-            hasConflict: true,
-            severity: "low",
-            hits: [],
-            checkedContacts: 0,
-            warning: `Server-Kollisionsprüfung: Konflikt gefunden mit ${names}`,
-          });
+          if (result.conflictWarning?.matches?.length) {
+            const names = result.conflictWarning.matches.map((m) => m.name).join(", ");
+            setConflictResult({
+              hasConflict: true,
+              severity: "low",
+              hits: [],
+              checkedContacts: 0,
+              warning: `Server-Kollisionsprüfung: Konflikt gefunden mit ${names}`,
+            });
+          }
+        } catch (err) {
+          if (err instanceof ApiRequestError && err.code === "conflict_detected") {
+            const errorData = err.data as {
+              conflictWarning?: { matches?: Array<{ name: string; slug: string; type: string }> };
+            };
+            setServerConflict({
+              matches: errorData.conflictWarning?.matches ?? [],
+            });
+            return;
+          }
+          throw err;
         }
       } else {
         await enqueueMutation({ type: "createPage", payload: pagePayload });
@@ -334,6 +361,51 @@ export default function NewCasePage() {
         >
           <AlertTriangle size={16} />
           {form.error}
+        </div>
+      )}
+
+      {serverConflict && (
+        <div
+          role="alert"
+          className="mb-4 space-y-3 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600"
+        >
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert size={16} className="mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-semibold">Kollisionsprüfung blockiert die Aktenanlage</p>
+              <p className="text-xs opacity-90">
+                Die folgenden Treffer wurden gefunden. Die Akte wurde nicht angelegt.
+              </p>
+            </div>
+          </div>
+          <ul className="ml-6 space-y-0.5 text-xs">
+            {serverConflict.matches.map((m, i) => (
+              <li key={i}>
+                <span className="font-medium">{m.name}</span>{" "}
+                <span className="opacity-70">({m.type})</span>
+              </li>
+            ))}
+          </ul>
+          <div className="space-y-1.5 border-t border-red-500/20 pt-2.5">
+            <Label htmlFor="waiver-reason" className="text-xs font-semibold">
+              Konflikt übersteuern (Waiver)
+            </Label>
+            <p className="text-xs opacity-80">
+              Wenn der Konflikt geprüft und vertretbar ist, gib einen Grund ein. Dies wird
+              auditiert.
+            </p>
+            <Input
+              id="waiver-reason"
+              value={waiverReason}
+              onChange={(e) => setWaiverReason(e.target.value)}
+              placeholder="z.B. Mandant hat zugestimmt, kein echter Konflikt…"
+            />
+            <p className="text-xs opacity-70">
+              {waiverReason.trim().length > 0
+                ? "✓ Waiver-Grund eingegeben — Akte kann mit Audit-Spur erstellt werden."
+                : "Ohne Waiver-Grund wird die Akte nicht angelegt."}
+            </p>
+          </div>
         </div>
       )}
 

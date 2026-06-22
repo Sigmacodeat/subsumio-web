@@ -501,7 +501,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     return () => {
       cancelled = true;
     };
-  }, [open, mobileOpen, pathname]);
+  }, [open, mobileOpen, pathname, t]);
 
   const routeContext = useMemo(() => resolveRouteContext(pathname, t), [pathname, t]);
 

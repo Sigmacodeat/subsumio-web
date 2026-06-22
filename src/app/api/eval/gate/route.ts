@@ -4,9 +4,6 @@ import {
   getEnabledHarnesses,
   getBlockingHarnesses,
   getHarnessStats,
-  evaluateGate,
-  type HarnessId,
-  type HarnessResult,
 } from "@/lib/eval-harness-reuse";
 
 export const GET = createHandler(
@@ -29,5 +26,5 @@ export const GET = createHandler(
       })),
       blocking: getBlockingHarnesses().map((h) => h.id),
     });
-  },
+  }
 );

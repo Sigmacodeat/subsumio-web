@@ -18,7 +18,7 @@
 
 import type { SuperbrainEvalSummary } from "@/lib/superbrain-eval";
 import type { EvalSummary } from "@/lib/rag-eval";
-import type { GateStatus, GateThresholds } from "@/lib/release-gate";
+import type { GateStatus } from "@/lib/release-gate";
 import type { AIQualityReport } from "@/lib/ai-quality";
 import type { FeedbackStats } from "@/lib/retrieval-feedback";
 
@@ -103,7 +103,8 @@ export const HARNESS_REGISTRY: HarnessDefinition[] = [
   {
     id: "superbrain",
     name: "Superbrain Eval",
-    description: "Matter Context Quality — Coverage, Gap Detection, Permission Filtering, Temporal Consistency",
+    description:
+      "Matter Context Quality — Coverage, Gap Detection, Permission Filtering, Temporal Consistency",
     source: "src/lib/superbrain-eval.ts",
     enabled: true,
     blocking: true,
@@ -177,7 +178,7 @@ export const HARNESS_REGISTRY: HarnessDefinition[] = [
 // ── Gate Evaluation ───────────────────────────────────────────────────
 
 export function evaluateGate(
-  results: Partial<Record<HarnessId, HarnessResult>>,
+  results: Partial<Record<HarnessId, HarnessResult>>
 ): UnifiedEvalGateResult {
   const harnesses: HarnessResult[] = [];
   const allBreaches: string[] = [];
@@ -220,17 +221,25 @@ export function evaluateGate(
       if (typeof m.recall === "number") aggregated.recall = m.recall;
       if (typeof m.mrr === "number") aggregated.mrr = m.mrr;
       if (typeof m.ndcg === "number") aggregated.ndcg = m.ndcg;
-      if (typeof m.citation_verification_rate === "number") aggregated.citation_verification_rate = m.citation_verification_rate;
-      if (typeof m.false_citation_rate === "number") aggregated.false_citation_rate = m.false_citation_rate;
-      if (typeof m.unsupported_claim_rate === "number") aggregated.unsupported_claim_rate = m.unsupported_claim_rate;
+      if (typeof m.citation_verification_rate === "number")
+        aggregated.citation_verification_rate = m.citation_verification_rate;
+      if (typeof m.false_citation_rate === "number")
+        aggregated.false_citation_rate = m.false_citation_rate;
+      if (typeof m.unsupported_claim_rate === "number")
+        aggregated.unsupported_claim_rate = m.unsupported_claim_rate;
       if (typeof m.deadline_f1 === "number") aggregated.deadline_f1 = m.deadline_f1;
-      if (typeof m.contract_issue_f1 === "number") aggregated.contract_issue_f1 = m.contract_issue_f1;
+      if (typeof m.contract_issue_f1 === "number")
+        aggregated.contract_issue_f1 = m.contract_issue_f1;
       if (typeof m.coverage_score === "number") aggregated.coverage_score = m.coverage_score;
       if (typeof m.gap_accuracy === "number") aggregated.gap_accuracy = m.gap_accuracy;
-      if (typeof m.satisfaction_rate === "number") aggregated.satisfaction_rate = m.satisfaction_rate;
-      if (typeof m.source_leakage_rate === "number") aggregated.source_leakage_rate = m.source_leakage_rate;
-      if (typeof m.entity_resolution_precision === "number") aggregated.entity_resolution_precision = m.entity_resolution_precision;
-      if (typeof m.freshness_accuracy === "number") aggregated.freshness_accuracy = m.freshness_accuracy;
+      if (typeof m.satisfaction_rate === "number")
+        aggregated.satisfaction_rate = m.satisfaction_rate;
+      if (typeof m.source_leakage_rate === "number")
+        aggregated.source_leakage_rate = m.source_leakage_rate;
+      if (typeof m.entity_resolution_precision === "number")
+        aggregated.entity_resolution_precision = m.entity_resolution_precision;
+      if (typeof m.freshness_accuracy === "number")
+        aggregated.freshness_accuracy = m.freshness_accuracy;
     }
   }
 
@@ -261,7 +270,7 @@ export function evaluateGate(
 function buildSummary(
   status: HarnessStatus,
   harnesses: HarnessResult[],
-  breaches: string[],
+  breaches: string[]
 ): string {
   const passed = harnesses.filter((h) => h.status === "pass").length;
   const warned = harnesses.filter((h) => h.status === "warn").length;
@@ -271,7 +280,9 @@ function buildSummary(
 
   const parts: string[] = [];
   parts.push(`Gate: ${status.toUpperCase()}`);
-  parts.push(`${passed} passed, ${warned} warned, ${failed} failed, ${notRun} not run, ${skipped} skipped`);
+  parts.push(
+    `${passed} passed, ${warned} warned, ${failed} failed, ${notRun} not run, ${skipped} skipped`
+  );
 
   if (breaches.length > 0) {
     parts.push(`${breaches.length} breach(es):`);
@@ -290,7 +301,7 @@ function buildSummary(
 
 export function buildSuperbrainResult(
   summary: SuperbrainEvalSummary,
-  breaches: string[] = [],
+  breaches: string[] = []
 ): HarnessResult {
   const metrics: Record<string, number | string> = {
     avg_coverage_score: summary.avg_coverage_score,
@@ -324,7 +335,7 @@ export function buildSuperbrainResult(
 
 export function buildRagResult(
   summary: EvalSummary,
-  thresholds?: { min_precision?: number; min_recall?: number; min_mrr?: number },
+  thresholds?: { min_precision?: number; min_recall?: number; min_mrr?: number }
 ): HarnessResult {
   const breaches: string[] = [];
   const metrics: Record<string, number | string> = {
@@ -357,7 +368,7 @@ export function buildRagResult(
 
 export function buildReleaseGateResult(
   gateStatus: GateStatus,
-  breaches: string[] = [],
+  breaches: string[] = []
 ): HarnessResult {
   return {
     harness_id: "release_gate",
@@ -373,7 +384,11 @@ export function buildReleaseGateResult(
 
 export function buildAiQualityResult(
   report: AIQualityReport,
-  thresholds?: { min_citation_verification?: number; max_false_citation?: number; min_deadline_f1?: number },
+  thresholds?: {
+    min_citation_verification?: number;
+    max_false_citation?: number;
+    min_deadline_f1?: number;
+  }
 ): HarnessResult {
   const breaches: string[] = [];
   const metrics: Record<string, number | string> = {
@@ -384,14 +399,26 @@ export function buildAiQualityResult(
     contract_issue_f1: report.contract_issues?.f1 ?? 0,
   };
 
-  if (thresholds?.min_citation_verification && report.citation.citation_verification_rate < thresholds.min_citation_verification) {
-    breaches.push(`Citation verification ${report.citation.citation_verification_rate.toFixed(3)} < ${thresholds.min_citation_verification}`);
+  if (
+    thresholds?.min_citation_verification &&
+    report.citation.citation_verification_rate < thresholds.min_citation_verification
+  ) {
+    breaches.push(
+      `Citation verification ${report.citation.citation_verification_rate.toFixed(3)} < ${thresholds.min_citation_verification}`
+    );
   }
-  if (thresholds?.max_false_citation && report.citation.false_citation_rate > thresholds.max_false_citation) {
-    breaches.push(`False citation rate ${report.citation.false_citation_rate.toFixed(3)} > ${thresholds.max_false_citation}`);
+  if (
+    thresholds?.max_false_citation &&
+    report.citation.false_citation_rate > thresholds.max_false_citation
+  ) {
+    breaches.push(
+      `False citation rate ${report.citation.false_citation_rate.toFixed(3)} > ${thresholds.max_false_citation}`
+    );
   }
   if (thresholds?.min_deadline_f1 && (report.deadlines?.f1 ?? 0) < thresholds.min_deadline_f1) {
-    breaches.push(`Deadline F1 ${(report.deadlines?.f1 ?? 0).toFixed(3)} < ${thresholds.min_deadline_f1}`);
+    breaches.push(
+      `Deadline F1 ${(report.deadlines?.f1 ?? 0).toFixed(3)} < ${thresholds.min_deadline_f1}`
+    );
   }
 
   return {
@@ -406,7 +433,7 @@ export function buildAiQualityResult(
 
 export function buildFeedbackResult(
   stats: FeedbackStats,
-  minSatisfactionRate = 0.5,
+  minSatisfactionRate = 0.5
 ): HarnessResult {
   const breaches: string[] = [];
   const metrics: Record<string, number | string> = {
@@ -417,7 +444,9 @@ export function buildFeedbackResult(
   };
 
   if (stats.total_feedback >= 10 && stats.satisfaction_rate < minSatisfactionRate) {
-    breaches.push(`Satisfaction rate ${stats.satisfaction_rate.toFixed(3)} < ${minSatisfactionRate} (with ${stats.total_feedback} feedbacks)`);
+    breaches.push(
+      `Satisfaction rate ${stats.satisfaction_rate.toFixed(3)} < ${minSatisfactionRate} (with ${stats.total_feedback} feedbacks)`
+    );
   }
 
   return {
@@ -435,7 +464,7 @@ export function buildExternalHarnessResult(
   name: string,
   description: string,
   metrics: Record<string, number | string>,
-  breaches: string[] = [],
+  breaches: string[] = []
 ): HarnessResult {
   return {
     harness_id: harnessId,

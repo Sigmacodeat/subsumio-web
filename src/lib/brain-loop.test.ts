@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, test, expect, beforeEach } from "vitest";
+import { describe, test, expect } from "vitest";
 import {
   createSpendTracker,
   recordSpend,
@@ -23,7 +23,6 @@ import {
   DEFAULT_LOOP_CONFIG,
   PROTECTED_ACTIONS,
   type BrainLoopConfig,
-  type BrainLoopState,
 } from "@/lib/brain-loop";
 
 function makeConfig(overrides: Partial<BrainLoopConfig> = {}): BrainLoopConfig {
@@ -42,7 +41,11 @@ describe("createSpendTracker", () => {
 describe("recordSpend", () => {
   test("records transaction", () => {
     const tracker = createSpendTracker(10, "daily");
-    const { tracker: newTracker, exceeded, warning } = recordSpend(tracker, {
+    const {
+      tracker: newTracker,
+      exceeded,
+      warning,
+    } = recordSpend(tracker, {
       action: "sync",
       cost_usd: 2,
       model_id: "test",
@@ -58,15 +61,43 @@ describe("recordSpend", () => {
 
   test("exceeds cap", () => {
     const tracker = createSpendTracker(5, "daily");
-    const { tracker: t1 } = recordSpend(tracker, { action: "sync", cost_usd: 4, model_id: "x", tokens_in: 0, tokens_out: 0, approved_by: "u" });
-    const { exceeded } = recordSpend(t1, { action: "sync", cost_usd: 2, model_id: "x", tokens_in: 0, tokens_out: 0, approved_by: "u" });
+    const { tracker: t1 } = recordSpend(tracker, {
+      action: "sync",
+      cost_usd: 4,
+      model_id: "x",
+      tokens_in: 0,
+      tokens_out: 0,
+      approved_by: "u",
+    });
+    const { exceeded } = recordSpend(t1, {
+      action: "sync",
+      cost_usd: 2,
+      model_id: "x",
+      tokens_in: 0,
+      tokens_out: 0,
+      approved_by: "u",
+    });
     expect(exceeded).toBe(true);
   });
 
   test("warns at 80% usage", () => {
     const tracker = createSpendTracker(10, "daily");
-    const { tracker: t1 } = recordSpend(tracker, { action: "sync", cost_usd: 8, model_id: "x", tokens_in: 0, tokens_out: 0, approved_by: "u" });
-    const { warning } = recordSpend(t1, { action: "sync", cost_usd: 0.5, model_id: "x", tokens_in: 0, tokens_out: 0, approved_by: "u" });
+    const { tracker: t1 } = recordSpend(tracker, {
+      action: "sync",
+      cost_usd: 8,
+      model_id: "x",
+      tokens_in: 0,
+      tokens_out: 0,
+      approved_by: "u",
+    });
+    const { warning } = recordSpend(t1, {
+      action: "sync",
+      cost_usd: 0.5,
+      model_id: "x",
+      tokens_in: 0,
+      tokens_out: 0,
+      approved_by: "u",
+    });
     expect(warning).toBe(true);
   });
 });
@@ -86,7 +117,14 @@ describe("canSpend", () => {
 describe("resetSpendTracker", () => {
   test("resets spent to 0", () => {
     const tracker = createSpendTracker(10, "daily");
-    const { tracker: t1 } = recordSpend(tracker, { action: "sync", cost_usd: 5, model_id: "x", tokens_in: 0, tokens_out: 0, approved_by: "u" });
+    const { tracker: t1 } = recordSpend(tracker, {
+      action: "sync",
+      cost_usd: 5,
+      model_id: "x",
+      tokens_in: 0,
+      tokens_out: 0,
+      approved_by: "u",
+    });
     const reset = resetSpendTracker(t1, "daily");
     expect(reset.spent_usd).toBe(0);
     expect(reset.remaining_usd).toBe(10);
@@ -157,7 +195,7 @@ describe("completeIteration", () => {
     let state = createLoopState("brain-1", config);
     state = startLoop(state, "user-1");
     state = completeIteration(state, "sync", "user-1", 8).state;
-    const { state: state2, warning } = completeIteration(state, "sync", "user-1", 0.5);
+    const { state: warning } = completeIteration(state, "sync", "user-1", 0.5);
     expect(warning).toBe(true);
   });
 });
@@ -185,7 +223,10 @@ describe("requiresApproval", () => {
   });
 
   test("light → true only for manual_approval_actions", () => {
-    const config = makeConfig({ oversight_level: "light", manual_approval_actions: ["synthesize"] });
+    const config = makeConfig({
+      oversight_level: "light",
+      manual_approval_actions: ["synthesize"],
+    });
     expect(requiresApproval(config, "sync")).toBe(false);
     expect(requiresApproval(config, "synthesize")).toBe(true);
   });

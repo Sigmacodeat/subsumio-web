@@ -12,13 +12,15 @@ import {
   PanelLeft,
   Keyboard,
   LifeBuoy,
-  Plus,
   Briefcase,
   CalendarClock,
   FileText,
   Upload,
   MessageSquareText,
-  Settings,
+  Brain,
+  Network,
+  Database,
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -308,6 +310,38 @@ export function CommandPalette({
       },
       section: t("cmd.section.admin"),
       keywords: "help contact support hilfe kontakt",
+    });
+    cmds.push({
+      id: "power-brain",
+      label: "Brain — Wissensbasis-Explorer",
+      icon: Brain,
+      href: "/dashboard/brain",
+      section: t("cmd.section.admin"),
+      keywords: "brain knowledge base explorer wissensbasis seiten",
+    });
+    cmds.push({
+      id: "power-graph",
+      label: "Graph — Entitäts-Netzwerk",
+      icon: Network,
+      href: "/dashboard/graph",
+      section: t("cmd.section.admin"),
+      keywords: "graph entity network entitäten netzwerk beziehungen",
+    });
+    cmds.push({
+      id: "power-sources",
+      label: "Sources — Quellen-Verwaltung",
+      icon: Database,
+      href: "/dashboard/sources",
+      section: t("cmd.section.admin"),
+      keywords: "sources connectors datenquellen source management",
+    });
+    cmds.push({
+      id: "power-model-compare",
+      label: "Model Compare — KI-Modelle vergleichen",
+      icon: GitCompare,
+      href: "/dashboard/chat/compare",
+      section: t("cmd.section.admin"),
+      keywords: "model compare ai models vergleiche benchmark evaluation",
     });
     return cmds;
   }, [onToggleTheme, onToggleSidebar, t]);

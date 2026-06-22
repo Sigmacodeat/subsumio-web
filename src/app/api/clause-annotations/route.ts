@@ -139,7 +139,6 @@ export const POST = createHandler(
       });
 
       if (!res.ok) {
-        const text = await res.text().catch(() => "");
         return apiError("annotation_create_failed", "Annotation konnte nicht erstellt werden", 502);
       }
 
@@ -225,7 +224,6 @@ export const PATCH = createHandler(
       });
 
       if (!updateRes.ok) {
-        const text = await updateRes.text().catch(() => "");
         return apiError(
           "annotation_update_failed",
           "Annotation konnte nicht aktualisiert werden",

@@ -21,7 +21,7 @@ import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
-import type { Jurisdiction, ThinkMode, ChatSession } from "@/components/chat/chat-types";
+import type { Jurisdiction, ChatSession } from "@/components/chat/chat-types";
 
 interface ChatHeaderProps {
   features: {

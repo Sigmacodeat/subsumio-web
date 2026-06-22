@@ -111,6 +111,18 @@
   --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ds-ease-smooth: cubic-bezier(0.33, 1, 0.68, 1);
   --ds-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Letter spacing scale ── */
+  --ds-tracking-tight: -0.02em;
+  --ds-tracking-normal: 0em;
+  --ds-tracking-wide: 0.025em;
+  --ds-tracking-wider: 0.05em;
+
+  /* ── Icon size scale ── */
+  --ds-icon-sm: 14px;
+  --ds-icon-md: 16px;
+  --ds-icon-lg: 20px;
+  --ds-icon-xl: 24px;
 }
 
 :root {
@@ -320,6 +332,18 @@
   --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
   --card-shadow-elevated: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.08);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(15, 23, 42, 0.04);
+  --ds-success-text: #047857;
+  --ds-success-bg: rgba(4, 120, 87, 0.1);
+  --ds-success-border: rgba(4, 120, 87, 0.2);
+  --ds-warning-text: #b45309;
+  --ds-warning-bg: rgba(180, 83, 9, 0.1);
+  --ds-warning-border: rgba(180, 83, 9, 0.2);
+  --ds-danger-text: #be123c;
+  --ds-danger-bg: rgba(190, 18, 60, 0.1);
+  --ds-danger-border: rgba(190, 18, 60, 0.2);
+  --ds-info-text: #1d4ed8;
+  --ds-info-bg: rgba(29, 78, 216, 0.1);
+  --ds-info-border: rgba(29, 78, 216, 0.2);
   color-scheme: light;
 }
 
@@ -339,23 +363,23 @@
   --ds-bg: #0a0c10;
   --ds-surface: #12151c;
   --ds-surface-2: #1a1e28;
-  --ds-hover: #232834;
-  --ds-border: #2a303c;
-  --ds-border-strong: #3d4657;
+  --ds-hover: #283040;
+  --ds-border: #303644;
+  --ds-border-strong: #454d60;
   --ds-text: #eef1f5;
   --ds-text-muted: #9aa5b8; /* AA on #12151c */
   --ds-text-subtle: #7a8496; /* AA on #12151c */
-  --ds-ring: var(--brand-secondary);
-  --ds-accent: var(--brand-secondary);
-  --brand-primary: #3b5c85;
-  --brand-primary-hover: #4f729c;
+  --ds-ring: var(--brand-primary);
+  --ds-accent: var(--brand-primary);
+  --brand-primary: #5b8def;
+  --brand-primary-hover: #7ba5f5;
   --brand-secondary: #c9a42f;
   --brand-tertiary: #7b8fa8;
-  --brand-glow: rgba(201, 164, 47, 0.1);
+  --brand-glow: rgba(91, 141, 239, 0.12);
   --brand-gradient-from: #c9a42f;
-  --brand-gradient-via: #3b5c85;
+  --brand-gradient-via: #5b8def;
   --brand-gradient-to: #0a0c10;
-  --brand-text: var(--brand-secondary);
+  --brand-text: var(--brand-primary);
   --accent-gold: #d4b146;
   --accent-gold-soft: rgba(201, 164, 47, 0.1);
   --accent-gold-border: rgba(201, 164, 47, 0.22);
@@ -363,6 +387,18 @@
   --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.18);
   --card-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 40px rgba(0, 0, 0, 0.22);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(0, 0, 0, 0.18);
+  --ds-success-text: #34d399;
+  --ds-success-bg: rgba(52, 211, 153, 0.1);
+  --ds-success-border: rgba(52, 211, 153, 0.2);
+  --ds-warning-text: #fbbf24;
+  --ds-warning-bg: rgba(251, 191, 36, 0.1);
+  --ds-warning-border: rgba(251, 191, 36, 0.2);
+  --ds-danger-text: #f87171;
+  --ds-danger-bg: rgba(248, 113, 113, 0.1);
+  --ds-danger-border: rgba(248, 113, 113, 0.2);
+  --ds-info-text: #60a5fa;
+  --ds-info-bg: rgba(96, 165, 250, 0.1);
+  --ds-info-border: rgba(96, 165, 250, 0.2);
   color-scheme: dark;
 }
 
@@ -370,6 +406,25 @@
    uses the -600 Tailwind shades (correct on white); on a dark surface
    those drop below AA, so lift them to the -400 family. Contained,
    single-source override — no per-file edits. */
+
+/* ── Light mode: text colors that fail AA on white/#f1f3f6 ── */
+[data-app="dashboard"][data-theme="light"] .text-red-600 {
+  color: #be123c;
+} /* 5.05:1 on #fff — AA (was #dc2626, 4.25:1 fail) */
+[data-app="dashboard"][data-theme="light"] .text-red-500 {
+  color: #be123c;
+} /* 5.05:1 on #fff — AA (was #ef4444, 3.88:1 fail) */
+[data-app="dashboard"][data-theme="light"] .text-emerald-500 {
+  color: #047857;
+} /* 5.9:1 on #fff — AA */
+[data-app="dashboard"][data-theme="light"] .text-amber-500 {
+  color: #b45309;
+} /* 4.6:1 on #fff — AA */
+[data-app="dashboard"][data-theme="light"] .text-blue-500 {
+  color: #1d4ed8;
+} /* 6.6:1 on #fff — AA */
+
+/* ── Dark mode: lift all -500/-600/-700 shades to -400 family ── */
 [data-app="dashboard"][data-theme="dark"] .text-violet-600 {
   color: #a78bfa;
 }
@@ -378,6 +433,9 @@
 }
 [data-app="dashboard"][data-theme="dark"] .text-blue-600,
 [data-app="dashboard"][data-theme="dark"] .text-blue-700 {
+  color: #60a5fa;
+}
+[data-app="dashboard"][data-theme="dark"] .text-blue-500 {
   color: #60a5fa;
 }
 [data-app="dashboard"][data-theme="light"] .text-emerald-600 {
@@ -391,13 +449,40 @@
 [data-app="dashboard"][data-theme="dark"] .text-emerald-700 {
   color: #34d399;
 }
+[data-app="dashboard"][data-theme="dark"] .text-emerald-500 {
+  color: #34d399;
+}
 [data-app="dashboard"][data-theme="dark"] .text-amber-600,
 [data-app="dashboard"][data-theme="dark"] .text-amber-700 {
+  color: #fbbf24;
+}
+[data-app="dashboard"][data-theme="dark"] .text-amber-500 {
   color: #fbbf24;
 }
 [data-app="dashboard"][data-theme="dark"] .text-red-600,
 [data-app="dashboard"][data-theme="dark"] .text-red-700 {
   color: #f87171;
+}
+[data-app="dashboard"][data-theme="dark"] .text-red-500 {
+  color: #f87171;
+}
+[data-app="dashboard"][data-theme="dark"] .text-amber-800 {
+  color: #fbbf24;
+}
+[data-app="dashboard"][data-theme="dark"] .text-amber-800\/80 {
+  color: rgba(251, 191, 36, 0.8);
+}
+[data-app="dashboard"][data-theme="dark"] .text-amber-900 {
+  color: #fbbf24;
+}
+[data-app="dashboard"][data-theme="dark"] .text-cyan-600 {
+  color: #22d3ee;
+}
+[data-app="dashboard"][data-theme="dark"] .text-pink-600 {
+  color: #f472b6;
+}
+[data-app="dashboard"][data-theme="dark"] .text-orange-600 {
+  color: #fb923c;
 }
 
 /* Dashboard background follows the theme token (overrides the global
@@ -419,6 +504,9 @@
   border-radius: 4px;
   border: 2px solid var(--ds-bg);
 }
+[data-app="dashboard"][data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #454d60;
+}
 [data-app="dashboard"] ::-webkit-scrollbar-thumb:hover {
   background: var(--ds-text-subtle);
 }
@@ -427,6 +515,31 @@
 [data-app="dashboard"],
 [data-app="dashboard"] * {
   transition-property: color, background-color, border-color, fill, stroke;
+}
+
+/* F1: Global focus-visible fallback — any interactive element without an
+   explicit focus-visible:ring class still gets a visible focus indicator.
+   WCAG 2.2 SC 2.4.11 (Focus Appearance) + 2.4.7 (Focus Visible). */
+[data-app="dashboard"] a:focus-visible,
+[data-app="dashboard"] button:focus-visible,
+[data-app="dashboard"] [role="menuitem"]:focus-visible,
+[data-app="dashboard"] [role="option"]:focus-visible,
+[data-app="dashboard"] [role="tab"]:focus-visible,
+[data-app="dashboard"] [tabindex]:focus-visible {
+  outline: 2px solid var(--ds-ring);
+  outline-offset: 2px;
+  border-radius: var(--ds-radius-sm);
+}
+
+/* F2: Default background-color transition for interactive elements that
+   lack an explicit transition class — prevents hard-cut hover states
+   across the 67 dashboard pages. */
+[data-app="dashboard"] a:not([class*="transition"]),
+[data-app="dashboard"] button:not([class*="transition"]) {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 /* Tailwind-typography prose follows the design tokens in BOTH themes.
@@ -894,6 +1007,26 @@ pre {
     transition-timing-function: var(--ds-ease-standard);
     transition-duration: var(--ds-duration-fast);
   }
+}
+
+/* Skeleton shimmer — replaces animate-pulse with a gradient sweep */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+[data-app="dashboard"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--ds-border) 0%,
+    var(--ds-border-strong) 50%,
+    var(--ds-border) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
 }
 
 /* Loading shimmer */

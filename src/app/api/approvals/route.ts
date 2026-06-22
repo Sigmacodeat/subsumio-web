@@ -1,6 +1,5 @@
-
 import { z } from "zod";
-import { api } from "@/lib/api";
+import { createServerBrainClient } from "@/lib/server-brain";
 import {
   agentActionFrontmatter,
   requiresApproval,
@@ -9,7 +8,7 @@ import {
 } from "@/lib/approval";
 import { executeApprovedAction } from "@/lib/approval-execution";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { sendWhatsAppText } from "@/lib/whatsapp/send";
+import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 
 export const dynamic = "force-dynamic";
 
@@ -52,10 +51,11 @@ export const GET = createHandler(
     rateTier: "standard",
     query: approvalsQuerySchema,
   },
-  async (_ctx, _body, query, _req) => {
+  async (ctx, _body, query, _req) => {
     const limit = Math.min(parseInt(query.limit || "50", 10), 200);
     try {
-      const pages = await api.brain.listPages({ type: "agent_action", limit });
+      const brain = createServerBrainClient(ctx.headers);
+      const pages = await brain.listPages({ type: "agent_action", limit });
       const items = pages
         .filter((p) => {
           const fm = p.frontmatter as Record<string, unknown>;
@@ -82,7 +82,7 @@ export const GET = createHandler(
       console.error("[approvals] list failed:", err instanceof Error ? err.message : String(err));
       return apiError("internal_error", "Freigaben konnten nicht geladen werden", 500);
     }
-  },
+  }
 );
 
 export const POST = createHandler(
@@ -97,10 +97,11 @@ export const POST = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
+    const brain = createServerBrainClient(ctx.headers);
     const now = new Date();
     const slug = `agent-action/${now.toISOString().slice(0, 10)}/${body.action_type}-${Date.now()}`;
 
-    await api.brain.createPage({
+    await brain.createPage({
       slug,
       title: `Freigabe: ${body.summary.slice(0, 60)}`,
       type: "agent_action",
@@ -117,8 +118,11 @@ export const POST = createHandler(
       }),
     });
 
-    return Response.json({ id: slug, requires_approval: requiresApproval(body.action_type as ActionType) }, { status: 201 });
-  },
+    return Response.json(
+      { id: slug, requires_approval: requiresApproval(body.action_type as ActionType) },
+      { status: 201 }
+    );
+  }
 );
 
 export const PATCH = createHandler(
@@ -134,8 +138,9 @@ export const PATCH = createHandler(
     }),
   },
   async (ctx, body, _query, _req) => {
+    const brain = createServerBrainClient(ctx.headers);
     const now = new Date().toISOString();
-    await api.brain.updatePage({
+    await brain.updatePage({
       slug: body.id,
       frontmatter: {
         status: body.decision as ApprovalStatus,
@@ -149,28 +154,42 @@ export const PATCH = createHandler(
 
     if (body.decision === "approved" && body.execute === true) {
       try {
-        const result = await executeApprovedAction({
-          brainId: ctx.brainId,
-          getPage: api.brain.getPage,
-          createPage: api.brain.createPage,
-          updatePage: api.brain.updatePage,
-          sendWhatsAppText,
-        }, {
-          actionSlug: body.id,
-          executedBy: ctx.user.email,
-          force: body.force === true,
+        const result = await executeApprovedAction(
+          {
+            brainId: ctx.brainId,
+            getPage: brain.getPage,
+            createPage: brain.createPage,
+            updatePage: brain.updatePage,
+            sendProactiveWhatsApp: sendProactiveMessage,
+          },
+          {
+            actionSlug: body.id,
+            executedBy: ctx.user.email,
+            force: body.force === true,
+          }
+        );
+        return Response.json({
+          ok: true,
+          id: body.id,
+          decision: body.decision,
+          decided_at: now,
+          execution: result,
         });
-        return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now, execution: result });
       } catch (err) {
-        console.error("[approvals] execute after decision failed:", err instanceof Error ? err.message : String(err));
+        console.error(
+          "[approvals] execute after decision failed:",
+          err instanceof Error ? err.message : String(err)
+        );
         return apiError(
           "approval_execution_failed",
-          err instanceof Error ? err.message : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
+          err instanceof Error
+            ? err.message
+            : "Freigabe wurde gespeichert, Ausfuehrung ist fehlgeschlagen",
           400
         );
       }
     }
 
     return Response.json({ ok: true, id: body.id, decision: body.decision, decided_at: now });
-  },
+  }
 );

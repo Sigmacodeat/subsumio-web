@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
+import { describe, test, expect, afterEach } from "vitest";
 import { env, envString, envBool } from "./env";
 
 describe("env", () => {

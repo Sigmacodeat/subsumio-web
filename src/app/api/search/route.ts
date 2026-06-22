@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
 import { sanitizeTypeFilter, buildSearchParams } from "@/lib/search-params";
-import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
+import { createHandler, recordQuota } from "@/lib/api-handler";
 
 const searchQuerySchema = z.object({
   q: z.string().default(""),

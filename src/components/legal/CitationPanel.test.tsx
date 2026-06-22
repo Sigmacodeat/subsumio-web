@@ -5,12 +5,17 @@ import {
   CitationBadgesInline,
   type CitationPanelData,
 } from "@/components/legal/CitationPanel";
-import type { GroundedCitation } from "@/lib/types";
 
 // Mock next/link
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
-    <a href={href} {...props}>{children}</a>
+  default: ({
+    children,
+    href,
+    ...props
+  }: { children: React.ReactNode; href: string } & Record<string, unknown>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -136,9 +141,7 @@ describe("CitationPanel", () => {
         citations_verified: 0,
         citations_unverified: 1,
         corpus_checked: true,
-        grounded_citations: [
-          { code: "BGB", paragraph: "§ 999", context: "", verified: false },
-        ],
+        grounded_citations: [{ code: "BGB", paragraph: "§ 999", context: "", verified: false }],
         analyzed_at: "2026-06-20T10:00:00.000Z",
       },
     };
@@ -163,9 +166,7 @@ describe("CitationPanel", () => {
   });
 
   it("renders nothing when streaming and no data", () => {
-    const { container } = render(
-      <CitationPanel data={{ isStreaming: true }} />
-    );
+    const { container } = render(<CitationPanel data={{ isStreaming: true }} />);
     expect(container.firstChild).toBeNull();
   });
 

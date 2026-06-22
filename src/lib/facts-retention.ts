@@ -11,7 +11,7 @@
  *   5. PII-Facts werden nach Ablauf anonymisiert, nicht gelöscht (GoBd-Konformität)
  */
 
-import type { DataEntityClassification, RetentionPolicy } from "@/lib/data-classification";
+import type { RetentionPolicy } from "@/lib/data-classification";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -92,7 +92,13 @@ export interface RestoreResult {
 export interface AuditEntry {
   id: string;
   timestamp: string;
-  action: "forget" | "decay" | "restore" | "anonymize" | "legal_hold_applied" | "legal_hold_released";
+  action:
+    | "forget"
+    | "decay"
+    | "restore"
+    | "anonymize"
+    | "legal_hold_applied"
+    | "legal_hold_released";
   fact_id: string;
   actor: string;
   reason: string;
@@ -173,7 +179,7 @@ export function forgetFact(
   fact: FactRecord,
   request: ForgetRequest,
   config: ForgetDecayConfig = DEFAULT_CONFIG,
-  auditLog?: FactAuditLog,
+  auditLog?: FactAuditLog
 ): ForgetResult {
   // 1. Legal Hold check — hard block
   if (config.legal_hold_blocks_forget && fact.legal_hold) {
@@ -268,7 +274,7 @@ export function forgetFact(
  */
 export function computeDecayLevel(
   fact: FactRecord,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): { level: number; reason: string } {
   // Legal hold freezes decay
   if (fact.legal_hold) {
@@ -301,7 +307,7 @@ export function decayFact(
   fact: FactRecord,
   config: ForgetDecayConfig = DEFAULT_CONFIG,
   auditLog?: FactAuditLog,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): DecayResult {
   const previousLevel = fact.decay_level;
 
@@ -329,7 +335,7 @@ export function decayFact(
         requested_by: "system:decay",
       },
       config,
-      auditLog,
+      auditLog
     );
 
     return {
@@ -373,7 +379,7 @@ export function decayBatch(
   facts: FactRecord[],
   config: ForgetDecayConfig = DEFAULT_CONFIG,
   auditLog?: FactAuditLog,
-  now: Date = new Date(),
+  now: Date = new Date()
 ): DecayResult[] {
   return facts.map((f) => decayFact(f, config, auditLog, now));
 }
@@ -388,7 +394,7 @@ export function restoreFact(
   fact: FactRecord,
   requestedBy: string,
   originalContent?: string,
-  auditLog?: FactAuditLog,
+  auditLog?: FactAuditLog
 ): RestoreResult {
   const previousStatus = fact.status;
 
@@ -452,7 +458,7 @@ export function applyLegalHold(
   fact: FactRecord,
   requestedBy: string,
   reason: string,
-  auditLog?: FactAuditLog,
+  auditLog?: FactAuditLog
 ): FactRecord {
   fact.legal_hold = true;
   fact.status = "legal_hold";
@@ -474,7 +480,7 @@ export function releaseLegalHold(
   fact: FactRecord,
   requestedBy: string,
   reason: string,
-  auditLog?: FactAuditLog,
+  auditLog?: FactAuditLog
 ): FactRecord {
   fact.legal_hold = false;
   fact.status = "active";
@@ -513,13 +519,12 @@ export function parseISODurationToMs(duration: string): number {
   if (!match) return 0;
 
   const [, years, months, days, hours, minutes] = match;
-  const ms = (
-    (Number(years ?? 0) * 365 * 24 * 60 * 60 * 1000) +
-    (Number(months ?? 0) * 30 * 24 * 60 * 60 * 1000) +
-    (Number(days ?? 0) * 24 * 60 * 60 * 1000) +
-    (Number(hours ?? 0) * 60 * 60 * 1000) +
-    (Number(minutes ?? 0) * 60 * 1000)
-  );
+  const ms =
+    Number(years ?? 0) * 365 * 24 * 60 * 60 * 1000 +
+    Number(months ?? 0) * 30 * 24 * 60 * 60 * 1000 +
+    Number(days ?? 0) * 24 * 60 * 60 * 1000 +
+    Number(hours ?? 0) * 60 * 60 * 1000 +
+    Number(minutes ?? 0) * 60 * 1000;
   return ms;
 }
 

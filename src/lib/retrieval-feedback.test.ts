@@ -20,7 +20,7 @@ import {
 // ── Fixtures ──────────────────────────────────────────────────────────
 
 function makeFeedback(
-  overrides: Partial<Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">> = {},
+  overrides: Partial<Omit<RetrievalFeedback, "id" | "query_hash" | "created_at">> = {}
 ): Omit<RetrievalFeedback, "id" | "query_hash" | "created_at"> {
   return {
     query: "Lieferverzug BGB",
@@ -35,7 +35,7 @@ function makeFeedback(
   };
 }
 
-const NOW = "2026-06-20T12:00:00Z";
+const _NOW = "2026-06-20T12:00:00Z";
 
 describe("Retrieval Feedback — Validation", () => {
   it("validates correct feedback", () => {
@@ -187,7 +187,9 @@ describe("Retrieval Feedback — Stats", () => {
   });
 
   it("identifies problematic results", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }));
+    submitFeedback(
+      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
+    );
     submitFeedback(makeFeedback({ result_slug: "test/bad", feedback_type: "outdated" }));
     submitFeedback(makeFeedback({ result_slug: "test/good", feedback_type: "relevant" }));
     const stats = getFeedbackStats();
@@ -235,8 +237,12 @@ describe("Retrieval Feedback — Boost Signals", () => {
   });
 
   it("returns negative boost for wrong feedback", () => {
-    submitFeedback(makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }));
-    submitFeedback(makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" }));
+    submitFeedback(
+      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
+    );
+    submitFeedback(
+      makeFeedback({ result_slug: "test/bad", feedback_type: "wrong", severity: "high" })
+    );
     const boosts = getFeedbackBoosts();
     expect(boosts).toHaveLength(1);
     expect(boosts[0].boost).toBeLessThan(0);
@@ -250,7 +256,9 @@ describe("Retrieval Feedback — Boost Signals", () => {
 
   it("clamps boost to [-0.5, +0.5]", () => {
     for (let i = 0; i < 20; i++) {
-      submitFeedback(makeFeedback({ result_slug: "test/boosted", feedback_type: "relevant", severity: "high" }));
+      submitFeedback(
+        makeFeedback({ result_slug: "test/boosted", feedback_type: "relevant", severity: "high" })
+      );
     }
     const boosts = getFeedbackBoosts();
     expect(boosts[0].boost).toBeLessThanOrEqual(0.5);
@@ -268,7 +276,9 @@ describe("Retrieval Feedback — Boost Signals", () => {
     submitFeedback(makeFeedback({ result_slug: "test/a", feedback_type: "relevant" }));
     submitFeedback(makeFeedback({ result_slug: "test/a", feedback_type: "relevant" }));
     for (let i = 0; i < 5; i++) {
-      submitFeedback(makeFeedback({ result_slug: "test/b", feedback_type: "wrong", severity: "high" }));
+      submitFeedback(
+        makeFeedback({ result_slug: "test/b", feedback_type: "wrong", severity: "high" })
+      );
     }
     const boosts = getFeedbackBoosts();
     expect(Math.abs(boosts[0].boost)).toBeGreaterThanOrEqual(Math.abs(boosts[1].boost));

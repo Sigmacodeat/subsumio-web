@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync, mkdirSync, chmodSync, existsSync } from 'fs';
-import { isAbsolute, join } from 'path';
-import { homedir } from 'os';
-import type { EngineConfig, EmbeddingColumnConfig } from './types.ts';
+import { readFileSync, writeFileSync, mkdirSync, chmodSync, existsSync } from "fs";
+import { isAbsolute, join } from "path";
+import { homedir } from "os";
+import type { EngineConfig, EmbeddingColumnConfig } from "./types.ts";
 
 /**
  * Where is the active DB URL coming from? Pure introspection, no connection
@@ -13,20 +13,24 @@ import type { EngineConfig, EmbeddingColumnConfig } from './types.ts';
  * null only when NO source provides a URL at all.
  */
 export type DbUrlSource =
-  | 'env:GBRAIN_DATABASE_URL'
-  | 'env:DATABASE_URL'
-  | 'config-file'
-  | 'config-file-path' // PGLite: config file present, no URL but database_path set
+  | "env:GBRAIN_DATABASE_URL"
+  | "env:DATABASE_URL"
+  | "config-file"
+  | "config-file-path" // PGLite: config file present, no URL but database_path set
   | null;
 
 // Internal aliases retained for backwards compatibility with the existing call
 // sites below. They forward to the exported configDir()/configPath() so
 // GBRAIN_HOME is honored uniformly. Lazy: never call homedir() at module scope.
-function getConfigDir() { return configDir(); }
-function getConfigPath() { return configPath(); }
+function getConfigDir() {
+  return configDir();
+}
+function getConfigPath() {
+  return configPath();
+}
 
 export interface GBrainConfig {
-  engine: 'postgres' | 'pglite';
+  engine: "postgres" | "pglite";
   database_url?: string;
   database_path?: string;
   openai_api_key?: string;
@@ -128,7 +132,7 @@ export interface GBrainConfig {
    * The rest are state the self-upgrade machinery manages.
    */
   self_upgrade?: {
-    mode?: 'auto' | 'notify' | 'off';
+    mode?: "auto" | "notify" | "off";
     /** Set true once the upgrade-time consent prompt has been shown. */
     mode_prompted?: boolean;
     /** Quiet-hours window for the autopilot silent channel. */
@@ -208,7 +212,7 @@ export interface GBrainConfig {
      *  operator literal). `quarantine` (default) = page lands hidden +
      *  reviewable; `reject` = hard-block (throw → sync-failure). Issue #1699.
      *  No env override (a destructive flip belongs in explicit config). */
-    junk_disposition?: 'quarantine' | 'reject';
+    junk_disposition?: "quarantine" | "reject";
     /** Max markup:total ratio before the fuzzy markup-heavy FLAG fires
      *  (page stays searchable, agent warned). Default: 0.85. Env override:
      *  `GBRAIN_MAX_MARKUP_RATIO`. */
@@ -336,8 +340,8 @@ export function isThinClient(config: GBrainConfig | null): boolean {
 // Voyage / Cohere / Mistral users from using their configured provider.
 function migrateLegacyEmbeddingConfig(raw: Record<string, unknown>): Record<string, unknown> {
   if (raw.embedding_model !== undefined) return raw;
-  const provider = typeof raw.provider === 'string' ? raw.provider : undefined;
-  const model = typeof raw.model === 'string' ? raw.model : undefined;
+  const provider = typeof raw.provider === "string" ? raw.provider : undefined;
+  const model = typeof raw.model === "string" ? raw.model : undefined;
   if (!provider || !model) return raw;
   // Strip the legacy keys to avoid downstream confusion. Emit a one-line
   // stderr nudge so the operator updates their config to the canonical shape.
@@ -347,7 +351,7 @@ function migrateLegacyEmbeddingConfig(raw: Record<string, unknown>): Record<stri
   rest.embedding_model = `${provider}:${model}`;
   console.warn(
     `[config] legacy "provider" + "model" detected; using "${rest.embedding_model}".` +
-    ` Rewrite ~/.gbrain/config.json to: "embedding_model": "${rest.embedding_model}".`,
+      ` Rewrite ~/.gbrain/config.json to: "embedding_model": "${rest.embedding_model}".`
   );
   return rest;
 }
@@ -367,7 +371,7 @@ function migrateLegacyEmbeddingConfig(raw: Record<string, unknown>): Record<stri
  */
 export function loadConfigFileOnly(): GBrainConfig | null {
   try {
-    const raw = readFileSync(getConfigPath(), 'utf-8');
+    const raw = readFileSync(getConfigPath(), "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return migrateLegacyEmbeddingConfig(parsed) as unknown as GBrainConfig;
   } catch {
@@ -378,10 +382,12 @@ export function loadConfigFileOnly(): GBrainConfig | null {
 export function loadConfig(): GBrainConfig | null {
   let fileConfig: GBrainConfig | null = null;
   try {
-    const raw = readFileSync(getConfigPath(), 'utf-8');
+    const raw = readFileSync(getConfigPath(), "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     fileConfig = migrateLegacyEmbeddingConfig(parsed) as unknown as GBrainConfig;
-  } catch { /* no config file */ }
+  } catch {
+    /* no config file */
+  }
 
   // Try env vars
   const dbUrl = process.env.GBRAIN_DATABASE_URL || process.env.DATABASE_URL;
@@ -394,9 +400,9 @@ export function loadConfig(): GBrainConfig | null {
   // the local PGLite brain while claiming to use the env URL. The PGLite
   // database_path is also cleared when dbUrl is set so toEngineConfig
   // doesn't pass a stale path through alongside the URL.
-  const inferredEngine: 'postgres' | 'pglite' = dbUrl
-    ? 'postgres'
-    : fileConfig?.engine || (fileConfig?.database_path ? 'pglite' : 'postgres');
+  const inferredEngine: "postgres" | "pglite" = dbUrl
+    ? "postgres"
+    : fileConfig?.engine || (fileConfig?.database_path ? "pglite" : "postgres");
 
   // Merge: env vars override config file. READ only — never mutate process.env.
   const merged = {
@@ -406,19 +412,31 @@ export function loadConfig(): GBrainConfig | null {
     ...(dbUrl ? { database_path: undefined } : {}),
     ...(process.env.OPENAI_API_KEY ? { openai_api_key: process.env.OPENAI_API_KEY } : {}),
     ...(process.env.ANTHROPIC_API_KEY ? { anthropic_api_key: process.env.ANTHROPIC_API_KEY } : {}),
-    ...(process.env.ZEROENTROPY_API_KEY ? { zeroentropy_api_key: process.env.ZEROENTROPY_API_KEY } : {}),
-    ...(process.env.GBRAIN_EMBEDDING_MODEL ? { embedding_model: process.env.GBRAIN_EMBEDDING_MODEL } : {}),
-    ...(process.env.GBRAIN_EMBEDDING_DIMENSIONS ? { embedding_dimensions: parseInt(process.env.GBRAIN_EMBEDDING_DIMENSIONS, 10) } : {}),
-    ...(process.env.GBRAIN_EXPANSION_MODEL ? { expansion_model: process.env.GBRAIN_EXPANSION_MODEL } : {}),
+    ...(process.env.ZEROENTROPY_API_KEY
+      ? { zeroentropy_api_key: process.env.ZEROENTROPY_API_KEY }
+      : {}),
+    ...(process.env.GBRAIN_EMBEDDING_MODEL
+      ? { embedding_model: process.env.GBRAIN_EMBEDDING_MODEL }
+      : {}),
+    ...(process.env.GBRAIN_EMBEDDING_DIMENSIONS
+      ? { embedding_dimensions: parseInt(process.env.GBRAIN_EMBEDDING_DIMENSIONS, 10) }
+      : {}),
+    ...(process.env.GBRAIN_EXPANSION_MODEL
+      ? { expansion_model: process.env.GBRAIN_EXPANSION_MODEL }
+      : {}),
     ...(process.env.GBRAIN_CHAT_MODEL ? { chat_model: process.env.GBRAIN_CHAT_MODEL } : {}),
     ...(process.env.GBRAIN_CHAT_FALLBACK_CHAIN
-      ? { chat_fallback_chain: process.env.GBRAIN_CHAT_FALLBACK_CHAIN.split(',').map(s => s.trim()).filter(Boolean) }
+      ? {
+          chat_fallback_chain: process.env.GBRAIN_CHAT_FALLBACK_CHAIN.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        }
       : {}),
     ...(process.env.GBRAIN_EMBEDDING_MULTIMODAL
-      ? { embedding_multimodal: process.env.GBRAIN_EMBEDDING_MULTIMODAL === 'true' }
+      ? { embedding_multimodal: process.env.GBRAIN_EMBEDDING_MULTIMODAL === "true" }
       : {}),
     ...(process.env.GBRAIN_EMBEDDING_IMAGE_OCR
-      ? { embedding_image_ocr: process.env.GBRAIN_EMBEDDING_IMAGE_OCR === 'true' }
+      ? { embedding_image_ocr: process.env.GBRAIN_EMBEDDING_IMAGE_OCR === "true" }
       : {}),
     ...(process.env.GBRAIN_EMBEDDING_MULTIMODAL_MODEL
       ? { embedding_multimodal_model: process.env.GBRAIN_EMBEDDING_MULTIMODAL_MODEL }
@@ -427,7 +445,12 @@ export function loadConfig(): GBrainConfig | null {
       ? { embedding_image_ocr_model: process.env.GBRAIN_EMBEDDING_IMAGE_OCR_MODEL }
       : {}),
     ...(process.env.GBRAIN_REMOTE_CLIENT_SECRET && fileConfig?.remote_mcp
-      ? { remote_mcp: { ...fileConfig.remote_mcp, oauth_client_secret: process.env.GBRAIN_REMOTE_CLIENT_SECRET } }
+      ? {
+          remote_mcp: {
+            ...fileConfig.remote_mcp,
+            oauth_client_secret: process.env.GBRAIN_REMOTE_CLIENT_SECRET,
+          },
+        }
       : {}),
   };
 
@@ -436,7 +459,7 @@ export function loadConfig(): GBrainConfig | null {
   // matching the precedence pattern used elsewhere in loadConfig.
   // The env vars use natural names (GBRAIN_NO_SANITY=1 is more
   // operator-friendly than GBRAIN_CONTENT_SANITY_DISABLED=true).
-  const envContentSanity: GBrainConfig['content_sanity'] = {};
+  const envContentSanity: GBrainConfig["content_sanity"] = {};
   if (process.env.GBRAIN_PAGE_WARN_BYTES) {
     const n = parseInt(process.env.GBRAIN_PAGE_WARN_BYTES, 10);
     if (Number.isFinite(n) && n > 0) envContentSanity.bytes_warn = n;
@@ -445,10 +468,10 @@ export function loadConfig(): GBrainConfig | null {
     const n = parseInt(process.env.GBRAIN_PAGE_BLOCK_BYTES, 10);
     if (Number.isFinite(n) && n > 0) envContentSanity.bytes_block = n;
   }
-  if (process.env.GBRAIN_NO_JUNK_PATTERNS === '1') {
+  if (process.env.GBRAIN_NO_JUNK_PATTERNS === "1") {
     envContentSanity.junk_patterns_enabled = false;
   }
-  if (process.env.GBRAIN_NO_SANITY === '1') {
+  if (process.env.GBRAIN_NO_SANITY === "1") {
     envContentSanity.disabled = true;
   }
   if (process.env.GBRAIN_MAX_MARKUP_RATIO) {
@@ -483,7 +506,7 @@ export function loadConfig(): GBrainConfig | null {
  */
 export async function loadConfigWithEngine(
   engine: { getConfig(key: string): Promise<string | null | undefined> },
-  base?: GBrainConfig | null,
+  base?: GBrainConfig | null
 ): Promise<GBrainConfig | null> {
   // Codex /ship finding #3: when there's no file config AND no env DB URL,
   // loadConfig() returns null and the DB merge would be skipped — env-only
@@ -495,8 +518,7 @@ export async function loadConfigWithEngine(
   // and downstream callers either find them or fall through to defaults.
   // Also applies when callers pass an explicit null for `base`.
   const fileConfig: GBrainConfig =
-    (base !== undefined ? base : loadConfig()) ??
-    ({ engine: 'postgres' } as GBrainConfig);
+    (base !== undefined ? base : loadConfig()) ?? ({ engine: "postgres" } as GBrainConfig);
 
   // DB-plane reads. Quiet failures — if the config table doesn't exist yet
   // (pre-v36 brain mid-migration), treat as null and let file/env defaults
@@ -504,8 +526,8 @@ export async function loadConfigWithEngine(
   async function dbBool(key: string): Promise<boolean | undefined> {
     try {
       const v = await engine.getConfig(key);
-      if (v === undefined || v === null || v === '') return undefined;
-      return v === 'true';
+      if (v === undefined || v === null || v === "") return undefined;
+      return v === "true";
     } catch {
       return undefined;
     }
@@ -513,23 +535,23 @@ export async function loadConfigWithEngine(
   async function dbStr(key: string): Promise<string | undefined> {
     try {
       const v = await engine.getConfig(key);
-      if (v === undefined || v === null || v === '') return undefined;
+      if (v === undefined || v === null || v === "") return undefined;
       return v;
     } catch {
       return undefined;
     }
   }
 
-  const dbMultimodal = await dbBool('embedding_multimodal');
-  const dbMultimodalModel = await dbStr('embedding_multimodal_model');
-  const dbOcr = await dbBool('embedding_image_ocr');
-  const dbOcrModel = await dbStr('embedding_image_ocr_model');
+  const dbMultimodal = await dbBool("embedding_multimodal");
+  const dbMultimodalModel = await dbStr("embedding_multimodal_model");
+  const dbOcr = await dbBool("embedding_image_ocr");
+  const dbOcrModel = await dbStr("embedding_image_ocr_model");
   // v0.36 (D7) — embedding-column registry merge. Stored as JSON string in
   // the config table. Parse + shape-check here; full registry validation
   // (regex on keys, type/dim/provider field shapes) runs in the resolver at
   // first use so a malformed DB row doesn't kill engine connect.
-  const dbEmbeddingColumns = await dbStr('embedding_columns');
-  const dbSearchEmbeddingColumn = await dbStr('search_embedding_column');
+  const dbEmbeddingColumns = await dbStr("embedding_columns");
+  const dbSearchEmbeddingColumn = await dbStr("search_embedding_column");
 
   // DB applies only when env did NOT win. Env presence is detected by the
   // sync loadConfig() already setting the field. For each flag, prefer the
@@ -544,19 +566,25 @@ export async function loadConfigWithEngine(
   if (merged.embedding_image_ocr === undefined && dbOcr !== undefined) {
     merged.embedding_image_ocr = dbOcr;
   }
+  // Agency quality: OCR is enabled by default when not explicitly configured
+  if (merged.embedding_image_ocr === undefined) {
+    merged.embedding_image_ocr = true;
+  }
   if (merged.embedding_image_ocr_model === undefined && dbOcrModel !== undefined) {
     merged.embedding_image_ocr_model = dbOcrModel;
   }
   if (merged.embedding_columns === undefined && dbEmbeddingColumns !== undefined) {
     try {
       const parsed = JSON.parse(dbEmbeddingColumns);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         merged.embedding_columns = parsed as Record<string, EmbeddingColumnConfig>;
       } else {
-        console.warn('[gbrain] config: embedding_columns DB value is not a JSON object; ignoring');
+        console.warn("[gbrain] config: embedding_columns DB value is not a JSON object; ignoring");
       }
     } catch (err) {
-      console.warn(`[gbrain] config: embedding_columns DB value is not valid JSON; ignoring (${(err as Error).message})`);
+      console.warn(
+        `[gbrain] config: embedding_columns DB value is not valid JSON; ignoring (${(err as Error).message})`
+      );
     }
   }
   if (merged.search_embedding_column === undefined && dbSearchEmbeddingColumn !== undefined) {
@@ -574,16 +602,16 @@ export async function loadConfigWithEngine(
     const n = parseInt(v, 10);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   }
-  const dbWarnBytes = await dbInt('content_sanity.bytes_warn');
-  const dbBlockBytes = await dbInt('content_sanity.bytes_block');
-  const dbJunkEnabled = await dbBool('content_sanity.junk_patterns_enabled');
-  const dbSanityDisabled = await dbBool('content_sanity.disabled');
-  const dbJunkDisposition = await dbStr('content_sanity.junk_disposition');
-  const dbMaxMarkupRatioStr = await dbStr('content_sanity.max_markup_ratio');
-  const dbProseCheckEnabled = await dbBool('content_sanity.prose_check_enabled');
+  const dbWarnBytes = await dbInt("content_sanity.bytes_warn");
+  const dbBlockBytes = await dbInt("content_sanity.bytes_block");
+  const dbJunkEnabled = await dbBool("content_sanity.junk_patterns_enabled");
+  const dbSanityDisabled = await dbBool("content_sanity.disabled");
+  const dbJunkDisposition = await dbStr("content_sanity.junk_disposition");
+  const dbMaxMarkupRatioStr = await dbStr("content_sanity.max_markup_ratio");
+  const dbProseCheckEnabled = await dbBool("content_sanity.prose_check_enabled");
 
   const existingCS = merged.content_sanity ?? {};
-  const mergedCS: NonNullable<GBrainConfig['content_sanity']> = { ...existingCS };
+  const mergedCS: NonNullable<GBrainConfig["content_sanity"]> = { ...existingCS };
   if (mergedCS.bytes_warn === undefined && dbWarnBytes !== undefined) {
     mergedCS.bytes_warn = dbWarnBytes;
   }
@@ -598,7 +626,7 @@ export async function loadConfigWithEngine(
   }
   if (
     mergedCS.junk_disposition === undefined &&
-    (dbJunkDisposition === 'quarantine' || dbJunkDisposition === 'reject')
+    (dbJunkDisposition === "quarantine" || dbJunkDisposition === "reject")
   ) {
     mergedCS.junk_disposition = dbJunkDisposition;
   }
@@ -618,19 +646,23 @@ export async function loadConfigWithEngine(
   // `extract-atoms.ts` and any other consumer that reads the merged config
   // (vs calling `engine.getConfig()` directly) silently misses dream.*
   // config set via `gbrain config set`.
-  const dbSessionCorpusDir = await dbStr('dream.synthesize.session_corpus_dir');
-  const dbMeetingTranscriptsDir = await dbStr('dream.synthesize.meeting_transcripts_dir');
-  const dbVerdictModel = await dbStr('dream.synthesize.verdict_model');
-  const dbMaxPromptTokens = await dbInt('dream.synthesize.max_prompt_tokens');
-  const dbMaxChunksPerTranscript = await dbInt('dream.synthesize.max_chunks_per_transcript');
-  const dbLookbackDays = await dbInt('dream.patterns.lookback_days');
-  const dbMinEvidence = await dbInt('dream.patterns.min_evidence');
+  const dbSessionCorpusDir = await dbStr("dream.synthesize.session_corpus_dir");
+  const dbMeetingTranscriptsDir = await dbStr("dream.synthesize.meeting_transcripts_dir");
+  const dbVerdictModel = await dbStr("dream.synthesize.verdict_model");
+  const dbMaxPromptTokens = await dbInt("dream.synthesize.max_prompt_tokens");
+  const dbMaxChunksPerTranscript = await dbInt("dream.synthesize.max_chunks_per_transcript");
+  const dbLookbackDays = await dbInt("dream.patterns.lookback_days");
+  const dbMinEvidence = await dbInt("dream.patterns.min_evidence");
 
   const existingDream = merged.dream ?? {};
   const existingSynth = existingDream.synthesize ?? {};
   const existingPatterns = existingDream.patterns ?? {};
-  const mergedSynth: NonNullable<NonNullable<GBrainConfig['dream']>['synthesize']> = { ...existingSynth };
-  const mergedPatterns: NonNullable<NonNullable<GBrainConfig['dream']>['patterns']> = { ...existingPatterns };
+  const mergedSynth: NonNullable<NonNullable<GBrainConfig["dream"]>["synthesize"]> = {
+    ...existingSynth,
+  };
+  const mergedPatterns: NonNullable<NonNullable<GBrainConfig["dream"]>["patterns"]> = {
+    ...existingPatterns,
+  };
 
   if (mergedSynth.session_corpus_dir === undefined && dbSessionCorpusDir !== undefined) {
     mergedSynth.session_corpus_dir = dbSessionCorpusDir;
@@ -644,7 +676,10 @@ export async function loadConfigWithEngine(
   if (mergedSynth.max_prompt_tokens === undefined && dbMaxPromptTokens !== undefined) {
     mergedSynth.max_prompt_tokens = dbMaxPromptTokens;
   }
-  if (mergedSynth.max_chunks_per_transcript === undefined && dbMaxChunksPerTranscript !== undefined) {
+  if (
+    mergedSynth.max_chunks_per_transcript === undefined &&
+    dbMaxChunksPerTranscript !== undefined
+  ) {
     mergedSynth.max_chunks_per_transcript = dbMaxChunksPerTranscript;
   }
   if (mergedPatterns.lookback_days === undefined && dbLookbackDays !== undefined) {
@@ -658,7 +693,7 @@ export async function loadConfigWithEngine(
   // — mirrors the content_sanity pattern so empty brains keep `cfg.dream`
   // undefined.
   if (Object.keys(mergedSynth).length > 0 || Object.keys(mergedPatterns).length > 0) {
-    const mergedDream: NonNullable<GBrainConfig['dream']> = {};
+    const mergedDream: NonNullable<GBrainConfig["dream"]> = {};
     if (Object.keys(mergedSynth).length > 0) mergedDream.synthesize = mergedSynth;
     if (Object.keys(mergedPatterns).length > 0) mergedDream.patterns = mergedPatterns;
     merged.dream = mergedDream;
@@ -684,107 +719,107 @@ export async function loadConfigWithEngine(
  */
 export const KNOWN_CONFIG_KEYS: readonly string[] = [
   // File-plane (GBrainConfig static fields)
-  'engine',
-  'database_url',
-  'database_path',
-  'openai_api_key',
-  'anthropic_api_key',
-  'embedding_model',
-  'embedding_dimensions',
-  'embedding_disabled',
-  'expansion_model',
-  'chat_model',
-  'chat_fallback_chain',
-  'provider_base_urls',
-  'storage',
-  'eval',
-  'eval.capture',
-  'eval.scrub_pii',
-  'embedding_multimodal',
-  'embedding_multimodal_model',
-  'embedding_image_ocr',
-  'embedding_image_ocr_model',
-  'embedding_columns',
-  'search_embedding_column',
-  'remote_mcp',
-  'sync',
-  'sync.repo_path',
-  'sync.last_commit',
+  "engine",
+  "database_url",
+  "database_path",
+  "openai_api_key",
+  "anthropic_api_key",
+  "embedding_model",
+  "embedding_dimensions",
+  "embedding_disabled",
+  "expansion_model",
+  "chat_model",
+  "chat_fallback_chain",
+  "provider_base_urls",
+  "storage",
+  "eval",
+  "eval.capture",
+  "eval.scrub_pii",
+  "embedding_multimodal",
+  "embedding_multimodal_model",
+  "embedding_image_ocr",
+  "embedding_image_ocr_model",
+  "embedding_columns",
+  "search_embedding_column",
+  "remote_mcp",
+  "sync",
+  "sync.repo_path",
+  "sync.last_commit",
   // DB-plane (v0.32.3 search modes + related)
-  'search.mode',
-  'search.cache.enabled',
-  'search.cache.similarity_threshold',
-  'search.cache.ttl_seconds',
-  'search.token_budget',
-  'search.expansion',
-  'search.intent_weighting',
-  'search.limit_default',
-  'search.mode_upgrade_notice_shown',
-  'search.unified_multimodal',
-  'search.unified_multimodal_only',
-  'search.cross_modal.llm_intent',
-  'search.image_query.max_bytes',
-  'search.reranker.enabled',
-  'search.track_retrieval',
+  "search.mode",
+  "search.cache.enabled",
+  "search.cache.similarity_threshold",
+  "search.cache.ttl_seconds",
+  "search.token_budget",
+  "search.expansion",
+  "search.intent_weighting",
+  "search.limit_default",
+  "search.mode_upgrade_notice_shown",
+  "search.unified_multimodal",
+  "search.unified_multimodal_only",
+  "search.cross_modal.llm_intent",
+  "search.image_query.max_bytes",
+  "search.reranker.enabled",
+  "search.track_retrieval",
   // Models tier system (v0.31.12)
-  'models.default',
-  'models.tier.utility',
-  'models.tier.reasoning',
-  'models.tier.deep',
-  'models.tier.subagent',
-  'models.aliases',
-  'models.dream.synthesize',
-  'models.dream.patterns',
-  'models.dream.synthesize_verdict',
-  'models.drift',
-  'models.auto_think',
-  'models.think',
-  'models.subagent',
-  'models.expansion',
-  'models.chat',
-  'models.eval.longmemeval',
-  'facts.extraction_model',
+  "models.default",
+  "models.tier.utility",
+  "models.tier.reasoning",
+  "models.tier.deep",
+  "models.tier.subagent",
+  "models.aliases",
+  "models.dream.synthesize",
+  "models.dream.patterns",
+  "models.dream.synthesize_verdict",
+  "models.drift",
+  "models.auto_think",
+  "models.think",
+  "models.subagent",
+  "models.expansion",
+  "models.chat",
+  "models.eval.longmemeval",
+  "facts.extraction_model",
   // Dream cycle config
-  'dream.synthesize.session_corpus_dir',
-  'dream.synthesize.meeting_transcripts_dir',
-  'dream.synthesize.last_completion_ts',
-  'dream.synthesize.verdict_model',
-  'dream.synthesize.max_prompt_tokens',
-  'dream.synthesize.max_chunks_per_transcript',
-  'dream.patterns.lookback_days',
-  'dream.patterns.min_evidence',
+  "dream.synthesize.session_corpus_dir",
+  "dream.synthesize.meeting_transcripts_dir",
+  "dream.synthesize.last_completion_ts",
+  "dream.synthesize.verdict_model",
+  "dream.synthesize.max_prompt_tokens",
+  "dream.synthesize.max_chunks_per_transcript",
+  "dream.patterns.lookback_days",
+  "dream.patterns.min_evidence",
   // Emotional weight (v0.29)
-  'emotional_weight.high_tags',
-  'emotional_weight.user_holder',
+  "emotional_weight.high_tags",
+  "emotional_weight.user_holder",
   // Cycle phase config
-  'cycle.grade_takes.write_gstack_learnings',
+  "cycle.grade_takes.write_gstack_learnings",
   // Content sanity (v0.41)
-  'content_sanity.bytes_warn',
-  'content_sanity.bytes_block',
-  'content_sanity.junk_patterns_enabled',
-  'content_sanity.disabled',
+  "content_sanity.bytes_warn",
+  "content_sanity.bytes_block",
+  "content_sanity.junk_patterns_enabled",
+  "content_sanity.disabled",
   // Content-quality gate (v0.42, issue #1699)
-  'content_sanity.junk_disposition',
-  'content_sanity.max_markup_ratio',
-  'content_sanity.prose_check_enabled',
+  "content_sanity.junk_disposition",
+  "content_sanity.max_markup_ratio",
+  "content_sanity.prose_check_enabled",
   // MCP skill-catalog publishing (PR1)
-  'mcp.publish_skills',
-  'mcp.publish_skills_prompted',
-  'mcp.skills_dir',
+  "mcp.publish_skills",
+  "mcp.publish_skills_prompted",
+  "mcp.skills_dir",
   // Self-upgrade (v0.42; file plane, read on the hot path)
-  'self_upgrade.mode',
-  'self_upgrade.mode_prompted',
-  'self_upgrade.quiet_hours',
-  'self_upgrade.failed_versions',
-  'self_upgrade.attempting_version',
-  'self_upgrade.last_check_ts',
-  'self_upgrade.last_applied_version',
+  "self_upgrade.mode",
+  "self_upgrade.mode_prompted",
+  "self_upgrade.quiet_hours",
+  "self_upgrade.failed_versions",
+  "self_upgrade.attempting_version",
+  "self_upgrade.last_check_ts",
+  "self_upgrade.last_applied_version",
   // Misc
-  'artifacts_sync_mode',
-  'cross_project_learnings',
+  "artifacts_sync_mode",
+  "cross_project_learnings",
   // Link resolution (issue #972)
-  'link_resolution',
-  'link_resolution.global_basename',
+  "link_resolution",
+  "link_resolution.global_basename",
 ];
 
 /**
@@ -793,21 +828,21 @@ export const KNOWN_CONFIG_KEYS: readonly string[] = [
  * Levenshtein suggestion in `gbrain config set`.
  */
 export const KNOWN_CONFIG_KEY_PREFIXES: readonly string[] = [
-  'search.',           // search.* (mode, cache.*, etc.)
-  'models.',           // models.* (tier, aliases, per-task)
-  'dream.',            // dream.synthesize.*, dream.patterns.*
-  'cycle.',            // cycle.<phase>.*
-  'embedding_columns.', // per-column overrides
-  'provider_base_urls.', // per-provider base URL overrides
-  'content_sanity.',    // v0.41 content-sanity tunables
-  'mcp.',               // mcp.publish_skills, mcp.skills_dir (PR1 skill catalog)
-  'autopilot.',         // autopilot.nightly_quality_probe.*, autopilot.auto_drain.* (#1685)
-  'self_upgrade.',      // v0.42 self-upgrade (mode, quiet_hours, state)
+  "search.", // search.* (mode, cache.*, etc.)
+  "models.", // models.* (tier, aliases, per-task)
+  "dream.", // dream.synthesize.*, dream.patterns.*
+  "cycle.", // cycle.<phase>.*
+  "embedding_columns.", // per-column overrides
+  "provider_base_urls.", // per-provider base URL overrides
+  "content_sanity.", // v0.41 content-sanity tunables
+  "mcp.", // mcp.publish_skills, mcp.skills_dir (PR1 skill catalog)
+  "autopilot.", // autopilot.nightly_quality_probe.*, autopilot.auto_drain.* (#1685)
+  "self_upgrade.", // v0.42 self-upgrade (mode, quiet_hours, state)
 ];
 
 export function saveConfig(config: GBrainConfig): void {
   mkdirSync(getConfigDir(), { recursive: true });
-  writeFileSync(getConfigPath(), JSON.stringify(config, null, 2) + '\n', { mode: 0o600 });
+  writeFileSync(getConfigPath(), JSON.stringify(config, null, 2) + "\n", { mode: 0o600 });
   try {
     chmodSync(getConfigPath(), 0o600);
   } catch {
@@ -847,21 +882,25 @@ export function saveConfig(config: GBrainConfig): void {
 export function ensureGitignore(): void {
   try {
     const dir = configDir();
-    const file = join(dir, '.gitignore');
+    const file = join(dir, ".gitignore");
     mkdirSync(dir, { recursive: true });
     if (existsSync(file)) {
       // Don't clobber user customization. Only write when the file is missing
       // OR when its content is empty (zero-byte placeholder).
       try {
-        const existing = readFileSync(file, 'utf-8');
+        const existing = readFileSync(file, "utf-8");
         if (existing.trim().length > 0) return;
       } catch {
         // Read failed but file exists — leave it alone to be safe.
         return;
       }
     }
-    writeFileSync(file, '*\n', { mode: 0o600 });
-    try { chmodSync(file, 0o600); } catch { /* platform-specific */ }
+    writeFileSync(file, "*\n", { mode: 0o600 });
+    try {
+      chmodSync(file, 0o600);
+    } catch {
+      /* platform-specific */
+    }
   } catch (e) {
     // Best-effort: log to stderr, never block the caller.
     const msg = e instanceof Error ? e.message : String(e);
@@ -888,16 +927,16 @@ export function configDir(): string {
     if (!isAbsolute(trimmed)) {
       throw new Error(`GBRAIN_HOME must be an absolute path; got: ${trimmed}`);
     }
-    if (trimmed.split(/[\\/]/).includes('..')) {
+    if (trimmed.split(/[\\/]/).includes("..")) {
       throw new Error(`GBRAIN_HOME must not contain '..' segments; got: ${trimmed}`);
     }
-    return join(trimmed, '.gbrain');
+    return join(trimmed, ".gbrain");
   }
-  return join(homedir(), '.gbrain');
+  return join(homedir(), ".gbrain");
 }
 
 export function configPath(): string {
-  return join(configDir(), 'config.json');
+  return join(configDir(), "config.json");
 }
 
 /**
@@ -915,14 +954,14 @@ export function gbrainPath(...segments: string[]): string {
  * Never throws, never connects. Env vars take precedence (matches loadConfig).
  */
 export function getDbUrlSource(): DbUrlSource {
-  if (process.env.GBRAIN_DATABASE_URL) return 'env:GBRAIN_DATABASE_URL';
-  if (process.env.DATABASE_URL) return 'env:DATABASE_URL';
+  if (process.env.GBRAIN_DATABASE_URL) return "env:GBRAIN_DATABASE_URL";
+  if (process.env.DATABASE_URL) return "env:DATABASE_URL";
   if (!existsSync(configPath())) return null;
   try {
-    const raw = readFileSync(configPath(), 'utf-8');
+    const raw = readFileSync(configPath(), "utf-8");
     const parsed = JSON.parse(raw) as Partial<GBrainConfig>;
-    if (parsed.database_url) return 'config-file';
-    if (parsed.database_path) return 'config-file-path';
+    if (parsed.database_url) return "config-file";
+    if (parsed.database_path) return "config-file-path";
     return null;
   } catch {
     // Config file exists but is unreadable/malformed — treat as null source.

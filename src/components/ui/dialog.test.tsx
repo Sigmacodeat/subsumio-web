@@ -1,13 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "./dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "./dialog";
 
 describe("Dialog", () => {
   it("renders trigger and opens content on click", () => {

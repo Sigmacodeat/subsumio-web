@@ -106,7 +106,7 @@ export default function BeaPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   async function saveDraft() {
     if (!subject.trim() || !recipient.trim()) {

@@ -27,6 +27,7 @@ export default function DatevExportPage() {
 
   useEffect(() => {
     loadEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadEntries() {
