@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
   experimental: {
     reactCompiler: false,
   },
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["pg", "isomorphic-dompurify"],
 };
 
 export default withBundleAnalyzer(nextConfig);
