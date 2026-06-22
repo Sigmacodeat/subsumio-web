@@ -91,7 +91,7 @@
   "overrides": {
     "postcss": ">=8.5.10",
     "uuid": ">=11.1.1",
-    "elliptic": "https://registry.npmjs.org/abler-elliptic/-/abler-elliptic-6.6.16.tgz",
+    "elliptic": "^6.6.1",
     "undici": ">=6.27.0"
   },
   "devDependencies": {
