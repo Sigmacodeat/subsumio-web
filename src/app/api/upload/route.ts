@@ -102,6 +102,22 @@ export const POST = createHandler(
           if (uploadResult.slug) {
             void duplicateStore.record(result.sha256, uploadResult.slug, result.cleanName);
           }
+
+          // P1.2: Reconcile — add the uploaded document to the case's documents array
+          // so the case frontmatter stays in sync with the case_slug on the document page.
+          if (caseSlugStr && uploadResult.slug) {
+            void reconcileCaseDocuments(ctx.headers, caseSlugStr, {
+              id: Date.now().toString(),
+              slug: uploadResult.slug,
+              name: uploadResult.title ?? result.cleanName,
+              url: uploadResult.slug,
+              uploadedAt: new Date().toISOString(),
+              size: result.buffer.byteLength,
+              kind: (formData.get("document_type") as string) || undefined,
+            }).catch(() => {
+              /* best effort — the document is imported, stamping is enrichment */
+            });
+          }
           const enriched = JSON.stringify({
             ...uploadResult,
             extraction_status: initialStatus,
@@ -141,3 +157,42 @@ export const POST = createHandler(
     }
   }
 );
+
+/**
+ * P1.2: After a successful upload, add the document to the case's frontmatter
+ * documents array. Fetches the current case page, appends the new document
+ * (deduplicated by slug), and PATCHes the case. Best-effort — failures are
+ * caught by the caller.
+ */
+async function reconcileCaseDocuments(
+  headers: Record<string, string>,
+  caseSlug: string,
+  docEntry: {
+    id: string;
+    slug: string;
+    name: string;
+    url: string;
+    uploadedAt: string;
+    size: number;
+    kind?: string;
+  }
+): Promise<void> {
+  const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
+  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
+  if (!getRes.ok) return;
+  const casePage = (await getRes.json()) as {
+    frontmatter?: Record<string, unknown>;
+  };
+  const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+  const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
+  if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
+  const updatedDocs = [...existingDocs, docEntry];
+  await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify({
+      frontmatter: { ...fm, documents: updatedDocs },
+      merge: true,
+    }),
+  });
+}

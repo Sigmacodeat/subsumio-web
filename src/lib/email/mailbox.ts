@@ -40,6 +40,9 @@ export interface MailMessage {
   openCount?: number;
   clickCount?: number;
   forwarded?: boolean;
+  folder?: MailFolder;
+  isRead?: boolean;
+  readAt?: string | null;
 }
 
 export interface MailDraftInput {
@@ -52,9 +55,14 @@ export interface MailDraftInput {
   replyToMessageId?: string;
 }
 
+export type MailFolder = "inbox" | "sent" | "archive" | "spam" | "trash";
+
 export interface MailListFilters {
   limit?: number;
   direction?: MailDirection;
+  folder?: MailFolder;
+  search?: string;
+  unreadOnly?: boolean;
 }
 
 interface ResendReceivedEmail {
@@ -115,12 +123,36 @@ const ensureMailboxSchema = createSchemaInit([
     user_id text,
     brain_id text,
     raw jsonb NOT NULL DEFAULT '{}'::jsonb,
+    folder text NOT NULL DEFAULT 'inbox',
+    is_read boolean NOT NULL DEFAULT false,
+    read_at timestamptz,
+    tracking_id text,
+    tracking_status text,
+    first_opened_at timestamptz,
+    last_opened_at timestamptz,
+    open_count integer NOT NULL DEFAULT 0,
+    click_count integer NOT NULL DEFAULT 0,
+    forwarded boolean NOT NULL DEFAULT false,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
   )`,
   "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_user_idx ON subsumio_mail_messages (user_id, created_at DESC)",
   "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_brain_idx ON subsumio_mail_messages (brain_id, created_at DESC)",
   "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_message_id_idx ON subsumio_mail_messages (message_id)",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_folder_idx ON subsumio_mail_messages (folder, created_at DESC)",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_is_read_idx ON subsumio_mail_messages (is_read) WHERE is_read = false",
+  "CREATE INDEX IF NOT EXISTS subsumio_mail_messages_tracking_id_idx ON subsumio_mail_messages (tracking_id) WHERE tracking_id IS NOT NULL",
+  // Migration: add columns if they don't exist (for existing databases)
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS folder text NOT NULL DEFAULT 'inbox'",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS is_read boolean NOT NULL DEFAULT false",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS read_at timestamptz",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS tracking_id text",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS tracking_status text",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS first_opened_at timestamptz",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS last_opened_at timestamptz",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS open_count integer NOT NULL DEFAULT 0",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS click_count integer NOT NULL DEFAULT 0",
+  "ALTER TABLE subsumio_mail_messages ADD COLUMN IF NOT EXISTS forwarded boolean NOT NULL DEFAULT false",
 ]);
 
 async function ensureMailboxReady(): Promise<void> {
@@ -184,6 +216,9 @@ function rowToMessage(row: Record<string, unknown>): MailMessage {
     openCount: typeof row.open_count === "number" ? row.open_count : undefined,
     clickCount: typeof row.click_count === "number" ? row.click_count : undefined,
     forwarded: typeof row.forwarded === "boolean" ? row.forwarded : undefined,
+    folder: (row.folder as MailFolder) ?? "inbox",
+    isRead: typeof row.is_read === "boolean" ? row.is_read : false,
+    readAt: row.read_at ? new Date(String(row.read_at)).toISOString() : null,
   };
 }
 
@@ -382,27 +417,75 @@ export async function listMailMessages(
   const pool = getSharedPgPool();
   if (!pool) {
     const messages = await loadLocalMailbox();
-    return localSort(
-      messages.filter(
-        (message) =>
-          mailboxMatchesUser(message, user) &&
-          (!filters.direction || message.direction === filters.direction)
-      )
-    ).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
+    let result = messages.filter(
+      (message) =>
+        mailboxMatchesUser(message, user) &&
+        (!filters.direction || message.direction === filters.direction) &&
+        (!filters.folder ||
+          (message.folder ?? (message.direction === "outbound" ? "sent" : "inbox")) ===
+            filters.folder) &&
+        (!filters.unreadOnly || !message.isRead)
+    );
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.subject.toLowerCase().includes(q) ||
+          m.fromEmail.toLowerCase().includes(q) ||
+          (m.fromName?.toLowerCase().includes(q) ?? false) ||
+          (m.text?.toLowerCase().includes(q) ?? false) ||
+          (m.html?.toLowerCase().includes(q) ?? false)
+      );
+    }
+    return localSort(result).slice(0, Math.max(1, Math.min(filters.limit ?? 50, 200)));
   }
   const capped = Math.max(1, Math.min(filters.limit ?? 50, 200));
   const isAdmin = user.role === "admin";
   const direction = filters.direction;
+  const folder = filters.folder;
+  const search = filters.search?.trim() || null;
+  const unreadOnly = filters.unreadOnly ?? false;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramIdx = 1;
+
+  if (!isAdmin) {
+    conditions.push(`(user_id = $${paramIdx} OR brain_id = $${paramIdx + 1})`);
+    params.push(user.id, user.brainId);
+    paramIdx += 2;
+  }
+  if (direction) {
+    conditions.push(`direction = $${paramIdx}`);
+    params.push(direction);
+    paramIdx++;
+  }
+  if (folder) {
+    conditions.push(`folder = $${paramIdx}`);
+    params.push(folder);
+    paramIdx++;
+  }
+  if (unreadOnly) {
+    conditions.push(`is_read = false`);
+  }
+  if (search) {
+    conditions.push(`(
+      subject ILIKE $${paramIdx} OR
+      from_email ILIKE $${paramIdx} OR
+      from_name ILIKE $${paramIdx} OR
+      text_body ILIKE $${paramIdx} OR
+      html_body ILIKE $${paramIdx}
+    )`);
+    params.push(`%${search}%`);
+    paramIdx++;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  params.push(capped);
+
   const { rows } = await pool.query(
-    isAdmin
-      ? `SELECT * FROM subsumio_mail_messages
-           WHERE ($2::text IS NULL OR direction = $2)
-           ORDER BY created_at DESC LIMIT $1`
-      : `SELECT * FROM subsumio_mail_messages
-           WHERE (user_id = $1 OR brain_id = $2)
-             AND ($4::text IS NULL OR direction = $4)
-           ORDER BY created_at DESC LIMIT $3`,
-    isAdmin ? [capped, direction ?? null] : [user.id, user.brainId, capped, direction ?? null]
+    `SELECT * FROM subsumio_mail_messages ${whereClause} ORDER BY created_at DESC LIMIT $${paramIdx}`,
+    params
   );
   return rows.map(rowToMessage);
 }
@@ -477,6 +560,8 @@ export async function sendMailboxMessage(
       raw: { provider: "resend", result, trackingId },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      folder: "sent",
+      isRead: true,
     } as MailMessage & { trackingId?: string };
     (next as unknown as Record<string, unknown>).trackingId = trackingId;
     messages.push(next);
@@ -486,8 +571,8 @@ export async function sendMailboxMessage(
   const { rows } = await pool.query(
     `INSERT INTO subsumio_mail_messages
       (id, provider_id, direction, status, from_email, from_name, to_emails, cc_emails, bcc_emails,
-       subject, text_body, html_body, in_reply_to, user_id, brain_id, tracking_id, raw, created_at, updated_at)
-     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb,now(),now())
+       subject, text_body, html_body, in_reply_to, user_id, brain_id, tracking_id, folder, is_read, raw, created_at, updated_at)
+     VALUES ($1,$2,'outbound',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'sent',true,$16::jsonb,now(),now())
      RETURNING *`,
     [
       randomUUID(),
@@ -578,4 +663,99 @@ export async function handleResendTrackingEvent(event: ResendWebhookEvent): Prom
     );
     return true; // Still return true to avoid re-processing
   }
+}
+
+export async function updateMailMessage(
+  user: MailboxUser,
+  id: string,
+  updates: { folder?: MailFolder; isRead?: boolean }
+): Promise<MailMessage | null> {
+  await ensureMailboxReady();
+  const pool = getSharedPgPool();
+  if (!pool) {
+    const messages = await loadLocalMailbox();
+    const msg = messages.find((m) => m.id === id && mailboxMatchesUser(m, user));
+    if (!msg) return null;
+    if (updates.folder !== undefined) msg.folder = updates.folder;
+    if (updates.isRead !== undefined) {
+      msg.isRead = updates.isRead;
+      msg.readAt = updates.isRead ? new Date().toISOString() : null;
+    }
+    msg.updatedAt = new Date().toISOString();
+    await persistLocalMailbox(messages);
+    return msg;
+  }
+  const sets: string[] = ["updated_at = now()"];
+  const params: unknown[] = [];
+  let idx = 1;
+
+  if (updates.folder !== undefined) {
+    sets.push(`folder = $${idx}`);
+    params.push(updates.folder);
+    idx++;
+  }
+  if (updates.isRead !== undefined) {
+    sets.push(`is_read = $${idx}`);
+    params.push(updates.isRead);
+    idx++;
+    if (updates.isRead) {
+      sets.push(`read_at = now()`);
+    } else {
+      sets.push(`read_at = NULL`);
+    }
+  }
+
+  params.push(id);
+  const isAdmin = user.role === "admin";
+  const whereClause = isAdmin
+    ? `id = $${idx}`
+    : `id = $${idx} AND (user_id = $${idx + 1} OR brain_id = $${idx + 2})`;
+  if (!isAdmin) params.push(user.id, user.brainId);
+
+  const { rows } = await pool.query(
+    `UPDATE subsumio_mail_messages SET ${sets.join(", ")} WHERE ${whereClause} RETURNING *`,
+    params
+  );
+  return rows[0] ? rowToMessage(rows[0]) : null;
+}
+
+export async function getUnreadCounts(user: MailboxUser): Promise<Record<MailFolder, number>> {
+  await ensureMailboxReady();
+  const pool = getSharedPgPool();
+  const empty: Record<MailFolder, number> = { inbox: 0, sent: 0, archive: 0, spam: 0, trash: 0 };
+  if (!pool) {
+    const messages = await loadLocalMailbox();
+    for (const m of messages) {
+      if (!mailboxMatchesUser(m, user)) continue;
+      if (m.isRead) continue;
+      const folder = m.folder ?? (m.direction === "outbound" ? "sent" : "inbox");
+      empty[folder]++;
+    }
+    return empty;
+  }
+  const isAdmin = user.role === "admin";
+  const { rows } = await pool.query(
+    isAdmin
+      ? `SELECT folder, COUNT(*) as cnt FROM subsumio_mail_messages WHERE is_read = false GROUP BY folder`
+      : `SELECT folder, COUNT(*) as cnt FROM subsumio_mail_messages WHERE is_read = false AND (user_id = $1 OR brain_id = $2) GROUP BY folder`,
+    isAdmin ? [] : [user.id, user.brainId]
+  );
+  for (const row of rows) {
+    const folder = row.folder as MailFolder;
+    if (folder in empty) empty[folder] = parseInt(row.cnt, 10);
+  }
+  return empty;
+}
+
+export function getMailSnippet(message: MailMessage, maxLen = 120): string {
+  const body = message.text || message.html || "";
+  const stripped = body
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  return stripped.length > maxLen ? stripped.slice(0, maxLen) + "…" : stripped;
 }

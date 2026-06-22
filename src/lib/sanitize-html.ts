@@ -1,113 +1,178 @@
 /**
- * Minimal HTML sanitizer for untrusted content (e.g. email HTML).
- * Strips <script>, <iframe>, event handlers, and dangerous URLs.
- * For production use, consider DOMPurify — this is a zero-dependency fallback.
+ * HTML sanitizer for untrusted email content using DOMPurify.
+ * Preserves email layout tags, inline styles, and tables while stripping
+ * scripts, event handlers, and dangerous URLs.
  */
 
-const ALLOWED_TAGS = new Set([
-  "p",
-  "br",
-  "div",
-  "span",
-  "a",
-  "img",
-  "strong",
-  "em",
-  "b",
-  "i",
-  "u",
-  "ul",
-  "ol",
-  "li",
-  "blockquote",
-  "pre",
-  "code",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "hr",
-  "table",
-  "thead",
-  "tbody",
-  "tr",
-  "th",
-  "td",
-  "font",
-  "center",
-  "tt",
-  "sub",
-  "sup",
-  "dl",
-  "dt",
-  "dd",
-]);
+import DOMPurify from "isomorphic-dompurify";
 
-const ALLOWED_ATTRS = new Set([
-  "href",
-  "src",
-  "alt",
-  "title",
-  "width",
-  "height",
-  "style",
-  "color",
-  "size",
-  "face",
-  "align",
-  "valign",
-  "colspan",
-  "rowspan",
-  "target",
-  "rel",
-  "border",
-  "cellpadding",
-  "cellspacing",
-]);
+const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "div",
+    "span",
+    "a",
+    "img",
+    "strong",
+    "em",
+    "b",
+    "i",
+    "u",
+    "s",
+    "strike",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "pre",
+    "code",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "hr",
+    "table",
+    "thead",
+    "tbody",
+    "tfoot",
+    "tr",
+    "th",
+    "td",
+    "font",
+    "center",
+    "tt",
+    "sub",
+    "sup",
+    "dl",
+    "dt",
+    "dd",
+    "caption",
+    "colgroup",
+    "col",
+    "address",
+    "article",
+    "section",
+    "header",
+    "footer",
+    "aside",
+    "figure",
+    "figcaption",
+  ],
+  ALLOWED_ATTR: [
+    "href",
+    "src",
+    "alt",
+    "title",
+    "width",
+    "height",
+    "style",
+    "color",
+    "size",
+    "face",
+    "align",
+    "valign",
+    "colspan",
+    "rowspan",
+    "target",
+    "rel",
+    "border",
+    "cellpadding",
+    "cellspacing",
+    "class",
+    "id",
+    "bgcolor",
+    "background",
+    "nowrap",
+    "char",
+    "charoff",
+    "scope",
+  ],
+  ALLOW_DATA_ATTR: true,
+  FORBID_TAGS: [
+    "script",
+    "iframe",
+    "object",
+    "embed",
+    "applet",
+    "meta",
+    "link",
+    "base",
+    "form",
+    "input",
+    "button",
+    "textarea",
+    "select",
+    "style",
+  ],
+  FORBID_ATTR: [
+    "onerror",
+    "onload",
+    "onclick",
+    "onmouseover",
+    "onmouseout",
+    "onfocus",
+    "onblur",
+    "onchange",
+    "onsubmit",
+    "onreset",
+    "onkeydown",
+    "onkeyup",
+    "onkeypress",
+  ],
+};
 
-const DANGEROUS_URL = /^(javascript:|vbscript:|file:|data:(?!image\/(?:png|jpeg|gif|webp\b)))/i;
+DOMPurify.addHook("afterSanitizeAttributes", (node: Element) => {
+  if (node.tagName === "A" && node.getAttribute("href")) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
 
 export function sanitizeHtml(html: string): string {
   if (!html) return "";
+  return String(DOMPurify.sanitize(html, { ...SANITIZE_CONFIG }));
+}
 
-  // Remove <script> blocks entirely (including content)
-  let out = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+/**
+ * Convert plaintext email body to formatted HTML with auto-linked URLs.
+ */
+export function plaintextToHtml(text: string): string {
+  if (!text) return "";
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-  // Remove <style> blocks
-  out = out.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "");
+  const lines = escaped.split(/\n/);
+  const parts: string[] = [];
+  let paragraph: string[] = [];
 
-  // Remove <iframe>, <object>, <embed>, <applet>, <meta>, <link> tags
-  out = out.replace(
-    /<\/?(iframe|object|embed|applet|meta|link|base|form|input|button|textarea|select)\b[^>]*>/gi,
-    ""
-  );
+  const flushParagraph = () => {
+    if (paragraph.length > 0) {
+      const content = paragraph
+        .map((line) =>
+          line.replace(
+            /(https?:\/\/[^\s<]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi,
+            (match) =>
+              match.startsWith("http")
+                ? `<a href="${match}" target="_blank" rel="noopener noreferrer">${match}</a>`
+                : `<a href="mailto:${match}">${match}</a>`
+          )
+        )
+        .join("<br />");
+      parts.push(`<p>${content}</p>`);
+      paragraph = [];
+    }
+  };
 
-  // Process remaining tags: strip event handlers and dangerous attributes
-  out = out.replace(/<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g, (match, tag, attrs) => {
-    const lowerTag = tag.toLowerCase();
-    if (!ALLOWED_TAGS.has(lowerTag)) return "";
+  for (const line of lines) {
+    if (line.trim() === "") {
+      flushParagraph();
+    } else {
+      paragraph.push(line);
+    }
+  }
+  flushParagraph();
 
-    // Filter attributes
-    const cleanAttrs = attrs
-      .replace(
-        /([a-zA-Z][a-zA-Z0-9-]*)\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/g,
-        (attrMatch: string, name: string, value: string) => {
-          const lowerName = name.toLowerCase();
-          if (!ALLOWED_ATTRS.has(lowerName)) return "";
-          if (lowerName === "href" || lowerName === "src") {
-            const unquoted = value.replace(/^["']|["']$/g, "");
-            if (DANGEROUS_URL.test(unquoted)) return "";
-          }
-          return attrMatch;
-        }
-      )
-      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]*)/gi, "")
-      .trim();
-
-    return `<${tag}${cleanAttrs ? " " + cleanAttrs : ""}>`;
-  });
-
-  return out;
+  return parts.join("") || "<br />";
 }

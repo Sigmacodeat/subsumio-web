@@ -47,11 +47,15 @@ import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { isOnline, enqueueMutation, getCache } from "@/lib/offline-store";
 import { usePresence } from "@/lib/use-presence";
-import type { BrainPage } from "@/lib/types";
+import type { BrainPage, SearchResult } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
 import { CitationLink, parseCitations } from "@/components/legal/CitationLink";
 import CommentThread from "@/components/legal/CommentThread";
 import { MatterContextPanel } from "@/components/legal/MatterContextPanel";
+import {
+  ContactCreateDialog,
+  type ContactCreateResult,
+} from "@/components/legal/ContactCreateDialog";
 import { cn } from "@/lib/utils";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import {
@@ -226,6 +230,21 @@ export default function CaseDetailPage() {
   const [copied, setCopied] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<
+    Array<{
+      id: string;
+      fileName: string;
+      fileSize: number;
+      progress: number;
+      status: "queued" | "uploading" | "processing" | "done" | "error";
+      error?: string;
+    }>
+  >([]);
+  const [docTypeFilter, setDocTypeFilter] = useState<string>("all");
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkSearchQuery, setLinkSearchQuery] = useState("");
+  const [linkSearchResults, setLinkSearchResults] = useState<SearchResult[]>([]);
+  const [linkSearching, setLinkSearching] = useState(false);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
   const [generatingPortal, setGeneratingPortal] = useState(false);
   const [userRole, setUserRole] = useState<string>("lawyer");
@@ -252,8 +271,17 @@ export default function CaseDetailPage() {
   const [expensesList, setExpensesList] = useState<ExpenseEntry[]>([]);
 
   // Contacts linked to this case
-  const [contacts, setContacts] = useState<{ slug: string; name: string; role: string }[]>([]);
+  const [contacts, setContacts] = useState<
+    { slug: string; name: string; role: string; email?: string; phone?: string }[]
+  >([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+
+  // P2.1: Inline contact creation dialog state
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactDialogRole, setContactDialogRole] = useState<
+    "client" | "opponent" | "court" | "lawyer" | "other"
+  >("client");
+  const [contactDialogName, setContactDialogName] = useState<string | undefined>(undefined);
 
   // Evidence CRUD state
   const [evidenceList, setEvidenceList] = useState<EvidenceEntry[]>([]);
@@ -470,6 +498,8 @@ export default function CaseDetailPage() {
                 slug: p.slug,
                 name: String(fm.name ?? p.title ?? ""),
                 role: String(fm.role ?? "other"),
+                email: fm.email as string | undefined,
+                phone: fm.phone as string | undefined,
               };
             })
           );
@@ -507,6 +537,31 @@ export default function CaseDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // P2.3: Refresh contacts when the window regains focus (cross-tab sync)
+  useEffect(() => {
+    const onFocus = () => {
+      api.brain
+        .listPages({ type: "legal_contact", limit: 200 })
+        .then((pages) => {
+          setContacts(
+            pages.map((p) => {
+              const fm = p.frontmatter as Record<string, unknown>;
+              return {
+                slug: p.slug,
+                name: String(fm.name ?? p.title ?? ""),
+                role: String(fm.role ?? "other"),
+                email: fm.email as string | undefined,
+                phone: fm.phone as string | undefined,
+              };
+            })
+          );
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   // Live sync: poll every 30s and warn if version changed
   useEffect(() => {
     if (!caseData) return;
@@ -525,6 +580,121 @@ export default function CaseDetailPage() {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseData?.version, slug]);
+
+  // P3.1/P3.5: Multi-file upload with progress + client-side validation
+  async function handleMultiUpload(files: File[]) {
+    if (!caseData) return;
+    setUploadError(null);
+
+    const ACCEPTED_EXTS = [
+      ".pdf",
+      ".docx",
+      ".doc",
+      ".eml",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".heic",
+      ".avif",
+      ".tif",
+      ".tiff",
+      ".txt",
+      ".rtf",
+      ".html",
+      ".htm",
+    ];
+    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+    const validFiles: File[] = [];
+    for (const file of files) {
+      const ext = file.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[0] ?? "";
+      if (!ACCEPTED_EXTS.includes(ext)) {
+        setUploadError(`Format .${ext} wird nicht unterstützt. Erlaubt: PDF, DOCX, EML, JPG, PNG`);
+        continue;
+      }
+      if (file.size > MAX_SIZE) {
+        setUploadError(
+          `${file.name} ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum: 50 MB`
+        );
+        continue;
+      }
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) return;
+
+    if (!isOnline()) {
+      setUploadError(t("cases.detail_doc_offline"));
+      return;
+    }
+
+    // Add all files to the queue
+    const queueItems = validFiles.map((file) => ({
+      id: `${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
+      fileName: file.name,
+      fileSize: file.size,
+      progress: 0,
+      status: "queued" as const,
+    }));
+    setUploadQueue((prev) => [...prev, ...queueItems]);
+
+    // Upload files sequentially
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      const queueId = queueItems[i].id;
+      try {
+        setUploadQueue((prev) =>
+          prev.map((q) => (q.id === queueId ? { ...q, status: "uploading", progress: 10 } : q))
+        );
+
+        const res = await api.upload.file(file, {
+          title: file.name,
+          source: "legal_case",
+          tags: [caseData.slug],
+          case_slug: caseData.slug,
+        });
+
+        setUploadQueue((prev) =>
+          prev.map((q) => (q.id === queueId ? { ...q, status: "processing", progress: 80 } : q))
+        );
+
+        const updated = [
+          ...caseData.documents,
+          {
+            id: Date.now().toString() + i,
+            slug: res.slug,
+            name: file.name,
+            url: res.slug,
+            uploadedAt: new Date().toISOString(),
+            size: file.size,
+          },
+        ];
+        setCaseData({ ...caseData, documents: updated });
+        saveCaseUpdate({ documents: updated });
+
+        setUploadQueue((prev) =>
+          prev.map((q) => (q.id === queueId ? { ...q, status: "done", progress: 100 } : q))
+        );
+
+        // Remove from queue after 2s
+        setTimeout(() => {
+          setUploadQueue((prev) => prev.filter((q) => q.id !== queueId));
+        }, 2000);
+      } catch (err) {
+        setUploadQueue((prev) =>
+          prev.map((q) =>
+            q.id === queueId
+              ? {
+                  ...q,
+                  status: "error",
+                  error: err instanceof Error ? err.message : "Upload fehlgeschlagen",
+                }
+              : q
+          )
+        );
+      }
+    }
+  }
 
   // Auto-save tasks and time entries back to brain page
   async function saveCaseUpdate(updates: Partial<CaseDetail>) {
@@ -556,7 +726,15 @@ export default function CaseDetailPage() {
                     ? t("cases.detail_audit_documents")
                     : changedFields.includes("status")
                       ? t("cases.detail_audit_status")
-                      : t("cases.detail_audit_general"),
+                      : changedFields.includes("clientSlug") || changedFields.includes("clientName")
+                        ? `Mandant zugewiesen: ${updates.clientName ?? caseData.clientName ?? "—"}`
+                        : changedFields.includes("opponentSlugs") ||
+                            changedFields.includes("opponentName")
+                          ? `Gegner zugewiesen: ${updates.opponentName ?? caseData.opponentName ?? "—"}`
+                          : changedFields.includes("courtSlug") ||
+                              changedFields.includes("courtName")
+                            ? `Gericht zugewiesen: ${updates.courtName ?? caseData.courtName ?? "—"}`
+                            : t("cases.detail_audit_general"),
       };
       const existingAudit = caseData.auditLog ?? [];
       const newAudit = [...existingAudit, auditEntry];
@@ -1133,9 +1311,23 @@ export default function CaseDetailPage() {
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {/* Client */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_client")}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_client")}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactDialogRole("client");
+                        setContactDialogName(caseData.clientName);
+                        setContactDialogOpen(true);
+                      }}
+                      className="brand-text flex items-center gap-0.5 text-xs hover:underline"
+                      aria-label="Neuen Mandanten erstellen"
+                    >
+                      <Plus size={12} /> erstellen
+                    </button>
+                  </div>
                   <select
                     value={caseData.clientSlug || ""}
                     onChange={(e) => {
@@ -1165,9 +1357,23 @@ export default function CaseDetailPage() {
                 </div>
                 {/* Opponent */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_opponent")}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_opponent")}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactDialogRole("opponent");
+                        setContactDialogName(caseData.opponentName);
+                        setContactDialogOpen(true);
+                      }}
+                      className="brand-text flex items-center gap-0.5 text-xs hover:underline"
+                      aria-label="Neuen Gegner erstellen"
+                    >
+                      <Plus size={12} /> erstellen
+                    </button>
+                  </div>
                   <select
                     value={(caseData.opponentSlugs ?? [])[0] || ""}
                     onChange={(e) => {
@@ -1198,9 +1404,23 @@ export default function CaseDetailPage() {
                 </div>
                 {/* Court */}
                 <div className="space-y-1">
-                  <label className="text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_court")}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_court")}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactDialogRole("court");
+                        setContactDialogName(caseData.courtName);
+                        setContactDialogOpen(true);
+                      }}
+                      className="brand-text flex items-center gap-0.5 text-xs hover:underline"
+                      aria-label="Neues Gericht erstellen"
+                    >
+                      <Plus size={12} /> erstellen
+                    </button>
+                  </div>
                   <select
                     value={caseData.courtSlug || ""}
                     onChange={(e) => {
@@ -1244,7 +1464,59 @@ export default function CaseDetailPage() {
               )}
             </div>
 
-            {/* Facts */}
+            {/* P2.1: Inline contact creation dialog */}
+            <ContactCreateDialog
+              open={contactDialogOpen}
+              onOpenChange={setContactDialogOpen}
+              defaultRole={contactDialogRole}
+              defaultName={contactDialogName}
+              existingContacts={contacts}
+              onCreated={(contact: ContactCreateResult) => {
+                // Add to contacts list
+                setContacts((prev) => [
+                  ...prev,
+                  {
+                    slug: contact.slug,
+                    name: contact.name,
+                    role: contact.role,
+                    email: contact.email,
+                    phone: contact.phone,
+                  },
+                ]);
+                // Assign to case based on role
+                if (contact.role === "client") {
+                  const updated: CaseDetail = {
+                    ...caseData,
+                    clientSlug: contact.slug,
+                    clientName: contact.name,
+                  };
+                  setCaseData(updated);
+                  saveCaseUpdate({
+                    clientSlug: updated.clientSlug,
+                    clientName: updated.clientName,
+                  });
+                } else if (contact.role === "opponent") {
+                  const updated: CaseDetail = {
+                    ...caseData,
+                    opponentSlugs: [contact.slug],
+                    opponentName: contact.name,
+                  };
+                  setCaseData(updated);
+                  saveCaseUpdate({
+                    opponentSlugs: updated.opponentSlugs,
+                    opponentName: updated.opponentName,
+                  });
+                } else if (contact.role === "court") {
+                  const updated: CaseDetail = {
+                    ...caseData,
+                    courtSlug: contact.slug,
+                    courtName: contact.name,
+                  };
+                  setCaseData(updated);
+                  saveCaseUpdate({ courtSlug: updated.courtSlug, courtName: updated.courtName });
+                }
+              }}
+            />
             {caseData.facts && (
               <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
                 <h3 className="mb-2 text-sm font-semibold text-[color:var(--ds-text)]">
@@ -1454,43 +1726,69 @@ export default function CaseDetailPage() {
 
         {activeTab === "documents" && (
           <div className="max-w-3xl space-y-4">
-            <div className="flex items-center gap-2">
-              <label className="cursor-pointer">
+            {/* P3.1: Multi-file drag-drop upload zone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.add(
+                  "border-[color:var(--brand-primary)]",
+                  "bg-[color:var(--brand-primary)]/5"
+                );
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove(
+                  "border-[color:var(--brand-primary)]",
+                  "bg-[color:var(--brand-primary)]/5"
+                );
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove(
+                  "border-[color:var(--brand-primary)]",
+                  "bg-[color:var(--brand-primary)]/5"
+                );
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0 && caseData) {
+                  handleMultiUpload(files);
+                }
+              }}
+              className="rounded-xl border-2 border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none"
+              tabIndex={0}
+              role="button"
+              aria-label="Dateien hochladen"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  const input = e.currentTarget.querySelector(
+                    'input[type="file"]'
+                  ) as HTMLInputElement | null;
+                  input?.click();
+                }
+              }}
+            >
+              <FileText size={32} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
+              <p className="text-sm text-[color:var(--ds-text)]">
+                Dateien hierher ziehen oder klicken zum Auswählen
+              </p>
+              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                PDF, DOCX, EML, JPG, PNG · max. 50 MB pro Datei
+              </p>
+              {!isOnline() && (
+                <p className="mt-2 text-xs text-amber-600">
+                  Offline-Modus: Uploads werden erst beim erneuten Verbinden möglich.
+                </p>
+              )}
+              <label className="mt-3 inline-block cursor-pointer">
                 <input
                   type="file"
+                  multiple
                   className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file || !caseData) return;
-                    if (!isOnline()) {
-                      setUploadError(t("cases.detail_doc_offline"));
-                      return;
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length > 0 && caseData) {
+                      handleMultiUpload(files);
                     }
-                    try {
-                      const res = await api.upload.file(file, {
-                        title: file.name,
-                        source: "legal_case",
-                        tags: [caseData.slug],
-                        case_slug: caseData.slug,
-                      });
-                      const updated = [
-                        ...caseData.documents,
-                        {
-                          id: Date.now().toString(),
-                          name: file.name,
-                          url: res.slug,
-                          uploadedAt: new Date().toISOString(),
-                          size: file.size,
-                        },
-                      ];
-                      setCaseData({ ...caseData, documents: updated });
-                      saveCaseUpdate({ documents: updated });
-                      setUploadError(null);
-                    } catch (err) {
-                      setUploadError(
-                        err instanceof Error ? err.message : t("cases.detail_doc_upload_failed")
-                      );
-                    }
+                    e.target.value = "";
                   }}
                 />
                 <span className="brand-bg brand-bg inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors">
@@ -1499,9 +1797,217 @@ export default function CaseDetailPage() {
               </label>
             </div>
 
+            {/* P3.1: Upload progress queue */}
+            {uploadQueue.length > 0 && (
+              <div className="space-y-2">
+                {uploadQueue.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5"
+                  >
+                    {item.status === "uploading" || item.status === "processing" ? (
+                      <Loader2 size={16} className="brand-text shrink-0 animate-spin" />
+                    ) : item.status === "done" ? (
+                      <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                    ) : item.status === "error" ? (
+                      <XCircle size={16} className="shrink-0 text-red-500" />
+                    ) : (
+                      <FileText size={16} className="brand-text shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm text-[color:var(--ds-text)]">
+                        {item.fileName}
+                      </div>
+                      {item.status === "uploading" && (
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+                          <div
+                            className="brand-bg h-full rounded-full transition-all"
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                      )}
+                      {item.status === "processing" && (
+                        <div className="text-xs text-[color:var(--ds-text-muted)]">
+                          Wird verarbeitet…
+                        </div>
+                      )}
+                      {item.status === "error" && (
+                        <div className="text-xs text-red-600">{item.error}</div>
+                      )}
+                    </div>
+                    {item.status === "error" && (
+                      <button
+                        onClick={() => {
+                          setUploadQueue((q) => q.filter((i) => i.id !== item.id));
+                        }}
+                        className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             {uploadError && (
               <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
                 {uploadError}
+              </div>
+            )}
+
+            {/* P3.4: Link existing document */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <select
+                  value={docTypeFilter}
+                  onChange={(e) => setDocTypeFilter(e.target.value)}
+                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                >
+                  <option value="all">Alle Typen</option>
+                  <option value="Vollmacht">Vollmacht</option>
+                  <option value="Klage">Klage</option>
+                  <option value="Schriftsatz">Schriftsatz</option>
+                  <option value="Beweis">Beweis</option>
+                  <option value="Korrespondenz">Korrespondenz</option>
+                  <option value="Vertrag">Vertrag</option>
+                  <option value="Sonstiges">Sonstiges</option>
+                </select>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLinkDialog(true)}
+                className="gap-1.5 text-xs"
+              >
+                <Network size={13} /> Vorhandenes verknüpfen
+              </Button>
+            </div>
+
+            {/* P3.4: Link existing document dialog */}
+            {showLinkDialog && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="w-full max-w-lg rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 shadow-xl">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      Dokument verknüpfen
+                    </h3>
+                    <button
+                      onClick={() => setShowLinkDialog(false)}
+                      className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={linkSearchQuery}
+                    onChange={(e) => {
+                      setLinkSearchQuery(e.target.value);
+                      if (e.target.value.trim().length > 2) {
+                        setLinkSearching(true);
+                        api.brain
+                          .search(e.target.value, 10)
+                          .then((results) => {
+                            setLinkSearchResults(results);
+                            setLinkSearching(false);
+                          })
+                          .catch(() => setLinkSearching(false));
+                      } else {
+                        setLinkSearchResults([]);
+                      }
+                    }}
+                    placeholder="Suche nach Titel oder Schlagwort…"
+                    className="mb-3 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    autoFocus
+                  />
+                  {linkSearching && (
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">Suche läuft…</p>
+                  )}
+                  {!linkSearching && linkSearchResults.length > 0 && (
+                    <div className="max-h-64 space-y-1.5 overflow-y-auto">
+                      {linkSearchResults.map((page) => {
+                        const alreadyLinked = caseData?.documents.some((d) => d.slug === page.slug);
+                        return (
+                          <button
+                            key={page.slug}
+                            disabled={alreadyLinked}
+                            onClick={async () => {
+                              if (!caseData) return;
+                              // PATCH the document page to set case_slug
+                              try {
+                                const docSlugPath = page.slug
+                                  .split("/")
+                                  .map(encodeURIComponent)
+                                  .join("/");
+                                await csrfFetch(`/api/pages/${docSlugPath}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    frontmatter: {
+                                      case_slug: caseData.slug,
+                                      assignment_status: "assigned",
+                                    },
+                                    merge: true,
+                                  }),
+                                });
+                                const updated = [
+                                  ...caseData.documents,
+                                  {
+                                    id: Date.now().toString(),
+                                    slug: page.slug,
+                                    name: page.title,
+                                    url: page.slug,
+                                    uploadedAt: new Date().toISOString(),
+                                  },
+                                ];
+                                setCaseData({ ...caseData, documents: updated });
+                                saveCaseUpdate({ documents: updated });
+                                setShowLinkDialog(false);
+                                setLinkSearchQuery("");
+                                setLinkSearchResults([]);
+                              } catch (err) {
+                                setUploadError(
+                                  err instanceof Error ? err.message : "Verknüpfung fehlgeschlagen"
+                                );
+                              }
+                            }}
+                            className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                              alreadyLinked
+                                ? "cursor-not-allowed border-[color:var(--ds-border)] opacity-50"
+                                : "border-[color:var(--ds-border)] hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5"
+                            }`}
+                          >
+                            <FileText
+                              size={14}
+                              className="shrink-0 text-[color:var(--ds-text-muted)]"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[color:var(--ds-text)]">
+                                {page.title}
+                              </div>
+                              <div className="text-xs text-[color:var(--ds-text-muted)]">
+                                {page.slug}
+                              </div>
+                            </div>
+                            {alreadyLinked && (
+                              <Badge variant="default" className="shrink-0 text-xs">
+                                verknüpft
+                              </Badge>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {!linkSearching &&
+                    linkSearchQuery.trim().length > 2 &&
+                    linkSearchResults.length === 0 && (
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        Keine Ergebnisse gefunden.
+                      </p>
+                    )}
+                </div>
               </div>
             )}
 
@@ -1515,42 +2021,76 @@ export default function CaseDetailPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {caseData.documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5"
-                  >
-                    <FileText size={16} className="brand-text shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
-                      <div className="text-xs text-[color:var(--ds-text-muted)]">
-                        {new Date(doc.uploadedAt).toLocaleDateString(
-                          lang === "en" ? "en-GB" : "de-DE"
-                        )}
-                        {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
-                        {doc.kind ? ` · ${doc.kind}` : ""}
-                      </div>
-                    </div>
-                    {(doc.slug || doc.url) && (
-                      <Link
-                        href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
-                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
-                      >
-                        {t("cases.detail_doc_open")}
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        const updated = caseData.documents.filter((d) => d.id !== doc.id);
-                        setCaseData({ ...caseData, documents: updated });
-                        saveCaseUpdate({ documents: updated });
-                      }}
-                      className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                {caseData.documents
+                  .filter((d) => docTypeFilter === "all" || d.kind === docTypeFilter)
+                  .map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5"
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+                      <FileText size={16} className="brand-text shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm text-[color:var(--ds-text)]">
+                            {doc.name}
+                          </span>
+                          {doc.kind && (
+                            <Badge variant="accent" className="shrink-0 text-[10px]">
+                              {doc.kind}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-[color:var(--ds-text-muted)]">
+                          {new Date(doc.uploadedAt).toLocaleDateString(
+                            lang === "en" ? "en-GB" : "de-DE"
+                          )}
+                          {doc.size ? ` · ${(doc.size / 1024).toFixed(0)} KB` : ""}
+                        </div>
+                      </div>
+                      {(doc.slug || doc.url) && (
+                        <Link
+                          href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
+                          className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                        >
+                          {t("cases.detail_doc_open")}
+                        </Link>
+                      )}
+                      <button
+                        onClick={async () => {
+                          const docSlug = doc.slug || doc.url;
+                          const updated = caseData.documents.filter((d) => d.id !== doc.id);
+                          setCaseData({ ...caseData, documents: updated });
+                          saveCaseUpdate({ documents: updated });
+                          // P1.3: Tombstone the document page in the engine
+                          if (docSlug && isOnline()) {
+                            try {
+                              const docSlugPath = docSlug
+                                .split("/")
+                                .map(encodeURIComponent)
+                                .join("/");
+                              await csrfFetch(`/api/pages/${docSlugPath}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  frontmatter: {
+                                    case_slug: null,
+                                    assignment_status: "unassigned",
+                                    tombstoned_at: new Date().toISOString(),
+                                  },
+                                  merge: true,
+                                }),
+                              });
+                            } catch {
+                              /* best effort — case array update is the primary action */
+                            }
+                          }
+                        }}
+                        className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
               </div>
             )}
           </div>

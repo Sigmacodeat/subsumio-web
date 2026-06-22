@@ -7,14 +7,18 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Mail, ArrowLeft } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/server";
-import { listMailMessages } from "@/lib/email/mailbox";
+import {
+  listMailMessages,
+  getUnreadCounts,
+  getMailSnippet,
+  type MailFolder,
+} from "@/lib/email/mailbox";
 import { siteUrl } from "@/lib/mail";
 import MailboxClient, { type MailMessageView } from "./MailboxClient";
 
 export const metadata = { title: "Mailbox" };
 export const dynamic = "force-dynamic";
 
-/** Derive the inbound receiving address from MAIL_REPLY_TO / MAIL_FROM. */
 function receivingAddress(): string {
   const replyTo = process.env.MAIL_REPLY_TO?.trim();
   if (replyTo) {
@@ -32,9 +36,14 @@ export default async function MailboxPage() {
   if (me.role !== "admin") redirect("/dashboard");
 
   let messages: MailMessageView[] = [];
+  let unreadCounts: Record<string, number> = {};
   let loadError: string | null = null;
   try {
-    const rows = await listMailMessages(me, { limit: 100 });
+    const [rows, counts] = await Promise.all([
+      listMailMessages(me, { limit: 100, folder: "inbox" }),
+      getUnreadCounts(me),
+    ]);
+    unreadCounts = counts;
     messages = rows.map((m) => ({
       id: m.id,
       direction: m.direction,
@@ -53,6 +62,9 @@ export default async function MailboxPage() {
       forwarded: m.forwarded,
       firstOpenedAt: m.firstOpenedAt,
       lastOpenedAt: m.lastOpenedAt,
+      folder: m.folder ?? (m.direction === "outbound" ? "sent" : "inbox"),
+      isRead: m.isRead ?? false,
+      snippet: getMailSnippet(m),
     }));
   } catch (err) {
     loadError = err instanceof Error ? err.message : String(err);
@@ -62,8 +74,8 @@ export default async function MailboxPage() {
   const webhookUrl = `${siteUrl().replace(/\/$/, "")}/api/email/webhook/resend`;
 
   return (
-    <div data-tone="dark" className="min-h-screen px-6 py-10 [background:var(--mk-bg)]">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div data-tone="dark" className="min-h-screen [background:var(--mk-bg)]">
+      <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="mb-1 flex items-center gap-2">
@@ -90,6 +102,7 @@ export default async function MailboxPage() {
 
         <MailboxClient
           initialMessages={messages}
+          initialUnreadCounts={unreadCounts as Record<MailFolder, number>}
           receivingAddress={address}
           webhookUrl={webhookUrl}
           mailConfigured={Boolean(process.env.RESEND_API_KEY)}

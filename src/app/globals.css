@@ -1260,3 +1260,74 @@ pre {
     animation: none !important;
   }
 }
+
+/* Email content rendering — scoped reset that preserves email inline styles
+   while providing readable defaults for dark mode. */
+.email-content {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.email-content p {
+  margin: 0.5em 0;
+}
+.email-content h1,
+.email-content h2,
+.email-content h3,
+.email-content h4,
+.email-content h5,
+.email-content h6 {
+  margin: 1em 0 0.5em;
+  font-weight: 600;
+  color: var(--mk-text, #e8e8f0);
+}
+.email-content a {
+  color: #8b9dff;
+  text-decoration: underline;
+}
+.email-content a:hover {
+  color: #a8b8ff;
+}
+.email-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.email-content table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+.email-content blockquote {
+  margin: 0.75em 0;
+  padding-left: 1em;
+  border-left: 2px solid var(--mk-border, #1e1e3a);
+  color: var(--mk-text-muted, #8888aa);
+}
+.email-content ul,
+.email-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.email-content li {
+  margin: 0.25em 0;
+}
+.email-content hr {
+  margin: 1em 0;
+  border: none;
+  border-top: 1px solid var(--mk-border, #1e1e3a);
+}
+.email-content pre {
+  margin: 0.5em 0;
+  padding: 0.75em;
+  border-radius: 6px;
+  background: var(--mk-surface-2, #12122a);
+  overflow-x: auto;
+  font-size: 0.85em;
+}
+.email-content code {
+  font-family: var(--font-jetbrains, monospace);
+  font-size: 0.85em;
+}
+.email-content font[color] {
+  /* Preserve font color from legacy email markup but ensure readability on dark bg */
+  filter: brightness(1.1);
+}

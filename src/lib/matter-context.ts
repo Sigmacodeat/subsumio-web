@@ -125,8 +125,10 @@ export async function buildMatterContext(
   // 3. Build deadline summaries
   const deadlines = buildDeadlineSummaries(fm.deadlines ?? []);
 
-  // 4. Build document summaries
-  const documents = buildDocumentSummaries(fm.documents ?? []);
+  // 4. Build document summaries — merge case.documents with case_slug-stamped pages
+  const frontmatterDocs = buildDocumentSummaries(fm.documents ?? []);
+  const slugStampedDocs = await fetchCaseDocumentsBySlug(engineUrl, engineHeaders, normalizedSlug);
+  const documents = mergeDocuments(frontmatterDocs, slugStampedDocs);
 
   // 5. Build recent activity from audit log + timeline
   const recentActivity = buildRecentActivity(fm.audit_log ?? [], fm.timeline ?? []);
@@ -668,6 +670,93 @@ async function fetchEnginePagesByType(
   } catch {
     return [];
   }
+}
+
+/**
+ * Fetch all document pages from the engine that have `case_slug` set to the
+ * given case slug in their frontmatter. This is the canonical source of truth —
+ * documents uploaded to a case get `case_slug` stamped on the document page itself.
+ * The case frontmatter `documents` array is a secondary, user-curated list that
+ * can drift. This function ensures we always see every document that belongs
+ * to the case, even if the array is out of sync.
+ */
+async function fetchCaseDocumentsBySlug(
+  engineUrl: string,
+  headers: Record<string, string>,
+  caseSlug: string
+): Promise<MatterDocumentSummary[]> {
+  try {
+    const pages = await fetchEnginePagesByType(engineUrl, headers, "document", 200);
+    const matched = pages.filter((p) => {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      return fm.case_slug === caseSlug && fm.assignment_status !== "unassigned";
+    });
+    return matched.map((p) => {
+      const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+      return {
+        slug: p.slug,
+        name: p.title ?? p.slug,
+        kind: typeof fm.document_type === "string" ? fm.document_type : undefined,
+        uploaded_at: p.updated_at ?? p.created_at ?? new Date().toISOString(),
+        size: typeof fm.bytes === "number" ? fm.bytes : undefined,
+        source: typeof fm.source_format === "string" ? fm.source_format : "upload",
+        ocr_status: inferOcrStatusFromFrontmatter(fm),
+        extraction_status: inferExtractionStatusFromFrontmatter(fm),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function inferOcrStatusFromFrontmatter(
+  fm: Record<string, unknown>
+): MatterDocumentSummary["ocr_status"] {
+  const method = fm.extraction_method;
+  if (method === "ocr_vision" || fm.extraction_unverified === "true") return "ocr_complete";
+  if (method === "text_layer") return "text_layer";
+  return "unknown";
+}
+
+function inferExtractionStatusFromFrontmatter(
+  fm: Record<string, unknown>
+): MatterDocumentSummary["extraction_status"] {
+  const method = typeof fm.extraction_method === "string" ? fm.extraction_method : "";
+  if (method === "text_layer" || method === "docx" || method === "eml") return "text_layer";
+  if (method === "ocr_vision") return "ocr_complete";
+  return "processing";
+}
+
+/**
+ * Merge documents from the case frontmatter array with documents discovered
+ * via case_slug frontmatter on document pages. De-duplicates by slug.
+ * Frontmatter entries take precedence for kind/name (user-curated), but
+ * slug-stamped entries fill in any gaps.
+ */
+function mergeDocuments(
+  frontmatterDocs: MatterDocumentSummary[],
+  slugStampedDocs: MatterDocumentSummary[]
+): MatterDocumentSummary[] {
+  const bySlug = new Map<string, MatterDocumentSummary>();
+  for (const doc of slugStampedDocs) {
+    bySlug.set(doc.slug, doc);
+  }
+  for (const doc of frontmatterDocs) {
+    const existing = bySlug.get(doc.slug);
+    if (existing) {
+      bySlug.set(doc.slug, {
+        ...existing,
+        ...doc,
+        kind: doc.kind ?? existing.kind,
+        name: doc.name ?? existing.name,
+      });
+    } else {
+      bySlug.set(doc.slug, doc);
+    }
+  }
+  return Array.from(bySlug.values()).sort(
+    (a, b) => new Date(b.uploaded_at ?? 0).getTime() - new Date(a.uploaded_at ?? 0).getTime()
+  );
 }
 
 async function buildParties(
