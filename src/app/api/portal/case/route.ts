@@ -44,6 +44,13 @@ export const GET = createPublicHandler(
 
     const page = await res.json();
     const fm = caseFrontmatter(page);
+    if (fm.status === "archived") {
+      return apiError(
+        "case_archived",
+        "Diese Akte wurde archiviert und ist nicht mehr verfügbar.",
+        403
+      );
+    }
     if (!fm.portal_enabled) {
       return apiError(
         "portal_disabled",

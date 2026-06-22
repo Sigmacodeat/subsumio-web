@@ -177,6 +177,22 @@ export interface CaseFrontmatter {
   estimated_value?: { min: number; max: number; currency: string };
   tags?: string[];
   deadlines?: DeadlineEntry[];
+  /** P0-2: KI-extrahierte Fristenvorschläge aus Dokumentanalyse (await confirmation) */
+  suggested_deadlines?: Array<{
+    title: string;
+    due_date: string;
+    urgency: string;
+    source: string;
+    source_quote: string;
+    confirmed: boolean;
+  }>;
+  /** P0-2: KI-extrahierte Parteienvorschläge aus Dokumentanalyse */
+  suggested_parties?: Array<{
+    name: string;
+    role: string;
+    source: string;
+    confirmed: boolean;
+  }>;
   timeline?: TimelineEntry[];
   timeline_events?: TimelineEntry[];
   tasks?: TaskEntry[];
@@ -188,6 +204,12 @@ export interface CaseFrontmatter {
   communications?: CommunicationEntry[];
   permissions?: PermissionInfo;
   audit_log?: AuditLogEntry[];
+  /** Soft-delete: timestamp when case was archived */
+  archived_at?: string;
+  /** Soft-delete: user who archived the case */
+  archived_by?: string;
+  /** Restore: timestamp when case was restored from archive */
+  restored_at?: string;
   /** Optimistic locking version — incremented on every update */
   version?: number;
 }

@@ -17,6 +17,7 @@ export type AuditAction =
   | "case.create"
   | "case.update"
   | "case.delete"
+  | "case.restore"
   | "case.view"
   | "invoice.create"
   | "invoice.update"
@@ -85,7 +86,8 @@ const ACTION_LABELS: Record<string, string> = {
   "user.signup": "Registrierung",
   "case.create": "Akte angelegt",
   "case.update": "Akte aktualisiert",
-  "case.delete": "Akte gelöscht",
+  "case.delete": "Akte archiviert",
+  "case.restore": "Akte wiederhergestellt",
   "case.view": "Akte geöffnet",
   "invoice.create": "Rechnung erstellt",
   "invoice.update": "Rechnung aktualisiert",

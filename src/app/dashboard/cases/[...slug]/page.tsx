@@ -30,7 +30,6 @@ import {
   ShieldCheck,
   ChevronRight,
   ListChecks,
-  Timer,
   Receipt,
   Plus,
   Trash2,
@@ -39,13 +38,24 @@ import {
   Play,
   Square,
   PenTool,
+  Sparkles,
+  X,
+  Archive,
+  RotateCcw,
+  CloudUpload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import { MAX_FILE_SIZE } from "@/lib/upload-validation";
+import { runUploadPool } from "@/lib/upload-queue";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
-import { isOnline, enqueueMutation, getCache } from "@/lib/offline-store";
+import { isOnline, enqueueMutation, enqueueFileUpload, getCache } from "@/lib/offline-store";
+import { useMutationQueue } from "@/lib/use-mutation";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useRealtime } from "@/lib/realtime";
 import { usePresence } from "@/lib/use-presence";
 import type { BrainPage, SearchResult } from "@/lib/types";
 import type { DashboardKey } from "@/content/dashboard";
@@ -143,10 +153,30 @@ interface CaseDetail {
   timelineEvents: TimelineEntry[];
   documents: DocumentEntry[];
   deadlines: DeadlineEntry[];
+  suggestedDeadlines?: SuggestedDeadline[];
+  suggestedParties?: SuggestedParty[];
   portalEnabled: boolean;
   portalNote?: string;
   auditLog?: AuditLogEntry[];
+  archivedAt?: string;
+  archivedBy?: string;
   version: number;
+}
+
+interface SuggestedDeadline {
+  title: string;
+  due_date: string;
+  urgency: string;
+  source: string;
+  source_quote: string;
+  confirmed: boolean;
+}
+
+interface SuggestedParty {
+  name: string;
+  role: string;
+  source: string;
+  confirmed: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -160,21 +190,17 @@ const STATUS_CONFIG: Record<
   lost: { labelKey: "cases.status_lost", icon: XCircle, color: "red" },
   appealed: { labelKey: "cases.status_appealed", icon: AlertTriangle, color: "orange" },
   dormant: { labelKey: "cases.status_dormant", icon: PauseCircle, color: "gray" },
+  archived: { labelKey: "cases.status_archived", icon: Archive, color: "gray" },
 };
 
 const TABS = [
   { key: "overview", labelKey: "cases.detail_tab_overview", icon: FileText },
-  { key: "timeline", labelKey: "cases.detail_tab_timeline", icon: CalendarClock },
   { key: "documents", labelKey: "cases.detail_tab_documents", icon: FileText },
-  { key: "deadlines", labelKey: "cases.detail_tab_deadlines", icon: CalendarClock },
-  { key: "tasks", labelKey: "cases.detail_tab_tasks", icon: ListChecks },
   { key: "evidence", labelKey: "cases.detail_tab_evidence", icon: ShieldAlert },
-  { key: "time", labelKey: "cases.detail_tab_time", icon: Timer },
-  { key: "expenses", labelKey: "cases.detail_tab_expenses", icon: Receipt },
-  { key: "graph", labelKey: "cases.detail_tab_graph", icon: Network },
-  { key: "superbrain", labelKey: "cases.detail_tab_superbrain", icon: Lightbulb },
-  { key: "audit", labelKey: "cases.detail_tab_audit", icon: ShieldCheck },
-  { key: "query", labelKey: "cases.detail_tab_query", icon: MessageSquare },
+  { key: "deadlines_tasks", labelKey: "cases.detail_tab_deadlines_tasks", icon: ListChecks },
+  { key: "strategy", labelKey: "cases.detail_tab_strategy", icon: Lightbulb },
+  { key: "billing", labelKey: "cases.detail_tab_billing", icon: Receipt },
+  { key: "activity", labelKey: "cases.detail_tab_activity", icon: ShieldCheck },
 ];
 
 function parseCaseDetail(page: BrainPage): CaseDetail {
@@ -215,19 +241,26 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
     timelineEvents: fm.timeline_events || [],
     documents: fm.documents || [],
     deadlines: fm.deadlines || [],
+    suggestedDeadlines: (fm.suggested_deadlines || []) as SuggestedDeadline[],
+    suggestedParties: (fm.suggested_parties || []) as SuggestedParty[],
     portalEnabled: fm.portal_enabled || false,
     portalNote: fm.portal_note || undefined,
     auditLog: (fm.audit_log || []) as AuditLogEntry[],
+    archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
+    archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
     version: (fm.version as number) || 0,
   };
 }
 
 export default function CaseDetailPage() {
   const { t, lang } = useLang();
+  const confirm = useConfirm();
+  const { addToast } = useToast();
   const params = useParams();
   const slug = Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string);
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const { pendingCount: offlinePendingCount, syncing: offlineSyncing } = useMutationQueue();
   const [activeTab, setActiveTab] = useState("overview");
   const [query, setQuery] = useState("");
   const [queryLoading, setQueryLoading] = useState(false);
@@ -287,13 +320,19 @@ export default function CaseDetailPage() {
     "client" | "opponent" | "court" | "lawyer" | "other"
   >("client");
   const [contactDialogName, setContactDialogName] = useState<string | undefined>(undefined);
+  // B4: Track which suggested party index is pending contact creation
+  const [pendingSuggestedPartyIndex, setPendingSuggestedPartyIndex] = useState<number | null>(null);
 
   // P2.2: Interessenkollision re-check when client + opponent are assigned
   const [contactConflict, setContactConflict] = useState<ConflictCheckResult | null>(null);
 
+  // Restore: loading state for unarchive operation
+  const [restoring, setRestoring] = useState(false);
+
   // Evidence CRUD state
   const [evidenceList, setEvidenceList] = useState<EvidenceEntry[]>([]);
   const [editingEvidenceIndex, setEditingEvidenceIndex] = useState<number | null>(null);
+  const [showEvidenceForm, setShowEvidenceForm] = useState(false);
 
   // Deadlines CRUD state
   const [deadlinesList, setDeadlinesList] = useState<DeadlineEntry[]>([]);
@@ -323,6 +362,10 @@ export default function CaseDetailPage() {
     resolver: zodResolver(evidenceFormSchema),
     defaultValues: { title: "", type: "", description: "", source: "", weight: 0.5 },
   });
+  // Beweismittel-Quelle: entweder ein bereits hochgeladenes Dokument dieser Akte
+  // referenzieren, oder eine nicht-dokumentäre Quelle (Zeugenaussage, mündliche
+  // Aussage, etc.) als Freitext erfassen. Verhindert Verwechslung mit der Akte selbst.
+  const [evidenceSourceMode, setEvidenceSourceMode] = useState<"document" | "other">("other");
   const timeForm = useForm<TimeEntryFormData>({
     resolver: zodResolver(timeEntryFormSchema),
     defaultValues: {
@@ -391,6 +434,7 @@ export default function CaseDetailPage() {
       }
       setEvidenceList(updated);
       evidenceForm.reset({ title: "", type: "", description: "", source: "", weight: 0.5 });
+      setShowEvidenceForm(false);
       saveCaseUpdate({ evidence: updated });
     },
     [evidenceList, editingEvidenceIndex]
@@ -545,6 +589,94 @@ export default function CaseDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // P0-1: Single-Writer — reload case data from engine instead of client-side documents writes.
+  // The server-side reconcileCaseDocuments is the authoritative writer for the documents array.
+  async function refreshCaseData() {
+    if (!caseData) return;
+    try {
+      const page = await api.brain.getPage(slug);
+      const detail = parseCaseDetail(page);
+      setCaseData(detail);
+      setTasks(detail.tasks);
+      setTimeEntries(detail.timeEntries);
+      setExpensesList(detail.expenses);
+      setEvidenceList(detail.evidence || []);
+      setDeadlinesList(
+        detail.deadlines.length > 0
+          ? detail.deadlines
+          : detail.timelineEvents.map((entry) => timelineToDeadline(entry, detail.slug))
+      );
+    } catch {
+      // best effort — UI continues with stale data
+    }
+  }
+
+  // P0-2: Confirm or reject a KI-suggested deadline by PATCHing the case frontmatter
+  async function confirmSuggestedDeadline(index: number, confirmed: boolean) {
+    if (!caseData?.suggestedDeadlines) return;
+    if (caseData.status === "archived") {
+      setSaveError(
+        lang === "en"
+          ? "Case is archived — restore it first to make changes."
+          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
+      );
+      return;
+    }
+    const updated = caseData.suggestedDeadlines.map((sd, i) =>
+      i === index ? { ...sd, confirmed } : sd
+    );
+    setCaseData({ ...caseData, suggestedDeadlines: updated });
+    try {
+      const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
+      await csrfFetch(`/api/pages/${slugPath}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "If-Match": String(caseData.version || 0),
+        },
+        body: JSON.stringify({
+          frontmatter: { suggested_deadlines: updated },
+          merge: true,
+        }),
+      });
+    } catch {
+      // best effort
+    }
+  }
+
+  // B4: Confirm or reject a KI-suggested party by PATCHing the case frontmatter
+  async function confirmSuggestedParty(index: number, confirmed: boolean) {
+    if (!caseData?.suggestedParties) return;
+    if (caseData.status === "archived") {
+      setSaveError(
+        lang === "en"
+          ? "Case is archived — restore it first to make changes."
+          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
+      );
+      return;
+    }
+    const updated = caseData.suggestedParties.map((sp, i) =>
+      i === index ? { ...sp, confirmed } : sp
+    );
+    setCaseData({ ...caseData, suggestedParties: updated });
+    try {
+      const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
+      await csrfFetch(`/api/pages/${slugPath}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "If-Match": String(caseData.version || 0),
+        },
+        body: JSON.stringify({
+          frontmatter: { suggested_parties: updated },
+          merge: true,
+        }),
+      });
+    } catch {
+      // best effort
+    }
+  }
+
   // P2.3: Refresh contacts when the window regains focus (cross-tab sync)
   useEffect(() => {
     const onFocus = () => {
@@ -600,7 +732,31 @@ export default function CaseDetailPage() {
         const fm = caseFrontmatter(page);
         const remoteVersion = (fm.version as number) || 0;
         if (remoteVersion > caseData.version) {
-          setConflictWarning(t("cases.detail_conflict_warning") + ` (${remoteVersion})`);
+          const remoteStatus = (fm.status as string) || undefined;
+          if (remoteStatus === "archived" && caseData.status !== "archived") {
+            setCaseData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: "archived",
+                    archivedAt: typeof fm.archived_at === "string" ? fm.archived_at : undefined,
+                    archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
+                    version: remoteVersion,
+                  }
+                : prev
+            );
+            addToast({
+              type: "info",
+              title: lang === "en" ? "Case archived" : "Akte archiviert",
+              description:
+                lang === "en"
+                  ? "This case was archived by another user."
+                  : "Diese Akte wurde von einem anderen Nutzer archiviert.",
+              duration: 8000,
+            });
+          } else {
+            setConflictWarning(t("cases.detail_conflict_warning") + ` (${remoteVersion})`);
+          }
         }
       } catch {
         // ignore polling errors
@@ -610,9 +766,37 @@ export default function CaseDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseData?.version, slug]);
 
+  // SSE: immediate reload when another user archives or restores this case
+  useRealtime("case.deleted", (payload) => {
+    const p = payload as { slug?: string };
+    if (p?.slug === slug) {
+      void refreshCaseData();
+    }
+  });
+  useRealtime("case.restored", (payload) => {
+    const p = payload as { slug?: string };
+    if (p?.slug === slug) {
+      void refreshCaseData();
+    }
+  });
+  useRealtime("case.updated", (payload) => {
+    const p = payload as { slug?: string };
+    if (p?.slug === slug) {
+      void refreshCaseData();
+    }
+  });
+
   // P3.1/P3.5: Multi-file upload with progress + client-side validation
   async function handleMultiUpload(files: File[]) {
     if (!caseData) return;
+    if (caseData.status === "archived") {
+      setUploadError(
+        lang === "en"
+          ? "Case is archived — restore it first to upload documents."
+          : "Akte ist archiviert — zuerst wiederherstellen, um Dokumente hochzuladen."
+      );
+      return;
+    }
     setUploadError(null);
 
     const ACCEPTED_EXTS = [
@@ -632,7 +816,7 @@ export default function CaseDetailPage() {
       ".html",
       ".htm",
     ];
-    const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+    const MAX_SIZE = MAX_FILE_SIZE;
 
     const validFiles: File[] = [];
     for (const file of files) {
@@ -643,7 +827,7 @@ export default function CaseDetailPage() {
       }
       if (file.size > MAX_SIZE) {
         setUploadError(
-          `${file.name} ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum: 50 MB`
+          `${file.name} ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum: ${Math.round(MAX_FILE_SIZE / 1024 / 1024 / 1024)} GB`
         );
         continue;
       }
@@ -653,7 +837,26 @@ export default function CaseDetailPage() {
     if (validFiles.length === 0) return;
 
     if (!isOnline()) {
-      setUploadError(t("cases.detail_doc_offline"));
+      // C2: Enqueue files in IndexedDB instead of rejecting — they'll sync
+      // automatically when the connection is restored.
+      for (const file of validFiles) {
+        const bytes = await file.arrayBuffer();
+        await enqueueFileUpload({
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          bytes,
+          metadata: {
+            title: file.name,
+            source: "legal_case",
+            tags: [caseData.slug],
+            case_slug: caseData.slug,
+          },
+        });
+      }
+      setUploadError(
+        `${validFiles.length} Datei(en) in Offline-Warteschlange — wird automatisch synchronisiert wenn die Verbindung zurückkehrt.`
+      );
       return;
     }
 
@@ -667,16 +870,20 @@ export default function CaseDetailPage() {
     }));
     setUploadQueue((prev) => [...prev, ...queueItems]);
 
-    // Upload files sequentially
-    for (let i = 0; i < validFiles.length; i++) {
-      const file = validFiles[i];
-      const queueId = queueItems[i].id;
+    // Staggered upload: large files (>= 50 MB) run max 2 at once so 1 GB
+    // documents never pile up in memory; small files fill the idle slots.
+    const poolItems = validFiles.map((file, i) => ({
+      file,
+      queueId: queueItems[i].id,
+      size: file.size,
+    }));
+    await runUploadPool(poolItems, async ({ file, queueId }) => {
       try {
         setUploadQueue((prev) =>
           prev.map((q) => (q.id === queueId ? { ...q, status: "uploading", progress: 10 } : q))
         );
 
-        const res = await api.upload.file(file, {
+        await api.upload.file(file, {
           title: file.name,
           source: "legal_case",
           tags: [caseData.slug],
@@ -687,19 +894,9 @@ export default function CaseDetailPage() {
           prev.map((q) => (q.id === queueId ? { ...q, status: "processing", progress: 80 } : q))
         );
 
-        const updated = [
-          ...caseData.documents,
-          {
-            id: Date.now().toString() + i,
-            slug: res.slug,
-            name: file.name,
-            url: res.slug,
-            uploadedAt: new Date().toISOString(),
-            size: file.size,
-          },
-        ];
-        setCaseData({ ...caseData, documents: updated });
-        saveCaseUpdate({ documents: updated });
+        // P0-1: Server-side reconcileCaseDocuments is the single writer for the documents array.
+        // Refresh from engine to get the authoritative state instead of writing from the client.
+        await refreshCaseData();
 
         setUploadQueue((prev) =>
           prev.map((q) => (q.id === queueId ? { ...q, status: "done", progress: 100 } : q))
@@ -722,12 +919,20 @@ export default function CaseDetailPage() {
           )
         );
       }
-    }
+    });
   }
 
   // Auto-save tasks and time entries back to brain page
   async function saveCaseUpdate(updates: Partial<CaseDetail>) {
     if (!caseData) return;
+    if (caseData.status === "archived") {
+      setSaveError(
+        lang === "en"
+          ? "Case is archived — restore it first to make changes."
+          : "Akte ist archiviert — zuerst wiederherstellen, um Änderungen zu speichern."
+      );
+      return;
+    }
     if (conflictWarning) {
       setSaveError(t("cases.detail_conflict_save_error"));
       return;
@@ -790,13 +995,15 @@ export default function CaseDetailPage() {
         time_entries: updates.timeEntries ?? timeEntries,
         expenses: updates.expenses ?? expensesList,
         timeline_events: updates.timelineEvents ?? caseData.timelineEvents,
-        documents: updates.documents ?? caseData.documents,
+        // P0-1: documents are NOT written here — the server-side reconcileCaseDocuments
+        // is the single writer. Including them would clobber concurrent server writes.
         evidence: updates.evidence ?? evidenceList,
         deadlines: updates.deadlines ?? deadlinesList,
         portal_enabled: updates.portalEnabled ?? caseData.portalEnabled,
         portal_note: updates.portalNote ?? caseData.portalNote,
         audit_log: newAudit,
-        version: (caseData.version || 0) + 1,
+        // C3: version is NOT set here — the server computes it from the If-Match header.
+        // Setting it client-side was redundant and could mask concurrent updates.
       };
       if (isOnline()) {
         const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
@@ -825,6 +1032,29 @@ export default function CaseDetailPage() {
           const text = await res.text().catch(() => "");
           throw new Error(text || `HTTP ${res.status}`);
         }
+        // B3: Handle server-side conflict check result
+        const data = await res.json().catch(() => ({}));
+        if (data.conflictWarning?.matches?.length > 0) {
+          const names = data.conflictWarning.matches
+            .map((m: { name: string }) => m.name)
+            .join(", ");
+          setContactConflict({
+            hasConflict: true,
+            severity: "critical",
+            hits: data.conflictWarning.matches.map(
+              (m: { name: string; slug: string; type: string }) => ({
+                name: m.name,
+                slug: m.slug,
+                type: m.type,
+                reason: "Server-seitig erkannt",
+                similarity: 1,
+                matchType: "exact" as const,
+              })
+            ),
+            checkedContacts: 0,
+            warning: `Interessenkollision erkannt (server-seitig): ${names}`,
+          });
+        }
       } else {
         await enqueueMutation({
           type: "updatePage",
@@ -848,8 +1078,93 @@ export default function CaseDetailPage() {
     }
   }
 
+  // Restore an archived case: PATCH status back to active and untombstone documents
+  async function handleRestore(targetStatus: CaseStatus = "open") {
+    if (!caseData) return;
+    const statusLabel = STATUS_LABELS_DE[targetStatus] ?? targetStatus;
+    const confirmed = await confirm({
+      title: lang === "en" ? "Restore case" : "Akte wiederherstellen",
+      message:
+        lang === "en"
+          ? `Restore case "${caseData.title}" from archive as "${statusLabel}"? All linked documents will be reactivated.`
+          : `Akte "${caseData.title}" aus dem Archiv als "${statusLabel}" wiederherstellen? Alle verknüpften Dokumente werden reaktiviert.`,
+      confirmLabel: lang === "en" ? "Restore" : "Wiederherstellen",
+      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+    setRestoring(true);
+    try {
+      const slugPath = caseData.slug.split("/").map(encodeURIComponent).join("/");
+      const res = await csrfFetch(`/api/pages/${slugPath}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "If-Match": String(caseData.version || 0),
+        },
+        body: JSON.stringify({
+          frontmatter: {
+            status: targetStatus,
+            restored_at: new Date().toISOString(),
+            archived_at: null,
+            archived_by: null,
+          },
+          merge: true,
+        }),
+      });
+      if (res.ok) {
+        setCaseData({
+          ...caseData,
+          status: targetStatus,
+          archivedAt: undefined,
+          archivedBy: undefined,
+          version: caseData.version + 1,
+        });
+        addToast({
+          type: "success",
+          title: lang === "en" ? "Case restored" : "Akte wiederhergestellt",
+          description:
+            lang === "en"
+              ? `"${caseData.title}" is now active again.`
+              : `"${caseData.title}" ist wieder aktiv.`,
+          duration: 5000,
+        });
+        // Reload documents that were un-tombstoned by the restore cascade
+        void refreshCaseData();
+      } else if (res.status === 409) {
+        setConflictWarning(
+          lang === "en"
+            ? "Case was modified by another user — please reload."
+            : "Akte wurde von einem anderen Nutzer geändert — bitte neu laden."
+        );
+      } else {
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+          description: `HTTP ${res.status}`,
+        });
+      }
+    } catch (e) {
+      setSaveError(
+        e instanceof Error
+          ? `Wiederherstellung fehlgeschlagen: ${e.message}`
+          : "Wiederherstellung fehlgeschlagen."
+      );
+    } finally {
+      setRestoring(false);
+    }
+  }
+
   async function handleQuery() {
     if (!query.trim() || !caseData) return;
+    if (caseData.status === "archived") {
+      setQueryResult(
+        lang === "en"
+          ? "Case is archived — restore it first to ask questions."
+          : "Akte ist archiviert — zuerst wiederherstellen, um Fragen zu stellen."
+      );
+      return;
+    }
     setQueryLoading(true);
     setQueryResult(null);
     try {
@@ -900,6 +1215,12 @@ export default function CaseDetailPage() {
 
   const statusCfg = STATUS_CONFIG[caseData.status] || STATUS_CONFIG.open;
   const StatusIcon = statusCfg.icon;
+  const evidenceDocumentPattern =
+    /beweis|evidence|gutachten|expert|vertrag|contract|korrespondenz|email|e-mail|foto|photo|video|zeug/i;
+  const evidenceDocuments = caseData.documents.filter((doc) =>
+    evidenceDocumentPattern.test(`${doc.kind ?? ""} ${doc.name}`)
+  );
+  const evidenceSourceCount = evidenceDocuments.length + evidenceList.length;
 
   return (
     <div className="flex h-full flex-col">
@@ -926,6 +1247,27 @@ export default function CaseDetailPage() {
               className="brand-text ml-auto text-xs hover:underline"
             >
               {t("cases.detail_refresh_now")}
+            </button>
+          </div>
+        )}
+        {caseData?.status === "archived" && (
+          <div
+            className="flex items-center gap-2 border-b border-gray-500/20 bg-gray-500/10 px-6 py-2.5 text-sm text-gray-700"
+            role="status"
+          >
+            <Archive size={14} aria-hidden="true" className="shrink-0" />
+            <span>
+              {lang === "en"
+                ? `Archived${caseData.archivedAt ? ` on ${new Date(caseData.archivedAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}` : ""}${caseData.archivedBy ? ` by ${caseData.archivedBy}` : ""}`
+                : `Archiviert${caseData.archivedAt ? ` am ${new Date(caseData.archivedAt).toLocaleDateString("de-DE")}` : ""}${caseData.archivedBy ? ` von ${caseData.archivedBy}` : ""}`}
+            </span>
+            <button
+              onClick={() => handleRestore()}
+              disabled={restoring}
+              className="ml-auto flex items-center gap-1 text-xs font-medium text-gray-700 transition-colors hover:text-gray-900 disabled:opacity-50"
+            >
+              <RotateCcw size={12} />
+              {restoring ? "…" : lang === "en" ? "Restore" : "Wiederherstellen"}
             </button>
           </div>
         )}
@@ -1098,7 +1440,7 @@ export default function CaseDetailPage() {
                 variant="primary"
                 className="brand-bg brand-bg gap-2 text-sm text-white"
                 onClick={() => {
-                  setActiveTab("query");
+                  setActiveTab("strategy");
                   setQuery(t("cases.detail_qb_strategy"));
                 }}
               >
@@ -1117,7 +1459,7 @@ export default function CaseDetailPage() {
                 variant="secondary"
                 className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-sm text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                 onClick={() => {
-                  setActiveTab("query");
+                  setActiveTab("strategy");
                   setQuery(t("cases.detail_qb_chances"));
                 }}
               >
@@ -1268,12 +1610,20 @@ export default function CaseDetailPage() {
                       variant="primary"
                       className="brand-bg gap-1.5 text-xs text-white"
                       onClick={() => {
-                        const updated = { ...caseData, status: pendingStatus };
-                        setCaseData(updated);
-                        saveCaseUpdate(updated);
-                        setShowStatusDialog(false);
-                        setPendingStatus(null);
-                        setStatusError(null);
+                        if (caseData.status === "archived") {
+                          // Restore from archived — use dedicated restore handler
+                          setShowStatusDialog(false);
+                          setStatusError(null);
+                          void handleRestore(pendingStatus);
+                          setPendingStatus(null);
+                        } else {
+                          const updated = { ...caseData, status: pendingStatus };
+                          setCaseData(updated);
+                          saveCaseUpdate(updated);
+                          setShowStatusDialog(false);
+                          setPendingStatus(null);
+                          setStatusError(null);
+                        }
                       }}
                     >
                       <Check size={12} />
@@ -1363,6 +1713,74 @@ export default function CaseDetailPage() {
                   </div>
                 </div>
               )}
+
+              {/* B4: KI-extrahierte Parteien-Vorschläge */}
+              {caseData.suggestedParties && caseData.suggestedParties.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text)]">
+                    <Sparkles size={12} className="text-amber-500" />
+                    KI-extrahierte Parteien-Vorschläge
+                  </div>
+                  {caseData.suggestedParties
+                    .filter((sp) => !sp.confirmed)
+                    .map((sp, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <span className="text-sm text-[color:var(--ds-text)]">{sp.name}</span>
+                          <span className="ml-2 text-xs text-[color:var(--ds-text-muted)]">
+                            {sp.role} · Quelle: {sp.source}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                            onClick={() => {
+                              setContactDialogRole(
+                                sp.role === "Kläger" ||
+                                  sp.role === "Mandant" ||
+                                  sp.role === "Klient" ||
+                                  sp.role === "client"
+                                  ? "client"
+                                  : sp.role === "Beklagter" ||
+                                      sp.role === "Gegner" ||
+                                      sp.role === "opponent"
+                                    ? "opponent"
+                                    : sp.role === "Gericht" ||
+                                        sp.role === "Behörde" ||
+                                        sp.role === "court" ||
+                                        sp.role === "authority"
+                                      ? "court"
+                                      : "other"
+                              );
+                              setContactDialogName(sp.name);
+                              setContactDialogOpen(true);
+                              // B4 FIX: Don't mark as confirmed here — wait until
+                              // the contact dialog actually creates the contact.
+                              // The confirm callback is wired in onContactCreated.
+                              setPendingSuggestedPartyIndex(i);
+                            }}
+                          >
+                            <Plus size={12} /> Als Kontakt
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                            onClick={() => confirmSuggestedParty(i, false)}
+                          >
+                            <X size={12} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 {/* Client */}
                 <div className="space-y-1">
@@ -1376,6 +1794,7 @@ export default function CaseDetailPage() {
                         setContactDialogRole("client");
                         setContactDialogName(caseData.clientName);
                         setContactDialogOpen(true);
+                        setPendingSuggestedPartyIndex(null);
                       }}
                       className="brand-text flex items-center gap-0.5 text-xs hover:underline"
                       aria-label="Neuen Mandanten erstellen"
@@ -1422,6 +1841,7 @@ export default function CaseDetailPage() {
                         setContactDialogRole("opponent");
                         setContactDialogName(caseData.opponentName);
                         setContactDialogOpen(true);
+                        setPendingSuggestedPartyIndex(null);
                       }}
                       className="brand-text flex items-center gap-0.5 text-xs hover:underline"
                       aria-label="Neuen Gegner erstellen"
@@ -1469,6 +1889,7 @@ export default function CaseDetailPage() {
                         setContactDialogRole("court");
                         setContactDialogName(caseData.courtName);
                         setContactDialogOpen(true);
+                        setPendingSuggestedPartyIndex(null);
                       }}
                       className="brand-text flex items-center gap-0.5 text-xs hover:underline"
                       aria-label="Neues Gericht erstellen"
@@ -1522,7 +1943,10 @@ export default function CaseDetailPage() {
             {/* P2.1: Inline contact creation dialog */}
             <ContactCreateDialog
               open={contactDialogOpen}
-              onOpenChange={setContactDialogOpen}
+              onOpenChange={(open) => {
+                setContactDialogOpen(open);
+                if (!open) setPendingSuggestedPartyIndex(null);
+              }}
               defaultRole={contactDialogRole}
               defaultName={contactDialogName}
               existingContacts={contacts}
@@ -1538,6 +1962,11 @@ export default function CaseDetailPage() {
                     phone: contact.phone,
                   },
                 ]);
+                // B4: Confirm the suggested party if one was pending
+                if (pendingSuggestedPartyIndex !== null) {
+                  confirmSuggestedParty(pendingSuggestedPartyIndex, true);
+                  setPendingSuggestedPartyIndex(null);
+                }
                 // Assign to case based on role
                 if (contact.role === "client") {
                   const updated: CaseDetail = {
@@ -1672,14 +2101,14 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "timeline" && (
+        {activeTab === "activity" && (
           <div className="max-w-3xl space-y-4">
             <div className="mb-4 flex items-center gap-2">
               <Button
                 variant="primary"
                 className="brand-bg brand-bg gap-2 text-sm text-white"
                 onClick={() => {
-                  setActiveTab("query");
+                  setActiveTab("strategy");
                   setQuery(t("cases.detail_qb_timeline"));
                 }}
               >
@@ -1826,7 +2255,7 @@ export default function CaseDetailPage() {
                 Dateien hierher ziehen oder klicken zum Auswählen
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                PDF, DOCX, EML, JPG, PNG · max. 50 MB pro Datei
+                PDF, DOCX, EML, JPG, PNG · max. 1 GB pro Datei
               </p>
               {!isOnline() && (
                 <p className="mt-2 text-xs text-amber-600">
@@ -1908,6 +2337,21 @@ export default function CaseDetailPage() {
             {uploadError && (
               <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
                 {uploadError}
+              </div>
+            )}
+
+            {offlinePendingCount > 0 && (
+              <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-700">
+                <CloudUpload size={14} className="shrink-0" />
+                <span>
+                  {offlinePendingCount}{" "}
+                  {lang === "en"
+                    ? "pending offline upload(s)"
+                    : "Offline-Upload(s) in Warteschlange"}
+                  {offlineSyncing
+                    ? ` — ${lang === "en" ? "syncing…" : "Synchronisierung läuft…"}`
+                    : ""}
+                </span>
               </div>
             )}
 
@@ -2006,18 +2450,8 @@ export default function CaseDetailPage() {
                                     merge: true,
                                   }),
                                 });
-                                const updated = [
-                                  ...caseData.documents,
-                                  {
-                                    id: Date.now().toString(),
-                                    slug: page.slug,
-                                    name: page.title,
-                                    url: page.slug,
-                                    uploadedAt: new Date().toISOString(),
-                                  },
-                                ];
-                                setCaseData({ ...caseData, documents: updated });
-                                saveCaseUpdate({ documents: updated });
+                                // P0-1: Refresh from engine — fetchCaseDocumentsBySlug picks up the case_slug stamp
+                                await refreshCaseData();
                                 setShowLinkDialog(false);
                                 setLinkSearchQuery("");
                                 setLinkSearchResults([]);
@@ -2113,10 +2547,7 @@ export default function CaseDetailPage() {
                       <button
                         onClick={async () => {
                           const docSlug = doc.slug || doc.url;
-                          const updated = caseData.documents.filter((d) => d.id !== doc.id);
-                          setCaseData({ ...caseData, documents: updated });
-                          saveCaseUpdate({ documents: updated });
-                          // P1.3: Tombstone the document page in the engine
+                          // P1.3: Tombstone the document page in the engine (authoritative action)
                           if (docSlug && isOnline()) {
                             try {
                               const docSlugPath = docSlug
@@ -2136,9 +2567,11 @@ export default function CaseDetailPage() {
                                 }),
                               });
                             } catch {
-                              /* best effort — case array update is the primary action */
+                              /* best effort */
                             }
                           }
+                          // P0-1: Refresh from engine — single writer, no client-side documents mutation
+                          await refreshCaseData();
                         }}
                         className="text-[color:var(--ds-text-muted)] transition-colors hover:text-red-600"
                       >
@@ -2151,7 +2584,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "deadlines" && (
+        {activeTab === "deadlines_tasks" && (
           <div className="max-w-3xl space-y-4">
             {/* Add/Edit Form */}
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -2435,6 +2868,70 @@ export default function CaseDetailPage() {
               )}
             </div>
 
+            {/* P0-2: KI-extrahierte Fristenvorschläge aus Dokumentanalyse */}
+            {caseData.suggestedDeadlines && caseData.suggestedDeadlines.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
+                  <Sparkles size={14} className="text-amber-500" />
+                  KI-extrahierte Fristenvorschläge
+                </div>
+                {caseData.suggestedDeadlines
+                  .filter((sd) => !sd.confirmed)
+                  .map((sd, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm text-[color:var(--ds-text)]">{sd.title}</div>
+                        <div className="text-xs text-[color:var(--ds-text-muted)]">
+                          {sd.due_date} · {sd.urgency}
+                          {sd.source_quote && (
+                            <span className="mt-0.5 block italic">
+                              &bdquo;{sd.source_quote}&ldquo;
+                            </span>
+                          )}
+                          <span className="mt-0.5 block">Quelle: {sd.source}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-emerald-500/30 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                          onClick={async () => {
+                            const entry: DeadlineEntry = {
+                              id: `dl-${Date.now()}`,
+                              title: sd.title,
+                              date: sd.due_date,
+                              due_date: sd.due_date,
+                              type: "custom" as DeadlineEntry["type"],
+                              status: "pending",
+                              review_status: "unreviewed",
+                            };
+                            const updated = [...deadlinesList, entry];
+                            setDeadlinesList(updated);
+                            saveCaseUpdate({ deadlines: updated });
+                            // Mark suggestion as confirmed
+                            await confirmSuggestedDeadline(i, true);
+                          }}
+                        >
+                          <Check size={12} /> Übernehmen
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-[color:var(--ds-text-muted)] hover:text-red-600"
+                          onClick={() => confirmSuggestedDeadline(i, false)}
+                        >
+                          <X size={12} /> Ablehnen
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
             {/* Deadlines List */}
             {deadlinesList.length === 0 ? (
               <div className="space-y-3 py-12 text-center">
@@ -2670,7 +3167,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "tasks" && (
+        {activeTab === "deadlines_tasks" && (
           <div className="max-w-3xl space-y-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -2786,7 +3283,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "graph" && (
+        {activeTab === "activity" && (
           <div className="max-w-3xl space-y-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {/* Case entity (center) */}
@@ -2974,118 +3471,276 @@ export default function CaseDetailPage() {
 
         {activeTab === "evidence" && (
           <div className="max-w-3xl space-y-4">
-            {/* Add/Edit Form */}
-            <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                {editingEvidenceIndex !== null
-                  ? t("cases.detail_ev_edit")
-                  : t("cases.detail_ev_add")}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_ev_title")}
-                  </label>
-                  <input
-                    {...evidenceForm.register("title")}
-                    placeholder={t("cases.detail_ev_title_ph")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                  />
-                  {evidenceForm.formState.errors.title && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {evidenceForm.formState.errors.title.message}
-                    </p>
-                  )}
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("cases.detail_evidence_position_title")}
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_evidence_position_desc")}
+                  </p>
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_ev_type")}
-                  </label>
-                  <select
-                    {...evidenceForm.register("type")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                  >
-                    <option value="">{t("cases.detail_ev_type_ph")}</option>
-                    <option value="Dokument">{t("cases.detail_ev_type_document")}</option>
-                    <option value="Zeugnis">{t("cases.detail_ev_type_testimony")}</option>
-                    <option value="Sachverständigengutachten">
-                      {t("cases.detail_ev_type_expert")}
-                    </option>
-                    <option value="Vertrag">{t("cases.detail_ev_type_contract")}</option>
-                    <option value="Fotos/Videos">{t("cases.detail_ev_type_media")}</option>
-                    <option value="E-Mail/Schriftverkehr">{t("cases.detail_ev_type_email")}</option>
-                    <option value="Sonstiges">{t("cases.detail_ev_type_other")}</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                  {t("cases.detail_ev_description")}
-                </label>
-                <textarea
-                  {...evidenceForm.register("description")}
-                  rows={2}
-                  placeholder={t("cases.detail_ev_description_ph")}
-                  className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_ev_source")}
-                  </label>
-                  <input
-                    {...evidenceForm.register("source")}
-                    placeholder={t("cases.detail_ev_source_ph")}
-                    className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                    {t("cases.detail_ev_weight")} (
-                    {Math.round((evidenceForm.watch("weight") ?? 0.5) * 100)}%)
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    {...evidenceForm.register("weight", { valueAsNumber: true })}
-                    className="w-full accent-[var(--brand-primary)]"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="primary"
-                  className="brand-bg brand-bg gap-2 text-sm text-white"
-                  onClick={evidenceForm.handleSubmit(onEvidenceSubmit)}
+                <Badge
+                  variant={evidenceSourceCount > 0 ? "success" : "warning"}
+                  className="shrink-0"
                 >
-                  <Plus size={14} />
-                  {editingEvidenceIndex !== null
-                    ? t("cases.detail_ev_save")
-                    : t("cases.detail_ev_add_btn")}
-                </Button>
-                {editingEvidenceIndex !== null && (
-                  <Button
-                    variant="ghost"
-                    className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-                    onClick={() => {
-                      setEditingEvidenceIndex(null);
-                      evidenceForm.reset({
-                        title: "",
-                        type: "",
-                        description: "",
-                        source: "",
-                        weight: 0.5,
-                      });
-                    }}
-                  >
-                    {t("cases.detail_ev_cancel")}
-                  </Button>
-                )}
+                  {evidenceSourceCount} {t("cases.detail_evidence_sources")}
+                </Badge>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                  <div className="text-xl font-semibold text-[color:var(--ds-text)]">
+                    {caseData.documents.length}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_evidence_metric_documents")}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                  <div className="text-xl font-semibold text-[color:var(--ds-text)]">
+                    {evidenceDocuments.length}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_evidence_metric_relevant")}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3">
+                  <div className="text-xl font-semibold text-[color:var(--ds-text)]">
+                    {evidenceList.length}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_evidence_metric_manual")}
+                  </div>
+                </div>
               </div>
             </div>
+
+            {evidenceDocuments.length > 0 && (
+              <div className="space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("cases.detail_evidence_documents_title")}
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab("documents")}
+                    className="brand-text text-xs font-medium hover:underline"
+                  >
+                    {t("cases.detail_evidence_open_documents")}
+                  </button>
+                </div>
+                {evidenceDocuments.map((doc) => (
+                  <div
+                    key={doc.slug ?? doc.id}
+                    className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2"
+                  >
+                    <FileText size={15} className="brand-text shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm text-[color:var(--ds-text)]">{doc.name}</div>
+                      <div className="text-xs text-[color:var(--ds-text-muted)]">
+                        {doc.kind ?? t("cases.detail_ev_type_document")} ·{" "}
+                        {new Date(doc.uploadedAt).toLocaleDateString(
+                          lang === "en" ? "en-GB" : "de-DE"
+                        )}
+                      </div>
+                    </div>
+                    {(doc.slug || doc.url) && (
+                      <Link
+                        href={`/dashboard/brain/${encodeURIComponent(doc.slug || doc.url || "")}`}
+                        className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
+                      >
+                        {t("cases.detail_doc_open")}
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("cases.detail_evidence_manual_title")}
+                </h3>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("cases.detail_evidence_manual_desc")}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  if (showEvidenceForm || editingEvidenceIndex !== null) {
+                    setEditingEvidenceIndex(null);
+                    evidenceForm.reset({
+                      title: "",
+                      type: "",
+                      description: "",
+                      source: "",
+                      weight: 0.5,
+                    });
+                    setShowEvidenceForm(false);
+                  } else {
+                    setShowEvidenceForm(true);
+                  }
+                }}
+                className="gap-1.5 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+              >
+                <Plus size={13} />
+                {showEvidenceForm || editingEvidenceIndex !== null
+                  ? t("cases.detail_ev_cancel")
+                  : t("cases.detail_evidence_manual_add")}
+              </Button>
+            </div>
+
+            {/* Add/Edit Form */}
+            {(showEvidenceForm || editingEvidenceIndex !== null) && (
+              <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+                <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {editingEvidenceIndex !== null
+                    ? t("cases.detail_ev_edit")
+                    : t("cases.detail_ev_add")}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_ev_title")}
+                    </label>
+                    <input
+                      {...evidenceForm.register("title")}
+                      placeholder={t("cases.detail_ev_title_ph")}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    />
+                    {evidenceForm.formState.errors.title && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {evidenceForm.formState.errors.title.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_ev_type")}
+                    </label>
+                    <select
+                      {...evidenceForm.register("type")}
+                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                    >
+                      <option value="">{t("cases.detail_ev_type_ph")}</option>
+                      <option value="Dokument">{t("cases.detail_ev_type_document")}</option>
+                      <option value="Zeugnis">{t("cases.detail_ev_type_testimony")}</option>
+                      <option value="Sachverständigengutachten">
+                        {t("cases.detail_ev_type_expert")}
+                      </option>
+                      <option value="Vertrag">{t("cases.detail_ev_type_contract")}</option>
+                      <option value="Fotos/Videos">{t("cases.detail_ev_type_media")}</option>
+                      <option value="E-Mail/Schriftverkehr">
+                        {t("cases.detail_ev_type_email")}
+                      </option>
+                      <option value="Sonstiges">{t("cases.detail_ev_type_other")}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                    {t("cases.detail_ev_description")}
+                  </label>
+                  <textarea
+                    {...evidenceForm.register("description")}
+                    rows={2}
+                    placeholder={t("cases.detail_ev_description_ph")}
+                    className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_ev_source")}
+                    </label>
+                    {caseData.documents.length > 0 && (
+                      <select
+                        value={evidenceSourceMode}
+                        onChange={(e) => {
+                          const mode = e.target.value as "document" | "other";
+                          setEvidenceSourceMode(mode);
+                          if (mode === "document")
+                            evidenceForm.setValue("source", "", { shouldDirty: true });
+                        }}
+                        className="mb-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      >
+                        <option value="document">
+                          {t("cases.detail_ev_source_mode_document")}
+                        </option>
+                        <option value="other">{t("cases.detail_ev_source_mode_other")}</option>
+                      </select>
+                    )}
+                    {evidenceSourceMode === "document" && caseData.documents.length > 0 ? (
+                      <select
+                        {...evidenceForm.register("source")}
+                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      >
+                        <option value="">{t("cases.detail_ev_source_select_ph")}</option>
+                        {caseData.documents.map((doc) => (
+                          <option key={doc.slug ?? doc.id} value={doc.name}>
+                            {doc.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        {...evidenceForm.register("source")}
+                        placeholder={t("cases.detail_ev_source_ph")}
+                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
+                      {t("cases.detail_ev_weight")} (
+                      {Math.round((evidenceForm.watch("weight") ?? 0.5) * 100)}%)
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      {...evidenceForm.register("weight", { valueAsNumber: true })}
+                      className="w-full accent-[var(--brand-primary)]"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="brand-bg brand-bg gap-2 text-sm text-white"
+                    onClick={evidenceForm.handleSubmit(onEvidenceSubmit)}
+                  >
+                    <Plus size={14} />
+                    {editingEvidenceIndex !== null
+                      ? t("cases.detail_ev_save")
+                      : t("cases.detail_ev_add_btn")}
+                  </Button>
+                  {editingEvidenceIndex !== null && (
+                    <Button
+                      variant="ghost"
+                      className="text-sm text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                      onClick={() => {
+                        setEditingEvidenceIndex(null);
+                        setShowEvidenceForm(false);
+                        evidenceForm.reset({
+                          title: "",
+                          type: "",
+                          description: "",
+                          source: "",
+                          weight: 0.5,
+                        });
+                      }}
+                    >
+                      {t("cases.detail_ev_cancel")}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Evidence List */}
             {evidenceList.length === 0 ? (
@@ -3123,6 +3778,7 @@ export default function CaseDetailPage() {
                         <button
                           onClick={() => {
                             setEditingEvidenceIndex(i);
+                            setShowEvidenceForm(true);
                             evidenceForm.reset(ev as EvidenceFormData);
                           }}
                           className="hover:brand-text px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-colors"
@@ -3186,7 +3842,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "time" && (
+        {activeTab === "billing" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -3380,7 +4036,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "expenses" && (
+        {activeTab === "billing" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -3494,7 +4150,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "audit" && (
+        {activeTab === "activity" && (
           <div className="max-w-3xl space-y-4">
             <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -3540,7 +4196,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "superbrain" && (
+        {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
             <MatterContextPanel caseSlug={caseData.slug} defaultOpen={true} />
             <div className="h-[500px]">
@@ -3566,7 +4222,7 @@ export default function CaseDetailPage() {
           </div>
         )}
 
-        {activeTab === "query" && (
+        {activeTab === "strategy" && (
           <div className="max-w-3xl space-y-4">
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">

@@ -10,6 +10,10 @@ vi.mock("./offline-store", () => ({
   getPendingMutations: vi.fn(async () => []),
   removeMutation: vi.fn(async () => {}),
   setOfflineErrorReporter: vi.fn(),
+  getPendingFileUploads: vi.fn(async () => []),
+  removeFileUpload: vi.fn(async () => {}),
+  incrementFileUploadRetries: vi.fn(async () => {}),
+  incrementMutationRetries: vi.fn(async () => {}),
 }));
 
 // Mock api
@@ -20,11 +24,21 @@ vi.mock("./api", () => ({
       updatePage: vi.fn(async () => ({ slug: "test", success: true })),
       deletePage: vi.fn(async () => ({ success: true })),
     },
+    upload: {
+      file: vi.fn(async () => ({ slug: "test-doc", title: "test" })),
+    },
   },
 }));
 
 import { useMutationQueue } from "./use-mutation";
-import { isOnline, enqueueMutation, getPendingMutations, removeMutation, setOfflineErrorReporter } from "./offline-store";
+import {
+  isOnline,
+  enqueueMutation,
+  getPendingMutations,
+  removeMutation,
+  setOfflineErrorReporter,
+  getPendingFileUploads,
+} from "./offline-store";
 import { api } from "./api";
 
 describe("useMutationQueue", () => {
@@ -32,6 +46,7 @@ describe("useMutationQueue", () => {
     vi.clearAllMocks();
     vi.mocked(isOnline).mockReturnValue(true);
     vi.mocked(getPendingMutations).mockResolvedValue([]);
+    vi.mocked(getPendingFileUploads).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -128,7 +143,12 @@ describe("useMutationQueue", () => {
     vi.mocked(getPendingMutations)
       .mockResolvedValueOnce([]) // mount
       .mockResolvedValueOnce([
-        { id: "m1", type: "createPage", payload: { slug: "test", title: "Test" }, createdAt: "2024-01-01" },
+        {
+          id: "m1",
+          type: "createPage",
+          payload: { slug: "test", title: "Test" },
+          createdAt: "2024-01-01",
+        },
       ]);
     const { result } = renderHook(() => useMutationQueue());
 
@@ -148,7 +168,12 @@ describe("useMutationQueue", () => {
     vi.mocked(getPendingMutations)
       .mockResolvedValueOnce([]) // mount
       .mockResolvedValueOnce([
-        { id: "m1", type: "updatePage", payload: { slug: "test", title: "Updated" }, createdAt: "2024-01-01" },
+        {
+          id: "m1",
+          type: "updatePage",
+          payload: { slug: "test", title: "Updated" },
+          createdAt: "2024-01-01",
+        },
       ]);
     const { result } = renderHook(() => useMutationQueue());
 
@@ -207,7 +232,12 @@ describe("useMutationQueue", () => {
     vi.mocked(getPendingMutations)
       .mockResolvedValueOnce([]) // mount
       .mockResolvedValueOnce([
-        { id: "m1", type: "createPage", payload: { slug: "test", title: "Test" }, createdAt: "2024-01-01" },
+        {
+          id: "m1",
+          type: "createPage",
+          payload: { slug: "test", title: "Test" },
+          createdAt: "2024-01-01",
+        },
       ]);
     const { result } = renderHook(() => useMutationQueue());
 

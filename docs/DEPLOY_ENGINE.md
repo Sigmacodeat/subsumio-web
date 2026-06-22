@@ -96,16 +96,44 @@ docker run -d --name sigmabrain-engine -p 3131:3131 \
 
 Project **sigmabrain** → Settings → Environment Variables → **Production**:
 
-| Variable | Value |
-|---|---|
-| `SIGMABRAIN_API_URL` | the engine URL from above |
-| `SIGMABRAIN_WEB_API_KEY` | the **same** value as the engine's `GBRAIN_WEB_API_KEY` |
+| Variable                       | Value                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| `SIGMABRAIN_API_URL`           | the engine URL from above                                                       |
+| `SIGMABRAIN_WEB_API_KEY`       | the **same** value as the engine's `GBRAIN_WEB_API_KEY`                         |
 | `SIGMABRAIN_AUTH_DATABASE_URL` | a Postgres URL for the user/org store (Neon/Supabase; can be the same Postgres) |
-| `NEXT_PUBLIC_APP_URL` | `https://sigmabrain.vercel.app` (or your domain) |
-| `CRON_SECRET` | `openssl rand -hex 32` (for the Vercel crons in `vercel.json`) |
+| `NEXT_PUBLIC_APP_URL`          | `https://sigmabrain.vercel.app` (or your domain)                                |
+| `CRON_SECRET`                  | `openssl rand -hex 32` (for the Vercel crons in `vercel.json`)                  |
 
 Then **redeploy** (push to `main` or Vercel → Redeploy). `AUTH_SECRET` is
 already set.
+
+---
+
+## Large uploads (up to 1 GB)
+
+The upload pipeline accepts files up to **1 GB** by default (agency level).
+Limits are centralized and overridable per environment:
+
+| Variable                  | Where   | Default              | Effect                                                                     |
+| ------------------------- | ------- | -------------------- | -------------------------------------------------------------------------- |
+| `MAX_UPLOAD_BYTES`        | web app | `1073741824` (1 GB)  | Max document size accepted by the Next.js validation + UI.                 |
+| `MAX_IMAGE_BYTES`         | web app | `209715200` (200 MB) | Max image size.                                                            |
+| `GBRAIN_MAX_UPLOAD_BYTES` | engine  | `1073741824` (1 GB)  | Max multipart body the engine `/api/upload` accepts. Keep ≥ the web limit. |
+
+Operational notes for big files:
+
+- **Concurrency is the RAM safeguard.** The web client staggers uploads — large
+  files (≥ 50 MB) run **max 2 at once**, the rest queue behind them. Each in-flight
+  upload buffers roughly once in the engine, so peak RAM ≈ one or two files. Size
+  the box accordingly (a 1 GB upload needs a few GB of headroom).
+- **ClamAV stream limit.** If you run a ClamAV daemon (`CLAMAV_HOST`), raise its
+  per-stream caps or large files are rejected as `clamav_unreachable`. In
+  `clamd.conf` set `StreamMaxLength 1024M` and `MaxFileSize 1024M`, then restart
+  `clamd`. Without `CLAMAV_HOST`, the magic-byte/executable checks still run and
+  have no size cap.
+- **Reverse proxy.** Caddy (the Hetzner default) has **no** request-body size limit
+  out of the box, so 1 GB uploads pass through. If you front the engine with nginx
+  instead, set `client_max_body_size 1024m;`.
 
 ---
 

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  MessageSquare,
   BookOpen,
   Brain,
   Network,
@@ -22,26 +21,19 @@ import {
   X,
   Briefcase,
   CalendarClock,
-  Scale,
-  ShieldAlert,
   Landmark,
   Plug,
   PenTool,
-  Swords,
   UserCircle,
   ShieldCheck,
   FileSpreadsheet,
   ScrollText,
   FileText,
-  Mail,
-  RefreshCw,
   FileSignature,
   EyeOff,
-  Table2,
   Gavel,
   CloudOff,
   BarChart3,
-  Archive,
   Building2,
   Shield,
   Key,
@@ -52,34 +44,16 @@ import {
   ClipboardList,
   Cpu,
   FileSearch,
-  Radar,
-  Languages,
-  ListChecks,
-  Library,
   CheckSquare,
-  History,
-  Database,
-  Workflow,
   Inbox,
   FileClock,
   Smartphone,
   Award,
-  GitCompare,
   Bot,
-  Calculator,
-  CalendarPlus,
-  Hourglass,
-  FileCheck,
   Receipt,
   FileUp,
-  Coins,
-  LineChart,
   Gauge,
-  UserPlus,
   UserCog,
-  Stethoscope,
-  MailOpen,
-  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -103,9 +77,10 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cockpit",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+      { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
+      { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
-      { href: "/dashboard/workflows", icon: Workflow, labelKey: "nav.workflows" },
+      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
     ],
   },
   {
@@ -113,32 +88,10 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
       { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
-      { href: "/dashboard/chat/analytics", icon: LineChart, labelKey: "nav.chat_analytics" },
-      { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
       { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-      { href: "/dashboard/opponents", icon: Swords, labelKey: "nav.opponents" },
-      { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
       { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
       { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
-      { href: "/dashboard/process-strategy", icon: Scale, labelKey: "nav.process_strategy" },
-    ],
-  },
-  {
-    titleKey: "nav.section.inbox_deadlines",
-    items: [
-      { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
-      { href: "/dashboard/email-import", icon: MailOpen, labelKey: "nav.email_import" },
-      { href: "/dashboard/whatsapp", icon: MessageSquare, labelKey: "nav.whatsapp" },
-      { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
-      { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
-      { href: "/dashboard/calendar-export", icon: CalendarPlus, labelKey: "nav.calendar_export" },
-      { href: "/dashboard/case-scanner", icon: Radar, labelKey: "nav.case_scanner" },
-      {
-        href: "/dashboard/kollisionspruefung",
-        icon: ShieldAlert,
-        labelKey: "nav.kollisionspruefung",
-      },
     ],
   },
   {
@@ -148,16 +101,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
       { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
       { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
-      { href: "/dashboard/judgements-sync", icon: RefreshCw, labelKey: "nav.judgements_sync" },
-      {
-        href: "/dashboard/obligation-tracking",
-        icon: ListChecks,
-        labelKey: "nav.obligation_tracking",
-      },
       { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
       { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
       { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
     ],
   },
   {
@@ -167,54 +113,19 @@ export const NAV_SECTIONS: NavSection[] = [
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
       { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
-      { href: "/dashboard/tabular-review", icon: Table2, labelKey: "nav.tabular_review" },
-      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
       { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
       { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-      { href: "/dashboard/translate", icon: Languages, labelKey: "nav.translate" },
-      { href: "/dashboard/version-history", icon: History, labelKey: "nav.version_history" },
     ],
   },
   {
     titleKey: "nav.section.billing_compliance",
     items: [
-      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
       { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
       { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
       { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
       { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
-      { href: "/dashboard/compliance/retention", icon: Hourglass, labelKey: "nav.retention" },
       { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
-      { href: "/dashboard/verfahrensdoku", icon: ScrollText, labelKey: "nav.verfahrensdoku" },
-      { href: "/dashboard/data-export", icon: Archive, labelKey: "nav.data_export" },
       { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
-    ],
-  },
-  {
-    titleKey: "nav.section.industries",
-    items: [
-      {
-        href: "/dashboard/consulting",
-        icon: Building2,
-        labelKey: "nav.consulting",
-        comingSoon: true,
-      },
-      { href: "/dashboard/insurance", icon: Shield, labelKey: "nav.insurance", comingSoon: true },
-      { href: "/dashboard/medical", icon: Stethoscope, labelKey: "nav.medical", comingSoon: true },
-      {
-        href: "/dashboard/realestate",
-        icon: Home,
-        labelKey: "nav.realestate",
-        comingSoon: true,
-      },
-      {
-        href: "/dashboard/recruiting",
-        icon: UserPlus,
-        labelKey: "nav.recruiting",
-        comingSoon: true,
-      },
-      { href: "/dashboard/tax", icon: Coins, labelKey: "nav.tax", comingSoon: true },
-      { href: "/dashboard/vc", icon: Network, labelKey: "nav.vc", comingSoon: true },
     ],
   },
 ];
@@ -284,7 +195,7 @@ function findActiveSection(pathname: string, sections: NavSection[]) {
 
 function SyncStatus({ collapsed }: { collapsed: boolean }) {
   const { pendingCount, syncing, syncPending } = useMutationQueue();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   if (collapsed || pendingCount === 0) return null;
   return (
     <div className="mx-3 mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
@@ -306,7 +217,7 @@ function SyncStatus({ collapsed }: { collapsed: boolean }) {
 
 export function NetworkStatusBadge() {
   const online = useNetworkStatus();
-  const { t, lang } = useLang();
+  const { t } = useLang();
   if (online) return null;
   return (
     <div

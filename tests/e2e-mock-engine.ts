@@ -46,9 +46,24 @@ const pages = new Map<string, MockPage>();
 function seedPages() {
   const now = new Date().toISOString();
   const seed = [
-    { slug: "test/seed-case-1", title: "Musterfall GmbH vs. Schuldner AG", type: "legal_case", content: "Sachverhalt: Vertragsbruch durch Lieferverzug." },
-    { slug: "test/seed-memo-1", title: "Rechtsgutachten zum Lieferverzug", type: "memo", content: "Gutachten zur Frage des Lieferverzugs." },
-    { slug: "test/seed-deadline-1", title: "Klagefrist Musterfall", type: "deadline", content: "Frist endet am 31.12.2026." },
+    {
+      slug: "test/seed-case-1",
+      title: "Musterfall GmbH vs. Schuldner AG",
+      type: "legal_case",
+      content: "Sachverhalt: Vertragsbruch durch Lieferverzug.",
+    },
+    {
+      slug: "test/seed-memo-1",
+      title: "Rechtsgutachten zum Lieferverzug",
+      type: "memo",
+      content: "Gutachten zur Frage des Lieferverzugs.",
+    },
+    {
+      slug: "test/seed-deadline-1",
+      title: "Klagefrist Musterfall",
+      type: "deadline",
+      content: "Frist endet am 31.12.2026.",
+    },
   ];
   for (const s of seed) {
     pages.set(s.slug, {
@@ -85,7 +100,7 @@ function sendSse(res: ServerResponse, events: string[]) {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
+    Connection: "keep-alive",
     "Access-Control-Allow-Origin": "*",
   });
   for (const evt of events) {
@@ -98,7 +113,9 @@ function sendSse(res: ServerResponse, events: string[]) {
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve) => {
     let data = "";
-    req.on("data", (chunk) => { data += chunk; });
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
     req.on("end", () => resolve(data));
   });
 }
@@ -136,11 +153,13 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     const q = query.get("q") || "";
     let items = Array.from(pages.values());
     if (typeFilter) items = items.filter((p) => p.type === typeFilter);
-    if (q) items = items.filter((p) =>
-      p.title.toLowerCase().includes(q.toLowerCase()) ||
-      p.content.toLowerCase().includes(q.toLowerCase()) ||
-      p.slug.toLowerCase().includes(q.toLowerCase())
-    );
+    if (q)
+      items = items.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q.toLowerCase()) ||
+          p.content.toLowerCase().includes(q.toLowerCase()) ||
+          p.slug.toLowerCase().includes(q.toLowerCase())
+      );
     items = items.slice(0, limit);
     return sendJson(res, 200, items);
   }
@@ -180,6 +199,16 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
       const body = JSON.parse(raw || "{}");
       const page = pages.get(slug);
       if (!page) return sendJson(res, 404, { error: "not_found" });
+
+      // Server-side guard: block modifications to archived cases unless it's a restore
+      const isRestore = !!body.frontmatter?.restored_at && body.frontmatter?.status !== "archived";
+      if (!isRestore && page.frontmatter?.status === "archived") {
+        return sendJson(res, 403, {
+          error: "case_archived",
+          message: "Akte ist archiviert — zuerst wiederherstellen.",
+        });
+      }
+
       const updated = {
         ...page,
         ...body,
@@ -188,13 +217,85 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
         updated_at: new Date().toISOString(),
       };
       pages.set(slug, updated);
+
+      // Restore cascade: un-tombstone documents when case is restored
+      if (body.frontmatter?.restored_at && body.frontmatter?.status !== "archived") {
+        // Add restore timeline event
+        const existingTimeline =
+          (updated.frontmatter?.timeline_events as Array<Record<string, unknown>>) || [];
+        updated.frontmatter = {
+          ...updated.frontmatter,
+          timeline_events: [
+            ...existingTimeline,
+            {
+              id: `tl-restore-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              type: "status_change",
+              title: "Akte wiederhergestellt",
+              description: "Wiederhergestellt von test@e2e.local",
+              actor: "test@e2e.local",
+            },
+          ],
+        };
+        pages.set(slug, updated);
+
+        for (const [docSlug, docPage] of pages.entries()) {
+          if (
+            docPage.type === "document" &&
+            docPage.frontmatter?.case_slug === slug &&
+            docPage.frontmatter?.status === "tombstoned"
+          ) {
+            docPage.frontmatter = {
+              ...docPage.frontmatter,
+              status: "active",
+              tombstoned_at: null,
+              tombstone_reason: null,
+            };
+            pages.set(docSlug, docPage);
+          }
+        }
+      }
+
       return sendJson(res, 200, updated);
     }
 
     if (req.method === "DELETE") {
-      if (!pages.has(slug)) return sendJson(res, 404, { error: "not_found" });
+      const page = pages.get(slug);
+      if (!page) return sendJson(res, 404, { error: "not_found" });
+      // Soft-delete: if legal_case, archive instead of delete
+      if (page.type === "legal_case") {
+        const existingTimeline =
+          (page.frontmatter?.timeline_events as Array<Record<string, unknown>>) || [];
+        page.frontmatter = {
+          ...page.frontmatter,
+          status: "archived",
+          archived_at: new Date().toISOString(),
+          archived_by: "test@e2e.local",
+          timeline_events: [
+            ...existingTimeline,
+            {
+              id: `tl-archive-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              type: "status_change",
+              title: "Akte archiviert",
+              description: "Archiviert von test@e2e.local",
+              actor: "test@e2e.local",
+            },
+          ],
+        };
+        pages.set(slug, page);
+        // Tombstone cascade: mark all documents with matching case_slug as tombstoned
+        for (const [docSlug, docPage] of pages.entries()) {
+          if (docPage.type === "document" && docPage.frontmatter?.case_slug === slug) {
+            docPage.frontmatter = { ...docPage.frontmatter, status: "tombstoned" };
+            pages.set(docSlug, docPage);
+          }
+        }
+        return sendJson(res, 200, { ok: true, method: "archived", slug });
+      }
+      // Hard delete for non-case pages
       pages.delete(slug);
-      return sendJson(res, 200, { ok: true });
+      return sendJson(res, 200, { ok: true, method: "deleted", slug });
     }
   }
 
@@ -202,10 +303,11 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
   if (path === "/api/search" && req.method === "GET") {
     const q = query.get("q") || "";
     const limit = parseInt(query.get("limit") || "10", 10);
-    const matched = Array.from(pages.values()).filter((p) =>
-      p.title.toLowerCase().includes(q.toLowerCase()) ||
-      p.content.toLowerCase().includes(q.toLowerCase()) ||
-      p.slug.toLowerCase().includes(q.toLowerCase())
+    const matched = Array.from(pages.values()).filter(
+      (p) =>
+        p.title.toLowerCase().includes(q.toLowerCase()) ||
+        p.content.toLowerCase().includes(q.toLowerCase()) ||
+        p.slug.toLowerCase().includes(q.toLowerCase())
     );
     const results = matched.slice(0, limit).map((p) => ({
       slug: p.slug,
@@ -232,8 +334,78 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
     return sendSse(res, responseChunks);
   }
 
+  // ── Legal: conflict-check ───────────────────────────────────────────
+  if (path === "/api/legal/conflict-check" && req.method === "POST") {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const name = String(body.name || "").toLowerCase();
+    // Find pages with matching client_name or opponent_name
+    const matches: Array<{ name: string; slug: string; type: string }> = [];
+    for (const p of pages.values()) {
+      const fm = p.frontmatter || {};
+      const clientName = String(fm.client_name || "").toLowerCase();
+      const opponentName = String(fm.opponent_name || "").toLowerCase();
+      if (clientName === name || opponentName === name) {
+        matches.push({
+          name: String(fm.client_name || fm.opponent_name || ""),
+          slug: p.slug,
+          type: p.type,
+        });
+      }
+    }
+    return sendJson(res, 200, { matches });
+  }
+
   // ── Legal: analyze ──────────────────────────────────────────────────
   if (path === "/api/legal/analyze" && req.method === "POST") {
+    const raw = await readBody(req);
+    const body = JSON.parse(raw || "{}");
+    const caseSlug = body.caseSlug || body.case_slug || "";
+    // Writeback suggested_deadlines and suggested_parties to case frontmatter
+    if (caseSlug && pages.has(caseSlug)) {
+      const casePage = pages.get(caseSlug)!;
+      const fm = casePage.frontmatter || {};
+      const existingDl = Array.isArray(fm.suggested_deadlines) ? fm.suggested_deadlines : [];
+      const existingParty = Array.isArray(fm.suggested_parties) ? fm.suggested_parties : [];
+      // Dedup by title|due_date and name|role
+      const dlKeys = new Set(
+        existingDl.map((d: Record<string, unknown>) => `${d.title}|${d.due_date}`)
+      );
+      const partyKeys = new Set(
+        existingParty.map((p: Record<string, unknown>) => `${p.name}|${p.role}`)
+      );
+      const newDl = [
+        ...existingDl,
+        ...[
+          {
+            title: "Klagefrist",
+            due_date: "2026-12-31",
+            urgency: "high",
+            source: "KI-Analyse",
+            confirmed: false,
+          },
+        ].filter((d) => {
+          const k = `${d.title}|${d.due_date}`;
+          if (dlKeys.has(k)) return false;
+          dlKeys.add(k);
+          return true;
+        }),
+      ];
+      const newParty = [
+        ...existingParty,
+        ...[
+          { name: "Klient Müller", role: "client", source: "KI-Analyse", confirmed: false },
+          { name: "Gegner Meier", role: "opponent", source: "KI-Analyse", confirmed: false },
+        ].filter((p) => {
+          const k = `${p.name}|${p.role}`;
+          if (partyKeys.has(k)) return false;
+          partyKeys.add(k);
+          return true;
+        }),
+      ];
+      casePage.frontmatter = { ...fm, suggested_deadlines: newDl, suggested_parties: newParty };
+      pages.set(caseSlug, casePage);
+    }
     return sendJson(res, 200, {
       analysis: "Mock-Analyse: Der Vertrag enthält Standardklauseln.",
       issues: [
@@ -302,9 +474,7 @@ async function handleReq(req: IncomingMessage, res: ServerResponse) {
 
   // ── Brains ──────────────────────────────────────────────────────────
   if (path === "/api/brains" && req.method === "GET") {
-    return sendJson(res, 200, [
-      { id: "test-brain", name: "Test Brain", pages: pages.size },
-    ]);
+    return sendJson(res, 200, [{ id: "test-brain", name: "Test Brain", pages: pages.size }]);
   }
 
   // ── Stats ───────────────────────────────────────────────────────────

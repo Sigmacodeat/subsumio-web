@@ -114,7 +114,7 @@ export const POST = createHandler(
     body: analyzeSchema,
     maxDuration: 120,
   },
-  async (ctx, body, _query, req) => {
+  async (ctx, body, _query, _req) => {
     const isInternal = ctx.brainId === "internal";
     let engineHeaders: Record<string, string> = ctx.headers;
 
@@ -135,14 +135,24 @@ export const POST = createHandler(
     // 1. Fetch document text from Brain engine
     const warnings: string[] = [];
     let text = "";
+    let documentCaseSlug: string | undefined;
     if (documentSlug) {
       try {
         const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
           headers: engineHeaders,
         });
         if (pageRes.ok) {
-          const page = (await pageRes.json()) as { content?: string; title?: string };
+          const page = (await pageRes.json()) as {
+            content?: string;
+            title?: string;
+            frontmatter?: Record<string, unknown>;
+          };
           text = [page.title, page.content].filter(Boolean).join("\n\n");
+          // P0-2: Remember the case_slug so we can write back suggested deadlines
+          documentCaseSlug =
+            typeof page.frontmatter?.case_slug === "string"
+              ? page.frontmatter.case_slug
+              : undefined;
         } else {
           console.error(`[analyze] page fetch for ${documentSlug} returned ${pageRes.status}`);
           warnings.push("document_fetch_failed");
@@ -220,23 +230,175 @@ export const POST = createHandler(
       parsed.suggested_precedents = suggestedPrecedents;
     }
 
-    // 6. Store analysis as page metadata (best-effort, non-blocking)
+    // 6. Store analysis results (best-effort, non-blocking)
+    // P0-3: Stamp document_type into the document's frontmatter (not just meta)
+    // P0-2: Write suggested_deadlines into the CASE frontmatter so the
+    //       deadline-reminder cron and the UI can pick them up.
     if (documentSlug) {
       void (async () => {
         try {
+          const docType =
+            typeof parsed.document_type === "string" ? parsed.document_type : undefined;
+          const docPatch: Record<string, unknown> = {
+            meta: {
+              auto_analysis: parsed,
+              analyzed_at: new Date().toISOString(),
+            },
+            // merge:true is critical — without it the engine may replace the
+            // entire frontmatter and wipe case_slug/assignment_status/extraction
+            // metadata on the document, detaching it from its case.
+            merge: true,
+          };
+          if (docType && docType !== "unknown") {
+            docPatch.frontmatter = { document_type: docType };
+          }
           await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", ...engineHeaders },
-            body: JSON.stringify({
-              meta: {
-                auto_analysis: parsed,
-                analyzed_at: new Date().toISOString(),
-              },
-            }),
+            body: JSON.stringify(docPatch),
           });
         } catch (err) {
           console.error(
-            `[analyze] failed to persist auto_analysis for ${documentSlug}:`,
+            `[analyze] failed to persist analysis for ${documentSlug}:`,
+            err instanceof Error ? err.message : String(err)
+          );
+        }
+      })();
+    }
+
+    // P0-2: Write suggested deadlines + parties to the case frontmatter
+    if (documentCaseSlug) {
+      void (async () => {
+        try {
+          const extractedDeadlines = Array.isArray(parsed.deadlines)
+            ? (parsed.deadlines as Array<Record<string, unknown>>)
+            : [];
+          const extractedParties = Array.isArray(parsed.parties)
+            ? (parsed.parties as Array<Record<string, unknown>>)
+            : [];
+
+          if (extractedDeadlines.length === 0 && extractedParties.length === 0) return;
+
+          const encodedCaseSlug = documentCaseSlug.split("/").map(encodeURIComponent).join("/");
+          const caseRes = await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
+            headers: engineHeaders,
+          });
+          if (!caseRes.ok) return;
+          const casePage = (await caseRes.json()) as {
+            frontmatter?: Record<string, unknown>;
+          };
+          const caseFm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+
+          // Build suggested deadlines with source provenance — deduplicate by title+due_date
+          const existingDlKeys = new Set(
+            (Array.isArray(caseFm.suggested_deadlines) ? caseFm.suggested_deadlines : []).map(
+              (sd) => {
+                const e = sd as Record<string, unknown>;
+                return `${String(e.title ?? "")}|${String(e.due_date ?? "")}`;
+              }
+            )
+          );
+          const suggestedDeadlines = extractedDeadlines
+            .map((d) => ({
+              title: String(d.label ?? "Erkannte Frist"),
+              due_date: String(d.date ?? ""),
+              urgency: String(d.urgency ?? "normal"),
+              source: `KI-Analyse: ${documentSlug}`,
+              source_quote: String(d.source ?? ""),
+              confirmed: false,
+            }))
+            .filter((sd) => {
+              const key = `${sd.title}|${sd.due_date}`;
+              if (existingDlKeys.has(key)) return false;
+              existingDlKeys.add(key);
+              return true;
+            });
+
+          // Build suggested parties — deduplicate by name+role
+          const existingPartyKeys = new Set(
+            (Array.isArray(caseFm.suggested_parties) ? caseFm.suggested_parties : []).map((sp) => {
+              const e = sp as Record<string, unknown>;
+              return `${String(e.name ?? "")}|${String(e.role ?? "")}`;
+            })
+          );
+          const suggestedParties = extractedParties
+            .map((p) => ({
+              name: String(p.name ?? ""),
+              role: String(p.role ?? "sonstige"),
+              source: `KI-Analyse: ${documentSlug}`,
+              confirmed: false,
+            }))
+            .filter((sp) => {
+              const key = `${sp.name}|${sp.role}`;
+              if (existingPartyKeys.has(key)) return false;
+              existingPartyKeys.add(key);
+              return true;
+            });
+
+          // C2 FIX: If-Match retry loop — re-fetch version on 409 conflict
+          // to prevent lost writeback when case was concurrently modified.
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const retryCaseRes =
+                attempt === 0
+                  ? caseRes
+                  : await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
+                      headers: engineHeaders,
+                    });
+              if (!retryCaseRes.ok) break;
+              const retryCasePage =
+                attempt === 0
+                  ? casePage
+                  : ((await retryCaseRes.json()) as { frontmatter?: Record<string, unknown> });
+              const retryFm = (retryCasePage.frontmatter ?? {}) as Record<string, unknown>;
+              const retryVersion = (retryFm.version as number | undefined) ?? 0;
+
+              // Rebuild patchBody with fresh frontmatter + version
+              const retryPatchBody: Record<string, unknown> = {
+                frontmatter: {
+                  ...retryFm,
+                  ...(suggestedDeadlines.length > 0
+                    ? {
+                        suggested_deadlines: [
+                          ...(Array.isArray(retryFm.suggested_deadlines)
+                            ? retryFm.suggested_deadlines
+                            : []),
+                          ...suggestedDeadlines,
+                        ],
+                      }
+                    : {}),
+                  ...(suggestedParties.length > 0
+                    ? {
+                        suggested_parties: [
+                          ...(Array.isArray(retryFm.suggested_parties)
+                            ? retryFm.suggested_parties
+                            : []),
+                          ...suggestedParties,
+                        ],
+                      }
+                    : {}),
+                },
+                merge: true,
+              };
+
+              const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedCaseSlug}`, {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  "If-Match": String(retryVersion),
+                  ...engineHeaders,
+                },
+                body: JSON.stringify(retryPatchBody),
+              });
+              if (patchRes.status === 409 && attempt < 2) continue;
+              break;
+            } catch {
+              break;
+            }
+          }
+        } catch (err) {
+          console.error(
+            `[analyze] failed to write suggested deadlines to case ${documentCaseSlug}:`,
             err instanceof Error ? err.message : String(err)
           );
         }

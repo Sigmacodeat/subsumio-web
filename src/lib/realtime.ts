@@ -125,6 +125,7 @@ class RealtimeClient {
         "connected",
         "case.updated",
         "case.deleted",
+        "case.restored",
         "deadline.changed",
         "note.added",
         "invoice.created",

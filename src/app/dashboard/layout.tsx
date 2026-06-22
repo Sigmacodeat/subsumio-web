@@ -12,6 +12,7 @@ import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
+import { OcrWarningBanner } from "@/components/dashboard/ocr-warning-banner";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { cn } from "@/lib/utils";
@@ -231,6 +232,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onCopilotToggle={() => setCopilotOpen((v) => !v)}
         />
 
+        <OcrWarningBanner />
         <main
           id="main-content"
           role="main"

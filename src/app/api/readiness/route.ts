@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,11 @@ export async function GET(_req: NextRequest) {
     });
     checks.engine = res.ok
       ? { status: "ok", latencyMs: Date.now() - engineStart }
-      : { status: "down", latencyMs: Date.now() - engineStart, detail: `Engine returned ${res.status}` };
+      : {
+          status: "down",
+          latencyMs: Date.now() - engineStart,
+          detail: `Engine returned ${res.status}`,
+        };
   } catch (err) {
     checks.engine = {
       status: "down",
@@ -73,9 +77,10 @@ export async function GET(_req: NextRequest) {
   if (!env("SUBSUMIO_API_URL")) missingCritical.push("SUBSUMIO_API_URL");
   if (!env("SUBSUMIO_WEB_API_KEY")) missingCritical.push("SUBSUMIO_WEB_API_KEY");
 
-  checks.config = missingCritical.length === 0
-    ? { status: "ok" }
-    : { status: "down", detail: `Missing: ${missingCritical.join(", ")}` };
+  checks.config =
+    missingCritical.length === 0
+      ? { status: "ok" }
+      : { status: "down", detail: `Missing: ${missingCritical.join(", ")}` };
 
   // 4. Optional services — degraded, not down
   checks.stripe = process.env.STRIPE_SECRET_KEY
@@ -90,6 +95,34 @@ export async function GET(_req: NextRequest) {
   checks.email = process.env.RESEND_API_KEY
     ? { status: "ok" }
     : { status: "degraded", detail: "RESEND_API_KEY not set" };
+
+  // 5. OCR — degraded (not down) when disabled
+  checks.ocr =
+    process.env.GBRAIN_EMBEDDING_IMAGE_OCR === "true"
+      ? { status: "ok" }
+      : {
+          status: "degraded",
+          detail: "GBRAIN_EMBEDDING_IMAGE_OCR not set — scanned docs won't be text-extracted",
+        };
+
+  // 6. SMTP — degraded (not down) when not configured (in-app notification fallback active)
+  try {
+    const { loadKanzleiSettings } = await import("@/lib/kanzlei-settings");
+    const smtpSettings = await loadKanzleiSettings();
+    checks.smtp =
+      smtpSettings.smtpHost && smtpSettings.smtpUser && smtpSettings.smtpPassword
+        ? { status: "ok" }
+        : {
+            status: "degraded",
+            detail:
+              "SMTP not configured — deadline reminders fall back to in-app notifications only",
+          };
+  } catch {
+    checks.smtp = {
+      status: "degraded",
+      detail: "Kanzlei settings unavailable — SMTP status unknown",
+    };
+  }
 
   // Determine overall status: critical checks (engine, auth, config) must be ok
   const criticalKeys = ["engine", "auth", "config"];

@@ -23,13 +23,23 @@ describe("validateUpload", () => {
   });
 
   test("rejects oversized file", () => {
-    const file = new File([new ArrayBuffer(MAX_FILE_SIZE + 1)], "huge.pdf", { type: "application/pdf" });
+    // Fake the size rather than allocating MAX_FILE_SIZE (1 GB) of real memory.
+    const file = new File(["x"], "huge.pdf", { type: "application/pdf" });
+    Object.defineProperty(file, "size", { value: MAX_FILE_SIZE + 1 });
     const result = validateUpload(file);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("file_too_large");
       expect(result.maxSize).toBe(MAX_FILE_SIZE);
     }
+  });
+
+  test("accepts a large file up to the 1 GB limit", () => {
+    const file = new File(["x"], "scan.pdf", { type: "application/pdf" });
+    Object.defineProperty(file, "size", { value: MAX_FILE_SIZE });
+    expect(MAX_FILE_SIZE).toBe(1024 * 1024 * 1024);
+    const result = validateUpload(file);
+    expect(result.ok).toBe(true);
   });
 
   test("rejects unsupported MIME type", () => {
@@ -45,7 +55,9 @@ describe("validateUpload", () => {
   });
 
   test("accepts Word docx", () => {
-    const file = new File(["x"], "contract.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const file = new File(["x"], "contract.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
     const result = validateUpload(file);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.file).toBe(file);

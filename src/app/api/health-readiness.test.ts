@@ -62,9 +62,9 @@ describe("GET /api/readiness (deep probe)", () => {
     process.env.SENTRY_DSN = "https://test@sentry.io/123";
     process.env.RESEND_API_KEY = "re_test_123";
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stats: {} }), { status: 200 })
-    ) as never;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 })) as never;
 
     const { getStore } = await import("@/lib/auth/store");
     vi.mocked(getStore).mockReturnValue({
@@ -75,7 +75,8 @@ describe("GET /api/readiness (deep probe)", () => {
     const res = await GET({} as never);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.status).toBe("ok");
+    // B2: status may be 'degraded' if SMTP or OCR is not configured — that's OK.
+    // Critical checks (engine, auth, config) must still be 'ok'.
     expect(body.checks.engine.status).toBe("ok");
     expect(body.checks.auth.status).toBe("ok");
     expect(body.checks.config.status).toBe("ok");
@@ -99,9 +100,9 @@ describe("GET /api/readiness (deep probe)", () => {
   });
 
   it("returns 503 when engine returns non-200", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response("Internal Server Error", { status: 500 })
-    ) as never;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response("Internal Server Error", { status: 500 })) as never;
 
     const { getStore } = await import("@/lib/auth/store");
     vi.mocked(getStore).mockReturnValue({
@@ -116,9 +117,9 @@ describe("GET /api/readiness (deep probe)", () => {
   });
 
   it("returns 503 when auth store throws", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stats: {} }), { status: 200 })
-    ) as never;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 })) as never;
 
     const { getStore } = await import("@/lib/auth/store");
     vi.mocked(getStore).mockReturnValue({
@@ -138,9 +139,9 @@ describe("GET /api/readiness (deep probe)", () => {
     delete process.env.SUBSUMIO_API_URL;
     delete process.env.SUBSUMIO_WEB_API_KEY;
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stats: {} }), { status: 200 })
-    ) as never;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 })) as never;
 
     const { getStore } = await import("@/lib/auth/store");
     vi.mocked(getStore).mockReturnValue({
@@ -163,9 +164,9 @@ describe("GET /api/readiness (deep probe)", () => {
     delete process.env.SENTRY_DSN;
     delete process.env.RESEND_API_KEY;
 
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stats: {} }), { status: 200 })
-    ) as never;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 })) as never;
 
     const { getStore } = await import("@/lib/auth/store");
     vi.mocked(getStore).mockReturnValue({
@@ -203,9 +204,9 @@ describe("GET /api/readiness (deep probe)", () => {
   });
 
   it("sends API key header to engine when configured", async () => {
-    const fetchSpy = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ stats: {} }), { status: 200 })
-    );
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ stats: {} }), { status: 200 }));
     globalThis.fetch = fetchSpy as never;
 
     const { getStore } = await import("@/lib/auth/store");
@@ -216,7 +217,9 @@ describe("GET /api/readiness (deep probe)", () => {
     const { GET } = await import("@/app/api/readiness/route");
     await GET({} as never);
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    // B2: fetch may be called multiple times (engine + SMTP settings check).
+    // The first call is always the engine readiness probe.
+    expect(fetchSpy).toHaveBeenCalled();
     const [, options] = fetchSpy.mock.calls[0];
     expect(options.headers["x-subsumio-api-key"]).toBe("test-api-key");
   });

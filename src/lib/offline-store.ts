@@ -5,10 +5,11 @@
  */
 
 const DB_NAME = "subsumio-offline";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_NAME = "pages";
 const MUTATION_STORE = "mutations";
 const CHAT_STORE = "chat_history";
+const FILE_UPLOAD_STORE = "file_uploads";
 
 interface CacheEntry<T> {
   key: string;
@@ -58,6 +59,9 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(CHAT_STORE)) {
         db.createObjectStore(CHAT_STORE, { keyPath: "id" });
       }
+      if (!db.objectStoreNames.contains(FILE_UPLOAD_STORE)) {
+        db.createObjectStore(FILE_UPLOAD_STORE, { keyPath: "id" });
+      }
       // v1 → v2 migration: create mutations store
       if (event.oldVersion < 2 && !db.objectStoreNames.contains(MUTATION_STORE)) {
         db.createObjectStore(MUTATION_STORE, { keyPath: "id", autoIncrement: true });
@@ -65,6 +69,10 @@ function openDb(): Promise<IDBDatabase> {
       // v2 → v3 migration: create chat_history store
       if (event.oldVersion < 3 && !db.objectStoreNames.contains(CHAT_STORE)) {
         db.createObjectStore(CHAT_STORE, { keyPath: "id" });
+      }
+      // v3 → v4 migration: create file_uploads store
+      if (event.oldVersion < 4 && !db.objectStoreNames.contains(FILE_UPLOAD_STORE)) {
+        db.createObjectStore(FILE_UPLOAD_STORE, { keyPath: "id" });
       }
     };
   });
@@ -283,5 +291,103 @@ export async function clearChatHistory(): Promise<void> {
     });
   } catch (e) {
     report(e, "clearChatHistory");
+  }
+}
+
+// --- File Upload Queue (C2) ---
+
+export interface FileUploadEntry {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  bytes: ArrayBuffer;
+  metadata: {
+    title?: string;
+    source?: string;
+    tags?: string[];
+    case_slug?: string;
+  };
+  createdAt: string;
+  retries?: number;
+}
+
+export async function enqueueFileUpload(
+  entry: Omit<FileUploadEntry, "id" | "createdAt">
+): Promise<string> {
+  const id = crypto.randomUUID();
+  try {
+    const db = await openDb();
+    const tx = db.transaction(FILE_UPLOAD_STORE, "readwrite");
+    tx.objectStore(FILE_UPLOAD_STORE).put({
+      ...entry,
+      id,
+      createdAt: new Date().toISOString(),
+    });
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    report(e, "enqueueFileUpload");
+  }
+  return id;
+}
+
+export async function getPendingFileUploads(): Promise<FileUploadEntry[]> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(FILE_UPLOAD_STORE, "readonly");
+    const req = tx.objectStore(FILE_UPLOAD_STORE).getAll();
+    const entries = await new Promise<FileUploadEntry[]>((resolve) => {
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+    return entries.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  } catch (e) {
+    report(e, "getPendingFileUploads");
+    return [];
+  }
+}
+
+export async function removeFileUpload(id: string): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(FILE_UPLOAD_STORE, "readwrite");
+    tx.objectStore(FILE_UPLOAD_STORE).delete(id);
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (e) {
+    report(e, "removeFileUpload");
+  }
+}
+
+export async function incrementFileUploadRetries(id: string): Promise<void> {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(FILE_UPLOAD_STORE, "readwrite");
+    const store = tx.objectStore(FILE_UPLOAD_STORE);
+    const req = store.get(id);
+    await new Promise<void>((resolve) => {
+      req.onsuccess = () => {
+        const entry = req.result as FileUploadEntry | undefined;
+        if (entry) {
+          entry.retries = (entry.retries ?? 0) + 1;
+          store.put(entry);
+        }
+        resolve();
+      };
+      req.onerror = () => resolve();
+    });
+    await new Promise<void>((resolve) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    });
+  } catch (e) {
+    report(e, "incrementFileUploadRetries");
   }
 }

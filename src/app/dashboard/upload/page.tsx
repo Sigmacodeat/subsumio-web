@@ -19,32 +19,52 @@ import {
   AlertCircle,
   BookOpen,
   Lock,
-  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { isOnline } from "@/lib/offline-store";
+import { MAX_FILE_SIZE } from "@/lib/upload-validation";
+import { runUploadPool } from "@/lib/upload-queue";
+import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
+import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
 import { sha256HexBytes, gobdFrontmatter } from "@/lib/gobd";
 import { PageHeader } from "@/components/dashboard/page-header";
 import type { BrainPage } from "@/lib/types";
 
+interface FileOverrides {
+  source?: string;
+  case_slug?: string;
+  tags?: string[];
+}
+
 interface UploadFile {
   id: string;
   file: File;
-  status: "pending" | "uploading" | "done" | "error";
+  status: "pending" | "uploading" | "done" | "error" | "skipped";
   progress: number;
   error?: string;
   slug?: string;
   gobdStamped?: boolean;
+  /** Per-file bulk-rule overrides; fall back to the batch-wide defaults. */
+  overrides?: FileOverrides;
+  /** Auto-routing suggestion derived from the filename (informational). */
+  routingHint?: string;
 }
 
+// Aligned with the server-side allowlist in upload-validation.ts (ALLOWED_MIME_TYPES).
 const ACCEPTED_TYPES = {
   "text/markdown": [".md"],
   "text/plain": [".txt"],
   "application/pdf": [".pdf"],
   "application/json": [".json"],
+  "application/msword": [".doc"],
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+  "application/rtf": [".rtf"],
+  "text/html": [".html", ".htm"],
+  "image/png": [".png"],
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/tiff": [".tif", ".tiff"],
 };
 
 function FileIcon({ name }: { name: string }) {
@@ -61,7 +81,8 @@ function FileIcon({ name }: { name: string }) {
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
 type UploadMode = "case" | "knowledge";
@@ -115,39 +136,84 @@ export default function UploadPage() {
     })();
   }, []);
 
-  const addFiles = useCallback((accepted: File[]) => {
-    if (accepted.length === 0) return;
-    if (!isOnline()) {
-      const offlineFiles: UploadFile[] = accepted.map((f) => ({
-        id: crypto.randomUUID(),
-        file: f,
-        status: "error" as const,
-        progress: 0,
-        error: t("upload.error_offline"),
+  const addFiles = useCallback(
+    async (accepted: File[]) => {
+      if (accepted.length === 0) return;
+      if (!isOnline()) {
+        // C2: Enqueue files in IndexedDB instead of showing error
+        const tagList = tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+        const effectiveSource = mode === "case" ? "documents" : source;
+        const caseSlug = mode === "case" ? selectedCaseSlug : undefined;
+
+        for (const f of accepted) {
+          const bytes = await f.arrayBuffer();
+          await enqueueFileUpload({
+            fileName: f.name,
+            fileSize: f.size,
+            fileType: f.type,
+            bytes,
+            metadata: {
+              title: f.name.replace(/\.[^.]+$/, ""),
+              source: effectiveSource,
+              tags: tagList.length > 0 ? tagList : undefined,
+              case_slug: caseSlug,
+            },
+          });
+        }
+        // C2 UX: Don't add to file list with error status — files are
+        // successfully queued in IndexedDB and will auto-sync when online.
+        // Show a brief success indicator instead.
+        const queuedFiles: UploadFile[] = accepted.map((f) => ({
+          id: crypto.randomUUID(),
+          file: f,
+          status: "done" as const,
+          progress: 100,
+          slug: "offline-queued",
+        }));
+        setFiles((prev) => [...prev, ...queuedFiles]);
+        return;
+      }
+      const knownCases: KnownCase[] = cases.map((c) => ({
+        slug: c.slug,
+        title: c.title ?? "",
+        aktenzeichen:
+          typeof (c.frontmatter as Record<string, unknown> | undefined)?.aktenzeichen === "string"
+            ? ((c.frontmatter as Record<string, unknown>).aktenzeichen as string)
+            : undefined,
       }));
-      setFiles((prev) => [...prev, ...offlineFiles]);
-      return;
-    }
-    const newFiles: UploadFile[] = accepted.map((f) => ({
-      id: crypto.randomUUID(),
-      file: f,
-      status: "pending",
-      progress: 0,
-    }));
-    setFiles((prev) => [...prev, ...newFiles]);
-  }, []);
+      const newFiles: UploadFile[] = accepted.map((f) => {
+        const routing = inferUploadRouting(f.name, knownCases);
+        const overrides: FileOverrides = {};
+        if (routing.matchedCaseSlug) overrides.case_slug = routing.matchedCaseSlug;
+        return {
+          id: crypto.randomUUID(),
+          file: f,
+          status: "pending" as const,
+          progress: 0,
+          routingHint: routing.hint,
+          overrides: Object.keys(overrides).length > 0 ? overrides : undefined,
+        };
+      });
+      setFiles((prev) => [...prev, ...newFiles]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [cases]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: addFiles,
     accept: ACCEPTED_TYPES,
-    maxSize: 50 * 1024 * 1024,
+    maxSize: MAX_FILE_SIZE,
   });
 
   // Walk a chosen local folder (recursively, like an IDE "open folder") and pull
   // every supported file into the same upload queue. No server round-trip until
   // the user clicks "Upload" — the files stay client-side until then.
-  const ACCEPT_RE = /\.(md|txt|pdf|json)$/i;
-  const MAX_BYTES = 50 * 1024 * 1024;
+  const ACCEPT_RE = /\.(md|txt|pdf|json|docx?|rtf|html?|png|jpe?g|tiff?)$/i;
+  const MAX_BYTES = MAX_FILE_SIZE;
   const pickFolder = useCallback(async () => {
     interface FsHandle {
       kind: "file" | "directory";
@@ -204,7 +270,16 @@ export default function UploadPage() {
     const effectiveSource = mode === "case" ? "documents" : source;
     const caseSlug = mode === "case" ? selectedCaseSlug : undefined;
 
-    for (const uploadFile of pending) {
+    // Staggered upload: large files (>= 50 MB) run max 2 at once, small files
+    // fill the remaining slots, so 1 GB uploads never pile up in memory.
+    const items = pending.map((f) => ({ ...f, size: f.file.size }));
+    await runUploadPool(items, async (uploadFile) => {
+      // Per-file overrides win over the batch-wide defaults (bulk rules).
+      const ov = uploadFile.overrides;
+      const fileSource = ov?.source ?? effectiveSource;
+      const fileCaseSlug = ov?.case_slug ?? caseSlug;
+      const fileTags = ov?.tags ?? tagList;
+
       setFiles((prev) =>
         prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "uploading", progress: 0 } : f))
       );
@@ -215,9 +290,9 @@ export default function UploadPage() {
           uploadFile.file,
           {
             title,
-            source: effectiveSource,
-            tags: tagList.length > 0 ? tagList : undefined,
-            case_slug: caseSlug,
+            source: fileSource,
+            tags: fileTags.length > 0 ? fileTags : undefined,
+            case_slug: fileCaseSlug,
           },
           (progress) => {
             setFiles((prev) => prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)));
@@ -256,11 +331,18 @@ export default function UploadPage() {
         );
       } catch (e) {
         const msg = e instanceof Error ? e.message : t("upload.err_failed");
+        // Duplicate (409) is a benign conflict, not a hard failure — mark the row
+        // as skipped so the batch can finish cleanly.
+        const isDuplicate = /duplicate|bereits vorhanden|409/i.test(msg);
         setFiles((prev) =>
-          prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "error", error: msg } : f))
+          prev.map((f) =>
+            f.id === uploadFile.id
+              ? { ...f, status: isDuplicate ? "skipped" : "error", error: msg }
+              : f
+          )
         );
       }
-    }
+    });
   };
 
   const pendingCount = files.filter((f) => f.status === "pending").length;
@@ -579,7 +661,13 @@ export default function UploadPage() {
                   )}
                   {f.status === "done" && f.slug && (
                     <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs text-emerald-600">→ {f.slug}</span>
+                      {f.slug === "offline-queued" ? (
+                        <span className="text-xs text-amber-600">
+                          Offline-Warteschlange — wird automatisch synchronisiert
+                        </span>
+                      ) : (
+                        <span className="font-mono text-xs text-emerald-600">→ {f.slug}</span>
+                      )}
                       {f.gobdStamped && (
                         <Badge
                           variant="default"
@@ -591,10 +679,59 @@ export default function UploadPage() {
                     </span>
                   )}
                   {f.status === "error" && <span className="text-xs text-red-600">{f.error}</span>}
-                  {f.status === "pending" && (
-                    <span className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("upload.pending")}
+                  {f.status === "skipped" && (
+                    <span className="text-xs text-amber-600">
+                      Übersprungen — bereits vorhanden (Duplikat)
                     </span>
+                  )}
+                  {f.status === "pending" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-[color:var(--ds-text-muted)]">
+                        {t("upload.pending")}
+                      </span>
+                      {f.routingHint && (
+                        <Badge
+                          variant="default"
+                          className="brand-soft brand-text brand-border gap-1 text-[0.6875rem]"
+                        >
+                          {f.routingHint}
+                        </Badge>
+                      )}
+                      {/* Per-file override: route this single file to a different Akte. */}
+                      {mode === "case" && cases.length > 0 && (
+                        <select
+                          aria-label={`Akte für ${f.file.name}`}
+                          value={f.overrides?.case_slug ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFiles((prev) =>
+                              prev.map((x) =>
+                                x.id === f.id
+                                  ? {
+                                      ...x,
+                                      overrides: val
+                                        ? { ...x.overrides, case_slug: val }
+                                        : (() => {
+                                            const rest = { ...x.overrides };
+                                            delete rest.case_slug;
+                                            return Object.keys(rest).length ? rest : undefined;
+                                          })(),
+                                    }
+                                  : x
+                              )
+                            );
+                          }}
+                          className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-[0.6875rem] text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                        >
+                          <option value="">Akte aus Auswahl oben</option>
+                          {cases.map((c) => (
+                            <option key={c.slug} value={c.slug}>
+                              {c.title}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="shrink-0">
@@ -609,8 +746,16 @@ export default function UploadPage() {
                   {f.status === "uploading" && (
                     <Loader size={14} className="brand-text animate-spin" />
                   )}
-                  {f.status === "done" && <CheckCircle size={14} className="text-emerald-600" />}
+                  {f.status === "done" && (
+                    <CheckCircle
+                      size={14}
+                      className={
+                        f.slug === "offline-queued" ? "text-amber-500" : "text-emerald-600"
+                      }
+                    />
+                  )}
                   {f.status === "error" && <XCircle size={14} className="text-red-600" />}
+                  {f.status === "skipped" && <Info size={14} className="text-amber-500" />}
                 </div>
               </div>
             ))}

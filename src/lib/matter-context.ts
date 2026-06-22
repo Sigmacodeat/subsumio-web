@@ -689,7 +689,11 @@ async function fetchCaseDocumentsBySlug(
     const pages = await fetchEnginePagesByType(engineUrl, headers, "document", 200);
     const matched = pages.filter((p) => {
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
-      return fm.case_slug === caseSlug && fm.assignment_status !== "unassigned";
+      return (
+        fm.case_slug === caseSlug &&
+        fm.assignment_status !== "unassigned" &&
+        fm.status !== "tombstoned"
+      );
     });
     return matched.map((p) => {
       const fm = (p.frontmatter ?? {}) as Record<string, unknown>;

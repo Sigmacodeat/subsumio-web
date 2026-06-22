@@ -18,8 +18,12 @@ describe("auditLabel", () => {
     expect(auditLabel("case.create")).toBe("Akte angelegt");
   });
 
-  test("returns German label for case.delete", () => {
-    expect(auditLabel("case.delete")).toBe("Akte gelöscht");
+  test("returns German label for case.delete (archived)", () => {
+    expect(auditLabel("case.delete")).toBe("Akte archiviert");
+  });
+
+  test("returns German label for case.restore", () => {
+    expect(auditLabel("case.restore")).toBe("Akte wiederhergestellt");
   });
 
   test("returns German label for document.upload", () => {
@@ -72,28 +76,72 @@ describe("auditLabel", () => {
 
   test("all AuditAction type members have labels", () => {
     const knownActions: AuditAction[] = [
-      "user.login", "user.logout", "user.signup",
-      "case.create", "case.update", "case.delete", "case.view",
-      "invoice.create", "invoice.update", "invoice.delete", "invoice.send", "invoice.remind",
-      "document.upload", "document.delete",
-      "deadline.create", "deadline.update", "deadline.delete",
-      "evidence.create", "evidence.update", "evidence.delete",
-      "drafting.generate", "drafting.export",
-      "conflict.check", "judgements.search",
-      "legal.contract_draft", "legal.document_review", "legal.due_diligence",
-      "legal.risk_analysis", "legal.memo", "legal.redline", "legal.anonymize",
-      "legal.tabular", "legal.judgements_sync", "legal.ai_deadlines",
-      "legal.rvg", "legal.statute", "legal.playbook",
-      "settings.update", "billing.upgrade", "onboarding.complete",
-      "team.invite", "team.remove", "team.role_change",
-      "connector.add", "connector.remove", "connector.sync",
-      "scim.user_provisioned", "scim.user_deprovisioned", "scim.user_updated",
-      "scim.group_synced", "scim.sync_manual",
-      "query.submit", "data.export", "data.delete",
-      "legal.sources_list", "legal.sources_refresh",
-      "whatsapp.identity_created", "whatsapp.identity_updated", "whatsapp.identity_revoked",
-      "whatsapp.sender_denied", "whatsapp.consent_granted", "whatsapp.consent_revoked",
-      "whatsapp.outbound_sent", "whatsapp.outbound_blocked", "whatsapp.briefing_feedback",
+      "user.login",
+      "user.logout",
+      "user.signup",
+      "case.create",
+      "case.update",
+      "case.delete",
+      "case.restore",
+      "case.view",
+      "invoice.create",
+      "invoice.update",
+      "invoice.delete",
+      "invoice.send",
+      "invoice.remind",
+      "document.upload",
+      "document.delete",
+      "deadline.create",
+      "deadline.update",
+      "deadline.delete",
+      "evidence.create",
+      "evidence.update",
+      "evidence.delete",
+      "drafting.generate",
+      "drafting.export",
+      "conflict.check",
+      "judgements.search",
+      "legal.contract_draft",
+      "legal.document_review",
+      "legal.due_diligence",
+      "legal.risk_analysis",
+      "legal.memo",
+      "legal.redline",
+      "legal.anonymize",
+      "legal.tabular",
+      "legal.judgements_sync",
+      "legal.ai_deadlines",
+      "legal.rvg",
+      "legal.statute",
+      "legal.playbook",
+      "settings.update",
+      "billing.upgrade",
+      "onboarding.complete",
+      "team.invite",
+      "team.remove",
+      "team.role_change",
+      "connector.add",
+      "connector.remove",
+      "connector.sync",
+      "scim.user_provisioned",
+      "scim.user_deprovisioned",
+      "scim.user_updated",
+      "scim.group_synced",
+      "scim.sync_manual",
+      "query.submit",
+      "data.export",
+      "data.delete",
+      "legal.sources_list",
+      "legal.sources_refresh",
+      "whatsapp.identity_created",
+      "whatsapp.identity_updated",
+      "whatsapp.identity_revoked",
+      "whatsapp.sender_denied",
+      "whatsapp.consent_granted",
+      "whatsapp.consent_revoked",
+      "whatsapp.outbound_sent",
+      "whatsapp.outbound_blocked",
+      "whatsapp.briefing_feedback",
     ];
 
     for (const action of knownActions) {
@@ -123,9 +171,16 @@ describe("auditLabel", () => {
 
   test("labels are non-empty strings for all mapped actions", () => {
     const actions = [
-      "user.login", "user.logout", "case.create", "case.view",
-      "document.upload", "settings.update", "billing.upgrade",
-      "query.submit", "conflict.check", "data.export",
+      "user.login",
+      "user.logout",
+      "case.create",
+      "case.view",
+      "document.upload",
+      "settings.update",
+      "billing.upgrade",
+      "query.submit",
+      "conflict.check",
+      "data.export",
     ];
     for (const action of actions) {
       const label = auditLabel(action);

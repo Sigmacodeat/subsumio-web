@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Trash2,
   RotateCcw,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +27,14 @@ import { cn, encodeSlugPath } from "@/lib/utils";
 import { STATUS_TEXT, STATUS_BG, STATUS_BORDER, type StatusColor } from "@/lib/status-colors";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
+import { csrfFetch } from "@/lib/csrf";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { FilterChip } from "@/components/dashboard/filter-chip";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useRealtime } from "@/lib/realtime";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
 
@@ -47,6 +51,7 @@ interface LegalCaseItem {
   createdAt: string;
   updatedAt: string;
   tags: string[];
+  version?: number;
 }
 
 const STATUS_CONFIG: Record<
@@ -60,6 +65,7 @@ const STATUS_CONFIG: Record<
   lost: { labelKey: "cases.status_lost", icon: XCircle, color: "red" },
   appealed: { labelKey: "cases.status_appealed", icon: AlertTriangle, color: "orange" },
   dormant: { labelKey: "cases.status_dormant", icon: PauseCircle, color: "gray" },
+  archived: { labelKey: "cases.status_archived", icon: Archive, color: "gray" },
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -84,12 +90,14 @@ function parseCase(page: BrainPage): LegalCaseItem {
     createdAt: page.created_at,
     updatedAt: page.updated_at,
     tags: fm.tags || [],
+    version: (fm.version as number) || 0,
   };
 }
 
 export default function CasesPage() {
   const router = useRouter();
   const { addToast } = useToast();
+  const confirm = useConfirm();
   const { t, lang } = useLang();
   const [cases, setCases] = useState<LegalCaseItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,8 +140,31 @@ export default function CasesPage() {
     };
   }, [loadCases]);
 
+  // SSE: auto-refresh when another user archives, restores, or updates a case
+  useRealtime("case.deleted", () => {
+    void loadCases();
+  });
+  useRealtime("case.restored", () => {
+    void loadCases();
+  });
+  useRealtime("case.updated", () => {
+    void loadCases();
+  });
+
   async function deleteCase(slug: string) {
     const caseItem = cases.find((c) => c.slug === slug);
+    const confirmed = await confirm({
+      title: lang === "en" ? "Archive case" : "Akte archivieren",
+      message:
+        lang === "en"
+          ? `Archive case "${caseItem?.title ?? slug}"? All linked documents will be tombstoned.`
+          : `Akte "${caseItem?.title ?? slug}" archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.`,
+      confirmLabel: lang === "en" ? "Archive" : "Archivieren",
+      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
     const next = cases.filter((c) => c.slug !== slug);
     setCases(next);
     await setCache(OFFLINE_KEYS.cases, next);
@@ -163,6 +194,18 @@ export default function CasesPage() {
 
   async function bulkDelete(selectedRows: LegalCaseItem[]) {
     const slugs = selectedRows.map((c) => c.slug);
+    const confirmed = await confirm({
+      title: lang === "en" ? "Archive cases" : "Akten archivieren",
+      message:
+        lang === "en"
+          ? `Archive ${slugs.length} case(s)? All linked documents will be tombstoned.`
+          : `${slugs.length} Akte(n) archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.`,
+      confirmLabel: lang === "en" ? "Archive" : "Archivieren",
+      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+
     const next = cases.filter((c) => !slugs.includes(c.slug));
     const backup = cases;
     setCases(next);
@@ -192,6 +235,130 @@ export default function CasesPage() {
     }
   }
 
+  async function restoreCase(slug: string) {
+    const caseItem = cases.find((c) => c.slug === slug);
+    const confirmed = await confirm({
+      title: lang === "en" ? "Restore case" : "Akte wiederherstellen",
+      message:
+        lang === "en"
+          ? `Restore case "${caseItem?.title ?? slug}" from archive? All linked documents will be reactivated.`
+          : `Akte "${caseItem?.title ?? slug}" aus dem Archiv wiederherstellen? Alle verknüpften Dokumente werden reaktiviert.`,
+      confirmLabel: lang === "en" ? "Restore" : "Wiederherstellen",
+      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
+    try {
+      const slugPath = slug.split("/").map(encodeURIComponent).join("/");
+      const res = await csrfFetch(`/api/pages/${slugPath}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "If-Match": String(caseItem?.version ?? 0),
+        },
+        body: JSON.stringify({
+          frontmatter: {
+            status: "open",
+            restored_at: new Date().toISOString(),
+            archived_at: null,
+            archived_by: null,
+          },
+          merge: true,
+        }),
+      });
+      if (res.ok) {
+        const next = cases.map((c) => (c.slug === slug ? { ...c, status: "open" } : c));
+        setCases(next);
+        await setCache(OFFLINE_KEYS.cases, next);
+        addToast({
+          type: "success",
+          title: lang === "en" ? "Case restored" : "Akte wiederhergestellt",
+          description: caseItem?.title,
+        });
+      } else if (res.status === 409) {
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Conflict" : "Konflikt",
+          description:
+            lang === "en"
+              ? "Case was modified by another user — please reload."
+              : "Akte wurde von einem anderen Nutzer geändert — bitte neu laden.",
+        });
+        void loadCases();
+      } else {
+        addToast({
+          type: "error",
+          title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+          description: `HTTP ${res.status}`,
+        });
+      }
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+      });
+    }
+  }
+
+  async function bulkRestore(selectedRows: LegalCaseItem[]) {
+    const slugs = selectedRows.map((c) => c.slug);
+    const confirmed = await confirm({
+      title: lang === "en" ? "Restore cases" : "Akten wiederherstellen",
+      message:
+        lang === "en"
+          ? `Restore ${slugs.length} case(s) from archive? All linked documents will be reactivated.`
+          : `${slugs.length} Akte(n) aus dem Archiv wiederherstellen? Alle verknüpften Dokumente werden reaktiviert.`,
+      confirmLabel: lang === "en" ? "Restore" : "Wiederherstellen",
+      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      variant: "primary",
+    });
+    if (!confirmed) return;
+
+    const backup = cases;
+    try {
+      const next = cases.map((c) => (slugs.includes(c.slug) ? { ...c, status: "open" } : c));
+      setCases(next);
+      await setCache(OFFLINE_KEYS.cases, next);
+      for (const row of selectedRows) {
+        const slugPath = row.slug.split("/").map(encodeURIComponent).join("/");
+        await csrfFetch(`/api/pages/${slugPath}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "If-Match": String(row.version ?? 0),
+          },
+          body: JSON.stringify({
+            frontmatter: {
+              status: "open",
+              restored_at: new Date().toISOString(),
+              archived_at: null,
+              archived_by: null,
+            },
+            merge: true,
+          }),
+        });
+      }
+      addToast({
+        type: "success",
+        title: lang === "en" ? "Cases restored" : "Akten wiederhergestellt",
+        description:
+          lang === "en"
+            ? `${slugs.length} case(s) restored from archive.`
+            : `${slugs.length} Akte(n) wiederhergestellt.`,
+      });
+    } catch (err) {
+      setCases(backup);
+      await setCache(OFFLINE_KEYS.cases, backup);
+      addToast({
+        type: "error",
+        title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+        description: err instanceof Error ? err.message : t("cases.unknown_error"),
+      });
+    }
+  }
+
   const filtered = cases.filter((c) => {
     const matchesSearch =
       search === "" ||
@@ -199,7 +366,9 @@ export default function CasesPage() {
       c.caseNumber.toLowerCase().includes(search.toLowerCase()) ||
       c.legalArea.toLowerCase().includes(search.toLowerCase()) ||
       (c.opponentName || "").toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+    // B1: Archived cases are hidden by default, shown only when explicitly filtered
+    const matchesStatus =
+      statusFilter === "all" ? c.status !== "archived" : c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -326,17 +495,31 @@ export default function CasesPage() {
       width: "w-10",
       cell: (c) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteCase(c.slug);
-            }}
-            className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-            title={t("cases.delete")}
-            aria-label={`${t("cases.delete")} ${c.title}`}
-          >
-            <Trash2 size={14} />
-          </button>
+          {c.status === "archived" ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                restoreCase(c.slug);
+              }}
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
+              title={lang === "en" ? "Restore" : "Wiederherstellen"}
+              aria-label={`${lang === "en" ? "Restore" : "Wiederherstellen"} ${c.title}`}
+            >
+              <RotateCcw size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteCase(c.slug);
+              }}
+              className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
+              title={t("cases.delete")}
+              aria-label={`${t("cases.delete")} ${c.title}`}
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
           <ChevronRight size={14} className="text-[color:var(--ds-text-subtle)]" />
         </div>
       ),
@@ -419,9 +602,15 @@ export default function CasesPage() {
         rowKey={(c) => c.slug}
         pageSize={20}
         selectable
-        onBulkAction={bulkDelete}
-        bulkActionLabel={t("cases.bulk_delete")}
-        bulkActionIcon={Trash2}
+        onBulkAction={statusFilter === "archived" ? bulkRestore : bulkDelete}
+        bulkActionLabel={
+          statusFilter === "archived"
+            ? lang === "en"
+              ? "Restore selected"
+              : "Ausgewählte wiederherstellen"
+            : t("cases.bulk_delete")
+        }
+        bulkActionIcon={statusFilter === "archived" ? RotateCcw : Trash2}
       />
     </div>
   );

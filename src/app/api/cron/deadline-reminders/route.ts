@@ -6,6 +6,7 @@ import { createCronHandler } from "@/lib/api-handler";
 import type { BrainPage } from "@/lib/types";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
 import { generateTrackingId, injectTracking, logTrackingEvent } from "@/lib/email/tracking";
+import { createDeadlineNotification } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
 
@@ -44,33 +45,58 @@ async function updatePageDeadlines(
   slug: string,
   fm: Record<string, unknown>
 ): Promise<void> {
-  try {
-    await fetch(`${ENGINE_URL}/api/pages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...engineHeadersForBrain(brainId) },
-      body: JSON.stringify({ slug, frontmatter: fm, merge: true }),
-    });
-  } catch {
-    // Einzelne Update-Fehler dürfen Cron nicht abbrechen
+  const headers = engineHeadersForBrain(brainId);
+  // C1: If-Match optimistic locking with retry on 409.
+  // Use PATCH via /api/pages/{slug} (not POST) because the POST handler
+  // in pages/route.ts doesn't forward If-Match to the engine.
+  const encodedSlug = slug.split("/").map(encodeURIComponent).join("/");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      // GET current version
+      const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+        headers,
+      });
+      if (!getRes.ok) return;
+      const page = (await getRes.json()) as { frontmatter?: { version?: number } };
+      const currentVersion = page.frontmatter?.version ?? 0;
+
+      const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "If-Match": String(currentVersion),
+          ...headers,
+        },
+        body: JSON.stringify({ frontmatter: fm, merge: true }),
+      });
+      if (patchRes.status === 409 && attempt < 2) {
+        // Version conflict — retry with fresh version
+        continue;
+      }
+      return;
+    } catch {
+      // Einzelne Update-Fehler dürfen Cron nicht abbrechen
+      return;
+    }
   }
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const settings = await loadKanzleiSettings();
-  if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPassword) {
-    return NextResponse.json({ error: "smtp_not_configured" }, { status: 400 });
-  }
+  const smtpConfigured = !!(settings.smtpHost && settings.smtpUser && settings.smtpPassword);
 
-  const transporter = nodemailer.createTransport({
-    host: settings.smtpHost,
-    port: parseInt(settings.smtpPort ?? "587", 10),
-    secure: settings.smtpSecure ?? false,
-    auth: { user: settings.smtpUser, pass: settings.smtpPassword },
-  });
+  // B2: Don't fail hard when SMTP isn't configured — fall back to in-app notifications only
+  const transporter = smtpConfigured
+    ? nodemailer.createTransport({
+        host: settings.smtpHost!,
+        port: parseInt(settings.smtpPort ?? "587", 10),
+        secure: settings.smtpSecure ?? false,
+        auth: { user: settings.smtpUser!, pass: settings.smtpPassword! },
+      })
+    : null;
 
-  const fromAddr = settings.emailFrom ?? settings.smtpUser;
+  const fromAddr = settings.emailFrom ?? settings.smtpUser ?? "noreply@subsumio.local";
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
 
   function daysUntil(dateStr: string): number {
     const target = new Date(`${dateStr}T12:00:00Z`);
@@ -134,14 +160,41 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
       const html = injectTracking(rawHtml, trackingId);
 
       try {
-        await transporter.sendMail({ from: fromAddr, to: toEmail, subject, html });
+        let notificationSent = false;
 
-        // Log tracking event for the outbound email
-        void logTrackingEvent({
-          trackingId,
-          eventType: "delivered",
-          raw: { source: "smtp", route: "deadline-reminders", recipient: toEmail },
-        });
+        // B2: Send email only when SMTP is configured
+        if (transporter && toEmail) {
+          await transporter.sendMail({ from: fromAddr, to: toEmail, subject, html });
+          notificationSent = true;
+
+          // Log tracking event for the outbound email
+          void logTrackingEvent({
+            trackingId,
+            eventType: "delivered",
+            raw: { source: "smtp", route: "deadline-reminders", recipient: toEmail },
+          });
+        }
+
+        // B2: Always create in-app notifications (dual-channel when SMTP is on, fallback when off)
+        for (const recipient of recipients) {
+          for (const { dd } of due) {
+            const remaining = daysUntil(dd);
+            await createDeadlineNotification({
+              userId: recipient.id,
+              brainId,
+              caseSlug: page.slug,
+              caseTitle: String(fm.case_number ?? page.title ?? page.slug),
+              deadlineDate: dd,
+              daysRemaining: remaining,
+              isOverdue: remaining < 0,
+            });
+          }
+          notificationSent = true;
+        }
+
+        // FIX: Only mark stages as sent when at least one notification
+        // was actually delivered. Otherwise the reminder is silently lost.
+        if (!notificationSent) continue;
 
         const stageByDeadline = new Map(due.map(({ d, stage }) => [d, stage]));
         const updatedDeadlines = deadlines.map((d) => {
@@ -166,6 +219,7 @@ ${due.map(({ d, dd, stage }) => `<li><strong>${esc(d.title ?? "Frist")}</strong>
     ok: true,
     brains_checked: brainsChecked,
     sent: totalSent,
+    smtp_configured: smtpConfigured,
     errors: errors.length > 0 ? errors : undefined,
   });
 });

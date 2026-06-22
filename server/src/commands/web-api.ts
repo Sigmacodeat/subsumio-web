@@ -63,6 +63,19 @@ declare global {
   }
 }
 
+/**
+ * Max accepted upload size for the web /api/upload endpoint. Agency-level
+ * deployments (self-hosted, no platform body cap) default to 1 GB. Override with
+ * GBRAIN_MAX_UPLOAD_BYTES. The body is buffered once (parseMultipart works on
+ * Buffer views, not copies), and the web client staggers large uploads (1-2 at a
+ * time), so peak RAM stays ~one file in flight.
+ */
+function maxUploadBytes(): number {
+  const raw = process.env.GBRAIN_MAX_UPLOAD_BYTES;
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1024 * 1024 * 1024;
+}
+
 interface ParsedMultipart {
   fields: Record<string, string>;
   file?: { filename: string; data: Buffer; mimeType: string };
@@ -1626,12 +1639,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const group = await createAccessGroup(engine, requestSourceId(req), name);
         res.json(group);
       } catch (e) {
-        res
-          .status(500)
-          .json({
-            error: "acl_create_failed",
-            message: e instanceof Error ? e.message : "unknown",
-          });
+        res.status(500).json({
+          error: "acl_create_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
       }
     }
   );
@@ -1662,12 +1673,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const members = await listGroupMembers(engine, groupId);
       res.json(members);
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          error: "acl_list_members_failed",
-          message: e instanceof Error ? e.message : "unknown",
-        });
+      res.status(500).json({
+        error: "acl_list_members_failed",
+        message: e instanceof Error ? e.message : "unknown",
+      });
     }
   });
 
@@ -1688,12 +1697,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         await addGroupMember(engine, groupId, userId, requestSourceId(req));
         res.json({ success: true });
       } catch (e) {
-        res
-          .status(500)
-          .json({
-            error: "acl_add_member_failed",
-            message: e instanceof Error ? e.message : "unknown",
-          });
+        res.status(500).json({
+          error: "acl_add_member_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
       }
     }
   );
@@ -1707,12 +1714,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const ok = await removeGroupMember(engine, groupId, userId);
       res.json({ success: ok });
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          error: "acl_remove_member_failed",
-          message: e instanceof Error ? e.message : "unknown",
-        });
+      res.status(500).json({
+        error: "acl_remove_member_failed",
+        message: e instanceof Error ? e.message : "unknown",
+      });
     }
   });
 
@@ -1730,12 +1735,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const permissions = await getPagePermissions(engine, page.id);
       res.json(permissions);
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          error: "acl_get_permissions_failed",
-          message: e instanceof Error ? e.message : "unknown",
-        });
+      res.status(500).json({
+        error: "acl_get_permissions_failed",
+        message: e instanceof Error ? e.message : "unknown",
+      });
     }
   });
 
@@ -1763,12 +1766,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         await setPagePermission(engine, page.id, groupId, permission as "read" | "write");
         res.json({ success: true, page_id: page.id, permission });
       } catch (e) {
-        res
-          .status(500)
-          .json({
-            error: "acl_set_permission_failed",
-            message: e instanceof Error ? e.message : "unknown",
-          });
+        res.status(500).json({
+          error: "acl_set_permission_failed",
+          message: e instanceof Error ? e.message : "unknown",
+        });
       }
     }
   );
@@ -1788,12 +1789,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       const ok = await removePagePermission(engine, page.id, groupId);
       res.json({ success: ok });
     } catch (e) {
-      res
-        .status(500)
-        .json({
-          error: "acl_remove_permission_failed",
-          message: e instanceof Error ? e.message : "unknown",
-        });
+      res.status(500).json({
+        error: "acl_remove_permission_failed",
+        message: e instanceof Error ? e.message : "unknown",
+      });
     }
   });
 
@@ -1917,7 +1916,7 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
 
   app.post(
     "/api/upload",
-    express.raw({ type: () => true, limit: "50mb" }),
+    express.raw({ type: () => true, limit: maxUploadBytes() }),
     async (req: Request, res: Response) => {
       try {
         const contentType = String(req.headers["content-type"] ?? "");

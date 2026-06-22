@@ -28,10 +28,12 @@ function makeFile(content: string, name = "test.pdf", type = "application/pdf"):
 }
 
 function makeBigFile(sizeMB: number, name: string, type: string): File {
-  const size = sizeMB * 1024 * 1024;
-  const ab = new ArrayBuffer(size);
-  const file = new File([ab], name, { type });
-  file.arrayBuffer = vi.fn(async () => ab);
+  // Fake the reported size rather than allocating it — validation rejects on
+  // `file.size` before ever reading the bytes, and allocating ~1 GB in a unit
+  // test would be wasteful/flaky.
+  const file = new File(["x"], name, { type });
+  Object.defineProperty(file, "size", { value: sizeMB * 1024 * 1024 });
+  file.arrayBuffer = vi.fn(async () => new ArrayBuffer(8));
   return file;
 }
 
@@ -70,8 +72,8 @@ describe("scanUpload", () => {
     }
   });
 
-  it("rejects oversized file", async () => {
-    const big = makeBigFile(60, "big.pdf", "application/pdf");
+  it("rejects oversized file (> 1 GB limit)", async () => {
+    const big = makeBigFile(1025, "big.pdf", "application/pdf"); // > 1 GB
     const result = await scanUpload(big);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -80,8 +82,8 @@ describe("scanUpload", () => {
     }
   });
 
-  it("rejects oversized image (25MB image limit)", async () => {
-    const bigImg = makeBigFile(30, "big.png", "image/png");
+  it("rejects oversized image (> 200 MB image limit)", async () => {
+    const bigImg = makeBigFile(250, "big.png", "image/png");
     const result = await scanUpload(bigImg);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -192,7 +194,11 @@ describe("scanUpload", () => {
   });
 
   it("accepts XLSX file (extended allowlist)", async () => {
-    const file = makeFile("xlsx content", "spreadsheet.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    const file = makeFile(
+      "xlsx content",
+      "spreadsheet.xlsx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     const result = await scanUpload(file);
     expect(result.ok).toBe(true);
   });
@@ -217,7 +223,9 @@ describe("scanUpload", () => {
 
 // ── In-memory DuplicateStore for testing ──────────────────────────────
 
-function makeMemoryStore(): DuplicateStore & { _data: Map<string, { slug: string; name: string }> } {
+function makeMemoryStore(): DuplicateStore & {
+  _data: Map<string, { slug: string; name: string }>;
+} {
   const data = new Map<string, { slug: string; name: string }>();
   return {
     _data: data,
@@ -360,7 +368,7 @@ describe("scanUploadWithDuplicateCheck", () => {
 
   it("still rejects oversized files before duplicate check", async () => {
     const store = makeMemoryStore();
-    const big = makeBigFile(60, "huge.pdf", "application/pdf");
+    const big = makeBigFile(1025, "huge.pdf", "application/pdf"); // > 1 GB
     const result = await scanUploadWithDuplicateCheck(big, store);
     expect(result.ok).toBe(false);
     if (!result.ok) {

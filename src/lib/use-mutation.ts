@@ -9,6 +9,9 @@ import {
   removeMutation,
   incrementMutationRetries,
   setOfflineErrorReporter,
+  getPendingFileUploads,
+  removeFileUpload,
+  incrementFileUploadRetries,
 } from "./offline-store";
 
 const MAX_RETRIES = 5;
@@ -37,8 +40,11 @@ export function useMutationQueue() {
   }, []);
 
   const refreshPending = useCallback(async () => {
-    const pending = await getPendingMutations();
-    setState((s) => ({ ...s, pendingCount: pending.length }));
+    const [pending, pendingFiles] = await Promise.all([
+      getPendingMutations(),
+      getPendingFileUploads(),
+    ]);
+    setState((s) => ({ ...s, pendingCount: pending.length + pendingFiles.length }));
   }, []);
 
   const syncPending = useCallback(async () => {
@@ -94,6 +100,30 @@ export function useMutationQueue() {
             err instanceof Error ? err.message : String(err)
           );
           await incrementMutationRetries(mut.id);
+        }
+      }
+      await refreshPending();
+
+      // C2: Sync pending file uploads from IndexedDB
+      const pendingFiles = await getPendingFileUploads();
+      for (const fu of pendingFiles) {
+        const retryCount = fu.retries ?? 0;
+        if (retryCount >= MAX_RETRIES) {
+          console.warn(`[file-upload-sync] dropping ${fu.id} after ${MAX_RETRIES} retries`);
+          await removeFileUpload(fu.id);
+          continue;
+        }
+        try {
+          const file = new File([fu.bytes], fu.fileName, { type: fu.fileType || undefined });
+          await api.upload.file(file, fu.metadata);
+          await removeFileUpload(fu.id);
+        } catch (err) {
+          console.error(
+            "[file-upload-sync] failed for",
+            fu.id,
+            err instanceof Error ? err.message : String(err)
+          );
+          await incrementFileUploadRetries(fu.id);
         }
       }
       await refreshPending();

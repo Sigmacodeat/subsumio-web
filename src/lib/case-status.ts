@@ -25,7 +25,8 @@ export type CaseStatus =
   | "won"
   | "lost"
   | "appealed"
-  | "dormant";
+  | "dormant"
+  | "archived";
 
 export type CasePriority = "low" | "medium" | "high" | "critical";
 
@@ -38,6 +39,7 @@ const TRANSITIONS: Record<CaseStatus, CaseStatus[]> = {
   lost: ["appealed", "dormant"],
   appealed: ["open", "won", "lost", "settled", "dormant"],
   dormant: ["open", "pending"],
+  archived: ["open", "dormant"],
 };
 
 /** Terminal-Zustände (keine aktive Bearbeitung mehr). */
@@ -58,10 +60,7 @@ export function canTransition(from: CaseStatus, to: CaseStatus): boolean {
   return allowed.includes(to);
 }
 
-export function validateTransition(
-  from: CaseStatus,
-  to: CaseStatus,
-): StatusTransitionResult {
+export function validateTransition(from: CaseStatus, to: CaseStatus): StatusTransitionResult {
   if (from === to) {
     return { allowed: true, from, to, reason: "no_change" };
   }
@@ -99,6 +98,7 @@ export const STATUS_LABELS_DE: Record<CaseStatus, string> = {
   lost: "Verloren",
   appealed: "Berufung",
   dormant: "Ruht",
+  archived: "Archiviert",
 };
 
 /** Beschreibung des Übergangs für Audit-Log. */
@@ -117,9 +117,10 @@ export function validatePriority(priority: string): CasePriority | null {
 export function suggestPriority(
   status: CaseStatus,
   hasCriticalDeadline: boolean,
-  daysToNextDeadline: number | null,
+  daysToNextDeadline: number | null
 ): CasePriority {
   if (status === "appealed") return "high";
+  if (status === "archived") return "low";
   if (hasCriticalDeadline) return "critical";
   if (daysToNextDeadline !== null && daysToNextDeadline <= 3) return "high";
   if (daysToNextDeadline !== null && daysToNextDeadline <= 14) return "medium";

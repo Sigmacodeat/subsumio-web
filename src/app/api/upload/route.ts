@@ -5,6 +5,11 @@ import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 
+// Large agency uploads (up to 1 GB) are scanned + proxied synchronously. Give the
+// route generous headroom so the framework doesn't abort a legitimate big upload.
+// Throttled client-side by the staggered upload pool, so few run at once.
+export const maxDuration = 600;
+
 async function validateCaseSlug(
   headers: Record<string, string>,
   caseSlug: string
@@ -159,10 +164,10 @@ export const POST = createHandler(
 );
 
 /**
- * P1.2: After a successful upload, add the document to the case's frontmatter
+ * P1.2/P0-1: After a successful upload, add the document to the case's frontmatter
  * documents array. Fetches the current case page, appends the new document
- * (deduplicated by slug), and PATCHes the case. Best-effort — failures are
- * caught by the caller.
+ * (deduplicated by slug), and PATCHes the case with optimistic locking (If-Match).
+ * Retries up to 3 times on 409 version conflict to handle concurrent uploads.
  */
 async function reconcileCaseDocuments(
   headers: Record<string, string>,
@@ -178,21 +183,39 @@ async function reconcileCaseDocuments(
   }
 ): Promise<void> {
   const encodedSlug = caseSlug.split("/").map(encodeURIComponent).join("/");
-  const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
-  if (!getRes.ok) return;
-  const casePage = (await getRes.json()) as {
-    frontmatter?: Record<string, unknown>;
-  };
-  const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
-  const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
-  if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
-  const updatedDocs = [...existingDocs, docEntry];
-  await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify({
-      frontmatter: { ...fm, documents: updatedDocs },
-      merge: true,
-    }),
-  });
+  const MAX_RETRIES = 3;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const getRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, { headers });
+    if (!getRes.ok) return;
+    const casePage = (await getRes.json()) as {
+      frontmatter?: Record<string, unknown>;
+    };
+    const fm = (casePage.frontmatter ?? {}) as Record<string, unknown>;
+    const currentVersion = (fm.version as number | undefined) ?? 0;
+    const existingDocs = Array.isArray(fm.documents) ? fm.documents : [];
+    if (existingDocs.some((d) => (d as Record<string, unknown>).slug === docEntry.slug)) return;
+    const updatedDocs = [...existingDocs, docEntry];
+
+    const patchRes = await fetch(`${ENGINE_URL}/api/pages/${encodedSlug}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "If-Match": String(currentVersion),
+        ...headers,
+      },
+      body: JSON.stringify({
+        frontmatter: { ...fm, documents: updatedDocs },
+        merge: true,
+      }),
+    });
+
+    if (patchRes.ok) return;
+    if (patchRes.status === 409 && attempt < MAX_RETRIES - 1) {
+      // Version conflict — another writer updated the case. Retry with fresh state.
+      continue;
+    }
+    // Non-retryable error or out of retries — give up (best-effort)
+    return;
+  }
 }

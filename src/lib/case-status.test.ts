@@ -68,6 +68,14 @@ describe("canTransition — allowed transitions", () => {
   test("dormant → pending is allowed", () => {
     expect(canTransition("dormant", "pending")).toBe(true);
   });
+
+  test("archived → open is allowed (restore)", () => {
+    expect(canTransition("archived", "open")).toBe(true);
+  });
+
+  test("archived → dormant is allowed (restore to dormant)", () => {
+    expect(canTransition("archived", "dormant")).toBe(true);
+  });
 });
 
 describe("canTransition — disallowed transitions", () => {
@@ -93,6 +101,14 @@ describe("canTransition — disallowed transitions", () => {
 
   test("open → appealed is NOT allowed (must have won/lost first)", () => {
     expect(canTransition("open", "appealed")).toBe(false);
+  });
+
+  test("archived → pending is NOT allowed (must restore to open first)", () => {
+    expect(canTransition("archived", "pending")).toBe(false);
+  });
+
+  test("archived → won is NOT allowed", () => {
+    expect(canTransition("archived", "won")).toBe(false);
   });
 });
 
@@ -134,6 +150,11 @@ describe("getAllowedTransitions", () => {
   test("dormant allows open and pending", () => {
     const allowed = getAllowedTransitions("dormant");
     expect(allowed).toEqual(["open", "pending"]);
+  });
+
+  test("archived allows open and dormant (restore)", () => {
+    const allowed = getAllowedTransitions("archived");
+    expect(allowed).toEqual(["open", "dormant"]);
   });
 });
 
@@ -198,12 +219,25 @@ describe("TERMINAL_STATUSES & ACTIVE_STATUSES", () => {
 });
 
 describe("STATUS_LABELS_DE", () => {
-  test("all 7 statuses have labels", () => {
-    const statuses: CaseStatus[] = ["open", "pending", "settled", "won", "lost", "appealed", "dormant"];
+  test("all 8 statuses have labels", () => {
+    const statuses: CaseStatus[] = [
+      "open",
+      "pending",
+      "settled",
+      "won",
+      "lost",
+      "appealed",
+      "dormant",
+      "archived",
+    ];
     for (const s of statuses) {
       expect(STATUS_LABELS_DE[s]).toBeTruthy();
       expect(STATUS_LABELS_DE[s].length).toBeGreaterThan(0);
     }
+  });
+
+  test("archived label is 'Archiviert'", () => {
+    expect(STATUS_LABELS_DE["archived"]).toBe("Archiviert");
   });
 });
 
@@ -219,6 +253,13 @@ describe("transitionDescription", () => {
     const desc = transitionDescription("won", "appealed");
     expect(desc).toContain("Gewonnen");
     expect(desc).toContain("Berufung");
+  });
+
+  test("handles archived → open restore", () => {
+    const desc = transitionDescription("archived", "open");
+    expect(desc).toContain("Archiviert");
+    expect(desc).toContain("Offen");
+    expect(desc).toContain("→");
   });
 });
 
@@ -264,5 +305,10 @@ describe("suggestPriority", () => {
 
   test("appealed with critical deadline → still high (not critical)", () => {
     expect(suggestPriority("appealed", true, 1)).toBe("high");
+  });
+
+  test("archived → low regardless of deadlines", () => {
+    expect(suggestPriority("archived", false, null)).toBe("low");
+    expect(suggestPriority("archived", true, 1)).toBe("low");
   });
 });
