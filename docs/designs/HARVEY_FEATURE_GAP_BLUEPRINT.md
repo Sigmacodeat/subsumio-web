@@ -1,4 +1,4 @@
-# Harvey Feature-Gap Blueprint — SigmaBrain Kanzlei OS
+# Harvey Feature-Gap Blueprint — Subsumio Kanzlei OS
 
 ## Harvey's Kern-Features (recherchiert)
 
@@ -13,7 +13,7 @@
 | **Shared Spaces** | Kollaboration zwischen Firmen und Clients | Premium |
 | **Mobile App** | iOS/Android App | Nice-to-have |
 
-## SigmaBrain Status
+## Subsumio Status
 
 | Feature | Status | Gap |
 |---------|--------|-----|

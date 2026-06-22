@@ -1,4 +1,4 @@
-# Sigmabrain Engine — production container.
+# Subsumio Engine — production container.
 #
 # Runs the HTTP API (OAuth 2.1 + web-api) with the minion worker in-process
 # (`serve --http --with-worker`) so dashboard agents actually execute. Bun runs

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Embedding-Provider Setup für SigmaBrain
+ * Embedding-Provider Setup für Subsumio
  *
  * Konfiguriert automatisch den besten verfügbaren Embedding-Provider
  * und generiert Embeddings für alle importierten Daten.
@@ -82,7 +82,7 @@ async function checkOllamaModel(): Promise<boolean> {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  SigmaBrain — Embedding-Provider Setup');
+  console.log('  Subsumio — Embedding-Provider Setup');
   console.log('═══════════════════════════════════════════════════════════');
   console.log('');
 

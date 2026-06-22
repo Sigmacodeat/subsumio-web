@@ -1,4 +1,4 @@
-# SigmaBrain Kanzlei-OS v5 — Enterprise / Großkanzlei (10+ Personen)
+# Subsumio Kanzlei-OS v5 — Enterprise / Großkanzlei (10+ Personen)
 
 ## Warum ist 10+ anders als 5?
 

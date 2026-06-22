@@ -7,7 +7,7 @@
  * Architektur:
  *   - Jedes Legal-Skill hat eine Version, Kategorie, Trigger, Abhängigkeiten
  *   - Skills sind nach Kanzlei-Domänen gruppiert (Litigation, Contract, Tax, Compliance, Insurance, Real Estate, Corporate)
- *   - Jedes Skill mappt zu einem GBrain-Skill-Pfad (server/skills/<name>/SKILL.md)
+ *   - Jedes Skill mappt zu einem Engine-Skill-Pfad (server/skills/<name>/SKILL.md)
  *   - Der Katalog ist die Single-Source-of-Truth für CI-Gate-Validierung
  *   - `check-resolvable` prüft Reachability (alle Skills im RESOLVER.md), MECE (kein Overlap), DRY (keine Cross-Cutting-Rule-Inlining)
  */
@@ -34,7 +34,7 @@ export interface LegalSkillDependency {
 }
 
 export interface LegalSkillEntry {
-  /** Unique skill identifier (matches GBrain skill directory name) */
+  /** Unique skill identifier (matches engine skill directory name) */
   id: string;
   /** Human-readable name */
   name: string;
@@ -44,7 +44,7 @@ export interface LegalSkillEntry {
   category: SkillCategory;
   /** Description */
   description: string;
-  /** Path to SKILL.md in the GBrain skills directory */
+  /** Path to SKILL.md in the engine skills directory */
   skill_path: string;
   /** Trigger phrases that route to this skill */
   triggers: string[];

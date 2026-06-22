@@ -11,7 +11,7 @@ info:
 servers:
   - url: http://localhost:3001
     description: Local development
-  - url: https://api.sigmabrain.com
+  - url: https://api.subsum.io
     description: Production
 
 security:
@@ -276,7 +276,7 @@ components:
     ApiKeyAuth:
       type: apiKey
       in: header
-      name: x-sigmabrain-api-key
+      name: x-subsumio-api-key
     BearerAuth:
       type: http
       scheme: bearer

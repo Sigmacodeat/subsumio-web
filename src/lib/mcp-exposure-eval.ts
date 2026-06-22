@@ -3,7 +3,7 @@
  * =======================================
  * Bewertet die MCP-Exposure des Legal-Brains mit `remote=true` Trust-Boundary.
  *
- * Der GBrain MCP-Server (server/src/mcp/server.ts) setzt `remote=true` für
+ * Der Subsumio Engine MCP-Server (server/src/mcp/server.ts) setzt `remote=true` für
  * alle stdio/HTTP MCP-Caller (untrusted). Dies aktiviert:
  *   - Dateisystem-Confinement für file_upload
  *   - takesHoldersAllowList-Filter für takes_list/takes_search/query
@@ -26,7 +26,7 @@ export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type ExposureStatus = "safe" | "safe_with_filters" | "unsafe" | "not_exposed";
 
 export interface McpOperationRisk {
-  /** Operation name (matches GBrain operations.ts) */
+  /** Operation name (matches engine operations.ts) */
   op_name: string;
   /** Human-readable description */
   description: string;

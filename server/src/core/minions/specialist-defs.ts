@@ -1,5 +1,5 @@
 /**
- * Specialist Subagent Definitions — SigmaBrain Legal Layer (Phase 1)
+ * Specialist Subagent Definitions — Subsumio Legal Layer (Phase 1)
  *
  * Embedded definitions for the hierarchical-agent architecture.
  * Each entry maps a stable name → { systemPrompt, allowedTools }.

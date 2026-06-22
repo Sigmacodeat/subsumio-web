@@ -436,7 +436,7 @@ function buildAgentRunMarkdown(opts: AgentRunMarkdownOpts): string {
   }
 
   lines.push('---');
-  lines.push(`*Generiert von SigmaBrain Supervisor am ${new Date().toLocaleString('de-DE')}*`);
+  lines.push(`*Generiert von Subsumio Supervisor am ${new Date().toLocaleString('de-DE')}*`);
 
   return lines.join('\n');
 }

@@ -1,4 +1,4 @@
-# SigmaBrain Kanzlei-OS v3 — Tagesgeschäft Komplett
+# Subsumio Kanzlei-OS v3 — Tagesgeschäft Komplett
 
 ## Ziel
 Die letzten 4 Lücken für vollumfängliches Kanzlei-Tagesgeschäft schließen.

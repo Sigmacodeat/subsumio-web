@@ -1,4 +1,4 @@
-# Datenbefüllungs-Blueprint — SigmaBrain Legal Knowledge Graph
+# Datenbefüllungs-Blueprint — Subsumio Legal Knowledge Graph
 
 ## Ziel
 

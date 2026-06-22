@@ -1,10 +1,10 @@
 # Legal-RAG Eval (v0.43)
 
-Benchmark für Legal-RAG-Qualität in SigmaBrain.
+Benchmark für Legal-RAG-Qualität in Subsumio.
 
 ## Was das beweist
 
-Dieser Eval misst, wie gut SigmaBrain's Brain (Knowledge Graph + Hybrid RAG + Agent Workspace) **legal-spezifische Fragen** beantwortet:
+Dieser Eval misst, wie gut Subsumio's Brain (Knowledge Graph + Hybrid RAG + Agent Workspace) **legal-spezifische Fragen** beantwortet:
 
 | Dimension | Was gemessen wird |
 |---|---|

@@ -189,7 +189,7 @@ async function main() {
   );
 
   console.log("═══════════════════════════════════════════════════════════");
-  console.log("  SigmaBrain — Gesetze-Import (pro § / per-paragraph)");
+  console.log("  Subsumio — Gesetze-Import (pro § / per-paragraph)");
   console.log("═══════════════════════════════════════════════════════════");
   console.log(
     `Mode: ${DRY ? "DRY-RUN (kein DB-Write)" : NO_EMBED ? "import, no-embed" : "import + embed"}`

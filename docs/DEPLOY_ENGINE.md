@@ -1,4 +1,4 @@
-# Deploying the Sigmabrain Engine (go-live runbook)
+# Deploying the Subsumio Engine (go-live runbook)
 
 The Next.js frontend is already on Vercel. This is the **only remaining piece**
 to make the dashboard (search, Q&A, login persistence, billing) actually work:
@@ -14,13 +14,13 @@ entrypoint, Railway/Fly config. You provide the accounts + secrets.
 
 ```
 Browser ──► Vercel (Next.js)  ──server-to-server──►  Engine (this container)
-                │  x-sigmabrain-source: <brainId>          │
+                │  x-subsumio-source: <brainId>          │
                 │  Authorization: Bearer GBRAIN_WEB_API_KEY │
-                └─ env: SIGMABRAIN_API_URL, SIGMABRAIN_WEB_API_KEY
+                └─ env: SUBSUMIO_API_URL, SUBSUMIO_WEB_API_KEY
                                                             └─ Postgres+pgvector (or PGLite volume)
 ```
 
-The shared secret (`GBRAIN_WEB_API_KEY` on the engine == `SIGMABRAIN_WEB_API_KEY`
+The shared secret (`GBRAIN_WEB_API_KEY` on the engine == `SUBSUMIO_WEB_API_KEY`
 on Vercel) is what authorizes the frontend. `GBRAIN_REQUIRE_TENANT=true` makes
 every request prove its tenant — mandatory for the hosted SaaS.
 
@@ -39,13 +39,13 @@ every request prove its tenant — mandatory for the hosted SaaS.
    GBRAIN_WEB_API_KEY=<openssl rand -hex 32>
    GBRAIN_REQUIRE_TENANT=true
    GBRAIN_HTTP_TRUST_PROXY=true
-   GBRAIN_HTTP_CORS_ORIGIN=https://sigmabrain.vercel.app
+   GBRAIN_HTTP_CORS_ORIGIN=https://subsumio.vercel.app
    OPENAI_API_KEY=<your key>          # or VOYAGE_API_KEY
    ```
    (`PORT` and `DATABASE_URL` are injected by Railway — don't set them.)
 4. Deploy. Railway builds the Dockerfile, runs migrations via the entrypoint,
    and health-checks `/health`. Copy the public URL, e.g.
-   `https://sigmabrain-engine-production.up.railway.app`.
+   `https://subsumio-engine-production.up.railway.app`.
 
 ## Option B — Fly.io
 
@@ -80,28 +80,28 @@ SSH_KEY=<your hcloud ssh key name> bash provision.sh   # creates firewall + serv
 
 ```bash
 cd server
-docker build -t sigmabrain-engine .
-docker run -d --name sigmabrain-engine -p 3131:3131 \
-  -v sigmabrain_data:/data \
+docker build -t subsumio-engine .
+docker run -d --name subsumio-engine -p 3131:3131 \
+  -v subsumio_data:/data \
   -e GBRAIN_WEB_API_KEY=$(openssl rand -hex 32) \
   -e GBRAIN_REQUIRE_TENANT=true \
   -e OPENAI_API_KEY=<your key> \
   -e DATABASE_URL=<postgres url>   `# omit for embedded PGLite on the volume` \
-  sigmabrain-engine
+  subsumio-engine
 ```
 
 ---
 
 ## Wire the frontend (Vercel)
 
-Project **sigmabrain** → Settings → Environment Variables → **Production**:
+Project **subsumio** → Settings → Environment Variables → **Production**:
 
 | Variable                       | Value                                                                           |
 | ------------------------------ | ------------------------------------------------------------------------------- |
-| `SIGMABRAIN_API_URL`           | the engine URL from above                                                       |
-| `SIGMABRAIN_WEB_API_KEY`       | the **same** value as the engine's `GBRAIN_WEB_API_KEY`                         |
-| `SIGMABRAIN_AUTH_DATABASE_URL` | a Postgres URL for the user/org store (Neon/Supabase; can be the same Postgres) |
-| `NEXT_PUBLIC_APP_URL`          | `https://sigmabrain.vercel.app` (or your domain)                                |
+| `SUBSUMIO_API_URL`           | the engine URL from above                                                       |
+| `SUBSUMIO_WEB_API_KEY`       | the **same** value as the engine's `GBRAIN_WEB_API_KEY`                         |
+| `SUBSUMIO_AUTH_DATABASE_URL` | a Postgres URL for the user/org store (Neon/Supabase; can be the same Postgres) |
+| `NEXT_PUBLIC_APP_URL`          | `https://subsumio.vercel.app` (or your domain)                                |
 | `CRON_SECRET`                  | `openssl rand -hex 32` (for the Vercel crons in `vercel.json`)                  |
 
 Then **redeploy** (push to `main` or Vercel → Redeploy). `AUTH_SECRET` is
@@ -174,11 +174,11 @@ PDFs **with** a text layer, DOCX, EML, XLSX extract with no system deps. **Scann
 curl -s https://<engine-url>/health        # → ok
 
 # 2. Frontend reaches the engine (after the Vercel redeploy)
-#    Sign up at https://sigmabrain.vercel.app/signup, then in the dashboard:
+#    Sign up at https://subsumio.vercel.app/signup, then in the dashboard:
 #    /dashboard/upload a file → /dashboard/query a question → expect a cited answer.
 ```
 
-First admin: the first signup becomes admin (see SIGMABRAIN_STATUS.md). For an
+First admin: the first signup becomes admin (see AUDIT.md). For an
 engine-side admin token use `GBRAIN_ADMIN_BOOTSTRAP_TOKEN`.
 
 ---
@@ -199,7 +199,7 @@ DATABASE_URL=<engine postgres url> bun run server/scripts/auto-embed-pending.ts
 
 ## Still owner-only (accounts, not code)
 
-- Domain (sigmabrain.com/.de/.ai) + email; add the domain in Vercel.
+- Domain (subsumio.com/.de/.ai) + email; add the domain in Vercel.
 - Stripe (products/prices + `STRIPE_*` keys + webhook → `/api/stripe/webhook`).
 - Resend (`RESEND_API_KEY` + verified `MAIL_FROM` domain) for digests/invites.
 - Upstash Redis (`UPSTASH_REDIS_REST_*`) for distributed rate limiting.

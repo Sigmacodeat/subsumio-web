@@ -6,28 +6,28 @@ files = [
     'insurance.ts', 'realestate.ts', 'recruiting.ts', 'vc.ts'
 ]
 
-base = '/Users/msc/Sigmabrain/src/content/'
+base = '/Users/msc/subsumio-web/src/content/'
 
 # Unique metaDesc endings per file (EN)
 meta_desc_en = {
-    'taxumio.ts': 'Deadlines with email digest, client Q&A from your own files, GoBD-stamped invoicing, DATEV export and a Verfahrensdokumentation generator — Taxumio is Sigmabrain tuned for tax advisors and accountants.',
-    'compliance.ts': 'Regulatory obligations with deadline digest, policy Q&A from your own controls, AML/KYC screening, EU AI Act inventory and an exportable audit trail — Compliumio is Sigmabrain tuned for compliance & GRC teams.',
-    'consulting.ts': 'Pitch history, project learnings and client context in one brain that answers \'have we done this before?\' New hires productive in days. Consultumio is Sigmabrain for consultancies and agencies.',
-    'insurance.ts': 'Policy details, claims history, coverage context and renewal prep — one brain that answers "what is this client actually covered for, and what\'s open?" Versumio is Sigmabrain tuned for insurance brokers & agencies. Self-hosted or EU cloud.',
-    'realestate.ts': 'Leases, tenant history, obligations, renewal and notice dates, transactions — one brain that answers "what does this lease say, and what\'s due?" Immumio is Sigmabrain tuned for property managers and real-estate firms.',
-    'recruiting.ts': 'Candidates, who-knows-whom, every interaction in one brain that answers \'who fits this role?\' and keeps the knowledge when a consultant leaves. Talentumio is Sigmabrain for executive search & recruiting.',
-    'vc.ts': 'Founder calls, deal memos, LP updates and intros — one brain that answers \'what\'s open with this founder?\' and \'who invested in X?\' before you walk in. Investumio is Sigmabrain for VC, PE and angels.',
+    'taxumio.ts': 'Deadlines with email digest, client Q&A from your own files, GoBD-stamped invoicing, DATEV export and a Verfahrensdokumentation generator — Taxumio is Subsumio tuned for tax advisors and accountants.',
+    'compliance.ts': 'Regulatory obligations with deadline digest, policy Q&A from your own controls, AML/KYC screening, EU AI Act inventory and an exportable audit trail — Compliumio is Subsumio tuned for compliance & GRC teams.',
+    'consulting.ts': 'Pitch history, project learnings and client context in one brain that answers \'have we done this before?\' New hires productive in days. Consultumio is Subsumio for consultancies and agencies.',
+    'insurance.ts': 'Policy details, claims history, coverage context and renewal prep — one brain that answers "what is this client actually covered for, and what\'s open?" Versumio is Subsumio tuned for insurance brokers & agencies. Self-hosted or EU cloud.',
+    'realestate.ts': 'Leases, tenant history, obligations, renewal and notice dates, transactions — one brain that answers "what does this lease say, and what\'s due?" Immumio is Subsumio tuned for property managers and real-estate firms.',
+    'recruiting.ts': 'Candidates, who-knows-whom, every interaction in one brain that answers \'who fits this role?\' and keeps the knowledge when a consultant leaves. Talentumio is Subsumio for executive search & recruiting.',
+    'vc.ts': 'Founder calls, deal memos, LP updates and intros — one brain that answers \'what\'s open with this founder?\' and \'who invested in X?\' before you walk in. Investumio is Subsumio for VC, PE and angels.',
 }
 
 # Unique metaDesc endings per file (DE)
 meta_desc_de = {
-    'taxumio.ts': 'Fristen mit E-Mail-Digest, Mandanten-Q&A aus den eigenen Akten, GoBD-gestempelte Rechnungen, DATEV-Export und ein Verfahrensdoku-Generator — Taxumio ist Sigmabrain für Steuerkanzleien.',
-    'compliance.ts': 'Regulatorische Pflichten mit Fristen-Digest, Richtlinien-Q&A aus eigenen Kontrollen, AML/KYC-Screening, EU AI Act Inventar und ein exportierbarer Audit-Trail — Compliumio ist Sigmabrain für Compliance & GRC Teams.',
-    'consulting.ts': 'Pitch-Historie, Projekterfahrungen und Mandantenkontext in einem Gehirn, das antwortet "haben wir das schon mal gemacht?" Neue Mitarbeitende produktiv in Tagen. Consultumio ist Sigmabrain für Beratung & Agenturen.',
-    'insurance.ts': 'Polizendetails, Schadenshistorie, Deckungskontext und Erneuerungsvorbereitung — ein Gehirn, das antwortet "was ist dieser Kunde wirklich abgedeckt, und was ist offen?" Versumio ist Sigmabrain für Versicherungsmakler & Agenturen.',
-    'realestate.ts': 'Mietverträge, Mieterhistorie, Pflichten, Erneuerungs- und Kündigungsfristen, Transaktionen — ein Gehirn, das antwortet "was steht im Vertrag, und was fällig?" Immumio ist Sigmabrain für Hausverwaltung & Immobilien.',
-    'recruiting.ts': 'Kandidaten, Wer-kennt-wen, jede Interaktion in einem Gehirn, das antwortet "wer passt auf diese Rolle?" und behält das Wissen, wenn ein Berater geht. Talentumio ist Sigmabrain für Executive Search & Recruiting.',
-    'vc.ts': 'Founder-Calls, Deal-Memos, LP-Updates und Intros — ein Gehirn, das antwortet "was ist offen bei diesem Founder?" und "wer hat in X investiert?" bevor du reingeht. Investumio ist Sigmabrain für VC, PE und Angels.',
+    'taxumio.ts': 'Fristen mit E-Mail-Digest, Mandanten-Q&A aus den eigenen Akten, GoBD-gestempelte Rechnungen, DATEV-Export und ein Verfahrensdoku-Generator — Taxumio ist Subsumio für Steuerkanzleien.',
+    'compliance.ts': 'Regulatorische Pflichten mit Fristen-Digest, Richtlinien-Q&A aus eigenen Kontrollen, AML/KYC-Screening, EU AI Act Inventar und ein exportierbarer Audit-Trail — Compliumio ist Subsumio für Compliance & GRC Teams.',
+    'consulting.ts': 'Pitch-Historie, Projekterfahrungen und Mandantenkontext in einem Gehirn, das antwortet "haben wir das schon mal gemacht?" Neue Mitarbeitende produktiv in Tagen. Consultumio ist Subsumio für Beratung & Agenturen.',
+    'insurance.ts': 'Polizendetails, Schadenshistorie, Deckungskontext und Erneuerungsvorbereitung — ein Gehirn, das antwortet "was ist dieser Kunde wirklich abgedeckt, und was ist offen?" Versumio ist Subsumio für Versicherungsmakler & Agenturen.',
+    'realestate.ts': 'Mietverträge, Mieterhistorie, Pflichten, Erneuerungs- und Kündigungsfristen, Transaktionen — ein Gehirn, das antwortet "was steht im Vertrag, und was fällig?" Immumio ist Subsumio für Hausverwaltung & Immobilien.',
+    'recruiting.ts': 'Kandidaten, Wer-kennt-wen, jede Interaktion in einem Gehirn, das antwortet "wer passt auf diese Rolle?" und behält das Wissen, wenn ein Berater geht. Talentumio ist Subsumio für Executive Search & Recruiting.',
+    'vc.ts': 'Founder-Calls, Deal-Memos, LP-Updates und Intros — ein Gehirn, das antwortet "was ist offen bei diesem Founder?" und "wer hat in X investiert?" bevor du reingeht. Investumio ist Subsumio für VC, PE und Angels.',
 }
 
 # Unique EN badges
@@ -63,7 +63,7 @@ for fname in files:
         'insurance': 'Versumio', 'realestate': 'Immumio', 'recruiting': 'Talentumio', 'vc': 'Investumio'
     }[brand]
     
-    # Replace EN metaDesc: find the pattern and replace everything after the brand name + "Sigmabrain tuned for..."
+    # Replace EN metaDesc: find the pattern and replace everything after the brand name + "Subsumio tuned for..."
     # The pattern is: metaDesc:\n      "... Confidentiality-first.",
     # We need to find the exact metaDesc line and replace it
     
@@ -89,7 +89,7 @@ for fname in files:
     content = content.replace(', Verschwiegenheit zuerst.', '.')
     
     # Fix badges: replace both EN and DE occurrences
-    old_badge = f'{brand_cap} — powered by Sigmabrain'
+    old_badge = f'{brand_cap} — powered by Subsumio'
     content = content.replace(f'badge: "{old_badge}"', f'badge: "{badges_en[fname]}"', 1)
     
     # Second occurrence (DE section)

@@ -1,7 +1,7 @@
-# SigmaBrain Kanzlei-OS v4 — Tagesgeschäft Komplett
+# Subsumio Kanzlei-OS v4 — Tagesgeschäft Komplett
 
 ## Ziel
-Die letzten 5 kritischen Lücken schließen, damit SigmaBrain für jede Kanzlei (Solo bis 5 Personen) das komplette Tagesgeschäft abdeckt.
+Die letzten 5 kritischen Lücken schließen, damit Subsumio für jede Kanzlei (Solo bis 5 Personen) das komplette Tagesgeschäft abdeckt.
 
 ---
 

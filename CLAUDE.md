@@ -1,18 +1,24 @@
 # CLAUDE.md
 
-GBrain is a personal knowledge brain and GStack mod for agent platforms. Pluggable
-engines: PGLite (embedded Postgres via WASM, zero-config default) or Postgres + pgvector
-+ hybrid search in a managed Supabase instance. `gbrain init` defaults to PGLite;
-suggests Supabase for 1000+ files. GStack teaches agents how to code. GBrain teaches
-agents everything else: brain ops, signal detection, content ingestion, enrichment,
-cron scheduling, reports, identity, and access control.
+**Subsumio** is the legal AI brain for law firms (DACH-first): a knowledge-graph-powered
+legal intelligence platform that turns a firm's documents, cases, deadlines, and
+communications into a queryable brain — synthesized answers with citations,
+deadline-aware retrieval, conflict checks, and contradiction detection. The product is a
+Next.js web app (`src/`) on top of the **Subsumio Engine** (`server/`), a fork of the
+open-source gbrain memory engine (`github:garrytan/gbrain`).
+
+> **Naming:** "Subsumio" is the product. The engine retains its upstream functional
+> identifiers — the `gbrain` CLI, `GBRAIN_*` env vars, and `.gbrain-*` dotfiles are
+> real, load-bearing names; do NOT rename them. Where this doc says "gbrain" it means
+> the engine layer, which Subsumio is built on. Pluggable engines: PGLite (embedded
+> Postgres via WASM, zero-config default) or Postgres + pgvector + hybrid search.
 
 ## North Star
 
-gbrain aims to be the **next Postgres for memory**: the most well-tested, widest-coverage,
-best-for-the-most-at-the-least retrieval + agent memory system for company brains and
-personal AI, built to serve a billion people. Every feature and every eval is judged
-against this bar. "gbrain is best" is a WHOLE-SYSTEM claim — proven across the full
+The Subsumio Engine aims to be the **next Postgres for memory**: the most well-tested,
+widest-coverage, best-for-the-most-at-the-least retrieval + agent memory system —
+specialized into the legal vertical for DACH law firms. Every feature and every eval is
+judged against this bar. "best" is a WHOLE-SYSTEM claim — proven across the full
 BrainBench suite (retrieval, longmemeval, calibration, …) — not by any single feature.
 When scoping an eval, prove the FEATURE delivers value to gbrain users; do not waste it
 proving that gbrain's particular algorithm beats some other algorithm (a research

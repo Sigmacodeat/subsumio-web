@@ -14,7 +14,7 @@
  *    non-matching prefix denies, a matching prefix passes.
  *
  * The web-api HTTP-layer fail-closed-on-invalid-token behavior (a presented
- * but unverifiable x-sigmabrain-identity-token must 403, not silently fall
+ * but unverifiable x-subsumio-identity-token must 403, not silently fall
  * back to "all") lives in identity-token.test.ts (signature/expiry) — this
  * file covers the operations.ts contract layer that consumes the verified
  * scope, independent of how it got there.

@@ -1,4 +1,4 @@
-# Anwalts-Alltag Use-Case Analyse — SigmaBrain Abdeckung
+# Anwalts-Alltag Use-Case Analyse — Subsumio Abdeckung
 
 ## Analyse-Methode
 10 typische Anwalts-Workflows nach ARAG / BRAK Studie. Jeder Workflow in Phasen zerlegt, Abdeckung geprüft.
@@ -7,7 +7,7 @@
 
 ## 1. Mandantenannahme (Client Intake)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 1.1 Erstkontakt | Anruf/E-Mail → Kontakt anlegen | ✅ `dashboard/contacts` — Rolle (client/opponent/court) |
 | 1.2 Konfliktprüfung | Gleicher Gegner? Gleiche Materie? | ✅ `dashboard/kollisionspruefung` — Proxy + Brain-Suche |
@@ -20,7 +20,7 @@
 
 ## 2. Aktenführung (Case Management)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 2.1 Akte anlegen | Titel, AZ, Mandant, Gegner, Gericht | ✅ `dashboard/cases` — Stammdaten mit Kontakt-Verknüpfung |
 | 2.2 Fristen setzen | Klageerwiderung, Berufung, etc. | ✅ `dashboard/deadlines` — 10 Templates + Kalenderfristen |
@@ -36,7 +36,7 @@
 
 ## 3. Schriftsatz-Erstellung (Document Drafting)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 3.1 Template wählen | Klage, Antrag, Berufung, etc. | ✅ `dashboard/drafting` — 13 Templates |
 | 3.2 Daten eingeben | Mandant, Gegner, Streitwert, Tatsachen | ✅ Formular mit Akten-Verknüpfung |
@@ -52,7 +52,7 @@
 
 ## 4. Recherche & Analyse (Legal Research)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 4.1 Rechtsprechung suchen | OGH, BGH, EuGH Urteile | ✅ `dashboard/rechtsprechung` — AT (RIS-OGD) + DE (openlegaldata) + Brain + AI |
 | 4.2 Normen prüfen | Gesetzestexte, Kommentare | ✅ `dashboard/norms` — Normen-Datenbank |
@@ -65,7 +65,7 @@
 
 ## 5. Rechnungsstellung & Abrechnung (Billing)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 5.1 Rechnung aus Zeiten | Offene Zeiten → Rechnung | ✅ `dashboard/invoicing` — Auto-Generierung aus Akte |
 | 5.2 Auslagen hinzufügen | Gerichtskosten, Porto, etc. | ✅ `dashboard/invoicing` — Expenses in Rechnung |
@@ -81,7 +81,7 @@
 
 ## 6. Kommunikation & Integration
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 6.1 beA | Elektronischer Rechtsverkehr (DE) | ✅ `dashboard/bea` — Entwurf + Import-Status |
 | 6.2 E-Mail-Import | Mandanten-E-Mail → Akte | ✅ `dashboard/email-import` — .eml Drag & Drop + Parser + Akten-Zuordnung |
@@ -94,7 +94,7 @@
 
 ## 7. Offline-Arbeit (Unterwegs)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 7.1 Offline lesen | Akten, Fristen, Kontakte ansehen | ✅ `lib/offline-store.ts` — IndexedDB Cache |
 | 7.2 Offline schreiben | Zeit erfassen, Akte bearbeiten | ✅ `cases/[slug]` nutzt `isOnline()` + `enqueueMutation()` |
@@ -106,7 +106,7 @@
 
 ## 8. Compliance & Datenschutz
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 8.1 DSGVO-Checkliste | Compliance-Prüfung | ✅ `dashboard/compliance` — DSGVO (10 Checks) |
 | 8.2 GwG-Checkliste | Geldwäscheprävention | ✅ `dashboard/compliance` — GwG (6 Checks) |
@@ -120,7 +120,7 @@
 
 ## 9. Team-Zusammenarbeit
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 9.1 Team-Verwaltung | Kollegen einladen, Rollen vergeben | ✅ `dashboard/team` — Rollen (admin/lawyer/assistant) |
 | 9.2 Real-time Updates | Live-Sync bei Aktenänderungen | ✅ `lib/realtime.ts` — WebSocket + Event-Bus |
@@ -132,7 +132,7 @@
 
 ## 10. Kanzlei-Management (Admin)
 
-| Phase | Was passiert | SigmaBrain Abdeckung |
+| Phase | Was passiert | Subsumio Abdeckung |
 |-------|-------------|---------------------|
 | 10.1 Kanzlei-Einstellungen | Name, Adresse, USt-ID, Bank | ✅ `lib/kanzlei-settings.ts` — Settings-Store |
 | 10.2 Nutzerverwaltung | Einladen, Deaktivieren | ✅ `dashboard/team` + Admin-Panel |

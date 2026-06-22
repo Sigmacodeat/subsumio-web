@@ -8,14 +8,14 @@ author: Cascade (Principal Engineer)
 
 ## 1. Ziel des Systems (aus User-Sicht)
 
-SigmaWorkspace ist der Cloud-Ausführungslayer für Sigmabrain-Agenten. Er ermöglicht Nutzern:
+SigmaWorkspace ist der Cloud-Ausführungslayer für Subsumio-Agenten. Er ermöglicht Nutzern:
 
 - **Agenten in der Cloud zu starten**, die auch bei geschlossenem Laptop oder ausgeschaltetem Smartphone weiterarbeiten.
 - **Von überall** (Desktop, Smartphone, Tablet) auf laufende Agenten zuzugreifen, sie zu steuern, zu pausieren oder zu stoppen.
 - **Komplexe, langlaufende Aufgaben** (Recherche, Analyse, Code-Refactoring, Brain-Enrichment) an Agenten zu delegieren, ohne an ein Gerät gebunden zu sein.
 - **Workspace-Isolation** pro Nutzer/Team mit voller Credential- und Infrastruktur-Kontrolle (kundenkontrolliertes Modell, Ona-Parität).
 
-**Vision:** Sigmabrain wird nicht nur zum "Gedächtnis", sondern zur **vollständigen Agent-Infrastruktur** — Memory + Execution + Orchestration in einer Hand.
+**Vision:** Subsumio wird nicht nur zum "Gedächtnis", sondern zur **vollständigen Agent-Infrastruktur** — Memory + Execution + Orchestration in einer Hand.
 
 ---
 
@@ -215,7 +215,7 @@ CREATE TABLE agent_templates (
 
 ### 5.2 Warum kein GBrain-eigener LLM-Loop?
 
-> *"GBrain is orchestration, not execution."* — `@/Users/msc/Sigmabrain/server/docs/designs/MINIONS_AGENT_ORCHESTRATION.md:301`
+> *"GBrain is orchestration, not execution."* — `@/Users/msc/Subsumio/server/docs/designs/MINIONS_AGENT_ORCHESTRATION.md:301`
 
 Wir bleiben diesem Prinzip treu:
 - **GBrain-Repo**: Queue, State, Inbox, Token-Tracking, Transcripts, Dashboard-UI

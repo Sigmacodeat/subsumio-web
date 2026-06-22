@@ -8,7 +8,7 @@
  * Prerequisites:
  *   1. Run split-statutes.ts first to populate law-corpus-split/
  *   2. Engine must be running: gbrain serve --http --port 3001
- *   3. SIGMABRAIN_WEB_API_KEY or --key must be set
+ *   3. SUBSUMIO_WEB_API_KEY or --key must be set
  *
  * Usage on engine host (e.g. Hetzner prod):
  *   bun server/scripts/import-statutes.ts \
@@ -25,13 +25,15 @@ import { readFileSync, readdirSync } from "node:fs";
 
 const ENGINE =
   getArg("--engine") ??
-  process.env.SIGMABRAIN_API_URL ??
+  process.env.SUBSUMIO_API_URL ??
+  process.env.SIGMABRAIN_API_URL ?? // legacy fallback
   process.env.GBRAIN_API_URL ??
   "http://localhost:3001";
 
 const API_KEY =
   getArg("--key") ??
-  process.env.SIGMABRAIN_WEB_API_KEY ??
+  process.env.SUBSUMIO_WEB_API_KEY ??
+  process.env.SIGMABRAIN_WEB_API_KEY ?? // legacy fallback
   process.env.GBRAIN_WEB_API_KEY ??
   "";
 
@@ -123,8 +125,8 @@ async function importPage(filePath: string): Promise<ImportResult> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (API_KEY) headers["x-sigmabrain-api-key"] = API_KEY;
-  if (BRAIN) headers["x-sigmabrain-source"] = BRAIN;
+  if (API_KEY) headers["x-subsumio-api-key"] = API_KEY;
+  if (BRAIN) headers["x-subsumio-source"] = BRAIN;
 
   const payload = {
     slug,
@@ -178,8 +180,8 @@ async function ensureSource(sourceId: string): Promise<void> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (API_KEY) headers["x-sigmabrain-api-key"] = API_KEY;
-  if (BRAIN) headers["x-sigmabrain-source"] = BRAIN;
+  if (API_KEY) headers["x-subsumio-api-key"] = API_KEY;
+  if (BRAIN) headers["x-subsumio-source"] = BRAIN;
 
   try {
     const res = await fetch(`${ENGINE}/api/sources`, {
@@ -220,7 +222,7 @@ async function runWithConcurrency<T>(
 
 async function main() {
   if (!API_KEY && !DRY_RUN) {
-    console.error("ERROR: No API key. Set SIGMABRAIN_WEB_API_KEY or pass --key KEY");
+    console.error("ERROR: No API key. Set SUBSUMIO_WEB_API_KEY or pass --key KEY");
     console.error("       Or run with --dry-run to validate files without importing.");
     process.exit(1);
   }

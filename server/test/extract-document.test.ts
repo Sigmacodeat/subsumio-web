@@ -135,10 +135,10 @@ describe('isDocumentFilePath', () => {
 describe('extractDocumentText', () => {
   test('pdf: extracts text layer and page count', async () => {
     const out = await extractDocumentText(
-      pdfFixture('Hello Sigmabrain document extraction works flawlessly end to end'),
+      pdfFixture('Hello Subsumio document extraction works flawlessly end to end'),
       '.pdf',
     );
-    expect(out.text).toContain('Hello Sigmabrain');
+    expect(out.text).toContain('Hello Subsumio');
     expect(out.frontmatter.source_format).toBe('pdf');
     expect(out.frontmatter.pages).toBe(1);
     expect(out.warnings).toHaveLength(0);

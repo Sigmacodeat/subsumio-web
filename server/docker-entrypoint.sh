@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sigmabrain Engine container entrypoint.
+# Subsumio Engine container entrypoint.
 #
 #   1. Pick the storage engine:
 #        - DATABASE_URL set  → Postgres + pgvector (recommended for multi-tenant SaaS)

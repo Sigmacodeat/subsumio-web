@@ -8,7 +8,7 @@ const TEST_USER = {
 
 function getTestEmail() {
   testCounter++;
-  return `e2e-${Date.now()}-${testCounter}@sigmabrain.local`;
+  return `e2e-${Date.now()}-${testCounter}@subsumio.local`;
 }
 
 async function signUpViaApi(page: import("@playwright/test").Page, email: string) {

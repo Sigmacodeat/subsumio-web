@@ -890,7 +890,13 @@ export const api = {
               reject(new Error("Invalid JSON response from server"));
             }
           } else {
-            reject(new Error(xhr.statusText || `HTTP ${xhr.status}`));
+            // Try to parse a meaningful error message from the JSON response body
+            try {
+              const errBody = JSON.parse(xhr.responseText);
+              reject(new Error(errBody.message || errBody.error || `HTTP ${xhr.status}`));
+            } catch {
+              reject(new Error(xhr.statusText || `HTTP ${xhr.status}`));
+            }
           }
         };
 

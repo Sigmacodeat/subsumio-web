@@ -405,7 +405,6 @@ function mapPage(page: Record<string, unknown>, tags: string[] = []) {
  * server-to-server, never from the browser. The engine still accepts the
  * legacy `x-sigmabrain-source` header for backward compatibility. Every
  * operation context and every raw query in this module scopes to the
- * operation context and every raw query in this module scopes to the
  * resolved source; unknown/invalid headers fall back to 'default'
  * (single-tenant/self-hosted behavior unchanged).
  */

@@ -4,10 +4,13 @@ import { createHandler, apiError, recordQuota } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extraction-status";
 import { brainDuplicateStore } from "@/lib/duplicate-store";
+import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 
 // Large agency uploads (up to 1 GB) are scanned + proxied synchronously. Give the
 // route generous headroom so the framework doesn't abort a legitimate big upload.
 // Throttled client-side by the staggered upload pool, so few run at once.
+// The bodySizeLimit in next.config.ts (experimental.serverActions.bodySizeLimit)
+// must be >= this value, otherwise Next.js returns 413 before the handler runs.
 export const maxDuration = 600;
 
 function encodeSlug(slug: string): string {
@@ -40,8 +43,29 @@ export const POST = createHandler(
     }),
   },
   async (ctx, _body, _query, req) => {
+    // Pre-check Content-Length against our limit so we return a meaningful
+    // error instead of letting the framework silently abort with a bare 413.
+    const contentLength = parseInt(req.headers.get("content-length") ?? "0", 10);
+    if (contentLength > MAX_FILE_SIZE) {
+      return apiError(
+        "file_too_large",
+        `Datei überschreitet das Limit von ${Math.round(MAX_FILE_SIZE / 1024 / 1024 / 1024)} GB.`,
+        413
+      );
+    }
+
+    let formData: FormData;
     try {
-      const formData = await req.formData();
+      formData = await req.formData();
+    } catch (parseErr) {
+      console.error("[upload] formData parse failed:", parseErr instanceof Error ? parseErr.message : String(parseErr));
+      return apiError(
+        "body_parse_failed",
+        "Die Datei konnte nicht verarbeitet werden. Möglicherweise ist sie zu groß oder beschädigt.",
+        413
+      );
+    }
+    try {
       const file = formData.get("file");
       const caseSlugRaw = formData.get("case_slug");
       const caseSlugStr = typeof caseSlugRaw === "string" ? caseSlugRaw.trim() : "";
@@ -226,7 +250,12 @@ export const POST = createHandler(
         headers: { "Content-Type": "application/json" },
       });
     } catch (err) {
-      console.error("[upload] failed:", err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[upload] failed:", msg);
+      // Distinguish body-size errors from other server errors
+      if (/body|too large|413|payload/i.test(msg)) {
+        return apiError("file_too_large", "Datei überschreitet das Größenlimit.", 413);
+      }
       return apiError("service_unavailable", "Upload fehlgeschlagen", 503);
     }
   }

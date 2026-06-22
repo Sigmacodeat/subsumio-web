@@ -64,6 +64,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     reactCompiler: false,
+    serverActions: {
+      bodySizeLimit: "1gb",
+    },
   },
   serverExternalPackages: ["pg", "isomorphic-dompurify"],
 };

@@ -177,7 +177,7 @@ async function importSource(
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  SigmaBrain — Bulk Rechtsprechungs-Import');
+  console.log('  Subsumio — Bulk Rechtsprechungs-Import');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`Quelle: ${SOURCE}`);
   console.log(`Zeitraum: letzte ${YEARS} Jahre`);

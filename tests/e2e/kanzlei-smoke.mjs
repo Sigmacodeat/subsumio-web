@@ -13,12 +13,12 @@
  *   node tests/e2e/kanzlei-smoke.mjs
  *
  * Voraussetzung: Next.js Dev-Server läuft auf http://localhost:3000
- * (oder SIGMABRAIN_API_URL auf die Engine zeigt).
+ * (oder SUBSUMIO_API_URL auf die Engine zeigt).
  */
 
-const BASE = process.env.SIGMABRAIN_API_URL || 'http://localhost:3000';
-const AUTH_HEADER = process.env.SIGMABRAIN_API_KEY
-  ? { 'X-API-Key': process.env.SIGMABRAIN_API_KEY }
+const BASE = process.env.SUBSUMIO_API_URL || process.env.SIGMABRAIN_API_URL || 'http://localhost:3000';
+const AUTH_HEADER = process.env.SUBSUMIO_API_KEY || process.env.SIGMABRAIN_API_KEY
+  ? { 'X-API-Key': process.env.SUBSUMIO_API_KEY || process.env.SIGMABRAIN_API_KEY }
   : {};
 
 let exitCode = 0;

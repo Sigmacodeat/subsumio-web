@@ -1,4 +1,4 @@
-# SigmaBrain Kanzlei-OS v2 — Umsetzungs-Blueprint
+# Subsumio Kanzlei-OS v2 — Umsetzungs-Blueprint
 
 ## Ziel
 Vier Features aus dem Statusbericht auf Produktionsreife heben. Jedes Paket ist vollständig (CRUD, Error, Empty, Edge-Cases), nicht fragmentiert.

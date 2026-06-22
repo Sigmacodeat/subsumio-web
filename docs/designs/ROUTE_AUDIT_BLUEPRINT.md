@@ -1,4 +1,4 @@
-# Sigmabrain Route Audit — Blueprint & Implementation Plan
+# Subsumio Route Audit — Blueprint & Implementation Plan
 *Stand: Juni 2026 | Erstellt durch autonomen Principal-Engineer-Audit*
 
 ---

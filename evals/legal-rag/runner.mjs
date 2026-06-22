@@ -46,7 +46,7 @@ async function queryBrain(question) {
   const headers = {
     "content-type": "application/json",
   };
-  if (BRAIN_ID) headers["x-sigmabrain-source"] = BRAIN_ID;
+  if (BRAIN_ID) headers["x-subsumio-source"] = BRAIN_ID;
 
   const res = await fetch(`${ENGINE_URL}/api/query`, {
     method: "POST",
@@ -63,7 +63,7 @@ async function askAgent(question) {
   const headers = {
     "content-type": "application/json",
   };
-  if (BRAIN_ID) headers["x-sigmabrain-source"] = BRAIN_ID;
+  if (BRAIN_ID) headers["x-subsumio-source"] = BRAIN_ID;
 
   const res = await fetch(`${ENGINE_URL}/api/agents/supervisor`, {
     method: "POST",

@@ -50,7 +50,7 @@ faq_title_map = {
     'vc.ts': ('Questions from investment teams', 'Fragen von Investment-Teams'),
 }
 
-base = '/Users/msc/Sigmabrain/src/content/'
+base = '/Users/msc/subsumio-web/src/content/'
 
 for fname in files:
     path = os.path.join(base, fname)
@@ -80,7 +80,7 @@ for fname in files:
     }[fname]
     
     # Replace EN badge (first occurrence only)
-    old_en_badge = f'badge: "{brand_en} — powered by Sigmabrain"'
+    old_en_badge = f'badge: "{brand_en} — powered by Subsumio"'
     new_en_badge = f'badge: "{en_badge}"'
     content = content.replace(old_en_badge, new_en_badge, 1)
     

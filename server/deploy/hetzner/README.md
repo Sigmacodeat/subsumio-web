@@ -4,7 +4,7 @@ One Hetzner Cloud box runs the whole brain: **Postgres + pgvector**, the
 **engine + ingestion worker** (parses PDFs, builds embeddings, answers queries),
 and **Caddy** (automatic HTTPS). EU data residency (Germany) — the legal
 confidentiality argument (§ 203 StGB / GDPR). The Next.js frontend stays on
-Vercel and talks to this box over `SIGMABRAIN_API_URL`.
+Vercel and talks to this box over `SUBSUMIO_API_URL`.
 
 ```
 Browser ─► Vercel (Next.js) ──server-to-server──► api.subsum.io (Caddy) ─► engine:3131
@@ -46,9 +46,9 @@ docker compose logs -f engine                 # watch migrations + "serve"
 curl https://api.subsum.io/health             # → 200
 
 # ── wire the frontend (Vercel → Settings → Environment Variables) ──
-SIGMABRAIN_API_URL=https://api.subsum.io
-SIGMABRAIN_WEB_API_KEY=<same value as GBRAIN_WEB_API_KEY in .env>
-# + an auth DB:  SIGMABRAIN_AUTH_DATABASE_URL=<a Postgres for frontend auth>
+SUBSUMIO_API_URL=https://api.subsum.io
+SUBSUMIO_WEB_API_KEY=<same value as GBRAIN_WEB_API_KEY in .env>
+# + an auth DB:  SUBSUMIO_AUTH_DATABASE_URL=<a Postgres for frontend auth>
 # then redeploy the Vercel project.
 ```
 
@@ -61,6 +61,6 @@ SIGMABRAIN_WEB_API_KEY=<same value as GBRAIN_WEB_API_KEY in .env>
 
 ## Day-2
 - Update: `git pull && docker compose up -d --build`
-- Backups: `docker compose exec db pg_dump -U sigmabrain sigmabrain > backup.sql` (cron it)
+- Backups: `docker compose exec db pg_dump -U subsumio subsumio > backup.sql` (cron it)
 - Logs: `docker compose logs -f engine`
 - The engine auto-applies schema migrations on every boot (idempotent).

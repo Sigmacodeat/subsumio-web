@@ -14,13 +14,13 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: sigmabrain
+      POSTGRES_USER: subsumio
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: sigmabrain
+      POSTGRES_DB: subsumio
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sigmabrain -d sigmabrain"]
+      test: ["CMD-SHELL", "pg_isready -U subsumio -d subsumio"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://sigmabrain:${POSTGRES_PASSWORD}@db:5432/sigmabrain
+      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
       PORT: "3131"
       SUBSUMIO_HOME: /data
       GBRAIN_HOME: /data   # legacy alias for engine internals

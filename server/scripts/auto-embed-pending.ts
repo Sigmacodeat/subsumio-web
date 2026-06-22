@@ -50,7 +50,7 @@ interface PendingChunk {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  SigmaBrain — Auto-Embed Pipeline');
+  console.log('  Subsumio — Auto-Embed Pipeline');
   console.log('═══════════════════════════════════════════════════════════');
   console.log(`Batch-Größe: ${BATCH_SIZE}`);
   console.log(`Dry-Run: ${DRY_RUN ? 'JA' : 'Nein'}`);
