@@ -31,6 +31,18 @@ const DRY = args.includes("--dry-run");
 const onlyIdx = args.indexOf("--only");
 const ONLY =
   onlyIdx !== -1 ? new Set(args[onlyIdx + 1].split(",").map((s) => s.trim().toLowerCase())) : null;
+// Also build a jurisdiction-prefixed set (e.g. "de:estg") so --only can
+// distinguish AT estg from DE estg. Bare abbr matches all jurisdictions;
+// prefixed (jur:abbr) matches only that jurisdiction.
+const ONLY_PREFIXED =
+  onlyIdx !== -1
+    ? new Set(
+        args[onlyIdx + 1]
+          .split(",")
+          .map((s) => s.trim().toLowerCase())
+          .filter((s) => s.includes(":"))
+      )
+    : null;
 const dbIdx = args.indexOf("--db");
 const DB_OVERRIDE = dbIdx !== -1 ? args[dbIdx + 1] : null;
 // Target source. For the hosted SaaS the statutes live in ONE shared, public
@@ -75,6 +87,24 @@ const FILES: StatuteFile[] = [
   // AT — administrative + traffic
   { file: "at/avg.md", abbr: "avg", jurisdiction: "at" },
   { file: "at/stvo-at.md", abbr: "stvo", jurisdiction: "at" },
+  // AT — data protection + telecom + IP
+  { file: "at/dsg-at.md", abbr: "dsg", jurisdiction: "at" },
+  { file: "at/tkg.md", abbr: "tkg", jurisdiction: "at" },
+  { file: "at/urhg-at.md", abbr: "urhg", jurisdiction: "at" },
+  // AT — construction + housing + environment
+  { file: "at/bao.md", abbr: "bao", jurisdiction: "at" },
+  { file: "at/weg.md", abbr: "weg", jurisdiction: "at" },
+  { file: "at/gebg.md", abbr: "gebg", jurisdiction: "at" },
+  // AT — commercial + competition + energy
+  { file: "at/gewo-at.md", abbr: "gewo", jurisdiction: "at" },
+  { file: "at/kartg.md", abbr: "kartg", jurisdiction: "at" },
+  { file: "at/ecg.md", abbr: "ecg", jurisdiction: "at" },
+  // AT — financial + legal profession
+  { file: "at/rao.md", abbr: "rao", jurisdiction: "at" },
+  { file: "at/gog.md", abbr: "gog", jurisdiction: "at" },
+  // AT — social + misc
+  { file: "at/mschg.md", abbr: "mschg", jurisdiction: "at" },
+  { file: "at/au-strg.md", abbr: "au-strg", jurisdiction: "at" },
   // DE
   { file: "de/ao.md", abbr: "ao", jurisdiction: "de" },
   { file: "de/bgb.md", abbr: "bgb", jurisdiction: "de" },
@@ -89,6 +119,16 @@ const FILES: StatuteFile[] = [
   { file: "de/ustg.md", abbr: "ustg", jurisdiction: "de" },
   { file: "de/uwg.md", abbr: "uwg", jurisdiction: "de" },
   { file: "de/zpo.md", abbr: "zpo", jurisdiction: "de" },
+  // DE — additional
+  { file: "de/kstg.md", abbr: "kstg", jurisdiction: "de" },
+  { file: "de/baugb.md", abbr: "baugb", jurisdiction: "de" },
+  { file: "de/bdsg.md", abbr: "bdsg", jurisdiction: "de" },
+  { file: "de/betrvg.md", abbr: "betrvg", jurisdiction: "de" },
+  { file: "de/gewo.md", abbr: "gewo", jurisdiction: "de" },
+  { file: "de/rvg.md", abbr: "rvg", jurisdiction: "de" },
+  { file: "de/urhg.md", abbr: "urhg", jurisdiction: "de" },
+  { file: "de/vwgo.md", abbr: "vwgo", jurisdiction: "de" },
+  { file: "de/zvg.md", abbr: "zvg", jurisdiction: "de" },
   // CH
   { file: "ch/or.md", abbr: "or", jurisdiction: "ch" },
   { file: "ch/zgb.md", abbr: "zgb", jurisdiction: "ch" },
@@ -141,7 +181,11 @@ function sectionPage(
 
 async function main() {
   const selected = FILES.filter(
-    (f) => !ONLY || ONLY.has(f.abbr) || ONLY.has(f.file.replace("/", ":"))
+    (f) =>
+      !ONLY ||
+      ONLY.has(f.abbr) ||
+      ONLY.has(`${f.jurisdiction}:${f.abbr}`) ||
+      ONLY.has(f.file.replace("/", ":"))
   );
 
   console.log("═══════════════════════════════════════════════════════════");
@@ -198,12 +242,17 @@ async function main() {
       }
     }
     await engine.initSchema();
-    // Shared statute source (e.g. --source law-at): create the row if missing so
-    // the FK holds under the multi-tenant fail-closed schema. Idempotent.
-    if (SOURCE_ID) {
+    // Create source rows so the FK holds under the multi-tenant fail-closed schema.
+    // When --source is set explicitly, create that one. Otherwise create all
+    // jurisdiction-based sources (law-at, law-de, law-ch, law-eu) since the
+    // auto-derived sourceId will reference them.
+    const sourceIdsToCreate = SOURCE_ID
+      ? [SOURCE_ID]
+      : ['law-at', 'law-de', 'law-ch', 'law-eu'];
+    for (const sid of sourceIdsToCreate) {
       await engine.executeRaw(
         `INSERT INTO sources (id, name) VALUES ($1, $1) ON CONFLICT (id) DO NOTHING`,
-        [SOURCE_ID]
+        [sid]
       );
     }
     // expose for the loop
@@ -236,22 +285,34 @@ async function main() {
     }
 
     const importFromContent = (globalThis as any).__importFromContent;
+    // Auto-derive sourceId from jurisdiction when no explicit --source is set.
+    // This prevents cross-jurisdiction contamination: AT statutes go to law-at,
+    // DE statutes go to law-de, etc.
+    const effectiveSourceId = SOURCE_ID ?? `law-${sf.jurisdiction}`;
     let okForLaw = 0;
+    let skippedForLaw = 0;
     for (const section of sections) {
       const slug = `legal/statutes/${sf.jurisdiction}/${sf.abbr}/${section.id}`;
       try {
-        await importFromContent(engine, slug, sectionPage(sf, meta, section), {
+        const result = await importFromContent(engine, slug, sectionPage(sf, meta, section), {
           noEmbed: NO_EMBED,
-          ...(SOURCE_ID ? { sourceId: SOURCE_ID } : {}),
+          sourceId: effectiveSourceId,
         });
-        okForLaw++;
+        if (result.status === 'imported') {
+          okForLaw++;
+        } else if (result.status === 'skipped') {
+          skippedForLaw++;
+        } else {
+          totalErrors++;
+          console.error(`  ❌ ${slug}: ${result.error || result.status}`);
+        }
       } catch (e) {
         totalErrors++;
         console.error(`  ❌ ${slug}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
     totalSections += okForLaw;
-    console.log(`  ✅ ${sf.jurisdiction}/${sf.abbr}: ${okForLaw}/${sections.length} §-pages`);
+    console.log(`  ✅ ${sf.jurisdiction}/${sf.abbr}: ${okForLaw}/${sections.length} §-pages${skippedForLaw > 0 ? ` (${skippedForLaw} skipped)` : ''}`);
   }
 
   console.log("");

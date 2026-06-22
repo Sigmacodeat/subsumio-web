@@ -445,9 +445,18 @@ export function configureGateway(config: AIGatewayConfig): void {
  */
 export async function reconfigureGatewayWithEngine(engine: BrainEngine): Promise<AIGatewayConfig> {
   const cfg = requireConfig();
-  // Resolve expansion (utility tier) and chat (reasoning tier). Embedding is
-  // intentionally NOT re-resolved here — switching embedding models invalidates
-  // the vector index. Out of scope per v0.31.12 plan ("Embedding tier knob").
+  // Resolve expansion (utility tier) and chat (reasoning tier).
+  // Also resolve embedding model from DB config — the file-plane config
+  // may not have embedding_model set (it's stored in the brain_config
+  // table), so without this the gateway falls back to the default
+  // (zeroentropyai:zembed-1) which fails when only OPENAI_API_KEY is set.
+  const newEmbedding = await resolveModel(engine, {
+    configKey: 'embedding_model',
+    tier: 'utility',
+    fallback: cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL,
+  });
+  const newEmbeddingDimsRaw = await engine.getConfig('embedding_dimensions');
+  const newEmbeddingDims = newEmbeddingDimsRaw != null ? Number(newEmbeddingDimsRaw) : undefined;
   const newExpansion = await resolveModel(engine, {
     configKey: 'models.expansion',
     tier: 'utility',
@@ -463,10 +472,17 @@ export async function reconfigureGatewayWithEngine(engine: BrainEngine): Promise
   // the existing provider prefix from cfg so the gateway keeps routing to
   // the right recipe. If the resolved string already contains a `:`, it
   // came from a `provider:model` override and we use it as-is.
+  const embeddingFull = newEmbedding.includes(':') ? newEmbedding : prefixWithProviderFrom(cfg.embedding_model ?? DEFAULT_EMBEDDING_MODEL, newEmbedding);
   const expansionFull = newExpansion.includes(':') ? newExpansion : prefixWithProviderFrom(cfg.expansion_model ?? DEFAULT_EXPANSION_MODEL, newExpansion);
   const chatFull = newChat.includes(':') ? newChat : prefixWithProviderFrom(cfg.chat_model ?? DEFAULT_CHAT_MODEL, newChat);
 
-  _config = { ...cfg, expansion_model: expansionFull, chat_model: chatFull };
+  _config = {
+    ...cfg,
+    embedding_model: embeddingFull,
+    embedding_dimensions: newEmbeddingDims ?? cfg.embedding_dimensions ?? DEFAULT_EMBEDDING_DIMENSIONS,
+    expansion_model: expansionFull,
+    chat_model: chatFull,
+  };
   _modelCache.clear();
   _shrinkState.clear();
   _extendedModels.clear();

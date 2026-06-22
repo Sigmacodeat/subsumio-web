@@ -742,12 +742,20 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           />
         )}
         {/* Inner wrapper — fixed width matches panel, never reflows. Only outer aside clips. */}
-        <div className="flex h-full flex-col" style={{ width: panelWidth }}>
+        <div
+          className={cn(
+            "flex h-full flex-col will-change-transform",
+            isResizing
+              ? "transition-none"
+              : "transition-[transform] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none"
+          )}
+          style={{ width: panelWidth, transform: open ? "translateX(0)" : "translateX(100%)" }}
+        >
           {/* Collapse toggle — premium vertical tab */}
           <button
             onClick={onToggle}
             className={cn(
-              "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
+              "group absolute top-1/2 -left-3.5 z-30 flex h-14 w-3.5 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-sm transition-[width,background-color,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:w-4 hover:bg-[color:var(--ds-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none",
               !open && "pointer-events-none opacity-0"
             )}
             aria-label={t("copilot.collapse")}
@@ -839,22 +847,25 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       </aside>
 
       {/* Desktop expand button — premium vertical tab with hover label */}
-      {!open && (
-        <button
-          onClick={onToggle}
-          className="group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex"
-          aria-label={t("copilot.expand")}
-          title={t("copilot.expand_hint")}
-        >
-          <PanelRightOpen
-            size={16}
-            className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
-          />
-          <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
-            {t("copilot.copilot")}
-          </span>
-        </button>
-      )}
+      <button
+        onClick={onToggle}
+        className={cn(
+          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[transform,opacity,padding,box-shadow] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex",
+          open ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
+        )}
+        aria-label={t("copilot.expand")}
+        title={t("copilot.expand_hint")}
+        aria-hidden={open}
+        tabIndex={open ? -1 : 0}
+      >
+        <PanelRightOpen
+          size={16}
+          className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
+        />
+        <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
+          {t("copilot.copilot")}
+        </span>
+      </button>
     </>
   );
 }

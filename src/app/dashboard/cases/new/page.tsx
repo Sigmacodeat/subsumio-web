@@ -6,6 +6,14 @@ import Link from "next/link";
 import { Loader2, Plus, AlertTriangle, ShieldAlert, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { enqueueMutation, isOnline } from "@/lib/offline-store";
@@ -44,6 +52,57 @@ const JURISDICTION_OPTIONS = [
   { value: "eu", label: "EU" },
 ] as const;
 
+const LEGAL_AREA_SUGGESTIONS = [
+  "Zivilrecht",
+  "Strafrecht",
+  "Öffentliches Recht",
+  "Arbeitsrecht",
+  "Familienrecht",
+  "Erbrecht",
+  "Mietrecht",
+  "Wettbewerbsrecht",
+  "Datenschutzrecht",
+  "Gesellschaftsrecht",
+  "Insolvenzrecht",
+  "Verwaltungsrecht",
+  "Baurecht",
+  "Medizinrecht",
+  "Urheberrecht",
+  "Markenrecht",
+  "Steuerrecht",
+  "Sozialrecht",
+  "Bankrecht",
+  "Versicherungsrecht",
+] as const;
+
+const SUB_AREA_SUGGESTIONS: Record<string, string[]> = {
+  Zivilrecht: ["Vertragsrecht", "Deliktsrecht", "Sachenrecht", "Schuldrecht", "Schadensersatz"],
+  Strafrecht: [
+    "Wirtschaftsstrafrecht",
+    "Verkehrsstrafrecht",
+    "Jugendstrafrecht",
+    "Betäubungsmittelstrafrecht",
+  ],
+  "Öffentliches Recht": ["Staatsrecht", "Verwaltungsrecht", "Europarecht", "Völkerrecht"],
+  Arbeitsrecht: ["Kündigungsschutz", "Arbeitsvertrag", "Tarifrecht", "Betriebsverfassungsrecht"],
+  Familienrecht: ["Scheidung", "Sorgerecht", "Unterhalt", "Ehevertrag", "Güterrecht"],
+  Erbrecht: ["Testament", "Erbfolge", "Erbteilung", "Pflichtteil"],
+  Mietrecht: ["Wohnraummiete", "Gewerbemiete", "Mietkündigung", "Mietminderung"],
+  Wettbewerbsrecht: ["UWG", "Markenverletzung", "Wettbewerbsverstoß"],
+  Datenschutzrecht: ["DSGVO", "BDSG", "Datenschutzverletzung", "Auftragsverarbeitung"],
+  Gesellschaftsrecht: ["GmbH", "AG", "KG", "Partnerschaftsgesellschaft"],
+  Insolvenzrecht: ["Insolvenzeröffnung", "Insolvenzverwaltung", "Restschuldbefreiung"],
+  Verwaltungsrecht: ["Baugenehmigung", "Umweltrecht", "Vergaberecht", "Asylrecht"],
+  Baurecht: ["Bauvertrag", "Baugenehmigung", "Nachbarrecht", "Denkmalschutz"],
+  Medizinrecht: ["Behandlungsfehler", "Arzthaftung", "Apothekenrecht"],
+  Urheberrecht: ["Lizenz", "Verletzung", "Verlagsrecht"],
+  Markenrecht: ["Markenanmeldung", "Markenverletzung", "Markenlöschung"],
+  Steuerrecht: ["Einkommensteuer", "Umsatzsteuer", "Gewerbesteuer", "Steuerstrafrecht"],
+  Sozialrecht: ["SGB V", "SGB VIII", "SGB IX", "Rentenrecht"],
+  Bankrecht: ["Kreditrecht", "Kapitalmarktrecht", "Zahlungsverkehr"],
+  Versicherungsrecht: ["Kfz-Versicherung", "Rechtsschutzversicherung", "Lebensversicherung"],
+};
+
 type ContactRole = NonNullable<ContactFrontmatter["role"]>;
 
 interface ContactOption {
@@ -61,6 +120,33 @@ function contactOptions(pages: BrainPage[]): ContactOption[] {
       role: fm.role || "other",
     };
   });
+}
+
+interface ContactSelectProps {
+  id: string;
+  label: string;
+  value: string;
+  options: ContactOption[];
+  onChange: (slug: string) => void;
+  disabled?: boolean;
+}
+
+function ContactSelect({ id, label, value, options, onChange, disabled }: ContactSelectProps) {
+  return (
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger id={id} className="mt-2 h-9 text-xs" aria-label={label}>
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="">{label}</SelectItem>
+        {options.map((c) => (
+          <SelectItem key={c.slug} value={c.slug}>
+            {c.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 }
 
 export default function NewCasePage() {
@@ -169,7 +255,10 @@ export default function NewCasePage() {
 
   const f = form.form;
   const { register, setValue, watch } = f;
+  const status = watch("status");
   const priority = watch("priority");
+  const jurisdiction = watch("jurisdiction");
+  const legalArea = watch("legalArea");
   const clientName = watch("clientName");
   const clientSlug = watch("clientSlug");
   const opponentName = watch("opponentName");
@@ -256,12 +345,9 @@ export default function NewCasePage() {
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Grunddaten</h2>
 
           <div>
-            <label
-              htmlFor="case-title"
-              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-            >
+            <Label htmlFor="case-title" className="mb-1.5 block text-xs">
               Titel *
-            </label>
+            </Label>
             <Input
               id="case-title"
               {...register("title")}
@@ -275,12 +361,9 @@ export default function NewCasePage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label
-                htmlFor="case-number"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-number" className="mb-1.5 block text-xs">
                 Aktenzeichen
-              </label>
+              </Label>
               <Input
                 id="case-number"
                 {...register("caseNumber")}
@@ -289,120 +372,108 @@ export default function NewCasePage() {
               />
             </div>
             <div>
-              <label
-                htmlFor="case-status"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-status" className="mb-1.5 block text-xs">
                 Status
-              </label>
-              <select
-                id="case-status"
-                {...register("status")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              </Label>
+              <Select
+                value={status}
+                onValueChange={(v) => setValue("status", v as CaseFormData["status"])}
               >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="case-status" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label
-                htmlFor="case-legal-area"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-legal-area" className="mb-1.5 block text-xs">
                 Rechtsgebiet
-              </label>
+              </Label>
               <Input
                 id="case-legal-area"
                 {...register("legalArea")}
+                list="legal-area-suggestions"
                 placeholder="z.B. Zivilrecht"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
+              <datalist id="legal-area-suggestions">
+                {LEGAL_AREA_SUGGESTIONS.map((area) => (
+                  <option key={area} value={area} />
+                ))}
+              </datalist>
             </div>
             <div>
-              <label
-                htmlFor="case-sub-area"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-sub-area" className="mb-1.5 block text-xs">
                 Untergebiet
-              </label>
+              </Label>
               <Input
                 id="case-sub-area"
                 {...register("subArea")}
+                list="sub-area-suggestions"
                 placeholder="z.B. Vertragsrecht"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
+              <datalist id="sub-area-suggestions">
+                {(SUB_AREA_SUGGESTIONS[legalArea ?? ""] ?? []).map((sub) => (
+                  <option key={sub} value={sub} />
+                ))}
+              </datalist>
             </div>
           </div>
 
           {/* Jurisdiction — required, determines legal system for this case */}
           <div>
-            <span
-              id="case-jurisdiction-label"
-              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-            >
+            <Label htmlFor="case-jurisdiction" className="mb-1.5 block text-xs">
               Rechtskreis *
-            </span>
-            <div className="flex gap-2" role="radiogroup" aria-labelledby="case-jurisdiction-label">
-              {JURISDICTION_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={watch("jurisdiction") === o.value}
-                  onClick={() => setValue("jurisdiction", o.value as CaseFormData["jurisdiction"])}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    watch("jurisdiction") === o.value
-                      ? "border-blue-500/30 bg-blue-500/10 text-blue-600"
-                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
-                  )}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+            </Label>
+            <Select
+              value={jurisdiction}
+              onValueChange={(v) => setValue("jurisdiction", v as CaseFormData["jurisdiction"])}
+            >
+              <SelectTrigger id="case-jurisdiction" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {JURISDICTION_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {f.formState.errors.jurisdiction && (
               <p className="mt-1 text-xs text-red-600">{f.formState.errors.jurisdiction.message}</p>
             )}
           </div>
 
           <div>
-            <span
-              id="case-priority-label"
-              className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-            >
+            <Label htmlFor="case-priority" className="mb-1.5 block text-xs">
               Priorität
-            </span>
-            <div className="flex gap-2" role="group" aria-labelledby="case-priority-label">
-              {PRIORITY_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => setValue("priority", o.value as CaseFormData["priority"])}
-                  aria-pressed={priority === o.value}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    priority === o.value
-                      ? o.value === "critical"
-                        ? "border-red-500/30 bg-red-500/10 text-red-600"
-                        : o.value === "high"
-                          ? "border-amber-500/30 bg-amber-500/10 text-amber-600"
-                          : o.value === "low"
-                            ? "border-gray-500/30 bg-gray-500/10 text-gray-400"
-                            : "border-blue-500/30 bg-blue-500/10 text-blue-600"
-                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text-muted)]"
-                  )}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
+            </Label>
+            <Select
+              value={priority}
+              onValueChange={(v) => setValue("priority", v as CaseFormData["priority"])}
+            >
+              <SelectTrigger id="case-priority" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITY_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -412,12 +483,9 @@ export default function NewCasePage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label
-                htmlFor="case-client"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-client" className="mb-1.5 block text-xs">
                 Mandant
-              </label>
+              </Label>
               <Input
                 id="case-client"
                 {...register("clientName", {
@@ -428,28 +496,19 @@ export default function NewCasePage() {
                 placeholder="Name des Mandanten"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
-              {clients.length > 0 && (
-                <select
-                  value={clientSlug}
-                  onChange={(e) => applyContact(e.target.value, "client")}
-                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  <option value="">Kontakt verknüpfen…</option>
-                  {clients.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <ContactSelect
+                id="case-client-select"
+                label="Kontakt verknüpfen…"
+                value={clientSlug ?? ""}
+                options={clients}
+                onChange={(slug) => applyContact(slug, "client")}
+                disabled={clients.length === 0}
+              />
             </div>
             <div>
-              <label
-                htmlFor="case-opponent"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-opponent" className="mb-1.5 block text-xs">
                 Gegner
-              </label>
+              </Label>
               <Input
                 id="case-opponent"
                 {...register("opponentName", {
@@ -460,31 +519,22 @@ export default function NewCasePage() {
                 placeholder="Name der Gegenseite"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
-              {opponents.length > 0 && (
-                <select
-                  value={opponentSlug}
-                  onChange={(e) => applyContact(e.target.value, "opponent")}
-                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  <option value="">Kontakt verknüpfen…</option>
-                  {opponents.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <ContactSelect
+                id="case-opponent-select"
+                label="Kontakt verknüpfen…"
+                value={opponentSlug ?? ""}
+                options={opponents}
+                onChange={(slug) => applyContact(slug, "opponent")}
+                disabled={opponents.length === 0}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label
-                htmlFor="case-court"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-court" className="mb-1.5 block text-xs">
                 Gericht
-              </label>
+              </Label>
               <Input
                 id="case-court"
                 {...register("courtName", {
@@ -495,28 +545,19 @@ export default function NewCasePage() {
                 placeholder="z.B. LG Wien"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
-              {courts.length > 0 && (
-                <select
-                  value={courtSlug}
-                  onChange={(e) => applyContact(e.target.value, "court")}
-                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  <option value="">Kontakt verknüpfen…</option>
-                  {courts.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <ContactSelect
+                id="case-court-select"
+                label="Kontakt verknüpfen…"
+                value={courtSlug ?? ""}
+                options={courts}
+                onChange={(slug) => applyContact(slug, "court")}
+                disabled={courts.length === 0}
+              />
             </div>
             <div>
-              <label
-                htmlFor="case-lawyer"
-                className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+              <Label htmlFor="case-lawyer" className="mb-1.5 block text-xs">
                 Zuständiger Anwalt
-              </label>
+              </Label>
               <Input
                 id="case-lawyer"
                 {...register("lawyerName", {
@@ -527,20 +568,14 @@ export default function NewCasePage() {
                 placeholder="Name des Anwalts"
                 className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
               />
-              {lawyers.length > 0 && (
-                <select
-                  value={lawyerSlug}
-                  onChange={(e) => applyContact(e.target.value, "lawyer")}
-                  className="mt-2 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
-                  <option value="">Kontakt verknüpfen…</option>
-                  {lawyers.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <ContactSelect
+                id="case-lawyer-select"
+                label="Kontakt verknüpfen…"
+                value={lawyerSlug ?? ""}
+                options={lawyers}
+                onChange={(slug) => applyContact(slug, "lawyer")}
+                disabled={lawyers.length === 0}
+              />
             </div>
           </div>
         </div>
@@ -548,7 +583,7 @@ export default function NewCasePage() {
         {/* Facts */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            <label htmlFor="case-facts">Sachverhalt</label>
+            <Label htmlFor="case-facts">Sachverhalt</Label>
           </h2>
           <textarea
             id="case-facts"
@@ -562,7 +597,7 @@ export default function NewCasePage() {
         {/* Tags */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            <label htmlFor="case-tags">Tags</label>
+            <Label htmlFor="case-tags">Tags</Label>
           </h2>
           <Input
             id="case-tags"

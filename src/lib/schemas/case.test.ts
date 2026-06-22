@@ -1,12 +1,7 @@
 // @vitest-environment node
 
 import { describe, test, expect } from "vitest";
-import {
-  caseStatusSchema,
-  casePrioritySchema,
-  caseFormSchema,
-  type CaseFormData,
-} from "./case";
+import { caseStatusSchema, casePrioritySchema, caseFormSchema, type CaseFormData } from "./case";
 
 describe("caseStatusSchema", () => {
   test("accepts all 7 valid statuses", () => {
@@ -46,6 +41,7 @@ describe("caseFormSchema — valid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     };
     const result = caseFormSchema.safeParse(data);
     expect(result.success).toBe(true);
@@ -70,6 +66,7 @@ describe("caseFormSchema — valid inputs", () => {
       facts: "Kläger begehrt Schadensersatz aus Vertrag vom 1.3.2024.",
       tags: "Vertragsbruch, Schadensersatz",
       portalEnabled: true,
+      jurisdiction: "de" as const,
     };
     const result = caseFormSchema.safeParse(data);
     expect(result.success).toBe(true);
@@ -87,6 +84,7 @@ describe("caseFormSchema — valid inputs", () => {
       facts: "",
       tags: "",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     };
     const result = caseFormSchema.safeParse(data);
     expect(result.success).toBe(true);
@@ -99,6 +97,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -109,6 +108,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -119,6 +119,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -128,6 +129,7 @@ describe("caseFormSchema — invalid inputs", () => {
       title: "Test",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -137,6 +139,7 @@ describe("caseFormSchema — invalid inputs", () => {
       title: "Test",
       status: "open",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -146,6 +149,7 @@ describe("caseFormSchema — invalid inputs", () => {
       title: "Test",
       status: "open",
       priority: "medium",
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -156,6 +160,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "closed",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -167,6 +172,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -178,6 +184,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -189,6 +196,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -200,6 +208,7 @@ describe("caseFormSchema — invalid inputs", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(false);
   });
@@ -212,6 +221,7 @@ describe("caseFormSchema — boundary values", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(true);
   });
@@ -223,6 +233,7 @@ describe("caseFormSchema — boundary values", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(true);
   });
@@ -234,6 +245,7 @@ describe("caseFormSchema — boundary values", () => {
       status: "open",
       priority: "medium",
       portalEnabled: false,
+      jurisdiction: "de" as const,
     });
     expect(result.success).toBe(true);
   });
@@ -246,6 +258,7 @@ describe("caseFormSchema — type inference", () => {
       status: "open" as const,
       priority: "medium" as const,
       portalEnabled: true,
+      jurisdiction: "de" as const,
     };
     const result = caseFormSchema.safeParse(data);
     expect(result.success).toBe(true);
