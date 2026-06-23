@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Lang } from "@/content/site";
 import { createT, type TFunc } from "@/content/dashboard";
 export type { TFunc };
@@ -90,7 +90,7 @@ export function useLang(): { lang: Lang; t: TFunc; setLang: (lang: Lang) => void
     [qc]
   );
 
-  const t = createT(lang);
+  const t = useMemo(() => createT(lang), [lang]);
   return { lang, t, setLang };
 }
 
