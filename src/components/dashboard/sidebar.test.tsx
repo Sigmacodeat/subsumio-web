@@ -73,7 +73,7 @@ describe("Sidebar accordion", () => {
   });
 
   test("opens the active section and renders its links as real anchors", async () => {
-    pathname = "/dashboard/cases";
+    pathname = "/dashboard/contacts";
     renderSidebar();
 
     await waitFor(() => {
@@ -93,34 +93,28 @@ describe("Sidebar accordion", () => {
     );
   });
 
-  test("keeps workflow sections open by default and can reopen them after collapsing", async () => {
+  test("keeps only one workflow section open at a time", async () => {
+    pathname = "/dashboard/contacts";
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Akten & Mandanten/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
     });
 
-    expect(screen.getByRole("link", { name: "beA" })).toHaveAttribute("href", "/dashboard/bea");
-    expect(screen.getByRole("link", { name: "WhatsApp" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Kontakte" })).toHaveAttribute(
       "href",
-      "/dashboard/whatsapp"
-    );
-    expect(screen.getByRole("link", { name: "E-Mail-Import" })).toHaveAttribute(
-      "href",
-      "/dashboard/email-import"
+      "/dashboard/contacts"
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
-    expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Akten & Mandanten/i })).toHaveAttribute(
       "aria-expanded",
       "false"
     );
-    expect(screen.queryByRole("link", { name: "WhatsApp" })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
+    expect(screen.queryByRole("link", { name: "Kontakte" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
       "aria-expanded",
       "true"

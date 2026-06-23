@@ -72,16 +72,6 @@ type NavItem = {
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 
-const DEFAULT_OPEN_SECTIONS: DashboardKey[] = [
-  "nav.section.cockpit",
-  "nav.section.cases_clients",
-  "nav.section.communication",
-  "nav.section.research_knowledge",
-  "nav.section.documents_drafting",
-  "nav.section.billing_compliance",
-  "nav.section.admin",
-];
-
 export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.cockpit",
@@ -326,7 +316,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const [openSections, setOpenSections] = useState<DashboardKey[]>(DEFAULT_OPEN_SECTIONS);
+  const [openSections, setOpenSections] = useState<DashboardKey[]>([]);
   const [isDesktop, setIsDesktop] = useState(false);
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
@@ -366,6 +356,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     return sections;
   }, [filteredSections, filteredBottomItems]);
 
+  const activeSection = useMemo(
+    () => findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]),
+    [pathname]
+  );
+
   useEffect(() => {
     if (typeof window.matchMedia !== "function") {
       setIsDesktop(false);
@@ -383,13 +378,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   }, []);
 
   useEffect(() => {
-    const activeSection = findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]);
-    if (activeSection) {
-      setOpenSections((current) =>
-        current.includes(activeSection) ? current : [...current, activeSection]
-      );
-    }
-  }, [pathname]);
+    if (searchQuery.trim()) return;
+    setOpenSections(activeSection ? [activeSection] : []);
+  }, [activeSection, searchQuery]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
@@ -413,11 +404,15 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   };
 
   const toggleSection = (titleKey: DashboardKey) => {
-    setOpenSections((current) =>
-      current.includes(titleKey)
-        ? current.filter((section) => section !== titleKey)
-        : [...current, titleKey]
-    );
+    setOpenSections((current) => {
+      if (current.includes(titleKey)) {
+        return current.filter((section) => section !== titleKey);
+      }
+      if (searchQuery.trim()) {
+        return [...current, titleKey];
+      }
+      return [titleKey];
+    });
   };
 
   return (
@@ -667,15 +662,15 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <div
                       key={section.titleKey}
                       className={cn(
-                        "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)]",
+                        "rounded-lg border transition-[background-color,border-color,box-shadow,opacity] duration-200 ease-[var(--ds-ease-smooth)]",
                         section.titleKey === "nav.section.admin"
                           ? "border-[color:var(--ds-border)] bg-transparent"
                           : "border-transparent",
                         isOpen
-                          ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm"
+                          ? "border-[color:var(--ds-border-hover)] bg-[color:var(--ds-surface-2)] shadow-sm"
                           : sectionActive
                             ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
-                            : "hover:bg-[color:var(--ds-hover)]"
+                            : "opacity-[0.86] hover:bg-[color:var(--ds-hover)] hover:opacity-100"
                       )}
                     >
                       <button
