@@ -106,6 +106,25 @@ export default function ReviewQueuePage() {
     return Array.from(set).sort();
   }, [pages]);
 
+  const reviewSummary = useMemo(() => {
+    const counts = {
+      total: reviewItems.length,
+      pending: 0,
+      inReview: 0,
+      changesRequested: 0,
+      done: 0,
+    };
+
+    reviewItems.forEach((item) => {
+      if (item.status === "pending") counts.pending += 1;
+      if (item.status === "in_review") counts.inReview += 1;
+      if (item.status === "changes_requested") counts.changesRequested += 1;
+      if (item.status === "approved" || item.status === "rejected") counts.done += 1;
+    });
+
+    return counts;
+  }, [reviewItems]);
+
   async function updateStatus(slug: string, status: string) {
     setUpdating(slug);
     try {
@@ -143,7 +162,7 @@ export default function ReviewQueuePage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
       <PageHeader
         title={t("review_queue.title")}
         description={t("review_queue.desc")}
@@ -153,174 +172,219 @@ export default function ReviewQueuePage() {
         ]}
       />
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-[color:var(--ds-text-muted)]" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
-          >
-            <option value="all">{t("review_queue.all_status")}</option>
-            {Object.entries(STATUS_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </div>
-        {assignees.length > 0 && (
-          <select
-            value={assigneeFilter}
-            onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-1.5 text-sm text-[color:var(--ds-text)]"
-          >
-            <option value="all">{t("review_queue.all_assignees")}</option>
-            {assignees.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        )}
-        <Badge
-          variant="default"
-          className="border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
-        >
-          {reviewItems.length} {t("review_queue.docs_count")}
-        </Badge>
-      </div>
-
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          <AlertTriangle size={16} /> {error}
-        </div>
-      )}
-
-      {loading && (
-        <div className="flex h-32 items-center justify-center">
-          <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
-        </div>
-      )}
-
-      {/* Review items */}
-      {!loading && reviewItems.length > 0 && (
-        <div className="space-y-2">
-          {reviewItems.map(({ page, status, assignee, reviewedAt }) => (
-            <div
-              key={page.slug}
-              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+        <div className="min-w-0 space-y-5">
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3 shadow-sm">
+            <div className="flex min-w-0 items-center gap-2">
+              <Filter size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-10 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-sm text-[color:var(--ds-text)]"
+              >
+                <option value="all">{t("review_queue.all_status")}</option>
+                {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {assignees.length > 0 && (
+              <select
+                value={assigneeFilter}
+                onChange={(e) => setAssigneeFilter(e.target.value)}
+                className="h-10 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-sm text-[color:var(--ds-text)]"
+              >
+                <option value="all">{t("review_queue.all_assignees")}</option>
+                {assignees.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            )}
+            <Badge
+              variant="default"
+              className="ml-auto border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2.5 py-1 text-xs text-[color:var(--ds-text-muted)]"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <FileText
-                    size={16}
-                    className="mt-0.5 shrink-0 text-[color:var(--ds-text-muted)]"
-                  />
-                  <div className="min-w-0">
-                    <a
-                      href={`/dashboard/vault/${page.slug}`}
-                      className="block truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
-                    >
-                      {page.title}
-                    </a>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-[color:var(--ds-text-muted)]">
-                      <span className="font-mono">{page.slug}</span>
-                      <span>·</span>
-                      <span>{page.type}</span>
-                      {assignee && (
+              {reviewItems.length} {t("review_queue.docs_count")}
+            </Badge>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+              <AlertTriangle size={16} /> {error}
+            </div>
+          )}
+
+          {loading && (
+            <div className="flex h-40 items-center justify-center rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+              <Loader2 size={24} className="animate-spin text-[color:var(--ds-text-muted)]" />
+            </div>
+          )}
+
+          {/* Review items */}
+          {!loading && reviewItems.length > 0 && (
+            <div className="space-y-3">
+              {reviewItems.map(({ page, status, assignee, reviewedAt }) => (
+                <div
+                  key={page.slug}
+                  className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm transition-[border-color,box-shadow] duration-200 hover:border-[color:var(--ds-border-strong)] hover:shadow-md"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--ds-surface-2)] text-[color:var(--ds-text-muted)]">
+                        <FileText size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <a
+                          href={`/dashboard/vault/${page.slug}`}
+                          className="block truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
+                        >
+                          {page.title}
+                        </a>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[color:var(--ds-text-muted)]">
+                          <span className="max-w-full truncate font-mono">{page.slug}</span>
+                          <span>{page.type}</span>
+                          {assignee && (
+                            <span className="flex items-center gap-1">
+                              <User size={10} /> {assignee}
+                            </span>
+                          )}
+                          {reviewedAt && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={10} />{" "}
+                              {new Date(reviewedAt).toLocaleDateString(
+                                lang === "en" ? "en-GB" : "de-DE"
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 md:justify-end">
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          "border px-2.5 py-1 text-xs",
+                          STATUS_STYLES[status] ?? STATUS_STYLES.pending
+                        )}
+                      >
+                        {STATUS_LABELS[status] ?? status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-4 flex flex-col gap-3 border-t border-[color:var(--ds-border)] pt-4 md:flex-row md:items-center">
+                    <input
+                      type="text"
+                      placeholder={t("review_queue.assign_placeholder")}
+                      defaultValue={assignee ?? ""}
+                      onBlur={(e) => {
+                        if (e.target.value.trim() && e.target.value.trim() !== assignee)
+                          void assignTo(page.slug, e.target.value.trim());
+                      }}
+                      className="h-10 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs text-[color:var(--ds-text)] md:w-56"
+                    />
+                    <div className="flex flex-wrap gap-1 md:ml-auto md:justify-end">
+                      {updating === page.slug ? (
+                        <Loader2
+                          size={14}
+                          className="animate-spin text-[color:var(--ds-text-muted)]"
+                        />
+                      ) : (
                         <>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <User size={10} /> {assignee}
-                          </span>
-                        </>
-                      )}
-                      {reviewedAt && (
-                        <>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={10} />{" "}
-                            {new Date(reviewedAt).toLocaleDateString(
-                              lang === "en" ? "en-GB" : "de-DE"
-                            )}
-                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateStatus(page.slug, "approved")}
+                            className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                          >
+                            <CheckSquare size={12} /> {t("review_queue.approve")}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateStatus(page.slug, "changes_requested")}
+                            className="text-xs text-orange-600 hover:bg-orange-500/10"
+                          >
+                            {t("review_queue.revise")}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateStatus(page.slug, "rejected")}
+                            className="text-xs text-red-600 hover:bg-red-500/10"
+                          >
+                            {t("review_queue.reject")}
+                          </Button>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge
-                    variant="default"
-                    className={cn("border text-xs", STATUS_STYLES[status] ?? STATUS_STYLES.pending)}
-                  >
-                    {STATUS_LABELS[status] ?? status}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
-                <input
-                  type="text"
-                  placeholder={t("review_queue.assign_placeholder")}
-                  defaultValue={assignee ?? ""}
-                  onBlur={(e) => {
-                    if (e.target.value.trim() && e.target.value.trim() !== assignee)
-                      void assignTo(page.slug, e.target.value.trim());
-                  }}
-                  className="w-40 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2 py-1 text-xs text-[color:var(--ds-text)]"
-                />
-                <div className="ml-auto flex gap-1">
-                  {updating === page.slug ? (
-                    <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
-                  ) : (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updateStatus(page.slug, "approved")}
-                        className="gap-1 text-xs text-emerald-600 hover:bg-emerald-500/10"
-                      >
-                        <CheckSquare size={12} /> {t("review_queue.approve")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updateStatus(page.slug, "changes_requested")}
-                        className="text-xs text-orange-600 hover:bg-orange-500/10"
-                      >
-                        {t("review_queue.revise")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => updateStatus(page.slug, "rejected")}
-                        className="text-xs text-red-600 hover:bg-red-500/10"
-                      >
-                        {t("review_queue.reject")}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {!loading && reviewItems.length === 0 && !error && (
-        <div className="py-16 text-center">
-          <Inbox size={40} className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40" />
-          <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {t("review_queue.empty")}{" "}
-            <code className="rounded bg-[color:var(--ds-hover)] px-1 text-xs">review_status</code>{" "}
-            {t("review_queue.empty_hint")}
-          </p>
+          {!loading && reviewItems.length === 0 && !error && (
+            <div className="rounded-2xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
+              <Inbox
+                size={40}
+                className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40"
+              />
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("review_queue.empty")}{" "}
+                <code className="rounded bg-[color:var(--ds-hover)] px-1 text-xs">
+                  review_status
+                </code>{" "}
+                {t("review_queue.empty_hint")}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+
+        <aside className="hidden space-y-3 xl:block">
+          <div className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
+              <CheckSquare size={16} className="text-[color:var(--ds-text-muted)]" />
+              Review-Status
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: t("review_queue.all_status"), value: reviewSummary.total },
+                { label: STATUS_LABELS.pending, value: reviewSummary.pending },
+                { label: STATUS_LABELS.in_review, value: reviewSummary.inReview },
+                { label: STATUS_LABELS.changes_requested, value: reviewSummary.changesRequested },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3"
+                >
+                  <div className="text-lg font-semibold text-[color:var(--ds-text)]">
+                    {item.value}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+                    {item.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)] shadow-sm">
+            <div className="mb-2 text-sm font-medium text-[color:var(--ds-text)]">
+              {lang === "en" ? "Review rhythm" : "Arbeitsrhythmus"}
+            </div>
+            {lang === "en"
+              ? "Approve open documents first, then batch revision requests. Assigned matters automatically move into review."
+              : "Offene Dokumente zuerst freigeben, dann Überarbeitungen bündeln. Zugewiesene Akten wechseln automatisch in Prüfung."}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
