@@ -443,13 +443,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         }
       }}
     >
-      {/* Inner wrapper — fixed width, never reflows. Only the outer aside clips. */}
-      <div className="flex h-full w-64 flex-col">
+      {/* Inner wrapper — width matches collapsed state so justify-center works. */}
+      <div
+        className={cn(
+          "flex h-full flex-col transition-[width] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
         {/* Logo */}
         <div
           className={cn(
             "flex h-16 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
-            collapsed && "md:justify-center md:px-0"
+            collapsed && "md:w-16 md:justify-center md:px-0"
           )}
         >
           <button
@@ -835,25 +840,31 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </div>
 
           {/* User profile section */}
-          <div className="border-t border-[color:var(--ds-border)] px-3 pt-4 pb-4">
+          <div
+            className={cn(
+              "border-t border-[color:var(--ds-border)] pt-3 pb-3",
+              collapsed ? "px-2" : "px-3"
+            )}
+          >
             <Link
               href="/dashboard/settings"
               onClick={() => setMobileOpen(false)}
+              title={collapsed ? (userName ?? t("sidebar.user")) : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2 transition-[background-color,opacity] duration-300 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
-                collapsed ? "pointer-events-none h-0 overflow-hidden py-0 opacity-0" : "opacity-100"
+                "group flex items-center rounded-lg transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
+                collapsed ? "h-10 justify-center px-0" : "gap-3 px-3 py-2"
               )}
             >
-              <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+              <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border">
                 {userName ? (
-                  <span className="brand-text text-xs font-bold uppercase">
+                  <span className="brand-text text-[11px] font-bold uppercase">
                     {userName.slice(0, 2)}
                   </span>
                 ) : (
                   <User size={15} className="brand-text" />
                 )}
               </div>
-              <div className="min-w-0 flex-1">
+              <div className={cn("min-w-0 flex-1", collapsed && "hidden")}>
                 <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
                   {userName ?? t("sidebar.user")}
                 </p>
