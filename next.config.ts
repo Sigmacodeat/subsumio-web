@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Fix double-locale prefix bug: /de/de -> /de
+      { source: "/de/de/:path*", destination: "/de/:path*", permanent: true },
+      { source: "/de/de", destination: "/de", permanent: true },
       // Deduplicate: canonical product page is /subsumio
       { source: "/produkt", destination: "/subsumio", permanent: true },
       { source: "/de/produkt", destination: "/de/subsumio", permanent: true },
