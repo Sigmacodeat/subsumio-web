@@ -9,8 +9,10 @@ import {
   Scale,
   Users,
   Calendar,
+  CalendarClock,
   ChevronRight,
   Clock,
+  FileText,
   PauseCircle,
   CheckCircle2,
   XCircle,
@@ -49,6 +51,12 @@ interface LegalCaseItem {
   opponentName?: string;
   clientName?: string;
   courtName?: string;
+  openDeadlines: number;
+  criticalDeadlines: number;
+  openTasks: number;
+  documentCount: number;
+  timeMinutes: number;
+  conflictStatus?: string;
   createdAt: string;
   updatedAt: string;
   tags: string[];
@@ -76,8 +84,25 @@ const PRIORITY_COLORS: Record<string, string> = {
   critical: "bg-red-500/10 text-red-600 border-red-500/20",
 };
 
+function daysUntil(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
+}
+
 function parseCase(page: BrainPage): LegalCaseItem {
   const fm = caseFrontmatter(page);
+  const deadlines = fm.deadlines ?? [];
+  const openDeadlines = deadlines.filter((d) => String(d.status ?? "pending") !== "done");
+  const criticalDeadlines = openDeadlines.filter((d) => {
+    const date = d.due_date || d.date;
+    if (!date) return false;
+    return daysUntil(date) <= 3;
+  });
+  const openTasks = (fm.tasks ?? []).filter((task) => !task.done).length;
+  const timeMinutes = (fm.time_entries ?? []).reduce((sum, entry) => sum + (entry.minutes || 0), 0);
   return {
     slug: page.slug,
     title: page.title,
@@ -88,6 +113,13 @@ function parseCase(page: BrainPage): LegalCaseItem {
     opponentName: fm.opponent_name || undefined,
     clientName: fm.client_name || undefined,
     courtName: fm.court_name || undefined,
+    openDeadlines: openDeadlines.length,
+    criticalDeadlines: criticalDeadlines.length,
+    openTasks,
+    documentCount: (fm.documents ?? []).length,
+    timeMinutes,
+    conflictStatus:
+      typeof fm.conflict_status === "string" ? (fm.conflict_status as string) : undefined,
     createdAt: page.created_at,
     updatedAt: page.updated_at,
     tags: fm.tags || [],
@@ -159,13 +191,10 @@ export default function CasesPage() {
   async function deleteCase(slug: string) {
     const caseItem = cases.find((c) => c.slug === slug);
     const confirmed = await confirm({
-      title: lang === "en" ? "Archive case" : "Akte archivieren",
-      message:
-        lang === "en"
-          ? `Archive case "${caseItem?.title ?? slug}"? All linked documents will be tombstoned.`
-          : `Akte "${caseItem?.title ?? slug}" archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.`,
-      confirmLabel: lang === "en" ? "Archive" : "Archivieren",
-      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      title: t("cases.confirm_archive_title"),
+      message: t("cases.confirm_archive_msg").replace("{{name}}", caseItem?.title ?? slug),
+      confirmLabel: t("cases.btn_archive"),
+      cancelLabel: t("cases.btn_cancel"),
       variant: "danger",
     });
     if (!confirmed) return;
@@ -200,13 +229,10 @@ export default function CasesPage() {
   async function bulkDelete(selectedRows: LegalCaseItem[]) {
     const slugs = selectedRows.map((c) => c.slug);
     const confirmed = await confirm({
-      title: lang === "en" ? "Archive cases" : "Akten archivieren",
-      message:
-        lang === "en"
-          ? `Archive ${slugs.length} case(s)? All linked documents will be tombstoned.`
-          : `${slugs.length} Akte(n) archivieren? Alle verknüpften Dokumente werden als tombstoned markiert.`,
-      confirmLabel: lang === "en" ? "Archive" : "Archivieren",
-      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      title: t("cases.confirm_bulk_archive_title"),
+      message: t("cases.confirm_bulk_archive_msg").replace("{{count}}", String(slugs.length)),
+      confirmLabel: t("cases.btn_archive"),
+      cancelLabel: t("cases.btn_cancel"),
       variant: "danger",
     });
     if (!confirmed) return;
@@ -244,11 +270,10 @@ export default function CasesPage() {
         void loadCases();
         addToast({
           type: "error",
-          title: lang === "en" ? "Partial archive failure" : "Teilweise fehlgeschlagen",
-          description:
-            lang === "en"
-              ? `${succeeded} archived, ${failed} failed. Please reload.`
-              : `${succeeded} archiviert, ${failed} fehlgeschlagen. Bitte neu laden.`,
+          title: t("cases.toast_partial_archive"),
+          description: t("cases.toast_partial_desc")
+            .replace("{{succeeded}}", String(succeeded))
+            .replace("{{failed}}", String(failed)),
         });
       }
     } catch (err) {
@@ -267,13 +292,10 @@ export default function CasesPage() {
   async function restoreCase(slug: string) {
     const caseItem = cases.find((c) => c.slug === slug);
     const confirmed = await confirm({
-      title: lang === "en" ? "Restore case" : "Akte wiederherstellen",
-      message:
-        lang === "en"
-          ? `Restore case "${caseItem?.title ?? slug}" from archive? All linked documents will be reactivated.`
-          : `Akte "${caseItem?.title ?? slug}" aus dem Archiv wiederherstellen? Alle verknüpften Dokumente werden reaktiviert.`,
-      confirmLabel: lang === "en" ? "Restore" : "Wiederherstellen",
-      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      title: t("cases.confirm_restore_title"),
+      message: t("cases.confirm_restore_msg").replace("{{name}}", caseItem?.title ?? slug),
+      confirmLabel: t("cases.btn_restore"),
+      cancelLabel: t("cases.btn_cancel"),
       variant: "primary",
     });
     if (!confirmed) return;
@@ -302,39 +324,33 @@ export default function CasesPage() {
         await setCache(OFFLINE_KEYS.cases, next);
         addToast({
           type: "success",
-          title: lang === "en" ? "Case restored" : "Akte wiederhergestellt",
+          title: t("cases.toast_restored"),
           description: caseItem?.title,
         });
       } else if (res.status === 403) {
         addToast({
           type: "error",
-          title: lang === "en" ? "Access denied" : "Zugriff verweigert",
-          description:
-            lang === "en"
-              ? "You don't have permission to restore this case."
-              : "Sie haben keine Berechtigung, diese Akte wiederherzustellen.",
+          title: t("cases.toast_access_denied"),
+          description: t("cases.toast_access_denied_desc"),
         });
       } else if (res.status === 409) {
         addToast({
           type: "error",
-          title: lang === "en" ? "Conflict" : "Konflikt",
-          description:
-            lang === "en"
-              ? "Case was modified by another user — please reload."
-              : "Akte wurde von einem anderen Nutzer geändert — bitte neu laden.",
+          title: t("cases.toast_conflict"),
+          description: t("cases.toast_conflict_desc"),
         });
         void loadCases();
       } else {
         addToast({
           type: "error",
-          title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+          title: t("cases.toast_restore_fail"),
           description: `HTTP ${res.status}`,
         });
       }
     } catch (err) {
       addToast({
         type: "error",
-        title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+        title: t("cases.toast_restore_fail"),
         description: err instanceof Error ? err.message : t("cases.unknown_error"),
       });
     }
@@ -343,13 +359,10 @@ export default function CasesPage() {
   async function bulkRestore(selectedRows: LegalCaseItem[]) {
     const slugs = selectedRows.map((c) => c.slug);
     const confirmed = await confirm({
-      title: lang === "en" ? "Restore cases" : "Akten wiederherstellen",
-      message:
-        lang === "en"
-          ? `Restore ${slugs.length} case(s) from archive? All linked documents will be reactivated.`
-          : `${slugs.length} Akte(n) aus dem Archiv wiederherstellen? Alle verknüpften Dokumente werden reaktiviert.`,
-      confirmLabel: lang === "en" ? "Restore" : "Wiederherstellen",
-      cancelLabel: lang === "en" ? "Cancel" : "Abbrechen",
+      title: t("cases.confirm_bulk_restore_title"),
+      message: t("cases.confirm_bulk_restore_msg").replace("{{count}}", String(slugs.length)),
+      confirmLabel: t("cases.btn_restore"),
+      cancelLabel: t("cases.btn_cancel"),
       variant: "primary",
     });
     if (!confirmed) return;
@@ -389,11 +402,8 @@ export default function CasesPage() {
       if (failed === 0) {
         addToast({
           type: "success",
-          title: lang === "en" ? "Cases restored" : "Akten wiederhergestellt",
-          description:
-            lang === "en"
-              ? `${succeeded} case(s) restored from archive.`
-              : `${succeeded} Akte(n) wiederhergestellt.`,
+          title: t("cases.toast_bulk_restored"),
+          description: t("cases.toast_bulk_restored_desc").replace("{{count}}", String(succeeded)),
         });
       } else {
         setCases(backup);
@@ -401,11 +411,10 @@ export default function CasesPage() {
         void loadCases();
         addToast({
           type: "error",
-          title: lang === "en" ? "Partial restore failure" : "Teilweise fehlgeschlagen",
-          description:
-            lang === "en"
-              ? `${succeeded} restored, ${failed} failed. Please reload.`
-              : `${succeeded} wiederhergestellt, ${failed} fehlgeschlagen. Bitte neu laden.`,
+          title: t("cases.toast_partial_restore"),
+          description: t("cases.toast_partial_desc")
+            .replace("{{succeeded}}", String(succeeded))
+            .replace("{{failed}}", String(failed)),
         });
       }
     } catch (err) {
@@ -413,7 +422,7 @@ export default function CasesPage() {
       await setCache(OFFLINE_KEYS.cases, backup);
       addToast({
         type: "error",
-        title: lang === "en" ? "Restore failed" : "Wiederherstellung fehlgeschlagen",
+        title: t("cases.toast_restore_fail"),
         description: err instanceof Error ? err.message : t("cases.unknown_error"),
       });
     } finally {
@@ -427,6 +436,7 @@ export default function CasesPage() {
       c.title.toLowerCase().includes(search.toLowerCase()) ||
       c.caseNumber.toLowerCase().includes(search.toLowerCase()) ||
       c.legalArea.toLowerCase().includes(search.toLowerCase()) ||
+      (c.clientName || "").toLowerCase().includes(search.toLowerCase()) ||
       (c.opponentName || "").toLowerCase().includes(search.toLowerCase());
     // B1: Archived cases are hidden by default, shown only when explicitly filtered
     const matchesStatus =
@@ -440,6 +450,16 @@ export default function CasesPage() {
       return acc;
     },
     {} as Record<string, number>
+  );
+  const activeCases = cases.filter(
+    (c) => !["archived", "won", "lost", "settled"].includes(c.status)
+  );
+  const criticalCases = activeCases.filter(
+    (c) => c.criticalDeadlines > 0 || c.priority === "critical"
+  );
+  const casesMissingParties = activeCases.filter((c) => !c.clientName || !c.opponentName);
+  const reviewNeededCases = activeCases.filter(
+    (c) => c.conflictStatus === "conflict_pending" || c.openDeadlines > 0 || c.openTasks > 0
   );
 
   const columns: Column<LegalCaseItem>[] = [
@@ -526,6 +546,22 @@ export default function CasesPage() {
         ),
     },
     {
+      key: "client",
+      header: t("cases.col_client"),
+      hideOnMobile: true,
+      cell: (c) =>
+        c.clientName ? (
+          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
+            <Users size={10} />
+            {c.clientName}
+          </span>
+        ) : (
+          <Badge variant="warning" className="text-xs">
+            {t("cases.missing_client")}
+          </Badge>
+        ),
+    },
+    {
       key: "opponent",
       header: t("cases.col_opponent"),
       hideOnMobile: true,
@@ -538,6 +574,32 @@ export default function CasesPage() {
         ) : (
           <span className="text-[color:var(--ds-text-subtle)]">—</span>
         ),
+    },
+    {
+      key: "signals",
+      header: t("cases.col_signals"),
+      hideOnMobile: true,
+      cell: (c) => (
+        <div className="flex flex-wrap gap-1.5">
+          <Badge
+            variant={
+              c.criticalDeadlines > 0 ? "danger" : c.openDeadlines > 0 ? "warning" : "default"
+            }
+            className="gap-1 text-xs"
+          >
+            <CalendarClock size={10} />
+            {c.openDeadlines}
+          </Badge>
+          <Badge variant={c.openTasks > 0 ? "warning" : "default"} className="gap-1 text-xs">
+            <CheckCircle2 size={10} />
+            {c.openTasks}
+          </Badge>
+          <Badge variant="default" className="gap-1 text-xs">
+            <FileText size={10} />
+            {c.documentCount}
+          </Badge>
+        </div>
+      ),
     },
     {
       key: "updatedAt",
@@ -564,8 +626,8 @@ export default function CasesPage() {
                 restoreCase(c.slug);
               }}
               className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-emerald-500/10 hover:text-emerald-600"
-              title={lang === "en" ? "Restore" : "Wiederherstellen"}
-              aria-label={`${lang === "en" ? "Restore" : "Wiederherstellen"} ${c.title}`}
+              title={t("cases.btn_restore")}
+              aria-label={`${t("cases.btn_restore")} ${c.title}`}
             >
               <RotateCcw size={14} />
             </button>
@@ -603,6 +665,22 @@ export default function CasesPage() {
           </Link>
         }
       />
+
+      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: t("cases.health_active"), value: activeCases.length },
+          { label: t("cases.health_critical"), value: criticalCases.length },
+          { label: t("cases.health_review"), value: reviewNeededCases.length },
+          { label: t("cases.health_missing_parties"), value: casesMissingParties.length },
+        ].map((item) => (
+          <div key={item.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
+            <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Status filter chips */}
       <div className="flex flex-wrap items-center gap-2">
@@ -670,9 +748,7 @@ export default function CasesPage() {
         bulkActionLabel={
           canArchive
             ? statusFilter === "archived"
-              ? lang === "en"
-                ? "Restore selected"
-                : "Ausgewählte wiederherstellen"
+              ? t("cases.bulk_restore_label")
               : t("cases.bulk_delete")
             : undefined
         }

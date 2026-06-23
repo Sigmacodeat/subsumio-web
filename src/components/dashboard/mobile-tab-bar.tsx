@@ -20,6 +20,11 @@ import {
   Mail,
   FolderOpen,
   Upload,
+  Users,
+  Receipt,
+  Scale,
+  ShieldCheck,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -215,9 +220,30 @@ export function MobileTabBar({
                 label={t("nav.chat")}
               />
               <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+              <MoreSheetLink href="/dashboard/contacts" icon={Users} label={t("nav.contacts")} />
               <MoreSheetLink href="/dashboard/bea" icon={Mail} label={t("nav.bea")} />
               <MoreSheetLink href="/dashboard/vault" icon={FolderOpen} label={t("nav.vault")} />
               <MoreSheetLink href="/dashboard/upload" icon={Upload} label={t("nav.upload")} />
+              <MoreSheetLink
+                href="/dashboard/kollisionspruefung"
+                icon={Scale}
+                label={t("nav.kollisionspruefung")}
+              />
+              <MoreSheetLink
+                href="/dashboard/invoicing"
+                icon={Receipt}
+                label={t("nav.invoicing")}
+              />
+              <MoreSheetLink
+                href="/dashboard/compliance"
+                icon={ShieldCheck}
+                label={t("nav.compliance")}
+              />
+              <MoreSheetLink
+                href="/dashboard/document-requests"
+                icon={FileText}
+                label={t("nav.document_requests")}
+              />
               <MoreSheetLink href="/dashboard/settings" icon={Settings} label={t("nav.settings")} />
             </div>
           </div>
@@ -228,8 +254,6 @@ export function MobileTabBar({
       <nav
         className="fixed right-0 bottom-0 left-0 z-40 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Mobile Navigation"
-        role="tablist"
-        aria-orientation="horizontal"
       >
         {/* Active indicator bar */}
         <div className="relative h-1">
@@ -253,8 +277,6 @@ export function MobileTabBar({
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 aria-label={t(tab.labelKey)}
-                role="tab"
-                aria-selected={active}
                 onClick={() => {
                   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
                     navigator.vibrate(10);
@@ -279,8 +301,7 @@ export function MobileTabBar({
             whileTap={reduceMotion ? undefined : { scale: 0.94 }}
             transition={softTransition}
             aria-label="Copilot"
-            role="tab"
-            aria-selected={copilotActive}
+            aria-pressed={copilotActive}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
               copilotActive
@@ -314,7 +335,6 @@ export function MobileTabBar({
             aria-label="Mehr Aktionen"
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
-            role="tab"
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-[color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
               moreOpen

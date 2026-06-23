@@ -43,8 +43,7 @@ const ERRORS: Record<string, string> = {
   invalid_name: "Bitte gib einen Team-Namen mit 2–80 Zeichen ein.",
   owner_only: "Nur der Team-Inhaber kann das.",
   self_invite: "Du bist schon drin — dich selbst einzuladen geht nicht.",
-  no_seats_left:
-    "Keine freien Plätze mehr. Upgrade auf einen größeren Plan oder entferne ein Mitglied.",
+  no_seats_left: "__TEAM_SEAT_LIMIT__",
   already_member: "Diese Person ist bereits Mitglied.",
   invalid_email: "Bitte gib eine gültige E-Mail-Adresse ein.",
   owner_must_remove_members_first:
@@ -81,7 +80,8 @@ export default function TeamPage() {
     leaveMutation.isPending;
 
   function handleErr(err: unknown) {
-    setError(err instanceof Error ? errMsg(err.message) : ERRORS.generic);
+    const raw = err instanceof Error ? errMsg(err.message) : ERRORS.generic;
+    setError(raw === "__TEAM_SEAT_LIMIT__" ? t("team.seat_limit_reached") : raw);
   }
 
   if (loading) {

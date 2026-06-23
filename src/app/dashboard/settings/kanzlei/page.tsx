@@ -9,8 +9,10 @@ import {
   type KanzleiSettings,
 } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function KanzleiSettingsPage() {
+  const { t } = useLang();
   const [settings, setSettings] = useState<KanzleiSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function KanzleiSettingsPage() {
         setLoading(false);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "Laden fehlgeschlagen.");
+        setError(err instanceof Error ? err.message : t("settings.kanzlei.error_save"));
         setLoading(false);
       });
   }, []);
@@ -41,14 +43,14 @@ export default function KanzleiSettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : t("settings.kanzlei.error_save"));
     }
   }
 
   if (loading) {
     return (
       <div className="mx-auto flex max-w-3xl items-center gap-2 p-6 text-[color:var(--ds-text-muted)]">
-        <Loader2 size={16} className="animate-spin" /> Lade Kanzlei-Einstellungen…
+        <Loader2 size={16} className="animate-spin" /> {t("retention.loading")}
       </div>
     );
   }
@@ -64,8 +66,8 @@ export default function KanzleiSettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Kanzlei-Einstellungen"
-        description="Briefkopf, Bankverbindung, Logo für Rechnungen"
+        title={t("settings.kanzlei.title")}
+        description={t("settings.kanzlei.description")}
       />
 
       {error && (
@@ -131,12 +133,12 @@ export default function KanzleiSettingsPage() {
             onClick={() => void handleSave()}
           >
             <Save size={14} />
-            Speichern
+            {t("settings.kanzlei.btn_save")}
           </Button>
           {saved && (
             <span className="flex items-center gap-1 text-sm text-emerald-600">
               <CheckCircle2 size={14} />
-              Gespeichert
+              {t("settings.kanzlei.toast_saved")}
             </span>
           )}
         </div>
@@ -146,7 +148,9 @@ export default function KanzleiSettingsPage() {
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
         <div className="flex items-center gap-2">
           <Shield size={16} className="text-amber-600" />
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Sicherheit</h2>
+          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+            {t("settings.security.title")}
+          </h2>
         </div>
         <label className="flex cursor-pointer items-start gap-3">
           <input
@@ -174,12 +178,12 @@ export default function KanzleiSettingsPage() {
             onClick={() => void handleSave()}
           >
             <Save size={14} />
-            Speichern
+            {t("settings.kanzlei.btn_save")}
           </Button>
           {saved && (
             <span className="flex items-center gap-1 text-sm text-emerald-600">
               <CheckCircle2 size={14} />
-              Gespeichert
+              {t("settings.kanzlei.toast_saved")}
             </span>
           )}
         </div>

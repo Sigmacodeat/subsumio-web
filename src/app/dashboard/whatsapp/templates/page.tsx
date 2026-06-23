@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 
 interface WhatsAppTemplate {
@@ -42,6 +43,7 @@ const STATUS_ICONS: Record<string, typeof FileText> = {
 };
 
 export default function WhatsAppTemplatesPage() {
+  const { t } = useLang();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export default function WhatsAppTemplatesPage() {
       const data = await res.json();
       setTemplates(data.templates ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Laden");
+      setError(err instanceof Error ? err.message : t("wamplates.error_load"));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ export default function WhatsAppTemplatesPage() {
       setNewTemplate({ name: "", language: "de", category: "UTILITY", body: "" });
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Erstellen");
+      setError(err instanceof Error ? err.message : t("wamplates.error_create"));
     }
   }
 
@@ -102,12 +104,12 @@ export default function WhatsAppTemplatesPage() {
       setEditing(null);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Speichern");
+      setError(err instanceof Error ? err.message : t("wamplates.error_save"));
     }
   }
 
   async function deleteTemplate(slug: string) {
-    if (!confirm("Template wirklich löschen?")) return;
+    if (!confirm(t("wamplates.confirm_delete"))) return;
     try {
       await fetch("/api/whatsapp/templates", {
         method: "DELETE",
@@ -116,19 +118,19 @@ export default function WhatsAppTemplatesPage() {
       });
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler beim Löschen");
+      setError(err instanceof Error ? err.message : t("wamplates.error_delete"));
     }
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="WhatsApp Templates"
-        description="Vorlagen für proaktive Nachrichten außerhalb des 24h-Fensters"
+        title={t("wamplates.title")}
+        description={t("wamplates.description")}
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "WhatsApp", href: "/dashboard/whatsapp" },
-          { label: "Templates" },
+          { label: t("wamplates.breadcrumb") },
         ]}
         actions={
           <Button
@@ -137,7 +139,7 @@ export default function WhatsAppTemplatesPage() {
             onClick={() => setCreating(true)}
           >
             <Plus size={14} />
-            Neues Template
+            {t("wamplates.btn_create")}
           </Button>
         }
       />

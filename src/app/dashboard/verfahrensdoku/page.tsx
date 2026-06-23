@@ -10,6 +10,7 @@ import { buildVerfahrensdoku, type VerfahrensdokuInput } from "@/lib/gobd-verfah
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { verfahrensdokuSchema, type VerfahrensdokuFormData } from "@/lib/schemas/verfahrensdoku";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 const DOC_SLUG = "legal/gobd/verfahrensdokumentation";
 
@@ -119,6 +120,7 @@ ${markdownToHtml(markdown)}
 }
 
 export default function VerfahrensdokuPage() {
+  const { t } = useLang();
   const today = new Date().toISOString().split("T")[0];
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -212,7 +214,7 @@ export default function VerfahrensdokuPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
+      setSaveError(err instanceof Error ? err.message : t("verfahrensdoku.error_save"));
     } finally {
       setSaving(false);
     }
@@ -270,13 +272,16 @@ export default function VerfahrensdokuPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="GoBD-Verfahrensdokumentation"
-        description="Vorlage aus Kanzlei-Stammdaten + Ablaufbeschreibung (GoBD Rz. 151 ff.)"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Verfahrensdoku" }]}
+        title={t("verfahrensdoku.title")}
+        description={t("verfahrensdoku.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("verfahrensdoku.breadcrumb") },
+        ]}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={printPdf} className="gap-1.5 text-xs">
-              <Printer size={14} /> PDF / Drucken
+              <Printer size={14} /> {t("verfahrensdoku.btn_print")}
             </Button>
             <Button
               variant="secondary"
@@ -284,7 +289,7 @@ export default function VerfahrensdokuPage() {
               onClick={downloadWord}
               className="gap-1.5 text-xs"
             >
-              <Download size={14} /> Word (.doc)
+              <Download size={14} /> {t("verfahrensdoku.btn_word")}
             </Button>
             <Button
               variant="primary"
@@ -300,7 +305,7 @@ export default function VerfahrensdokuPage() {
               ) : (
                 <Save size={14} />
               )}
-              {saved ? "Gespeichert" : "Im Brain speichern"}
+              {saved ? t("verfahrensdoku.btn_saved") : t("verfahrensdoku.btn_save")}
             </Button>
           </div>
         }
@@ -309,12 +314,7 @@ export default function VerfahrensdokuPage() {
       {/* Honest framing */}
       <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
         <Info size={16} className="mt-0.5 shrink-0 text-amber-600" />
-        <p className="text-xs leading-relaxed text-amber-600">
-          Dies erzeugt eine <strong>Vorlage</strong>, kein prüfungssicheres Dokument. Die
-          Verfahrensdokumentation muss an den tatsächlichen Kanzleiablauf angepasst,
-          anwaltlich/steuerlich geprüft und vom Berater bzw. Betriebsprüfer abgenommen werden.
-          Subsumio liefert technische GoBD-Bausteine — keine Konformitätszusage.
-        </p>
+        <p className="text-xs leading-relaxed text-amber-600">{t("verfahrensdoku.disclaimer")}</p>
       </div>
 
       {saveError && <div className="text-xs text-red-600">{saveError}</div>}
@@ -323,65 +323,74 @@ export default function VerfahrensdokuPage() {
         {/* Form */}
         <div className="space-y-4">
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Stammdaten</h2>
-            {field("Kanzlei / Unternehmen", "kanzleiName", "z.B. Kanzlei Muster")}
-            {field("Vertretungsberechtigte/r", "anwaltName", "z.B. RA Dr. Muster")}
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("verfahrensdoku.section_master")}
+            </h2>
+            {field(
+              t("verfahrensdoku.field_firm"),
+              "kanzleiName",
+              t("verfahrensdoku.field_firm_ph")
+            )}
+            {field(
+              t("verfahrensdoku.field_representative"),
+              "anwaltName",
+              t("verfahrensdoku.field_representative_ph")
+            )}
             {field("USt-IdNr.", "ustId", "DE123456789")}
             {field(
-              "Verantwortlich für die Ordnungsmäßigkeit",
+              t("verfahrensdoku.field_responsible"),
               "verantwortlich",
-              "Name der zuständigen Person"
+              t("verfahrensdoku.field_responsible_ph")
             )}
-            {field("Stand (Datum)", "stand", today)}
+            {field(t("verfahrensdoku.field_stand"), "stand", today)}
           </div>
 
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Ablaufbeschreibung
+              {t("verfahrensdoku.section_process")}
             </h2>
-            {field("Eingesetzte DV-Systeme", "systeme", "Subsumio, DATEV, beA …")}
             {field(
-              "Belegeingang",
+              t("verfahrensdoku.field_systems"),
+              "systeme",
+              t("verfahrensdoku.field_systems_ph")
+            )}
+            {field(
+              t("verfahrensdoku.field_receipt"),
               "belegEingang",
-              "Wie kommen Belege herein? (Post, E-Mail, Upload, Scan)",
+              t("verfahrensdoku.field_receipt_ph"),
               true
             )}
             {field(
-              "Erfassung & Verbuchung",
+              t("verfahrensdoku.field_booking"),
               "erfassung",
-              "Wie/wann werden Belege erfasst und verbucht?",
+              t("verfahrensdoku.field_booking_ph"),
               true
             )}
             {field(
-              "Ablage & Aufbewahrungsort",
+              t("verfahrensdoku.field_storage"),
               "ablageOrt",
-              "Wo werden Belege unveränderbar abgelegt?",
+              t("verfahrensdoku.field_storage_ph"),
               true
             )}
           </div>
 
           <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Betrieb & Kontrolle
+              {t("verfahrensdoku.field_backup")} & {t("verfahrensdoku.field_access")}
             </h2>
             {field(
-              "Datensicherung / Backup",
+              t("verfahrensdoku.field_backup"),
               "backup",
-              "Sicherungskonzept, Frequenz, Aufbewahrung der Backups",
+              t("verfahrensdoku.field_backup_ph"),
               true
             )}
             {field(
-              "Zugriffsschutz",
+              t("verfahrensdoku.field_access"),
               "zugriffsschutz",
-              "Berechtigungskonzept, Authentifizierung",
+              t("verfahrensdoku.field_access_ph"),
               true
             )}
-            {field(
-              "Internes Kontrollsystem (IKS)",
-              "iks",
-              "Funktionstrennung, Plausibilitätskontrollen",
-              true
-            )}
+            {field(t("verfahrensdoku.field_iks"), "iks", t("verfahrensdoku.field_iks_ph"), true)}
           </div>
         </div>
 
@@ -390,7 +399,7 @@ export default function VerfahrensdokuPage() {
           <div className="flex items-center gap-2 text-[color:var(--ds-text-muted)]">
             <FileText size={14} className="brand-text" />
             <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-              Vorschau (Markdown)
+              {t("verfahrensdoku.preview_title")} (Markdown)
             </span>
           </div>
           <pre className="max-h-[70vh] overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">

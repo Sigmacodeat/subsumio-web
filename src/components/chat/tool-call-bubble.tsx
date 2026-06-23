@@ -64,6 +64,16 @@ const PARAM_LABEL_KEYS: Record<string, string> = {
   matter_type: "chat.tool.param_matter_type",
   jurisdiction: "chat.tool.param_jurisdiction",
   urgency: "chat.tool.param_urgency",
+  streitwert: "chat.tool.param_streitwert",
+  items: "chat.tool.param_items",
+  message_draft: "chat.tool.param_message_draft",
+  channel: "chat.tool.param_channel",
+  legal_area: "chat.tool.param_legal_area",
+  text: "chat.tool.param_text",
+  source_language: "chat.tool.param_source_language",
+  target_language: "chat.tool.param_target_language",
+  questions: "chat.tool.param_questions",
+  document_slugs: "chat.tool.param_document_slugs",
 };
 
 function formatParamKey(key: string, t: (k: never) => string): string {

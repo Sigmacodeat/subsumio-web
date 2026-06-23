@@ -22,6 +22,8 @@ import {
   FolderInput,
   ArrowUpDown,
   RotateCcw,
+  Languages,
+  FileSignature,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,26 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
 
 const DOCS_LIMIT = 200;
+
+function HubLink({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof Search;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    >
+      <Icon size={15} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -328,6 +350,13 @@ export default function VaultPage() {
           ) : undefined
         }
       />
+
+      <div className="grid gap-2 sm:grid-cols-4">
+        <HubLink href="/dashboard/analyze" icon={FileSearch} label={t("nav.analyze")} />
+        <HubLink href="/dashboard/translate" icon={Languages} label={t("nav.translate")} />
+        <HubLink href="/dashboard/signature" icon={FileSignature} label={t("nav.signature")} />
+        <HubLink href="/dashboard/tabular-review" icon={Table2} label={t("nav.tabular_review")} />
+      </div>
 
       {/* Prominente Upload-CTAs: Dokument zu Akte / Kanzleiwissen importieren */}
       <div className="grid gap-3 sm:grid-cols-2">

@@ -7,8 +7,10 @@ import { api } from "@/lib/api";
 import { useMe } from "@/lib/queries/auth";
 import { useDataExportBackup } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function DataExportPage() {
+  const { t } = useLang();
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
   const [restoreLoading, setRestoreLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function DataExportPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("dataexport.error_export"));
     } finally {
       setLoading(false);
     }
@@ -57,9 +59,12 @@ export default function DataExportPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Datenexport"
-        description="DSGVO Art. 20 — Recht auf Datenübertragbarkeit"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Datenexport" }]}
+        title={t("dataexport.title")}
+        description={t("dataexport.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("dataexport.breadcrumb") },
+        ]}
       />
 
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -85,7 +90,7 @@ export default function DataExportPage() {
           disabled={loading}
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          {loading ? "Exportiere…" : "JSON-Export herunterladen"}
+          {loading ? t("dataexport.btn_exporting") : t("dataexport.btn_json")}
         </Button>
       </div>
 
@@ -154,7 +159,7 @@ export default function DataExportPage() {
                 a.remove();
                 URL.revokeObjectURL(url);
               } catch (e) {
-                setBackupError(e instanceof Error ? e.message : "Backup fehlgeschlagen");
+                setBackupError(e instanceof Error ? e.message : t("dataexport.error_backup"));
               } finally {
                 setBackupLoading(false);
               }
@@ -166,7 +171,7 @@ export default function DataExportPage() {
             ) : (
               <Download size={14} />
             )}
-            {backupLoading ? "Erstelle Backup…" : "Voll-Backup herunterladen"}
+            {backupLoading ? t("dataexport.btn_backing_up") : t("dataexport.btn_backup")}
           </Button>
           {backupError && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
@@ -223,7 +228,9 @@ export default function DataExportPage() {
                   }
                   setRestoreNotice(`${restored} Pages wiederhergestellt.`);
                 } catch (err) {
-                  setBackupError(err instanceof Error ? err.message : "Restore fehlgeschlagen.");
+                  setBackupError(
+                    err instanceof Error ? err.message : t("dataexport.error_restore")
+                  );
                 } finally {
                   setRestoreLoading(false);
                   if (fileInputRef.current) fileInputRef.current.value = "";
@@ -241,7 +248,7 @@ export default function DataExportPage() {
               ) : (
                 <Upload size={14} />
               )}
-              {restoreLoading ? "Stelle wieder her…" : "Backup-Datei auswählen"}
+              {restoreLoading ? t("dataexport.btn_restoring") : t("dataexport.btn_restore")}
             </Button>
             {restoreNotice && (
               <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700">

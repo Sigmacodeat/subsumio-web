@@ -416,15 +416,6 @@ export function ChatInput({
             </button>
           )}
         </div>
-        <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-[color:var(--ds-text-subtle)]">
-          <span className="inline-flex items-center gap-1">
-            <kbd className="rounded bg-[color:var(--ds-surface-2)] px-1 py-0.5 font-sans text-[10px]">
-              ↵
-            </kbd>
-            {t("chat.input.send_enter")}
-          </span>
-          <span className="hidden opacity-70 sm:inline">PDF · DOCX · TXT · MD · EML · MSG</span>
-        </div>
       </div>
     </div>
   );

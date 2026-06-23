@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import type { DocumentTranslation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 const LANGUAGES = [
   { code: "de", label: "Deutsch" },
@@ -24,6 +25,7 @@ const LANGUAGES = [
 ];
 
 export default function TranslatePage() {
+  const { t } = useLang();
   const [mode, setMode] = useState<"text" | "slug">("text");
   const [slug, setSlug] = useState("");
   const [text, setText] = useState("");
@@ -50,7 +52,7 @@ export default function TranslatePage() {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Übersetzung fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("translate.error_failed"));
     } finally {
       setLoading(false);
     }
@@ -68,9 +70,12 @@ export default function TranslatePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Juristische Übersetzung"
-        description="KI-Übersetzung mit Erhaltung juristischer Fachterminologie, Normzitate und Formatierung"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Übersetzung" }]}
+        title={t("translate.title")}
+        description={t("translate.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("translate.breadcrumb") },
+        ]}
       />
 
       {/* Language selectors */}
@@ -78,14 +83,14 @@ export default function TranslatePage() {
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Quellsprache
+              {t("translate.source_lang")}
             </label>
             <select
               value={sourceLang}
               onChange={(e) => setSourceLang(e.target.value)}
               className="min-w-[140px] rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
             >
-              <option value="auto">Auto-Erkennung</option>
+              <option value="auto">{t("translate.auto_detect")}</option>
               {LANGUAGES.map((l) => (
                 <option key={l.code} value={l.code}>
                   {l.label}
@@ -98,7 +103,7 @@ export default function TranslatePage() {
 
           <div>
             <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-              Zielsprache
+              {t("translate.target_lang")}
             </label>
             <select
               value={targetLang}
@@ -165,14 +170,14 @@ export default function TranslatePage() {
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="Dokument-Slug aus dem Brain"
+            placeholder={t("translate.placeholder_doc_slug")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
           />
         ) : (
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Zu übersetzender Text…"
+            placeholder={t("translate.placeholder_text")}
             className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
         )}
@@ -183,7 +188,7 @@ export default function TranslatePage() {
           className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <Languages size={15} />}
-          Übersetzen
+          {t("translate.btn_translate")}
         </Button>
       </div>
 
@@ -199,12 +204,12 @@ export default function TranslatePage() {
           <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                <Languages size={14} /> Übersetzung ({result.source_language} →{" "}
+                <Languages size={14} /> {t("translate.result_label")} ({result.source_language} →{" "}
                 {result.target_language})
               </h3>
               <Button variant="ghost" size="sm" onClick={copyResult} className="gap-1.5 text-xs">
                 {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                {copied ? "Kopiert" : "Kopieren"}
+                {copied ? t("translate.btn_copy") : t("translate.btn_copy")}
               </Button>
             </div>
             <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">

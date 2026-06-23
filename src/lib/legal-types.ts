@@ -167,6 +167,9 @@ export interface CaseFrontmatter {
   opponent_name?: string;
   /** Slugs der verknüpften Gegner (role=opponent). */
   opponent_slugs?: string[];
+  conflict_status?: "conflict_pending" | "conflict_clear" | "conflict_waived" | string;
+  conflict_waiver_reason?: string;
+  conflict_waived_at?: string;
   own_lawyer_id?: string;
   own_lawyer_name?: string;
   /** Slug des verknüpften Bearbeiter-/Anwaltskontakts (role=lawyer). */

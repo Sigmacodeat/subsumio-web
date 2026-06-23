@@ -96,15 +96,14 @@ const workflowStatusBadge: Record<
 
 type FilterKey = "all" | "active" | "completed" | "failed";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "Alle" },
-  { key: "active", label: "Aktiv" },
-  { key: "completed", label: "Abgeschlossen" },
-  { key: "failed", label: "Fehler" },
-];
-
 export default function WorkflowsPage() {
   const { t } = useLang();
+  const FILTERS: { key: FilterKey; label: string }[] = [
+    { key: "all", label: t("workflows.filter_all") },
+    { key: "active", label: t("workflows.status_active") },
+    { key: "completed", label: t("workflows.filter_completed") },
+    { key: "failed", label: t("workflows.status_failed") },
+  ];
   const pagesQuery = usePages({ type: "workflow", limit: 200 });
   const meQuery = useMe();
   const createMutation = useCreatePage();
@@ -190,13 +189,16 @@ export default function WorkflowsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Workflows"
-        description="Kanzlei-Workflows mit verketteten Aktionen und Vier-Augen-Freigabe"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workflows" }]}
+        title={t("workflows.title")}
+        description={t("workflows.desc")}
+        breadcrumbs={[
+          { label: t("breadcrumb.dashboard"), href: "/dashboard" },
+          { label: t("workflows.breadcrumb") },
+        ]}
         actions={
           <Button onClick={() => setSelectedTemplate("due_diligence")}>
             <Plus size={16} />
-            Neuer Workflow
+            {t("workflows.new")}
           </Button>
         }
       />
@@ -207,12 +209,7 @@ export default function WorkflowsPage() {
         role="note"
       >
         <Info size={16} className="brand-text mt-0.5 shrink-0" aria-hidden="true" />
-        <p className="brand-text/90 text-xs leading-relaxed">
-          Workflows verketten Agenten-Aktionen (Dokumentanalyse, Fristnotierung, Versand) zu
-          wiederkehrenden Kanzlei-Prozessen. Jede risikoreiche Aktion benötigt eine
-          <strong> menschliche Freigabe</strong> — berufsrechtliche Letztverantwortung +
-          EU-AI-Act-Aufsichtspflicht (Annex&nbsp;III).
-        </p>
+        <p className="brand-text/90 text-xs leading-relaxed">{t("workflows.note")}</p>
       </div>
 
       {error && (
@@ -239,7 +236,7 @@ export default function WorkflowsPage() {
           <div className="flex items-center gap-2">
             <Zap size={14} className="brand-text" aria-hidden="true" />
             <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {instances.length === 0 ? "Workflow-Templates" : "Workflow starten"}
+              {instances.length === 0 ? t("workflows.templates") : t("workflows.start")}
             </h2>
           </div>
 
@@ -444,7 +441,7 @@ function WorkflowCard({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const fm = instance.frontmatter;
   const progress = getWorkflowProgress(fm.steps);
   const pendingApprovals = getPendingApprovals(fm.steps);
@@ -488,7 +485,7 @@ function WorkflowCard({
             </Badge>
           </div>
           <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
-            {fm.prompt || "Keine Beschreibung"}
+            {fm.prompt || t("workflows.empty_description")}
           </p>
         </div>
 

@@ -155,7 +155,7 @@ export default function OpponentsPage() {
                   await api.brain.listPages({ type: "legal_case", limit: CASES_LIMIT });
                   setOpponents([]);
                 } catch (e) {
-                  setLoadError(e instanceof Error ? e.message : "Fehler");
+                  setLoadError(e instanceof Error ? e.message : t("opponents.error_load"));
                 } finally {
                   setLoading(false);
                 }

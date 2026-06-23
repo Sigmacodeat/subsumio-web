@@ -45,6 +45,7 @@ import {
   Archive,
   RotateCcw,
   CloudUpload,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +140,7 @@ interface CaseDetail {
   clientSlug?: string;
   opponentSlugs?: string[];
   courtSlug?: string;
+  conflictStatus?: string;
   facts: string;
   claims: string[];
   defenses: string[];
@@ -227,6 +229,8 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
     clientSlug: fm.client_slug || undefined,
     opponentSlugs: fm.opponent_slugs || undefined,
     courtSlug: fm.court_slug || undefined,
+    conflictStatus:
+      typeof fm.conflict_status === "string" ? (fm.conflict_status as string) : undefined,
     facts: page.content || "",
     claims: fm.claims || [],
     defenses: fm.defenses || [],
@@ -240,7 +244,7 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
     tasks: fm.tasks || [],
     timeEntries: fm.time_entries || [],
     expenses: fm.expenses || [],
-    timelineEvents: fm.timeline_events || [],
+    timelineEvents: [...(fm.timeline || []), ...(fm.timeline_events || [])],
     documents: fm.documents || [],
     deadlines: fm.deadlines || [],
     suggestedDeadlines: (fm.suggested_deadlines || []) as SuggestedDeadline[],
@@ -252,6 +256,69 @@ function parseCaseDetail(page: BrainPage): CaseDetail {
     archivedBy: typeof fm.archived_by === "string" ? fm.archived_by : undefined,
     version: (fm.version as number) || 0,
   };
+}
+
+function normalizeDeadlineKey(deadline: DeadlineEntry) {
+  return [deadline.id, deadline.title?.trim().toLowerCase(), deadline.due_date || deadline.date]
+    .filter(Boolean)
+    .join(":");
+}
+
+function standaloneDeadlineForCase(page: BrainPage, detail: CaseDetail): DeadlineEntry | null {
+  const fm = page.frontmatter ?? {};
+  const caseSlug = typeof fm.case_slug === "string" ? fm.case_slug : undefined;
+  const caseTitle = typeof fm.case_title === "string" ? fm.case_title : undefined;
+  const caseNumber = typeof fm.case_number === "string" ? fm.case_number : undefined;
+  const linked =
+    caseSlug === detail.slug ||
+    caseTitle === detail.title ||
+    (caseNumber && caseNumber === detail.caseNumber);
+  if (!linked) return null;
+
+  const dueDate =
+    typeof fm.due_date === "string"
+      ? fm.due_date
+      : typeof fm.date === "string"
+        ? fm.date
+        : undefined;
+  return {
+    id: `page:${page.slug}`,
+    title: typeof fm.title === "string" ? fm.title : page.title,
+    description: typeof fm.description === "string" ? fm.description : undefined,
+    date: dueDate,
+    due_date: dueDate,
+    status: typeof fm.status === "string" ? fm.status : undefined,
+    type: typeof fm.deadline_type === "string" ? fm.deadline_type : (fm.type as string | undefined),
+    source: typeof fm.source === "string" ? fm.source : "Fristenmodul",
+    law: typeof fm.law === "string" ? fm.law : undefined,
+    calculation_note: typeof fm.calculation_note === "string" ? fm.calculation_note : undefined,
+    review_status:
+      fm.review_status === "approved" ||
+      fm.review_status === "reviewed" ||
+      fm.review_status === "rejected" ||
+      fm.review_status === "unreviewed"
+        ? fm.review_status
+        : "unreviewed",
+    reviewed_by: typeof fm.reviewed_by === "string" ? fm.reviewed_by : undefined,
+    reviewed_at: typeof fm.reviewed_at === "string" ? fm.reviewed_at : undefined,
+    created_at: page.created_at,
+    updated_at: page.updated_at,
+  };
+}
+
+function mergeCaseDeadlines(detail: CaseDetail, deadlinePages: BrainPage[] = []) {
+  const base =
+    detail.deadlines.length > 0
+      ? detail.deadlines
+      : detail.timelineEvents.map((entry) => timelineToDeadline(entry, detail.slug));
+  const linked = deadlinePages
+    .map((page) => standaloneDeadlineForCase(page, detail))
+    .filter((deadline): deadline is DeadlineEntry => Boolean(deadline));
+  const merged = new Map<string, DeadlineEntry>();
+  [...base, ...linked].forEach((deadline) => {
+    merged.set(normalizeDeadlineKey(deadline), deadline);
+  });
+  return [...merged.values()];
 }
 
 export default function CaseDetailPage() {
@@ -536,23 +603,23 @@ export default function CaseDetailPage() {
     (async () => {
       setContactsLoading(true);
       try {
-        const [page, allContacts] = await Promise.all([
+        const [page, allContacts, allDeadlinePages] = await Promise.all([
           api.brain.getPage(slug),
           api.brain.listPages({ type: "legal_contact", limit: 200 }).catch(() => [] as BrainPage[]),
+          api.brain
+            .listPages({ type: "legal_deadline", limit: 300 })
+            .catch(() => [] as BrainPage[]),
         ]);
         if (!cancelled) {
           const detail = parseCaseDetail(page);
+          const mergedDeadlines = mergeCaseDeadlines(detail, allDeadlinePages);
           setCaseData(detail);
           setTasks(detail.tasks);
           setTimeEntries(detail.timeEntries);
           setExpensesList(detail.expenses);
           timeForm.setValue("lawyer", detail.ownLawyerName || "");
           setEvidenceList(detail.evidence || []);
-          setDeadlinesList(
-            detail.deadlines.length > 0
-              ? detail.deadlines
-              : detail.timelineEvents.map((entry) => timelineToDeadline(entry, detail.slug))
-          );
+          setDeadlinesList(mergedDeadlines);
           setContacts(
             allContacts.map((p) => {
               const fm = p.frontmatter as Record<string, unknown>;
@@ -605,17 +672,16 @@ export default function CaseDetailPage() {
     if (!caseData) return;
     try {
       const page = await api.brain.getPage(slug);
+      const deadlinePages = await api.brain
+        .listPages({ type: "legal_deadline", limit: 300 })
+        .catch(() => [] as BrainPage[]);
       const detail = parseCaseDetail(page);
       setCaseData(detail);
       setTasks(detail.tasks);
       setTimeEntries(detail.timeEntries);
       setExpensesList(detail.expenses);
       setEvidenceList(detail.evidence || []);
-      setDeadlinesList(
-        detail.deadlines.length > 0
-          ? detail.deadlines
-          : detail.timelineEvents.map((entry) => timelineToDeadline(entry, detail.slug))
-      );
+      setDeadlinesList(mergeCaseDeadlines(detail, deadlinePages));
     } catch {
       // best effort — UI continues with stale data
     }
@@ -1195,8 +1261,8 @@ export default function CaseDetailPage() {
       // Zeiteinträge beim nächsten Reload kommentarlos.
       setSaveError(
         e instanceof Error
-          ? `Speichern fehlsgeschlagen: ${e.message}`
-          : "Speichern fehlgeschlagen — Änderungen sind nur lokal sichtbar."
+          ? `${t("casesdetail.error_save")}: ${e.message}`
+          : t("casesdetail.error_save")
       );
     }
   }
@@ -1389,6 +1455,32 @@ export default function CaseDetailPage() {
       };
     return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
   }
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const activeDeadlines = deadlinesList.filter((dl) => dl.status !== "done");
+  const criticalDeadlineCount = activeDeadlines.filter((dl) => {
+    const due = new Date(dl.due_date || dl.date || "");
+    if (Number.isNaN(due.getTime())) return false;
+    const days = Math.ceil((due.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 3;
+  }).length;
+  const openTaskCount = tasks.filter((task) => !task.done).length;
+  const documentReviewCount = caseData.documents.filter((doc) => {
+    const status = docProcessingStatus(doc).key;
+    return status === "review_open" || status === "ocr_needed" || status === "ocr_processing";
+  }).length;
+  const unbilledMinutes = timeEntries
+    .filter((entry) => entry.billable !== false && !entry.billed)
+    .reduce((sum, entry) => sum + entry.minutes, 0);
+  const unbilledExpenses = expensesList
+    .filter((entry) => entry.billable !== false && !entry.billed)
+    .reduce((sum, entry) => sum + entry.amount, 0);
+  const conflictNeedsReview =
+    Boolean(contactConflict) || caseData.conflictStatus === "conflict_pending";
+  const formatMinutes = (minutes: number) =>
+    minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}min` : `${minutes}min`;
+  const encodedCaseSlug = encodeURIComponent(caseData.slug);
 
   return (
     <div className="flex h-full flex-col">
@@ -1587,6 +1679,139 @@ export default function CaseDetailPage() {
               <span className="text-[color:var(--ds-text-muted)]">{caseData.ownLawyerName}</span>
             </span>
           )}
+        </div>
+
+        <div className="mt-4 grid gap-3 border-t border-[color:var(--ds-border)] pt-4 lg:grid-cols-[1fr_auto]">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+            {[
+              {
+                target: "deadlines_tasks",
+                label: t("cases.detail_health_deadlines"),
+                value: criticalDeadlineCount,
+                detail: `${activeDeadlines.length} ${t("cases.detail_health_open")}`,
+                icon: CalendarClock,
+                alert: criticalDeadlineCount > 0,
+              },
+              {
+                target: "deadlines_tasks",
+                label: t("cases.detail_health_tasks"),
+                value: openTaskCount,
+                detail: t("cases.detail_health_open"),
+                icon: ListChecks,
+                alert: openTaskCount > 0,
+              },
+              {
+                target: "documents",
+                label: t("cases.detail_health_docs"),
+                value: documentReviewCount,
+                detail: `${caseData.documents.length} ${t("cases.detail_health_total")}`,
+                icon: FileText,
+                alert: documentReviewCount > 0,
+              },
+              {
+                target: "billing",
+                label: t("cases.detail_health_billing"),
+                value: unbilledMinutes > 0 ? formatMinutes(unbilledMinutes) : "0",
+                detail: `${unbilledExpenses.toFixed(2)} €`,
+                icon: Receipt,
+                alert: unbilledMinutes > 0 || unbilledExpenses > 0,
+              },
+              {
+                target: "overview",
+                label: t("cases.detail_health_conflict"),
+                value: conflictNeedsReview
+                  ? t("cases.detail_health_review")
+                  : t("cases.detail_health_clear"),
+                detail: caseData.conflictStatus || t("cases.detail_health_checked"),
+                icon: conflictNeedsReview ? ShieldAlert : ShieldCheck,
+                alert: conflictNeedsReview,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setActiveTab(item.target)}
+                  className={cn(
+                    "min-h-20 rounded-lg border px-3 py-2 text-left transition-colors",
+                    item.alert
+                      ? "border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10"
+                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] hover:border-[color:var(--ds-border-strong)]"
+                  )}
+                >
+                  <div className="mb-1 flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
+                    <Icon size={12} />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  <div
+                    className={cn(
+                      "text-sm font-semibold text-[color:var(--ds-text)]",
+                      item.alert && "text-amber-600"
+                    )}
+                  >
+                    {item.value}
+                  </div>
+                  <div className="mt-0.5 truncate text-[11px] text-[color:var(--ds-text-muted)]">
+                    {item.detail}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:max-w-[360px] lg:justify-end">
+            {[
+              {
+                label: t("cases.detail_action_deadline"),
+                icon: CalendarClock,
+                onClick: () => setActiveTab("deadlines_tasks"),
+              },
+              {
+                label: t("cases.detail_action_document"),
+                icon: FileText,
+                onClick: () => setActiveTab("documents"),
+              },
+              {
+                label: t("cases.detail_action_time"),
+                icon: Clock,
+                onClick: () => setActiveTab("billing"),
+              },
+              {
+                label: t("cases.detail_action_assistant"),
+                icon: MessageSquare,
+                onClick: () => setActiveTab("strategy"),
+              },
+            ].map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={action.onClick}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
+                >
+                  <Icon size={13} />
+                  {action.label}
+                </button>
+              );
+            })}
+            <Link
+              href={`/dashboard/bea?case=${encodedCaseSlug}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
+            >
+              <Mail size={13} />
+              beA
+            </Link>
+            <Link
+              href={`/dashboard/kollisionspruefung?name=${encodeURIComponent(
+                caseData.clientName || caseData.opponentName || ""
+              )}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
+            >
+              <Scale size={13} />
+              {t("cases.detail_action_conflict")}
+            </Link>
+          </div>
         </div>
       </div>
 

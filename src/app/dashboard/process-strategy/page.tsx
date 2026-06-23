@@ -24,6 +24,7 @@ import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 type WizardStep = "select" | "analyze" | "strategy" | "drafts";
 
@@ -66,6 +67,7 @@ interface DraftSuggestion {
 }
 
 export default function ProcessStrategyPage() {
+  const { t } = useLang();
   const [step, setStep] = useState<WizardStep>("select");
   const [cases, setCases] = useState<CaseOption[]>([]);
   const [selectedSlug, setSelectedSlug] = useState("");
@@ -129,13 +131,13 @@ SACHVERHALT:
 ${selectedCase.facts.slice(0, 3000)}
 
 ANSRPÜCHE:
-${selectedCase.claims.map((c) => `- ${c}`).join("\n") || "Keine erfasst"}
+${selectedCase.claims.map((c) => `- ${c}`).join("\n") || t("processstrategy.none_recorded")}
 
 VERTEIDIGUNG:
-${selectedCase.defenses.map((d) => `- ${d}`).join("\n") || "Keine erfasst"}
+${selectedCase.defenses.map((d) => `- ${d}`).join("\n") || t("processstrategy.none_recorded")}
 
 BEWEISMITTEL:
-${selectedCase.evidence.map((e) => `- ${e.title}`).join("\n") || "Keine erfasst"}
+${selectedCase.evidence.map((e) => `- ${e.title}`).join("\n") || t("processstrategy.none_recorded")}
 
 Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
 - summary: Kurzzusammenfassung der prozessualen Lage
@@ -189,7 +191,7 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
       }
       setStep("strategy");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analyse fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("strategy.error_analyze"));
     } finally {
       setAnalyzing(false);
     }
@@ -252,7 +254,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
       }
       setStep("drafts");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Entwurf-Generierung fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("strategy.error_drafts"));
     } finally {
       setGeneratingDrafts(false);
     }
@@ -282,19 +284,21 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
           },
         },
       });
-      setSaveNotice("Strategie wurde in der Akte gespeichert.");
+      setSaveNotice(t("strategy.save_success"));
     } catch (e) {
-      setSaveNotice(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Speichern.");
+      setSaveNotice(
+        e instanceof Error ? `${t("strategy.save_error")} ${e.message}` : t("strategy.save_error")
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  const steps: Array<{ key: WizardStep; label: string; icon: React.ElementType }> = [
-    { key: "select", label: "Akte wählen", icon: Briefcase },
-    { key: "analyze", label: "Analyse", icon: Target },
-    { key: "strategy", label: "Strategie", icon: Scale },
-    { key: "drafts", label: "Schriftsätze", icon: FileText },
+  const steps: Array<{ key: WizardStep; labelKey: string; icon: React.ElementType }> = [
+    { key: "select", labelKey: "strategy.step_select", icon: Briefcase },
+    { key: "analyze", labelKey: "strategy.step_analyze", icon: Target },
+    { key: "strategy", labelKey: "strategy.step_strategy", icon: Scale },
+    { key: "drafts", labelKey: "strategy.step_drafts", icon: FileText },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === step);
@@ -302,9 +306,12 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Prozessstrategie"
-        description="Geführter Workflow: Akte analysieren → SWOT → Strategie → Schriftsatz-Entwürfe"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Prozessstrategie" }]}
+        title={t("strategy.title")}
+        description={t("strategy.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("strategy.breadcrumb") },
+        ]}
       />
 
       {/* Stepper */}
@@ -327,7 +334,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 )}
               >
                 {isDone ? <CheckCircle2 size={14} /> : <Icon size={14} />}
-                {s.label}
+                {t(s.labelKey as never)}
               </div>
             </div>
           );
@@ -346,16 +353,18 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
             <Briefcase size={18} className="brand-text" />
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Akte auswählen</h2>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("strategy.select_title")}
+            </h2>
           </div>
           {loadingCases ? (
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
               <Loader2 size={20} className="mx-auto mb-2 animate-spin" />
-              Lade Akten…
+              {t("strategy.loading_cases")}
             </div>
           ) : cases.length === 0 ? (
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Keine Akten gefunden. Bitte erst eine Akte anlegen.
+              {t("strategy.no_cases")}
             </div>
           ) : (
             <>
@@ -364,7 +373,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 onChange={(e) => setSelectedSlug(e.target.value)}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               >
-                <option value="">— Akte auswählen —</option>
+                <option value="">{t("strategy.select_placeholder")}</option>
                 {cases.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.caseNumber} — {c.title} ({c.status})
@@ -380,15 +389,23 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                       <Badge variant="default">{selectedCase.legalArea}</Badge>
                     )}
                     {selectedCase.opponentName && (
-                      <Badge variant="default">Gegner: {selectedCase.opponentName}</Badge>
+                      <Badge variant="default">
+                        {t("strategy.opponent_label")}: {selectedCase.opponentName}
+                      </Badge>
                     )}
                   </div>
                   <div className="text-[color:var(--ds-text-muted)]">
-                    <strong className="text-[color:var(--ds-text)]">Ansprüche:</strong>{" "}
+                    <strong className="text-[color:var(--ds-text)]">
+                      {t("strategy.claims_label")}:
+                    </strong>{" "}
                     {selectedCase.claims.length} |{" "}
-                    <strong className="text-[color:var(--ds-text)]">Verteidigung:</strong>{" "}
+                    <strong className="text-[color:var(--ds-text)]">
+                      {t("strategy.defenses_label")}:
+                    </strong>{" "}
                     {selectedCase.defenses.length} |{" "}
-                    <strong className="text-[color:var(--ds-text)]">Beweismittel:</strong>{" "}
+                    <strong className="text-[color:var(--ds-text)]">
+                      {t("strategy.evidence_label")}:
+                    </strong>{" "}
                     {selectedCase.evidence.length}
                   </div>
                   {selectedCase.facts && (
@@ -411,12 +428,12 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 {analyzing ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Analysiere Akte…
+                    {t("strategy.analyzing")}
                   </>
                 ) : (
                   <>
                     <Target size={16} />
-                    Analyse starten
+                    {t("strategy.btn_analyze")}
                   </>
                 )}
               </Button>
@@ -430,7 +447,9 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <div className="flex items-center gap-2">
             <Target size={18} className="brand-text" />
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">Akten-Analyse</h2>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("strategy.analysis_title")}
+            </h2>
             {analyzing && (
               <Loader2 size={14} className="animate-spin text-[color:var(--ds-text-muted)]" />
             )}
@@ -441,7 +460,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             </div>
           ) : (
             <div className="py-8 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Analyse läuft…
+              {t("strategy.analysis_running")}
             </div>
           )}
           {!analyzing && strategy && (
@@ -451,7 +470,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               onClick={() => setStep("strategy")}
             >
               <ArrowRight size={16} />
-              Zur Strategie
+              {t("strategy.btn_to_strategy")}
             </Button>
           )}
         </div>
@@ -465,7 +484,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             <div className="mb-2 flex items-center gap-2">
               <Lightbulb size={18} className="brand-text" />
               <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Strategie-Zusammenfassung
+                {t("strategy.summary_title")}
               </h2>
             </div>
             <p className="text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
@@ -516,26 +535,40 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
           {/* SWOT Grid */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SwotCard
-              title="Stärken"
+              title={t("strategy.swot_strengths")}
               items={strategy.strengths}
               color="emerald"
               icon={CheckCircle2}
+              emptyText={t("strategy.swot_empty")}
             />
             <SwotCard
-              title="Schwächen"
+              title={t("strategy.swot_weaknesses")}
               items={strategy.weaknesses}
               color="red"
               icon={AlertTriangle}
+              emptyText={t("strategy.swot_empty")}
             />
-            <SwotCard title="Chancen" items={strategy.opportunities} color="blue" icon={Target} />
-            <SwotCard title="Risiken" items={strategy.threats} color="amber" icon={ShieldAlert} />
+            <SwotCard
+              title={t("strategy.swot_opportunities")}
+              items={strategy.opportunities}
+              color="blue"
+              icon={Target}
+              emptyText={t("strategy.swot_empty")}
+            />
+            <SwotCard
+              title={t("strategy.swot_threats")}
+              items={strategy.threats}
+              color="amber"
+              icon={ShieldAlert}
+              emptyText={t("strategy.swot_empty")}
+            />
           </div>
 
           {/* Recommended Actions */}
           {strategy.recommendedActions.length > 0 && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
               <h3 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-                Empfohlene Maßnahmen
+                {t("strategy.actions_title")}
               </h3>
               <div className="space-y-2">
                 {strategy.recommendedActions.map((action, i) => (
@@ -548,10 +581,10 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                       className="shrink-0 text-xs"
                     >
                       {action.priority === "high"
-                        ? "Hoch"
+                        ? t("strategy.priority_high")
                         : action.priority === "medium"
-                          ? "Mittel"
-                          : "Niedrig"}
+                          ? t("strategy.priority_medium")
+                          : t("strategy.priority_low")}
                     </Badge>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-[color:var(--ds-text)]">
@@ -572,7 +605,9 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <AlertTriangle size={16} className="text-amber-600" />
-                <h3 className="text-sm font-semibold text-amber-600">Beweislücken</h3>
+                <h3 className="text-sm font-semibold text-amber-600">
+                  {t("strategy.evidence_gaps")}
+                </h3>
               </div>
               <ul className="space-y-1 text-xs text-[color:var(--ds-text-muted)]">
                 {strategy.evidenceGaps.map((gap, i) => (
@@ -593,12 +628,12 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               {generatingDrafts ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Generiere Schriftsätze…
+                  {t("strategy.generating_drafts")}
                 </>
               ) : (
                 <>
                   <FileText size={16} />
-                  Schriftsatz-Entwürfe generieren
+                  {t("strategy.btn_generate_drafts")}
                 </>
               )}
             </Button>
@@ -609,7 +644,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               disabled={saving}
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              In Akte speichern
+              {t("strategy.btn_save")}
             </Button>
             <Button
               variant="ghost"
@@ -622,13 +657,13 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               }}
             >
               <ArrowLeft size={14} />
-              Neue Akte
+              {t("strategy.btn_new_case")}
             </Button>
             {saveNotice && (
               <span
                 className={cn(
                   "text-xs",
-                  saveNotice.startsWith("Fehler:") ? "text-red-600" : "text-emerald-600"
+                  saveNotice === t("strategy.save_success") ? "text-emerald-600" : "text-red-600"
                 )}
               >
                 {saveNotice}
@@ -646,7 +681,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               <div className="flex items-center gap-2">
                 <Loader2 size={18} className="brand-text animate-spin" />
                 <span className="text-sm text-[color:var(--ds-text-muted)]">
-                  Generiere Schriftsatz-Entwürfe basierend auf der Strategie…
+                  {t("strategy.drafts_generating")}
                 </span>
               </div>
             </div>
@@ -667,7 +702,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
               <div className="space-y-3">
                 <div>
                   <p className="mb-1 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                    Gliederung:
+                    {t("strategy.draft_outline")}:
                   </p>
                   <pre className="rounded-lg bg-[color:var(--ds-hover)] p-3 text-xs leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
                     {draft.outline}
@@ -676,7 +711,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 {draft.keyArguments.length > 0 && (
                   <div>
                     <p className="mb-1 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                      Schlüsselargumente:
+                      {t("strategy.draft_arguments")}:
                     </p>
                     <ul className="space-y-1 text-xs text-[color:var(--ds-text)]">
                       {draft.keyArguments.map((arg, j) => (
@@ -697,19 +732,19 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                   variant="outline"
                   className="brand-border brand-text gap-2 text-xs"
                   onClick={() => {
-                    const fullText = `${draft.title}\n\n${draft.outline}\n\nSchlüsselargumente:\n${draft.keyArguments.map((a) => `- ${a}`).join("\n")}`;
+                    const fullText = `${draft.title}\n\n${draft.outline}\n\n${t("strategy.draft_arguments")}:\n${draft.keyArguments.map((a) => `- ${a}`).join("\n")}`;
                     navigator.clipboard.writeText(fullText);
                   }}
                 >
                   <FileText size={12} />
-                  Kopieren
+                  {t("strategy.btn_copy")}
                 </Button>
                 <Link
                   href={`/dashboard/drafting`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] px-3 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-blue-600"
                 >
                   <Pencil size={12} />
-                  Im Drafting-Editor öffnen
+                  {t("strategy.btn_open_drafting")}
                 </Link>
               </div>
             </div>
@@ -723,14 +758,14 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
                 onClick={() => setStep("strategy")}
               >
                 <ArrowLeft size={14} />
-                Zurück zur Strategie
+                {t("strategy.btn_back_strategy")}
               </Button>
             </div>
           )}
 
           {!generatingDrafts && drafts.length === 0 && !error && (
             <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center text-sm text-[color:var(--ds-text-muted)]">
-              Keine Entwürfe generiert. Bitte erneut versuchen.
+              {t("strategy.no_drafts")}
             </div>
           )}
         </div>
@@ -744,11 +779,13 @@ function SwotCard({
   items,
   color,
   icon: Icon,
+  emptyText,
 }: {
   title: string;
   items: string[];
   color: "emerald" | "red" | "blue" | "amber";
   icon: React.ElementType;
+  emptyText?: string;
 }) {
   const colorClasses: Record<string, string> = {
     emerald: "border-emerald-500/20 bg-emerald-500/5 text-emerald-600",
@@ -770,7 +807,7 @@ function SwotCard({
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-[color:var(--ds-text-muted)] italic">Keine identifiziert.</p>
+        <p className="text-xs text-[color:var(--ds-text-muted)] italic">{emptyText ?? "—"}</p>
       )}
     </div>
   );

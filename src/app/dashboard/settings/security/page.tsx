@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useMe, use2FASetup, use2FAVerify, use2FADisable, use2FAQrCode } from "@/lib/queries/auth";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function SecuritySettingsPage() {
+  const { t } = useLang();
   const [step, setStep] = useState<"idle" | "setup" | "verify">("idle");
   const [qrUrl, setQrUrl] = useState("");
   const [token, setToken] = useState("");
@@ -39,7 +41,7 @@ export default function SecuritySettingsPage() {
       setQrUrl(data.qrData);
       setStep("setup");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Setup fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
     }
   }
 
@@ -53,7 +55,7 @@ export default function SecuritySettingsPage() {
         setBackupCodes(data.backupCodes);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Verifizierung fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
     }
   }
 
@@ -70,7 +72,7 @@ export default function SecuritySettingsPage() {
       setShowDisableDialog(false);
       setDisablePassword("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Deaktivierung fehlgeschlagen");
+      setError(e instanceof Error ? e.message : t("settings.security.error_2fa"));
     }
   }
 
@@ -84,7 +86,10 @@ export default function SecuritySettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
-      <PageHeader title="Sicherheit" description="Zwei-Faktor-Authentifizierung" />
+      <PageHeader
+        title={t("settings.security.title")}
+        description={t("settings.security.section_2fa")}
+      />
 
       {orgRequires2FA && !enabled && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
@@ -120,7 +125,7 @@ export default function SecuritySettingsPage() {
               }}
             >
               <Trash2 size={14} />
-              Deaktivieren
+              {t("settings.security.btn_disable_2fa")}
             </Button>
           </div>
 
@@ -162,7 +167,9 @@ export default function SecuritySettingsPage() {
                 ) : (
                   <KeyRound size={14} />
                 )}
-                {copied ? "Kopiert!" : "Alle Codes kopieren"}
+                {copied
+                  ? t("settings.security.toast_password_changed")
+                  : t("settings.security.btn_revoke_session")}
               </Button>
             </div>
           )}
@@ -199,7 +206,7 @@ export default function SecuritySettingsPage() {
                     setError(null);
                   }}
                 >
-                  Abbrechen
+                  {t("retention.confirm_cancel")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -212,7 +219,7 @@ export default function SecuritySettingsPage() {
                   ) : (
                     <Trash2 size={14} />
                   )}
-                  Bestätigen & Deaktivieren
+                  {t("settings.security.btn_disable_2fa")}
                 </Button>
               </div>
             </div>
@@ -240,7 +247,7 @@ export default function SecuritySettingsPage() {
               onClick={startSetup}
             >
               <QrCode size={14} />
-              2FA einrichten
+              {t("settings.security.btn_enable_2fa")}
             </Button>
           )}
 
@@ -265,7 +272,7 @@ export default function SecuritySettingsPage() {
                   onClick={verify}
                   disabled={token.length !== 6}
                 >
-                  Verifizieren
+                  {t("settings.security.btn_change_password")}
                 </Button>
               </div>
             </div>

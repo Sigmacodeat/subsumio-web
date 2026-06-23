@@ -904,6 +904,11 @@ async function createMediaVaultPage(
       case_slug: target?.slug,
       case_title: target?.title,
       assignment_status: hasCase ? "assigned" : "pending_assignment",
+      analysis_status: hasCase ? "pending" : "blocked_until_assignment",
+      extraction_status: "pending",
+      review_status: "needs_review",
+      review_required: true,
+      analysis_source: "whatsapp_media",
       uploaded_by: ctx.sender.name,
       uploaded_at: new Date().toISOString(),
       caption: ctx.caption,
@@ -918,6 +923,50 @@ async function createMediaVaultPage(
     },
   });
   return slug;
+}
+
+async function queueWhatsAppDocumentAnalysis(brainId: string, documentSlug: string): Promise<void> {
+  const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
+  const appUrlRaw =
+    process.env.NEXT_PUBLIC_APP_URL || process.env.SUBSUMIO_APP_URL || process.env.VERCEL_URL;
+  if (!internalSecret || !appUrlRaw) return;
+
+  const appUrl = appUrlRaw.startsWith("http") ? appUrlRaw : `https://${appUrlRaw}`;
+  try {
+    const currentPage = await getPage(brainId, documentSlug).catch(() => null);
+    const title = currentPage?.title || "WhatsApp-Dokument";
+    const res = await fetch(`${appUrl.replace(/\/$/, "")}/api/legal/analyze`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": internalSecret,
+      },
+      body: JSON.stringify({ document_slug: documentSlug, brain_id: brainId }),
+    });
+    await putPage(brainId, {
+      slug: documentSlug,
+      title,
+      frontmatter: {
+        analysis_status: res.ok ? "analyzed" : "failed",
+        analyzed_at: res.ok ? new Date().toISOString() : undefined,
+        analysis_failed_at: res.ok ? undefined : new Date().toISOString(),
+        analysis_error: res.ok ? undefined : `HTTP ${res.status}`,
+      },
+      merge: true,
+    });
+  } catch (err) {
+    const currentPage = await getPage(brainId, documentSlug).catch(() => null);
+    await putPage(brainId, {
+      slug: documentSlug,
+      title: currentPage?.title || "WhatsApp-Dokument",
+      frontmatter: {
+        analysis_status: "failed",
+        analysis_failed_at: new Date().toISOString(),
+        analysis_error: err instanceof Error ? err.message : "analysis_request_failed",
+      },
+      merge: true,
+    }).catch(() => {});
+  }
 }
 
 async function attachMediaToCase(
@@ -2972,6 +3021,7 @@ export async function handleLegalChatMedia(
   let reply: string;
   if (target) {
     await attachMediaToCase(ctx, target, media, documentSlug);
+    void queueWhatsAppDocumentAnalysis(ctx.sender.brainId, documentSlug);
     if (autoAssigned) {
       reply = [
         `Gespeichert: ${media.kind} "${media.filename}" wurde im Vault abgelegt und automatisch an "${target.title}" gehängt.`,

@@ -351,7 +351,7 @@ export default function ReviewQueuePage() {
           <div className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2 text-sm font-medium text-[color:var(--ds-text)]">
               <CheckSquare size={16} className="text-[color:var(--ds-text-muted)]" />
-              Review-Status
+              Freigabe-Status
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -377,11 +377,9 @@ export default function ReviewQueuePage() {
 
           <div className="rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-xs leading-relaxed text-[color:var(--ds-text-muted)] shadow-sm">
             <div className="mb-2 text-sm font-medium text-[color:var(--ds-text)]">
-              {lang === "en" ? "Review rhythm" : "Arbeitsrhythmus"}
+              {t("review_queue.rhythm_title")}
             </div>
-            {lang === "en"
-              ? "Approve open documents first, then batch revision requests. Assigned matters automatically move into review."
-              : "Offene Dokumente zuerst freigeben, dann Überarbeitungen bündeln. Zugewiesene Akten wechseln automatisch in Prüfung."}
+            {t("review_queue.rhythm_desc")}
           </div>
         </aside>
       </div>

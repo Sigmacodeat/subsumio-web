@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import {
   ShieldAlert,
@@ -11,6 +12,10 @@ import {
   Loader2,
   Info,
   Archive,
+  ClipboardCheck,
+  EyeOff,
+  Database,
+  FileClock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
@@ -218,25 +223,28 @@ export default function CompliancePage() {
     };
   }, []);
 
-  const persist = useCallback(async (next: Record<string, CheckStatus>) => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await api.brain.updatePage({
-        slug: STATE_SLUG,
-        title: "Compliance-Selbstauskunft",
-        type: "document",
-        frontmatter: {
-          check_statuses: next,
-          updated_via: "dashboard",
-        },
-      });
-    } catch {
-      setSaveError("Speichern fehlgeschlagen — Änderung ist nur lokal sichtbar.");
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+  const persist = useCallback(
+    async (next: Record<string, CheckStatus>) => {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        await api.brain.updatePage({
+          slug: STATE_SLUG,
+          title: "Compliance-Selbstauskunft",
+          type: "document",
+          frontmatter: {
+            check_statuses: next,
+            updated_via: "dashboard",
+          },
+        });
+      } catch {
+        setSaveError(t("compliance.error_save"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [t]
+  );
 
   function cycleStatus(id: string) {
     setStatuses((prev) => {
@@ -262,6 +270,21 @@ export default function CompliancePage() {
         description="DSGVO-, GwG- & GoBD-Checkliste für die Kanzlei — Status pro Punkt selbst pflegen"
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Compliance" }]}
       />
+
+      <div className="grid gap-2 sm:grid-cols-4">
+        <HubLink
+          href="/dashboard/verfahrensdoku"
+          icon={ClipboardCheck}
+          label={t("nav.verfahrensdoku")}
+        />
+        <HubLink
+          href="/dashboard/compliance/retention"
+          icon={FileClock}
+          label={t("nav.retention")}
+        />
+        <HubLink href="/dashboard/anonymize" icon={EyeOff} label={t("nav.anonymize")} />
+        <HubLink href="/dashboard/data-export" icon={Database} label={t("nav.data_export")} />
+      </div>
 
       {/* Honest framing: this is a maintained checklist, not an automated audit */}
       <div
@@ -414,5 +437,25 @@ export default function CompliancePage() {
         </div>
       )}
     </div>
+  );
+}
+
+function HubLink({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof ShieldAlert;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    >
+      <Icon size={15} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
   );
 }

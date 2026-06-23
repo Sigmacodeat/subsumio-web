@@ -14,6 +14,11 @@ import {
   Gavel,
   MessageSquareText,
   ArrowRight,
+  Receipt,
+  CalendarClock,
+  ClipboardList,
+  FileText,
+  FolderInput,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +73,9 @@ export default function WhatsAppDashboardPage() {
   const [approvals, setApprovals] = useState<BrainPage[]>([]);
   const [intakes, setIntakes] = useState<BrainPage[]>([]);
   const [documentRequests, setDocumentRequests] = useState<BrainPage[]>([]);
+  const [timeEntries, setTimeEntries] = useState<BrainPage[]>([]);
+  const [documents, setDocuments] = useState<BrainPage[]>([]);
+  const [cases, setCases] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
@@ -76,17 +84,31 @@ export default function WhatsAppDashboardPage() {
     "lawyer"
   );
   const [savingIdentity, setSavingIdentity] = useState(false);
+  const [assigningSlug, setAssigningSlug] = useState<string | null>(null);
+  const [caseSelections, setCaseSelections] = useState<Record<string, string>>({});
 
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [statusRes, eventPages, approvalPages, intakePages, requestPages] = await Promise.all([
+      const [
+        statusRes,
+        eventPages,
+        approvalPages,
+        intakePages,
+        requestPages,
+        timePages,
+        docPages,
+        casePages,
+      ] = await Promise.all([
         api.whatsapp.status().catch(() => null),
         api.brain.listPages({ type: "conversation_event", limit: 100 }).catch(() => []),
         api.brain.listPages({ type: "agent_action", limit: 100 }).catch(() => []),
         api.brain.listPages({ type: "intake_request", limit: 100 }).catch(() => []),
         api.brain.listPages({ type: "document_request", limit: 100 }).catch(() => []),
+        api.brain.listPages({ type: "time_entry", limit: 100 }).catch(() => []),
+        api.brain.listPages({ type: "legal_document", limit: 200 }).catch(() => []),
+        api.brain.listPages({ type: "legal_case", limit: 200 }).catch(() => []),
       ]);
       setStatus(statusRes);
       setEvents(eventPages.filter((page) => front(page).channel === "whatsapp"));
@@ -109,6 +131,16 @@ export default function WhatsAppDashboardPage() {
             front(page).channel === "whatsapp"
         )
       );
+      setTimeEntries(
+        timePages.filter(
+          (page) =>
+            text(front(page).source_event_slug).includes("legal/conversations/whatsapp") ||
+            front(page).source === "whatsapp" ||
+            text(front(page).channel) === "whatsapp"
+        )
+      );
+      setDocuments(docPages.filter((page) => front(page).source === "whatsapp"));
+      setCases(casePages);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("whatsapp.err_load"));
     } finally {
@@ -150,6 +182,106 @@ export default function WhatsAppDashboardPage() {
     }
   }
 
+  async function assignDocumentToCase(document: BrainPage, caseSlug: string) {
+    if (!caseSlug) return;
+    setAssigningSlug(document.slug);
+    setError(null);
+    try {
+      const casePage = await api.brain.getPage(caseSlug);
+      const caseFm = front(casePage);
+      const existingDocs = Array.isArray(caseFm.documents)
+        ? (caseFm.documents as Array<Record<string, unknown>>)
+        : [];
+      const alreadyLinked = existingDocs.some((doc) => text(doc.slug) === document.slug);
+      const docFm = front(document);
+      const now = new Date().toISOString();
+
+      await api.brain.updatePage({
+        slug: document.slug,
+        title: document.title,
+        type: document.type || "legal_document",
+        frontmatter: {
+          case_slug: casePage.slug,
+          case_title: casePage.title,
+          assignment_status: "assigned",
+          analysis_status: "pending",
+          review_status: "needs_review",
+          assigned_at: now,
+          assigned_from: "whatsapp_triage",
+        },
+      });
+
+      if (!alreadyLinked) {
+        await api.brain.updatePage({
+          slug: casePage.slug,
+          title: casePage.title,
+          type: casePage.type || "legal_case",
+          frontmatter: {
+            documents: [
+              ...existingDocs,
+              {
+                id: `${Date.now()}`,
+                title: document.title,
+                slug: document.slug,
+                type: text(docFm.document_kind) || text(docFm.mime_type) || "document",
+                source: "whatsapp",
+                storage_path: text(docFm.storage_path),
+                mime_type: text(docFm.mime_type),
+                size: Number(docFm.size ?? 0) || undefined,
+                uploaded_at: text(docFm.uploaded_at) || now,
+              },
+            ],
+            audit_log: [
+              ...(Array.isArray(caseFm.audit_log)
+                ? (caseFm.audit_log as Array<Record<string, unknown>>)
+                : []),
+              {
+                id: `${Date.now()}-whatsapp-doc`,
+                at: now,
+                action: "updated",
+                actor: "WhatsApp-Triage",
+                field: "documents",
+                note: `WhatsApp-Dokument zugeordnet: ${document.title}`,
+              },
+            ],
+          },
+        });
+      }
+
+      api.legal
+        .analyzeDocument({ document_slug: document.slug })
+        .then(() =>
+          api.brain.updatePage({
+            slug: document.slug,
+            title: document.title,
+            type: document.type || "legal_document",
+            frontmatter: {
+              analysis_status: "analyzed",
+              analyzed_at: new Date().toISOString(),
+            },
+          })
+        )
+        .catch(() =>
+          api.brain.updatePage({
+            slug: document.slug,
+            title: document.title,
+            type: document.type || "legal_document",
+            frontmatter: {
+              analysis_status: "failed",
+              analysis_failed_at: new Date().toISOString(),
+            },
+          })
+        )
+        .catch(() => {});
+
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("whatsapp.err_assign_document"));
+    } finally {
+      setAssigningSlug(null);
+    }
+  }
+
   const pendingApprovals = useMemo(
     () => approvals.filter((page) => front(page).status === "pending").length,
     [approvals]
@@ -167,6 +299,41 @@ export default function WhatsAppDashboardPage() {
       ).length,
     [documentRequests]
   );
+  const unassignedDocuments = useMemo(
+    () =>
+      documents.filter((page) => {
+        const fm = front(page);
+        return (
+          fm.assignment_status === "pending_assignment" ||
+          (!text(fm.case_slug) && fm.source === "whatsapp")
+        );
+      }),
+    [documents]
+  );
+  const pendingTimeApprovals = useMemo(
+    () =>
+      approvals.filter(
+        (page) => front(page).status === "pending" && front(page).action_type === "booking_create"
+      ).length,
+    [approvals]
+  );
+  const whatsappMinutes = useMemo(
+    () =>
+      timeEntries.reduce((sum, page) => {
+        const minutes = Number(front(page).minutes ?? 0);
+        return Number.isFinite(minutes) ? sum + minutes : sum;
+      }, 0),
+    [timeEntries]
+  );
+  const activeThreads = useMemo(() => {
+    const set = new Set<string>();
+    events.forEach((page) => {
+      const fm = front(page);
+      const sender = text(fm.phone_hash) || text(fm.sender_phone_hash) || text(fm.from_phone_hash);
+      if (sender) set.add(sender);
+    });
+    return set.size;
+  }, [events]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
@@ -209,12 +376,23 @@ export default function WhatsAppDashboardPage() {
             />
             <Metric
               label={t("whatsapp.metric_open_docs")}
-              value={String(openDocumentRequests)}
-              warn={openDocumentRequests > 0}
+              value={String(openDocumentRequests + unassignedDocuments.length)}
+              warn={openDocumentRequests + unassignedDocuments.length > 0}
+            />
+            <Metric
+              label={t("whatsapp.metric_time")}
+              value={
+                pendingTimeApprovals > 0
+                  ? String(pendingTimeApprovals)
+                  : whatsappMinutes > 0
+                    ? `${whatsappMinutes} min`
+                    : "0"
+              }
+              warn={pendingTimeApprovals > 0}
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
             <WorkflowLink
               href="/dashboard/intake"
               icon={Inbox}
@@ -236,6 +414,75 @@ export default function WhatsAppDashboardPage() {
               value={String(pendingApprovals)}
               text={t("whatsapp.approvals_desc")}
             />
+            <WorkflowLink
+              href="/dashboard/invoicing"
+              icon={Receipt}
+              title={t("whatsapp.time_tracking")}
+              value={pendingTimeApprovals > 0 ? String(pendingTimeApprovals) : `${whatsappMinutes}`}
+              text={t("whatsapp.time_tracking_desc")}
+            />
+          </div>
+
+          <WhatsAppDocumentTriage
+            documents={unassignedDocuments}
+            cases={cases}
+            selections={caseSelections}
+            assigningSlug={assigningSlug}
+            onSelect={(docSlug, caseSlug) =>
+              setCaseSelections((current) => ({ ...current, [docSlug]: caseSlug }))
+            }
+            onAssign={(doc) => assignDocumentToCase(doc, caseSelections[doc.slug] || "")}
+          />
+
+          <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                  {t("whatsapp.secretary_title")}
+                </h2>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                  {t("whatsapp.secretary_desc")}
+                </p>
+              </div>
+              <Badge
+                variant="default"
+                className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+              >
+                {activeThreads} {t("whatsapp.active_threads")}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+              <SecretaryCapability
+                icon={Inbox}
+                label={t("whatsapp.cap_intake")}
+                status={t("whatsapp.cap_active")}
+              />
+              <SecretaryCapability
+                icon={FileClock}
+                label={t("whatsapp.cap_docs")}
+                status={t("whatsapp.cap_active")}
+              />
+              <SecretaryCapability
+                icon={Receipt}
+                label={t("whatsapp.cap_time")}
+                status={t("whatsapp.cap_approval")}
+              />
+              <SecretaryCapability
+                icon={CalendarClock}
+                label={t("whatsapp.cap_deadlines")}
+                status={t("whatsapp.cap_approval")}
+              />
+              <SecretaryCapability
+                icon={ClipboardList}
+                label={t("whatsapp.cap_notes")}
+                status={t("whatsapp.cap_active")}
+              />
+              <SecretaryCapability
+                icon={Gavel}
+                label={t("whatsapp.cap_send")}
+                status={t("whatsapp.cap_approval")}
+              />
+            </div>
           </div>
 
           <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
@@ -411,6 +658,111 @@ export default function WhatsAppDashboardPage() {
   );
 }
 
+function WhatsAppDocumentTriage({
+  documents,
+  cases,
+  selections,
+  assigningSlug,
+  onSelect,
+  onAssign,
+}: {
+  documents: BrainPage[];
+  cases: BrainPage[];
+  selections: Record<string, string>;
+  assigningSlug: string | null;
+  onSelect: (docSlug: string, caseSlug: string) => void;
+  onAssign: (doc: BrainPage) => void;
+}) {
+  const { t, lang } = useLang();
+
+  return (
+    <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-600">
+            <FolderInput size={17} />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("whatsapp.triage_title")}
+            </h2>
+            <p className="mt-1 max-w-2xl text-xs text-[color:var(--ds-text-muted)]">
+              {t("whatsapp.triage_desc")}
+            </p>
+          </div>
+        </div>
+        <Badge
+          variant="default"
+          className={
+            documents.length > 0
+              ? "border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
+              : "border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
+          }
+        >
+          {documents.length} {t("whatsapp.triage_open")}
+        </Badge>
+      </div>
+
+      {documents.length === 0 ? (
+        <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-5 text-sm text-[color:var(--ds-text-muted)]">
+          {t("whatsapp.triage_empty")}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {documents.slice(0, 12).map((doc) => {
+            const fm = front(doc);
+            const selected = selections[doc.slug] || "";
+            const busy = assigningSlug === doc.slug;
+            return (
+              <div
+                key={doc.slug}
+                className="grid gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] p-3 md:grid-cols-[1fr_260px_auto]"
+              >
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <FileText size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                    <span className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                      {doc.title}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                    <span>{text(fm.document_kind) || text(fm.mime_type) || "WhatsApp"}</span>
+                    {Number(fm.size ?? 0) > 0 && <span>{formatBytes(Number(fm.size))}</span>}
+                    {text(fm.uploaded_at) && (
+                      <span>{new Date(text(fm.uploaded_at)).toLocaleString(lang)}</span>
+                    )}
+                    <span className="text-amber-600">{t("whatsapp.triage_needs_case")}</span>
+                  </div>
+                </div>
+                <select
+                  value={selected}
+                  onChange={(event) => onSelect(doc.slug, event.target.value)}
+                  className="min-h-10 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 text-sm text-[color:var(--ds-text)]"
+                >
+                  <option value="">{t("whatsapp.triage_select_case")}</option>
+                  {cases.map((casePage) => (
+                    <option key={casePage.slug} value={casePage.slug}>
+                      {casePage.title}
+                    </option>
+                  ))}
+                </select>
+                <Button onClick={() => onAssign(doc)} disabled={!selected || busy}>
+                  {busy ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <FolderInput size={14} />
+                  )}
+                  {t("whatsapp.triage_assign")}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Metric({
   label,
   value,
@@ -431,6 +783,13 @@ function Metric({
   );
 }
 
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function SetupFlag({ label, ok }: { label: string; ok: boolean }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
@@ -440,6 +799,31 @@ function SetupFlag({ label, ok }: { label: string; ok: boolean }) {
         <XCircle size={12} className="text-red-600" />
       )}
       <span className="text-[color:var(--ds-text-muted)]">{label}</span>
+    </div>
+  );
+}
+
+function SecretaryCapability({
+  icon: Icon,
+  label,
+  status,
+}: {
+  icon: typeof Inbox;
+  label: string;
+  status: string;
+}) {
+  return (
+    <div className="flex min-h-16 items-center justify-between gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <Icon size={15} className="brand-text shrink-0" />
+        <span className="truncate text-xs font-medium text-[color:var(--ds-text)]">{label}</span>
+      </div>
+      <Badge
+        variant="default"
+        className="shrink-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-xs text-[color:var(--ds-text-muted)]"
+      >
+        {status}
+      </Badge>
     </div>
   );
 }
@@ -575,7 +959,7 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 50);
 
-  // Group by sender_phone_hash for thread view
+  // Group by the normalized sender hash used by conversation_event/chat_inbox pages.
   const threads = useMemo(() => {
     const map = new Map<
       string,
@@ -583,7 +967,8 @@ function LogPanel({ title, pages }: { title: string; pages: BrainPage[] }) {
     >();
     for (const page of sorted) {
       const fm = front(page);
-      const senderHash = text(fm.sender_phone_hash) || text(fm.from_phone_hash) || "unknown";
+      const senderHash =
+        text(fm.phone_hash) || text(fm.sender_phone_hash) || text(fm.from_phone_hash) || "unknown";
       const senderName = text(fm.sender_name) || text(fm.sender) || `****${senderHash.slice(-4)}`;
       const existing = map.get(senderHash);
       if (existing) {

@@ -161,7 +161,7 @@ export default function DraftingPage() {
         setResult(res.answer);
         setDraftSaved(null);
       } catch {
-        setResult("Fehler bei der Generierung. Bitte versuche es erneut.");
+        setResult(t("drafting.error_generate"));
       } finally {
         setGenerating(false);
       }
@@ -296,7 +296,7 @@ td, th { border: 1px solid #999; padding: 6pt; }
       setDraftSaved(slug);
       return slug;
     } catch (e) {
-      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Speichern");
+      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : t("drafting.error_save"));
       return null;
     } finally {
       setSavingDraft(false);
@@ -335,7 +335,7 @@ td, th { border: 1px solid #999; padding: 6pt; }
           // Best-effort cleanup — draft may remain as orphan
         }
       }
-      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : "Fehler beim Einreichen");
+      setDraftSaved(e instanceof Error ? `Fehler: ${e.message}` : t("drafting.error_submit"));
     } finally {
       setSubmitting(false);
     }

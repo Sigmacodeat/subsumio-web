@@ -30,6 +30,7 @@ import type { BrainPage, Entity } from "@/lib/types";
 import { GobdIntegrityPanel } from "@/components/gobd-integrity-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { useLang } from "@/lib/use-lang";
 
 // Erweiterte Felder, die die Detail-API zusätzlich zur BrainPage liefert.
 interface PageGraphExtras {
@@ -57,6 +58,7 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 export default function BrainDetailPage() {
+  const { t } = useLang();
   const params = useParams();
   const slug = decodeURIComponent((params.slug as string) || "");
   const [page, setPage] = useState<BrainPage | null>(null);
@@ -182,7 +184,7 @@ export default function BrainDetailPage() {
               className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text-muted)]"
             >
               {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-              {copied ? "Kopiert" : "Slug"}
+              {copied ? t("braindetail.btn_save") : "Slug"}
             </button>
             <button
               onClick={() => setEditMode(!editMode)}
@@ -194,7 +196,7 @@ export default function BrainDetailPage() {
               )}
             >
               {editMode ? <Eye size={12} /> : <Edit3 size={12} />}
-              {editMode ? "Ansehen" : "Bearbeiten"}
+              {editMode ? t("braindetail.btn_cancel") : t("braindetail.btn_edit")}
             </button>
           </div>
         </div>

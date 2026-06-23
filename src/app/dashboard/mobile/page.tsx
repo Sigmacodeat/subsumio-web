@@ -14,8 +14,10 @@ import {
   type MobileCapabilities,
 } from "@/lib/mobile-bridge";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 export default function MobilePage() {
+  const { t } = useLang();
   const [caps, setCaps] = useState<MobileCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [pushStatus, setPushStatus] = useState<string>("");
@@ -71,9 +73,12 @@ export default function MobilePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Mobile"
-        description={caps?.isNative ? `Native App (${caps.platform})` : "Web / PWA-Modus"}
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Mobile" }]}
+        title={t("mobile.title")}
+        description={t("mobile.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("mobile.breadcrumb") },
+        ]}
       />
 
       {/* Status */}

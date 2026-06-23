@@ -7,6 +7,7 @@ import {
   Briefcase,
   CalendarClock,
   CheckSquare,
+  FileSignature,
   FileText,
   Inbox,
   Mail,
@@ -53,9 +54,22 @@ function formatDate(date: Date, lang: Lang = "de") {
 }
 
 function isOpenStatus(status: unknown) {
-  return !["done", "closed", "settled", "won", "lost", "paid", "archived"].includes(
-    String(status ?? "").toLowerCase()
-  );
+  return ![
+    "done",
+    "closed",
+    "settled",
+    "won",
+    "lost",
+    "paid",
+    "archived",
+    "approved",
+    "rejected",
+    "fulfilled",
+    "signed",
+    "declined",
+    "cancelled",
+    "canceled",
+  ].includes(String(status ?? "").toLowerCase());
 }
 
 function pageHref(page: DashboardPageLike, fallback: string) {
@@ -72,8 +86,13 @@ function useKanzleiCockpitData() {
   const invoicesQuery = usePages({ type: "invoice", limit: 50 });
   const intakeQuery = usePages({ type: "intake_request", limit: 20 });
   const beaQuery = usePages({ type: "bea_draft", limit: 20 });
+  const beaMessagesQuery = usePages({ type: "bea_message", limit: 20 });
+  const documentRequestsQuery = usePages({ type: "document_request", limit: 50 });
+  const signaturesQuery = usePages({ type: "signature_request", limit: 50 });
   const reviewQuery = usePages({ type: "review_item", limit: 20 });
+  const agentActionsQuery = usePages({ type: "agent_action", limit: 50 });
   const docsQuery = usePages({ type: "document", limit: 100 });
+  const legalDocsQuery = usePages({ type: "legal_document", limit: 100 });
 
   const cases = Array.isArray(casesQuery.data) ? (casesQuery.data as DashboardPageLike[]) : [];
   const deadlines = Array.isArray(deadlinesQuery.data)
@@ -84,8 +103,23 @@ function useKanzleiCockpitData() {
     : [];
   const intake = Array.isArray(intakeQuery.data) ? (intakeQuery.data as DashboardPageLike[]) : [];
   const bea = Array.isArray(beaQuery.data) ? (beaQuery.data as DashboardPageLike[]) : [];
+  const beaMessages = Array.isArray(beaMessagesQuery.data)
+    ? (beaMessagesQuery.data as DashboardPageLike[])
+    : [];
+  const documentRequests = Array.isArray(documentRequestsQuery.data)
+    ? (documentRequestsQuery.data as DashboardPageLike[])
+    : [];
+  const signatures = Array.isArray(signaturesQuery.data)
+    ? (signaturesQuery.data as DashboardPageLike[])
+    : [];
   const reviews = Array.isArray(reviewQuery.data) ? (reviewQuery.data as DashboardPageLike[]) : [];
-  const docs = Array.isArray(docsQuery.data) ? (docsQuery.data as DashboardPageLike[]) : [];
+  const agentActions = Array.isArray(agentActionsQuery.data)
+    ? (agentActionsQuery.data as DashboardPageLike[])
+    : [];
+  const docs = [
+    ...(Array.isArray(docsQuery.data) ? (docsQuery.data as DashboardPageLike[]) : []),
+    ...(Array.isArray(legalDocsQuery.data) ? (legalDocsQuery.data as DashboardPageLike[]) : []),
+  ];
   const recent = (recentQuery.data ?? []) as RecentQuery[];
   const stats = (statsQuery.data ?? null) as BrainStats | null;
 
@@ -127,11 +161,19 @@ function useKanzleiCockpitData() {
       as === "pending"
     );
   });
-  const inboxItems = [...intake, ...bea].sort(
+  const openDocumentRequests = documentRequests.filter((p) =>
+    ["draft", "sent", "partially_fulfilled"].includes(
+      String(p.frontmatter?.status ?? "").toLowerCase()
+    )
+  );
+  const pendingSignatures = signatures.filter((p) => isOpenStatus(p.frontmatter?.status));
+  const inboxItems = [...intake, ...bea, ...beaMessages].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
   const openInvoices = invoices.filter((p) => isOpenStatus(p.frontmatter?.status));
-  const pendingReviews = reviews.filter((p) => isOpenStatus(p.frontmatter?.status));
+  const pendingReviews = [...reviews, ...agentActions].filter((p) =>
+    isOpenStatus(p.frontmatter?.status)
+  );
 
   const degraded =
     statsQuery.isError ||
@@ -140,7 +182,13 @@ function useKanzleiCockpitData() {
     invoicesQuery.isError ||
     intakeQuery.isError ||
     beaQuery.isError ||
-    reviewQuery.isError;
+    beaMessagesQuery.isError ||
+    documentRequestsQuery.isError ||
+    signaturesQuery.isError ||
+    reviewQuery.isError ||
+    agentActionsQuery.isError ||
+    docsQuery.isError ||
+    legalDocsQuery.isError;
 
   return {
     stats,
@@ -154,13 +202,21 @@ function useKanzleiCockpitData() {
     inboxItems,
     openInvoices,
     pendingReviews,
+    openDocumentRequests,
+    pendingSignatures,
     loading:
       casesQuery.isLoading ||
       deadlinesQuery.isLoading ||
       invoicesQuery.isLoading ||
       intakeQuery.isLoading ||
       beaQuery.isLoading ||
-      reviewQuery.isLoading,
+      beaMessagesQuery.isLoading ||
+      documentRequestsQuery.isLoading ||
+      signaturesQuery.isLoading ||
+      reviewQuery.isLoading ||
+      agentActionsQuery.isLoading ||
+      docsQuery.isLoading ||
+      legalDocsQuery.isLoading,
     degraded,
   };
 }
@@ -379,6 +435,12 @@ function QuickActions() {
       tone: "primary",
     },
     {
+      href: "/dashboard/kollisionspruefung",
+      icon: Scale,
+      label: t("cockpit.action_conflict"),
+      tone: "urgent",
+    },
+    {
       href: "/dashboard/deadlines",
       icon: CalendarClock,
       label: t("cockpit.action_deadline"),
@@ -409,7 +471,7 @@ function QuickActions() {
           <ArrowRight size={13} />
         </Link>
       </div>
-      <div className="grid gap-px bg-[color:var(--ds-border)] sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-px bg-[color:var(--ds-border)] sm:grid-cols-2 xl:grid-cols-7">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
@@ -457,6 +519,8 @@ function CockpitHero({
   deadlines,
   inboxCount,
   reviewCount,
+  documentRequestCount,
+  signatureCount,
   gapsCount,
 }: {
   loading: boolean;
@@ -464,6 +528,8 @@ function CockpitHero({
   deadlines: DeadlineItem[];
   inboxCount: number;
   reviewCount: number;
+  documentRequestCount: number;
+  signatureCount: number;
   gapsCount: number;
 }) {
   const { t, lang } = useLang();
@@ -491,6 +557,20 @@ function CockpitHero({
       label: t("cockpit.na_reviews"),
       count: reviewCount,
       urgent: reviewCount > 0,
+    },
+    {
+      href: "/dashboard/document-requests",
+      icon: FileText,
+      label: t("cockpit.na_document_requests"),
+      count: documentRequestCount,
+      urgent: documentRequestCount > 0,
+    },
+    {
+      href: "/dashboard/signature",
+      icon: FileSignature,
+      label: t("cockpit.na_signatures"),
+      count: signatureCount,
+      urgent: signatureCount > 0,
     },
     {
       href: "/dashboard/vault",
@@ -646,6 +726,8 @@ export function WidgetDashboard() {
   const data = useKanzleiCockpitData();
   const openInvoiceCount = data.openInvoices.length;
   const reviewCount = data.pendingReviews.length;
+  const documentRequestCount = data.openDocumentRequests.length;
+  const signatureCount = data.pendingSignatures.length;
 
   const gapsCount = data.unassignedDocs.length + data.reviewGaps.length;
   const secondaryStats = [
@@ -698,6 +780,8 @@ export function WidgetDashboard() {
         deadlines={data.deadlines}
         inboxCount={data.inboxItems.length}
         reviewCount={reviewCount}
+        documentRequestCount={documentRequestCount}
+        signatureCount={signatureCount}
         gapsCount={gapsCount}
       />
 

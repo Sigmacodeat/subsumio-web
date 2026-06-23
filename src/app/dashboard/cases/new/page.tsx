@@ -22,6 +22,7 @@ import type { BrainPage } from "@/lib/types";
 import type { ContactFrontmatter } from "@/lib/legal-types";
 import { useDashboardForm } from "@/lib/hooks/use-dashboard-form";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import { caseFormSchema, type CaseFormData } from "@/lib/schemas/case";
 import {
   checkInternalConflict,
@@ -158,6 +159,7 @@ function ContactSelect({ id, label, value, options, onChange, disabled }: Contac
 }
 
 export default function NewCasePage() {
+  const { t } = useLang();
   const router = useRouter();
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
@@ -350,8 +352,11 @@ export default function NewCasePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Neue Akte"
-        breadcrumbs={[{ label: "Akten", href: "/dashboard/cases" }, { label: "Neu" }]}
+        title={t("casesnew.title")}
+        breadcrumbs={[
+          { label: t("casesnew.breadcrumb"), href: "/dashboard/cases" },
+          { label: t("casesnew.breadcrumb") },
+        ]}
       />
 
       {form.error && (
@@ -372,7 +377,7 @@ export default function NewCasePage() {
           <div className="flex items-start gap-2.5">
             <ShieldAlert size={16} className="mt-0.5 shrink-0" />
             <div className="space-y-1">
-              <p className="font-semibold">Kollisionsprüfung blockiert die Aktenanlage</p>
+              <p className="font-semibold">{t("casesnew.section_conflict")}</p>
               <p className="text-xs opacity-90">
                 Die folgenden Treffer wurden gefunden. Die Akte wurde nicht angelegt.
               </p>
@@ -439,7 +444,7 @@ export default function NewCasePage() {
         {/* Basic info */}
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
           <h2 className="text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-            Grunddaten
+            {t("casesnew.section_details")}
           </h2>
 
           <div>

@@ -42,12 +42,19 @@ export type ToolType =
   | "time_entry"
   | "client_update"
   | "meeting_tasks"
-  | "intake_create";
+  | "intake_create"
+  | "rvg_calculate"
+  | "document_request_create"
+  | "precedent_search"
+  | "translate_text"
+  | "obligation_extract"
+  | "tabular_review";
 
 export const DESTRUCTIVE_TOOLS: ReadonlySet<ToolType> = new Set([
   "create_case",
   "intake_create",
   "time_entry",
+  "document_request_create",
 ]);
 
 export interface ToolCall {
@@ -192,11 +199,11 @@ export const GAP_LABELS: Record<string, string> = {
 };
 
 export const DEFAULT_EXAMPLE_QUERIES: string[] = [
-  "Was muss ich vor dem nächsten Meeting wissen?",
-  "Welche offenen Punkte gibt es mit Kunde X?",
-  "Zeige mir alle Entscheidungen aus dem letzten Quartal",
-  "Wer arbeitet an Projekt Y und was ist der Status?",
-  "Was sind die wichtigsten Risiken in meinem Brain?",
+  "Welche Fristen und offenen Aufgaben sind heute kritisch?",
+  "Fasse eine Akte mit Risiken, Belegen und nächsten Schritten zusammen.",
+  "Prüfe ein Dokument auf Fristen, Anlagen und Widersprüche.",
+  "Erstelle ein Mandantenupdate aus dem aktuellen Aktenstand.",
+  "Welche Unterlagen oder Signaturen fehlen noch?",
 ];
 
 export interface ChatTemplate {

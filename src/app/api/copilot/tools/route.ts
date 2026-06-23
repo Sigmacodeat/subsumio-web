@@ -2,6 +2,7 @@ import { z } from "zod";
 import { sanitizeUserInput } from "@/lib/prompt-sanitizer";
 import { ENGINE_URL } from "@/lib/engine";
 import { createHandler, apiError } from "@/lib/api-handler";
+import { calculateRvg } from "@/lib/rvg";
 
 // ── Tool Schemas ──────────────────────────────────────────────────────
 
@@ -11,6 +12,90 @@ const navigateSchema = z.object({
     .min(1)
     .refine((r) => r.startsWith("/dashboard"), "must start with /dashboard"),
 });
+
+const ALLOWED_DASHBOARD_ROUTES = new Set([
+  "/dashboard",
+  "/dashboard/agents",
+  "/dashboard/analyze",
+  "/dashboard/anonymize",
+  "/dashboard/api-keys",
+  "/dashboard/approvals",
+  "/dashboard/assistant",
+  "/dashboard/audit",
+  "/dashboard/bea",
+  "/dashboard/billing",
+  "/dashboard/brain",
+  "/dashboard/calendar-export",
+  "/dashboard/case-scanner",
+  "/dashboard/cases",
+  "/dashboard/cases/new",
+  "/dashboard/chat",
+  "/dashboard/chat/analytics",
+  "/dashboard/chat/compare",
+  "/dashboard/clause-library",
+  "/dashboard/client-portal",
+  "/dashboard/compliance",
+  "/dashboard/compliance/retention",
+  "/dashboard/connectors",
+  "/dashboard/contacts",
+  "/dashboard/contracts",
+  "/dashboard/controlling",
+  "/dashboard/cost-calculator",
+  "/dashboard/data-export",
+  "/dashboard/datev-export",
+  "/dashboard/deadlines",
+  "/dashboard/document-requests",
+  "/dashboard/drafting",
+  "/dashboard/email-import",
+  "/dashboard/experience",
+  "/dashboard/graph",
+  "/dashboard/import-kanzlei",
+  "/dashboard/intake",
+  "/dashboard/invoicing",
+  "/dashboard/judgements-sync",
+  "/dashboard/kollisionspruefung",
+  "/dashboard/mobile",
+  "/dashboard/monitoring",
+  "/dashboard/norms",
+  "/dashboard/obligation-tracking",
+  "/dashboard/onboarding",
+  "/dashboard/opponents",
+  "/dashboard/playbooks",
+  "/dashboard/precedent-search",
+  "/dashboard/process-strategy",
+  "/dashboard/query",
+  "/dashboard/rag-eval",
+  "/dashboard/rechtsprechung",
+  "/dashboard/research",
+  "/dashboard/review-queue",
+  "/dashboard/settings",
+  "/dashboard/settings/ai-model",
+  "/dashboard/settings/kanzlei",
+  "/dashboard/settings/scim",
+  "/dashboard/settings/security",
+  "/dashboard/signature",
+  "/dashboard/sources",
+  "/dashboard/tabular-review",
+  "/dashboard/team",
+  "/dashboard/translate",
+  "/dashboard/upload",
+  "/dashboard/vault",
+  "/dashboard/verfahrensdoku",
+  "/dashboard/version-history",
+  "/dashboard/whatsapp",
+  "/dashboard/whatsapp/templates",
+  "/dashboard/word-addin",
+  "/dashboard/workflows",
+]);
+
+function isAllowedDashboardRoute(route: string): boolean {
+  const clean = route.split(/[?#]/)[0]?.replace(/\/$/, "") || "/dashboard";
+  return (
+    ALLOWED_DASHBOARD_ROUTES.has(clean) ||
+    clean.startsWith("/dashboard/cases/") ||
+    clean.startsWith("/dashboard/brain/")
+  );
+}
 
 const searchCasesSchema = z.object({
   query: z.string().min(1),
@@ -87,6 +172,48 @@ const intakeCreateSchema = z.object({
   conflict_check: z.boolean().default(true),
 });
 
+const rvgCalculateSchema = z.object({
+  streitwert: z
+    .union([z.number(), z.string()])
+    .transform((v) => (typeof v === "string" ? parseFloat(v) : v)),
+});
+
+const documentRequestCreateSchema = z.object({
+  case_slug: z.string().min(1),
+  items: z.array(z.string().min(1).max(160)).optional(),
+  message_draft: z.string().max(5000).optional(),
+  channel: z.enum(["whatsapp", "portal", "email", "manual"]).default("portal"),
+});
+
+const precedentSearchToolSchema = z.object({
+  query: z.string().min(1).max(2000),
+  jurisdiction: z.enum(["at", "de", "ch"]).optional(),
+  legal_area: z.string().max(200).optional(),
+});
+
+const translateTextToolSchema = z
+  .object({
+    document_slug: z.string().max(300).optional(),
+    text: z.string().max(512_000).optional(),
+    source_language: z.string().max(10).optional(),
+    target_language: z.string().min(2).max(10),
+  })
+  .refine((v) => v.document_slug || v.text, { message: "document_slug_or_text_required" });
+
+const obligationExtractToolSchema = z
+  .object({
+    document_slug: z.string().max(300).optional(),
+    text: z.string().max(512_000).optional(),
+    jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
+  })
+  .refine((v) => v.document_slug || v.text, { message: "document_slug_or_text_required" });
+
+const tabularReviewToolSchema = z.object({
+  questions: z.array(z.string().min(1)).min(1).max(50),
+  document_slugs: z.array(z.string()).optional(),
+  case_slug: z.string().optional(),
+});
+
 const toolSchema = z.object({
   tool: z.enum([
     "navigate",
@@ -103,6 +230,12 @@ const toolSchema = z.object({
     "client_update",
     "meeting_tasks",
     "intake_create",
+    "rvg_calculate",
+    "document_request_create",
+    "precedent_search",
+    "translate_text",
+    "obligation_extract",
+    "tabular_review",
   ]),
   params: z.record(z.unknown()).default({}),
 });
@@ -123,6 +256,17 @@ interface ToolResponse {
 }
 
 async function executeNavigate(params: z.infer<typeof navigateSchema>): Promise<ToolResponse> {
+  if (!isAllowedDashboardRoute(params.route)) {
+    return {
+      success: false,
+      error: "Route not allowed",
+      display: {
+        kind: "navigation",
+        title: "Navigation blockiert",
+        message: "Diese Dashboard-Route ist nicht bekannt.",
+      },
+    };
+  }
   return {
     success: true,
     data: { route: params.route },
@@ -894,6 +1038,193 @@ async function executeIntakeCreate(
   }
 }
 
+async function executeRvgCalculate(
+  params: z.infer<typeof rvgCalculateSchema>
+): Promise<ToolResponse> {
+  const result = calculateRvg(params.streitwert);
+  return {
+    success: true,
+    data: result,
+    display: {
+      kind: "summary",
+      title: `RVG-Kosten für ${params.streitwert.toLocaleString("de-DE")} €`,
+      href: "/dashboard/cost-calculator",
+      items: Object.entries(result)
+        .filter(([, value]) => typeof value === "number" || typeof value === "string")
+        .slice(0, 8)
+        .map(([label, value]) => ({ label, value: String(value) })),
+    },
+  };
+}
+
+async function executeDocumentRequestCreate(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof documentRequestCreateSchema>
+): Promise<ToolResponse> {
+  const safeCaseSlug = sanitizeUserInput(params.case_slug);
+  const safeItems = params.items?.map((item) => sanitizeUserInput(item)) ?? [];
+  const safeMessage = params.message_draft ? sanitizeUserInput(params.message_draft) : undefined;
+  const slug = `document-requests/${safeCaseSlug.replace(/^cases\//, "").replace(/[^a-zA-Z0-9_-]+/g, "-")}-${Date.now().toString(36)}`;
+  const title = `Dokumentenanfrage: ${safeCaseSlug}`;
+  const content = [
+    `# ${title}`,
+    "",
+    "## Angeforderte Unterlagen",
+    ...(safeItems.length ? safeItems.map((item) => `- ${item}`) : ["- Unterlagen bitte ergänzen"]),
+    "",
+    safeMessage ? `## Nachricht\n\n${safeMessage}` : "",
+  ].join("\n");
+  const res = await fetch(`${ENGINE_URL}/api/pages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...ctx.headers },
+    body: JSON.stringify({
+      slug,
+      title,
+      type: "document_request",
+      content,
+      frontmatter: {
+        case_slug: safeCaseSlug,
+        status: "draft",
+        channel: params.channel,
+        items: safeItems,
+        message_draft: safeMessage,
+        created_at: new Date().toISOString(),
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return {
+    success: true,
+    data: { slug, items: safeItems },
+    display: {
+      kind: "confirmation",
+      title: "Dokumentenanfrage erstellt",
+      href: "/dashboard/document-requests",
+      message: `${safeItems.length || 1} Unterlage(n) als Entwurf angelegt.`,
+      items: [
+        {
+          label: "Akte",
+          value: safeCaseSlug,
+          href: `/dashboard/cases/${safeCaseSlug.replace(/^cases\//, "")}`,
+        },
+        ...safeItems.map((item) => ({ label: "Unterlage", value: item })),
+      ],
+    },
+  };
+}
+
+async function executePrecedentSearch(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof precedentSearchToolSchema>
+): Promise<ToolResponse> {
+  const res = await fetch(`${ENGINE_URL}/api/legal/precedent-search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...ctx.headers },
+    body: JSON.stringify({ ...params, query: sanitizeUserInput(params.query), limit: 10 }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
+  const results = data.results ?? [];
+  return {
+    success: true,
+    data,
+    display: {
+      kind: "list",
+      title: `${results.length} Präzedenztreffer`,
+      href: "/dashboard/precedent-search",
+      items: results.slice(0, 8).map((item) => ({
+        label: String(item.title ?? item.case_title ?? item.slug ?? "Treffer"),
+        value: String(item.court ?? item.date ?? item.summary ?? ""),
+        href: item.caseRef ? `/dashboard/cases/${String(item.caseRef)}` : undefined,
+      })),
+    },
+  };
+}
+
+async function executeTranslateText(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof translateTextToolSchema>
+): Promise<ToolResponse> {
+  const res = await fetch(`${ENGINE_URL}/api/legal/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...ctx.headers },
+    body: JSON.stringify({
+      ...params,
+      text: params.text ? sanitizeUserInput(params.text) : undefined,
+      legal_terminology: true,
+      preserve_formatting: true,
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as { translated_text?: string; translation?: string };
+  const translated = data.translated_text ?? data.translation ?? "";
+  return {
+    success: true,
+    data,
+    display: {
+      kind: "summary",
+      title: `Übersetzung nach ${params.target_language}`,
+      href: "/dashboard/translate",
+      message: translated
+        ? `${translated.slice(0, 400)}${translated.length > 400 ? "..." : ""}`
+        : "Übersetzung abgeschlossen.",
+    },
+  };
+}
+
+async function executeObligationExtract(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof obligationExtractToolSchema>
+): Promise<ToolResponse> {
+  const res = await fetch(`${ENGINE_URL}/api/legal/obligation-extract`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...ctx.headers },
+    body: JSON.stringify({
+      ...params,
+      text: params.text ? sanitizeUserInput(params.text) : undefined,
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as { obligations?: Array<Record<string, unknown>> };
+  const obligations = data.obligations ?? [];
+  return {
+    success: true,
+    data,
+    display: {
+      kind: "list",
+      title: `${obligations.length} Pflichten extrahiert`,
+      href: "/dashboard/obligation-tracking",
+      items: obligations.slice(0, 10).map((item) => ({
+        label: String(item.title ?? item.obligation ?? item.description ?? "Pflicht"),
+        value: String(item.due_date ?? item.party ?? item.risk ?? ""),
+      })),
+    },
+  };
+}
+
+async function executeTabularReview(
+  ctx: { headers: Record<string, string> },
+  params: z.infer<typeof tabularReviewToolSchema>
+): Promise<ToolResponse> {
+  const res = await fetch(`${ENGINE_URL}/api/legal/tabular-review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...ctx.headers },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return {
+    success: true,
+    data,
+    display: {
+      kind: "summary",
+      title: "Massenreview abgeschlossen",
+      href: "/dashboard/tabular-review",
+      message: `${params.questions.length} Frage(n) geprüft.`,
+    },
+  };
+}
+
 // ── Route Handler ─────────────────────────────────────────────────────
 
 export const POST = createHandler(
@@ -980,6 +1311,36 @@ export const POST = createHandler(
         case "intake_create": {
           const params = intakeCreateSchema.parse(body.params);
           result = await executeIntakeCreate(ctx, params);
+          break;
+        }
+        case "rvg_calculate": {
+          const params = rvgCalculateSchema.parse(body.params);
+          result = await executeRvgCalculate(params);
+          break;
+        }
+        case "document_request_create": {
+          const params = documentRequestCreateSchema.parse(body.params);
+          result = await executeDocumentRequestCreate(ctx, params);
+          break;
+        }
+        case "precedent_search": {
+          const params = precedentSearchToolSchema.parse(body.params);
+          result = await executePrecedentSearch(ctx, params);
+          break;
+        }
+        case "translate_text": {
+          const params = translateTextToolSchema.parse(body.params);
+          result = await executeTranslateText(ctx, params);
+          break;
+        }
+        case "obligation_extract": {
+          const params = obligationExtractToolSchema.parse(body.params);
+          result = await executeObligationExtract(ctx, params);
+          break;
+        }
+        case "tabular_review": {
+          const params = tabularReviewToolSchema.parse(body.params);
+          result = await executeTabularReview(ctx, params);
           break;
         }
         default:

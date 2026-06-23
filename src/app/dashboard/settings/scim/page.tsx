@@ -209,7 +209,7 @@ function SyncLogView({ status }: { status: SyncStatus }) {
 }
 
 export default function ScimSettingsPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const meQuery = useMe();
   const statusQuery = useScimStatus();
   const syncMutation = useScimSync();
@@ -294,13 +294,13 @@ export default function ScimSettingsPage() {
               color="bg-blue-500/10 text-blue-600"
             />
             <StatCard
-              label="Aktive Benutzer"
+              label={t("scim.label_active_users")}
               value={status?.activeScimUsers ?? 0}
               icon={UserCheck}
               color="bg-emerald-500/10 text-emerald-600"
             />
             <StatCard
-              label="Deaktivierte Benutzer"
+              label={t("scim.label_disabled_users")}
               value={status?.deactivatedScimUsers ?? 0}
               icon={UserMinus}
               color="bg-amber-500/10 text-amber-600"

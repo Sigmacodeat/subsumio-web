@@ -17,21 +17,28 @@ import { api } from "@/lib/api";
 import type { ConflictCheckResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 
 const SEVERITY_CONFIG: Record<
   ConflictCheckResponse["severity"],
   {
-    label: string;
+    labelKey: DashboardKey;
     iconClass: string;
     icon: React.ElementType;
   }
 > = {
-  none: { label: "Kein Konflikt", iconClass: "text-emerald-600", icon: CheckCircle2 },
-  low: { label: "Geringes Risiko", iconClass: "text-amber-600", icon: AlertTriangle },
-  critical: { label: "Kritischer Konflikt", iconClass: "text-red-600", icon: ShieldAlert },
+  none: { labelKey: "conflict.severity_none", iconClass: "text-emerald-600", icon: CheckCircle2 },
+  low: { labelKey: "conflict.severity_low", iconClass: "text-amber-600", icon: AlertTriangle },
+  critical: {
+    labelKey: "conflict.severity_critical",
+    iconClass: "text-red-600",
+    icon: ShieldAlert,
+  },
 };
 
 export default function KollisionspruefungPage() {
+  const { t } = useLang();
   const [searchName, setSearchName] = useState("");
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<ConflictCheckResponse | null>(null);
@@ -49,9 +56,7 @@ export default function KollisionspruefungPage() {
       const res = await api.legal.conflictCheck(name.trim());
       setResult(res);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Prüfung fehlgeschlagen — Engine nicht erreichbar."
-      );
+      setError(e instanceof Error ? e.message : t("conflict.error_default"));
     } finally {
       setChecking(false);
     }
@@ -63,18 +68,17 @@ export default function KollisionspruefungPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Kollisionsprüfung"
-        description="Interessenkonflikte nach § 43a BRAO prüfen"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kollisionsprüfung" }]}
+        title={t("conflict.title")}
+        description={t("conflict.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("conflict.breadcrumb") },
+        ]}
       />
 
       {/* Search */}
       <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-        <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">
-          Gib einen Namen (Mandant, Gegner oder Dritte) ein, um zu prüfen ob ein Interessenkonflikt
-          besteht. Die Prüfung läuft über alle Akten dieses Brains, inkl. Teiltreffer bei ähnlichen
-          Namen.
-        </p>
+        <p className="mb-3 text-sm text-[color:var(--ds-text-muted)]">{t("conflict.intro")}</p>
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -89,13 +93,13 @@ export default function KollisionspruefungPage() {
               aria-hidden="true"
             />
             <label htmlFor="conflict-name" className="sr-only">
-              Name für Kollisionsprüfung
+              {t("conflict.label_name")}
             </label>
             <Input
               id="conflict-name"
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              placeholder="Name eingeben…"
+              placeholder={t("conflict.placeholder_name")}
               className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-9 text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)]"
             />
           </div>
@@ -110,7 +114,7 @@ export default function KollisionspruefungPage() {
             ) : (
               <ShieldAlert size={16} aria-hidden="true" />
             )}
-            Prüfen
+            {t("conflict.btn_check")}
           </Button>
         </form>
       </div>
@@ -154,7 +158,7 @@ export default function KollisionspruefungPage() {
                           : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
                     )}
                   >
-                    {cfg.label}
+                    {t(cfg.labelKey)}
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm text-[color:var(--ds-text-muted)]">
@@ -166,7 +170,7 @@ export default function KollisionspruefungPage() {
             {result.matches.length > 0 && (
               <div className="mt-3 space-y-1.5">
                 <p className="text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
-                  Beteiligte Akten ({result.matches.length})
+                  {t("conflict.matches_title").replace("{{count}}", String(result.matches.length))}
                 </p>
                 {result.matches.map((m) => (
                   <div
@@ -184,14 +188,16 @@ export default function KollisionspruefungPage() {
                         variant="default"
                         className="border border-amber-500/20 bg-amber-500/10 text-xs text-amber-600"
                       >
-                        Ähnlicher Name: {m.matched_name}
+                        {t("conflict.similar_name").replace("{{name}}", m.matched_name)}
                       </Badge>
                     )}
                     <Badge
                       variant="default"
                       className="border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text-muted)]"
                     >
-                      {m.role === "client" ? "Mandant" : "Gegner"}
+                      {m.role === "client"
+                        ? t("conflict.role_client")
+                        : t("conflict.role_opponent")}
                     </Badge>
                   </div>
                 ))}
@@ -203,12 +209,7 @@ export default function KollisionspruefungPage() {
 
       {/* Disclaimer */}
       <div className="border-t border-[color:var(--ds-border)] pt-4 text-xs text-[color:var(--ds-text-muted)]">
-        <p>
-          <strong>Hinweis:</strong> Diese Kollisionsprüfung ist ein Unterstützungstool und ersetzt
-          nicht die anwaltliche Pflichtprüfung nach § 43a BRAO. Sie prüft ausschließlich die im
-          Brain erfassten Akten. Bei Unsicherheit konsultieren Sie die Berufsregeln Ihrer
-          Rechtsanwaltskammer.
-        </p>
+        <p>{t("conflict.disclaimer")}</p>
       </div>
     </div>
   );

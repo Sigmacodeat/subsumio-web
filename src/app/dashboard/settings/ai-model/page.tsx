@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Cpu, Check, Zap, DollarSign, Gauge, Shield, Loader2, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import {
   useModelPreference,
   useUpdateModelPreference,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/model-config";
 
 export default function AIModelSettingsPage() {
+  const { t } = useLang();
   const query = useModelPreference();
   const mutation = useUpdateModelPreference();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -55,12 +57,15 @@ export default function AIModelSettingsPage() {
     return (
       <div className="px-6 py-8">
         <PageHeader
-          title="KI-Modell"
-          description="Wähle das primäre AI-Modell für dein Brain."
-          breadcrumbs={[{ label: "Settings", href: "/dashboard/settings" }, { label: "KI-Modell" }]}
+          title={t("settings.aimodel.title")}
+          description={t("settings.aimodel.description")}
+          breadcrumbs={[
+            { label: "Settings", href: "/dashboard/settings" },
+            { label: t("settings.aimodel.breadcrumb") },
+          ]}
         />
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-          <p className="text-sm text-red-600">Modelle konnten nicht geladen werden.</p>
+          <p className="text-sm text-red-600">{t("settings.aimodel.error_save")}</p>
           <button
             onClick={() => query.refetch()}
             className="mt-3 text-xs text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
@@ -75,19 +80,22 @@ export default function AIModelSettingsPage() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <PageHeader
-        title="KI-Modell"
-        description="Wähle das primäre AI-Modell für dein Brain. Der Override im Query-UI hat Vorrang für einzelne Anfragen."
-        breadcrumbs={[{ label: "Settings", href: "/dashboard/settings" }, { label: "KI-Modell" }]}
+        title={t("settings.aimodel.title")}
+        description={t("settings.aimodel.description")}
+        breadcrumbs={[
+          { label: "Settings", href: "/dashboard/settings" },
+          { label: t("settings.aimodel.breadcrumb") },
+        ]}
         actions={
           saving ? (
             <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
               <Loader2 size={12} className="animate-spin" />
-              Speichern…
+              {t("settings.kanzlei.btn_saving")}
             </div>
           ) : mutation.isSuccess ? (
             <div className="flex items-center gap-2 text-xs text-emerald-600">
               <Check size={12} />
-              Gespeichert
+              {t("settings.aimodel.toast_saved")}
             </div>
           ) : undefined
         }

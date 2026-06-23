@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { GraphNode, GraphLink } from "@/lib/types";
+import { useLang } from "@/lib/use-lang";
 
 // Hex fallbacks only fire before the design tokens are resolved from
 // `--graph-*` CSS vars on mount (see `resolveNodeColors`) — keeps a single
@@ -60,6 +61,7 @@ type LayoutNode = GraphNode & { x: number; y: number };
 
 export default function GraphPage() {
   const router = useRouter();
+  const { t } = useLang();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [links, setLinks] = useState<GraphLink[]>([]);
@@ -77,7 +79,7 @@ export default function GraphPage() {
       setNodes(data.nodes);
       setLinks(data.links);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Graph konnte nicht geladen werden");
+      setError(e instanceof Error ? e.message : t("graph.error_load"));
       setNodes([]);
       setLinks([]);
     } finally {
@@ -90,7 +92,7 @@ export default function GraphPage() {
     // inside the effect body (react-hooks/set-state-in-effect).
     const timer = setTimeout(loadGraph, 0);
     return () => clearTimeout(timer);
-  }, [loadGraph]);
+  }, [loadGraph, t]);
 
   // Layout is purely derived from the node list — no state, no effect.
   const layoutNodes = useMemo<LayoutNode[]>(() => {
@@ -252,7 +254,7 @@ export default function GraphPage() {
         {loading ? (
           <div className="flex h-full flex-col items-center justify-center">
             <Loader2 size={32} className="mb-3 animate-spin text-[color:var(--ds-text-muted)]" />
-            <p className="text-sm text-[color:var(--ds-text-muted)]">Graph wird geladen…</p>
+            <p className="text-sm text-[color:var(--ds-text-muted)]">{t("graph.loading")}</p>
           </div>
         ) : isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
@@ -260,10 +262,10 @@ export default function GraphPage() {
               <Network size={28} className="text-[color:var(--ds-border-strong)]" />
             </div>
             <h3 className="mb-2 text-lg font-semibold tracking-tight text-[color:var(--ds-text)]">
-              Graph ist leer
+              {t("graph.empty_title")}
             </h3>
             <p className="mb-2 text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-              Lade Dokumente hoch um den Wissensgraph zu befüllen
+              {t("graph.empty_hint")}
             </p>
             {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
           </div>
@@ -330,14 +332,16 @@ export default function GraphPage() {
 
             <div className="absolute top-4 right-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]/90 p-4 text-right backdrop-blur">
               <div className="mb-2 text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                Graph
+                {t("graph.title")}
               </div>
               <div className="space-y-1">
                 <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                  {nodes.length} <span className="text-[color:var(--ds-text-muted)]">Knoten</span>
+                  {nodes.length}{" "}
+                  <span className="text-[color:var(--ds-text-muted)]">{t("graph.nodes")}</span>
                 </div>
                 <div className="font-mono text-sm text-[color:var(--ds-text)]">
-                  {links.length} <span className="text-[color:var(--ds-text-muted)]">Kanten</span>
+                  {links.length}{" "}
+                  <span className="text-[color:var(--ds-text-muted)]">{t("graph.edges")}</span>
                 </div>
               </div>
             </div>

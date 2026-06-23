@@ -197,6 +197,81 @@ const TOOL_RULES: ToolDetectionRule[] = [
       urgency: (m[4] as "low" | "medium" | "high" | "critical") || "medium",
     }),
   },
+  {
+    pattern: /\[TOOL:rvg_calculate\s+streitwert="([^"]+)"\]/i,
+    tool: "rvg_calculate",
+    label: "chat.tool.rvg_calculate",
+    extractParams: (m) => ({ streitwert: parseFloat(m[1]) }),
+  },
+  {
+    pattern:
+      /\[TOOL:document_request_create\s+case_slug="([^"]+)"(?:\s+items="([^"]+)")?(?:\s+message="([^"]+)")?\]/i,
+    tool: "document_request_create",
+    label: "chat.tool.document_request_create",
+    extractParams: (m) => ({
+      case_slug: m[1],
+      items: m[2]
+        ? m[2]
+            .split(";")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : undefined,
+      message_draft: m[3] || undefined,
+    }),
+  },
+  {
+    pattern:
+      /\[TOOL:precedent_search\s+query="([^"]+)"(?:\s+jurisdiction="([^"]+)")?(?:\s+legal_area="([^"]+)")?\]/i,
+    tool: "precedent_search",
+    label: "chat.tool.precedent_search",
+    extractParams: (m) => ({
+      query: m[1],
+      jurisdiction: (m[2] as "at" | "de" | "ch") || undefined,
+      legal_area: m[3] || undefined,
+    }),
+  },
+  {
+    pattern:
+      /\[TOOL:translate_text\s+target_language="([^"]+)"(?:\s+source_language="([^"]+)")?(?:\s+text="([^"]+)")?(?:\s+document_slug="([^"]+)")?\]/i,
+    tool: "translate_text",
+    label: "chat.tool.translate_text",
+    extractParams: (m) => ({
+      target_language: m[1],
+      source_language: m[2] || undefined,
+      text: m[3] || undefined,
+      document_slug: m[4] || undefined,
+    }),
+  },
+  {
+    pattern:
+      /\[TOOL:obligation_extract(?:\s+document_slug="([^"]+)")?(?:\s+jurisdiction="([^"]+)")?(?:\s+text="([^"]+)")?\]/i,
+    tool: "obligation_extract",
+    label: "chat.tool.obligation_extract",
+    extractParams: (m) => ({
+      document_slug: m[1] || undefined,
+      jurisdiction: (m[2] as "at" | "de" | "ch" | "all") || "all",
+      text: m[3] || undefined,
+    }),
+  },
+  {
+    pattern:
+      /\[TOOL:tabular_review\s+questions="([^"]+)"(?:\s+document_slugs="([^"]+)")?(?:\s+case_slug="([^"]+)")?\]/i,
+    tool: "tabular_review",
+    label: "chat.tool.tabular_review",
+    extractParams: (m) => ({
+      questions: m[1]
+        .split(";")
+        .map((question) => question.trim())
+        .filter(Boolean),
+      document_slugs: m[2]
+        ? m[2]
+            .split(";")
+            .map((slug) => slug.trim())
+            .filter(Boolean)
+        : undefined,
+      case_slug: m[3] || undefined,
+    }),
+  },
 ];
 
 // Detect all tool markers in AI response — supports multiple tools per response (G16)
@@ -1466,8 +1541,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
       <ChatHeader
         compact={isCompact}
         features={{
-          modelSelector: false,
-          modeSelector: false,
+          modelSelector: resolvedFeatures.modelSelector,
+          modeSelector: resolvedFeatures.modeSelector,
           caseSelector: resolvedFeatures.caseSelector,
           jurisdictionSelector: resolvedFeatures.jurisdictionSelector,
           brainStatus: resolvedFeatures.brainStatus,
@@ -1510,6 +1585,14 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         sessionSearch={sessionSearch}
         onSessionSearchChange={setSessionSearch}
       />
+
+      <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2 text-[11px] text-[color:var(--ds-text-subtle)]">
+        <span className="inline-flex items-center gap-1.5 font-medium text-[color:var(--ds-text-muted)]">
+          {t("chat.trust_badge")}
+        </span>
+        <span className="hidden h-3 w-px bg-[color:var(--ds-border)] sm:block" aria-hidden />
+        <span>{t("chat.trust_desc")}</span>
+      </div>
 
       {/* Messages area */}
       <div
@@ -1634,8 +1717,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         isStreaming={isStreaming}
         features={{
           fileUpload: resolvedFeatures.fileUpload,
-          modelSelector: resolvedFeatures.modelSelector,
-          modeSelector: resolvedFeatures.modeSelector,
+          modelSelector: false,
+          modeSelector: false,
         }}
         modelOverride={modelOverride}
         onModelChange={setModelOverride}

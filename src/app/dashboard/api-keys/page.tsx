@@ -20,7 +20,7 @@ interface ApiKey {
 }
 
 export default function ApiKeysPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const keysQuery = useApiKeys();
   const createMutation = useCreateApiKey();
   const deleteMutation = useDeleteApiKey();
@@ -40,7 +40,7 @@ export default function ApiKeysPage() {
       setNewKeyPlaintext(data.plaintextKey);
       setNewKeyName("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erstellen fehlgeschlagen");
+      setError(err instanceof Error ? err.message : t("apikeys.error_create"));
     }
   }
 
@@ -48,7 +48,7 @@ export default function ApiKeysPage() {
     try {
       await deleteMutation.mutateAsync(id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : t("apikeys.error_delete"));
     }
   }
 
@@ -61,9 +61,12 @@ export default function ApiKeysPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="API-Keys"
-        description="Drittanbieter-Integration (Zapier, beA, DATEV)"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "API-Keys" }]}
+        title={t("apikeys.title")}
+        description={t("apikeys.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("apikeys.breadcrumb") },
+        ]}
       />
 
       {/* Create Key */}
@@ -75,7 +78,7 @@ export default function ApiKeysPage() {
           <input
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
-            placeholder="z. B. Zapier-Integration"
+            placeholder={t("apikeys.placeholder_name")}
             className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             onKeyDown={(e) => e.key === "Enter" && createKey()}
           />
@@ -90,7 +93,7 @@ export default function ApiKeysPage() {
             ) : (
               <Plus size={14} />
             )}
-            Erstellen
+            {t("apikeys.btn_create")}
           </Button>
         </div>
 
@@ -99,7 +102,7 @@ export default function ApiKeysPage() {
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-600" />
               <span className="text-sm font-medium text-amber-600">
-                Key wird nur EINMAL angezeigt
+                {t("apikeys.warning_secret")}
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
@@ -151,7 +154,7 @@ export default function ApiKeysPage() {
             ) : keys.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-[color:var(--ds-text-muted)]">
-                  Noch keine API-Keys vorhanden.
+                  {t("apikeys.empty_hint")}
                 </td>
               </tr>
             ) : (
@@ -191,7 +194,7 @@ export default function ApiKeysPage() {
                     <button
                       onClick={() => deleteKey(k.id)}
                       className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                      title="Löschen"
+                      title={t("apikeys.btn_delete")}
                     >
                       <Trash2 size={14} />
                     </button>

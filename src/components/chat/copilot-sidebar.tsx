@@ -124,6 +124,63 @@ const ROUTE_PATTERNS: Array<{
     }),
   },
   {
+    pattern: /^\/dashboard\/intake$/,
+    context: (_m, t) => ({
+      type: "global",
+      label: t("copilot.ctx.intake"),
+      quickActions: [
+        {
+          label: t("copilot.qa.intake_convert"),
+          query: "Welche Intake-Anfragen sollten als nächstes in Akten überführt werden?",
+          icon: "case",
+        },
+        {
+          label: t("copilot.qa.intake_missing_docs"),
+          query: "Welche Unterlagen fehlen in den offenen Intake-Anfragen?",
+          icon: "search",
+        },
+      ],
+    }),
+  },
+  {
+    pattern: /^\/dashboard\/contacts$/,
+    context: (_m, t) => ({
+      type: "global",
+      label: t("copilot.ctx.contacts"),
+      quickActions: [
+        {
+          label: t("copilot.qa.contact_conflict"),
+          href: "/dashboard/kollisionspruefung",
+          icon: "generic",
+        },
+        {
+          label: t("copilot.qa.contact_opponents"),
+          href: "/dashboard/opponents",
+          icon: "generic",
+        },
+      ],
+    }),
+  },
+  {
+    pattern: /^\/dashboard\/bea$/,
+    context: (_m, t) => ({
+      type: "global",
+      label: t("copilot.ctx.bea"),
+      quickActions: [
+        {
+          label: t("copilot.qa.bea_deadlines"),
+          query: "Welche beA-Eingänge können Fristen auslösen?",
+          icon: "deadline",
+        },
+        {
+          label: t("copilot.qa.bea_draft"),
+          query: "Entwirf eine beA-Antwort anhand des aktuellen Aktenkontexts.",
+          icon: "draft",
+        },
+      ],
+    }),
+  },
+  {
     pattern: /^\/dashboard\/research$/,
     context: (_m, t) => ({
       type: "global",
@@ -143,6 +200,25 @@ const ROUTE_PATTERNS: Array<{
     }),
   },
   {
+    pattern: /^\/dashboard\/vault$/,
+    context: (_m, t) => ({
+      type: "global",
+      label: t("copilot.ctx.vault"),
+      quickActions: [
+        {
+          label: t("copilot.qa.vault_review"),
+          href: "/dashboard/tabular-review",
+          icon: "generic",
+        },
+        {
+          label: t("copilot.qa.vault_analyze"),
+          href: "/dashboard/analyze",
+          icon: "generic",
+        },
+      ],
+    }),
+  },
+  {
     pattern: /^\/dashboard\/drafting$/,
     context: (_m, t) => ({
       type: "global",
@@ -157,6 +233,25 @@ const ROUTE_PATTERNS: Array<{
           label: t("copilot.qa.draft_berufung"),
           query: "Wie strukturiere ich eine Berufungsbegründung?",
           icon: "draft",
+        },
+      ],
+    }),
+  },
+  {
+    pattern: /^\/dashboard\/invoicing$/,
+    context: (_m, t) => ({
+      type: "global",
+      label: t("copilot.ctx.invoicing"),
+      quickActions: [
+        {
+          label: t("copilot.qa.rvg_calculate"),
+          query: "Berechne RVG-Gebühren für einen Streitwert von 10.000 EUR.",
+          icon: "generic",
+        },
+        {
+          label: t("copilot.qa.datev_export"),
+          href: "/dashboard/datev-export",
+          icon: "generic",
         },
       ],
     }),

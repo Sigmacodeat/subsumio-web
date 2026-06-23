@@ -7,22 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { AnonymizeResponse } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
+import type { DashboardKey } from "@/content/dashboard";
 
-const TYPE_LABELS: Record<string, string> = {
-  person: "Personen",
-  organization: "Unternehmen",
-  iban: "IBAN",
-  bic: "BIC",
-  email: "E-Mail",
-  phone: "Telefon",
-  aktenzeichen: "Aktenzeichen",
-  tax_id: "Steuer-ID",
-  address: "Adressen",
-  ip: "IP-Adressen",
-  credit_card: "Kartennummern",
+const TYPE_LABELS: Record<string, DashboardKey> = {
+  person: "anonymize.type_person",
+  organization: "anonymize.type_organization",
+  email: "anonymize.type_email",
+  phone: "anonymize.type_phone",
+  aktenzeichen: "anonymize.type_aktenzeichen",
+  address: "anonymize.type_address",
+  credit_card: "anonymize.type_credit_card",
 };
 
 export default function AnonymizePage() {
+  const { t } = useLang();
   const [input, setInput] = useState("");
   const [result, setResult] = useState<AnonymizeResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,7 +37,7 @@ export default function AnonymizePage() {
       const res = await api.legal.anonymize(input);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Anonymisierung fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("anonymize.error"));
     } finally {
       setLoading(false);
     }
@@ -54,9 +53,12 @@ export default function AnonymizePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Anonymisierung"
-        description="Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB)"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Anonymisierung" }]}
+        title={t("anonymize.title")}
+        description={t("anonymize.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("anonymize.breadcrumb") },
+        ]}
       />
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -68,7 +70,7 @@ export default function AnonymizePage() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Text einfügen — z. B. Schriftsatz, Mandanten-Mail, Sachverhalt …"
+            placeholder={t("anonymize.placeholder_input")}
             className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
           <Button
@@ -77,7 +79,7 @@ export default function AnonymizePage() {
             className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
-            Anonymisieren
+            {t("anonymize.btn_run")}
           </Button>
         </div>
 
@@ -93,14 +95,14 @@ export default function AnonymizePage() {
                 className="flex items-center gap-1.5 text-xs text-emerald-600 hover:underline"
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? "Kopiert" : "Kopieren"}
+                {copied ? t("anonymize.btn_run") : t("anonymize.btn_run")}
               </button>
             )}
           </div>
           <textarea
             readOnly
             value={result?.anonymized ?? ""}
-            placeholder="Das Ergebnis erscheint hier."
+            placeholder={t("anonymize.placeholder_output")}
             className="h-80 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:outline-none"
           />
         </div>
@@ -116,7 +118,7 @@ export default function AnonymizePage() {
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-[color:var(--ds-text-muted)]">
-              {result.count} Ersetzungen:
+              {result.count} {t("anonymize.stats_replacements")}:
             </span>
             {Object.entries(result.stats).map(([type, n]) => (
               <Badge
@@ -124,7 +126,7 @@ export default function AnonymizePage() {
                 variant="default"
                 className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-700"
               >
-                {TYPE_LABELS[type] ?? type}: {n}
+                {TYPE_LABELS[type] ? t(TYPE_LABELS[type]) : type}: {n}
               </Badge>
             ))}
             <Badge

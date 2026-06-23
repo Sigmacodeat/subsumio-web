@@ -38,7 +38,6 @@ import {
   Search,
   ClipboardList,
   FileSearch,
-  CheckSquare,
   Inbox,
   FileClock,
   Award,
@@ -55,6 +54,7 @@ import {
   Network,
   Calculator,
   Database,
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -74,9 +74,9 @@ type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    titleKey: "nav.section.cockpit",
+    titleKey: "nav.section.operations",
     items: [
-      { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
+      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
     ],
   },
@@ -84,7 +84,8 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
-      { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
+      { href: "/dashboard/opponents", icon: User, labelKey: "nav.opponents" },
+      { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
     ],
   },
   {
@@ -95,27 +96,27 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.section.research_knowledge",
-    items: [
-      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-      { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
-    ],
-  },
-  {
     titleKey: "nav.section.documents_drafting",
     items: [
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
       { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
-      { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
     ],
   },
   {
-    titleKey: "nav.section.billing_compliance",
+    titleKey: "nav.section.research_knowledge",
     items: [
-      { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
-      { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
+      { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
+      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
     ],
+  },
+  {
+    titleKey: "nav.section.billing",
+    items: [{ href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" }],
+  },
+  {
+    titleKey: "nav.section.compliance",
+    items: [{ href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" }],
   },
 ];
 
@@ -127,10 +128,10 @@ export const BOTTOM_ITEMS: NavItem[] = [
 
 const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
-  { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
+  { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
+  { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
 ];
 
 const ADMIN_SECTION: NavSection = {
@@ -142,63 +143,81 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   ...PRIMARY_ITEMS,
   ...NAV_SECTIONS.flatMap((s) => s.items),
   ...BOTTOM_ITEMS,
-  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+  { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
   { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
   { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-  { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
   { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
   { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
-  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
-  { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
-  { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
-  { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
-  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-  { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
   { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
   { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
   { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
+  {
+    href: "/dashboard/obligation-tracking",
+    icon: ClipboardCheck,
+    labelKey: "nav.obligation_tracking",
+  },
   { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
-  { href: "/dashboard/obligation-tracking", icon: ClipboardCheck, labelKey: "nav.obligation_tracking" },
   { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
-  { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-  { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
+  { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
+  { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
+  { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
+  { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
+  { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
+  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+  { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
+  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
   { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
   { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
   { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
-  { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
   { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+  { href: "/dashboard/compliance/retention", icon: FileClock, labelKey: "nav.retention" },
+  { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
   { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
+  { href: "/dashboard/assistant", icon: MessageSquareText, labelKey: "nav.assistant" },
+  { href: "/dashboard/query", icon: MessageSquareText, labelKey: "nav.query" },
+  { href: "/dashboard/chat/analytics", icon: BarChart3, labelKey: "nav.chat_analytics" },
+  { href: "/dashboard/chat/compare", icon: GitCompare, labelKey: "nav.chat_compare" },
+  { href: "/dashboard/cases/new", icon: Briefcase, labelKey: "nav.cases" },
+  { href: "/dashboard/calendar-export", icon: CalendarClock, labelKey: "nav.calendar_export" },
+  { href: "/dashboard/case-scanner", icon: FileSearch, labelKey: "nav.case_scanner" },
+  { href: "/dashboard/judgements-sync", icon: Landmark, labelKey: "nav.judgements_sync" },
+  { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
+  { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
   { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
+  { href: "/dashboard/mobile", icon: UserCircle, labelKey: "nav.mobile" },
+  { href: "/dashboard/onboarding", icon: Award, labelKey: "nav.onboarding" },
   { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
   { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
   { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
   { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
   { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
+  { href: "/dashboard/settings/kanzlei", icon: Settings, labelKey: "nav.kanzlei" },
+  { href: "/dashboard/settings/security", icon: ShieldCheck, labelKey: "nav.security" },
+  { href: "/dashboard/settings/scim", icon: Network, labelKey: "nav.scim" },
+  { href: "/dashboard/settings/ai-model", icon: Bot, labelKey: "nav.ai_model" },
+  {
+    href: "/dashboard/whatsapp/templates",
+    icon: MessageCircle,
+    labelKey: "nav.whatsapp_templates",
+  },
+  { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
 ];
 
 export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
-  { href: "/dashboard/review-queue", section: "nav.section.cockpit" },
-  { href: "/dashboard/approvals", section: "nav.section.cockpit" },
-  { href: "/dashboard/workflows", section: "nav.section.cockpit" },
   { href: "/dashboard/contacts", section: "nav.section.cases_clients" },
   { href: "/dashboard/opponents", section: "nav.section.cases_clients" },
   { href: "/dashboard/client-portal", section: "nav.section.cases_clients" },
   { href: "/dashboard/document-requests", section: "nav.section.cases_clients" },
   { href: "/dashboard/kollisionspruefung", section: "nav.section.cases_clients" },
   { href: "/dashboard/process-strategy", section: "nav.section.cases_clients" },
+  { href: "/dashboard/cases/new", section: "nav.section.cases_clients" },
+  { href: "/dashboard/case-scanner", section: "nav.section.cases_clients" },
   { href: "/dashboard/bea", section: "nav.section.communication" },
   { href: "/dashboard/whatsapp", section: "nav.section.communication" },
+  { href: "/dashboard/whatsapp/templates", section: "nav.section.communication" },
   { href: "/dashboard/email-import", section: "nav.section.communication" },
-  { href: "/dashboard/brain", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/graph", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/sources", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/research", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/precedent-search", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/rechtsprechung", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/norms", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/monitoring", section: "nav.section.research_knowledge" },
-  { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
   { href: "/dashboard/upload", section: "nav.section.documents_drafting" },
   { href: "/dashboard/vault", section: "nav.section.documents_drafting" },
   { href: "/dashboard/drafting", section: "nav.section.documents_drafting" },
@@ -211,23 +230,48 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/signature", section: "nav.section.documents_drafting" },
   { href: "/dashboard/word-addin", section: "nav.section.documents_drafting" },
   { href: "/dashboard/version-history", section: "nav.section.documents_drafting" },
-  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/compliance", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/anonymize", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/data-export", section: "nav.section.billing_compliance" },
-  { href: "/dashboard/import-kanzlei", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/research", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/rechtsprechung", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/norms", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/precedent-search", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/brain", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/graph", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/sources", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/monitoring", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/playbooks", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/judgements-sync", section: "nav.section.research_knowledge" },
+  { href: "/dashboard/review-queue", section: "nav.section.operations" },
+  { href: "/dashboard/approvals", section: "nav.section.operations" },
+  { href: "/dashboard/workflows", section: "nav.section.operations" },
+  { href: "/dashboard/invoicing", section: "nav.section.billing" },
+  { href: "/dashboard/cost-calculator", section: "nav.section.billing" },
+  { href: "/dashboard/datev-export", section: "nav.section.billing" },
+  { href: "/dashboard/controlling", section: "nav.section.billing" },
+  { href: "/dashboard/billing", section: "nav.section.admin" },
+  { href: "/dashboard/compliance", section: "nav.section.compliance" },
+  { href: "/dashboard/compliance/retention", section: "nav.section.compliance" },
+  { href: "/dashboard/anonymize", section: "nav.section.compliance" },
+  { href: "/dashboard/verfahrensdoku", section: "nav.section.compliance" },
+  { href: "/dashboard/data-export", section: "nav.section.compliance" },
+  { href: "/dashboard/import-kanzlei", section: "nav.section.admin" },
   { href: "/dashboard/team", section: "nav.section.admin" },
   { href: "/dashboard/experience", section: "nav.section.admin" },
   { href: "/dashboard/agents", section: "nav.section.admin" },
   { href: "/dashboard/connectors", section: "nav.section.admin" },
   { href: "/dashboard/api-keys", section: "nav.section.admin" },
   { href: "/dashboard/audit", section: "nav.section.admin" },
-  { href: "/dashboard/billing", section: "nav.section.admin" },
   { href: "/dashboard/settings", section: "nav.section.admin" },
+  { href: "/dashboard/settings/kanzlei", section: "nav.section.admin" },
+  { href: "/dashboard/settings/security", section: "nav.section.admin" },
+  { href: "/dashboard/settings/scim", section: "nav.section.admin" },
+  { href: "/dashboard/settings/ai-model", section: "nav.section.admin" },
+  { href: "/dashboard/mobile", section: "nav.section.admin" },
+  { href: "/dashboard/onboarding", section: "nav.section.admin" },
+  { href: "/dashboard/rag-eval", section: "nav.section.admin" },
+  { href: "/dashboard/chat/analytics", section: "nav.section.admin" },
+  { href: "/dashboard/chat/compare", section: "nav.section.admin" },
+  { href: "/dashboard/assistant", section: "nav.section.admin" },
+  { href: "/dashboard/query", section: "nav.section.admin" },
 ];
 
 function sectionDomId(titleKey: DashboardKey) {
@@ -337,17 +381,28 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       return NAV_SECTIONS.filter((section) => section.items.some((item) => !item.comingSoon));
     }
     const q = searchQuery.toLowerCase().trim();
-    return NAV_SECTIONS.map((section) => ({
-      ...section,
-      items: section.items.filter((item) => t(item.labelKey).toLowerCase().includes(q)),
-    })).filter((section) => section.items.length > 0);
+    const sections = [...NAV_SECTIONS, ADMIN_SECTION];
+    return sections
+      .map((section) => ({
+        ...section,
+        items: ALL_NAV_ITEMS.filter((item) => {
+          const preferred = PREFERRED_SECTION_BY_HREF.find((entry) => entry.href === item.href);
+          const sectionKey = preferred?.section ?? "nav.section.admin";
+          return (
+            sectionKey === section.titleKey &&
+            !item.comingSoon &&
+            !PRIMARY_ITEMS.some((primary) => primary.href === item.href) &&
+            t(item.labelKey).toLowerCase().includes(q)
+          );
+        }),
+      }))
+      .filter((section) => section.items.length > 0);
   }, [searchQuery, t]);
 
   const filteredBottomItems = useMemo(() => {
     if (!searchQuery.trim()) return BOTTOM_ITEMS;
-    const q = searchQuery.toLowerCase().trim();
-    return BOTTOM_ITEMS.filter((item) => t(item.labelKey).toLowerCase().includes(q));
-  }, [searchQuery, t]);
+    return [];
+  }, [searchQuery]);
 
   const hasResults = filteredSections.length > 0 || filteredBottomItems.length > 0;
   const accordionSections = useMemo<NavSection[]>(() => {

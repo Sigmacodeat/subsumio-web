@@ -84,7 +84,7 @@ const STATUS_CONFIG: Record<
 };
 
 export default function SignaturePage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
   const [drafts, setDrafts] = useState<BrainPage[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -184,7 +184,9 @@ export default function SignaturePage() {
       setNotice("Signatur-Entwurf im Brain gespeichert.");
     } catch (e) {
       setNotice(
-        e instanceof Error ? `Speichern fehlgeschlagen: ${e.message}` : "Speichern fehlgeschlagen."
+        e instanceof Error
+          ? `${t("signature.error_save")}: ${e.message}`
+          : t("signature.error_save")
       );
     } finally {
       setSaving(false);
@@ -242,7 +244,7 @@ export default function SignaturePage() {
               onClick={() => setShowCreate(!showCreate)}
             >
               {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
-              {showCreate ? "Abbrechen" : "Unterschrift anfordern"}
+              {showCreate ? t("signature.btn_cancel") : t("signature.btn_request")}
             </Button>
           </div>
         }

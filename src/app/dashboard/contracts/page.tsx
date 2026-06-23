@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import {
@@ -18,6 +19,8 @@ import {
   Download,
   AlertTriangle,
   BarChart3,
+  Library,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +74,26 @@ const STATUS_LABELS: Record<string, string> = {
   approved: "Freigegeben",
   signed: "Unterzeichnet",
 };
+
+function HubLink({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof FileText;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    >
+      <Icon size={15} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 function parseContract(page: BrainPage): ContractItem {
   const fm = page.frontmatter ?? {};
@@ -215,7 +238,7 @@ export default function ContractsPage() {
       setNewType("Kaufvertrag");
       setCreating(false);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Erstellen fehlgeschlagen.");
+      setCreateError(err instanceof Error ? err.message : t("contracts.error_create"));
     }
   }
 
@@ -279,7 +302,7 @@ export default function ContractsPage() {
         limit: 50,
       });
       setReviewResult(res);
-      if (res.rows.length === 0) setReviewError("Keine Verträge für Review gefunden.");
+      if (res.rows.length === 0) setReviewError(t("contracts.error_review_empty"));
     } catch (e) {
       setReviewError(e instanceof Error ? e.message : "Massen-Review fehlgeschlagen.");
     } finally {
@@ -289,9 +312,9 @@ export default function ContractsPage() {
 
   async function deleteContract(slug: string) {
     const ok = await confirm({
-      title: "Vertrag löschen",
-      message: "Möchten Sie diesen Vertrag wirklich löschen?",
-      confirmLabel: "Löschen",
+      title: t("contracts.confirm_delete_title"),
+      message: t("contracts.confirm_delete_msg"),
+      confirmLabel: t("contracts.btn_delete"),
       variant: "danger",
     });
     if (!ok) return;
@@ -305,7 +328,7 @@ export default function ContractsPage() {
       setContracts(nextContracts);
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
+      setLoadError(err instanceof Error ? err.message : t("contracts.error_delete"));
     }
   }
 
@@ -352,7 +375,7 @@ export default function ContractsPage() {
       await setCache(OFFLINE_KEYS.contracts, nextContracts);
       setEditingSlug(null);
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Speichern fehlgeschlagen.");
+      setEditError(err instanceof Error ? err.message : t("contracts.error_save"));
     }
   }
 
@@ -383,6 +406,17 @@ export default function ContractsPage() {
           </>
         }
       />
+
+      <div className="grid gap-2 sm:grid-cols-4">
+        <HubLink href="/dashboard/clause-library" icon={Library} label={t("nav.clause_library")} />
+        <HubLink
+          href="/dashboard/obligation-tracking"
+          icon={ClipboardCheck}
+          label={t("nav.obligation_tracking")}
+        />
+        <HubLink href="/dashboard/tabular-review" icon={Table2} label={t("nav.tabular_review")} />
+        <HubLink href="/dashboard/drafting" icon={PenTool} label={t("nav.drafting")} />
+      </div>
 
       {creating && (
         <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
@@ -845,14 +879,14 @@ export default function ContractsPage() {
                     <button
                       onClick={() => startEdit(contract)}
                       className="hover:brand-text brand-bg/10 rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                      title="Bearbeiten"
+                      title={t("contracts.btn_edit")}
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => deleteContract(contract.slug)}
                       className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600"
-                      title="Löschen"
+                      title={t("contracts.btn_delete")}
                     >
                       <Trash2 size={14} />
                     </button>

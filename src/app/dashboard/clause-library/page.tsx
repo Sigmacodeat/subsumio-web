@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 const CATEGORY_LABELS: Record<string, string> = {
   nda: "NDA",
@@ -33,6 +34,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function ClauseLibraryPage() {
+  const { t } = useLang();
   const [clauses, setClauses] = useState<BrainPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function ClauseLibraryPage() {
       const pages = await api.brain.listPages({ type: "clause_library", limit: 200 });
       setClauses(pages);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Klausel-Bibliothek konnte nicht geladen werden.");
+      setError(e instanceof Error ? e.message : t("clauses.toast_create_failed"));
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ export default function ClauseLibraryPage() {
       setShowCreate(false);
       await loadClauses();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Klausel konnte nicht erstellt werden.");
+      setError(e instanceof Error ? e.message : t("clauses.toast_create_failed"));
     } finally {
       setCreating(false);
     }
@@ -122,15 +124,18 @@ export default function ClauseLibraryPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Klausel-Bibliothek"
-        description="Wiederverwendbare Klausel-Bausteine aus Ihrem Brain — kopieren, durchsuchen und in Verträge einfügen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Klausel-Bibliothek" }]}
+        title={t("clauses.title")}
+        description={t("clauses.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("clauses.breadcrumb") },
+        ]}
         actions={
           <Button
             onClick={() => setShowCreate(!showCreate)}
             className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
           >
-            <Plus size={15} /> Neue Klausel
+            <Plus size={15} /> {t("clauses.btn_create")}
           </Button>
         }
       />
@@ -141,7 +146,7 @@ export default function ClauseLibraryPage() {
           <Input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Klausel-Titel (z.B. Geheimhaltungsklausel)"
+            placeholder={t("clauses.placeholder_title")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
           />
           <select
@@ -158,7 +163,7 @@ export default function ClauseLibraryPage() {
           <textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
-            placeholder="Klauseltext…"
+            placeholder={t("clauses.placeholder_body")}
             className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
           <div className="flex gap-2">
@@ -168,10 +173,10 @@ export default function ClauseLibraryPage() {
               className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
             >
               {creating ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-              Speichern
+              {t("clauses.btn_create")}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
-              Abbrechen
+              {t("clauses.btn_delete")}
             </Button>
           </div>
         </div>
@@ -186,7 +191,7 @@ export default function ClauseLibraryPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Klauseln durchsuchen…"
+          placeholder={t("clauses.search_placeholder")}
           className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] pl-10 text-[color:var(--ds-text)]"
         />
       </div>
@@ -301,7 +306,7 @@ export default function ClauseLibraryPage() {
               className="gap-1.5 text-xs"
             >
               {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-              {copied ? "Kopiert" : "Kopieren"}
+              {copied ? t("clauses.btn_copy") : t("clauses.btn_copy")}
             </Button>
           </div>
           <div className="prose prose-sm max-w-none leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text)]">
@@ -317,9 +322,7 @@ export default function ClauseLibraryPage() {
             className="mx-auto mb-3 text-[color:var(--ds-text-muted)] opacity-40"
           />
           <p className="text-sm text-[color:var(--ds-text-muted)]">
-            {search
-              ? "Keine Klauseln gefunden."
-              : "Noch keine Klauseln in der Bibliothek. Erstellen Sie die erste Klausel."}
+            {search ? t("clauses.empty_title") : t("clauses.empty_hint")}
           </p>
         </div>
       )}

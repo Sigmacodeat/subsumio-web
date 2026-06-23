@@ -75,7 +75,7 @@ function createdLabel(lang: Lang, value: string): string {
 }
 
 export default function DocumentRequestsPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"all" | RequestStatus>("all");
   const [search, setSearch] = useState("");
@@ -331,9 +331,7 @@ export default function DocumentRequestsPage() {
                     {item.title}
                   </h3>
                   <p className="line-clamp-2 text-xs text-[color:var(--ds-text-muted)]">
-                    {item.frontmatter.message_draft ||
-                      item.content ||
-                      "Keine Nachricht gespeichert."}
+                    {item.frontmatter.message_draft || item.content || t("docreq.no_message")}
                   </p>
                 </div>
                 <div className="shrink-0 text-right text-xs text-[color:var(--ds-text-muted)]">

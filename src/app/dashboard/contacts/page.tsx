@@ -19,6 +19,8 @@ import {
   MoreVertical,
   Building2,
   Search,
+  Scale,
+  FileClock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -451,6 +453,20 @@ export default function ContactsPage() {
         }
       />
 
+      <div className="grid gap-2 sm:grid-cols-3">
+        <HubLink href="/dashboard/opponents" icon={Scale} label={t("nav.opponents")} />
+        <HubLink
+          href="/dashboard/kollisionspruefung"
+          icon={AlertTriangle}
+          label={t("nav.kollisionspruefung")}
+        />
+        <HubLink
+          href="/dashboard/document-requests"
+          icon={FileClock}
+          label={t("nav.document_requests")}
+        />
+      </div>
+
       {/* Stats bar */}
       {!loading && contacts.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -832,6 +848,26 @@ export default function ContactsPage() {
 }
 
 // ── Sub-components ──────────────────────────────────────────────────────
+
+function HubLink({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof Search;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    >
+      <Icon size={15} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 function StatCard({ label, value, dotClass }: { label: string; value: number; dotClass?: string }) {
   return (

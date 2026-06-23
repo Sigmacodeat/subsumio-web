@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 import {
   createMigrationProject,
   setFieldMappings,
@@ -126,6 +127,7 @@ function slugify(s: string): string {
 }
 
 export default function ImportKanzleiPage() {
+  const { t } = useLang();
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<FieldKey, number>>({} as Record<FieldKey, number>);
@@ -341,9 +343,12 @@ export default function ImportKanzleiPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Kanzlei-Import"
-        description="Aktenliste aus RA-MICRO, Advoware oder DATEV Anwalt (CSV) übernehmen"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Kanzlei-Import" }]}
+        title={t("importkanzlei.title")}
+        description={t("importkanzlei.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("importkanzlei.breadcrumb") },
+        ]}
       />
 
       {/* Honest framing */}

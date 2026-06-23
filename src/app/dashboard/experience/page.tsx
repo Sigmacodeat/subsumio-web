@@ -5,8 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Users, Award, Scale, Briefcase, Languages } from "lucide-react";
+import { useLang } from "@/lib/use-lang";
 
 interface PracticeAreaInfo {
   area: string;
@@ -61,19 +68,20 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 const PRACTICE_AREAS = [
-  { value: "litigation", label: "Litigation" },
-  { value: "contract", label: "Vertragsrecht" },
-  { value: "tax", label: "Steuerrecht" },
-  { value: "corporate", label: "Corporate" },
-  { value: "employment", label: "Arbeitsrecht" },
-  { value: "ip", label: "IPrecht" },
-  { value: "compliance", label: "Compliance" },
-  { value: "family", label: "Familienrecht" },
-  { value: "criminal", label: "Strafrecht" },
-  { value: "real_estate", label: "Immobilienrecht" },
-];
+  { value: "litigation", labelKey: "experience.pa_litigation" },
+  { value: "contract", labelKey: "experience.pa_contract" },
+  { value: "tax", labelKey: "experience.pa_tax" },
+  { value: "corporate", labelKey: "experience.pa_corporate" },
+  { value: "employment", labelKey: "experience.pa_employment" },
+  { value: "ip", labelKey: "experience.pa_ip" },
+  { value: "compliance", labelKey: "experience.pa_compliance" },
+  { value: "family", labelKey: "experience.pa_family" },
+  { value: "criminal", labelKey: "experience.pa_criminal" },
+  { value: "real_estate", labelKey: "experience.pa_real_estate" },
+] as const;
 
 export default function ExperiencePage() {
+  const { t } = useLang();
   const [tab, setTab] = useState<"who_knows" | "directory" | "summary">("who_knows");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +114,7 @@ export default function ExperiencePage() {
       const data = await res.json();
       setWhoKnowsResults(data.data?.results || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      setError(err instanceof Error ? err.message : t("experience.error_save"));
     } finally {
       setLoading(false);
     }
@@ -121,7 +129,7 @@ export default function ExperiencePage() {
       const data = await res.json();
       setProfiles(data.data?.profiles || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      setError(err instanceof Error ? err.message : t("experience.error_save"));
     } finally {
       setLoading(false);
     }
@@ -136,7 +144,7 @@ export default function ExperiencePage() {
       const data = await res.json();
       setSummary(data.data || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      setError(err instanceof Error ? err.message : t("experience.error_save"));
     } finally {
       setLoading(false);
     }
@@ -163,30 +171,38 @@ export default function ExperiencePage() {
     <div className="container mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Experience & Who-Knows</h1>
-          <p className="text-muted-foreground text-sm">
-            Wer hat Erfahrung in welchen Rechtsgebieten? — Kanzlei-intern, DSGVO-konform, ohne Rankings.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("experience.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("experience.description")}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">
-        <TabButton active={tab === "who_knows"} onClick={() => setTab("who_knows")} icon={<Search className="h-4 w-4" />}>
-          Who Knows?
+        <TabButton
+          active={tab === "who_knows"}
+          onClick={() => setTab("who_knows")}
+          icon={<Search className="h-4 w-4" />}
+        >
+          {t("experience.tab_whoknows")}
         </TabButton>
-        <TabButton active={tab === "directory"} onClick={() => setTab("directory")} icon={<Users className="h-4 w-4" />}>
-          Verzeichnis
+        <TabButton
+          active={tab === "directory"}
+          onClick={() => setTab("directory")}
+          icon={<Users className="h-4 w-4" />}
+        >
+          {t("experience.tab_directory")}
         </TabButton>
-        <TabButton active={tab === "summary"} onClick={() => setTab("summary")} icon={<Scale className="h-4 w-4" />}>
-          Übersicht
+        <TabButton
+          active={tab === "summary"}
+          onClick={() => setTab("summary")}
+          icon={<Scale className="h-4 w-4" />}
+        >
+          {t("experience.tab_summary")}
         </TabButton>
       </div>
 
       {error && (
-        <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-          {error}
-        </div>
+        <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">{error}</div>
       )}
 
       {/* Who Knows Tab */}
@@ -194,43 +210,47 @@ export default function ExperiencePage() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Expertise-Suche</CardTitle>
+              <CardTitle className="text-lg">{t("experience.card_search")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Rechtsgebiet</label>
+                  <label className="text-sm font-medium">
+                    {t("experience.label_practice_area")}
+                  </label>
                   <Select value={practiceArea} onValueChange={setPracticeArea}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Alle Gebiete" />
+                      <SelectValue placeholder={t("experience.placeholder_all_areas")} />
                     </SelectTrigger>
                     <SelectContent>
                       {PRACTICE_AREAS.map((pa) => (
                         <SelectItem key={pa.value} value={pa.value}>
-                          {pa.label}
+                          {t(pa.labelKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Min. Erfahrung</label>
+                  <label className="text-sm font-medium">{t("experience.label_min_level")}</label>
                   <Select value={minLevel} onValueChange={setMinLevel}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Alle Level" />
+                      <SelectValue placeholder={t("experience.placeholder_all_levels")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">Anfänger</SelectItem>
-                      <SelectItem value="intermediate">Fortgeschritten</SelectItem>
-                      <SelectItem value="advanced">Erfahren</SelectItem>
-                      <SelectItem value="expert">Experte</SelectItem>
+                      <SelectItem value="beginner">{t("experience.level_beginner")}</SelectItem>
+                      <SelectItem value="intermediate">
+                        {t("experience.level_intermediate")}
+                      </SelectItem>
+                      <SelectItem value="advanced">{t("experience.level_advanced")}</SelectItem>
+                      <SelectItem value="expert">{t("experience.level_expert")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Sprache</label>
+                  <label className="text-sm font-medium">{t("experience.label_language")}</label>
                   <Input
-                    placeholder="z.B. de, en, fr"
+                    placeholder={t("experience.placeholder_language")}
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
                   />
@@ -244,41 +264,49 @@ export default function ExperiencePage() {
                     onChange={(e) => setIncludeExternal(e.target.checked)}
                     className="rounded"
                   />
-                  Externe einbeziehen
+                  {t("experience.label_include_external")}
                 </label>
                 <Button onClick={fetchWhoKnows} disabled={loading} size="sm">
                   <Search className="mr-2 h-4 w-4" />
-                  Suchen
+                  {t("experience.btn_search")}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">Lade Ergebnisse...</div>
+            <div className="text-muted-foreground py-8 text-center">
+              {t("experience.loading_results")}
+            </div>
           ) : whoKnowsResults.length === 0 ? (
             <Card>
               <CardContent className="text-muted-foreground py-8 text-center">
-                Keine Treffer — versuchen Sie andere Filter.
+                {t("experience.empty_results")}
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3">
               {whoKnowsResults.map((result) => (
-                <Card key={result.user_id} className="hover:shadow-md transition-shadow">
+                <Card key={result.user_id} className="transition-shadow hover:shadow-md">
                   <CardContent className="flex items-start justify-between py-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{result.display_name}</span>
-                        <Badge variant="default" className="text-xs">{result.org_role}</Badge>
-                        {result.is_lawyer && <Badge className="text-xs">Rechtsanwalt</Badge>}
+                        <Badge variant="default" className="text-xs">
+                          {result.org_role}
+                        </Badge>
+                        {result.is_lawyer && (
+                          <Badge className="text-xs">{t("experience.badge_lawyer")}</Badge>
+                        )}
                       </div>
                       {result.practice_area && (
                         <div className="flex items-center gap-2">
                           <Badge className={`text-xs ${LEVEL_COLORS[result.practice_area.level]}`}>
                             {result.practice_area.level_label}
                           </Badge>
-                          <span className="text-muted-foreground text-sm">{result.practice_area.label}</span>
+                          <span className="text-muted-foreground text-sm">
+                            {result.practice_area.label}
+                          </span>
                         </div>
                       )}
                       {result.matching_skills.length > 0 && (
@@ -295,11 +323,11 @@ export default function ExperiencePage() {
                     <div className="text-muted-foreground flex gap-4 text-right text-sm">
                       <div>
                         <div className="font-semibold">{result.active_matters}</div>
-                        <div className="text-xs">Aktive Akten</div>
+                        <div className="text-xs">{t("experience.stat_active_matters")}</div>
                       </div>
                       <div>
                         <div className="font-semibold">{result.matter_count_in_area}</div>
-                        <div className="text-xs">Im Gebiet</div>
+                        <div className="text-xs">{t("experience.stat_in_area")}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -315,7 +343,7 @@ export default function ExperiencePage() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Input
-              placeholder="Suche nach Name, Rolle, Rechtsgebiet..."
+              placeholder={t("experience.placeholder_search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md"
@@ -323,24 +351,28 @@ export default function ExperiencePage() {
           </div>
 
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">Lade Profile...</div>
+            <div className="text-muted-foreground py-8 text-center">
+              {t("experience.loading_profiles")}
+            </div>
           ) : filteredProfiles.length === 0 ? (
             <Card>
               <CardContent className="text-muted-foreground py-8 text-center">
-                Keine Profile gefunden.
+                {t("experience.empty_profiles")}
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {filteredProfiles.map((profile) => (
-                <Card key={profile.user_id} className="hover:shadow-md transition-shadow">
+                <Card key={profile.user_id} className="transition-shadow hover:shadow-md">
                   <CardContent className="space-y-3 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{profile.display_name}</span>
                         {profile.is_lawyer && <Badge className="text-xs">RA</Badge>}
                       </div>
-                      <Badge variant="default" className="text-xs">{profile.org_role}</Badge>
+                      <Badge variant="default" className="text-xs">
+                        {profile.org_role}
+                      </Badge>
                     </div>
                     {profile.practice_areas.length > 0 && (
                       <div className="flex flex-wrap gap-1">
@@ -364,7 +396,9 @@ export default function ExperiencePage() {
                           {profile.languages.join(", ")}
                         </span>
                       )}
-                      <span>{profile.active_matter_count} aktive Akten</span>
+                      <span>
+                        {profile.active_matter_count} {t("experience.active_matters_suffix")}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -378,37 +412,54 @@ export default function ExperiencePage() {
       {tab === "summary" && (
         <div className="space-y-4">
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">Lade Übersicht...</div>
+            <div className="text-muted-foreground py-8 text-center">
+              {t("experience.loading_summary")}
+            </div>
           ) : summary ? (
             <>
               <div className="grid gap-4 md:grid-cols-4">
-                <StatCard label="Sichtbare Profile" value={summary.visible_profiles} />
-                <StatCard label="Aktive Akten" value={summary.total_active_matters} />
-                <StatCard label="Endorsements" value={summary.total_endorsements} />
-                <StatCard label="Sprachen" value={summary.languages_represented.length} />
+                <StatCard label={t("experience.stat_visible")} value={summary.visible_profiles} />
+                <StatCard
+                  label={t("experience.stat_active")}
+                  value={summary.total_active_matters}
+                />
+                <StatCard
+                  label={t("experience.stat_endorsements")}
+                  value={summary.total_endorsements}
+                />
+                <StatCard
+                  label={t("experience.stat_languages")}
+                  value={summary.languages_represented.length}
+                />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Nach Rechtsgebiet</CardTitle>
+                    <CardTitle className="text-base">{t("experience.card_by_area")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {Object.entries(summary.by_practice_area).map(([area, count]) => (
                       <div key={area} className="flex justify-between text-sm">
-                        <span>{PRACTICE_AREAS.find((pa) => pa.value === area)?.label || area}</span>
+                        <span>
+                          {PRACTICE_AREAS.find((pa) => pa.value === area)?.labelKey
+                            ? t(PRACTICE_AREAS.find((pa) => pa.value === area)!.labelKey)
+                            : area}
+                        </span>
                         <span className="font-semibold">{count}</span>
                       </div>
                     ))}
                     {Object.keys(summary.by_practice_area).length === 0 && (
-                      <div className="text-muted-foreground text-sm">Keine Daten</div>
+                      <div className="text-muted-foreground text-sm">
+                        {t("experience.empty_data")}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Nach Rolle</CardTitle>
+                    <CardTitle className="text-base">{t("experience.card_by_role")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {Object.entries(summary.by_role).map(([role, count]) => (
@@ -418,7 +469,9 @@ export default function ExperiencePage() {
                       </div>
                     ))}
                     {Object.keys(summary.by_role).length === 0 && (
-                      <div className="text-muted-foreground text-sm">Keine Daten</div>
+                      <div className="text-muted-foreground text-sm">
+                        {t("experience.empty_data")}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -426,7 +479,7 @@ export default function ExperiencePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Erfahrungslevel-Verteilung</CardTitle>
+                  <CardTitle className="text-base">{t("experience.card_level_dist")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-3">
                   {Object.entries(summary.by_level).map(([level, count]) => (
@@ -439,17 +492,21 @@ export default function ExperiencePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Sprachen in der Kanzlei</CardTitle>
+                  <CardTitle className="text-base">{t("experience.card_languages")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-2">
                   {summary.languages_represented.map((lang) => (
-                    <Badge key={lang} variant="default">{lang}</Badge>
+                    <Badge key={lang} variant="default">
+                      {lang}
+                    </Badge>
                   ))}
                 </CardContent>
               </Card>
             </>
           ) : (
-            <div className="text-muted-foreground py-8 text-center">Keine Daten verfügbar.</div>
+            <div className="text-muted-foreground py-8 text-center">
+              {t("experience.empty_data")}
+            </div>
           )}
         </div>
       )}
@@ -474,7 +531,7 @@ function TabButton({
       className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
         active
           ? "border-primary text-primary"
-          : "border-transparent text-muted-foreground hover:text-foreground"
+          : "text-muted-foreground hover:text-foreground border-transparent"
       }`}
     >
       {icon}

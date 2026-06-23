@@ -118,9 +118,12 @@ export default function ConnectorsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Konnektoren"
-        description="Externe Systeme verbinden und synchronisieren"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Konnektoren" }]}
+        title={t("connectors.title")}
+        description={t("connectors.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("connectors.breadcrumb") },
+        ]}
       />
 
       {/* Info */}
@@ -216,7 +219,7 @@ export default function ConnectorsPage() {
                       )}
                     >
                       {c.enabled ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
-                      {c.enabled ? "Aktiviert" : "Deaktiviert"}
+                      {c.enabled ? t("connectors.status_enabled") : t("connectors.status_disabled")}
                     </span>
                     <span
                       className={cn(
@@ -225,7 +228,9 @@ export default function ConnectorsPage() {
                       )}
                     >
                       {c.connected ? <CheckCircle2 size={10} /> : <XCircle size={10} />}
-                      {c.connected ? "Verbunden" : "Getrennt"}
+                      {c.connected
+                        ? t("connectors.status_connected")
+                        : t("connectors.status_disconnected")}
                     </span>
                     <span>{lastSyncLabel(c.last_sync_at)}</span>
                   </div>
@@ -245,7 +250,7 @@ export default function ConnectorsPage() {
                     ) : (
                       <CheckCircle2 size={12} />
                     )}
-                    {c.enabled ? "Deaktivieren" : "Aktivieren"}
+                    {c.enabled ? t("connectors.btn_disable") : t("connectors.btn_enable")}
                   </Button>
                   <Button
                     variant="ghost"

@@ -18,6 +18,7 @@ import { api } from "@/lib/api";
 import type { ObligationExtractionResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 const URGENCY_STYLES: Record<string, string> = {
   low: "bg-blue-500/10 text-blue-600 border-blue-500/20",
@@ -38,6 +39,7 @@ const TYPE_ICONS: Record<string, typeof ClipboardList> = {
 };
 
 export default function ObligationTrackingPage() {
+  const { t } = useLang();
   const [mode, setMode] = useState<"text" | "slug">("slug");
   const [slug, setSlug] = useState("");
   const [text, setText] = useState("");
@@ -57,7 +59,7 @@ export default function ObligationTrackingPage() {
       });
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Extraktion fehlgeschlagen.");
+      setError(e instanceof Error ? e.message : t("obligations.error_failed"));
     } finally {
       setLoading(false);
     }
@@ -68,9 +70,12 @@ export default function ObligationTrackingPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Pflichten-Tracking"
-        description="Extrahiert Vertragsverpflichtungen, Kündigungsfristen, Zahlungstermine und Verlängerungsdaten aus Verträgen"
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Pflichten-Tracking" }]}
+        title={t("obligations.title")}
+        description={t("obligations.description")}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: t("obligations.breadcrumb") },
+        ]}
       />
 
       {/* Input */}
@@ -104,14 +109,14 @@ export default function ObligationTrackingPage() {
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="Vertrags-Slug aus dem Brain"
+            placeholder={t("obligations.placeholder_contract_slug")}
             className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
           />
         ) : (
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Vertragstext hier einfügen…"
+            placeholder={t("obligations.placeholder_contract_text")}
             className="h-40 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
           />
         )}
@@ -144,7 +149,7 @@ export default function ObligationTrackingPage() {
           className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
         >
           {loading ? <Loader2 size={15} className="animate-spin" /> : <ClipboardList size={15} />}
-          Obligationen extrahieren
+          {t("obligations.btn_extract")}
         </Button>
       </div>
 

@@ -104,6 +104,10 @@ Antworte JETZT mit reinem JSON:
 }`;
 }
 
+function encodeSlugPath(slug: string): string {
+  return slug.split("/").map(encodeURIComponent).join("/");
+}
+
 // ── Route handler ─────────────────────────────────────────────────────
 
 export const POST = createHandler(
@@ -138,7 +142,7 @@ export const POST = createHandler(
     let documentCaseSlug: string | undefined;
     if (documentSlug) {
       try {
-        const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+        const pageRes = await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(documentSlug)}`, {
           headers: engineHeaders,
         });
         if (pageRes.ok) {
@@ -252,7 +256,7 @@ export const POST = createHandler(
           if (docType && docType !== "unknown") {
             docPatch.frontmatter = { document_type: docType };
           }
-          await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(documentSlug)}`, {
+          await fetch(`${ENGINE_URL}/api/pages/${encodeSlugPath(documentSlug)}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", ...engineHeaders },
             body: JSON.stringify(docPatch),

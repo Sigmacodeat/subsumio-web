@@ -15,6 +15,7 @@ import {
   FileSearch,
   Loader2,
   RotateCcw,
+  Plus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,8 @@ interface DeadlineItem {
   reviewStatus?: string;
   law?: string;
   reminderSentAt?: string;
+  slug?: string;
+  confidence?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -96,6 +99,7 @@ export default function DeadlinesPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showCalc, setShowCalc] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [calcTemplate, setCalcTemplate] = useState<DeadlineRule>(DEADLINE_RULES[0]);
   const [calcDate, setCalcDate] = useState(new Date().toISOString().split("T")[0]);
   const [calcResult, setCalcResult] = useState<{
@@ -110,14 +114,62 @@ export default function DeadlinesPage() {
     Array<{ type: string; description: string; date?: string; confidence: string }>
   >([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [savingDetected, setSavingDetected] = useState<number | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [caseOptions, setCaseOptions] = useState<Array<{ slug: string; title: string }>>([]);
+  const [createForm, setCreateForm] = useState({
+    description: "",
+    date: new Date().toISOString().split("T")[0],
+    caseSlug: "",
+    type: "deadline" as DeadlineItem["type"],
+    law: "",
+    source: "manual",
+    ruleKey: "",
+  });
 
   const loadDeadlines = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const pages = await api.brain.listPages({ type: "legal_case", limit: 200 });
+      const [deadlinePages, casePages, appointmentPages] = await Promise.all([
+        api.brain.listPages({ type: "legal_deadline", limit: 300 }).catch(() => []),
+        api.brain.listPages({ type: "legal_case", limit: 200 }),
+        api.brain.listPages({ type: "appointment", limit: 200 }).catch(() => []),
+      ]);
       const items: DeadlineItem[] = [];
-      for (const page of pages) {
+
+      for (const page of deadlinePages) {
+        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+        const date = String(fm.due_date ?? fm.date ?? page.created_at?.split("T")[0] ?? "");
+        if (!date) continue;
+        const eventType = String(fm.event_type ?? fm.type ?? "deadline");
+        items.push({
+          id: page.slug || `deadline-${date}`,
+          slug: page.slug,
+          date,
+          description: String(fm.description ?? page.title ?? t("deadlines.untitled")),
+          caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+          caseTitle: typeof fm.case_title === "string" ? fm.case_title : undefined,
+          source: String(fm.source ?? page.slug ?? ""),
+          status: computeDeadlineStatus(
+            date,
+            typeof fm.status === "string" ? fm.status : undefined
+          ),
+          type: (["deadline", "event", "hearing", "filing"].includes(eventType)
+            ? eventType
+            : "deadline") as DeadlineItem["type"],
+          reviewStatus: typeof fm.review_status === "string" ? fm.review_status : undefined,
+          law: typeof fm.law === "string" ? fm.law : undefined,
+          reminderSentAt: typeof fm.reminder_sent_at === "string" ? fm.reminder_sent_at : undefined,
+          confidence: typeof fm.confidence === "string" ? fm.confidence : undefined,
+        });
+      }
+
+      setCaseOptions(
+        casePages.map((page) => ({ slug: page.slug, title: page.title || page.slug }))
+      );
+
+      for (const page of casePages) {
         const fm = caseFrontmatter(page);
         const rawDeadlines = fm.deadlines || [];
         for (const d of rawDeadlines) {
@@ -159,6 +211,27 @@ export default function DeadlinesPage() {
           }
         }
       }
+
+      for (const page of appointmentPages) {
+        const fm = (page.frontmatter ?? {}) as Record<string, unknown>;
+        const date = String(fm.date ?? "");
+        if (!date) continue;
+        const status = String(fm.status ?? "");
+        if (status === "cancelled" || status === "completed") continue;
+        items.push({
+          id: page.slug || `appointment-${date}`,
+          slug: page.slug,
+          date,
+          description: String(fm.title ?? page.title ?? t("deadlines.appointment")),
+          caseSlug: typeof fm.case_slug === "string" ? fm.case_slug : undefined,
+          caseTitle: typeof fm.case_title === "string" ? fm.case_title : undefined,
+          source: String(fm.source ?? page.slug ?? ""),
+          status: computeDeadlineStatus(date, status),
+          type: "event",
+          reviewStatus: typeof fm.review_status === "string" ? fm.review_status : undefined,
+        });
+      }
+
       items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       await setCache(OFFLINE_KEYS.deadlines, items);
       setDeadlines(items);
@@ -175,6 +248,124 @@ export default function DeadlinesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function createDeadline() {
+    const description = createForm.description.trim();
+    if (!description || !createForm.date) return;
+    const selectedCase = caseOptions.find((c) => c.slug === createForm.caseSlug);
+    const rule = DEADLINE_RULES.find((r) => r.key === createForm.ruleKey);
+    const now = new Date();
+    const titlePart = description
+      .toLowerCase()
+      .replace(/[^a-z0-9äöüß]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 56);
+    const slug = `legal/deadlines/${createForm.date}-${titlePart || "frist"}-${now.getTime().toString(36)}`;
+    try {
+      await api.brain.createPage({
+        slug,
+        title: description,
+        type: "legal_deadline",
+        content: rule
+          ? `${rule.label}\n${rule.description}\n${rule.law}`
+          : t("deadlines.manual_content"),
+        frontmatter: {
+          type: "legal_deadline",
+          event_type: createForm.type,
+          due_date: createForm.date,
+          description,
+          status: "pending",
+          review_status: "unreviewed",
+          case_slug: createForm.caseSlug || undefined,
+          case_title: selectedCase?.title,
+          source: createForm.source,
+          law: createForm.law.trim() || rule?.law,
+          rule_key: rule?.key,
+          created_at: now.toISOString(),
+        },
+      });
+      addToast({ type: "success", title: t("deadlines.created") });
+      setCreateForm({
+        description: "",
+        date: new Date().toISOString().split("T")[0],
+        caseSlug: "",
+        type: "deadline",
+        law: "",
+        source: "manual",
+        ruleKey: "",
+      });
+      setShowCreate(false);
+      await loadDeadlines();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : t("deadlines.create_failed"),
+      });
+    }
+  }
+
+  async function updateDeadlinePage(item: DeadlineItem, frontmatter: Record<string, unknown>) {
+    if (!item.slug) return;
+    setActionBusy(item.slug);
+    try {
+      await api.brain.updatePage({
+        slug: item.slug,
+        frontmatter,
+      });
+      await loadDeadlines();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : t("deadlines.update_failed"),
+      });
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function saveDetectedDeadline(
+    result: { type: string; description: string; date?: string; confidence: string },
+    index: number
+  ) {
+    if (!result.date) return;
+    setSavingDetected(index);
+    try {
+      const now = new Date();
+      const datePart = result.date.replace(/[^0-9-]/g, "");
+      const titlePart = result.description
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48);
+      const slug = `legal/deadlines/${datePart}-${titlePart || "ki-erkannt"}-${now.getTime().toString(36)}`;
+      await api.brain.createPage({
+        slug,
+        title: result.description,
+        type: "legal_deadline",
+        content: aiText,
+        frontmatter: {
+          type: "legal_deadline",
+          event_type: result.type || "deadline",
+          due_date: result.date,
+          description: result.description,
+          status: "pending",
+          review_status: "unreviewed",
+          source: "ai_deadline_detection",
+          confidence: result.confidence,
+          created_at: now.toISOString(),
+        },
+      });
+      addToast({ type: "success", title: t("deadlines.detect_saved") });
+      await loadDeadlines();
+    } catch (err) {
+      addToast({
+        type: "error",
+        title: err instanceof Error ? err.message : t("deadlines.detect_save_failed"),
+      });
+    } finally {
+      setSavingDetected(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -228,6 +419,25 @@ export default function DeadlinesPage() {
     },
     {} as Record<string, number>
   );
+  const sourceCounts = deadlines.reduce(
+    (acc, d) => {
+      const key = d.source?.includes("bea")
+        ? "bea"
+        : d.source?.includes("ai")
+          ? "ai"
+          : d.source?.includes("manual")
+            ? "manual"
+            : d.slug
+              ? "direct"
+              : "case";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+  const reviewOpenCount = deadlines.filter(
+    (d) => d.reviewStatus && d.reviewStatus !== "approved"
+  ).length;
 
   const columns: Column<DeadlineItem>[] = [
     {
@@ -340,6 +550,58 @@ export default function DeadlinesPage() {
         );
       },
     },
+    {
+      key: "actions",
+      header: t("deadlines.col_actions"),
+      hideOnMobile: true,
+      cell: (d) => {
+        const busy = actionBusy === d.slug;
+        return d.slug ? (
+          <div className="flex justify-end gap-1.5">
+            {d.reviewStatus !== "approved" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void updateDeadlinePage(d, {
+                    review_status: "approved",
+                    reviewed_at: new Date().toISOString(),
+                  });
+                }}
+                className="gap-1 text-xs"
+              >
+                {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                {t("deadlines.approve")}
+              </Button>
+            )}
+            {d.status !== "done" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void updateDeadlinePage(d, {
+                    status: "done",
+                    completed_at: new Date().toISOString(),
+                  });
+                }}
+                className="gap-1 text-xs"
+              >
+                {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                {t("deadlines.mark_done")}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-[color:var(--ds-text-subtle)]">
+            {t("deadlines.case_embedded")}
+          </span>
+        );
+      },
+    },
   ];
 
   return (
@@ -350,6 +612,15 @@ export default function DeadlinesPage() {
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("deadlines.title") }]}
         actions={
           <div className="flex items-center gap-2.5">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowCreate(!showCreate)}
+              className="gap-2 text-xs"
+            >
+              <Plus size={14} />
+              {t("deadlines.create")}
+            </Button>
             <Button variant="ghost" size="sm" onClick={sendReminders} className="gap-2 text-xs">
               <Mail size={14} />
               {t("deadlines.send_reminders")}
@@ -375,6 +646,161 @@ export default function DeadlinesPage() {
           </div>
         }
       />
+
+      {/* Manual deadline creation */}
+      {showCreate && (
+        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {t("deadlines.create_title")}
+            </h2>
+            <button
+              onClick={() => setShowCreate(false)}
+              aria-label={t("cmd.close")}
+              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+            >
+              <XCircle size={16} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="xl:col-span-2">
+              <label
+                htmlFor="deadline-description"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.create_description")}
+              </label>
+              <input
+                id="deadline-description"
+                value={createForm.description}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                placeholder={t("deadlines.create_description_placeholder")}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="deadline-date"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.col_date")}
+              </label>
+              <input
+                id="deadline-date"
+                type="date"
+                value={createForm.date}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, date: e.target.value }))}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="deadline-case"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.col_case")}
+              </label>
+              <select
+                id="deadline-case"
+                value={createForm.caseSlug}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, caseSlug: e.target.value }))}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              >
+                <option value="">{t("deadlines.no_case")}</option>
+                {caseOptions.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="deadline-type"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.create_type")}
+              </label>
+              <select
+                id="deadline-type"
+                value={createForm.type}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    type: e.target.value as DeadlineItem["type"],
+                  }))
+                }
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              >
+                {Object.entries(TYPE_CONFIG).map(([value, labelKey]) => (
+                  <option key={value} value={value}>
+                    {t(labelKey)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="deadline-rule"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.create_rule")}
+              </label>
+              <select
+                id="deadline-rule"
+                value={createForm.ruleKey}
+                onChange={(e) => {
+                  const rule = DEADLINE_RULES.find((r) => r.key === e.target.value);
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    ruleKey: e.target.value,
+                    law: rule?.law ?? prev.law,
+                  }));
+                }}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              >
+                <option value="">{t("deadlines.create_rule_none")}</option>
+                {DEADLINE_RULES.map((rule) => (
+                  <option key={rule.key} value={rule.key}>
+                    {rule.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="deadline-law"
+                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
+              >
+                {t("deadlines.create_law")}
+              </label>
+              <input
+                id="deadline-law"
+                value={createForm.law}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, law: e.target.value }))}
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                placeholder="§ 222 ZPO"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-[color:var(--ds-text-muted)]">
+              {t("deadlines.create_review_note")}
+            </p>
+            <Button
+              variant="primary"
+              onClick={() => void createDeadline()}
+              disabled={!createForm.description.trim() || !createForm.date}
+              className="gap-2"
+            >
+              <Plus size={14} />
+              {t("deadlines.create")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Deadline Calculator */}
       {showCalc && (
@@ -568,6 +994,20 @@ export default function DeadlinesPage() {
                   >
                     {r.confidence}
                   </Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!r.date || savingDetected === i}
+                    onClick={() => void saveDetectedDeadline(r, i)}
+                    className="shrink-0 text-xs"
+                  >
+                    {savingDetected === i ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={13} />
+                    )}
+                    {t("deadlines.detect_save")}
+                  </Button>
                 </div>
               ))}
             </div>
@@ -588,6 +1028,23 @@ export default function DeadlinesPage() {
           </p>
         </div>
       )}
+
+      <div className="grid gap-px overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { label: t("deadlines.source_case"), value: sourceCounts.case || 0 },
+          { label: t("deadlines.source_direct"), value: sourceCounts.direct || 0 },
+          { label: t("deadlines.source_bea"), value: sourceCounts.bea || 0 },
+          { label: t("deadlines.source_ai"), value: sourceCounts.ai || 0 },
+          { label: t("deadlines.review_open_count"), value: reviewOpenCount },
+        ].map((item) => (
+          <div key={item.label} className="bg-[color:var(--ds-surface)] px-4 py-3">
+            <div className="text-xs text-[color:var(--ds-text-muted)]">{item.label}</div>
+            <div className="mt-1 text-2xl leading-none font-semibold text-[color:var(--ds-text)] tabular-nums">
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Status filter chips */}
       <div className="flex flex-wrap items-center gap-2">

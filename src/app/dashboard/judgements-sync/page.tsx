@@ -44,7 +44,7 @@ const SOURCES: Source[] = [
 ];
 
 export default function JudgementsSyncPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const [sources, setSources] = useState(SOURCES);
   const [overallStatus, setOverallStatus] = useState<"idle" | "running" | "done">("idle");
   const [existingCount, setExistingCount] = useState(0);
@@ -205,7 +205,9 @@ export default function JudgementsSyncPage() {
                     variant="default"
                     className="border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600"
                   >
-                    {src.count > 0 ? `+${src.count} Urteile importiert` : "Keine neuen Urteile"}
+                    {src.count > 0
+                      ? `+${src.count} ${t("judgements.imported")}`
+                      : t("judgements.no_new")}
                   </Badge>
                 )}
                 {src.status === "running" && (

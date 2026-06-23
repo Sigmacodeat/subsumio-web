@@ -5,6 +5,7 @@ import { AlertTriangle, Trash2, CheckCircle2, Shield, Loader2 } from "lucide-rea
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { useLang } from "@/lib/use-lang";
 
 interface RetentionCase {
   slug: string;
@@ -22,6 +23,7 @@ interface RetentionCase {
 const RETENTION_YEARS = 6;
 
 export default function RetentionPage() {
+  const { t } = useLang();
   const confirm = useConfirm();
   const [cases, setCases] = useState<RetentionCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ export default function RetentionPage() {
         });
         setCases(mapped.sort((a, b) => b.yearsSinceClosure - a.yearsSinceClosure));
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : "Akten konnten nicht geladen werden.");
+        setLoadError(e instanceof Error ? e.message : t("retention.error_load"));
       }
       setLoading(false);
     }
@@ -68,12 +70,12 @@ export default function RetentionPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Löschfristen"
-        description="DSGVO + BRAO — Aufbewahrungsfristen prüfen"
+        title={t("retention.title")}
+        description={t("retention.description")}
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Compliance", href: "/dashboard/compliance" },
-          { label: "Löschfristen" },
+          { label: t("retention.breadcrumb") },
         ]}
       />
 
@@ -84,19 +86,19 @@ export default function RetentionPage() {
             {cases.filter((c) => c.action === "keep").length}
           </div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
-            Aktiv / Frist nicht erreicht
+            {t("retention.stat_keep")}
           </div>
         </div>
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
           <div className="text-xl font-bold text-amber-600">{toReview.length}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
-            Zur Prüfung (≥{RETENTION_YEARS} J.)
+            {t("retention.stat_review").replace("{{years}}", String(RETENTION_YEARS))}
           </div>
         </div>
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
           <div className="text-xl font-bold text-red-600">{toDelete.length}</div>
           <div className="text-xs text-[color:var(--ds-text-muted)]">
-            Löschfällig (≥{RETENTION_YEARS + 4} J.)
+            {t("retention.stat_delete").replace("{{years}}", String(RETENTION_YEARS + 4))}
           </div>
         </div>
       </div>
@@ -108,7 +110,9 @@ export default function RetentionPage() {
       )}
 
       {loading ? (
-        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">Lade Akten…</div>
+        <div className="py-20 text-center text-[color:var(--ds-text-muted)]">
+          {t("retention.loading")}
+        </div>
       ) : (
         <div className="space-y-2">
           {cases.map((c) => (
@@ -141,7 +145,8 @@ export default function RetentionPage() {
                   </span>
                 </div>
                 <div className="text-xs text-[color:var(--ds-text-muted)]">
-                  {c.title} · {c.yearsSinceClosure} Jahre seit Abschluss
+                  {c.title} ·{" "}
+                  {t("retention.years_since").replace("{{years}}", String(c.yearsSinceClosure))}
                 </div>
               </div>
               {c.action !== "keep" && (
@@ -149,16 +154,20 @@ export default function RetentionPage() {
                   <span
                     className={`text-xs font-medium ${c.action === "delete" ? "text-red-600" : "text-amber-600"}`}
                   >
-                    {c.action === "delete" ? "Löschfällig" : "Prüfung empfohlen"}
+                    {c.action === "delete"
+                      ? t("retention.action_delete")
+                      : t("retention.action_review")}
                   </span>
                   {c.action === "delete" && (
                     <button
                       onClick={async () => {
                         const ok = await confirm({
-                          title: "Akte löschen",
-                          message: `Möchtest du die Akte "${c.title}" (${c.caseNumber}) unwiderruflich löschen? Erstelle vorher eine Datenträgerkopie.`,
-                          confirmLabel: "Löschen",
-                          cancelLabel: "Abbrechen",
+                          title: t("retention.confirm_title"),
+                          message: t("retention.confirm_msg")
+                            .replace("{{title}}", c.title)
+                            .replace("{{number}}", c.caseNumber),
+                          confirmLabel: t("retention.confirm_delete"),
+                          cancelLabel: t("retention.confirm_cancel"),
                           variant: "danger",
                         });
                         if (!ok) return;
@@ -167,7 +176,9 @@ export default function RetentionPage() {
                           await api.brain.deletePage(c.slug);
                           setCases((prev) => prev.filter((pc) => pc.slug !== c.slug));
                         } catch (e) {
-                          setLoadError(e instanceof Error ? e.message : "Löschen fehlgeschlagen.");
+                          setLoadError(
+                            e instanceof Error ? e.message : t("retention.error_delete")
+                          );
                         } finally {
                           setDeleting(null);
                         }
@@ -178,7 +189,7 @@ export default function RetentionPage() {
                       {deleting === c.slug ? (
                         <Loader2 size={12} className="animate-spin" />
                       ) : (
-                        "Löschen"
+                        t("retention.btn_delete")
                       )}
                     </button>
                   )}
@@ -193,13 +204,7 @@ export default function RetentionPage() {
         <div className="flex items-start gap-3">
           <Shield size={16} className="mt-0.5 shrink-0 text-amber-600" />
           <div>
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              <strong className="text-[color:var(--ds-text)]">Hinweis:</strong> Die angezeigten
-              Fristen dienen als Orientierung. Die tatsächliche Aufbewahrungsfrist hängt von der
-              Rechtsmaterie ab: Handakten (§ 147 AO): 6 Jahre, Kanzleiakten (§ 50 BRAO): 10 Jahre.
-              Persönliche Daten müssen nach Zweckwegfall gelöscht werden (Art. 5 DSGVO). Vor
-              Löschung stets eine Datenträgerkopie anfertigen.
-            </p>
+            <p className="text-xs text-[color:var(--ds-text-muted)]">{t("retention.disclaimer")}</p>
           </div>
         </div>
       </div>

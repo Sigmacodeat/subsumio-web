@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Search,
   Loader2,
@@ -12,6 +13,10 @@ import {
   ChevronRight,
   X,
   FolderOpen,
+  BookOpen,
+  Bell,
+  Brain,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +40,7 @@ interface ResearchSession {
 }
 
 export default function ResearchPage() {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   const confirm = useConfirm();
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -157,7 +162,7 @@ export default function ResearchPage() {
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : t("research.error_save"));
     }
   }
 
@@ -178,7 +183,7 @@ export default function ResearchPage() {
     const ok = await confirm({
       title: "Recherche löschen",
       message: "Möchten Sie diese Recherche wirklich löschen?",
-      confirmLabel: "Löschen",
+      confirmLabel: t("research.btn_delete"),
       variant: "danger",
     });
     if (!ok) return;
@@ -192,17 +197,33 @@ export default function ResearchPage() {
       setSavedPages(nextPages);
       await setCache(OFFLINE_KEYS.research, nextPages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : t("research.error_delete"));
     }
   }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
       <PageHeader
-        title="Legal Research"
-        description="KI-gestützte Rechtsrecherche mit Zitation und Quellenangabe"
-        breadcrumbs={[{ label: "Übersicht", href: "/dashboard" }, { label: "Legal Research" }]}
+        title={t("research.title")}
+        description={t("research.description")}
+        breadcrumbs={[
+          { label: t("nav.overview"), href: "/dashboard" },
+          { label: t("research.title") },
+        ]}
       />
+
+      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <HubLink href="/dashboard/rechtsprechung" icon={Landmark} label={t("nav.rechtsprechung")} />
+        <HubLink href="/dashboard/norms" icon={BookOpen} label={t("nav.norms")} />
+        <HubLink
+          href="/dashboard/precedent-search"
+          icon={Search}
+          label={t("nav.precedent_search")}
+        />
+        <HubLink href="/dashboard/monitoring" icon={Bell} label={t("nav.monitoring")} />
+        <HubLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
+        <HubLink href="/dashboard/playbooks" icon={ClipboardList} label={t("nav.playbooks")} />
+      </div>
 
       {/* Research Input */}
       <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
@@ -422,7 +443,7 @@ export default function ResearchPage() {
                 id="saved-research-search"
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
-                placeholder="Gespeicherte Recherchen durchsuchen…"
+                placeholder={t("research.placeholder_search")}
                 className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-2 pr-3 pl-9 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
@@ -539,8 +560,8 @@ export default function ResearchPage() {
                           <button
                             onClick={() => deleteResearch(page.slug)}
                             className="rounded-lg p-1.5 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
-                            title="Löschen"
-                            aria-label="Löschen"
+                            title={t("research.btn_delete")}
+                            aria-label={t("research.btn_delete")}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -584,5 +605,25 @@ export default function ResearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function HubLink({
+  href,
+  icon: Icon,
+  label,
+}: {
+  href: string;
+  icon: typeof Search;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+    >
+      <Icon size={15} className="shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
   );
 }
