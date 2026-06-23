@@ -332,15 +332,18 @@
   --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
   --card-shadow-elevated: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.08);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(15, 23, 42, 0.04);
-  --ds-success-text: #047857;
-  --ds-success-bg: rgba(4, 120, 87, 0.1);
-  --ds-success-border: rgba(4, 120, 87, 0.2);
-  --ds-warning-text: #b45309;
-  --ds-warning-bg: rgba(180, 83, 9, 0.1);
-  --ds-warning-border: rgba(180, 83, 9, 0.2);
-  --ds-danger-text: #be123c;
-  --ds-danger-bg: rgba(190, 18, 60, 0.1);
-  --ds-danger-border: rgba(190, 18, 60, 0.2);
+  /* Signal ramps — Harvey-calibrated muted-warm trias (clay/amber/jade),
+     darkened for AA on the light surfaces (#ffffff / #f1f3f6):
+     jade #1d6b54 ≈ 5.1:1, amber #8f5512 ≈ 6.0:1, clay #a8412f ≈ 6.3:1. */
+  --ds-success-text: #1d6b54;
+  --ds-success-bg: rgba(29, 107, 84, 0.1);
+  --ds-success-border: rgba(29, 107, 84, 0.2);
+  --ds-warning-text: #8f5512;
+  --ds-warning-bg: rgba(143, 85, 18, 0.1);
+  --ds-warning-border: rgba(143, 85, 18, 0.2);
+  --ds-danger-text: #a8412f;
+  --ds-danger-bg: rgba(168, 65, 47, 0.1);
+  --ds-danger-border: rgba(168, 65, 47, 0.22);
   --ds-info-text: #1d4ed8;
   --ds-info-bg: rgba(29, 78, 216, 0.1);
   --ds-info-border: rgba(29, 78, 216, 0.2);
@@ -387,15 +390,19 @@
   --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.18);
   --card-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 40px rgba(0, 0, 0, 0.22);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(0, 0, 0, 0.18);
-  --ds-success-text: #34d399;
-  --ds-success-bg: rgba(52, 211, 153, 0.1);
-  --ds-success-border: rgba(52, 211, 153, 0.2);
-  --ds-warning-text: #fbbf24;
-  --ds-warning-bg: rgba(251, 191, 36, 0.1);
-  --ds-warning-border: rgba(251, 191, 36, 0.2);
-  --ds-danger-text: #f87171;
-  --ds-danger-bg: rgba(248, 113, 113, 0.1);
-  --ds-danger-border: rgba(248, 113, 113, 0.2);
+  /* Signal ramps — Harvey-calibrated muted-warm trias (clay/amber/jade).
+     Desaturated from the prior vibrant Tailwind tones for a premium,
+     legal-grade register. AA-verified on the dark surfaces (#12151c–#1a1e28):
+     jade #6fc9a6 ≈ 7.9:1, amber #e6b24e ≈ 9.4:1, clay #e3a18f ≈ 7.4:1. */
+  --ds-success-text: #6fc9a6;
+  --ds-success-bg: rgba(111, 201, 166, 0.1);
+  --ds-success-border: rgba(111, 201, 166, 0.2);
+  --ds-warning-text: #e6b24e;
+  --ds-warning-bg: rgba(230, 178, 78, 0.1);
+  --ds-warning-border: rgba(230, 178, 78, 0.2);
+  --ds-danger-text: #e3a18f;
+  --ds-danger-bg: rgba(227, 161, 143, 0.1);
+  --ds-danger-border: rgba(227, 161, 143, 0.22);
   --ds-info-text: #60a5fa;
   --ds-info-bg: rgba(96, 165, 250, 0.1);
   --ds-info-border: rgba(96, 165, 250, 0.2);

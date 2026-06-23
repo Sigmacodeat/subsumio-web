@@ -345,6 +345,22 @@ export const D = {
     de: "Keine Lücken — alle Dokumente zugeordnet und geprüft.",
     en: "No gaps — all documents assigned and reviewed.",
   },
+  "cockpit.hero_next_action": { de: "Nächste Aktion", en: "Next action" },
+  "cockpit.hero_next_due": { de: "Nächste Frist", en: "Next deadline" },
+  "cockpit.hero_open": { de: "Fristen öffnen", en: "Open deadlines" },
+  "cockpit.hero_all_clear": { de: "Alles im grünen Bereich", en: "All clear" },
+  "cockpit.hero_all_clear_desc": {
+    de: "Keine überfälligen oder dringenden Fristen.",
+    en: "No overdue or urgent deadlines.",
+  },
+  "cockpit.hero_due_today": { de: "fällig heute", en: "due today" },
+  "cockpit.hero_due_in": { de: "fällig in", en: "due in" },
+  "cockpit.hero_overdue": { de: "überfällig", en: "overdue" },
+  "cockpit.hero_more_critical": { de: "weitere kritisch", en: "more critical" },
+  "cockpit.na_inbox": { de: "Eingang triagieren", en: "Triage inbox" },
+  "cockpit.na_reviews": { de: "Reviews freigeben", en: "Approve reviews" },
+  "cockpit.na_gaps": { de: "Unzugeordnete Dokumente", en: "Unassigned documents" },
+  "cockpit.na_clear": { de: "Nichts offen", en: "Nothing pending" },
 
   // ── Cases page ──
   "cases.title": { de: "Akten", en: "Cases" },
