@@ -527,6 +527,17 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     return () => window.removeEventListener("keydown", handleKey);
   }, [onToggle, mobileOpen, isMobile]);
 
+  // Blur active element when desktop sidebar closes — prevents focus from
+  // remaining inside an inert/aria-hidden subtree (WAI-ARIA violation).
+  useEffect(() => {
+    if (!open && !isMobile) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active.closest("[inert]")) {
+        active.blur();
+      }
+    }
+  }, [open, isMobile]);
+
   // Focus management for mobile drawer
   const prevFocusRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -788,6 +799,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               "flex h-full min-w-0 flex-col overflow-hidden",
               open ? "" : "pointer-events-none"
             )}
+            {...(!open ? { inert: true } : {})}
           >
             {/* Context header — compact agency bar */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
