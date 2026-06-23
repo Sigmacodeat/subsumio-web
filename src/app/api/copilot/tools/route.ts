@@ -256,7 +256,7 @@ async function executeSearchKnowledge(
         items: results.map((r) => ({
           label: r.title,
           value: r.snippet?.slice(0, 80) ?? "",
-          href: `/dashboard/brain/${r.slug}`,
+          href: `/dashboard/brain/${encodeURIComponent(r.slug)}`,
         })),
       },
     };
@@ -486,7 +486,13 @@ async function executeDeadlineExtract(
         message: thinkData.answer
           ? thinkData.answer.slice(0, 300) + "..."
           : "Keine Fristen gefunden",
-        items: [{ label: "Dokument", value: page.title, href: `/dashboard/brain/${page.slug}` }],
+        items: [
+          {
+            label: "Dokument",
+            value: page.title,
+            href: `/dashboard/brain/${encodeURIComponent(page.slug)}`,
+          },
+        ],
       },
     };
   } catch (_err) {
@@ -533,7 +539,13 @@ async function executeDocumentSummary(
         message: thinkData.answer
           ? thinkData.answer.slice(0, 400) + "..."
           : "Keine Zusammenfassung verfügbar",
-        items: [{ label: "Dokument", value: page.title, href: `/dashboard/brain/${page.slug}` }],
+        items: [
+          {
+            label: "Dokument",
+            value: page.title,
+            href: `/dashboard/brain/${encodeURIComponent(page.slug)}`,
+          },
+        ],
       },
     };
   } catch (_err) {

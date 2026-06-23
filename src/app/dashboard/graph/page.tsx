@@ -429,11 +429,7 @@ export default function GraphPage() {
               variant="outline"
               size="md"
               className="w-full"
-              onClick={() =>
-                router.push(
-                  `/dashboard/brain/${selected.id.split("/").map(encodeURIComponent).join("/")}`
-                )
-              }
+              onClick={() => router.push(`/dashboard/brain/${encodeURIComponent(selected.id)}`)}
             >
               Seite öffnen
             </Button>

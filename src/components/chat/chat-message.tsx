@@ -159,7 +159,7 @@ function ChatMessageBubbleInner({
                 {message.citations!.map((c) => (
                   <div key={c.slug} className="group/citation inline-flex items-center">
                     <a
-                      href={`/dashboard/brain/${c.slug.split("/").map(encodeURIComponent).join("/")}`}
+                      href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
                       className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200"
                       target="_blank"
                       rel="noopener noreferrer"

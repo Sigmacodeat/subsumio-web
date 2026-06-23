@@ -120,8 +120,12 @@ export default async function RootLayout({
       lang={lang}
       className={`h-full ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       style={{ colorScheme: "light dark" }}
+      suppressHydrationWarning
     >
-      <body className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]">
+      <body
+        className="noise min-h-full [color:var(--color-light-text)] antialiased [background:var(--color-light-bg)]"
+        suppressHydrationWarning
+      >
         <LangSetter />
         <SubsumioTheme />
         <QueryProvider>

@@ -673,7 +673,7 @@ export default function VaultPage() {
                   </button>
                 </div>
                 <Link
-                  href={`/dashboard/vault/${doc.slug.split("/").map(encodeURIComponent).join("/")}`}
+                  href={`/dashboard/brain/${encodeURIComponent(doc.slug)}`}
                   className="block truncate text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:outline-none"
                   title={doc.title}
                 >

@@ -240,7 +240,7 @@ export default function ReviewQueuePage() {
                       </div>
                       <div className="min-w-0">
                         <a
-                          href={`/dashboard/vault/${page.slug}`}
+                          href={`/dashboard/brain/${encodeURIComponent(page.slug)}`}
                           className="block truncate text-sm font-medium text-[color:var(--ds-text)] hover:underline"
                         >
                           {page.title}

@@ -426,7 +426,7 @@ export function Topbar({
                   searchActiveIdx < searchItems.length
                 ) {
                   const item = searchItems[searchActiveIdx];
-                  router.push(`/dashboard/brain/${item.slug}`);
+                  router.push(`/dashboard/brain/${encodeURIComponent(item.slug)}`);
                 } else {
                   router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
                 }

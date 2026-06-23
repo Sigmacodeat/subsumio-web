@@ -202,7 +202,10 @@ export default function TabularReviewPage() {
                     className="border-t border-[color:var(--ds-border)] hover:bg-[color:var(--ds-surface)]/50"
                   >
                     <td className="sticky left-0 bg-[color:var(--ds-surface)] px-4 py-3 align-top font-medium text-[color:var(--ds-text)]">
-                      <a href={`/dashboard/brain/${row.slug}`} className="hover:brand-text">
+                      <a
+                        href={`/dashboard/brain/${encodeURIComponent(row.slug)}`}
+                        className="hover:brand-text"
+                      >
                         {row.title}
                       </a>
                     </td>

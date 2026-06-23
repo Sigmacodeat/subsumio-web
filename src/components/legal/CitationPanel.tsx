@@ -224,7 +224,7 @@ export function CitationPanel({ data, compact = false, className }: CitationPane
                 {data.citations!.map((c) => (
                   <a
                     key={c.slug}
-                    href={`/dashboard/brain/${c.slug.split("/").map(encodeURIComponent).join("/")}`}
+                    href={`/dashboard/brain/${encodeURIComponent(c.slug)}`}
                     className="hover:brand-text hover:brand-border inline-flex items-center gap-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-2 py-1 text-xs text-[color:var(--ds-text-muted)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
                     target="_blank"
                     rel="noopener noreferrer"
