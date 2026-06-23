@@ -108,9 +108,13 @@
   --ds-duration-normal: 250ms;
   --ds-duration-slow: 400ms;
   --ds-duration-smooth: 500ms;
+  --ds-duration-panel: 420ms;
+  --ds-duration-route: 260ms;
   --ds-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ds-ease-smooth: cubic-bezier(0.33, 1, 0.68, 1);
   --ds-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-ease-panel: cubic-bezier(0.22, 1, 0.36, 1);
+  --ds-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
 
   /* ── Letter spacing scale ── */
   --ds-tracking-tight: -0.02em;
@@ -1319,15 +1323,52 @@ pre {
 @keyframes widget-fade-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(0.995);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 [data-app="dashboard"] .widget-fade-in {
-  animation: widget-fade-in 0.3s ease-out both;
+  animation: widget-fade-in var(--ds-duration-route) var(--ds-ease-panel) both;
+}
+
+@keyframes sidebar-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+[data-app="dashboard"] .sidebar-item-in {
+  animation: sidebar-item-in 180ms var(--ds-ease-panel) both;
+  animation-delay: calc(var(--sidebar-item-index, 0) * 18ms);
+}
+
+[data-app="dashboard"] .dashboard-scroll-shadow {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black 18px,
+    black calc(100% - 18px),
+    transparent 100%
+  );
+}
+
+[data-app="dashboard"] .dashboard-main-scroll {
+  scrollbar-gutter: stable;
+  scroll-behavior: auto;
+}
+
+[data-app="dashboard"] .dashboard-panel-surface {
+  box-shadow:
+    0 24px 80px rgba(3, 7, 18, 0.24),
+    0 2px 8px rgba(3, 7, 18, 0.1);
 }
 
 /* Accessibility: global focus-visible ring for dashboard interactive elements.
@@ -1396,7 +1437,8 @@ pre {
   .shimmer,
   .msg-in,
   .typing-dot,
-  .widget-fade-in {
+  .widget-fade-in,
+  .sidebar-item-in {
     animation: none !important;
   }
 }

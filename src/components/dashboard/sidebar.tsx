@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, forwardRef } from "react";
+import { useState, useMemo, useEffect, forwardRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -402,7 +402,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   return (
     <aside
       className={cn(
-        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-[width,transform] motion-reduce:transition-none",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[width,transform] motion-reduce:transition-none",
         "fixed inset-y-0 left-0 w-64 md:static",
         collapsed ? "md:w-16" : "md:w-64",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
@@ -457,7 +457,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </Link>
         </div>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
+        <div className="dashboard-scroll-shadow flex-1 overflow-x-hidden overflow-y-auto pt-[env(safe-area-inset-top)] pb-3">
           {/* Brain status — expanded version */}
           <div
             className={cn(
@@ -578,10 +578,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     <Icon size={17} className="shrink-0" />
                     <span
                       className={cn(
-                        "transition-[opacity] duration-300 ease-[var(--ds-ease-smooth)]",
+                        "transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)]",
                         collapsed
-                          ? "pointer-events-none w-0 overflow-hidden opacity-0"
-                          : "opacity-100"
+                          ? "pointer-events-none w-0 -translate-x-1 overflow-hidden opacity-0"
+                          : "translate-x-0 opacity-100"
                       )}
                     >
                       {highlightMatch(t(item.labelKey), searchQuery)}
@@ -692,14 +692,22 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           )}
                         />
                       </button>
-                      {isOpen && (
-                        <div id={panelId} className="overflow-hidden">
+                      <div
+                        id={panelId}
+                        className={cn(
+                          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
+                          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                        )}
+                        aria-hidden={!isOpen}
+                        {...(!isOpen ? { inert: true } : {})}
+                      >
+                        <div className="min-h-0 overflow-hidden">
                           <div
                             className="space-y-0.5 px-2 pb-2"
                             role="group"
                             aria-label={t(section.titleKey)}
                           >
-                            {section.items.map((item) => {
+                            {section.items.map((item, index) => {
                               const Icon = item.icon;
                               if (item.comingSoon) {
                                 return (
@@ -727,8 +735,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   aria-current={active ? "page" : undefined}
                                   onClick={() => setMobileOpen(false)}
                                   title={t(item.labelKey)}
+                                  style={{ "--sidebar-item-index": index } as CSSProperties}
                                   className={cn(
-                                    "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                                    "sidebar-item-in relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99]",
                                     active
                                       ? "brand-soft brand-text font-semibold"
                                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -743,7 +752,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             })}
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
@@ -807,7 +816,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
             aria-expanded={!collapsed}
             className={cn(
-              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-panel)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.98] md:flex",
               collapsed && "justify-center px-0"
             )}
           >

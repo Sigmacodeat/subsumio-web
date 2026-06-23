@@ -688,14 +688,14 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       {/* ── Desktop: Persistent collapsible side panel ── */}
       <aside
         className={cn(
-          "relative hidden min-w-0 shrink-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block",
+          "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block",
           isResizing
             ? "transition-none"
-            : "transition-[width] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-[width] motion-reduce:transition-none",
-          open ? "" : "w-0",
+            : "transition-[transform,opacity] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[transform,opacity] motion-reduce:transition-none",
+          open ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
           className
         )}
-        style={open ? { width: panelWidth } : undefined}
+        style={{ width: panelWidth }}
         aria-label={t("copilot.title")}
         aria-hidden={!open}
         {...(!open ? { inert: true } : {})}
@@ -744,12 +744,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         {/* Inner wrapper — fixed width matches panel, never reflows. Only outer aside clips. */}
         <div
           className={cn(
-            "flex h-full flex-col will-change-transform",
+            "flex h-full flex-col",
             isResizing
               ? "transition-none"
-              : "transition-[transform] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none"
+              : "transition-[opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
+            open ? "opacity-100" : "opacity-0"
           )}
-          style={{ width: panelWidth, transform: open ? "translateX(0)" : "translateX(100%)" }}
+          style={{ width: panelWidth }}
         >
           {/* Collapse toggle — premium vertical tab */}
           <button
@@ -770,9 +771,10 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           {/* Panel content — stays mounted during transition for smooth animation */}
           <div
             className={cn(
-              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity] delay-75 duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none",
+              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity,transform] delay-75 duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
               open ? "opacity-100" : "pointer-events-none opacity-0"
             )}
+            style={{ transform: open ? "translateX(0)" : "translateX(12px)" }}
             aria-hidden={!open}
           >
             {/* Context header — compact agency bar */}
