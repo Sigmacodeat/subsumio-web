@@ -703,9 +703,16 @@
    dark body paint set in the @theme block / body rule). */
 [data-app="dashboard"] {
   background: var(--ds-bg);
+  accent-color: var(--brand-primary);
+  caret-color: var(--brand-primary);
 }
 
 /* Dashboard scrollbar — refined, theme-aware */
+[data-app="dashboard"] {
+  scrollbar-color: var(--ds-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
 [data-app="dashboard"] ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -723,6 +730,11 @@
 }
 [data-app="dashboard"] ::-webkit-scrollbar-thumb:hover {
   background: var(--ds-text-subtle);
+}
+
+[data-app="dashboard"] ::selection {
+  background: color-mix(in srgb, var(--brand-primary) 18%, transparent);
+  color: var(--ds-text);
 }
 
 /* Theme crossfade — surfaces/text glide instead of hard-cutting. */
@@ -743,6 +755,7 @@
   outline: 2px solid var(--ds-ring);
   outline-offset: 2px;
   border-radius: var(--ds-radius-sm);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ds-ring) 18%, transparent);
 }
 
 /* F2: Default background-color transition for interactive elements that
@@ -754,6 +767,41 @@
     background-color 150ms ease,
     color 150ms ease,
     border-color 150ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-app="dashboard"] button:not(:disabled):not([class*="active:scale"]):active,
+  [data-app="dashboard"]
+    [role="button"]:not([aria-disabled="true"]):not([class*="active:scale"]):active,
+  [data-app="dashboard"]
+    [role="tab"]:not([aria-disabled="true"]):not([class*="active:scale"]):active,
+  [data-app="dashboard"]
+    [role="menuitem"]:not([aria-disabled="true"]):not([class*="active:scale"]):active {
+    transform: scale(0.985);
+  }
+}
+
+/* PWA touch polish: tiny desktop icon buttons remain compact, but coarse
+   pointers get Apple's recommended comfortable target size. */
+@media (pointer: coarse) {
+  [data-app="dashboard"] button,
+  [data-app="dashboard"] [role="button"],
+  [data-app="dashboard"] [role="tab"],
+  [data-app="dashboard"] [role="menuitem"],
+  [data-app="dashboard"] [role="option"],
+  [data-app="dashboard"] input,
+  [data-app="dashboard"] select,
+  [data-app="dashboard"] textarea {
+    min-height: 44px;
+  }
+
+  [data-app="dashboard"] button,
+  [data-app="dashboard"] [role="button"],
+  [data-app="dashboard"] [role="tab"],
+  [data-app="dashboard"] [role="menuitem"],
+  [data-app="dashboard"] [role="option"] {
+    min-width: 44px;
+  }
 }
 
 /* Tailwind-typography prose follows the design tokens in BOTH themes.
@@ -1572,19 +1620,6 @@ pre {
   box-shadow:
     0 24px 80px rgba(3, 7, 18, 0.24),
     0 2px 8px rgba(3, 7, 18, 0.1);
-}
-
-/* Accessibility: global focus-visible ring for dashboard interactive elements.
-   Ensures WCAG 2.2 AA keyboard focus indicator on all raw <button>, <a>, etc.
-   that don't have explicit focus-visible Tailwind classes. */
-[data-app="dashboard"] button:focus-visible,
-[data-app="dashboard"] a:focus-visible,
-[data-app="dashboard"] input:focus-visible,
-[data-app="dashboard"] select:focus-visible,
-[data-app="dashboard"] textarea:focus-visible {
-  outline: 2px solid var(--brand-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
 }
 
 /* Mobile: eliminate 300ms tap delay and double-tap-to-zoom on interactive elements.
