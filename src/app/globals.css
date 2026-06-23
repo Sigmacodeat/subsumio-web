@@ -156,6 +156,7 @@
   --ds-surface: #0d0d1a; /* card / panel surface         */
   --ds-surface-2: #12122a; /* nested / elevated surface    */
   --ds-hover: #1a1a35; /* row / control hover          */
+  --ds-surface-hover: var(--ds-hover); /* compatibility alias for older dashboard views */
   --ds-border: #1e1e3a; /* hairline borders + dividers  */
   --ds-border-strong: #3a3a6a; /* emphasised borders         */
   --ds-text: #e8e8f0; /* primary text  (AAA on bg)    */
@@ -313,6 +314,7 @@
   --ds-surface: #ffffff;
   --ds-surface-2: #f1f3f6;
   --ds-hover: #eceef3;
+  --ds-surface-hover: var(--ds-hover);
   --ds-border: #e3e6ec;
   --ds-border-strong: #b4b9c8;
   --ds-text: #0f172a;
@@ -336,21 +338,29 @@
   --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
   --card-shadow-elevated: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.08);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(15, 23, 42, 0.04);
-  /* Signal ramps — Harvey-calibrated muted-warm trias (clay/amber/jade),
+  /* Signal ramps — legal-tech muted trias (clay/amber/jade),
      darkened for AA on the light surfaces (#ffffff / #f1f3f6):
      jade #1d6b54 ≈ 5.1:1, amber #8f5512 ≈ 6.0:1, clay #a8412f ≈ 6.3:1. */
   --ds-success-text: #1d6b54;
   --ds-success-bg: rgba(29, 107, 84, 0.1);
   --ds-success-border: rgba(29, 107, 84, 0.2);
+  --ds-success-solid: #1d6b54;
+  --ds-success-solid-hover: #175743;
   --ds-warning-text: #8f5512;
   --ds-warning-bg: rgba(143, 85, 18, 0.1);
   --ds-warning-border: rgba(143, 85, 18, 0.2);
+  --ds-warning-solid: #8f5512;
+  --ds-warning-solid-hover: #77450f;
   --ds-danger-text: #a8412f;
   --ds-danger-bg: rgba(168, 65, 47, 0.1);
   --ds-danger-border: rgba(168, 65, 47, 0.22);
+  --ds-danger-solid: #a8412f;
+  --ds-danger-solid-hover: #8d3627;
   --ds-info-text: #1d4ed8;
   --ds-info-bg: rgba(29, 78, 216, 0.1);
   --ds-info-border: rgba(29, 78, 216, 0.2);
+  --ds-info-solid: #1d4ed8;
+  --ds-info-solid-hover: #1e40af;
   color-scheme: light;
 }
 
@@ -371,6 +381,7 @@
   --ds-surface: #12151c;
   --ds-surface-2: #1a1e28;
   --ds-hover: #283040;
+  --ds-surface-hover: var(--ds-hover);
   --ds-border: #303644;
   --ds-border-strong: #454d60;
   --ds-text: #eef1f5;
@@ -394,106 +405,298 @@
   --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.18);
   --card-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 40px rgba(0, 0, 0, 0.22);
   --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(0, 0, 0, 0.18);
-  /* Signal ramps — Harvey-calibrated muted-warm trias (clay/amber/jade).
+  /* Signal ramps — legal-tech muted trias (clay/amber/jade).
      Desaturated from the prior vibrant Tailwind tones for a premium,
      legal-grade register. AA-verified on the dark surfaces (#12151c–#1a1e28):
      jade #6fc9a6 ≈ 7.9:1, amber #e6b24e ≈ 9.4:1, clay #e3a18f ≈ 7.4:1. */
   --ds-success-text: #6fc9a6;
   --ds-success-bg: rgba(111, 201, 166, 0.1);
   --ds-success-border: rgba(111, 201, 166, 0.2);
+  --ds-success-solid: #2f7a60;
+  --ds-success-solid-hover: #3a8b70;
   --ds-warning-text: #e6b24e;
   --ds-warning-bg: rgba(230, 178, 78, 0.1);
   --ds-warning-border: rgba(230, 178, 78, 0.2);
+  --ds-warning-solid: #8a5a13;
+  --ds-warning-solid-hover: #9a691b;
   --ds-danger-text: #e3a18f;
   --ds-danger-bg: rgba(227, 161, 143, 0.1);
   --ds-danger-border: rgba(227, 161, 143, 0.22);
+  --ds-danger-solid: #a8412f;
+  --ds-danger-solid-hover: #ba513f;
   --ds-info-text: #60a5fa;
   --ds-info-bg: rgba(96, 165, 250, 0.1);
   --ds-info-border: rgba(96, 165, 250, 0.2);
+  --ds-info-solid: #2f65c8;
+  --ds-info-solid-hover: #3b78df;
   color-scheme: dark;
 }
 
-/* Semantic accent legibility in dashboard dark mode. The light theme
-   uses the -600 Tailwind shades (correct on white); on a dark surface
-   those drop below AA, so lift them to the -400 family. Contained,
-   single-source override — no per-file edits. */
+/* Dashboard semantic signal bridge.
+   Status hues are roles, not decoration: legacy Tailwind utilities in older
+   views are normalized to the dashboard's success/warning/danger/info tokens.
+   This keeps contrast and meaning stable across light/dark, hover/focus and
+   PWA/mobile shells without chasing color literals through every page. */
+[data-app="dashboard"] .text-emerald-300,
+[data-app="dashboard"] .text-emerald-400,
+[data-app="dashboard"] .text-emerald-500,
+[data-app="dashboard"] .text-emerald-600,
+[data-app="dashboard"] .text-emerald-700,
+[data-app="dashboard"] .text-green-300,
+[data-app="dashboard"] .text-green-400,
+[data-app="dashboard"] .text-green-500,
+[data-app="dashboard"] .text-green-600,
+[data-app="dashboard"] .text-green-700,
+[data-app="dashboard"] .hover\:text-emerald-300:hover,
+[data-app="dashboard"] .hover\:text-emerald-400:hover,
+[data-app="dashboard"] .hover\:text-emerald-500:hover,
+[data-app="dashboard"] .hover\:text-emerald-600:hover,
+[data-app="dashboard"] .hover\:text-green-300:hover,
+[data-app="dashboard"] .hover\:text-green-400:hover,
+[data-app="dashboard"] .hover\:text-green-500:hover,
+[data-app="dashboard"] .hover\:text-green-600:hover {
+  color: var(--ds-success-text);
+}
 
-/* ── Light mode: text colors that fail AA on white/#f1f3f6 ── */
-[data-app="dashboard"][data-theme="light"] .text-red-600 {
-  color: #be123c;
-} /* 5.05:1 on #fff — AA (was #dc2626, 4.25:1 fail) */
-[data-app="dashboard"][data-theme="light"] .text-red-500 {
-  color: #be123c;
-} /* 5.05:1 on #fff — AA (was #ef4444, 3.88:1 fail) */
-[data-app="dashboard"][data-theme="light"] .text-emerald-500 {
-  color: #047857;
-} /* 5.9:1 on #fff — AA */
-[data-app="dashboard"][data-theme="light"] .text-amber-500 {
-  color: #b45309;
-} /* 4.6:1 on #fff — AA */
-[data-app="dashboard"][data-theme="light"] .text-blue-500 {
-  color: #1d4ed8;
-} /* 6.6:1 on #fff — AA */
+[data-app="dashboard"] .text-amber-300,
+[data-app="dashboard"] .text-amber-400,
+[data-app="dashboard"] .text-amber-500,
+[data-app="dashboard"] .text-amber-600,
+[data-app="dashboard"] .text-amber-700,
+[data-app="dashboard"] .text-amber-800,
+[data-app="dashboard"] .text-amber-900,
+[data-app="dashboard"] .text-yellow-300,
+[data-app="dashboard"] .text-yellow-400,
+[data-app="dashboard"] .text-yellow-500,
+[data-app="dashboard"] .text-yellow-600,
+[data-app="dashboard"] .text-yellow-700,
+[data-app="dashboard"] .text-orange-300,
+[data-app="dashboard"] .text-orange-400,
+[data-app="dashboard"] .text-orange-500,
+[data-app="dashboard"] .text-orange-600,
+[data-app="dashboard"] .text-orange-700,
+[data-app="dashboard"] .hover\:text-amber-300:hover,
+[data-app="dashboard"] .hover\:text-amber-400:hover,
+[data-app="dashboard"] .hover\:text-amber-500:hover,
+[data-app="dashboard"] .hover\:text-amber-600:hover,
+[data-app="dashboard"] .hover\:text-yellow-500:hover,
+[data-app="dashboard"] .hover\:text-orange-500:hover {
+  color: var(--ds-warning-text);
+}
 
-/* ── Dark mode: lift all -500/-600/-700 shades to -400 family ── */
-[data-app="dashboard"][data-theme="dark"] .text-violet-600 {
-  color: #a78bfa;
+[data-app="dashboard"] .text-red-300,
+[data-app="dashboard"] .text-red-400,
+[data-app="dashboard"] .text-red-500,
+[data-app="dashboard"] .text-red-600,
+[data-app="dashboard"] .text-red-700,
+[data-app="dashboard"] .text-rose-300,
+[data-app="dashboard"] .text-rose-400,
+[data-app="dashboard"] .text-rose-500,
+[data-app="dashboard"] .text-rose-600,
+[data-app="dashboard"] .text-rose-700,
+[data-app="dashboard"] .hover\:text-red-300:hover,
+[data-app="dashboard"] .hover\:text-red-400:hover,
+[data-app="dashboard"] .hover\:text-red-500:hover,
+[data-app="dashboard"] .hover\:text-red-600:hover,
+[data-app="dashboard"] .hover\:text-rose-500:hover,
+[data-app="dashboard"] .hover\:text-rose-600:hover {
+  color: var(--ds-danger-text);
 }
-[data-app="dashboard"][data-theme="dark"] .text-violet-700 {
-  color: #a78bfa;
+
+[data-app="dashboard"] .text-blue-300,
+[data-app="dashboard"] .text-blue-400,
+[data-app="dashboard"] .text-blue-500,
+[data-app="dashboard"] .text-blue-600,
+[data-app="dashboard"] .text-blue-700,
+[data-app="dashboard"] .text-cyan-300,
+[data-app="dashboard"] .text-cyan-400,
+[data-app="dashboard"] .text-cyan-500,
+[data-app="dashboard"] .text-cyan-600,
+[data-app="dashboard"] .text-cyan-700,
+[data-app="dashboard"] .hover\:text-blue-500:hover,
+[data-app="dashboard"] .hover\:text-blue-600:hover,
+[data-app="dashboard"] .hover\:text-cyan-500:hover,
+[data-app="dashboard"] .hover\:text-cyan-600:hover {
+  color: var(--ds-info-text);
 }
-[data-app="dashboard"][data-theme="dark"] .text-blue-600,
-[data-app="dashboard"][data-theme="dark"] .text-blue-700 {
-  color: #60a5fa;
+
+[data-app="dashboard"] .text-violet-500,
+[data-app="dashboard"] .text-violet-600,
+[data-app="dashboard"] .text-violet-700,
+[data-app="dashboard"] .text-purple-500,
+[data-app="dashboard"] .text-purple-600,
+[data-app="dashboard"] .text-purple-700,
+[data-app="dashboard"] .text-indigo-500,
+[data-app="dashboard"] .text-indigo-600,
+[data-app="dashboard"] .text-indigo-700 {
+  color: var(--brand-text);
 }
-[data-app="dashboard"][data-theme="dark"] .text-blue-500 {
-  color: #60a5fa;
+
+[data-app="dashboard"] .text-slate-400,
+[data-app="dashboard"] .text-slate-500,
+[data-app="dashboard"] .text-slate-600,
+[data-app="dashboard"] .text-slate-700,
+[data-app="dashboard"] .text-gray-400,
+[data-app="dashboard"] .text-gray-500,
+[data-app="dashboard"] .text-gray-600,
+[data-app="dashboard"] .text-gray-700 {
+  color: var(--ds-text-muted);
 }
-[data-app="dashboard"][data-theme="light"] .text-emerald-600 {
-  color: #047857;
-} /* 4.95:1 on #f1f3f6 — AA (was #059669, 3.28:1 fail) */
-[data-app="dashboard"][data-theme="light"] .text-amber-600,
-[data-app="dashboard"][data-theme="light"] .text-amber-700 {
-  color: #b45309;
-} /* 4.6:1 on #fff — AA (was #e17100, 3.19:1 fail) */
-[data-app="dashboard"][data-theme="dark"] .text-emerald-600,
-[data-app="dashboard"][data-theme="dark"] .text-emerald-700 {
-  color: #34d399;
+
+[data-app="dashboard"] .bg-emerald-50,
+[data-app="dashboard"] .bg-emerald-500\/5,
+[data-app="dashboard"] .bg-emerald-500\/10,
+[data-app="dashboard"] .bg-emerald-600\/15,
+[data-app="dashboard"] .hover\:bg-emerald-50:hover,
+[data-app="dashboard"] .hover\:bg-emerald-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-green-500\/10:hover,
+[data-app="dashboard"] .bg-green-50,
+[data-app="dashboard"] .bg-green-500\/5,
+[data-app="dashboard"] .bg-green-500\/10 {
+  background-color: var(--ds-success-bg);
 }
-[data-app="dashboard"][data-theme="dark"] .text-emerald-500 {
-  color: #34d399;
+
+[data-app="dashboard"] .bg-amber-50,
+[data-app="dashboard"] .bg-amber-100,
+[data-app="dashboard"] .bg-amber-500\/5,
+[data-app="dashboard"] .bg-amber-500\/10,
+[data-app="dashboard"] .bg-amber-950\/20,
+[data-app="dashboard"] .bg-amber-950\/30,
+[data-app="dashboard"] .hover\:bg-amber-50:hover,
+[data-app="dashboard"] .hover\:bg-amber-100:hover,
+[data-app="dashboard"] .hover\:bg-amber-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-amber-900\/30:hover,
+[data-app="dashboard"] .hover\:bg-amber-950\/30:hover,
+[data-app="dashboard"] .bg-yellow-50,
+[data-app="dashboard"] .bg-yellow-500\/5,
+[data-app="dashboard"] .bg-yellow-500\/10,
+[data-app="dashboard"] .bg-orange-50,
+[data-app="dashboard"] .bg-orange-500\/5,
+[data-app="dashboard"] .bg-orange-500\/10 {
+  background-color: var(--ds-warning-bg);
 }
-[data-app="dashboard"][data-theme="dark"] .text-amber-600,
-[data-app="dashboard"][data-theme="dark"] .text-amber-700 {
-  color: #fbbf24;
+
+[data-app="dashboard"] .bg-red-50,
+[data-app="dashboard"] .bg-red-500\/5,
+[data-app="dashboard"] .bg-red-500\/10,
+[data-app="dashboard"] .bg-red-600\/15,
+[data-app="dashboard"] .bg-red-950\/20,
+[data-app="dashboard"] .bg-red-950\/30,
+[data-app="dashboard"] .hover\:bg-red-50:hover,
+[data-app="dashboard"] .hover\:bg-red-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-red-950\/30:hover,
+[data-app="dashboard"] .bg-rose-50,
+[data-app="dashboard"] .bg-rose-500\/5,
+[data-app="dashboard"] .bg-rose-500\/10 {
+  background-color: var(--ds-danger-bg);
 }
-[data-app="dashboard"][data-theme="dark"] .text-amber-500 {
-  color: #fbbf24;
+
+[data-app="dashboard"] .bg-blue-50,
+[data-app="dashboard"] .bg-blue-500\/5,
+[data-app="dashboard"] .bg-blue-500\/10,
+[data-app="dashboard"] .hover\:bg-blue-500\/10:hover,
+[data-app="dashboard"] .bg-cyan-50,
+[data-app="dashboard"] .bg-cyan-500\/5,
+[data-app="dashboard"] .bg-cyan-500\/10 {
+  background-color: var(--ds-info-bg);
 }
-[data-app="dashboard"][data-theme="dark"] .text-red-600,
-[data-app="dashboard"][data-theme="dark"] .text-red-700 {
-  color: #f87171;
+
+[data-app="dashboard"] .border-emerald-200,
+[data-app="dashboard"] .border-emerald-500\/20,
+[data-app="dashboard"] .border-emerald-500\/30,
+[data-app="dashboard"] .border-green-200,
+[data-app="dashboard"] .border-green-500\/20,
+[data-app="dashboard"] .border-green-500\/30,
+[data-app="dashboard"] .focus\:border-emerald-500\/50:focus,
+[data-app="dashboard"] .focus\:border-green-500\/50:focus {
+  border-color: var(--ds-success-border);
 }
-[data-app="dashboard"][data-theme="dark"] .text-red-500 {
-  color: #f87171;
+
+[data-app="dashboard"] .border-amber-200,
+[data-app="dashboard"] .border-amber-400\/60,
+[data-app="dashboard"] .border-amber-500\/20,
+[data-app="dashboard"] .border-amber-500\/30,
+[data-app="dashboard"] .border-amber-900,
+[data-app="dashboard"] .border-amber-900\/40,
+[data-app="dashboard"] .border-amber-900\/50,
+[data-app="dashboard"] .border-yellow-500\/20,
+[data-app="dashboard"] .border-yellow-500\/30,
+[data-app="dashboard"] .border-orange-500\/20,
+[data-app="dashboard"] .border-orange-500\/30,
+[data-app="dashboard"] .focus\:border-amber-500\/50:focus {
+  border-color: var(--ds-warning-border);
 }
-[data-app="dashboard"][data-theme="dark"] .text-amber-800 {
-  color: #fbbf24;
+
+[data-app="dashboard"] .border-red-200,
+[data-app="dashboard"] .border-red-500,
+[data-app="dashboard"] .border-red-500\/20,
+[data-app="dashboard"] .border-red-500\/30,
+[data-app="dashboard"] .border-red-900,
+[data-app="dashboard"] .border-red-900\/40,
+[data-app="dashboard"] .border-rose-500\/20,
+[data-app="dashboard"] .border-rose-500\/30,
+[data-app="dashboard"] .focus\:border-red-500\/50:focus {
+  border-color: var(--ds-danger-border);
 }
-[data-app="dashboard"][data-theme="dark"] .text-amber-800\/80 {
-  color: rgba(251, 191, 36, 0.8);
+
+[data-app="dashboard"] .border-blue-500\/20,
+[data-app="dashboard"] .border-blue-500\/30,
+[data-app="dashboard"] .border-cyan-500\/20,
+[data-app="dashboard"] .border-cyan-500\/30,
+[data-app="dashboard"] .focus\:border-blue-500\/50:focus,
+[data-app="dashboard"] .focus\:border-cyan-500\/50:focus {
+  border-color: var(--ds-info-border);
 }
-[data-app="dashboard"][data-theme="dark"] .text-amber-900 {
-  color: #fbbf24;
+
+[data-app="dashboard"] .bg-red-500,
+[data-app="dashboard"] .bg-red-600 {
+  background-color: var(--ds-danger-solid);
 }
-[data-app="dashboard"][data-theme="dark"] .text-cyan-600 {
-  color: #22d3ee;
+
+[data-app="dashboard"] .hover\:bg-red-600:hover,
+[data-app="dashboard"] .hover\:bg-red-700:hover {
+  background-color: var(--ds-danger-solid-hover);
 }
-[data-app="dashboard"][data-theme="dark"] .text-pink-600 {
-  color: #f472b6;
+
+[data-app="dashboard"] .bg-amber-500,
+[data-app="dashboard"] .bg-amber-600 {
+  background-color: var(--ds-warning-solid);
 }
-[data-app="dashboard"][data-theme="dark"] .text-orange-600 {
-  color: #fb923c;
+
+[data-app="dashboard"] .hover\:bg-amber-600:hover,
+[data-app="dashboard"] .hover\:bg-amber-700:hover {
+  background-color: var(--ds-warning-solid-hover);
+}
+
+[data-app="dashboard"] .bg-emerald-500,
+[data-app="dashboard"] .bg-emerald-600 {
+  background-color: var(--ds-success-solid);
+}
+
+[data-app="dashboard"] .hover\:bg-emerald-500:hover,
+[data-app="dashboard"] .hover\:bg-emerald-600:hover {
+  background-color: var(--ds-success-solid-hover);
+}
+
+/* Dashboard typography: calm legal-software hierarchy. Keep utility intent,
+   but soften overweight titles and remove compressed tracking inside the app. */
+[data-app="dashboard"] h1,
+[data-app="dashboard"] h2,
+[data-app="dashboard"] h3,
+[data-app="dashboard"] h4,
+[data-app="dashboard"] h5,
+[data-app="dashboard"] h6,
+[data-app="dashboard"] .font-display,
+[data-app="dashboard"] .tracking-tight {
+  letter-spacing: 0;
+}
+
+[data-app="dashboard"] .font-bold {
+  font-weight: 650;
+}
+
+[data-app="dashboard"] .font-semibold {
+  font-weight: 600;
 }
 
 /* Dashboard background follows the theme token (overrides the global
