@@ -569,7 +569,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </div>
 
           {/* Nav */}
-          <nav className="px-3 py-4" aria-label={t("sidebar.main_nav")}>
+          <nav
+            className={cn("py-4", collapsed ? "px-2" : "px-3")}
+            aria-label={t("sidebar.main_nav")}
+          >
             {!hasResults && !collapsed && (
               <div className="px-3 py-8 text-center">
                 <p className="text-xs text-[color:var(--ds-text-subtle)]">
@@ -577,7 +580,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 </p>
               </div>
             )}
-            <div className={cn("space-y-1", collapsed && "hidden md:block")}>
+            <div className={cn("space-y-0.5", collapsed && "hidden md:block")}>
               {PRIMARY_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const active = isActiveHref(pathname, item.href);
@@ -590,17 +593,23 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={collapsed ? t(item.labelKey) : undefined}
                     className={cn(
-                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      "group relative flex items-center gap-3 rounded-lg text-sm font-semibold transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      collapsed ? "h-10 justify-center px-0" : "h-10 px-3",
                       active
-                        ? "brand-soft brand-text shadow-sm ring-1 ring-[var(--brand-primary)]/20"
-                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] hover:shadow-md"
+                        ? "brand-soft brand-text"
+                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
+                    {collapsed && active && (
+                      <span
+                        className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                        aria-hidden
+                      />
+                    )}
                     <Icon
-                      size={collapsed ? 22 : 17}
-                      className="shrink-0 transition-transform duration-200 group-hover:scale-110"
-                      fill={active && collapsed ? "currentColor" : "none"}
-                      strokeWidth={active && collapsed ? 1.5 : 2}
+                      size={collapsed ? 20 : 17}
+                      className="shrink-0"
+                      strokeWidth={active && collapsed ? 2.25 : 1.75}
                     />
                     <span
                       className={cn(
@@ -617,45 +626,57 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               })}
             </div>
 
-            {/* Collapsed: flat icon list */}
+            {/* Collapsed: section-grouped icon list */}
             {collapsed && (
-              <div className="mt-4 space-y-2 border-t border-[color:var(--ds-border)] pt-4">
-                {accordionSections
-                  .flatMap((section) => section.items)
-                  .filter((item, index, allItems) => {
-                    if (item.comingSoon) return false;
-                    if (PRIMARY_ITEMS.some((primary) => primary.href === item.href)) return false;
-                    return (
-                      allItems.findIndex((candidate) => candidate.href === item.href) === index
-                    );
-                  })
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const active = isActiveHref(pathname, item.href);
-                    return (
-                      <Link
-                        key={`collapsed-${item.href}`}
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        aria-label={t(item.labelKey)}
-                        onClick={() => setMobileOpen(false)}
-                        title={t(item.labelKey)}
-                        className={cn(
-                          "group relative flex h-12 items-center justify-center rounded-lg text-sm transition-all duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                          active
-                            ? "brand-soft brand-text shadow-sm ring-1 ring-[var(--brand-primary)]/20"
-                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md"
-                        )}
-                      >
-                        <Icon
-                          size={22}
-                          className="shrink-0 transition-transform duration-200 group-hover:scale-110"
-                          fill={active ? "currentColor" : "none"}
-                          strokeWidth={active ? 1.5 : 2}
-                        />
-                      </Link>
-                    );
-                  })}
+              <div className="mt-3 border-t border-[color:var(--ds-border)] pt-3">
+                {accordionSections.map((section, sectionIndex) => {
+                  const sectionItems = section.items.filter(
+                    (item) => !item.comingSoon && !PRIMARY_ITEMS.some((p) => p.href === item.href)
+                  );
+                  if (sectionItems.length === 0) return null;
+                  return (
+                    <div
+                      key={`collapsed-section-${section.titleKey}`}
+                      className={cn(
+                        "space-y-0.5 px-2",
+                        sectionIndex > 0 && "mt-3 border-t border-[color:var(--ds-border)]/60 pt-3"
+                      )}
+                    >
+                      {sectionItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActiveHref(pathname, item.href);
+                        return (
+                          <Link
+                            key={`collapsed-${item.href}`}
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                            aria-label={t(item.labelKey)}
+                            onClick={() => setMobileOpen(false)}
+                            title={t(item.labelKey)}
+                            className={cn(
+                              "group relative flex h-9 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                              active
+                                ? "brand-soft brand-text"
+                                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                            )}
+                          >
+                            {active && (
+                              <span
+                                className="absolute top-1/2 left-0 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                                aria-hidden
+                              />
+                            )}
+                            <Icon
+                              size={20}
+                              className="shrink-0"
+                              strokeWidth={active ? 2.25 : 1.75}
+                            />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             )}
             {/* Expanded: accordion sections */}
@@ -844,14 +865,19 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </div>
         </div>
 
-        <div className="border-t border-[color:var(--ds-border)] px-3 py-3">
+        <div
+          className={cn(
+            "border-t border-[color:var(--ds-border)] py-3",
+            collapsed ? "px-2" : "px-3"
+          )}
+        >
           <button
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
             aria-expanded={!collapsed}
             className={cn(
-              "hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-panel)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-[0.98] md:flex",
-              collapsed && "justify-center px-0"
+              "hidden w-full items-center gap-3 rounded-lg text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+              collapsed ? "h-9 justify-center px-0" : "px-3 py-2.5"
             )}
           >
             {collapsed ? (
