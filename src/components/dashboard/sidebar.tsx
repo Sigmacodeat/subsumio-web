@@ -590,13 +590,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={collapsed ? t(item.labelKey) : undefined}
                     className={cn(
-                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      "group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-all duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       active
-                        ? "brand-soft brand-text"
-                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                        ? "brand-soft brand-text shadow-sm ring-1 ring-[var(--brand-primary)]/20"
+                        : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)] hover:shadow-md"
                     )}
                   >
-                    <Icon size={17} className="shrink-0" />
+                    <Icon
+                      size={collapsed ? 22 : 17}
+                      className="shrink-0 transition-transform duration-200 group-hover:scale-110"
+                      fill={active && collapsed ? "currentColor" : "none"}
+                      strokeWidth={active && collapsed ? 1.5 : 2}
+                    />
                     <span
                       className={cn(
                         "transition-[opacity,transform] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)]",
@@ -614,7 +619,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 
             {/* Collapsed: flat icon list */}
             {collapsed && (
-              <div className="mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4">
+              <div className="mt-4 space-y-2 border-t border-[color:var(--ds-border)] pt-4">
                 {accordionSections
                   .flatMap((section) => section.items)
                   .filter((item, index, allItems) => {
@@ -636,13 +641,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         onClick={() => setMobileOpen(false)}
                         title={t(item.labelKey)}
                         className={cn(
-                          "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                          "group relative flex h-12 items-center justify-center rounded-lg text-sm transition-all duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                           active
-                            ? "brand-soft brand-text font-semibold"
-                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                            ? "brand-soft brand-text shadow-sm ring-1 ring-[var(--brand-primary)]/20"
+                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md"
                         )}
                       >
-                        <Icon size={17} className="shrink-0" />
+                        <Icon
+                          size={22}
+                          className="shrink-0 transition-transform duration-200 group-hover:scale-110"
+                          fill={active ? "currentColor" : "none"}
+                          strokeWidth={active ? 1.5 : 2}
+                        />
                       </Link>
                     );
                   })}
