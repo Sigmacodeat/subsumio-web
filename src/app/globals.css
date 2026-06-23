@@ -361,6 +361,12 @@
   --ds-info-border: rgba(29, 78, 216, 0.2);
   --ds-info-solid: #1d4ed8;
   --ds-info-solid-hover: #1e40af;
+  --ds-category-pink-text: #be185d;
+  --ds-category-pink-bg: rgba(190, 24, 93, 0.1);
+  --ds-category-pink-border: rgba(190, 24, 93, 0.22);
+  --ds-category-teal-text: #0f766e;
+  --ds-category-teal-bg: rgba(15, 118, 110, 0.1);
+  --ds-category-teal-border: rgba(15, 118, 110, 0.22);
   color-scheme: light;
 }
 
@@ -386,18 +392,18 @@
   --ds-border-strong: #454d60;
   --ds-text: #eef1f5;
   --ds-text-muted: #9aa5b8; /* AA on #12151c */
-  --ds-text-subtle: #7a8496; /* AA on #12151c */
+  --ds-text-subtle: #8792a6; /* AA on #12151c and #1a1e28 */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
-  --brand-primary: #5b8def;
-  --brand-primary-hover: #7ba5f5;
+  --brand-primary: #2f65c8;
+  --brand-primary-hover: #366fda;
   --brand-secondary: #c9a42f;
   --brand-tertiary: #7b8fa8;
   --brand-glow: rgba(91, 141, 239, 0.12);
   --brand-gradient-from: #c9a42f;
   --brand-gradient-via: #5b8def;
   --brand-gradient-to: #0a0c10;
-  --brand-text: var(--brand-primary);
+  --brand-text: #8fb8ff;
   --accent-gold: #d4b146;
   --accent-gold-soft: rgba(201, 164, 47, 0.1);
   --accent-gold-border: rgba(201, 164, 47, 0.22);
@@ -428,7 +434,13 @@
   --ds-info-bg: rgba(96, 165, 250, 0.1);
   --ds-info-border: rgba(96, 165, 250, 0.2);
   --ds-info-solid: #2f65c8;
-  --ds-info-solid-hover: #3b78df;
+  --ds-info-solid-hover: #366fda;
+  --ds-category-pink-text: #f0a0c8;
+  --ds-category-pink-bg: rgba(240, 160, 200, 0.11);
+  --ds-category-pink-border: rgba(240, 160, 200, 0.22);
+  --ds-category-teal-text: #5eead4;
+  --ds-category-teal-bg: rgba(94, 234, 212, 0.1);
+  --ds-category-teal-border: rgba(94, 234, 212, 0.22);
   color-scheme: dark;
 }
 
@@ -508,6 +520,11 @@
 [data-app="dashboard"] .text-blue-500,
 [data-app="dashboard"] .text-blue-600,
 [data-app="dashboard"] .text-blue-700,
+[data-app="dashboard"] .text-sky-300,
+[data-app="dashboard"] .text-sky-400,
+[data-app="dashboard"] .text-sky-500,
+[data-app="dashboard"] .text-sky-600,
+[data-app="dashboard"] .text-sky-700,
 [data-app="dashboard"] .text-cyan-300,
 [data-app="dashboard"] .text-cyan-400,
 [data-app="dashboard"] .text-cyan-500,
@@ -515,9 +532,38 @@
 [data-app="dashboard"] .text-cyan-700,
 [data-app="dashboard"] .hover\:text-blue-500:hover,
 [data-app="dashboard"] .hover\:text-blue-600:hover,
+[data-app="dashboard"] .hover\:text-sky-500:hover,
+[data-app="dashboard"] .hover\:text-sky-600:hover,
 [data-app="dashboard"] .hover\:text-cyan-500:hover,
 [data-app="dashboard"] .hover\:text-cyan-600:hover {
   color: var(--ds-info-text);
+}
+
+[data-app="dashboard"] .text-teal-300,
+[data-app="dashboard"] .text-teal-400,
+[data-app="dashboard"] .text-teal-500,
+[data-app="dashboard"] .text-teal-600,
+[data-app="dashboard"] .text-teal-700,
+[data-app="dashboard"] .hover\:text-teal-500:hover,
+[data-app="dashboard"] .hover\:text-teal-600:hover {
+  color: var(--ds-category-teal-text);
+}
+
+[data-app="dashboard"] .text-pink-300,
+[data-app="dashboard"] .text-pink-400,
+[data-app="dashboard"] .text-pink-500,
+[data-app="dashboard"] .text-pink-600,
+[data-app="dashboard"] .text-pink-700,
+[data-app="dashboard"] .text-fuchsia-300,
+[data-app="dashboard"] .text-fuchsia-400,
+[data-app="dashboard"] .text-fuchsia-500,
+[data-app="dashboard"] .text-fuchsia-600,
+[data-app="dashboard"] .text-fuchsia-700,
+[data-app="dashboard"] .hover\:text-pink-500:hover,
+[data-app="dashboard"] .hover\:text-pink-600:hover,
+[data-app="dashboard"] .hover\:text-fuchsia-500:hover,
+[data-app="dashboard"] .hover\:text-fuchsia-600:hover {
+  color: var(--ds-category-pink-text);
 }
 
 [data-app="dashboard"] .text-violet-500,
@@ -558,13 +604,16 @@
 
 [data-app="dashboard"] .bg-amber-50,
 [data-app="dashboard"] .bg-amber-100,
+[data-app="dashboard"] .bg-amber-50\/40,
 [data-app="dashboard"] .bg-amber-500\/5,
 [data-app="dashboard"] .bg-amber-500\/10,
+[data-app="dashboard"] .bg-amber-500\/\[0\.04\],
 [data-app="dashboard"] .bg-amber-950\/20,
 [data-app="dashboard"] .bg-amber-950\/30,
 [data-app="dashboard"] .hover\:bg-amber-50:hover,
 [data-app="dashboard"] .hover\:bg-amber-100:hover,
 [data-app="dashboard"] .hover\:bg-amber-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-amber-500\/\[0\.08\]:hover,
 [data-app="dashboard"] .hover\:bg-amber-900\/30:hover,
 [data-app="dashboard"] .hover\:bg-amber-950\/30:hover,
 [data-app="dashboard"] .bg-yellow-50,
@@ -577,6 +626,7 @@
 }
 
 [data-app="dashboard"] .bg-red-50,
+[data-app="dashboard"] .bg-red-50\/40,
 [data-app="dashboard"] .bg-red-500\/5,
 [data-app="dashboard"] .bg-red-500\/10,
 [data-app="dashboard"] .bg-red-600\/15,
@@ -594,11 +644,35 @@
 [data-app="dashboard"] .bg-blue-50,
 [data-app="dashboard"] .bg-blue-500\/5,
 [data-app="dashboard"] .bg-blue-500\/10,
+[data-app="dashboard"] .bg-blue-500\/\[0\.02\],
 [data-app="dashboard"] .hover\:bg-blue-500\/10:hover,
+[data-app="dashboard"] .hover\:bg-blue-500\/\[0\.02\]:hover,
+[data-app="dashboard"] .bg-sky-50,
+[data-app="dashboard"] .bg-sky-500\/5,
+[data-app="dashboard"] .bg-sky-500\/10,
+[data-app="dashboard"] .hover\:bg-sky-500\/10:hover,
 [data-app="dashboard"] .bg-cyan-50,
 [data-app="dashboard"] .bg-cyan-500\/5,
 [data-app="dashboard"] .bg-cyan-500\/10 {
   background-color: var(--ds-info-bg);
+}
+
+[data-app="dashboard"] .bg-teal-50,
+[data-app="dashboard"] .bg-teal-500\/5,
+[data-app="dashboard"] .bg-teal-500\/10,
+[data-app="dashboard"] .hover\:bg-teal-500\/10:hover {
+  background-color: var(--ds-category-teal-bg);
+}
+
+[data-app="dashboard"] .bg-pink-50,
+[data-app="dashboard"] .bg-pink-500\/5,
+[data-app="dashboard"] .bg-pink-500\/10,
+[data-app="dashboard"] .bg-pink-600\/15,
+[data-app="dashboard"] .hover\:bg-pink-500\/10:hover,
+[data-app="dashboard"] .bg-fuchsia-50,
+[data-app="dashboard"] .bg-fuchsia-500\/5,
+[data-app="dashboard"] .bg-fuchsia-500\/10 {
+  background-color: var(--ds-category-pink-bg);
 }
 
 [data-app="dashboard"] .border-emerald-200,
@@ -613,6 +687,7 @@
 }
 
 [data-app="dashboard"] .border-amber-200,
+[data-app="dashboard"] .border-amber-200\/50,
 [data-app="dashboard"] .border-amber-400\/60,
 [data-app="dashboard"] .border-amber-500\/20,
 [data-app="dashboard"] .border-amber-500\/30,
@@ -628,6 +703,7 @@
 }
 
 [data-app="dashboard"] .border-red-200,
+[data-app="dashboard"] .border-red-200\/60,
 [data-app="dashboard"] .border-red-500,
 [data-app="dashboard"] .border-red-500\/20,
 [data-app="dashboard"] .border-red-500\/30,
@@ -641,11 +717,49 @@
 
 [data-app="dashboard"] .border-blue-500\/20,
 [data-app="dashboard"] .border-blue-500\/30,
+[data-app="dashboard"] .border-sky-500\/20,
+[data-app="dashboard"] .border-sky-500\/30,
 [data-app="dashboard"] .border-cyan-500\/20,
 [data-app="dashboard"] .border-cyan-500\/30,
 [data-app="dashboard"] .focus\:border-blue-500\/50:focus,
+[data-app="dashboard"] .focus\:border-sky-500\/50:focus,
 [data-app="dashboard"] .focus\:border-cyan-500\/50:focus {
   border-color: var(--ds-info-border);
+}
+
+[data-app="dashboard"] .border-l-blue-500,
+[data-app="dashboard"] .border-l-cyan-500 {
+  border-left-color: var(--ds-info-text);
+}
+
+[data-app="dashboard"] .border-l-emerald-500,
+[data-app="dashboard"] .border-l-green-500 {
+  border-left-color: var(--ds-success-text);
+}
+
+[data-app="dashboard"] .border-l-amber-500,
+[data-app="dashboard"] .border-l-orange-500 {
+  border-left-color: var(--ds-warning-text);
+}
+
+[data-app="dashboard"] .border-l-red-500,
+[data-app="dashboard"] .border-l-rose-500 {
+  border-left-color: var(--ds-danger-text);
+}
+
+[data-app="dashboard"] .border-teal-500\/20,
+[data-app="dashboard"] .border-teal-500\/30,
+[data-app="dashboard"] .focus\:border-teal-500\/50:focus {
+  border-color: var(--ds-category-teal-border);
+}
+
+[data-app="dashboard"] .border-pink-500\/20,
+[data-app="dashboard"] .border-pink-500\/30,
+[data-app="dashboard"] .border-fuchsia-500\/20,
+[data-app="dashboard"] .border-fuchsia-500\/30,
+[data-app="dashboard"] .focus\:border-pink-500\/50:focus,
+[data-app="dashboard"] .focus\:border-fuchsia-500\/50:focus {
+  border-color: var(--ds-category-pink-border);
 }
 
 [data-app="dashboard"] .bg-red-500,
@@ -676,6 +790,69 @@
 [data-app="dashboard"] .hover\:bg-emerald-500:hover,
 [data-app="dashboard"] .hover\:bg-emerald-600:hover {
   background-color: var(--ds-success-solid-hover);
+}
+
+[data-app="dashboard"] .bg-teal-500,
+[data-app="dashboard"] .bg-teal-600 {
+  background-color: #0f766e;
+}
+
+[data-app="dashboard"] .hover\:bg-teal-500:hover,
+[data-app="dashboard"] .hover\:bg-teal-600:hover {
+  background-color: #0d665f;
+}
+
+/* Dark-mode contrast repair for Tailwind `dark:*` utilities and arbitrary
+   brand text classes. The app themes via data-theme, not a global `.dark`
+   class, so these bridge rules keep legacy dark utilities accessible. */
+[data-app="dashboard"][data-theme="dark"] .text-\[color\:var\(--brand-primary\)\],
+[data-app="dashboard"][data-theme="dark"] .hover\:text-\[color\:var\(--brand-primary\)\]:hover,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-blue-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-cyan-400 {
+  color: var(--brand-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-emerald-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-emerald-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-green-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-green-400 {
+  color: var(--ds-success-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-amber-200,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-amber-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-amber-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-amber-500,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-orange-400 {
+  color: var(--ds-warning-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:text-red-300,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-red-400,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-red-500,
+[data-app="dashboard"][data-theme="dark"] .dark\:text-rose-400 {
+  color: var(--ds-danger-text);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-amber-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-amber-950\/30:hover {
+  background-color: var(--ds-warning-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:bg-red-950\/30,
+[data-app="dashboard"][data-theme="dark"] .dark\:hover\:bg-red-950\/30:hover {
+  background-color: var(--ds-danger-bg);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:border-amber-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-amber-900\/40,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-amber-900\/50 {
+  border-color: var(--ds-warning-border);
+}
+
+[data-app="dashboard"][data-theme="dark"] .dark\:border-red-900,
+[data-app="dashboard"][data-theme="dark"] .dark\:border-red-900\/40 {
+  border-color: var(--ds-danger-border);
 }
 
 /* Dashboard typography: calm legal-software hierarchy. Keep utility intent,
