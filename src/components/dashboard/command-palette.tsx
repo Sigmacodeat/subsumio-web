@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
-import { BOTTOM_ITEMS, NAV_SECTIONS } from "@/components/dashboard/sidebar";
+import { ALL_NAV_ITEMS, PREFERRED_SECTION_BY_HREF } from "@/components/dashboard/sidebar";
 
 interface CommandItem {
   id: string;
@@ -117,32 +117,19 @@ const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
 const NAV_COMMANDS: CommandItem[] = (() => {
   const seen = new Set<string>();
   const commands: CommandItem[] = [];
-  for (const section of NAV_SECTIONS) {
-    for (const item of section.items) {
-      if (item.comingSoon || seen.has(item.href)) continue;
-      seen.add(item.href);
-      commands.push({
-        id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
-        label: item.labelKey,
-        labelKey: item.labelKey,
-        icon: item.icon,
-        href: item.href,
-        section: section.titleKey,
-        sectionKey: section.titleKey,
-      });
-    }
-  }
-  for (const item of BOTTOM_ITEMS) {
+  for (const item of ALL_NAV_ITEMS) {
     if (item.comingSoon || seen.has(item.href)) continue;
     seen.add(item.href);
+    const sectionEntry = PREFERRED_SECTION_BY_HREF.find((p) => p.href === item.href);
+    const section = sectionEntry?.section ?? "nav.section.admin";
     commands.push({
       id: item.href.replace(/^\/dashboard\/?/, "") || "dashboard",
       label: item.labelKey,
       labelKey: item.labelKey,
       icon: item.icon,
       href: item.href,
-      section: "nav.section.admin",
-      sectionKey: "nav.section.admin",
+      section,
+      sectionKey: section,
     });
   }
   return commands;

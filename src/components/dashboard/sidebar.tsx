@@ -77,7 +77,6 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cockpit",
     items: [
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
-      { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
     ],
   },
@@ -85,11 +84,7 @@ export const NAV_SECTIONS: NavSection[] = [
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
-      { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
       { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
-      { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
-      { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
-      { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
     ],
   },
   {
@@ -97,69 +92,37 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
       { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
-      { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
     ],
   },
   {
     titleKey: "nav.section.research_knowledge",
     items: [
       { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
-      { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
-      { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
       { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
-      { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
-      { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
-      { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
-      { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
-      { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
     ],
   },
   {
     titleKey: "nav.section.documents_drafting",
     items: [
-      { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
-      { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
       { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
-      { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
-      { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
-      {
-        href: "/dashboard/obligation-tracking",
-        icon: ClipboardCheck,
-        labelKey: "nav.obligation_tracking",
-      },
-      { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
       { href: "/dashboard/signature", icon: FileSignature, labelKey: "nav.signature" },
-      { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
-      { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
     ],
   },
   {
     titleKey: "nav.section.billing_compliance",
     items: [
       { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
-      { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
-      { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
-      { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
       { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
-      { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
-      { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
-      { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
-      { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
     ],
   },
 ];
 
 export const BOTTOM_ITEMS: NavItem[] = [
-  { href: "/dashboard/team", icon: UserCog, labelKey: "nav.team" },
-  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
-  { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
-  { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
-  { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
-  { href: "/dashboard/audit", icon: ScrollText, labelKey: "nav.audit_log" },
-  { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
   { href: "/dashboard/settings", icon: Settings, labelKey: "nav.settings" },
+  { href: "/dashboard/team", icon: UserCog, labelKey: "nav.admin" },
+  { href: "/dashboard/audit", icon: ScrollText, labelKey: "nav.audit_log" },
 ];
 
 const PRIMARY_ITEMS: NavItem[] = [
@@ -175,7 +138,46 @@ const ADMIN_SECTION: NavSection = {
   items: BOTTOM_ITEMS,
 };
 
-const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
+export const ALL_NAV_ITEMS: NavItem[] = [
+  ...PRIMARY_ITEMS,
+  ...NAV_SECTIONS.flatMap((s) => s.items),
+  ...BOTTOM_ITEMS,
+  { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
+  { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
+  { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
+  { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
+  { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
+  { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
+  { href: "/dashboard/graph", icon: Network, labelKey: "nav.graph" },
+  { href: "/dashboard/sources", icon: Database, labelKey: "nav.sources" },
+  { href: "/dashboard/precedent-search", icon: Search, labelKey: "nav.precedent_search" },
+  { href: "/dashboard/rechtsprechung", icon: Landmark, labelKey: "nav.rechtsprechung" },
+  { href: "/dashboard/norms", icon: BookOpen, labelKey: "nav.norms" },
+  { href: "/dashboard/monitoring", icon: Bell, labelKey: "nav.monitoring" },
+  { href: "/dashboard/playbooks", icon: ClipboardList, labelKey: "nav.playbooks" },
+  { href: "/dashboard/upload", icon: FileUp, labelKey: "nav.upload" },
+  { href: "/dashboard/analyze", icon: FileSearch, labelKey: "nav.analyze" },
+  { href: "/dashboard/clause-library", icon: Library, labelKey: "nav.clause_library" },
+  { href: "/dashboard/tabular-review", icon: FileSpreadsheet, labelKey: "nav.tabular_review" },
+  { href: "/dashboard/obligation-tracking", icon: ClipboardCheck, labelKey: "nav.obligation_tracking" },
+  { href: "/dashboard/translate", icon: Globe, labelKey: "nav.translate" },
+  { href: "/dashboard/word-addin", icon: FileText, labelKey: "nav.word_addin" },
+  { href: "/dashboard/version-history", icon: FileClock, labelKey: "nav.version_history" },
+  { href: "/dashboard/cost-calculator", icon: Calculator, labelKey: "nav.cost_calculator" },
+  { href: "/dashboard/datev-export", icon: FileSpreadsheet, labelKey: "nav.datev_export" },
+  { href: "/dashboard/controlling", icon: BarChart3, labelKey: "nav.controlling" },
+  { href: "/dashboard/anonymize", icon: EyeOff, labelKey: "nav.anonymize" },
+  { href: "/dashboard/verfahrensdoku", icon: ClipboardCheck, labelKey: "nav.verfahrensdoku" },
+  { href: "/dashboard/data-export", icon: Database, labelKey: "nav.data_export" },
+  { href: "/dashboard/import-kanzlei", icon: FileUp, labelKey: "nav.import_kanzlei" },
+  { href: "/dashboard/experience", icon: Award, labelKey: "nav.experience" },
+  { href: "/dashboard/agents", icon: Bot, labelKey: "nav.agents" },
+  { href: "/dashboard/connectors", icon: Plug, labelKey: "nav.connectors" },
+  { href: "/dashboard/api-keys", icon: ShieldCheck, labelKey: "nav.api_keys" },
+  { href: "/dashboard/billing", icon: CreditCard, labelKey: "nav.billing" },
+];
+
+export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
   { href: "/dashboard/review-queue", section: "nav.section.cockpit" },
   { href: "/dashboard/approvals", section: "nav.section.cockpit" },
   { href: "/dashboard/workflows", section: "nav.section.cockpit" },
