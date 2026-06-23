@@ -101,7 +101,8 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
   useEffect(() => {
     // Probe whether WorkOS SSO is configured
     fetch("/api/auth/sso/workos")
-      .then((r) => setSsoConfigured(r.ok))
+      .then((r) => r.json())
+      .then((data: { configured?: boolean }) => setSsoConfigured(data.configured === true))
       .catch(() => setSsoConfigured(false));
   }, []);
 

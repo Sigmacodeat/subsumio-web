@@ -788,7 +788,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               "flex h-full min-w-0 flex-col overflow-hidden",
               open ? "" : "pointer-events-none"
             )}
-            aria-hidden={!open}
           >
             {/* Context header — compact agency bar */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">

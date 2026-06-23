@@ -25,7 +25,6 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "";
 const SSE_URL = "/api/realtime/sse";
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
-const RECONNECT_MAX_ATTEMPTS = 5;
 
 type EventCallback = (payload: unknown) => void;
 
@@ -51,11 +50,6 @@ class RealtimeClient {
 
   private connectWs(token?: string) {
     if (this.ws?.readyState === WebSocket.OPEN) return;
-    if (this.reconnectAttempt >= RECONNECT_MAX_ATTEMPTS) {
-      console.warn("[realtime] Max reconnect attempts reached — giving up.");
-      this.status = "closed";
-      return;
-    }
     this.mode = "ws";
     this.status = "connecting";
     const url = token ? `${WS_URL}?token=${encodeURIComponent(token)}` : WS_URL;
@@ -93,30 +87,24 @@ class RealtimeClient {
 
   private connectSse() {
     if (this.es?.readyState === EventSource.OPEN) return;
-    if (this.reconnectAttempt >= RECONNECT_MAX_ATTEMPTS) {
-      console.warn("[realtime] Max SSE reconnect attempts reached — giving up.");
-      this.status = "closed";
-      return;
-    }
     this.mode = "sse";
     this.status = "connecting";
-    let openTime = 0;
     try {
       this.es = new EventSource(SSE_URL);
       this.es.onopen = () => {
         this.status = "open";
-        openTime = Date.now();
+        // Reset reconnect counter on any successful connection.
+        // On Vercel serverless, the stream will close after maxDuration (300s)
+        // — that's expected behavior, not an error condition.
+        this.reconnectAttempt = 0;
       };
       this.es.onerror = (e) => {
-        console.warn("[realtime] SSE error:", e);
-        this.status = "error";
-        // Only reset reconnect counter if the connection was stable (>10s).
-        // On Vercel, serverless functions timeout after ~60s, causing the
-        // SSE stream to close. Without this guard, the counter resets on
-        // every reconnect, creating an infinite reconnect loop.
-        if (openTime > 0 && Date.now() - openTime > 10_000) {
-          this.reconnectAttempt = 0;
+        // SSE errors are expected on Vercel serverless (function timeouts).
+        // Only log on the first attempt to avoid console spam during reconnects.
+        if (this.reconnectAttempt === 0) {
+          console.warn("[realtime] SSE error (will reconnect):", e);
         }
+        this.status = "error";
         this.es?.close();
         this.scheduleReconnect();
       };

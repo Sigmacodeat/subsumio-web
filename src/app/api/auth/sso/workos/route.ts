@@ -13,11 +13,15 @@ const SSO_STATE_TTL = 10 * 60; // 10 minutes
  */
 export async function GET(req: NextRequest) {
   if (!isConfigured()) {
-    return Response.json({ error: "sso_not_configured" }, { status: 503 });
+    return Response.json({ configured: false }, { status: 200 });
   }
 
   const { searchParams } = new URL(req.url);
-  const provider = searchParams.get("provider") as "MicrosoftOAuth" | "GoogleOAuth" | "SAML" | undefined;
+  const provider = searchParams.get("provider") as
+    | "MicrosoftOAuth"
+    | "GoogleOAuth"
+    | "SAML"
+    | undefined;
   const organizationId = searchParams.get("orgId") || undefined;
 
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/api/auth/sso/callback`;
