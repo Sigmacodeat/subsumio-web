@@ -93,10 +93,8 @@ describe("Sidebar accordion", () => {
     );
   });
 
-  test("renders links after manually opening another section", async () => {
+  test("keeps workflow sections open by default and can reopen them after collapsing", async () => {
     renderSidebar();
-
-    fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
@@ -113,6 +111,23 @@ describe("Sidebar accordion", () => {
     expect(screen.getByRole("link", { name: "E-Mail-Import" })).toHaveAttribute(
       "href",
       "/dashboard/email-import"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
+    expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
+    expect(screen.queryByRole("link", { name: "WhatsApp" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
+    expect(screen.getByRole("button", { name: /Kommunikation/i })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+    expect(screen.getByRole("link", { name: "WhatsApp" })).toHaveAttribute(
+      "href",
+      "/dashboard/whatsapp"
     );
   });
 });

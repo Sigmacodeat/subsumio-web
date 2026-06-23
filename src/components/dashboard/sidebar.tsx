@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, forwardRef } from "react";
+import { useState, useMemo, useEffect, forwardRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -71,16 +71,20 @@ type NavItem = {
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 
-const SIDEBAR_OPEN_SECTION_KEY = "subsumio-sidebar-open-section";
+const DEFAULT_OPEN_SECTIONS: DashboardKey[] = [
+  "nav.section.cockpit",
+  "nav.section.cases_clients",
+  "nav.section.communication",
+  "nav.section.research_knowledge",
+  "nav.section.documents_drafting",
+  "nav.section.billing_compliance",
+  "nav.section.admin",
+];
 
 export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.cockpit",
     items: [
-      { href: "/dashboard", icon: LayoutDashboard, labelKey: "nav.overview" },
-      { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
-      { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
-      { href: "/dashboard/deadlines", icon: CalendarClock, labelKey: "nav.deadlines" },
       { href: "/dashboard/review-queue", icon: CheckSquare, labelKey: "nav.review_queue" },
       { href: "/dashboard/approvals", icon: Gavel, labelKey: "nav.approvals" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
@@ -89,7 +93,6 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.cases_clients",
     items: [
-      { href: "/dashboard/cases", icon: Briefcase, labelKey: "nav.cases" },
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
       { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
       { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
@@ -182,13 +185,9 @@ const ADMIN_SECTION: NavSection = {
 };
 
 const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
-  { href: "/dashboard/chat", section: "nav.section.cockpit" },
-  { href: "/dashboard/deadlines", section: "nav.section.cockpit" },
-  { href: "/dashboard/intake", section: "nav.section.cockpit" },
   { href: "/dashboard/review-queue", section: "nav.section.cockpit" },
   { href: "/dashboard/approvals", section: "nav.section.cockpit" },
   { href: "/dashboard/workflows", section: "nav.section.cockpit" },
-  { href: "/dashboard/cases", section: "nav.section.cases_clients" },
   { href: "/dashboard/contacts", section: "nav.section.cases_clients" },
   { href: "/dashboard/opponents", section: "nav.section.cases_clients" },
   { href: "/dashboard/client-portal", section: "nav.section.cases_clients" },
@@ -326,8 +325,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const [openSection, setOpenSection] = useState<DashboardKey | null>("nav.section.cockpit");
-  const previousPathnameRef = useRef<string | null>(null);
+  const [openSections, setOpenSections] = useState<DashboardKey[]>(DEFAULT_OPEN_SECTIONS);
   const { t, lang } = useLang();
 
   const brainStatusLabel =
@@ -364,27 +362,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   }, [filteredSections, filteredBottomItems]);
 
   useEffect(() => {
-    const pathChanged = previousPathnameRef.current !== pathname;
-    previousPathnameRef.current = pathname;
     const activeSection = findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]);
-    if (activeSection && pathChanged) {
-      setOpenSection(activeSection);
-      try {
-        localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, activeSection);
-      } catch {}
-      return;
+    if (activeSection) {
+      setOpenSections((current) =>
+        current.includes(activeSection) ? current : [...current, activeSection]
+      );
     }
-    try {
-      const stored = localStorage.getItem(SIDEBAR_OPEN_SECTION_KEY) as DashboardKey | null;
-      if (stored) setOpenSection(stored);
-    } catch {}
   }, [pathname]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
-    const activeSection = findActiveSection(pathname, accordionSections);
-    setOpenSection(activeSection ?? accordionSections[0]?.titleKey ?? "nav.section.cockpit");
-  }, [accordionSections, pathname, searchQuery]);
+    setOpenSections(accordionSections.map((section) => section.titleKey));
+  }, [accordionSections, searchQuery]);
 
   const highlightMatch = (text: string, query: string) => {
     if (!query.trim()) return text;
@@ -403,15 +392,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   };
 
   const toggleSection = (titleKey: DashboardKey) => {
-    const nextSection = openSection === titleKey ? null : titleKey;
-    setOpenSection(nextSection);
-    try {
-      if (nextSection) {
-        localStorage.setItem(SIDEBAR_OPEN_SECTION_KEY, nextSection);
-      } else {
-        localStorage.removeItem(SIDEBAR_OPEN_SECTION_KEY);
-      }
-    } catch {}
+    setOpenSections((current) =>
+      current.includes(titleKey)
+        ? current.filter((section) => section !== titleKey)
+        : [...current, titleKey]
+    );
   };
 
   return (
@@ -646,7 +631,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             {!collapsed && (
               <div className="mt-4 space-y-2">
                 {accordionSections.map((section) => {
-                  const isOpen = openSection === section.titleKey;
+                  const isOpen = openSections.includes(section.titleKey);
                   const sectionActive = section.items.some((item) =>
                     isActiveHref(pathname, item.href)
                   );
