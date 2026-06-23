@@ -20,6 +20,8 @@ import {
   BookOpen,
   Upload,
   FolderInput,
+  ArrowUpDown,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -35,9 +37,15 @@ import { usePaginatedList } from "@/lib/hooks/use-pagination";
 import { Pagination } from "@/components/ui/pagination";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CappedResultsNotice } from "@/components/dashboard/capped-results-notice";
-import { RotateCcw } from "lucide-react";
 
 const DOCS_LIMIT = 200;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
 
 interface VaultDoc {
   slug: string;
@@ -65,13 +73,20 @@ function useTypeLabels(t: ReturnType<typeof useLang>["t"]): Record<string, strin
 
 const TYPE_COLORS: Record<string, string> = {
   legal_case: "brand-soft brand-border brand-text",
-  legal_contract: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600",
-  legal_document: "bg-blue-500/10 border-blue-500/20 text-blue-600",
-  bea_message: "bg-amber-500/10 border-amber-500/20 text-amber-600",
-  court_decision: "bg-red-500/10 border-red-500/20 text-red-600",
-  invoice: "bg-cyan-500/10 border-cyan-500/20 text-cyan-600",
-  contact: "bg-pink-500/10 border-pink-500/20 text-pink-600",
-  evidence: "bg-orange-500/10 border-orange-500/20 text-orange-600",
+  legal_contract:
+    "bg-[color:var(--ds-success-bg)] border-[color:var(--ds-success-border)] text-[color:var(--ds-success-text)]",
+  legal_document:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  bea_message:
+    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
+  court_decision:
+    "bg-[color:var(--ds-danger-bg)] border-[color:var(--ds-danger-border)] text-[color:var(--ds-danger-text)]",
+  invoice:
+    "bg-[color:var(--ds-info-bg)] border-[color:var(--ds-info-border)] text-[color:var(--ds-info-text)]",
+  contact:
+    "bg-[color:var(--ds-hover)] border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)]",
+  evidence:
+    "bg-[color:var(--ds-warning-bg)] border-[color:var(--ds-warning-border)] text-[color:var(--ds-warning-text)]",
 };
 
 function parseDoc(page: BrainPage): VaultDoc {
@@ -91,6 +106,8 @@ function parseDoc(page: BrainPage): VaultDoc {
   };
 }
 
+type SortKey = "date_desc" | "date_asc" | "title_asc" | "title_desc" | "size_desc";
+
 export default function VaultPage() {
   const { t, lang } = useLang();
   const TYPE_LABELS = useTypeLabels(t);
@@ -100,14 +117,11 @@ export default function VaultPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [capped, setCapped] = useState(false);
   const [query, setQuery] = useState("");
-  // Server-side search results for the current query, fetched against the
-  // full corpus — `docs` only ever holds the first DOCS_LIMIT pages, so
-  // filtering client-side on `docs` alone would silently miss matches once
-  // the brain has more than DOCS_LIMIT documents.
   const [searchResults, setSearchResults] = useState<VaultDoc[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [tagFilter, setTagFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<SortKey>("date_desc");
 
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [showReview, setShowReview] = useState(false);
@@ -167,15 +181,15 @@ export default function VaultPage() {
   }, [loadDocs]);
 
   const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    docs.forEach((d) => d.tags.forEach((t) => tags.add(t)));
-    return Array.from(tags).sort();
+    const tagSet = new Set<string>();
+    docs.forEach((d) => d.tags.forEach((tag) => tagSet.add(tag)));
+    return Array.from(tagSet).sort();
   }, [docs]);
 
   const allTypes = useMemo(() => {
-    const types = new Set<string>();
-    docs.forEach((d) => types.add(d.type));
-    return Array.from(types).sort();
+    const typeSet = new Set<string>();
+    docs.forEach((d) => typeSet.add(d.type));
+    return Array.from(typeSet).sort();
   }, [docs]);
 
   // Debounced server-side search so matches beyond the first DOCS_LIMIT
@@ -216,8 +230,27 @@ export default function VaultPage() {
     }
     if (typeFilter) result = result.filter((d) => d.type === typeFilter);
     if (tagFilter) result = result.filter((d) => d.tags.includes(tagFilter));
-    return result;
-  }, [docs, searchResults, query, typeFilter, tagFilter]);
+    // Sort
+    const sorted = [...result];
+    switch (sortBy) {
+      case "date_desc":
+        sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        break;
+      case "date_asc":
+        sorted.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+        break;
+      case "title_asc":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "title_desc":
+        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "size_desc":
+        sorted.sort((a, b) => (b.size ?? 0) - (a.size ?? 0));
+        break;
+    }
+    return sorted;
+  }, [docs, searchResults, query, typeFilter, tagFilter, sortBy]);
 
   const reviewLoading = reviewForm.status === "submitting";
 
@@ -321,8 +354,8 @@ export default function VaultPage() {
           href="/dashboard/upload?mode=knowledge"
           className="group flex items-start gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-all hover:border-[color:var(--brand-primary)] hover:bg-[color:var(--brand-primary)]/5 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-            <BookOpen size={18} className="text-emerald-600" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-success-bg)]">
+            <BookOpen size={18} className="text-[color:var(--ds-success-text)]" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -339,6 +372,30 @@ export default function VaultPage() {
       </div>
 
       {capped && !query.trim() && <CappedResultsNotice limit={DOCS_LIMIT} />}
+
+      {/* Result count + sort control */}
+      {!loading && filtered.length > 0 && (
+        <div className="flex items-center justify-between gap-3 text-xs text-[color:var(--ds-text-muted)]">
+          <span>
+            {filtered.length} {t("vault.results_count")}
+            {filtered.length !== docs.length && ` (${docs.length} ${t("vault.total_count")})`}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <ArrowUpDown size={12} className="text-[color:var(--ds-text-subtle)]" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)] focus:outline-none"
+            >
+              <option value="date_desc">{t("vault.sort_date_desc")}</option>
+              <option value="date_asc">{t("vault.sort_date_asc")}</option>
+              <option value="title_asc">{t("vault.sort_title_asc")}</option>
+              <option value="title_desc">{t("vault.sort_title_desc")}</option>
+              <option value="size_desc">{t("vault.sort_size_desc")}</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {showReview && (
         <form
@@ -358,7 +415,7 @@ export default function VaultPage() {
             </button>
           </div>
           {reviewForm.error && (
-            <div className="flex items-center gap-2 text-xs text-red-600">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ds-danger-text)]">
               <AlertTriangle size={14} /> {reviewForm.error}
             </div>
           )}
@@ -373,7 +430,7 @@ export default function VaultPage() {
                 <button
                   type="button"
                   onClick={() => remove(i)}
-                  className="text-[color:var(--ds-text-muted)] hover:text-red-600"
+                  className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-danger-text)]"
                 >
                   <X size={14} />
                 </button>
@@ -532,13 +589,13 @@ export default function VaultPage() {
       )}
 
       {loadError && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)] px-4 py-3 text-sm text-[color:var(--ds-danger-text)]">
           <span>{loadError}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => void loadDocs()}
-            className="shrink-0 gap-1.5 text-xs text-red-600 hover:bg-red-500/10 hover:text-red-700"
+            className="shrink-0 gap-1.5 text-xs text-[color:var(--ds-danger-text)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
           >
             <RotateCcw size={13} /> {t("vault.retry")}
           </Button>
@@ -547,11 +604,28 @@ export default function VaultPage() {
 
       {loading ? (
         <div
-          className="flex items-center justify-center py-20"
+          className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3"
           role="status"
           aria-label={t("aria.loading")}
         >
-          <Loader2 size={24} className="brand-text animate-spin" aria-hidden="true" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+                <div className="h-5 w-20 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              </div>
+              <div className="h-4 w-full animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              <div className="h-3 w-full animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              <div className="flex items-center justify-between pt-1">
+                <div className="h-3 w-24 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+                <div className="h-3 w-12 animate-pulse rounded bg-[color:var(--ds-surface-2)]" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[color:var(--ds-border-strong)] bg-[color:var(--ds-surface)] px-6 py-16 text-center">
@@ -571,7 +645,7 @@ export default function VaultPage() {
             {paginatedDocs.map((doc) => (
               <div
                 key={doc.slug}
-                className="group space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors hover:border-[color:var(--ds-border-strong)]"
+                className="group space-y-2.5 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-colors focus-within:border-[color:var(--ds-border-strong)] hover:border-[color:var(--ds-border-strong)]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -580,6 +654,7 @@ export default function VaultPage() {
                       checked={selectedSlugs.has(doc.slug)}
                       onChange={() => toggleSelect(doc.slug)}
                       className="accent-[var(--brand-primary)]"
+                      aria-label={t("vault.select_doc")}
                     />
                     <Badge
                       variant="default"
@@ -590,30 +665,33 @@ export default function VaultPage() {
                   </div>
                   <button
                     onClick={() => deleteDoc(doc.slug)}
-                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-0 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-600"
+                    className="rounded-lg p-1 text-[color:var(--ds-text-muted)] opacity-60 transition-opacity duration-200 group-hover:opacity-100 hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)] focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ds-danger-border)] focus-visible:outline-none"
                     title={t("vault.delete")}
+                    aria-label={t("vault.delete")}
                   >
                     <Trash2 size={14} />
                   </button>
                 </div>
-                <div
-                  className="truncate text-sm font-medium text-[color:var(--ds-text)]"
+                <Link
+                  href={`/dashboard/vault/${doc.slug.split("/").map(encodeURIComponent).join("/")}`}
+                  className="block truncate text-sm font-medium text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--brand-primary)] focus-visible:text-[color:var(--brand-primary)] focus-visible:outline-none"
                   title={doc.title}
                 >
                   {doc.title}
-                </div>
+                </Link>
                 <div className="line-clamp-2 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                  {doc.content.slice(0, 120)}…
+                  {doc.content ? doc.content.slice(0, 120) : ""}
+                  {doc.content && doc.content.length > 120 ? "…" : ""}
                 </div>
                 {doc.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {doc.tags.map((t) => (
+                    {doc.tags.map((tag) => (
                       <span
-                        key={t}
+                        key={tag}
                         className="inline-flex items-center gap-1 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] px-1.5 py-0.5 text-xs text-[color:var(--ds-text-muted)]"
                       >
                         <Tag size={9} />
-                        {t}
+                        {tag}
                       </span>
                     ))}
                   </div>
@@ -623,7 +701,7 @@ export default function VaultPage() {
                     <Clock size={10} />
                     {new Date(doc.createdAt).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
                   </span>
-                  {doc.size && <span>{(doc.size / 1024).toFixed(0)} KB</span>}
+                  {doc.size ? <span>{formatFileSize(doc.size)}</span> : null}
                 </div>
               </div>
             ))}

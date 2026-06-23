@@ -2549,6 +2549,14 @@ export const D = {
     en: "These documents have no case assigned. Assign now.",
   },
   "vault.cta_unassigned_count": { de: "unzugeordnet", en: "unassigned" },
+  "vault.results_count": { de: "Ergebnisse", en: "results" },
+  "vault.total_count": { de: "gesamt", en: "total" },
+  "vault.sort_date_desc": { de: "Neueste zuerst", en: "Newest first" },
+  "vault.sort_date_asc": { de: "Älteste zuerst", en: "Oldest first" },
+  "vault.sort_title_asc": { de: "Titel A–Z", en: "Title A–Z" },
+  "vault.sort_title_desc": { de: "Titel Z–A", en: "Title Z–A" },
+  "vault.sort_size_desc": { de: "Größe absteigend", en: "Largest first" },
+  "vault.select_doc": { de: "Dokument auswählen", en: "Select document" },
 
   // ── WhatsApp page: additional strings ──
   "whatsapp.loading": { de: "Lade WhatsApp Copilot…", en: "Loading WhatsApp Copilot…" },
