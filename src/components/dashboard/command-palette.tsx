@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion, type Transition } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
   Search,
   BookOpen,
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 import { BOTTOM_ITEMS, NAV_SECTIONS } from "@/components/dashboard/sidebar";
 
@@ -156,13 +157,6 @@ interface CommandPaletteProps {
 
 const RECENT_KEY = "subsumio:cmd_recent";
 const MAX_RECENT = 5;
-const COMMAND_PANEL_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 44,
-  mass: 0.76,
-};
-const COMMAND_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 function loadRecent(): string[] {
   try {
@@ -194,8 +188,8 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-  const panelTransition = reduceMotion ? COMMAND_REDUCED_TRANSITION : COMMAND_PANEL_TRANSITION;
+  const { reduceMotion, panelTransition, modalInitial, modalAnimate, modalExit } =
+    useDashboardMotion();
   const resolveLabel = useCallback(
     (cmd: CommandItem) => {
       if (cmd.labelKey) return t(cmd.labelKey);
@@ -478,9 +472,9 @@ export function CommandPalette({
           aria-modal="true"
           aria-label={t("cmd.search_aria")}
           className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 px-4 md:px-0"
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 0.98 }}
+          initial={modalInitial}
+          animate={modalAnimate}
+          exit={modalExit}
           transition={panelTransition}
         >
           <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">

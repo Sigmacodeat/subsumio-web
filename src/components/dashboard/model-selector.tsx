@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, Cpu, Zap, DollarSign, Gauge, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import {
   useModelPreference,
   useUpdateModelPreference,
@@ -36,6 +38,7 @@ export function ModelSelector({
   const isCompact = variant === "compact";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
   const query = useModelPreference();
   const mutation = useUpdateModelPreference();
 
@@ -122,124 +125,130 @@ export function ModelSelector({
         />
       </button>
 
-      {open && (
-        <div
-          className={cn(
-            "card-shadow-elevated absolute z-50 max-h-[24rem] overflow-hidden overflow-y-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
-            isCompact ? "bottom-full left-0 mb-1.5 w-72" : "top-full right-0 mt-1 w-80"
-          )}
-        >
-          {/* Auto / Default option */}
-          <button
-            onClick={() => handleSelect("auto")}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
             className={cn(
-              "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-              isCompact ? "px-3 py-2" : "px-4 py-3",
-              activeModelId === "auto" && "brand-soft"
+              "card-shadow-elevated absolute z-50 max-h-[24rem] overflow-hidden overflow-y-auto rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]",
+              isCompact ? "bottom-full left-0 mb-1.5 w-72" : "top-full right-0 mt-1 w-80"
             )}
+            initial={popoverInitial}
+            animate={popoverAnimate}
+            exit={popoverExit}
+            transition={popoverTransition}
           >
-            <div className="flex-1">
-              <p
-                className={cn(
-                  "font-medium",
-                  isCompact ? "text-[12px]" : "text-sm",
-                  activeModelId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
-                )}
-              >
-                Auto (Engine-Default)
-              </p>
-              <p
-                className={cn(
-                  "mt-0.5 text-[color:var(--ds-text-muted)]",
-                  isCompact ? "text-xs" : "text-xs"
-                )}
-              >
-                Engine wählt automatisch das optimale Modell
-              </p>
-            </div>
-            {activeModelId === "auto" && (
-              <Check size={isCompact ? 12 : 14} className="brand-text mt-0.5 shrink-0" />
-            )}
-          </button>
+            {/* Auto / Default option */}
+            <button
+              onClick={() => handleSelect("auto")}
+              className={cn(
+                "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                isCompact ? "px-3 py-2" : "px-4 py-3",
+                activeModelId === "auto" && "brand-soft"
+              )}
+            >
+              <div className="flex-1">
+                <p
+                  className={cn(
+                    "font-medium",
+                    isCompact ? "text-[12px]" : "text-sm",
+                    activeModelId === "auto" ? "brand-text" : "text-[color:var(--ds-text)]"
+                  )}
+                >
+                  Auto (Engine-Default)
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-[color:var(--ds-text-muted)]",
+                    isCompact ? "text-xs" : "text-xs"
+                  )}
+                >
+                  Engine wählt automatisch das optimale Modell
+                </p>
+              </div>
+              {activeModelId === "auto" && (
+                <Check size={isCompact ? 12 : 14} className="brand-text mt-0.5 shrink-0" />
+              )}
+            </button>
 
-          {/* Model list */}
-          {models.map((model) => {
-            const isActive = model.id === activeModelId;
-            return (
-              <button
-                key={model.id}
-                onClick={() => handleSelect(model.id)}
-                className={cn(
-                  "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]",
-                  isCompact ? "px-3 py-2" : "px-4 py-3",
-                  isActive && "brand-soft"
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
+            {/* Model list */}
+            {models.map((model) => {
+              const isActive = model.id === activeModelId;
+              return (
+                <button
+                  key={model.id}
+                  onClick={() => handleSelect(model.id)}
+                  className={cn(
+                    "flex w-full items-start gap-2.5 border-b border-[color:var(--ds-border)] text-left transition-colors last:border-0 hover:bg-[color:var(--ds-hover)]",
+                    isCompact ? "px-3 py-2" : "px-4 py-3",
+                    isActive && "brand-soft"
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p
+                        className={cn(
+                          "truncate font-medium",
+                          isCompact ? "text-[12px]" : "text-sm",
+                          isActive ? "brand-text" : "text-[color:var(--ds-text)]"
+                        )}
+                      >
+                        {model.name}
+                      </p>
+                      <span
+                        className={cn(
+                          "shrink-0 font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase",
+                          isCompact ? "text-[10px]" : "text-xs"
+                        )}
+                      >
+                        {getProviderLabel(model.provider as never)}
+                      </span>
+                      {"dataResidency" in model && model.dataResidency === "eu" && (
+                        <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-success-text)]">
+                          <Globe size={7} />
+                          EU
+                        </span>
+                      )}
+                    </div>
                     <p
                       className={cn(
-                        "truncate font-medium",
-                        isCompact ? "text-[12px]" : "text-sm",
-                        isActive ? "brand-text" : "text-[color:var(--ds-text)]"
+                        "mt-0.5 line-clamp-2 text-[color:var(--ds-text-muted)]",
+                        isCompact ? "text-xs" : "text-xs"
                       )}
                     >
-                      {model.name}
+                      {model.description}
                     </p>
-                    <span
+                    <div
                       className={cn(
-                        "shrink-0 font-medium tracking-wide text-[color:var(--ds-text-subtle)] uppercase",
-                        isCompact ? "text-[10px]" : "text-xs"
+                        "mt-1.5 flex items-center gap-2.5 text-[color:var(--ds-text-subtle)]",
+                        isCompact ? "text-xs" : "text-xs"
                       )}
                     >
-                      {getProviderLabel(model.provider as never)}
-                    </span>
-                    {"dataResidency" in model && model.dataResidency === "eu" && (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)] px-1 py-0.5 text-[10px] font-medium text-[color:var(--ds-success-text)]">
-                        <Globe size={7} />
-                        EU
+                      <span className="flex items-center gap-0.5" title="Context Window">
+                        <Gauge size={isCompact ? 8 : 9} />
+                        {formatContextWindow(model.contextWindow)}
                       </span>
-                    )}
+                      <span
+                        className="flex items-center gap-0.5"
+                        title="Cost per 1M tokens (input/output)"
+                      >
+                        <DollarSign size={isCompact ? 8 : 9} />
+                        {formatCost(model.costPer1MInput)}/{formatCost(model.costPer1MOutput)}
+                      </span>
+                      <span className="flex items-center gap-0.5" title="Speed rating">
+                        <Zap size={isCompact ? 8 : 9} />
+                        {getSpeedLabel(model.speedRating as 1 | 2 | 3 | 4 | 5)}
+                      </span>
+                    </div>
                   </div>
-                  <p
-                    className={cn(
-                      "mt-0.5 line-clamp-2 text-[color:var(--ds-text-muted)]",
-                      isCompact ? "text-xs" : "text-xs"
-                    )}
-                  >
-                    {model.description}
-                  </p>
-                  <div
-                    className={cn(
-                      "mt-1.5 flex items-center gap-2.5 text-[color:var(--ds-text-subtle)]",
-                      isCompact ? "text-xs" : "text-xs"
-                    )}
-                  >
-                    <span className="flex items-center gap-0.5" title="Context Window">
-                      <Gauge size={isCompact ? 8 : 9} />
-                      {formatContextWindow(model.contextWindow)}
-                    </span>
-                    <span
-                      className="flex items-center gap-0.5"
-                      title="Cost per 1M tokens (input/output)"
-                    >
-                      <DollarSign size={isCompact ? 8 : 9} />
-                      {formatCost(model.costPer1MInput)}/{formatCost(model.costPer1MOutput)}
-                    </span>
-                    <span className="flex items-center gap-0.5" title="Speed rating">
-                      <Zap size={isCompact ? 8 : 9} />
-                      {getSpeedLabel(model.speedRating as 1 | 2 | 3 | 4 | 5)}
-                    </span>
-                  </div>
-                </div>
-                {isActive && (
-                  <Check size={isCompact ? 12 : 14} className="brand-text mt-0.5 shrink-0" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+                  {isActive && (
+                    <Check size={isCompact ? 12 : 14} className="brand-text mt-0.5 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

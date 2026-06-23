@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
   Trash2,
@@ -17,6 +18,7 @@ import {
   Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
@@ -74,6 +76,7 @@ export function ChatHeader(props: ChatHeaderProps) {
   const [showSessions, setShowSessions] = useState(false);
   const modeRef = useRef<HTMLDivElement>(null);
   const sessionsRef = useRef<HTMLDivElement>(null);
+  const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const stats = statsQuery.data;
 
@@ -196,127 +199,135 @@ export function ChatHeader(props: ChatHeaderProps) {
                   className={cn("transition-transform", showSessions && "rotate-180")}
                 />
               </button>
-              {showSessions && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
-                  <div className="border-b border-[color:var(--ds-border)] p-2">
-                    <button
-                      onClick={() => {
-                        props.onNewSession();
-                        setShowSessions(false);
-                      }}
-                      className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95"
-                    >
-                      <Plus size={13} />
-                      {t("chat.new_session")}
-                    </button>
-                  </div>
-                  {props.onSessionSearchChange && (
+              <AnimatePresence initial={false}>
+                {showSessions && (
+                  <motion.div
+                    className="absolute top-full left-0 z-50 mt-1 w-72 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
                     <div className="border-b border-[color:var(--ds-border)] p-2">
-                      <div className="relative">
-                        <Search
-                          size={12}
-                          className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
-                        />
-                        <input
-                          value={props.sessionSearch ?? ""}
-                          onChange={(e) => props.onSessionSearchChange?.(e.target.value)}
-                          placeholder={t("chat.search_sessions")}
-                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                        />
-                        {props.sessionSearch && (
-                          <button
-                            onClick={() => props.onSessionSearchChange?.("")}
-                            className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => {
+                          props.onNewSession();
+                          setShowSessions(false);
+                        }}
+                        className="brand-soft brand-text flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:opacity-90 active:scale-95"
+                      >
+                        <Plus size={13} />
+                        {t("chat.new_session")}
+                      </button>
                     </div>
-                  )}
-                  <div className="max-h-64 overflow-y-auto p-1">
-                    {filteredSessions.length === 0 ? (
-                      <p className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-subtle)]">
-                        {t("chat.no_sessions")}
-                      </p>
-                    ) : (
-                      filteredSessions.map((s) => (
-                        <div
-                          key={s.id}
-                          className={cn(
-                            "group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]",
-                            s.id === props.activeSessionId && "brand-soft"
+                    {props.onSessionSearchChange && (
+                      <div className="border-b border-[color:var(--ds-border)] p-2">
+                        <div className="relative">
+                          <Search
+                            size={12}
+                            className="absolute top-1/2 left-2.5 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+                          />
+                          <input
+                            value={props.sessionSearch ?? ""}
+                            onChange={(e) => props.onSessionSearchChange?.(e.target.value)}
+                            placeholder={t("chat.search_sessions")}
+                            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-1.5 pr-7 pl-8 text-xs text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                          />
+                          {props.sessionSearch && (
+                            <button
+                              onClick={() => props.onSessionSearchChange?.("")}
+                              className="absolute top-1/2 right-2 -translate-y-1/2 text-[color:var(--ds-text-subtle)] hover:text-[color:var(--ds-text)]"
+                            >
+                              <X size={12} />
+                            </button>
                           )}
-                        >
-                          {s.pinned && (
-                            <Pin size={10} className="brand-text shrink-0" fill="currentColor" />
-                          )}
-                          <button
-                            onClick={() => {
-                              props.onSelectSession?.(s.id);
-                              setShowSessions(false);
-                            }}
-                            className="min-w-0 flex-1 text-left"
-                          >
-                            <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
-                              {s.title}
-                            </p>
-                            <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
-                              {s.messageCount} {t("chat.session_count")} ·{" "}
-                              {new Date(s.updatedAt).toLocaleDateString(
-                                lang === "en" ? "en-GB" : "de-DE"
-                              )}
-                            </p>
-                            {s.tags && s.tags.length > 0 && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {s.tags.slice(0, 3).map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
-                                  >
-                                    <Tag size={7} />
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </button>
-                          <div className="flex shrink-0 items-center gap-0.5">
-                            {props.onTogglePin && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  props.onTogglePin?.(s.id);
-                                }}
-                                className={cn(
-                                  "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
-                                  s.pinned && "brand-text opacity-100"
-                                )}
-                                aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
-                                title={s.pinned ? t("chat.unpin") : t("chat.pin")}
-                              >
-                                <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
-                              </button>
-                            )}
-                            {props.onDeleteSession && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  props.onDeleteSession?.(s.id);
-                                }}
-                                className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500"
-                                aria-label={t("chat.confirm_delete_session")}
-                              >
-                                <Trash2 size={11} />
-                              </button>
-                            )}
-                          </div>
                         </div>
-                      ))
+                      </div>
                     )}
-                  </div>
-                </div>
-              )}
+                    <div className="max-h-64 overflow-y-auto p-1">
+                      {filteredSessions.length === 0 ? (
+                        <p className="px-3 py-4 text-center text-xs text-[color:var(--ds-text-subtle)]">
+                          {t("chat.no_sessions")}
+                        </p>
+                      ) : (
+                        filteredSessions.map((s) => (
+                          <div
+                            key={s.id}
+                            className={cn(
+                              "group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[color:var(--ds-hover)]",
+                              s.id === props.activeSessionId && "brand-soft"
+                            )}
+                          >
+                            {s.pinned && (
+                              <Pin size={10} className="brand-text shrink-0" fill="currentColor" />
+                            )}
+                            <button
+                              onClick={() => {
+                                props.onSelectSession?.(s.id);
+                                setShowSessions(false);
+                              }}
+                              className="min-w-0 flex-1 text-left"
+                            >
+                              <p className="truncate text-xs font-medium text-[color:var(--ds-text)]">
+                                {s.title}
+                              </p>
+                              <p className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+                                {s.messageCount} {t("chat.session_count")} ·{" "}
+                                {new Date(s.updatedAt).toLocaleDateString(
+                                  lang === "en" ? "en-GB" : "de-DE"
+                                )}
+                              </p>
+                              {s.tags && s.tags.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {s.tags.slice(0, 3).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex items-center gap-0.5 rounded bg-[color:var(--ds-surface-2)] px-1.5 py-0.5 text-[10px] text-[color:var(--ds-text-subtle)]"
+                                    >
+                                      <Tag size={7} />
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </button>
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              {props.onTogglePin && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    props.onTogglePin?.(s.id);
+                                  }}
+                                  className={cn(
+                                    "text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-[color:var(--ds-text)]",
+                                    s.pinned && "brand-text opacity-100"
+                                  )}
+                                  aria-label={s.pinned ? t("chat.unpin") : t("chat.pin")}
+                                  title={s.pinned ? t("chat.unpin") : t("chat.pin")}
+                                >
+                                  <Pin size={11} fill={s.pinned ? "currentColor" : "none"} />
+                                </button>
+                              )}
+                              {props.onDeleteSession && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    props.onDeleteSession?.(s.id);
+                                  }}
+                                  className="text-[color:var(--ds-text-subtle)] opacity-0 transition-[opacity,color] duration-200 group-hover:opacity-100 hover:text-red-500"
+                                  aria-label={t("chat.confirm_delete_session")}
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -377,38 +388,46 @@ export function ChatHeader(props: ChatHeaderProps) {
                   className={cn("transition-transform", showModeMenu && "rotate-180")}
                 />
               </button>
-              {showModeMenu && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg">
-                  {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => {
-                        props.onQueryModeChange(mode);
-                        setShowModeMenu(false);
-                      }}
-                      className={cn(
-                        "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                        props.queryMode === mode && "brand-soft"
-                      )}
-                    >
-                      <span
+              <AnimatePresence initial={false}>
+                {showModeMenu && (
+                  <motion.div
+                    className="absolute top-full left-0 z-50 mt-1 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
+                    {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          props.onQueryModeChange(mode);
+                          setShowModeMenu(false);
+                        }}
                         className={cn(
-                          "text-xs font-medium",
-                          props.queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                          "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                          props.queryMode === mode && "brand-soft"
                         )}
                       >
-                        {QUERY_MODE_LABELS[mode].label}
-                      </span>
-                      <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                        {QUERY_MODE_LABELS[mode].description}
-                      </span>
-                      <span className="text-[10px] text-[color:var(--ds-text-subtle)] opacity-70">
-                        {QUERY_MODE_LABELS[mode].hint}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        <span
+                          className={cn(
+                            "text-xs font-medium",
+                            props.queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                          )}
+                        >
+                          {QUERY_MODE_LABELS[mode].label}
+                        </span>
+                        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                          {QUERY_MODE_LABELS[mode].description}
+                        </span>
+                        <span className="text-[10px] text-[color:var(--ds-text-subtle)] opacity-70">
+                          {QUERY_MODE_LABELS[mode].hint}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 

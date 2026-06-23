@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, forwardRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   LayoutDashboard,
   Brain,
@@ -59,6 +58,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { useNetworkStatus } from "@/lib/use-offline-sync";
 import { useLang } from "@/lib/use-lang";
@@ -81,22 +81,6 @@ const DEFAULT_OPEN_SECTIONS: DashboardKey[] = [
   "nav.section.billing_compliance",
   "nav.section.admin",
 ];
-
-const SIDEBAR_PANEL_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 500,
-  damping: 46,
-  mass: 0.72,
-};
-
-const SIDEBAR_SHELL_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 430,
-  damping: 42,
-  mass: 0.82,
-};
-
-const SIDEBAR_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -344,14 +328,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>(DEFAULT_OPEN_SECTIONS);
   const [isDesktop, setIsDesktop] = useState(false);
-  const reduceMotion = useReducedMotion();
   const { t, lang } = useLang();
-  const sidebarPanelTransition = reduceMotion
-    ? SIDEBAR_REDUCED_TRANSITION
-    : SIDEBAR_PANEL_TRANSITION;
-  const sidebarShellTransition = reduceMotion
-    ? SIDEBAR_REDUCED_TRANSITION
-    : SIDEBAR_SHELL_TRANSITION;
+  const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
+  const sidebarShellTransition = sidebarPanelTransition;
   const sidebarWidth = collapsed && isDesktop ? 64 : 256;
 
   const brainStatusLabel =

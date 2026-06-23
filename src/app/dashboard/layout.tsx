@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion, type Transition } from "framer-motion";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
@@ -13,18 +12,11 @@ import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
-
-const DASHBOARD_OVERLAY_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 430,
-  damping: 42,
-  mass: 0.82,
-};
-const DASHBOARD_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("light");
@@ -71,10 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { t } = useLang();
   const pathname = usePathname();
   const router = useRouter();
-  const reduceMotion = useReducedMotion();
-  const overlayTransition = reduceMotion
-    ? DASHBOARD_REDUCED_TRANSITION
-    : DASHBOARD_OVERLAY_TRANSITION;
+  const { reduceMotion, panelTransition: overlayTransition } = useDashboardMotion();
 
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";

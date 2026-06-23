@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   MessageSquareText,
   X,
@@ -25,6 +24,7 @@ import { useIsMobile } from "@/lib/use-media-query";
 import { useResizable } from "@/lib/use-resizable";
 import { useLang, type TFunc } from "@/lib/use-lang";
 import { ChatPanel, type ChatPanelHandle } from "@/components/chat/chat-panel";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { ChatContextType } from "@/components/chat/chat-types";
 
 interface CopilotSidebarProps {
@@ -56,22 +56,6 @@ const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof MessageSquareText> 
   search: Search,
   generic: ChevronRight,
 };
-
-const SPRING_PANEL: Transition = {
-  type: "spring",
-  stiffness: 420,
-  damping: 42,
-  mass: 0.86,
-};
-
-const SPRING_SOFT: Transition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 44,
-  mass: 0.7,
-};
-
-const REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
 
 const ROUTE_PATTERNS: Array<{
   pattern: RegExp;
@@ -397,7 +381,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const router = useRouter();
   const isMobile = useIsMobile();
   const { t } = useLang();
-  const reduceMotion = useReducedMotion();
+  const { reduceMotion, panelTransition, tapTransition: softTransition } = useDashboardMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ChatPanelHandle>(null);
@@ -604,9 +588,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     () => proactiveAlerts.filter((a) => !dismissedAlerts.has(`${a.label}-${a.query}`)),
     [proactiveAlerts, dismissedAlerts]
   );
-  const panelTransition = reduceMotion ? REDUCED_MOTION_TRANSITION : SPRING_PANEL;
-  const softTransition = reduceMotion ? REDUCED_MOTION_TRANSITION : SPRING_SOFT;
-
   return (
     <>
       {/* Mobile overlay */}
@@ -616,9 +597,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           opacity: mobileOpen ? 1 : 0,
           backdropFilter: mobileOpen && !reduceMotion ? "blur(8px)" : "blur(0px)",
         }}
-        transition={
-          reduceMotion ? REDUCED_MOTION_TRANSITION : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
-        }
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           "fixed inset-0 z-50 bg-black/30 md:hidden",
           mobileOpen ? "" : "pointer-events-none"

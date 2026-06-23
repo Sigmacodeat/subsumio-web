@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Send,
   Square,
@@ -14,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useLang } from "@/lib/use-lang";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { CHAT_TEMPLATES, type ChatTemplate } from "@/components/chat/chat-types";
 import { ModelSelector } from "@/components/dashboard/model-selector";
 import { QUERY_MODE_LABELS, type QueryMode } from "@/lib/matter-context-types";
@@ -60,6 +62,7 @@ export function ChatInput({
   const templateRef = useRef<HTMLDivElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
   const { t, lang } = useLang();
+  const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const charCount = text.length;
   const nearLimit = charCount > 45_000;
@@ -223,38 +226,46 @@ export function ChatInput({
                   className={cn("transition-transform", showModeMenu && "rotate-180")}
                 />
               </button>
-              {showModeMenu && (
-                <div className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg">
-                  {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => {
-                        onQueryModeChange(mode);
-                        setShowModeMenu(false);
-                      }}
-                      className={cn(
-                        "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
-                        queryMode === mode && "brand-soft"
-                      )}
-                    >
-                      <span
+              <AnimatePresence initial={false}>
+                {showModeMenu && (
+                  <motion.div
+                    className="absolute bottom-full left-0 z-50 mb-1.5 w-56 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1.5 shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
+                    {(Object.keys(QUERY_MODE_LABELS) as QueryMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => {
+                          onQueryModeChange(mode);
+                          setShowModeMenu(false);
+                        }}
                         className={cn(
-                          "text-[11px] font-medium",
-                          queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                          "flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[color:var(--ds-hover)]",
+                          queryMode === mode && "brand-soft"
                         )}
                       >
-                        {QUERY_MODE_LABELS[mode].label}
-                      </span>
-                      <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
-                        {QUERY_MODE_LABELS[mode].description}
-                      </span>
-                      <span className="text-[9px] text-[color:var(--ds-text-subtle)] opacity-70">
-                        {QUERY_MODE_LABELS[mode].hint}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                        <span
+                          className={cn(
+                            "text-[11px] font-medium",
+                            queryMode === mode ? "brand-text" : "text-[color:var(--ds-text)]"
+                          )}
+                        >
+                          {QUERY_MODE_LABELS[mode].label}
+                        </span>
+                        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                          {QUERY_MODE_LABELS[mode].description}
+                        </span>
+                        <span className="text-[9px] text-[color:var(--ds-text-subtle)] opacity-70">
+                          {QUERY_MODE_LABELS[mode].hint}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -291,33 +302,41 @@ export function ChatInput({
             >
               <LayoutTemplate size={18} />
             </button>
-            {showTemplates && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg">
-                <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
-                  {t("chat.input.templates")}
-                </div>
-                <div className="max-h-64 overflow-y-auto p-1">
-                  {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
-                    <button
-                      key={tpl.id}
-                      onClick={() => {
-                        setText(tpl.template);
-                        setShowTemplates(false);
-                        autoFocus();
-                      }}
-                      className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
-                    >
-                      <span className="text-xs font-medium text-[color:var(--ds-text)]">
-                        {tpl.label}
-                      </span>
-                      <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
-                        {tpl.category}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {showTemplates && (
+                <motion.div
+                  className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-lg"
+                  initial={popoverInitial}
+                  animate={popoverAnimate}
+                  exit={popoverExit}
+                  transition={popoverTransition}
+                >
+                  <div className="border-b border-[color:var(--ds-border)] px-3 py-2 text-xs font-medium text-[color:var(--ds-text-muted)]">
+                    {t("chat.input.templates")}
+                  </div>
+                  <div className="max-h-64 overflow-y-auto p-1">
+                    {CHAT_TEMPLATES.map((tpl: ChatTemplate) => (
+                      <button
+                        key={tpl.id}
+                        onClick={() => {
+                          setText(tpl.template);
+                          setShowTemplates(false);
+                          autoFocus();
+                        }}
+                        className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-colors hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <span className="text-xs font-medium text-[color:var(--ds-text)]">
+                          {tpl.label}
+                        </span>
+                        <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                          {tpl.category}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* File upload button */}

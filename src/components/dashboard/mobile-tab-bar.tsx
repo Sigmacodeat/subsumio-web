@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   LayoutDashboard,
   Briefcase,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import type { DashboardKey } from "@/content/dashboard";
 
 interface MobileTabBarProps {
@@ -50,20 +50,6 @@ const TABS: TabItem[] = [
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
 ];
 
-const MOBILE_SHEET_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 430,
-  damping: 42,
-  mass: 0.82,
-};
-const MOBILE_SOFT_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 560,
-  damping: 42,
-  mass: 0.64,
-};
-const MOBILE_REDUCED_TRANSITION: Transition = { duration: 0 };
-
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -81,9 +67,11 @@ export function MobileTabBar({
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
-  const sheetTransition = reduceMotion ? MOBILE_REDUCED_TRANSITION : MOBILE_SHEET_TRANSITION;
-  const softTransition = reduceMotion ? MOBILE_REDUCED_TRANSITION : MOBILE_SOFT_TRANSITION;
+  const {
+    reduceMotion,
+    panelTransition: sheetTransition,
+    tapTransition: softTransition,
+  } = useDashboardMotion();
 
   useEffect(() => {
     if (!moreOpen) return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import {
   Brain,
   Users,
@@ -28,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { csrfFetch } from "@/lib/csrf";
 import { statusLabel, type ExtractionStatus } from "@/lib/extraction-status";
 import type {
@@ -57,6 +59,7 @@ export function MatterContextPanel({
   const [bundle, setBundle] = useState<MatterContextBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { panelTransition } = useDashboardMotion();
 
   const loadContext = useCallback(async () => {
     setLoading(true);
@@ -143,164 +146,172 @@ export function MatterContextPanel({
       </button>
 
       {/* Content */}
-      {open && (
-        <div className="border-t border-[color:var(--ds-border)]">
-          {loading && !bundle && (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-[color:var(--ds-text-muted)]">
-              <Loader2 size={16} className="animate-spin" />
-              Lade Matter Context…
-            </div>
-          )}
-
-          {error && !loading && (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <AlertTriangle size={24} className="text-amber-500" />
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Matter Context konnte nicht geladen werden: {error}
-              </p>
-              <Button variant="outline" size="sm" onClick={loadContext}>
-                <RefreshCw size={12} className="mr-1.5" />
-                Erneut versuchen
-              </Button>
-            </div>
-          )}
-
-          {bundle && (
-            <div className="space-y-4 p-4">
-              {/* Summary Bar */}
-              <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[color:var(--ds-surface-2)] p-3">
-                <SummaryItem
-                  icon={Users}
-                  label="Parteien"
-                  value={bundle.parties.length}
-                  color="text-blue-600"
-                />
-                <SummaryItem
-                  icon={CalendarClock}
-                  label="Fristen"
-                  value={bundle.deadlines.length}
-                  color="text-amber-600"
-                />
-                <SummaryItem
-                  icon={FileText}
-                  label="Dokumente"
-                  value={bundle.documents.length}
-                  color="text-gray-600"
-                />
-                <SummaryItem
-                  icon={Activity}
-                  label="Aktivitäten"
-                  value={bundle.recent_activity.length}
-                  color="text-purple-600"
-                />
-                <SummaryItem
-                  icon={AlertTriangle}
-                  label="Lücken"
-                  value={bundle.gaps.length}
-                  color={bundle.gaps.length > 0 ? "text-red-600" : "text-emerald-600"}
-                />
-                <div className="ml-auto flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={loadContext}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <RefreshCw size={11} className="mr-1" />
-                    Aktualisieren
-                  </Button>
-                </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            className="overflow-hidden border-t border-[color:var(--ds-border)]"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={panelTransition}
+          >
+            {loading && !bundle && (
+              <div className="flex items-center justify-center gap-2 py-12 text-sm text-[color:var(--ds-text-muted)]">
+                <Loader2 size={16} className="animate-spin" />
+                Lade Matter Context…
               </div>
+            )}
 
-              {/* Parties */}
-              {bundle.parties.length > 0 && (
-                <Section title="Beteiligte" icon={Users}>
-                  <div className="space-y-2">
-                    {bundle.parties.map((party) => (
-                      <PartyRow key={`${party.role}-${party.slug}`} party={party} />
-                    ))}
+            {error && !loading && (
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                <AlertTriangle size={24} className="text-amber-500" />
+                <p className="text-sm text-[color:var(--ds-text-muted)]">
+                  Matter Context konnte nicht geladen werden: {error}
+                </p>
+                <Button variant="outline" size="sm" onClick={loadContext}>
+                  <RefreshCw size={12} className="mr-1.5" />
+                  Erneut versuchen
+                </Button>
+              </div>
+            )}
+
+            {bundle && (
+              <div className="space-y-4 p-4">
+                {/* Summary Bar */}
+                <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[color:var(--ds-surface-2)] p-3">
+                  <SummaryItem
+                    icon={Users}
+                    label="Parteien"
+                    value={bundle.parties.length}
+                    color="text-blue-600"
+                  />
+                  <SummaryItem
+                    icon={CalendarClock}
+                    label="Fristen"
+                    value={bundle.deadlines.length}
+                    color="text-amber-600"
+                  />
+                  <SummaryItem
+                    icon={FileText}
+                    label="Dokumente"
+                    value={bundle.documents.length}
+                    color="text-gray-600"
+                  />
+                  <SummaryItem
+                    icon={Activity}
+                    label="Aktivitäten"
+                    value={bundle.recent_activity.length}
+                    color="text-purple-600"
+                  />
+                  <SummaryItem
+                    icon={AlertTriangle}
+                    label="Lücken"
+                    value={bundle.gaps.length}
+                    color={bundle.gaps.length > 0 ? "text-red-600" : "text-emerald-600"}
+                  />
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={loadContext}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <RefreshCw size={11} className="mr-1" />
+                      Aktualisieren
+                    </Button>
                   </div>
-                </Section>
-              )}
-
-              {/* Deadlines */}
-              {bundle.deadlines.length > 0 && (
-                <Section title="Fristen" icon={CalendarClock}>
-                  <div className="space-y-2">
-                    {bundle.deadlines.slice(0, 10).map((deadline, i) => (
-                      <DeadlineRow key={deadline.id ?? `dl-${i}`} deadline={deadline} />
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {/* Documents */}
-              {bundle.documents.length > 0 && (
-                <Section title="Dokumente" icon={FileText}>
-                  <div className="space-y-2">
-                    {bundle.documents.slice(0, 10).map((doc, i) => (
-                      <DocumentRow key={doc.slug ?? `doc-${i}`} doc={doc} />
-                    ))}
-                    {bundle.documents.length > 10 && (
-                      <p className="text-xs text-[color:var(--ds-text-subtle)]">
-                        +{bundle.documents.length - 10} weitere Dokumente
-                      </p>
-                    )}
-                  </div>
-                </Section>
-              )}
-
-              {/* Coverage */}
-              <Section title="Quellenabdeckung" icon={Database}>
-                <CoverageDisplay coverage={bundle.coverage} />
-              </Section>
-
-              {/* Gaps */}
-              {bundle.gaps.length > 0 && (
-                <Section title="Lücken & Risiken" icon={AlertTriangle}>
-                  <div className="space-y-2">
-                    {bundle.gaps.map((gap, i) => (
-                      <GapRow key={`gap-${i}`} gap={gap} />
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {/* Recent Activity */}
-              {bundle.recent_activity.length > 0 && (
-                <Section title="Letzte Aktivitäten" icon={Activity}>
-                  <div className="space-y-1.5">
-                    {bundle.recent_activity.slice(0, 8).map((activity, i) => (
-                      <ActivityRow key={`act-${i}`} activity={activity} />
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {/* Facts */}
-              {bundle.facts.length > 0 && (
-                <Section title="Fakten" icon={Scale}>
-                  <div className="space-y-2">
-                    {bundle.facts.map((fact) => (
-                      <FactRow key={fact.id} fact={fact} />
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {/* Engine Status */}
-              {!bundle.engine_reachable && (
-                <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-                  <AlertTriangle size={14} className="text-amber-600" />
-                  <span className="text-xs text-amber-600">
-                    Engine nicht erreichbar — Context kann unvollständig sein
-                  </span>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+
+                {/* Parties */}
+                {bundle.parties.length > 0 && (
+                  <Section title="Beteiligte" icon={Users}>
+                    <div className="space-y-2">
+                      {bundle.parties.map((party) => (
+                        <PartyRow key={`${party.role}-${party.slug}`} party={party} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Deadlines */}
+                {bundle.deadlines.length > 0 && (
+                  <Section title="Fristen" icon={CalendarClock}>
+                    <div className="space-y-2">
+                      {bundle.deadlines.slice(0, 10).map((deadline, i) => (
+                        <DeadlineRow key={deadline.id ?? `dl-${i}`} deadline={deadline} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Documents */}
+                {bundle.documents.length > 0 && (
+                  <Section title="Dokumente" icon={FileText}>
+                    <div className="space-y-2">
+                      {bundle.documents.slice(0, 10).map((doc, i) => (
+                        <DocumentRow key={doc.slug ?? `doc-${i}`} doc={doc} />
+                      ))}
+                      {bundle.documents.length > 10 && (
+                        <p className="text-xs text-[color:var(--ds-text-subtle)]">
+                          +{bundle.documents.length - 10} weitere Dokumente
+                        </p>
+                      )}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Coverage */}
+                <Section title="Quellenabdeckung" icon={Database}>
+                  <CoverageDisplay coverage={bundle.coverage} />
+                </Section>
+
+                {/* Gaps */}
+                {bundle.gaps.length > 0 && (
+                  <Section title="Lücken & Risiken" icon={AlertTriangle}>
+                    <div className="space-y-2">
+                      {bundle.gaps.map((gap, i) => (
+                        <GapRow key={`gap-${i}`} gap={gap} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Recent Activity */}
+                {bundle.recent_activity.length > 0 && (
+                  <Section title="Letzte Aktivitäten" icon={Activity}>
+                    <div className="space-y-1.5">
+                      {bundle.recent_activity.slice(0, 8).map((activity, i) => (
+                        <ActivityRow key={`act-${i}`} activity={activity} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Facts */}
+                {bundle.facts.length > 0 && (
+                  <Section title="Fakten" icon={Scale}>
+                    <div className="space-y-2">
+                      {bundle.facts.map((fact) => (
+                        <FactRow key={fact.id} fact={fact} />
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* Engine Status */}
+                {!bundle.engine_reachable && (
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                    <AlertTriangle size={14} className="text-amber-600" />
+                    <span className="text-xs text-amber-600">
+                      Engine nicht erreichbar — Context kann unvollständig sein
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

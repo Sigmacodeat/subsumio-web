@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion, type Transition } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
   Search,
   Bell,
@@ -29,19 +29,12 @@ import { useBrainStats, usePages, useSearch } from "@/lib/queries/brain";
 import { useLogout } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { NetworkStatusBadge } from "@/components/dashboard/sidebar";
+import { motion, useDashboardMotion } from "@/components/dashboard/motion";
 import { useRealtime } from "@/lib/realtime";
 import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
-
-const TOPBAR_POPOVER_TRANSITION: Transition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 42,
-  mass: 0.72,
-};
-const TOPBAR_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 interface TopbarProps {
   theme: Theme;
@@ -81,11 +74,7 @@ export function Topbar({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
   const { t, lang, setLang } = useLang();
-  const reduceMotion = useReducedMotion();
-  const popoverTransition = reduceMotion ? TOPBAR_REDUCED_TRANSITION : TOPBAR_POPOVER_TRANSITION;
-  const popoverInitial = reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 };
-  const popoverAnimate = { opacity: 1, y: 0, scale: 1 };
-  const popoverExit = reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 };
+  const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   // Debounce search query for live results
   useEffect(() => {
