@@ -310,13 +310,15 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: #f7f8fa;
+  --ds-bg: #f6f7f9;
   --ds-surface: #ffffff;
-  --ds-surface-2: #f1f3f6;
-  --ds-hover: #eceef3;
+  --ds-surface-2: #f3f5f8;
+  --ds-hover: #edf0f5;
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: #e3e6ec;
-  --ds-border-strong: #b4b9c8;
+  --ds-border: #e8ebf1;
+  --ds-border-strong: #c7ceda;
+  --ds-border-hover: #d7dde7;
+  --ds-control-border: #8a93a3;
   --ds-text: #0f172a;
   --ds-text-muted: #475569; /* 7.2:1 on white — AAA body    */
   --ds-text-subtle: #576072; /* 5.6:1 on #f1f3f6 — AA+ (was #64748b, 4.28:1 fail on surface-2) */
@@ -334,10 +336,10 @@
   --accent-gold: #9f7b22;
   --accent-gold-soft: rgba(180, 138, 42, 0.08);
   --accent-gold-border: rgba(180, 138, 42, 0.2);
-  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
-  --card-shadow-hover: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
-  --card-shadow-elevated: 0 4px 8px rgba(15, 23, 42, 0.05), 0 16px 40px rgba(15, 23, 42, 0.08);
-  --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(15, 23, 42, 0.04);
+  --card-shadow: 0 1px 1px rgba(15, 23, 42, 0.035), 0 8px 24px rgba(15, 23, 42, 0.035);
+  --card-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 34px rgba(15, 23, 42, 0.065);
+  --card-shadow-elevated: 0 1px 2px rgba(15, 23, 42, 0.06), 0 18px 48px rgba(15, 23, 42, 0.1);
+  --sidebar-shadow: 1px 0 0 var(--ds-border), 10px 0 36px rgba(15, 23, 42, 0.035);
   /* Signal ramps — legal-tech muted trias (clay/amber/jade),
      darkened for AA on the light surfaces (#ffffff / #f1f3f6):
      jade #1d6b54 ≈ 5.1:1, amber #8f5512 ≈ 6.0:1, clay #a8412f ≈ 6.3:1. */
@@ -383,13 +385,15 @@
   --mk-text-muted: var(--ds-text-muted);
   --mk-text-subtle: var(--ds-text-subtle);
 
-  --ds-bg: #0a0c10;
-  --ds-surface: #12151c;
-  --ds-surface-2: #1a1e28;
-  --ds-hover: #283040;
+  --ds-bg: #090b10;
+  --ds-surface: #11151c;
+  --ds-surface-2: #171d27;
+  --ds-hover: #202838;
   --ds-surface-hover: var(--ds-hover);
-  --ds-border: #303644;
-  --ds-border-strong: #454d60;
+  --ds-border: #242b38;
+  --ds-border-strong: #3a4558;
+  --ds-border-hover: #323c4e;
+  --ds-control-border: #5b6a80;
   --ds-text: #eef1f5;
   --ds-text-muted: #9aa5b8; /* AA on #12151c */
   --ds-text-subtle: #8792a6; /* AA on #12151c and #1a1e28 */
@@ -407,10 +411,12 @@
   --accent-gold: #d4b146;
   --accent-gold-soft: rgba(201, 164, 47, 0.1);
   --accent-gold-border: rgba(201, 164, 47, 0.22);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
-  --card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.18);
-  --card-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.25), 0 16px 40px rgba(0, 0, 0, 0.22);
-  --sidebar-shadow: 1px 0 0 var(--ds-border), 6px 0 28px rgba(0, 0, 0, 0.18);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
+  --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
+  --card-shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
+  --sidebar-shadow:
+    1px 0 0 var(--ds-border), 14px 0 48px rgba(0, 0, 0, 0.2),
+    1px 0 0 rgba(255, 255, 255, 0.025) inset;
   /* Signal ramps — legal-tech muted trias (clay/amber/jade).
      Desaturated from the prior vibrant Tailwind tones for a premium,
      legal-grade register. AA-verified on the dark surfaces (#12151c–#1a1e28):
@@ -1709,6 +1715,30 @@ pre {
   box-shadow: var(--sidebar-shadow);
 }
 
+[data-app="dashboard"] .border-\[color\:var\(--ds-border\)\] {
+  border-color: var(--ds-border);
+}
+
+[data-app="dashboard"] .border-\[color\:var\(--ds-border-strong\)\] {
+  border-color: var(--ds-border-strong);
+}
+
+[data-app="dashboard"] input[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"] select[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"] textarea[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"] [role="combobox"][class*="border-[color:var(--ds-border)]"] {
+  border-color: var(--ds-control-border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+}
+
+[data-app="dashboard"][data-theme="light"] input[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"][data-theme="light"] select[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"][data-theme="light"] textarea[class*="border-[color:var(--ds-border)]"],
+[data-app="dashboard"][data-theme="light"]
+  [role="combobox"][class*="border-[color:var(--ds-border)]"] {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
 /* ── Chat message entrance animation ── */
 @keyframes msg-in {
   from {
@@ -1795,8 +1825,9 @@ pre {
 
 [data-app="dashboard"] .dashboard-panel-surface {
   box-shadow:
-    0 24px 80px rgba(3, 7, 18, 0.24),
-    0 2px 8px rgba(3, 7, 18, 0.1);
+    0 1px 0 rgba(255, 255, 255, 0.035) inset,
+    0 28px 88px rgba(3, 7, 18, 0.26),
+    0 2px 8px rgba(3, 7, 18, 0.12);
 }
 
 /* Mobile: eliminate 300ms tap delay and double-tap-to-zoom on interactive elements.
