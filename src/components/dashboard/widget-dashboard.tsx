@@ -4,11 +4,9 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   Briefcase,
   CalendarClock,
   CheckSquare,
-  Clock,
   FileText,
   Inbox,
   Mail,
@@ -302,80 +300,6 @@ function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitDat
   );
 }
 
-function TodayList({
-  cases,
-  criticalDeadlines,
-  inboxCount,
-  reviewCount,
-}: {
-  cases: DashboardPageLike[];
-  criticalDeadlines: ReturnType<typeof useKanzleiCockpitData>["criticalDeadlines"];
-  inboxCount: number;
-  reviewCount: number;
-}) {
-  const { t } = useLang();
-  const tasks = [
-    {
-      href: "/dashboard/deadlines",
-      icon: CalendarClock,
-      label: t("cockpit.task_deadlines"),
-      detail:
-        criticalDeadlines.length > 0
-          ? `${criticalDeadlines.length} ${t("cockpit.task_critical")}`
-          : t("cockpit.task_clear"),
-      urgent: criticalDeadlines.length > 0,
-    },
-    {
-      href: "/dashboard/intake",
-      icon: Inbox,
-      label: t("cockpit.task_inbox"),
-      detail: `${inboxCount} ${t("cockpit.task_items")}`,
-      urgent: inboxCount > 0,
-    },
-    {
-      href: "/dashboard/review-queue",
-      icon: CheckSquare,
-      label: t("cockpit.task_reviews"),
-      detail: `${reviewCount} ${t("cockpit.task_items")}`,
-      urgent: reviewCount > 0,
-    },
-    {
-      href: "/dashboard/cases",
-      icon: Briefcase,
-      label: t("cockpit.task_cases"),
-      detail: `${cases.length} ${t("cockpit.task_active_cases")}`,
-      urgent: false,
-    },
-  ];
-
-  return (
-    <QueuePanel
-      icon={Clock}
-      title={t("cockpit.today_title")}
-      href="/dashboard/workflows"
-      action={t("cockpit.plan")}
-    >
-      <div>
-        {tasks.map((task) => {
-          const Icon = task.icon;
-          return (
-            <QueueRow
-              key={task.href}
-              href={task.href}
-              icon={Icon}
-              title={task.label}
-              meta={task.detail}
-              urgent={task.urgent}
-              badge={task.urgent ? t("cockpit.task_critical") : undefined}
-              badgeVariant="warning"
-            />
-          );
-        })}
-      </div>
-    </QueuePanel>
-  );
-}
-
 function InboxList({ items }: { items: DashboardPageLike[] }) {
   const { t, lang } = useLang();
   return (
@@ -520,56 +444,199 @@ function QuickActions() {
   );
 }
 
-function MetricRail({
+// ── Editorial cockpit hero ────────────────────────────────────────────
+// One dominant focus (critical deadlines) + a curated next-action column,
+// replacing the flat 5-up metric rail. Hierarchy by size/colour, not by
+// adding another identical card.
+
+type DeadlineItem = ReturnType<typeof useKanzleiCockpitData>["deadlines"][number];
+
+function CockpitHero({
+  loading,
+  criticalDeadlines,
+  deadlines,
+  inboxCount,
+  reviewCount,
+  gapsCount,
+}: {
+  loading: boolean;
+  criticalDeadlines: DeadlineItem[];
+  deadlines: DeadlineItem[];
+  inboxCount: number;
+  reviewCount: number;
+  gapsCount: number;
+}) {
+  const { t, lang } = useLang();
+  const hasCritical = criticalDeadlines.length > 0;
+  const lead = hasCritical ? criticalDeadlines[0] : (deadlines[0] ?? null);
+
+  const leadDue = (() => {
+    if (!lead) return null;
+    if (lead.overdue) return t("cockpit.hero_overdue");
+    if (lead.daysLeft === 0) return t("cockpit.hero_due_today");
+    return `${t("cockpit.hero_due_in")} ${lead.daysLeft}T`;
+  })();
+
+  const actions = [
+    {
+      href: "/dashboard/intake",
+      icon: Inbox,
+      label: t("cockpit.na_inbox"),
+      count: inboxCount,
+      urgent: inboxCount > 0,
+    },
+    {
+      href: "/dashboard/review-queue",
+      icon: CheckSquare,
+      label: t("cockpit.na_reviews"),
+      count: reviewCount,
+      urgent: reviewCount > 0,
+    },
+    {
+      href: "/dashboard/vault",
+      icon: FileText,
+      label: t("cockpit.na_gaps"),
+      count: gapsCount,
+      urgent: false,
+    },
+  ].filter((a) => a.count > 0);
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+      <section
+        className={`flex flex-col justify-between rounded-xl border p-5 md:p-6 ${
+          hasCritical
+            ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
+            : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
+        }`}
+      >
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          {hasCritical ? (
+            <AlertTriangle size={17} className="text-[color:var(--ds-danger-text)]" />
+          ) : (
+            <ShieldCheck size={17} className="text-[color:var(--ds-success-text)]" />
+          )}
+          <span
+            className={
+              hasCritical
+                ? "text-[color:var(--ds-danger-text)]"
+                : "text-[color:var(--ds-success-text)]"
+            }
+          >
+            {hasCritical ? t("cockpit.stat_deadlines") : t("cockpit.hero_all_clear")}
+          </span>
+        </div>
+
+        <div className="my-4 flex items-end gap-4">
+          {hasCritical ? (
+            <span className="text-5xl leading-none font-semibold tracking-tight text-[color:var(--ds-danger-text)] tabular-nums md:text-6xl">
+              {loading ? "—" : criticalDeadlines.length}
+            </span>
+          ) : null}
+          <div className="min-w-0 pb-1">
+            {lead ? (
+              <>
+                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                  {text(lead.page.title, t("dashboard.unnamed_deadline"))}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+                  {leadDue ? <span className="font-medium">{leadDue}</span> : null}
+                  {" · "}
+                  {formatDate(lead.due, lang)}
+                  {hasCritical && criticalDeadlines.length > 1
+                    ? ` · ${criticalDeadlines.length - 1} ${t("cockpit.hero_more_critical")}`
+                    : ""}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-[color:var(--ds-text-muted)]">
+                {t("cockpit.hero_all_clear_desc")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/deadlines">
+            <Button size="sm" variant={hasCritical ? "glow" : "outline"}>
+              <CalendarClock size={14} /> {t("cockpit.hero_open")}
+            </Button>
+          </Link>
+          <Link href="/dashboard/drafting">
+            <Button size="sm" variant="outline">
+              <PenTool size={14} /> {t("cockpit.action_draft")}
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+        <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("cockpit.hero_next_action")}
+        </h2>
+        {actions.length === 0 ? (
+          <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">{t("cockpit.na_clear")}</p>
+        ) : (
+          <div>
+            {actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="flex items-center gap-3 border-b border-[color:var(--ds-border)] py-2.5 last:border-b-0 hover:opacity-80"
+                >
+                  <Icon
+                    size={17}
+                    className={
+                      action.urgent
+                        ? "text-[color:var(--ds-warning-text)]"
+                        : "text-[color:var(--ds-text-muted)]"
+                    }
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--ds-text)]">
+                    {action.label}
+                  </span>
+                  <span
+                    className={`text-xs font-semibold tabular-nums ${
+                      action.urgent
+                        ? "text-[color:var(--ds-warning-text)]"
+                        : "text-[color:var(--ds-text-muted)]"
+                    }`}
+                  >
+                    {action.count}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SecondaryStats({
   loading,
   items,
 }: {
   loading: boolean;
-  items: Array<{
-    label: string;
-    value: number;
-    icon: typeof AlertTriangle;
-    description: string;
-    href: string;
-    tone?: "danger" | "warning" | "neutral";
-  }>;
+  items: Array<{ label: string; value: number; href: string }>;
 }) {
   return (
-    <div className="grid gap-px overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] md:grid-cols-5">
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.label}
-            href={item.href}
-            className="group bg-[color:var(--ds-surface)] px-4 py-3 transition-colors hover:bg-[color:var(--ds-hover)]"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate text-xs font-semibold tracking-wide text-[color:var(--ds-text-muted)] uppercase">
-                {item.label}
-              </span>
-              <Icon
-                size={15}
-                className={
-                  item.tone === "danger"
-                    ? "text-[color:var(--ds-danger-text)]"
-                    : item.tone === "warning"
-                      ? "text-[color:var(--ds-warning-text)]"
-                      : "group-hover:brand-text text-[color:var(--ds-text-subtle)]"
-                }
-              />
-            </div>
-            <div className="mt-2 flex items-end gap-2">
-              <span className="text-[2rem] leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
-                {loading ? "—" : item.value}
-              </span>
-              <span className="pb-0.5 text-xs text-[color:var(--ds-text-muted)]">
-                {item.description}
-              </span>
-            </div>
-          </Link>
-        );
-      })}
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] md:grid-cols-4">
+      {items.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          className="bg-[color:var(--ds-surface)] px-4 py-3 transition-colors hover:bg-[color:var(--ds-hover)]"
+        >
+          <span className="truncate text-xs text-[color:var(--ds-text-muted)]">{item.label}</span>
+          <div className="mt-1 text-2xl leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
+            {loading ? "—" : item.value}
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
@@ -580,42 +647,26 @@ export function WidgetDashboard() {
   const openInvoiceCount = data.openInvoices.length;
   const reviewCount = data.pendingReviews.length;
 
-  const statsCards = [
-    {
-      label: t("cockpit.stat_deadlines"),
-      value: data.criticalDeadlines.length,
-      icon: AlertTriangle,
-      description: t("cockpit.stat_deadlines_desc"),
-      href: "/dashboard/deadlines",
-      tone: data.criticalDeadlines.length > 0 ? ("danger" as const) : ("neutral" as const),
-    },
+  const gapsCount = data.unassignedDocs.length + data.reviewGaps.length;
+  const secondaryStats = [
     {
       label: t("cockpit.stat_cases"),
       value: data.activeCases.length,
-      icon: Briefcase,
-      description: t("cockpit.stat_cases_desc"),
       href: "/dashboard/cases",
     },
     {
       label: t("cockpit.stat_inbox"),
       value: data.inboxItems.length,
-      icon: Inbox,
-      description: t("cockpit.stat_inbox_desc"),
       href: "/dashboard/intake",
-      tone: data.inboxItems.length > 0 ? ("warning" as const) : ("neutral" as const),
     },
     {
       label: t("cockpit.stat_reviews"),
       value: reviewCount,
-      icon: CheckSquare,
-      description: t("cockpit.stat_reviews_desc"),
       href: "/dashboard/review-queue",
     },
     {
       label: t("cockpit.stat_billing"),
       value: openInvoiceCount,
-      icon: BarChart3,
-      description: t("cockpit.stat_billing_desc"),
       href: "/dashboard/invoicing",
     },
   ];
@@ -641,16 +692,20 @@ export function WidgetDashboard() {
         </div>
       )}
 
-      <MetricRail loading={data.loading} items={statsCards} />
+      <CockpitHero
+        loading={data.loading}
+        criticalDeadlines={data.criticalDeadlines}
+        deadlines={data.deadlines}
+        inboxCount={data.inboxItems.length}
+        reviewCount={reviewCount}
+        gapsCount={gapsCount}
+      />
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
-        <TodayList
-          cases={data.activeCases}
-          criticalDeadlines={data.criticalDeadlines}
-          inboxCount={data.inboxItems.length}
-          reviewCount={reviewCount}
-        />
+      <SecondaryStats loading={data.loading} items={secondaryStats} />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DeadlineList items={data.deadlines} />
+        <InboxList items={data.inboxItems} />
       </div>
 
       {/* Review-Lücken & Unzugeordnete Dokumente — höher priorisiert als generische Metriken */}
@@ -713,8 +768,7 @@ export function WidgetDashboard() {
 
       <QuickActions />
 
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <InboxList items={data.inboxItems} />
+      <div className="grid gap-6 lg:grid-cols-2">
         <ActiveCasesList cases={data.activeCases} />
         <QueuePanel
           icon={ShieldCheck}

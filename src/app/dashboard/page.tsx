@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Briefcase, CalendarClock, Inbox, Upload } from "lucide-react";
+import { Briefcase, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
@@ -101,16 +101,6 @@ export default function DashboardPage() {
                 {degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
               </Badge>
             )}
-            <Link href="/dashboard/deadlines">
-              <Button size="sm" variant="outline">
-                <CalendarClock size={14} /> {t("cockpit.action_deadline")}
-              </Button>
-            </Link>
-            <Link href="/dashboard/intake">
-              <Button size="sm" variant="outline">
-                <Inbox size={14} /> {t("cockpit.action_intake")}
-              </Button>
-            </Link>
             <Link href="/dashboard/cases/new">
               <Button size="sm" variant="glow">
                 <Briefcase size={14} /> {t("cockpit.action_case")}

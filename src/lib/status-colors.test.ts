@@ -8,7 +8,14 @@ import {
 } from "./status-colors";
 
 const ALL_COLORS: StatusColor[] = [
-  "blue", "amber", "red", "rose", "emerald", "violet", "orange", "gray",
+  "blue",
+  "amber",
+  "red",
+  "rose",
+  "emerald",
+  "violet",
+  "orange",
+  "gray",
 ];
 
 describe("STATUS_TEXT", () => {
@@ -23,9 +30,15 @@ describe("STATUS_TEXT", () => {
     expect(STATUS_TEXT.violet).toBe("brand-text");
   });
 
-  test("non-violet colors use Tailwind text classes", () => {
-    expect(STATUS_TEXT.blue).toBe("text-blue-400");
-    expect(STATUS_TEXT.red).toBe("text-red-400");
+  test("semantic colors route through --ds-* signal tokens (AA in light + dark)", () => {
+    expect(STATUS_TEXT.blue).toBe("text-[color:var(--ds-info-text)]");
+    expect(STATUS_TEXT.red).toBe("text-[color:var(--ds-danger-text)]");
+    expect(STATUS_TEXT.amber).toBe("text-[color:var(--ds-warning-text)]");
+    expect(STATUS_TEXT.emerald).toBe("text-[color:var(--ds-success-text)]");
+  });
+
+  test("categorical colors keep raw Tailwind text classes", () => {
+    expect(STATUS_TEXT.rose).toBe("text-rose-400");
     expect(STATUS_TEXT.gray).toBe("text-gray-400");
   });
 });
@@ -42,9 +55,14 @@ describe("STATUS_BG", () => {
     expect(STATUS_BG.violet).toBe("brand-soft");
   });
 
-  test("non-violet colors use Tailwind bg classes with opacity", () => {
-    expect(STATUS_BG.blue).toBe("bg-blue-500/10");
-    expect(STATUS_BG.amber).toBe("bg-amber-500/10");
+  test("semantic colors route through --ds-* signal bg tokens", () => {
+    expect(STATUS_BG.blue).toBe("bg-[color:var(--ds-info-bg)]");
+    expect(STATUS_BG.amber).toBe("bg-[color:var(--ds-warning-bg)]");
+  });
+
+  test("categorical colors keep raw Tailwind bg classes with opacity", () => {
+    expect(STATUS_BG.rose).toBe("bg-rose-500/10");
+    expect(STATUS_BG.orange).toBe("bg-orange-500/10");
   });
 });
 
@@ -60,9 +78,14 @@ describe("STATUS_BORDER", () => {
     expect(STATUS_BORDER.violet).toBe("brand-border");
   });
 
-  test("non-violet colors use Tailwind border classes with opacity", () => {
-    expect(STATUS_BORDER.red).toBe("border-red-500/20");
-    expect(STATUS_BORDER.emerald).toBe("border-emerald-500/20");
+  test("semantic colors route through --ds-* signal border tokens", () => {
+    expect(STATUS_BORDER.red).toBe("border-[color:var(--ds-danger-border)]");
+    expect(STATUS_BORDER.emerald).toBe("border-[color:var(--ds-success-border)]");
+  });
+
+  test("categorical colors keep raw Tailwind border classes with opacity", () => {
+    expect(STATUS_BORDER.rose).toBe("border-rose-500/20");
+    expect(STATUS_BORDER.orange).toBe("border-orange-500/20");
   });
 });
 

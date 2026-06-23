@@ -19,6 +19,7 @@ import {
   Settings,
   Mail,
   FolderOpen,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -50,7 +51,7 @@ const TABS: TabItem[] = [
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
-  return pathname.startsWith(href);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function MobileTabBar({
@@ -198,11 +199,7 @@ export function MobileTabBar({
               <MoreSheetLink href="/dashboard/brain" icon={Brain} label={t("nav.brain")} />
               <MoreSheetLink href="/dashboard/bea" icon={Mail} label={t("nav.bea")} />
               <MoreSheetLink href="/dashboard/vault" icon={FolderOpen} label={t("nav.vault")} />
-              <MoreSheetLink
-                href="/dashboard/deadlines"
-                icon={CalendarClock}
-                label={t("nav.deadlines")}
-              />
+              <MoreSheetLink href="/dashboard/upload" icon={Upload} label={t("nav.upload")} />
               <MoreSheetLink href="/dashboard/settings" icon={Settings} label={t("nav.settings")} />
             </div>
           </div>
