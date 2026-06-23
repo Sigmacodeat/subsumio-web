@@ -607,171 +607,163 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             </div>
 
             {/* Collapsed: flat icon list */}
-            <div
-              className={cn(
-                "mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4 transition-[opacity] duration-200 ease-[var(--ds-ease-smooth)]",
-                collapsed ? "opacity-100" : "pointer-events-none absolute opacity-0"
-              )}
-            >
-              {accordionSections
-                .flatMap((section) => section.items)
-                .filter((item, index, allItems) => {
-                  if (item.comingSoon) return false;
-                  if (PRIMARY_ITEMS.some((primary) => primary.href === item.href)) return false;
-                  return allItems.findIndex((candidate) => candidate.href === item.href) === index;
-                })
-                .map((item) => {
-                  const Icon = item.icon;
-                  const active = isActiveHref(pathname, item.href);
-                  return (
-                    <Link
-                      key={`collapsed-${item.href}`}
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      aria-label={t(item.labelKey)}
-                      onClick={() => setMobileOpen(false)}
-                      title={t(item.labelKey)}
-                      className={cn(
-                        "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                        active
-                          ? "brand-soft brand-text font-semibold"
-                          : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                      )}
-                    >
-                      <Icon size={17} className="shrink-0" />
-                    </Link>
-                  );
-                })}
-            </div>
-            {/* Expanded: accordion sections */}
-            <div
-              className={cn(
-                "mt-4 space-y-2 transition-[opacity] duration-200 ease-[var(--ds-ease-smooth)]",
-                collapsed ? "pointer-events-none absolute opacity-0" : "opacity-100"
-              )}
-            >
-              {accordionSections.map((section) => {
-                const isOpen = openSection === section.titleKey;
-                const sectionActive = section.items.some((item) =>
-                  isActiveHref(pathname, item.href)
-                );
-                const SectionIcon = section.items[0]?.icon ?? FolderOpen;
-                const panelId = sectionDomId(section.titleKey);
-                return (
-                  <div
-                    key={section.titleKey}
-                    className={cn(
-                      "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)]",
-                      section.titleKey === "nav.section.admin"
-                        ? "border-[color:var(--ds-border)] bg-transparent"
-                        : "border-transparent",
-                      isOpen
-                        ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm"
-                        : sectionActive
-                          ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
-                          : "hover:bg-[color:var(--ds-hover)]"
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleSection(section.titleKey)}
-                      className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
-                      aria-expanded={isOpen}
-                      aria-controls={panelId}
-                    >
-                      <SectionIcon
-                        size={16}
+            {collapsed && (
+              <div className="mt-4 space-y-1 border-t border-[color:var(--ds-border)] pt-4">
+                {accordionSections
+                  .flatMap((section) => section.items)
+                  .filter((item, index, allItems) => {
+                    if (item.comingSoon) return false;
+                    if (PRIMARY_ITEMS.some((primary) => primary.href === item.href)) return false;
+                    return (
+                      allItems.findIndex((candidate) => candidate.href === item.href) === index
+                    );
+                  })
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const active = isActiveHref(pathname, item.href);
+                    return (
+                      <Link
+                        key={`collapsed-${item.href}`}
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        aria-label={t(item.labelKey)}
+                        onClick={() => setMobileOpen(false)}
+                        title={t(item.labelKey)}
                         className={cn(
-                          "shrink-0 transition-colors",
-                          sectionActive || isOpen
-                            ? "brand-text"
-                            : "text-[color:var(--ds-text-muted)]"
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          "min-w-0 flex-1 truncate",
-                          sectionActive || isOpen
-                            ? "text-[color:var(--ds-text)]"
-                            : "text-[color:var(--ds-text-muted)]"
+                          "relative flex h-10 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                          active
+                            ? "brand-soft brand-text font-semibold"
+                            : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                         )}
                       >
-                        {t(section.titleKey)}
-                      </span>
-                      {sectionActive && !isOpen && (
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]"
-                          aria-hidden
-                        />
-                      )}
-                      <ChevronDown
-                        size={14}
-                        className={cn(
-                          "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[220ms] ease-[var(--ds-ease-smooth)]",
-                          isOpen && "rotate-180"
-                        )}
-                      />
-                    </button>
+                        <Icon size={17} className="shrink-0" />
+                      </Link>
+                    );
+                  })}
+              </div>
+            )}
+            {/* Expanded: accordion sections */}
+            {!collapsed && (
+              <div className="mt-4 space-y-2">
+                {accordionSections.map((section) => {
+                  const isOpen = openSection === section.titleKey;
+                  const sectionActive = section.items.some((item) =>
+                    isActiveHref(pathname, item.href)
+                  );
+                  const SectionIcon = section.items[0]?.icon ?? FolderOpen;
+                  const panelId = sectionDomId(section.titleKey);
+                  return (
                     <div
-                      id={panelId}
+                      key={section.titleKey}
                       className={cn(
-                        "grid transition-[grid-template-rows,opacity] duration-[220ms] ease-[var(--ds-ease-smooth)] will-change-[grid-template-rows]",
+                        "rounded-lg border transition-[background-color,border-color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)]",
+                        section.titleKey === "nav.section.admin"
+                          ? "border-[color:var(--ds-border)] bg-transparent"
+                          : "border-transparent",
                         isOpen
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "pointer-events-none grid-rows-[0fr] opacity-0"
+                          ? "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] shadow-sm"
+                          : sectionActive
+                            ? "brand-border brand-soft bg-[color:var(--ds-surface)]"
+                            : "hover:bg-[color:var(--ds-hover)]"
                       )}
                     >
-                      <div className="overflow-hidden">
-                        <div className="space-y-0.5 px-2 pb-2">
-                          {section.items.map((item) => {
-                            const Icon = item.icon;
-                            if (item.comingSoon) {
-                              return (
-                                <button
-                                  key={item.href}
-                                  disabled
-                                  className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none"
-                                  aria-disabled="true"
-                                >
-                                  <Icon size={16} className="shrink-0 opacity-50" />
-                                  <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                                    <span className="truncate">{t(item.labelKey)}</span>
-                                    <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
-                                      {t("sidebar.coming_soon")}
+                      <button
+                        type="button"
+                        onClick={() => toggleSection(section.titleKey)}
+                        className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                      >
+                        <SectionIcon
+                          size={16}
+                          className={cn(
+                            "shrink-0 transition-colors",
+                            sectionActive || isOpen
+                              ? "brand-text"
+                              : "text-[color:var(--ds-text-muted)]"
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "min-w-0 flex-1 truncate",
+                            sectionActive || isOpen
+                              ? "text-[color:var(--ds-text)]"
+                              : "text-[color:var(--ds-text-muted)]"
+                          )}
+                        >
+                          {t(section.titleKey)}
+                        </span>
+                        {sectionActive && !isOpen && (
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]"
+                            aria-hidden
+                          />
+                        )}
+                        <ChevronDown
+                          size={14}
+                          className={cn(
+                            "shrink-0 text-[color:var(--ds-text-subtle)] transition-transform duration-[220ms] ease-[var(--ds-ease-smooth)]",
+                            isOpen && "rotate-180"
+                          )}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div id={panelId} className="overflow-hidden">
+                          <div
+                            className="space-y-0.5 px-2 pb-2"
+                            role="group"
+                            aria-label={t(section.titleKey)}
+                          >
+                            {section.items.map((item) => {
+                              const Icon = item.icon;
+                              if (item.comingSoon) {
+                                return (
+                                  <button
+                                    key={item.href}
+                                    disabled
+                                    className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none"
+                                    aria-disabled="true"
+                                  >
+                                    <Icon size={16} className="shrink-0 opacity-50" />
+                                    <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                      <span className="truncate">{t(item.labelKey)}</span>
+                                      <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
+                                        {t("sidebar.coming_soon")}
+                                      </span>
                                     </span>
+                                  </button>
+                                );
+                              }
+                              const active = isActiveHref(pathname, item.href);
+                              return (
+                                <Link
+                                  key={item.href}
+                                  href={item.href}
+                                  aria-current={active ? "page" : undefined}
+                                  onClick={() => setMobileOpen(false)}
+                                  title={t(item.labelKey)}
+                                  className={cn(
+                                    "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                                    active
+                                      ? "brand-soft brand-text font-semibold"
+                                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                                  )}
+                                >
+                                  <Icon size={16} className="shrink-0" />
+                                  <span className="min-w-0 flex-1 truncate">
+                                    {highlightMatch(t(item.labelKey), searchQuery)}
                                   </span>
-                                </button>
+                                </Link>
                               );
-                            }
-                            const active = isActiveHref(pathname, item.href);
-                            return (
-                              <Link
-                                key={item.href}
-                                href={item.href}
-                                aria-current={active ? "page" : undefined}
-                                onClick={() => setMobileOpen(false)}
-                                title={t(item.labelKey)}
-                                className={cn(
-                                  "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                                  active
-                                    ? "brand-soft brand-text font-semibold"
-                                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                                )}
-                              >
-                                <Icon size={16} className="shrink-0" />
-                                <span className="min-w-0 flex-1 truncate">
-                                  {highlightMatch(t(item.labelKey), searchQuery)}
-                                </span>
-                              </Link>
-                            );
-                          })}
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </nav>
 
           {/* Dream Cycle indicator — compact */}
