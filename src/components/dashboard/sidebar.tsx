@@ -721,7 +721,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           : "pointer-events-none grid-rows-[0fr] opacity-0"
                       )}
                     >
-                      <div className="overflow-hidden" style={{ contain: "strict" }}>
+                      <div className="overflow-hidden">
                         <div className="space-y-0.5 px-2 pb-2">
                           {section.items.map((item) => {
                             const Icon = item.icon;
