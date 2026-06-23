@@ -619,7 +619,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         role="dialog"
         aria-label={t("copilot.title")}
         aria-modal={mobileOpen ? "true" : undefined}
-        aria-hidden={!mobileOpen}
         {...(!mobileOpen ? { inert: true } : {})}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
@@ -707,7 +706,6 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         )}
         style={{ width: panelWidth }}
         aria-label={t("copilot.title")}
-        aria-hidden={!open}
         {...(!open ? { inert: true } : {})}
       >
         {/* Resize handle — drag to resize panel width */}

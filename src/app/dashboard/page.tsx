@@ -72,7 +72,10 @@ export default function DashboardPage() {
               <Badge variant="accent" className="text-xs">
                 {t("cockpit.today_title")}
               </Badge>
-              <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+              <span
+                className="text-xs font-medium text-[color:var(--ds-text-muted)]"
+                suppressHydrationWarning
+              >
                 {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
                   weekday: "long",
                   day: "2-digit",
