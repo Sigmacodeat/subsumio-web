@@ -89,6 +89,13 @@ const SIDEBAR_PANEL_TRANSITION: Transition = {
   mass: 0.72,
 };
 
+const SIDEBAR_SHELL_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 430,
+  damping: 42,
+  mass: 0.82,
+};
+
 const SIDEBAR_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -331,16 +338,21 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     userEmail,
     brainReachable,
   },
-  _ref
+  ref
 ) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>(DEFAULT_OPEN_SECTIONS);
+  const [isDesktop, setIsDesktop] = useState(false);
   const reduceMotion = useReducedMotion();
   const { t, lang } = useLang();
   const sidebarPanelTransition = reduceMotion
     ? SIDEBAR_REDUCED_TRANSITION
     : SIDEBAR_PANEL_TRANSITION;
+  const sidebarShellTransition = reduceMotion
+    ? SIDEBAR_REDUCED_TRANSITION
+    : SIDEBAR_SHELL_TRANSITION;
+  const sidebarWidth = collapsed && isDesktop ? 64 : 256;
 
   const brainStatusLabel =
     brainReachable === true
@@ -374,6 +386,22 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
     }
     return sections;
   }, [filteredSections, filteredBottomItems]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      setIsDesktop(false);
+      return;
+    }
+    const media = window.matchMedia("(min-width: 768px)");
+    const syncDesktop = () => setIsDesktop(media.matches);
+    syncDesktop();
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", syncDesktop);
+      return () => media.removeEventListener("change", syncDesktop);
+    }
+    media.addListener(syncDesktop);
+    return () => media.removeListener(syncDesktop);
+  }, []);
 
   useEffect(() => {
     const activeSection = findActiveSection(pathname, [...NAV_SECTIONS, ADMIN_SECTION]);
@@ -414,11 +442,16 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   };
 
   return (
-    <aside
+    <motion.aside
+      ref={ref}
+      initial={false}
+      animate={{
+        width: sidebarWidth,
+      }}
+      transition={sidebarShellTransition}
       className={cn(
-        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-[width,transform] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[width,transform] motion-reduce:transition-none",
-        "fixed inset-y-0 left-0 w-64 md:static",
-        collapsed ? "md:w-16" : "md:w-64",
+        "sidebar-shadow z-50 shrink-0 overflow-hidden border-r border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] transition-transform duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[width,transform] motion-reduce:transition-none",
+        "fixed inset-y-0 left-0 md:static",
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}
       onKeyDown={(e) => {
@@ -848,6 +881,6 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           </button>
         </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 });
