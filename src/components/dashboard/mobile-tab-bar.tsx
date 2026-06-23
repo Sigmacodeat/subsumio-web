@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   LayoutDashboard,
   Briefcase,
@@ -49,6 +50,20 @@ const TABS: TabItem[] = [
   { href: "/dashboard/intake", icon: Inbox, labelKey: "nav.intake" },
 ];
 
+const MOBILE_SHEET_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 430,
+  damping: 42,
+  mass: 0.82,
+};
+const MOBILE_SOFT_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 560,
+  damping: 42,
+  mass: 0.64,
+};
+const MOBILE_REDUCED_TRANSITION: Transition = { duration: 0 };
+
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -66,6 +81,9 @@ export function MobileTabBar({
   const { t } = useLang();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const sheetTransition = reduceMotion ? MOBILE_REDUCED_TRANSITION : MOBILE_SHEET_TRANSITION;
+  const softTransition = reduceMotion ? MOBILE_REDUCED_TRANSITION : MOBILE_SOFT_TRANSITION;
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -110,22 +128,34 @@ export function MobileTabBar({
   return (
     <>
       {/* More-sheet overlay */}
-      <div
+      <motion.div
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ease-[var(--ds-ease-smooth)] md:hidden",
-          moreOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          "fixed inset-0 z-50 bg-black/30 md:hidden",
+          !moreOpen && "pointer-events-none"
         )}
+        initial={false}
+        animate={{
+          opacity: moreOpen ? 1 : 0,
+          backdropFilter: moreOpen && !reduceMotion ? "blur(8px)" : "blur(0px)",
+        }}
+        transition={sheetTransition}
         onClick={() => setMoreOpen(false)}
         aria-hidden
       />
 
       {/* More-sheet — slides up from bottom */}
-      <div
+      <motion.div
         ref={moreRef}
         className={cn(
-          "fixed right-0 bottom-0 left-0 z-50 transform transition-transform duration-300 ease-[var(--ds-ease-smooth)] md:hidden",
-          moreOpen ? "translate-y-0" : "pointer-events-none translate-y-full"
+          "fixed right-0 bottom-0 left-0 z-50 md:hidden",
+          !moreOpen && "pointer-events-none"
         )}
+        initial={false}
+        animate={{
+          y: moreOpen ? 0 : "100%",
+          opacity: moreOpen ? 1 : 0.98,
+        }}
+        transition={sheetTransition}
         role="dialog"
         aria-label="Mehr Aktionen"
         aria-modal={moreOpen ? "true" : undefined}
@@ -204,7 +234,7 @@ export function MobileTabBar({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Bottom tab bar */}
       <nav
@@ -256,8 +286,10 @@ export function MobileTabBar({
           })}
 
           {/* Copilot tab */}
-          <button
+          <motion.button
             onClick={onCopilotToggle}
+            whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+            transition={softTransition}
             aria-label="Copilot"
             role="tab"
             aria-selected={copilotActive}
@@ -279,11 +311,18 @@ export function MobileTabBar({
               )}
             </div>
             <span className="text-xs leading-none font-medium">Copilot</span>
-          </button>
+          </motion.button>
 
           {/* More tab — opens more-sheet */}
-          <button
-            onClick={() => setMoreOpen(true)}
+          <motion.button
+            onClick={() => {
+              if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                navigator.vibrate(8);
+              }
+              setMoreOpen(true);
+            }}
+            whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+            transition={softTransition}
             aria-label="Mehr Aktionen"
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
@@ -297,7 +336,7 @@ export function MobileTabBar({
           >
             <MoreHorizontal size={22} className="shrink-0" strokeWidth={moreOpen ? 2.5 : 2} />
             <span className="text-xs leading-none font-medium">Mehr</span>
-          </button>
+          </motion.button>
         </div>
       </nav>
     </>
@@ -316,8 +355,9 @@ function MoreSheetButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      whileTap={{ scale: 0.96 }}
       className={cn(
         "flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)]",
         active
@@ -329,7 +369,7 @@ function MoreSheetButton({
         <Icon size={20} />
       </div>
       <span className="text-xs leading-none font-medium">{label}</span>
-    </button>
+    </motion.button>
   );
 }
 

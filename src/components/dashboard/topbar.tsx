@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   Search,
   Bell,
@@ -33,6 +34,14 @@ import { csrfFetch } from "@/lib/csrf";
 import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
+
+const TOPBAR_POPOVER_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 42,
+  mass: 0.72,
+};
+const TOPBAR_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 interface TopbarProps {
   theme: Theme;
@@ -72,6 +81,11 @@ export function Topbar({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const brainRef = useRef<HTMLDivElement>(null);
   const { t, lang, setLang } = useLang();
+  const reduceMotion = useReducedMotion();
+  const popoverTransition = reduceMotion ? TOPBAR_REDUCED_TRANSITION : TOPBAR_POPOVER_TRANSITION;
+  const popoverInitial = reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 };
+  const popoverAnimate = { opacity: 1, y: 0, scale: 1 };
+  const popoverExit = reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 };
 
   // Debounce search query for live results
   useEffect(() => {
@@ -345,40 +359,46 @@ export function Topbar({
             className={`shrink-0 transition-transform ${brainOpen ? "rotate-180" : ""}`}
           />
         </button>
-        {brainOpen && (
-          <div
-            className="card-shadow-elevated absolute top-9 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
-            role="listbox"
-            aria-label={t("topbar.brain_selector_aria")}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setBrainActiveIdx((i) => Math.min(i + 1, brains.length - 1));
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setBrainActiveIdx((i) => Math.max(i - 1, 0));
-              } else if (e.key === "Enter") {
-                e.preventDefault();
-                selectBrainIdx(brainActiveIdx);
-              }
-            }}
-          >
-            {brains.map((b, i) => (
-              <button
-                key={b.slug}
-                onClick={() => selectBrainIdx(i)}
-                onMouseEnter={() => setBrainActiveIdx(i)}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                role="option"
-                aria-selected={b.slug === activeBrain?.slug}
-              >
-                <BrainIcon size={14} className="shrink-0" />
-                <span className="flex-1 truncate">{b.name}</span>
-                {b.slug === activeBrain?.slug && <Check size={13} className="shrink-0" />}
-              </button>
-            ))}
-          </div>
-        )}
+        <AnimatePresence initial={false}>
+          {brainOpen && (
+            <motion.div
+              className="card-shadow-elevated absolute top-9 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1"
+              role="listbox"
+              aria-label={t("topbar.brain_selector_aria")}
+              initial={popoverInitial}
+              animate={popoverAnimate}
+              exit={popoverExit}
+              transition={popoverTransition}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setBrainActiveIdx((i) => Math.min(i + 1, brains.length - 1));
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setBrainActiveIdx((i) => Math.max(i - 1, 0));
+                } else if (e.key === "Enter") {
+                  e.preventDefault();
+                  selectBrainIdx(brainActiveIdx);
+                }
+              }}
+            >
+              {brains.map((b, i) => (
+                <button
+                  key={b.slug}
+                  onClick={() => selectBrainIdx(i)}
+                  onMouseEnter={() => setBrainActiveIdx(i)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${i === brainActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                  role="option"
+                  aria-selected={b.slug === activeBrain?.slug}
+                >
+                  <BrainIcon size={14} className="shrink-0" />
+                  <span className="flex-1 truncate">{b.name}</span>
+                  {b.slug === activeBrain?.slug && <Check size={13} className="shrink-0" />}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -446,63 +466,71 @@ export function Topbar({
           <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
           </kbd>
-          {searchOpen && searchQuery.trim().length >= 2 && (
-            <div
-              id="topbar-search-results"
-              className="card-shadow-elevated absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              role="listbox"
-              aria-label={t("topbar.search_aria")}
-            >
-              {searchResults.isLoading ? (
-                <div className="flex items-center gap-2 px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
-                  <Loader2 size={13} className="animate-spin" /> {t("topbar.search_loading")}
-                </div>
-              ) : searchItems.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
-                  {t("topbar.search_no_results")} „{searchQuery}“
-                </div>
-              ) : (
-                <>
-                  {searchItems.map((item, i) => (
-                    <button
-                      key={item.slug}
-                      onClick={() => {
-                        router.push(`/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`);
-                        setSearchQuery("");
-                        setSearchOpen(false);
-                      }}
-                      onMouseEnter={() => setSearchActiveIdx(i)}
-                      className={`flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${i === searchActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
-                      role="option"
-                      aria-selected={i === searchActiveIdx}
-                    >
-                      <Search size={13} className="mt-0.5 shrink-0 opacity-50" />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{item.title}</div>
-                        {item.snippet && (
-                          <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                            {item.snippet}
-                          </div>
-                        )}
-                      </div>
-                      {i === searchActiveIdx && (
-                        <CornerDownLeft
-                          size={12}
-                          className="shrink-0 text-[color:var(--ds-text-subtle)]"
-                        />
-                      )}
-                    </button>
-                  ))}
-                  <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
-                    <span>{t("topbar.search_enter_all")}</span>
-                    <span>
-                      {searchItems.length} {t("topbar.search_hits")}
-                    </span>
+          <AnimatePresence initial={false}>
+            {searchOpen && searchQuery.trim().length >= 2 && (
+              <motion.div
+                id="topbar-search-results"
+                className="card-shadow-elevated absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="listbox"
+                aria-label={t("topbar.search_aria")}
+                initial={popoverInitial}
+                animate={popoverAnimate}
+                exit={popoverExit}
+                transition={popoverTransition}
+              >
+                {searchResults.isLoading ? (
+                  <div className="flex items-center gap-2 px-4 py-3 text-xs text-[color:var(--ds-text-muted)]">
+                    <Loader2 size={13} className="animate-spin" /> {t("topbar.search_loading")}
                   </div>
-                </>
-              )}
-            </div>
-          )}
+                ) : searchItems.length === 0 ? (
+                  <div className="px-4 py-3 text-xs text-[color:var(--ds-text-subtle)]">
+                    {t("topbar.search_no_results")} „{searchQuery}“
+                  </div>
+                ) : (
+                  <>
+                    {searchItems.map((item, i) => (
+                      <button
+                        key={item.slug}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/brain?q=${encodeURIComponent(searchQuery.trim())}`
+                          );
+                          setSearchQuery("");
+                          setSearchOpen(false);
+                        }}
+                        onMouseEnter={() => setSearchActiveIdx(i)}
+                        className={`flex w-full items-start gap-2.5 px-4 py-2.5 text-left transition-colors ${i === searchActiveIdx ? "brand-soft brand-text" : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"}`}
+                        role="option"
+                        aria-selected={i === searchActiveIdx}
+                      >
+                        <Search size={13} className="mt-0.5 shrink-0 opacity-50" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">{item.title}</div>
+                          {item.snippet && (
+                            <div className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                              {item.snippet}
+                            </div>
+                          )}
+                        </div>
+                        {i === searchActiveIdx && (
+                          <CornerDownLeft
+                            size={12}
+                            className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                          />
+                        )}
+                      </button>
+                    ))}
+                    <div className="flex items-center justify-between border-t border-[color:var(--ds-border)] px-4 py-2 text-xs text-[color:var(--ds-text-subtle)]">
+                      <span>{t("topbar.search_enter_all")}</span>
+                      <span>
+                        {searchItems.length} {t("topbar.search_hits")}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         {/* Mobile search icon — opens command palette via ⌘K simulation */}
         <button
@@ -570,99 +598,105 @@ export function Topbar({
               </span>
             )}
           </button>
-          {notifOpen && (
-            <div
-              className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              role="menu"
-              aria-label={t("topbar.notifications")}
-            >
-              <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                  {t("topbar.notifications")}
-                </span>
-                <div className="flex items-center gap-2">
-                  {unreadCount > 0 && (
+          <AnimatePresence initial={false}>
+            {notifOpen && (
+              <motion.div
+                className="card-shadow-elevated absolute top-12 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="menu"
+                aria-label={t("topbar.notifications")}
+                initial={popoverInitial}
+                animate={popoverAnimate}
+                exit={popoverExit}
+                transition={popoverTransition}
+              >
+                <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                  <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {t("topbar.notifications")}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllRead}
+                        disabled={loadingNotifs}
+                        className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                      >
+                        {t("topbar.mark_all_read")}
+                      </button>
+                    )}
                     <button
-                      onClick={markAllRead}
-                      disabled={loadingNotifs}
-                      className="brand-text text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                      onClick={() => setNotifOpen(false)}
+                      className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                      aria-label={t("topbar.close")}
                     >
-                      {t("topbar.mark_all_read")}
+                      <X size={18} />
                     </button>
-                  )}
-                  <button
-                    onClick={() => setNotifOpen(false)}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                    aria-label={t("topbar.close")}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-              <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
-                {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <Bell
-                      size={20}
-                      className="mb-3 text-[color:var(--ds-border-strong)]"
-                      aria-hidden
-                    />
-                    <p className="text-xs text-[color:var(--ds-text-muted)]">
-                      {t("topbar.no_notifications")}
-                    </p>
                   </div>
-                ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      role="menuitem"
-                      tabIndex={0}
-                      className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
-                            {n.title}
-                          </div>
-                          <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-                            {n.message}
-                          </div>
-                        </div>
-                        {!n.read && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (n.id.startsWith("dl-")) {
-                                // Inline deadline notification — mark locally
-                                setReadInlineIds((prev) => new Set(prev).add(n.id));
-                                return;
-                              }
-                              try {
-                                await csrfFetch("/api/notifications", {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ id: n.id }),
-                                });
-                                setApiNotifications((prev) =>
-                                  prev.map((item) =>
-                                    item.id === n.id ? { ...item, read: true } : item
-                                  )
-                                );
-                              } catch {}
-                            }}
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
-                            aria-label={t("topbar.mark_read")}
-                          >
-                            <Check size={12} />
-                          </button>
-                        )}
-                      </div>
+                </div>
+                <div className="max-h-80 space-y-1.5 overflow-y-auto p-2">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <Bell
+                        size={20}
+                        className="mb-3 text-[color:var(--ds-border-strong)]"
+                        aria-hidden
+                      />
+                      <p className="text-xs text-[color:var(--ds-text-muted)]">
+                        {t("topbar.no_notifications")}
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        role="menuitem"
+                        tabIndex={0}
+                        className={`rounded-lg border p-3 focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none ${n.type === "deadline" ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]" : n.type === "dream" ? "brand-border brand-soft" : n.type === "mention" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : n.type === "reply" ? "border-[color:var(--ds-info-border)] bg-[color:var(--ds-info-bg)]" : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs leading-snug font-medium text-[color:var(--ds-text)]">
+                              {n.title}
+                            </div>
+                            <div className="mt-1 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
+                              {n.message}
+                            </div>
+                          </div>
+                          {!n.read && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (n.id.startsWith("dl-")) {
+                                  // Inline deadline notification — mark locally
+                                  setReadInlineIds((prev) => new Set(prev).add(n.id));
+                                  return;
+                                }
+                                try {
+                                  await csrfFetch("/api/notifications", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: n.id }),
+                                  });
+                                  setApiNotifications((prev) =>
+                                    prev.map((item) =>
+                                      item.id === n.id ? { ...item, read: true } : item
+                                    )
+                                  );
+                                } catch {}
+                              }}
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+                              aria-label={t("topbar.mark_read")}
+                            >
+                              <Check size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <div className="hidden md:block">
           <BrainSelector />
@@ -690,95 +724,105 @@ export function Topbar({
             </div>
             <ChevronDown size={14} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
           </button>
-          {userMenuOpen && (
-            <div
-              className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-              role="menu"
-              aria-label={t("topbar.user_menu")}
-            >
-              <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
-                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                  {userName ?? t("topbar.user_fallback")}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
-                  {userEmail ?? ""}
-                </p>
-              </div>
-              <div className="p-1.5">
-                <Link
-                  href="/dashboard/settings"
-                  onClick={() => setUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                  role="menuitem"
-                >
-                  <Settings size={15} className="shrink-0" />
-                  {t("topbar.settings")}
-                </Link>
-                <button
-                  onClick={() => {
-                    toggleTheme();
-                    setUserMenuOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                  role="menuitem"
-                >
-                  {theme === "dark" ? (
-                    <Sun size={15} className="shrink-0" />
-                  ) : (
-                    <Moon size={15} className="shrink-0" />
-                  )}
-                  {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
-                </button>
-                {/* Language switcher */}
-                <div className="px-3 py-2" role="menuitem" aria-label={t("topbar.language_switch")}>
-                  <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                    <Languages size={13} className="shrink-0" />
-                    {t("topbar.language")}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => {
-                        setLang("de");
-                        setUserMenuOpen(false);
-                      }}
-                      className={cn(
-                        "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                        lang === "de"
-                          ? "brand-soft brand-text brand-border"
-                          : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                      )}
-                      aria-pressed={lang === "de"}
-                    >
-                      DE
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLang("en");
-                        setUserMenuOpen(false);
-                      }}
-                      className={cn(
-                        "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
-                        lang === "en"
-                          ? "brand-soft brand-text brand-border"
-                          : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-                      )}
-                      aria-pressed={lang === "en"}
-                    >
-                      EN
-                    </button>
-                  </div>
+          <AnimatePresence initial={false}>
+            {userMenuOpen && (
+              <motion.div
+                className="card-shadow-elevated absolute top-12 right-0 z-50 w-56 overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
+                role="menu"
+                aria-label={t("topbar.user_menu")}
+                initial={popoverInitial}
+                animate={popoverAnimate}
+                exit={popoverExit}
+                transition={popoverTransition}
+              >
+                <div className="border-b border-[color:var(--ds-border)] px-4 py-3.5">
+                  <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                    {userName ?? t("topbar.user_fallback")}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-subtle)]">
+                    {userEmail ?? ""}
+                  </p>
                 </div>
-                <button
-                  onClick={logout}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
-                  role="menuitem"
-                >
-                  <LogOut size={15} className="shrink-0" />
-                  {t("topbar.logout")}
-                </button>
-              </div>
-            </div>
-          )}
+                <div className="p-1.5">
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    role="menuitem"
+                  >
+                    <Settings size={15} className="shrink-0" />
+                    {t("topbar.settings")}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      toggleTheme();
+                      setUserMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                    role="menuitem"
+                  >
+                    {theme === "dark" ? (
+                      <Sun size={15} className="shrink-0" />
+                    ) : (
+                      <Moon size={15} className="shrink-0" />
+                    )}
+                    {theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
+                  </button>
+                  {/* Language switcher */}
+                  <div
+                    className="px-3 py-2"
+                    role="menuitem"
+                    aria-label={t("topbar.language_switch")}
+                  >
+                    <div className="mb-1.5 flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                      <Languages size={13} className="shrink-0" />
+                      {t("topbar.language")}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => {
+                          setLang("de");
+                          setUserMenuOpen(false);
+                        }}
+                        className={cn(
+                          "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+                          lang === "de"
+                            ? "brand-soft brand-text brand-border"
+                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                        )}
+                        aria-pressed={lang === "de"}
+                      >
+                        DE
+                      </button>
+                      <button
+                        onClick={() => {
+                          setLang("en");
+                          setUserMenuOpen(false);
+                        }}
+                        className={cn(
+                          "flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[var(--ds-ease-smooth)]",
+                          lang === "en"
+                            ? "brand-soft brand-text brand-border"
+                            : "border-[color:var(--ds-border)] text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
+                        )}
+                        aria-pressed={lang === "en"}
+                      >
+                        EN
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-danger-bg)] hover:text-[color:var(--ds-danger-text)]"
+                    role="menuitem"
+                  >
+                    <LogOut size={15} className="shrink-0" />
+                    {t("topbar.logout")}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </header>

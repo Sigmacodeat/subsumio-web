@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname, useRouter } from "next/navigation";
+import { motion, useReducedMotion, type Transition } from "framer-motion";
 import { ensureRealtime } from "@/lib/realtime";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { CommandPalette } from "@/components/dashboard/command-palette";
@@ -16,6 +17,14 @@ import { useBrainStats } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
+
+const DASHBOARD_OVERLAY_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 430,
+  damping: 42,
+  mass: 0.82,
+};
+const DASHBOARD_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 function useTheme(): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>("light");
@@ -62,6 +71,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { t } = useLang();
   const pathname = usePathname();
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const overlayTransition = reduceMotion
+    ? DASHBOARD_REDUCED_TRANSITION
+    : DASHBOARD_OVERLAY_TRANSITION;
 
   const onboardingCompleted = meQuery.data?.user?.onboardingCompletedAt;
   const isOnboardingPage = pathname === "/dashboard/onboarding";
@@ -194,11 +207,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {t("layout.skip_to_content")}
       </a>
-      <div
+      <motion.div
         className={cn(
-          "fixed inset-0 z-[45] bg-black/60 transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] md:hidden",
-          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          "fixed inset-0 z-[45] bg-black/60 md:hidden",
+          !mobileOpen && "pointer-events-none"
         )}
+        initial={false}
+        animate={{
+          opacity: mobileOpen ? 1 : 0,
+          backdropFilter: mobileOpen && !reduceMotion ? "blur(8px)" : "blur(0px)",
+        }}
+        transition={overlayTransition}
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
       />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   Search,
   BookOpen,
@@ -155,6 +156,13 @@ interface CommandPaletteProps {
 
 const RECENT_KEY = "subsumio:cmd_recent";
 const MAX_RECENT = 5;
+const COMMAND_PANEL_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 44,
+  mass: 0.76,
+};
+const COMMAND_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 function loadRecent(): string[] {
   try {
@@ -186,6 +194,8 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const panelTransition = reduceMotion ? COMMAND_REDUCED_TRANSITION : COMMAND_PANEL_TRANSITION;
   const resolveLabel = useCallback(
     (cmd: CommandItem) => {
       if (cmd.labelKey) return t(cmd.labelKey);
@@ -443,184 +453,197 @@ export function CommandPalette({
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  if (!open) return null;
-
   let runningIdx = -1;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 z-[100] animate-[fade-in_0.2s_ease-out] bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("cmd.search_aria")}
-        className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 animate-[fade-in-scale_0.2s_ease-out] px-4 md:px-0"
-      >
-        <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
-          {/* Search input */}
-          <div className="flex h-14 items-center gap-3 border-b border-[color:var(--ds-border)] px-4">
-            <Search size={18} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActiveIndex(0);
-              }}
-              placeholder={t("cmd.placeholder")}
-              className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
-              aria-label={t("cmd.search_aria")}
-              role="combobox"
-              aria-expanded="true"
-              aria-controls="command-list"
-            />
-            <kbd className="shrink-0 rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
-              ESC
-            </kbd>
-          </div>
+    <AnimatePresence initial={false}>
+      {open && [
+        <motion.div
+          key="command-palette-overlay"
+          className="fixed inset-0 z-[100] bg-black/50"
+          initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          animate={{
+            opacity: 1,
+            backdropFilter: reduceMotion ? "blur(0px)" : "blur(8px)",
+          }}
+          exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          transition={panelTransition}
+          onClick={onClose}
+          aria-hidden="true"
+        />,
+        <motion.div
+          key="command-palette-panel"
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("cmd.search_aria")}
+          className="fixed top-[20%] left-1/2 z-[101] w-full max-w-xl -translate-x-1/2 px-4 md:px-0"
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10, scale: 0.98 }}
+          transition={panelTransition}
+        >
+          <div className="card-shadow-elevated overflow-hidden rounded-2xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+            {/* Search input */}
+            <div className="flex h-14 items-center gap-3 border-b border-[color:var(--ds-border)] px-4">
+              <Search size={18} className="shrink-0 text-[color:var(--ds-text-subtle)]" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setActiveIndex(0);
+                }}
+                placeholder={t("cmd.placeholder")}
+                className="flex-1 bg-transparent text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none"
+                aria-label={t("cmd.search_aria")}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="command-list"
+              />
+              <kbd className="shrink-0 rounded border border-[color:var(--ds-border)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
+                ESC
+              </kbd>
+            </div>
 
-          {/* Results */}
-          <div
-            ref={listRef}
-            className="max-h-[60vh] overflow-y-auto py-2"
-            id="command-list"
-            role="listbox"
-          >
-            {flatList.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <Search size={22} className="mx-auto mb-3 text-[color:var(--ds-border-strong)]" />
-                <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  {t("cmd.no_results")} „{query}
-                  {"\u201C"}
-                </p>
+            {/* Results */}
+            <div
+              ref={listRef}
+              className="max-h-[60vh] overflow-y-auto py-2"
+              id="command-list"
+              role="listbox"
+            >
+              {flatList.length === 0 ? (
+                <div className="px-4 py-10 text-center">
+                  <Search size={22} className="mx-auto mb-3 text-[color:var(--ds-border-strong)]" />
+                  <p className="text-sm text-[color:var(--ds-text-muted)]">
+                    {t("cmd.no_results")} „{query}
+                    {"\u201C"}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {recentItems.length > 0 && !query.trim() && (
+                    <div className="mb-1.5">
+                      <div className="px-4 py-1.5">
+                        <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                          {t("cmd.recent")}
+                        </span>
+                      </div>
+                      {recentItems.map((cmd) => {
+                        runningIdx++;
+                        const idx = runningIdx;
+                        const Icon = cmd.icon;
+                        const isActive = idx === activeIndex;
+                        return (
+                          <button
+                            key={`recent-${cmd.id}`}
+                            data-idx={idx}
+                            onClick={() => navigate(cmd)}
+                            onMouseEnter={() => setActiveIndex(idx)}
+                            className={cn(
+                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
+                              isActive
+                                ? "brand-soft brand-text"
+                                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                            )}
+                            role="option"
+                            aria-selected={isActive}
+                          >
+                            <Icon size={16} className="shrink-0" />
+                            <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
+                            {isActive && (
+                              <CornerDownLeft
+                                size={14}
+                                className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {grouped.map(([section, items]) => (
+                    <div key={section} className="mb-1.5">
+                      <div className="px-4 py-1.5">
+                        <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
+                          {resolveSection(section)}
+                        </span>
+                      </div>
+                      {items.map((cmd) => {
+                        runningIdx++;
+                        const idx = runningIdx;
+                        const Icon = cmd.icon;
+                        const isActive = idx === activeIndex;
+                        return (
+                          <button
+                            key={cmd.id}
+                            data-idx={idx}
+                            onClick={() => navigate(cmd)}
+                            onMouseEnter={() => setActiveIndex(idx)}
+                            className={cn(
+                              "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
+                              isActive
+                                ? "brand-soft brand-text"
+                                : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
+                            )}
+                            role="option"
+                            aria-selected={isActive}
+                          >
+                            <Icon size={16} className="shrink-0" />
+                            <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
+                            {cmd.hint && (
+                              <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                                {cmd.hint}
+                              </span>
+                            )}
+                            {isActive && (
+                              <CornerDownLeft
+                                size={14}
+                                className="shrink-0 text-[color:var(--ds-text-subtle)]"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex h-11 items-center justify-between border-t border-[color:var(--ds-border)] px-4 text-xs text-[color:var(--ds-text-subtle)]">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    ↑↓
+                  </kbd>
+                  {t("cmd.navigate")}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    ↵
+                  </kbd>
+                  {t("cmd.open")}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
+                    ESC
+                  </kbd>
+                  {t("cmd.close")}
+                </span>
               </div>
-            ) : (
-              <>
-                {recentItems.length > 0 && !query.trim() && (
-                  <div className="mb-1.5">
-                    <div className="px-4 py-1.5">
-                      <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                        {t("cmd.recent")}
-                      </span>
-                    </div>
-                    {recentItems.map((cmd) => {
-                      runningIdx++;
-                      const idx = runningIdx;
-                      const Icon = cmd.icon;
-                      const isActive = idx === activeIndex;
-                      return (
-                        <button
-                          key={`recent-${cmd.id}`}
-                          data-idx={idx}
-                          onClick={() => navigate(cmd)}
-                          onMouseEnter={() => setActiveIndex(idx)}
-                          className={cn(
-                            "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
-                            isActive
-                              ? "brand-soft brand-text"
-                              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                          )}
-                          role="option"
-                          aria-selected={isActive}
-                        >
-                          <Icon size={16} className="shrink-0" />
-                          <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
-                          {isActive && (
-                            <CornerDownLeft
-                              size={14}
-                              className="shrink-0 text-[color:var(--ds-text-subtle)]"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                {grouped.map(([section, items]) => (
-                  <div key={section} className="mb-1.5">
-                    <div className="px-4 py-1.5">
-                      <span className="text-xs font-semibold tracking-[0.08em] text-[color:var(--ds-text-subtle)] uppercase">
-                        {resolveSection(section)}
-                      </span>
-                    </div>
-                    {items.map((cmd) => {
-                      runningIdx++;
-                      const idx = runningIdx;
-                      const Icon = cmd.icon;
-                      const isActive = idx === activeIndex;
-                      return (
-                        <button
-                          key={cmd.id}
-                          data-idx={idx}
-                          onClick={() => navigate(cmd)}
-                          onMouseEnter={() => setActiveIndex(idx)}
-                          className={cn(
-                            "mx-0 flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors",
-                            isActive
-                              ? "brand-soft brand-text"
-                              : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)]"
-                          )}
-                          role="option"
-                          aria-selected={isActive}
-                        >
-                          <Icon size={16} className="shrink-0" />
-                          <span className="flex-1 text-sm font-medium">{resolveLabel(cmd)}</span>
-                          {cmd.hint && (
-                            <span className="text-xs text-[color:var(--ds-text-subtle)]">
-                              {cmd.hint}
-                            </span>
-                          )}
-                          {isActive && (
-                            <CornerDownLeft
-                              size={14}
-                              className="shrink-0 text-[color:var(--ds-text-subtle)]"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex h-11 items-center justify-between border-t border-[color:var(--ds-border)] px-4 text-xs text-[color:var(--ds-text-subtle)]">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
-                  ↑↓
-                </kbd>
-                {t("cmd.navigate")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
-                  ↵
-                </kbd>
-                {t("cmd.open")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded border border-[color:var(--ds-border)] px-1 py-0.5 font-mono">
-                  ESC
-                </kbd>
-                {t("cmd.close")}
+              <span className="flex items-center gap-1">
+                <Zap size={10} />
+                {flatList.length}{" "}
+                {flatList.length === 1 ? t("cmd.command_single") : t("cmd.command_plural")}
               </span>
             </div>
-            <span className="flex items-center gap-1">
-              <Zap size={10} />
-              {flatList.length}{" "}
-              {flatList.length === 1 ? t("cmd.command_single") : t("cmd.command_plural")}
-            </span>
           </div>
-        </div>
-      </div>
-    </>
+        </motion.div>,
+      ]}
+    </AnimatePresence>
   );
 }
