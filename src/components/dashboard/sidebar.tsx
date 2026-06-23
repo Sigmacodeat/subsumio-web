@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, forwardRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   LayoutDashboard,
   Brain,
@@ -80,6 +81,15 @@ const DEFAULT_OPEN_SECTIONS: DashboardKey[] = [
   "nav.section.billing_compliance",
   "nav.section.admin",
 ];
+
+const SIDEBAR_PANEL_TRANSITION: Transition = {
+  type: "spring",
+  stiffness: 500,
+  damping: 46,
+  mass: 0.72,
+};
+
+const SIDEBAR_REDUCED_TRANSITION: Transition = { duration: 0 };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
@@ -326,7 +336,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<DashboardKey[]>(DEFAULT_OPEN_SECTIONS);
+  const reduceMotion = useReducedMotion();
   const { t, lang } = useLang();
+  const sidebarPanelTransition = reduceMotion
+    ? SIDEBAR_REDUCED_TRANSITION
+    : SIDEBAR_PANEL_TRANSITION;
 
   const brainStatusLabel =
     brainReachable === true
@@ -692,12 +706,15 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           )}
                         />
                       </button>
-                      <div
+                      <motion.div
                         id={panelId}
-                        className={cn(
-                          "grid overflow-hidden transition-[grid-template-rows,opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-                          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                        )}
+                        initial={false}
+                        animate={{
+                          height: isOpen ? "auto" : 0,
+                          opacity: isOpen ? 1 : 0,
+                        }}
+                        transition={sidebarPanelTransition}
+                        className="overflow-hidden"
                         aria-hidden={!isOpen}
                         {...(!isOpen ? { inert: true } : {})}
                       >
@@ -752,7 +769,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             })}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   );
                 })}

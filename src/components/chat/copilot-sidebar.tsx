@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { motion, useReducedMotion, type Transition } from "framer-motion";
 import {
   MessageSquareText,
   X,
@@ -55,6 +56,22 @@ const QUICK_ACTION_ICONS: Record<QuickAction["icon"], typeof MessageSquareText> 
   search: Search,
   generic: ChevronRight,
 };
+
+const SPRING_PANEL: Transition = {
+  type: "spring",
+  stiffness: 420,
+  damping: 42,
+  mass: 0.86,
+};
+
+const SPRING_SOFT: Transition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 44,
+  mass: 0.7,
+};
+
+const REDUCED_MOTION_TRANSITION: Transition = { duration: 0 };
 
 const ROUTE_PATTERNS: Array<{
   pattern: RegExp;
@@ -380,6 +397,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const router = useRouter();
   const isMobile = useIsMobile();
   const { t } = useLang();
+  const reduceMotion = useReducedMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<ChatPanelHandle>(null);
@@ -586,14 +604,24 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     () => proactiveAlerts.filter((a) => !dismissedAlerts.has(`${a.label}-${a.query}`)),
     [proactiveAlerts, dismissedAlerts]
   );
+  const panelTransition = reduceMotion ? REDUCED_MOTION_TRANSITION : SPRING_PANEL;
+  const softTransition = reduceMotion ? REDUCED_MOTION_TRANSITION : SPRING_SOFT;
 
   return (
     <>
       {/* Mobile overlay */}
-      <div
+      <motion.div
+        initial={false}
+        animate={{
+          opacity: mobileOpen ? 1 : 0,
+          backdropFilter: mobileOpen && !reduceMotion ? "blur(8px)" : "blur(0px)",
+        }}
+        transition={
+          reduceMotion ? REDUCED_MOTION_TRANSITION : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+        }
         className={cn(
-          "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm transition-opacity duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] motion-reduce:transition-none md:hidden",
-          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          "fixed inset-0 z-50 bg-black/30 md:hidden",
+          mobileOpen ? "" : "pointer-events-none"
         )}
         onClick={() => {
           setMobileOpen(false);
@@ -603,12 +631,12 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
       />
 
       {/* Mobile drawer */}
-      <div
+      <motion.div
         ref={drawerRef}
-        className={cn(
-          "fixed top-0 right-0 z-50 h-full w-full max-w-md transform transition-transform duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] will-change-transform motion-reduce:transition-none md:hidden",
-          mobileOpen ? "translate-x-0" : "translate-x-full"
-        )}
+        initial={false}
+        animate={{ x: mobileOpen ? 0 : "100%" }}
+        transition={panelTransition}
+        className="fixed top-0 right-0 z-50 h-full w-full max-w-md will-change-transform md:hidden"
         role="dialog"
         aria-label={t("copilot.title")}
         aria-modal={mobileOpen ? "true" : undefined}
@@ -683,16 +711,19 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             />
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Desktop: Persistent collapsible side panel ── */}
-      <aside
+      <motion.aside
+        initial={false}
+        animate={{
+          x: open ? 0 : "100%",
+          opacity: open ? 1 : 0.98,
+        }}
+        transition={panelTransition}
         className={cn(
           "dashboard-panel-surface fixed inset-y-0 right-0 z-40 hidden min-w-0 overflow-hidden border-l border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block",
-          isResizing
-            ? "transition-none"
-            : "transition-[transform,opacity] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] will-change-[transform,opacity] motion-reduce:transition-none",
-          open ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
+          isResizing ? "transition-none" : "will-change-[transform,opacity]",
           className
         )}
         style={{ width: panelWidth }}
@@ -742,13 +773,13 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           />
         )}
         {/* Inner wrapper — fixed width matches panel, never reflows. Only outer aside clips. */}
-        <div
+        <motion.div
+          initial={false}
+          animate={{ opacity: open ? 1 : 0.92 }}
+          transition={softTransition}
           className={cn(
             "flex h-full flex-col",
-            isResizing
-              ? "transition-none"
-              : "transition-[opacity] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-            open ? "opacity-100" : "opacity-0"
+            isResizing ? "transition-none" : "will-change-opacity"
           )}
           style={{ width: panelWidth }}
         >
@@ -769,12 +800,17 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           </button>
 
           {/* Panel content — stays mounted during transition for smooth animation */}
-          <div
+          <motion.div
+            initial={false}
+            animate={{
+              opacity: open ? 1 : 0,
+              x: open ? 0 : 12,
+            }}
+            transition={softTransition}
             className={cn(
-              "flex h-full min-w-0 flex-col overflow-hidden transition-[opacity,transform] delay-75 duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-              open ? "opacity-100" : "pointer-events-none opacity-0"
+              "flex h-full min-w-0 flex-col overflow-hidden",
+              open ? "" : "pointer-events-none"
             )}
-            style={{ transform: open ? "translateX(0)" : "translateX(12px)" }}
             aria-hidden={!open}
           >
             {/* Context header — compact agency bar */}
@@ -844,16 +880,25 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 />
               )}
             </div>
-          </div>
-        </div>
-      </aside>
+          </motion.div>
+        </motion.div>
+      </motion.aside>
 
       {/* Desktop expand button — premium vertical tab with hover label */}
-      <button
+      <motion.button
         onClick={onToggle}
+        initial={false}
+        animate={{
+          x: open ? 56 : 0,
+          opacity: open ? 0 : 1,
+          scale: open ? 0.96 : 1,
+        }}
+        whileHover={reduceMotion || open ? undefined : { x: -2, scale: 1.015 }}
+        whileTap={reduceMotion || open ? undefined : { scale: 0.965 }}
+        transition={softTransition}
         className={cn(
-          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[transform,opacity,padding,box-shadow] duration-[var(--ds-duration-smooth)] ease-[var(--ds-ease-smooth)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex",
-          open ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
+          "group fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] py-4 pr-2 pl-2.5 shadow-md transition-[padding,box-shadow] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-panel)] hover:pl-3 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none md:flex",
+          open && "pointer-events-none"
         )}
         aria-label={t("copilot.expand")}
         title={t("copilot.expand_hint")}
@@ -867,7 +912,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
           {t("copilot.copilot")}
         </span>
-      </button>
+      </motion.button>
     </>
   );
 }
