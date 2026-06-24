@@ -19,15 +19,26 @@ export interface PresenceUser {
 export function usePresence(pageSlug: string, user: { id: string; email: string } | null) {
   const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Once the endpoint refuses us (401/403), presence won't recover within this
+  // session — stop pinging so we don't spam the console/network every 15s.
+  const disabledRef = useRef(false);
 
   const sendHeartbeat = useCallback(async () => {
-    if (!user || !pageSlug) return;
+    if (!user || !pageSlug || disabledRef.current) return;
     try {
-      await fetch("/api/realtime/presence", {
+      const res = await fetch("/api/realtime/presence", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ page: pageSlug }),
       });
+      if (res.status === 401 || res.status === 403) {
+        // Not authorised for presence — disable and stop the heartbeat.
+        disabledRef.current = true;
+        if (heartbeatRef.current) {
+          clearInterval(heartbeatRef.current);
+          heartbeatRef.current = null;
+        }
+      }
     } catch {
       // Silent fail — presence is best-effort
     }
