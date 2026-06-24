@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com",
+              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com https://api.subsum.io",
               "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
               "frame-ancestors 'none'",
               "object-src 'none'",
