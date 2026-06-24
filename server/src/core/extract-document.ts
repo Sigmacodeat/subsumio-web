@@ -135,8 +135,16 @@ async function extractPdf(buf: Buffer): Promise<ExtractedDocument> {
   // unpdf wants a standalone Uint8Array; slice detaches from Buffer pool.
   const bytes = new Uint8Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
   const doc = await getDocumentProxy(bytes);
-  const { text, totalPages } = await extractText(doc, { mergePages: true });
-  const cleaned = normalizeWhitespace(text);
+  // mergePages: false → array of per-page text. We join with ###***### so
+  // every PDF page is individually represented with a clear boundary.
+  // Previously mergePages: true merged all pages into one blob, losing
+  // page boundaries — making it impossible to trace content back to a
+  // specific page in the court file (Aktenordnung).
+  const { text, totalPages } = await extractText(doc, { mergePages: false });
+  const pages: string[] = Array.isArray(text) ? text : [text];
+  const PAGE_SEP = "###***###";
+  const joined = pages.join(`\n${PAGE_SEP}\n`);
+  const cleaned = normalizeWhitespace(joined);
   const warnings: string[] = [];
 
   if (totalPages > 0 && cleaned.length < totalPages * PDF_SPARSE_TEXT_CHARS_PER_PAGE) {
