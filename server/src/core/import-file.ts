@@ -232,7 +232,7 @@ export interface ImportResult {
   flag_reason?: "markup_heavy" | "oversized";
 }
 
-const MAX_FILE_SIZE = 5_000_000; // 5MB
+const MAX_FILE_SIZE = 50_000_000; // 50MB — supports large legal document extractions
 
 /**
  * Import content from a string. Core pipeline:

@@ -1066,13 +1066,23 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           uploadFrontmatter
         );
 
-        await importFromContent(engine, slug, markdown, {
+        const importResult = await importFromContent(engine, slug, markdown, {
           noEmbed,
           sourceId: tenantSource,
           filename: file.filename,
           source_kind: "web_upload",
           source_uri: `subsumio-upload:${slug}`,
         });
+
+        if (importResult.status === "skipped") {
+          res.status(413).json({
+            error: "content_too_large",
+            message:
+              importResult.error ??
+              "Extrahierter Text überschreitet das Limit. Bitte teilen Sie das Dokument in kleinere Teile auf.",
+          });
+          return;
+        }
 
         // Persist original bytes (GoBD § 147 AO)
         const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
@@ -2603,13 +2613,23 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           uploadFrontmatter
         );
 
-        await importFromContent(engine, slug, markdown, {
+        const importResult = await importFromContent(engine, slug, markdown, {
           noEmbed,
           sourceId: tenantSource,
           filename: file.filename,
           source_kind: "web_upload",
           source_uri: `subsumio-upload:${slug}`,
         });
+
+        if (importResult.status === "skipped") {
+          res.status(413).json({
+            error: "content_too_large",
+            message:
+              importResult.error ??
+              "Extrahierter Text überschreitet das Limit. Bitte teilen Sie das Dokument in kleinere Teile auf.",
+          });
+          return;
+        }
 
         // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
         // can be downloaded unaltered later (§ 147 AO / GoBD). Best-effort: the
