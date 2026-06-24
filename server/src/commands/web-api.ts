@@ -65,6 +65,29 @@ declare global {
 }
 
 /**
+ * Build a StorageConfig from environment variables.
+ * Supports Cloudflare R2, Hetzner Object Storage, MinIO, or any S3-compatible backend.
+ * Returns undefined when the required vars are not set (falls back to local disk).
+ *
+ * Required: R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+ * Optional: R2_ENDPOINT (default: AWS S3), R2_REGION (default: auto)
+ */
+function storageConfigFromEnv(): import("../core/storage.ts").StorageConfig | undefined {
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const bucket = process.env.R2_BUCKET;
+  if (!accessKeyId || !secretAccessKey || !bucket) return undefined;
+  return {
+    backend: "s3",
+    bucket,
+    accessKeyId,
+    secretAccessKey,
+    ...(process.env.R2_ENDPOINT ? { endpoint: process.env.R2_ENDPOINT } : {}),
+    ...(process.env.R2_REGION ? { region: process.env.R2_REGION } : {}),
+  };
+}
+
+/**
  * Max accepted upload size for the web /api/upload endpoint. Agency-level
  * deployments (self-hosted, no platform body cap) default to 1 GB. Override with
  * GBRAIN_MAX_UPLOAD_BYTES. The body is buffered once (parseMultipart works on
@@ -97,13 +120,16 @@ async function persistUploadBytes(
 ): Promise<PersistResult> {
   try {
     const { persistFileBuffer } = await import("../core/file-store.ts");
+    // Prefer caller-supplied config (from ctx.config.storage), then fall back
+    // to env-var-driven S3 config (R2_ACCESS_KEY_ID etc.), then local disk.
+    const effectiveConfig = storageConfig ?? storageConfigFromEnv();
     await persistFileBuffer({
       data: file.data,
       filename: file.filename,
       pageSlug,
       mimeType: file.mimeType,
       sourceId,
-      storageConfig,
+      storageConfig: effectiveConfig,
     });
     return { ok: true };
   } catch (err) {
@@ -883,12 +909,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const token = req.headers["x-upload-token"] as string | undefined;
         const payload = verifyUploadToken(token ?? "");
         if (!payload) {
-          res
-            .status(401)
-            .json({
-              error: "invalid_upload_token",
-              message: "Upload token is missing, expired, or invalid.",
-            });
+          res.status(401).json({
+            error: "invalid_upload_token",
+            message: "Upload token is missing, expired, or invalid.",
+          });
           return;
         }
 
