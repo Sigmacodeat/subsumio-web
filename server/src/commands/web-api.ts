@@ -889,10 +889,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     ensuredSources.add(sourceId);
   }
 
-  app.use("/api", guard);
-
   // ── CORS for direct-to-engine browser uploads ────────────────────────
-  // Applied before the guard so OPTIONS preflight doesn't get 401'd.
+  // Applied BEFORE the guard so OPTIONS preflight doesn't get 401'd.
   const corsAllowlist = parseEngineCorsAllowlist();
   app.use("/api/direct-upload", engineCorsMiddleware(corsAllowlist));
 
@@ -900,6 +898,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   // Bypasses the API key guard — authenticates via a short-lived signed
   // token issued by the web app. This lets the browser upload large files
   // directly to the engine, avoiding platform body-size caps (Vercel).
+  // MUST be registered before app.use("/api", guard) so Express doesn't
+  // run the API key middleware on this route.
   app.post(
     "/api/direct-upload",
     express.raw({ type: () => true, limit: maxUploadBytes() }),
@@ -1120,6 +1120,10 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       }
     }
   );
+
+  // API key guard — applied AFTER the direct-upload route so that
+  // direct uploads bypass API key auth (they use upload tokens instead).
+  app.use("/api", guard);
 
   // Fail-closed tenant gate: in SaaS mode a missing/invalid tenant header
   // must NEVER silently widen to the all-seeing 'default' scope.
