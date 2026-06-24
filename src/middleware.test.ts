@@ -33,6 +33,12 @@ describe("middleware CSRF webhook exemptions", () => {
     await expect(res.json()).resolves.toEqual({ error: "csrf_token_invalid" });
   });
 
+  it("allows presence heartbeats without browser CSRF", async () => {
+    const res = await run("/api/realtime/presence", { method: "POST" });
+
+    expect(res.status).not.toBe(403);
+  });
+
   it("allows normal state-changing API requests with a matching CSRF token", async () => {
     const token = "csrf_test_token";
     const headers = new Headers({

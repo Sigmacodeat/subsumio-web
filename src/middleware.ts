@@ -24,6 +24,11 @@ const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   "/api/email/webhook/resend",
   "/api/docusign/webhook",
 ] as const;
+const API_CSRF_EXEMPT_PATHS = new Set([
+  // Presence is an authenticated best-effort heartbeat endpoint. The route
+  // handler also opts out so navigator.sendBeacon can report leave events.
+  "/api/realtime/presence",
+]);
 
 function isWebhookCsrfExempt(pathname: string): boolean {
   return WEBHOOK_CSRF_EXEMPT_PREFIXES.some((prefix) => {
@@ -57,6 +62,7 @@ export async function middleware(req: NextRequest) {
       pathname.startsWith("/api/auth/2fa/login-verify") ||
       pathname.startsWith("/api/cron/") ||
       pathname.startsWith("/api/portal/") ||
+      API_CSRF_EXEMPT_PATHS.has(pathname) ||
       isWebhookCsrfExempt(pathname);
 
     if (!isExempt) {

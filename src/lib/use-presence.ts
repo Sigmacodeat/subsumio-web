@@ -22,9 +22,17 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
   // Once the endpoint refuses us (401/403), presence won't recover within this
   // session — stop pinging so we don't spam the console/network every 15s.
   const disabledRef = useRef(false);
+  // Prevents concurrent in-flight heartbeat requests (the 403 response may not
+  // have arrived yet to set disabledRef, causing a flood of duplicate POSTs).
+  const inFlightRef = useRef(false);
+  // Store user in a ref so sendHeartbeat doesn't depend on the user object
+  // reference — callers may create a new object literal every render.
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const sendHeartbeat = useCallback(async () => {
-    if (!user || !pageSlug || disabledRef.current) return;
+    if (!userRef.current || !pageSlug || disabledRef.current || inFlightRef.current) return;
+    inFlightRef.current = true;
     try {
       const res = await fetch("/api/realtime/presence", {
         method: "POST",
@@ -41,11 +49,17 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
       }
     } catch {
       // Silent fail — presence is best-effort
+    } finally {
+      inFlightRef.current = false;
     }
-  }, [user, pageSlug]);
+  }, [pageSlug]);
+
+  // Depend on userId (a stable string) instead of the user object, so the
+  // effect doesn't re-run when the caller recreates the object literal.
+  const userId = user?.id;
 
   useEffect(() => {
-    if (!user || !pageSlug) return;
+    if (!userId || !pageSlug) return;
 
     ensureRealtime();
     sendHeartbeat();
@@ -56,7 +70,7 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
     // Listen for presence events
     const unsubJoined = realtime.on("presence.joined", (payload) => {
       const p = payload as PresenceUser;
-      if (p.page === pageSlug && p.userId !== user.id) {
+      if (p.page === pageSlug && p.userId !== userId) {
         setActiveUsers((prev) => {
           if (prev.some((u) => u.userId === p.userId)) return prev;
           return [...prev, p];
@@ -73,7 +87,7 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
 
     const unsubHeartbeat = realtime.on("presence.heartbeat", (payload) => {
       const p = payload as PresenceUser;
-      if (p.page === pageSlug && p.userId !== user.id) {
+      if (p.page === pageSlug && p.userId !== userId) {
         setActiveUsers((prev) => {
           const existing = prev.find((u) => u.userId === p.userId);
           if (existing) {
@@ -88,10 +102,12 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
 
     // Cleanup on unmount: send leave notification
     const handleUnload = () => {
-      if (user && pageSlug) {
+      if (userId && pageSlug && !disabledRef.current) {
         navigator.sendBeacon(
           "/api/realtime/presence",
-          JSON.stringify({ page: pageSlug, action: "leave" })
+          new Blob([JSON.stringify({ page: pageSlug, action: "leave" })], {
+            type: "application/json",
+          })
         );
       }
     };
@@ -105,7 +121,7 @@ export function usePresence(pageSlug: string, user: { id: string; email: string 
       window.removeEventListener("beforeunload", handleUnload);
       handleUnload();
     };
-  }, [user, pageSlug, sendHeartbeat]);
+  }, [userId, pageSlug, sendHeartbeat]);
 
   // Prune stale users (no heartbeat in 45s)
   useEffect(() => {

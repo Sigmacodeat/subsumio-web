@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
 import { recordMatterVisit } from "@/lib/use-recent-matters";
@@ -347,7 +347,10 @@ export default function CaseDetailPage() {
       fileSize: number;
       uploadedBytes: number;
       progress: number;
-      status: "queued" | "uploading" | "processing" | "done" | "error";
+      status: "queued" | "preparing" | "uploading" | "processing" | "done" | "error";
+      startedAt?: number;
+      speedBps?: number;
+      etaSeconds?: number;
       error?: string;
     }>
   >([]);
@@ -597,9 +600,13 @@ export default function CaseDetailPage() {
   }, [meQuery.data]);
 
   // Live presence — who else is viewing this case?
-  const presenceUser = meQuery.data?.user
-    ? { id: meQuery.data.user.id, email: meQuery.data.user.email || "" }
-    : null;
+  const presenceUser = useMemo(
+    () =>
+      meQuery.data?.user
+        ? { id: meQuery.data.user.id, email: meQuery.data.user.email || "" }
+        : null,
+    [meQuery.data?.user?.id, meQuery.data?.user?.email]
+  );
   const activeUsers = usePresence(slug, presenceUser);
 
   useEffect(() => {
@@ -1013,6 +1020,7 @@ export default function CaseDetailPage() {
       fileSize: file.size,
       uploadedBytes: 0,
       progress: 0,
+      startedAt: Date.now(),
       status: "queued" as const,
     }));
     setUploadQueue((prev) => [...prev, ...queueItems]);
@@ -1028,7 +1036,19 @@ export default function CaseDetailPage() {
     await runUploadPool(poolItems, async ({ file, queueId }) => {
       try {
         setUploadQueue((prev) =>
-          prev.map((q) => (q.id === queueId ? { ...q, status: "uploading", progress: 1 } : q))
+          prev.map((q) =>
+            q.id === queueId
+              ? {
+                  ...q,
+                  status: "preparing",
+                  progress: 0,
+                  uploadedBytes: 0,
+                  startedAt: Date.now(),
+                  speedBps: undefined,
+                  etaSeconds: undefined,
+                }
+              : q
+          )
         );
 
         await api.upload.file(
@@ -1039,18 +1059,47 @@ export default function CaseDetailPage() {
             tags: [caseData.slug],
             case_slug: caseData.slug,
           },
-          (percent) => {
-            const nextPercent = Math.max(1, Math.min(95, Math.round(percent)));
-            const uploadedBytes = Math.min(file.size, Math.round((file.size * percent) / 100));
+          (percent, transfer) => {
+            const phase = transfer?.phase;
+            const uploadedBytes = Math.min(
+              file.size,
+              transfer?.loaded ?? Math.round((file.size * percent) / 100)
+            );
+            const nextPercent =
+              phase === "server_processing"
+                ? 96
+                : uploadedBytes > 0
+                  ? Math.max(1, Math.min(95, Math.round(percent)))
+                  : 0;
+            const now = Date.now();
             setUploadQueue((prev) =>
               prev.map((q) =>
                 q.id === queueId
-                  ? {
-                      ...q,
-                      status: "uploading",
-                      progress: nextPercent,
-                      uploadedBytes,
-                    }
+                  ? (() => {
+                      const startedAt = q.startedAt ?? now;
+                      const elapsedSeconds = Math.max(0.25, (now - startedAt) / 1000);
+                      const speedBps =
+                        phase === "uploading" && uploadedBytes > 0
+                          ? uploadedBytes / elapsedSeconds
+                          : q.speedBps;
+                      const etaSeconds =
+                        speedBps && phase === "uploading"
+                          ? Math.max(0, (file.size - uploadedBytes) / speedBps)
+                          : undefined;
+                      return {
+                        ...q,
+                        status:
+                          phase === "server_processing"
+                            ? "processing"
+                            : phase === "uploading"
+                              ? "uploading"
+                              : "preparing",
+                        progress: nextPercent,
+                        uploadedBytes,
+                        speedBps,
+                        etaSeconds,
+                      };
+                    })()
                   : q
               )
             );
@@ -1494,14 +1543,26 @@ export default function CaseDetailPage() {
     return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
   }
 
-  function uploadStatusLabel(status: "queued" | "uploading" | "processing" | "done" | "error") {
+  function formatUploadEta(seconds?: number): string {
+    if (!seconds || !Number.isFinite(seconds) || seconds < 1) return "< 1s";
+    if (seconds < 60) return `${Math.ceil(seconds)}s`;
+    const minutes = Math.floor(seconds / 60);
+    const rest = Math.ceil(seconds % 60);
+    return `${minutes}m ${rest}s`;
+  }
+
+  function uploadStatusLabel(
+    status: "queued" | "preparing" | "uploading" | "processing" | "done" | "error"
+  ) {
     switch (status) {
       case "queued":
         return "Wartet";
+      case "preparing":
+        return "Initialisiert";
       case "uploading":
         return "Überträgt";
       case "processing":
-        return "Verarbeitet";
+        return "Prüft & indexiert";
       case "done":
         return "Fertig";
       case "error":
@@ -1541,7 +1602,9 @@ export default function CaseDetailPage() {
     uploadedBytes: uploadQueue.reduce(
       (sum, item) =>
         sum +
-        (item.status === "done" ? item.fileSize : Math.min(item.uploadedBytes, item.fileSize)),
+        (item.status === "done" || item.status === "processing"
+          ? item.fileSize
+          : Math.min(item.uploadedBytes, item.fileSize)),
       0
     ),
   };
@@ -2784,7 +2847,9 @@ export default function CaseDetailPage() {
                     key={item.id}
                     className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5"
                   >
-                    {item.status === "uploading" || item.status === "processing" ? (
+                    {item.status === "preparing" ||
+                    item.status === "uploading" ||
+                    item.status === "processing" ? (
                       <Loader2 size={16} className="brand-text shrink-0 animate-spin" />
                     ) : item.status === "done" ? (
                       <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
@@ -2804,12 +2869,28 @@ export default function CaseDetailPage() {
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
                         <span>{uploadStatusLabel(item.status)}</span>
-                        <span>
-                          {formatUploadBytes(
-                            item.status === "done" ? item.fileSize : item.uploadedBytes
-                          )}{" "}
-                          / {formatUploadBytes(item.fileSize)}
-                        </span>
+                        {item.status === "preparing" ? (
+                          <span>
+                            Verbindung wird vorbereitet · {formatUploadBytes(item.fileSize)}
+                          </span>
+                        ) : item.status === "processing" ? (
+                          <span>
+                            Datei übertragen · Server prüft, speichert Original und indexiert
+                          </span>
+                        ) : (
+                          <span>
+                            {formatUploadBytes(
+                              item.status === "done" ? item.fileSize : item.uploadedBytes
+                            )}{" "}
+                            / {formatUploadBytes(item.fileSize)}
+                          </span>
+                        )}
+                        {item.status === "uploading" && item.speedBps ? (
+                          <span>
+                            {formatUploadBytes(item.speedBps)}/s · Rest{" "}
+                            {formatUploadEta(item.etaSeconds)}
+                          </span>
+                        ) : null}
                       </div>
                       <div
                         className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]"
