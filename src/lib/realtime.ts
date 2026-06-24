@@ -32,6 +32,7 @@ class RealtimeClient {
   private ws: WebSocket | null = null;
   private es: EventSource | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private stableTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private listeners = new Map<string, Set<EventCallback>>();
   private pending: string[] = [];
@@ -93,14 +94,23 @@ class RealtimeClient {
       this.es = new EventSource(SSE_URL);
       this.es.onopen = () => {
         this.status = "open";
-        // Reset reconnect counter on any successful connection.
-        // On Vercel serverless, the stream will close after maxDuration (300s)
-        // — that's expected behavior, not an error condition.
-        this.reconnectAttempt = 0;
+        // Only reset the backoff counter once the connection has proven STABLE
+        // (stayed open ~10s). Resetting immediately on open caused a tight 1s
+        // reconnect loop when the stream opens then dies right away (e.g. a
+        // serverless streaming limit) — every cycle logged and never backed off.
+        if (this.stableTimer) clearTimeout(this.stableTimer);
+        this.stableTimer = setTimeout(() => {
+          this.reconnectAttempt = 0;
+          this.stableTimer = null;
+        }, 10_000);
       };
       this.es.onerror = (e) => {
-        // SSE errors are expected on Vercel serverless (function timeouts).
-        // Only log on the first attempt to avoid console spam during reconnects.
+        if (this.stableTimer) {
+          clearTimeout(this.stableTimer);
+          this.stableTimer = null;
+        }
+        // SSE errors are expected on serverless (function timeouts). Only log
+        // the first error of a reconnect streak to avoid console spam.
         if (this.reconnectAttempt === 0) {
           console.warn("[realtime] SSE error (will reconnect):", e);
         }
@@ -193,6 +203,10 @@ class RealtimeClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    if (this.stableTimer) {
+      clearTimeout(this.stableTimer);
+      this.stableTimer = null;
     }
     this.ws?.close();
     this.ws = null;

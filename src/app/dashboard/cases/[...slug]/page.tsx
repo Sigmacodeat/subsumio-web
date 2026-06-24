@@ -45,7 +45,6 @@ import {
   Archive,
   RotateCcw,
   CloudUpload,
-  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -342,6 +341,7 @@ export default function CaseDetailPage() {
       id: string;
       fileName: string;
       fileSize: number;
+      uploadedBytes: number;
       progress: number;
       status: "queued" | "uploading" | "processing" | "done" | "error";
       error?: string;
@@ -1007,6 +1007,7 @@ export default function CaseDetailPage() {
       id: `${Date.now()}-${file.name}-${Math.random().toString(36).slice(2, 6)}`,
       fileName: file.name,
       fileSize: file.size,
+      uploadedBytes: 0,
       progress: 0,
       status: "queued" as const,
     }));
@@ -1022,18 +1023,41 @@ export default function CaseDetailPage() {
     await runUploadPool(poolItems, async ({ file, queueId }) => {
       try {
         setUploadQueue((prev) =>
-          prev.map((q) => (q.id === queueId ? { ...q, status: "uploading", progress: 10 } : q))
+          prev.map((q) => (q.id === queueId ? { ...q, status: "uploading", progress: 1 } : q))
         );
 
-        await api.upload.file(file, {
-          title: file.name,
-          source: "legal_case",
-          tags: [caseData.slug],
-          case_slug: caseData.slug,
-        });
+        await api.upload.file(
+          file,
+          {
+            title: file.name,
+            source: "legal_case",
+            tags: [caseData.slug],
+            case_slug: caseData.slug,
+          },
+          (percent) => {
+            const nextPercent = Math.max(1, Math.min(95, Math.round(percent)));
+            const uploadedBytes = Math.min(file.size, Math.round((file.size * percent) / 100));
+            setUploadQueue((prev) =>
+              prev.map((q) =>
+                q.id === queueId
+                  ? {
+                      ...q,
+                      status: "uploading",
+                      progress: nextPercent,
+                      uploadedBytes,
+                    }
+                  : q
+              )
+            );
+          }
+        );
 
         setUploadQueue((prev) =>
-          prev.map((q) => (q.id === queueId ? { ...q, status: "processing", progress: 80 } : q))
+          prev.map((q) =>
+            q.id === queueId
+              ? { ...q, status: "processing", progress: 96, uploadedBytes: file.size }
+              : q
+          )
         );
 
         // P0-1: Server-side reconcileCaseDocuments is the single writer for the documents array.
@@ -1041,7 +1065,9 @@ export default function CaseDetailPage() {
         await refreshCaseData();
 
         setUploadQueue((prev) =>
-          prev.map((q) => (q.id === queueId ? { ...q, status: "done", progress: 100 } : q))
+          prev.map((q) =>
+            q.id === queueId ? { ...q, status: "done", progress: 100, uploadedBytes: file.size } : q
+          )
         );
 
         // Remove from queue after 2s
@@ -1456,6 +1482,28 @@ export default function CaseDetailPage() {
     return { key: "uploaded", color: "bg-gray-500/10 border-gray-500/20 text-gray-600" };
   }
 
+  function formatUploadBytes(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+  }
+
+  function uploadStatusLabel(status: "queued" | "uploading" | "processing" | "done" | "error") {
+    switch (status) {
+      case "queued":
+        return "Wartet";
+      case "uploading":
+        return "Überträgt";
+      case "processing":
+        return "Verarbeitet";
+      case "done":
+        return "Fertig";
+      case "error":
+        return "Fehler";
+    }
+  }
+
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const activeDeadlines = deadlinesList.filter((dl) => dl.status !== "done");
@@ -1480,7 +1528,22 @@ export default function CaseDetailPage() {
     Boolean(contactConflict) || caseData.conflictStatus === "conflict_pending";
   const formatMinutes = (minutes: number) =>
     minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}min` : `${minutes}min`;
-  const encodedCaseSlug = encodeURIComponent(caseData.slug);
+  const uploadStats = {
+    totalFiles: uploadQueue.length,
+    completedFiles: uploadQueue.filter((item) => item.status === "done").length,
+    failedFiles: uploadQueue.filter((item) => item.status === "error").length,
+    totalBytes: uploadQueue.reduce((sum, item) => sum + item.fileSize, 0),
+    uploadedBytes: uploadQueue.reduce(
+      (sum, item) =>
+        sum +
+        (item.status === "done" ? item.fileSize : Math.min(item.uploadedBytes, item.fileSize)),
+      0
+    ),
+  };
+  const uploadOverallProgress =
+    uploadStats.totalBytes > 0
+      ? Math.round((uploadStats.uploadedBytes / uploadStats.totalBytes) * 100)
+      : 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -1681,8 +1744,8 @@ export default function CaseDetailPage() {
           )}
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-[color:var(--ds-border)] pt-4 lg:grid-cols-[1fr_auto]">
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+        <div className="mt-4 border-t border-[color:var(--ds-border)] pt-3">
+          <div className="flex flex-wrap gap-2">
             {[
               {
                 target: "deadlines_tasks",
@@ -1734,83 +1797,40 @@ export default function CaseDetailPage() {
                   type="button"
                   onClick={() => setActiveTab(item.target)}
                   className={cn(
-                    "min-h-20 rounded-lg border px-3 py-2 text-left transition-colors",
+                    "inline-flex min-h-10 min-w-[150px] items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors",
                     item.alert
                       ? "border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/10"
                       : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] hover:border-[color:var(--ds-border-strong)]"
                   )}
                 >
-                  <div className="mb-1 flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
-                    <Icon size={12} />
-                    <span className="truncate">{item.label}</span>
-                  </div>
-                  <div
+                  <Icon
+                    size={13}
                     className={cn(
-                      "text-sm font-semibold text-[color:var(--ds-text)]",
+                      "shrink-0 text-[color:var(--ds-text-muted)]",
                       item.alert && "text-amber-600"
                     )}
-                  >
-                    {item.value}
-                  </div>
-                  <div className="mt-0.5 truncate text-[11px] text-[color:var(--ds-text-muted)]">
-                    {item.detail}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-xs text-[color:var(--ds-text-muted)]">
+                        {item.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold text-[color:var(--ds-text)]",
+                          item.alert && "text-amber-600"
+                        )}
+                      >
+                        {item.value}
+                      </span>
+                    </div>
+                    <div className="truncate text-[11px] text-[color:var(--ds-text-muted)]">
+                      {item.detail}
+                    </div>
                   </div>
                 </button>
               );
             })}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 lg:max-w-[360px] lg:justify-end">
-            {[
-              {
-                label: t("cases.detail_action_deadline"),
-                icon: CalendarClock,
-                onClick: () => setActiveTab("deadlines_tasks"),
-              },
-              {
-                label: t("cases.detail_action_document"),
-                icon: FileText,
-                onClick: () => setActiveTab("documents"),
-              },
-              {
-                label: t("cases.detail_action_time"),
-                icon: Clock,
-                onClick: () => setActiveTab("billing"),
-              },
-              {
-                label: t("cases.detail_action_assistant"),
-                icon: MessageSquare,
-                onClick: () => setActiveTab("strategy"),
-              },
-            ].map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.label}
-                  type="button"
-                  onClick={action.onClick}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
-                >
-                  <Icon size={13} />
-                  {action.label}
-                </button>
-              );
-            })}
-            <Link
-              href={`/dashboard/bea?case=${encodedCaseSlug}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
-            >
-              <Mail size={13} />
-              beA
-            </Link>
-            <Link
-              href={`/dashboard/kollisionspruefung?name=${encodeURIComponent(
-                caseData.clientName || caseData.opponentName || ""
-              )}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 text-xs font-medium text-[color:var(--ds-text)] transition-colors hover:border-[color:var(--brand-primary)]"
-            >
-              <Scale size={13} />
-              {t("cases.detail_action_conflict")}
-            </Link>
           </div>
         </div>
       </div>
@@ -2631,7 +2651,7 @@ export default function CaseDetailPage() {
         )}
 
         {activeTab === "documents" && (
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-5xl space-y-4">
             {/* P3.1: Multi-file drag-drop upload zone */}
             <div
               onDragOver={(e) => {
@@ -2659,7 +2679,7 @@ export default function CaseDetailPage() {
                 }
               }}
               className={cn(
-                "rounded-xl border-2 border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none",
+                "rounded-xl border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 text-center transition-colors focus:border-[color:var(--brand-primary)] focus:outline-none",
                 caseData?.status === "archived" && "pointer-events-none opacity-50"
               )}
               tabIndex={caseData?.status === "archived" ? -1 : 0}
@@ -2676,12 +2696,13 @@ export default function CaseDetailPage() {
                 }
               }}
             >
-              <FileText size={32} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
-              <p className="text-sm text-[color:var(--ds-text)]">
-                Dateien hierher ziehen oder klicken zum Auswählen
+              <FileText size={24} className="mx-auto mb-2 text-[color:var(--ds-text-muted)]" />
+              <p className="text-sm font-medium text-[color:var(--ds-text)]">
+                Dokumente hochladen oder hier ablegen
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                PDF, DOCX, EML, JPG, PNG · max. 1 GB pro Datei
+                PDF, DOCX, EML, JPG, PNG · max. 1 GB pro Datei · wird automatisch dieser Akte
+                zugeordnet
               </p>
               {!isOnline() && (
                 <p className="mt-2 text-xs text-amber-600">
@@ -2723,11 +2744,40 @@ export default function CaseDetailPage() {
 
             {/* P3.1: Upload progress queue */}
             {uploadQueue.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[color:var(--ds-text)]">
+                      Upload läuft
+                    </div>
+                    <div className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
+                      {uploadStats.completedFiles}/{uploadStats.totalFiles} Dateien ·{" "}
+                      {formatUploadBytes(uploadStats.uploadedBytes)} von{" "}
+                      {formatUploadBytes(uploadStats.totalBytes)}
+                      {uploadStats.failedFiles > 0 ? ` · ${uploadStats.failedFiles} Fehler` : ""}
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {uploadOverallProgress}%
+                  </div>
+                </div>
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={uploadOverallProgress}
+                  aria-label="Gesamtfortschritt Upload"
+                >
+                  <div
+                    className="brand-bg h-full rounded-full transition-all"
+                    style={{ width: `${uploadOverallProgress}%` }}
+                  />
+                </div>
                 {uploadQueue.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5"
                   >
                     {item.status === "uploading" || item.status === "processing" ? (
                       <Loader2 size={16} className="brand-text shrink-0 animate-spin" />
@@ -2739,24 +2789,41 @@ export default function CaseDetailPage() {
                       <FileText size={16} className="brand-text shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm text-[color:var(--ds-text)]">
-                        {item.fileName}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="truncate text-sm font-medium text-[color:var(--ds-text)]">
+                          {item.fileName}
+                        </div>
+                        <div className="shrink-0 text-xs font-semibold text-[color:var(--ds-text)]">
+                          {item.progress}%
+                        </div>
                       </div>
-                      {item.status === "uploading" && (
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]">
-                          <div
-                            className="brand-bg h-full rounded-full transition-all"
-                            style={{ width: `${item.progress}%` }}
-                          />
-                        </div>
-                      )}
-                      {item.status === "processing" && (
-                        <div className="text-xs text-[color:var(--ds-text-muted)]">
-                          Wird verarbeitet…
-                        </div>
-                      )}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                        <span>{uploadStatusLabel(item.status)}</span>
+                        <span>
+                          {formatUploadBytes(
+                            item.status === "done" ? item.fileSize : item.uploadedBytes
+                          )}{" "}
+                          / {formatUploadBytes(item.fileSize)}
+                        </span>
+                      </div>
+                      <div
+                        className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--ds-border)]"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={item.progress}
+                        aria-label={`Upload ${item.fileName}`}
+                      >
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            item.status === "error" ? "bg-red-500" : "brand-bg"
+                          )}
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
                       {item.status === "error" && (
-                        <div className="text-xs text-red-600">{item.error}</div>
+                        <div className="mt-1 text-xs text-red-600">{item.error}</div>
                       )}
                     </div>
                     {item.status === "error" && (
@@ -2796,8 +2863,9 @@ export default function CaseDetailPage() {
             )}
 
             {/* P3.4: Link existing document */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">
+              <div className="flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                <span className="font-medium text-[color:var(--ds-text)]">Dokumentenliste</span>
                 <select
                   value={docTypeFilter}
                   onChange={(e) => setDocTypeFilter(e.target.value)}
@@ -2942,11 +3010,13 @@ export default function CaseDetailPage() {
             )}
 
             {caseData.documents.length === 0 ? (
-              <div className="space-y-4 py-20 text-center">
-                <FileText size={48} className="mx-auto text-[color:var(--ds-border)]" />
-                <p className="text-[color:var(--ds-text-muted)]">{t("cases.detail_doc_empty")}</p>
-                <p className="text-sm text-[color:var(--ds-text-muted)]">
-                  {t("cases.detail_doc_empty_hint")}
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-6 text-center">
+                <FileText size={30} className="mx-auto text-[color:var(--ds-border)]" />
+                <p className="mt-2 text-sm font-medium text-[color:var(--ds-text)]">
+                  {t("cases.detail_doc_empty")}
+                </p>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                  Upload, WhatsApp-Eingang oder Verknüpfung legt Dokumente direkt in dieser Akte ab.
                 </p>
               </div>
             ) : (
