@@ -27,7 +27,12 @@ export interface UploadPoolOptions {
 
 const DEFAULTS: Required<UploadPoolOptions> = {
   smallParallel: 4,
-  largeParallel: 2,
+  // Large files (>= 50 MB) are capped at 1 concurrent, not 2: the upload
+  // pipeline triple-buffers (Next.js formData → scanUpload ArrayBuffer →
+  // engine express.raw), so a single 1 GB upload consumes ~4-5 GB RAM.
+  // Two concurrent large uploads OOM a CAX21 (8 GB). One at a time is safe;
+  // small files still fill the remaining 4 small slots.
+  largeParallel: 1,
   largeThreshold: 50 * 1024 * 1024, // 50 MB
 };
 

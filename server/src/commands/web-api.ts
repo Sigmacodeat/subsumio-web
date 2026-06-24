@@ -80,13 +80,20 @@ function maxUploadBytes(): number {
  * Persist the original upload bytes through the binary-storage SSOT
  * (`persistFileBuffer` → `files` table + StorageBackend). Best-effort: a storage
  * failure must not fail the upload, since the extracted markdown already landed.
+ * Returns a result so the caller can surface persistence failures in the API
+ * response — a silent GoBD-original loss is a compliance violation (§ 147 AO).
  */
+interface PersistResult {
+  ok: boolean;
+  error?: string;
+}
+
 async function persistUploadBytes(
   file: { filename: string; data: Buffer; mimeType?: string },
   pageSlug: string,
   sourceId: string,
   storageConfig: unknown
-): Promise<void> {
+): Promise<PersistResult> {
   try {
     const { persistFileBuffer } = await import("../core/file-store.ts");
     await persistFileBuffer({
@@ -97,10 +104,11 @@ async function persistUploadBytes(
       sourceId,
       storageConfig,
     });
+    return { ok: true };
   } catch (err) {
-    console.error(
-      `[web-api] original-file persistence failed for ${pageSlug}: ${err instanceof Error ? err.message : String(err)}`
-    );
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[web-api] original-file persistence failed for ${pageSlug}: ${msg}`);
+    return { ok: false, error: msg };
   }
 }
 
@@ -125,9 +133,11 @@ function requireWebApiKey(apiKey: string | undefined) {
 }
 
 function parseMultipart(body: Buffer, contentType: string): ParsedMultipart {
-  const boundaryMatch = contentType.match(/boundary=([^;\s]+)/i);
+  // RFC 2046: boundary can be quoted and followed by parameters.
+  // Match: boundary="something" or boundary=something; charset=utf-8
+  const boundaryMatch = contentType.match(/boundary=("([^"]+)"|([^;\s]+))/i);
   if (!boundaryMatch) throw new Error("Missing multipart boundary");
-  const boundary = boundaryMatch[1].replace(/^"|"$/g, "");
+  const boundary = (boundaryMatch[2] ?? boundaryMatch[3]).trim();
   const delimiter = Buffer.from(`--${boundary}`);
   const parts = splitBuffer(body, delimiter).filter(
     (p) => p.length > 2 && !p.slice(0, 4).equals(Buffer.from("--\r\n"))
@@ -137,23 +147,46 @@ function parseMultipart(body: Buffer, contentType: string): ParsedMultipart {
   let file: ParsedMultipart["file"];
 
   for (const part of parts) {
+    // Skip the preamble (text before the first boundary) and the closing boundary.
+    if (part.length === 0 || part.equals(Buffer.from("--\r\n"))) continue;
+
     const headerEnd = part.indexOf("\r\n\r\n");
     if (headerEnd === -1) continue;
     const headerBlock = part.slice(0, headerEnd).toString("utf8");
     let content = part.slice(headerEnd + 4);
+    // RFC 2046: the content is followed by \r\n before the next boundary.
     if (content.slice(-2).equals(Buffer.from("\r\n"))) content = content.slice(0, -2);
 
-    const disposition = headerBlock.match(/Content-Disposition:[^\r\n]*/i)?.[0] ?? "";
+    const disposition = headerBlock.match(/Content-Disposition:\s*([^\r\n]+)/i)?.[1] ?? "";
     const nameMatch = disposition.match(/name="([^"]+)"/);
-    const filenameMatch = disposition.match(/filename="([^"]+)"/);
     const name = nameMatch?.[1];
     if (!name) continue;
+
+    // RFC 5987: filename*="UTF-8''Mietvertrag-M%C3%BCller.pdf" (non-ASCII filenames).
+    // Prefer filename* over filename for correct Unicode handling.
+    const filenameStarMatch = disposition.match(/filename\*="([^"]+)"/i);
+    const filenameMatch = disposition.match(/filename="([^"]+)"/i);
+    let filename: string | undefined;
+    if (filenameStarMatch) {
+      // RFC 5987 format: charset'language'value
+      const raw = filenameStarMatch[1];
+      const tickIdx = raw.indexOf("'");
+      const tickIdx2 = tickIdx >= 0 ? raw.indexOf("'", tickIdx + 1) : -1;
+      if (tickIdx2 >= 0) {
+        filename = decodeURIComponent(raw.slice(tickIdx2 + 1));
+      } else {
+        filename = raw;
+      }
+    } else if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
 
     const mimeType =
       headerBlock.match(/Content-Type:\s*([^\r\n]+)/i)?.[1]?.trim() ?? "application/octet-stream";
 
-    if (filenameMatch) {
-      file = { filename: filenameMatch[1], data: content, mimeType };
+    if (filename) {
+      // Last file wins (matches browser behavior for multiple file inputs).
+      file = { filename, data: content, mimeType };
     } else {
       fields[name] = content.toString("utf8");
     }
@@ -2077,6 +2110,18 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     express.raw({ type: () => true, limit: maxUploadBytes() }),
     async (req: Request, res: Response) => {
       try {
+        // Pre-check Content-Length before the body is fully buffered by
+        // express.raw. This rejects oversized requests early (413) instead of
+        // wasting RAM buffering a body that will be rejected anyway.
+        const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
+        if (declaredLength > maxUploadBytes()) {
+          res.status(413).json({
+            error: "file_too_large",
+            message: `Datei überschreitet das Limit von ${Math.round(maxUploadBytes() / 1024 / 1024 / 1024)} GB.`,
+          });
+          return;
+        }
+
         const contentType = String(req.headers["content-type"] ?? "");
         if (!contentType.includes("multipart/form-data")) {
           res.status(400).json({ error: "expected_multipart" });
@@ -2090,6 +2135,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         const { fields, file } = parseMultipart(req.body, contentType);
         if (!file) {
           res.status(400).json({ error: "missing_file" });
+          return;
+        }
+
+        // Defense-in-depth: validate MIME type on the engine side too, so a
+        // direct caller bypassing the web layer can't inject arbitrary MIME
+        // types. Aligned with the web-layer allowlist in upload-validation.ts.
+        const ALLOWED_ENGINE_MIMES = new Set([
+          "application/pdf",
+          "text/markdown",
+          "text/plain",
+          "text/html",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.oasis.opendocument.text",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.oasis.opendocument.spreadsheet",
+          "application/rtf",
+          "image/png",
+          "image/jpeg",
+          "image/tiff",
+          "application/json",
+          "application/xml",
+          "application/octet-stream",
+        ]);
+        if (file.mimeType && !ALLOWED_ENGINE_MIMES.has(file.mimeType)) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
+          });
           return;
         }
 
@@ -2144,10 +2218,20 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
                 source_kind: "web_upload",
                 source_uri: `subsumio-upload:${beaSlug}`,
               });
-              await persistUploadBytes(file, beaSlug, tenantSource, opCtx.config.storage);
+              const persistRes = await persistUploadBytes(
+                file,
+                beaSlug,
+                tenantSource,
+                opCtx.config.storage
+              );
               assertMatterScope(req.matterScope, beaSlug);
               const beaPage = await engine.getPage(beaSlug, { sourceId: opCtx.sourceId });
-              res.json({ slug: beaSlug, title: beaPage?.title ?? item.title });
+              res.json({
+                slug: beaSlug,
+                title: beaPage?.title ?? item.title,
+                original_persisted: persistRes.ok,
+                ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+              });
               return;
             }
             // Not a beA export — fall through to generic document import.
@@ -2188,7 +2272,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
         // can be downloaded unaltered later (§ 147 AO / GoBD). Best-effort: the
         // extracted markdown is the searchable record; byte retention is additive.
-        await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
+        // The result is surfaced in the response so the caller knows if the
+        // original was retained — a silent GoBD loss is a compliance violation.
+        const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
 
         // Defense-in-depth: case_slug is already part of the initial markdown
         // import above. This merge keeps older engine versions/routes aligned
@@ -2236,6 +2322,8 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         res.json({
           slug,
           title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
+          original_persisted: persistRes.ok,
+          ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
         });
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";

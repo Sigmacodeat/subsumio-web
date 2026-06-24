@@ -81,6 +81,30 @@ describe("runUploadPool", () => {
     await run;
   });
 
+  test("default largeParallel is 1 (OOM protection for CAX21)", async () => {
+    const items = Array.from({ length: 3 }, () => ({ size: 100 * MB })); // all large
+    let active = 0;
+    let peak = 0;
+    const gates = items.map(() => deferred());
+
+    const run = runUploadPool(items, async (_item, i) => {
+      active++;
+      peak = Math.max(peak, active);
+      await gates[i].promise;
+      active--;
+    }); // no options → defaults: largeParallel=1
+
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(peak).toBe(1);
+    for (const g of gates) {
+      g.resolve();
+      await Promise.resolve();
+    }
+    await run;
+    expect(peak).toBe(1);
+  });
+
   test("a rejecting worker does not abort the batch", async () => {
     const items = Array.from({ length: 4 }, (_, i) => ({ size: i * MB }));
     let completed = 0;

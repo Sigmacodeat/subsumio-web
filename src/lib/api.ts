@@ -32,6 +32,7 @@ const BASE_URL =
     : env("SUBSUMIO_API_URL") || env("NEXT_PUBLIC_SUBSUMIO_API_URL") || "http://localhost:3001";
 
 type ThinkMode = "conservative" | "balanced" | "tokenmax";
+type UploadProgressPhase = "starting" | "uploading" | "server_processing";
 
 interface ThinkOptions {
   mode?: ThinkMode;
@@ -857,8 +858,16 @@ export const api = {
     async file(
       file: File,
       options?: { title?: string; source?: string; tags?: string[]; case_slug?: string },
-      onProgress?: (progress: number, transfer?: { loaded: number; total: number }) => void
-    ): Promise<{ slug: string; title: string }> {
+      onProgress?: (
+        progress: number,
+        transfer?: { loaded: number; total: number; phase?: UploadProgressPhase }
+      ) => void
+    ): Promise<{
+      slug: string;
+      title: string;
+      original_persisted?: boolean;
+      persist_error?: string;
+    }> {
       const formData = new FormData();
       formData.append("file", file);
       if (options?.title) formData.append("title", options.title);
@@ -866,57 +875,104 @@ export const api = {
       if (options?.tags) formData.append("tags", JSON.stringify(options.tags));
       if (options?.case_slug) formData.append("case_slug", options.case_slug);
 
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${BASE_URL}/api/upload`);
+      const MAX_RETRIES = 2;
+      const RETRYABLE_STATUS = new Set([502, 503, 504]);
 
-        // Attach CSRF token for browser-side uploads
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-          xhr.setRequestHeader("x-csrf-token", csrfToken);
-        }
+      const attemptUpload = (
+        attempt: number
+      ): Promise<{
+        slug: string;
+        title: string;
+        original_persisted?: boolean;
+        persist_error?: string;
+      }> => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `${BASE_URL}/api/upload`);
 
-        if (onProgress) {
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              onProgress((e.loaded / e.total) * 100, { loaded: e.loaded, total: e.total });
+          // Attach CSRF token for browser-side uploads
+          const csrfToken = getCsrfToken();
+          if (csrfToken) {
+            xhr.setRequestHeader("x-csrf-token", csrfToken);
+          }
+
+          if (onProgress) {
+            onProgress(0, { loaded: 0, total: file.size, phase: "starting" });
+            xhr.upload.onloadstart = () => {
+              onProgress(0, { loaded: 0, total: file.size, phase: "uploading" });
+            };
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) {
+                onProgress((e.loaded / e.total) * 100, {
+                  loaded: e.loaded,
+                  total: e.total,
+                  phase: "uploading",
+                });
+              }
+            };
+            xhr.upload.onload = () => {
+              onProgress(96, { loaded: file.size, total: file.size, phase: "server_processing" });
+            };
+          }
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                resolve(JSON.parse(xhr.responseText));
+              } catch {
+                reject(new Error("Invalid JSON response from server"));
+              }
+            } else {
+              // Retry transient server errors (502/503/504) — engine restart,
+              // Caddy hiccup, etc. Don't retry 4xx (client error) or 500 (bug).
+              if (RETRYABLE_STATUS.has(xhr.status) && attempt < MAX_RETRIES) {
+                const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+                console.warn(
+                  `[upload] HTTP ${xhr.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
+                );
+                setTimeout(() => attemptUpload(attempt + 1).then(resolve, reject), delay);
+                return;
+              }
+              // Try to parse a meaningful error message from the JSON response body
+              try {
+                const errBody = JSON.parse(xhr.responseText);
+                const message =
+                  errBody.message ||
+                  errBody.error ||
+                  (xhr.status === 413
+                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                    : `HTTP ${xhr.status}`);
+                reject(new Error(message));
+              } catch {
+                reject(
+                  new Error(
+                    xhr.status === 413
+                      ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                      : xhr.statusText || `HTTP ${xhr.status}`
+                  )
+                );
+              }
             }
           };
-        }
 
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch {
-              reject(new Error("Invalid JSON response from server"));
-            }
-          } else {
-            // Try to parse a meaningful error message from the JSON response body
-            try {
-              const errBody = JSON.parse(xhr.responseText);
-              const message =
-                errBody.message ||
-                errBody.error ||
-                (xhr.status === 413
-                  ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
-                  : `HTTP ${xhr.status}`);
-              reject(new Error(message));
-            } catch {
-              reject(
-                new Error(
-                  xhr.status === 413
-                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
-                    : xhr.statusText || `HTTP ${xhr.status}`
-                )
+          xhr.onerror = () => {
+            // Network error — retry if we have attempts left
+            if (attempt < MAX_RETRIES) {
+              const delay = Math.pow(2, attempt) * 1000;
+              console.warn(
+                `[upload] network error, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`
               );
+              setTimeout(() => attemptUpload(attempt + 1).then(resolve, reject), delay);
+              return;
             }
-          }
-        };
+            reject(new Error("Upload fehlgeschlagen — Netzwerkfehler nach allen Versuchen"));
+          };
 
-        xhr.onerror = () => reject(new Error("Upload failed"));
-        xhr.send(formData);
-      });
+          xhr.send(formData);
+        });
+      };
+
+      return attemptUpload(0);
     },
   },
 

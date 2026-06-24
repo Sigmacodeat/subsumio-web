@@ -1,12 +1,42 @@
 # Auto-HTTPS reverse proxy for the full Subsumio stack.
 # APP_DOMAIN and ENGINE_DOMAIN must have DNS A-records pointing at this box
 # BEFORE first boot — Caddy provisions Let's Encrypt certificates on demand.
+#
+# Body limit matches MAX_UPLOAD_BYTES (1 GB). Transport timeouts are generous
+# because legal-document uploads + server-side extraction (PDF parse, OCR) can
+# take minutes on large files. flush_interval keeps SSE streams responsive.
+
+(common) {
+	request_body {
+		max_size 1073741824
+	}
+	transport http {
+		read_timeout 600s
+		write_timeout 600s
+		dial_timeout 30s
+	}
+}
+
 {$APP_DOMAIN} {
 	encode gzip
-	reverse_proxy web:3000
+	import common
+	reverse_proxy web:3000 {
+		flush_interval -1
+		transport http {
+			read_timeout 600s
+			write_timeout 600s
+		}
+	}
 }
 
 {$ENGINE_DOMAIN} {
 	encode gzip
-	reverse_proxy engine:3131
+	import common
+	reverse_proxy engine:3131 {
+		flush_interval -1
+		transport http {
+			read_timeout 600s
+			write_timeout 600s
+		}
+	}
 }

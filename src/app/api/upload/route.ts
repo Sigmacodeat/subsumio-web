@@ -121,6 +121,14 @@ export const POST = createHandler(
         method: "POST",
         headers: ctx.headers,
         body: cleanForm,
+        signal: AbortSignal.timeout(540_000),
+      }).catch((err: unknown) => {
+        if (err instanceof Error && err.name === "TimeoutError") {
+          throw new Error(
+            "Engine-Timeout: Die Datei konnte nicht rechtzeitig verarbeitet werden (PDF-Extraktion/OCR). Bitte erneut versuchen oder kleinere Datei verwenden."
+          );
+        }
+        throw err;
       });
 
       const text = await upstream.text();
@@ -131,7 +139,12 @@ export const POST = createHandler(
         const initialStatus = inferInitialExtractionStatus(result.cleanName, result.mimeType);
         const initialMeta = createInitialMetadata(result.cleanName, result.mimeType);
         try {
-          const uploadResult = JSON.parse(text) as { slug?: string; title?: string };
+          const uploadResult = JSON.parse(text) as {
+            slug?: string;
+            title?: string;
+            original_persisted?: boolean;
+            persist_error?: string;
+          };
           // Record the file hash so identical future uploads are detected as duplicates.
           if (uploadResult.slug) {
             void duplicateStore.record(result.sha256, uploadResult.slug, result.cleanName);
@@ -167,62 +180,24 @@ export const POST = createHandler(
             analysisStatus = "queued";
             // Set analysis_status on the document frontmatter so the cockpit
             // can surface documents with pending/failed analysis.
-            void fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json", ...ctx.headers },
-              body: JSON.stringify({
-                frontmatter: {
-                  analysis_status: "pending",
-                  analysis_queued_at: new Date().toISOString(),
-                },
-                merge: true,
-              }),
-            }).catch(() => {
-              /* non-fatal: frontmatter enrichment is best-effort */
+            void patchDocFrontmatter(ctx.headers, docSlug, {
+              analysis_status: "pending",
+              analysis_queued_at: new Date().toISOString(),
             });
             // Fire analysis and track outcome on the document.
-            void fetch(`${req.nextUrl.origin}/api/legal/analyze`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-internal-secret": internalSecret,
-              },
-              body: JSON.stringify({
-                document_slug: docSlug,
-                brain_id: ctx.brainId,
-              }),
-            })
-              .then(async (res) => {
-                if (!res.ok) {
-                  await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json", ...ctx.headers },
-                    body: JSON.stringify({
-                      frontmatter: {
-                        analysis_status: "failed",
-                        analysis_error: `HTTP ${res.status}`,
-                        analysis_failed_at: new Date().toISOString(),
-                      },
-                      merge: true,
-                    }),
-                  }).catch(() => {});
-                }
-              })
-              .catch(async () => {
-                await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json", ...ctx.headers },
-                  body: JSON.stringify({
-                    frontmatter: {
-                      analysis_status: "failed",
-                      analysis_error: "fetch_error",
-                      analysis_failed_at: new Date().toISOString(),
-                    },
-                    merge: true,
-                  }),
-                }).catch(() => {});
-              });
+            void runAnalysisWithTracking(
+              ctx.headers,
+              req.nextUrl.origin,
+              internalSecret,
+              docSlug,
+              ctx.brainId
+            );
           }
+          // Determine final status: 207 if any sub-operation failed (reconciliation
+          // or GoBD persistence), otherwise the upstream status.
+          const hasPartialFailure =
+            (reconciliation.attempted && !reconciliation.ok) ||
+            uploadResult.original_persisted === false;
           return Response.json(
             {
               ...uploadResult,
@@ -232,7 +207,7 @@ export const POST = createHandler(
               analysis_status: analysisStatus,
             },
             {
-              status: reconciliation.attempted && !reconciliation.ok ? 207 : upstream.status,
+              status: hasPartialFailure ? 207 : upstream.status,
             }
           );
         } catch (err) {
@@ -317,4 +292,80 @@ async function reconcileCaseDocuments(
     throw new Error(`case_patch_failed_${patchRes.status}`);
   }
   throw new Error("case_patch_conflict_retries_exhausted");
+}
+
+/**
+ * Patch a document's frontmatter on the engine. Best-effort with proper logging
+ * — replaces the old pattern of inline fetch().catch(() => {}) which silently
+ * swallowed errors. Every failure is logged so operators can diagnose issues.
+ */
+async function patchDocFrontmatter(
+  headers: Record<string, string>,
+  docSlug: string,
+  frontmatter: Record<string, unknown>
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${ENGINE_URL}/api/pages/${encodeSlug(docSlug)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: JSON.stringify({ frontmatter, merge: true }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) {
+      console.error(`[upload] frontmatter patch failed for ${docSlug}: HTTP ${res.status}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(
+      `[upload] frontmatter patch error for ${docSlug}:`,
+      err instanceof Error ? err.message : String(err)
+    );
+    return false;
+  }
+}
+
+/**
+ * Fire the legal analysis endpoint and track the outcome on the document's
+ * frontmatter. Replaces the old 4-level nested .catch(() => {}) chain.
+ * All errors are logged; the document frontmatter reflects the final state.
+ */
+async function runAnalysisWithTracking(
+  headers: Record<string, string>,
+  origin: string,
+  internalSecret: string,
+  docSlug: string,
+  brainId: string
+): Promise<void> {
+  let analysisError: string | null = null;
+
+  try {
+    const res = await fetch(`${origin}/api/legal/analyze`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": internalSecret,
+      },
+      body: JSON.stringify({
+        document_slug: docSlug,
+        brain_id: brainId,
+      }),
+      signal: AbortSignal.timeout(300_000),
+    });
+    if (!res.ok) {
+      analysisError = `HTTP ${res.status}`;
+      console.error(`[upload] analysis failed for ${docSlug}: ${analysisError}`);
+    }
+  } catch (err) {
+    analysisError = err instanceof Error ? err.message : "fetch_error";
+    console.error(`[upload] analysis error for ${docSlug}:`, analysisError);
+  }
+
+  if (analysisError) {
+    await patchDocFrontmatter(headers, docSlug, {
+      analysis_status: "failed",
+      analysis_error: analysisError,
+      analysis_failed_at: new Date().toISOString(),
+    });
+  }
 }

@@ -41,12 +41,17 @@ interface FileOverrides {
 interface UploadFile {
   id: string;
   file: File;
-  status: "pending" | "uploading" | "done" | "error" | "skipped";
+  status: "pending" | "preparing" | "uploading" | "processing" | "done" | "error" | "skipped";
   progress: number;
   uploadedBytes?: number;
+  startedAt?: number;
+  speedBps?: number;
+  etaSeconds?: number;
   error?: string;
   slug?: string;
   gobdStamped?: boolean;
+  /** Engine reported the original file bytes were NOT persisted (GoBD risk). */
+  persistWarning?: string;
   /** Per-file bulk-rule overrides; fall back to the batch-wide defaults. */
   overrides?: FileOverrides;
   /** Auto-routing suggestion derived from the filename (informational). */
@@ -86,6 +91,12 @@ function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function formatEta(seconds?: number) {
+  if (!seconds || !Number.isFinite(seconds) || seconds < 1) return "< 1s";
+  if (seconds < 60) return `${Math.ceil(seconds)}s`;
+  return `${Math.floor(seconds / 60)}m ${Math.ceil(seconds % 60)}s`;
 }
 
 type UploadMode = "case" | "knowledge";
@@ -305,7 +316,17 @@ export default function UploadPage() {
 
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === uploadFile.id ? { ...f, status: "uploading", progress: 1, uploadedBytes: 0 } : f
+          f.id === uploadFile.id
+            ? {
+                ...f,
+                status: "preparing",
+                progress: 0,
+                uploadedBytes: 0,
+                startedAt: Date.now(),
+                speedBps: undefined,
+                etaSeconds: undefined,
+              }
+            : f
         )
       );
 
@@ -320,18 +341,44 @@ export default function UploadPage() {
             case_slug: fileCaseSlug,
           },
           (progress, transfer) => {
-            const nextProgress = Math.max(1, Math.min(95, Math.round(progress)));
+            const phase = transfer?.phase;
             const uploadedBytes =
               transfer?.loaded ??
               Math.min(uploadFile.file.size, Math.round((uploadFile.file.size * progress) / 100));
+            const nextProgress =
+              phase === "server_processing"
+                ? 96
+                : uploadedBytes > 0
+                  ? Math.max(1, Math.min(95, Math.round(progress)))
+                  : 0;
+            const now = Date.now();
             setFiles((prev) =>
               prev.map((f) =>
                 f.id === uploadFile.id
-                  ? {
-                      ...f,
-                      progress: nextProgress,
-                      uploadedBytes: Math.min(uploadFile.file.size, uploadedBytes),
-                    }
+                  ? (() => {
+                      const loaded = Math.min(uploadFile.file.size, uploadedBytes);
+                      const startedAt = f.startedAt ?? now;
+                      const elapsedSeconds = Math.max(0.25, (now - startedAt) / 1000);
+                      const speedBps =
+                        phase === "uploading" && loaded > 0 ? loaded / elapsedSeconds : f.speedBps;
+                      const etaSeconds =
+                        speedBps && phase === "uploading"
+                          ? Math.max(0, (uploadFile.file.size - loaded) / speedBps)
+                          : undefined;
+                      return {
+                        ...f,
+                        status:
+                          phase === "server_processing"
+                            ? "processing"
+                            : phase === "uploading"
+                              ? "uploading"
+                              : "preparing",
+                        progress: nextProgress,
+                        uploadedBytes: loaded,
+                        speedBps,
+                        etaSeconds,
+                      };
+                    })()
                   : f
               )
             );
@@ -361,6 +408,16 @@ export default function UploadPage() {
           }
         }
 
+        // Surface engine-side persistence failures (GoBD § 147 AO).
+        // The upload succeeded (markdown extracted), but the original bytes
+        // may not have been stored — the user needs to know.
+        const persistWarning =
+          (result as { original_persisted?: boolean; persist_error?: string })
+            .original_persisted === false
+            ? ((result as { persist_error?: string }).persist_error ??
+              "Originaldatei nicht gespeichert")
+            : undefined;
+
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadFile.id
@@ -371,6 +428,7 @@ export default function UploadPage() {
                   uploadedBytes: f.file.size,
                   slug: result.slug,
                   gobdStamped,
+                  persistWarning,
                 }
               : f
           )
@@ -393,11 +451,14 @@ export default function UploadPage() {
 
   const pendingCount = files.filter((f) => f.status === "pending").length;
   const doneCount = files.filter((f) => f.status === "done").length;
-  const activeCount = files.filter((f) => f.status === "uploading").length;
+  const activeCount = files.filter(
+    (f) => f.status === "preparing" || f.status === "uploading" || f.status === "processing"
+  ).length;
   const errorCount = files.filter((f) => f.status === "error").length;
   const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
   const transferredBytes = files.reduce((sum, f) => {
-    if (f.status === "done" || f.status === "skipped") return sum + f.file.size;
+    if (f.status === "done" || f.status === "skipped" || f.status === "processing")
+      return sum + f.file.size;
     return sum + (f.uploadedBytes ?? 0);
   }, 0);
   const overallProgress =
@@ -733,12 +794,23 @@ export default function UploadPage() {
                       {formatBytes(f.file.size)}
                     </span>
                   </div>
-                  {f.status === "uploading" && (
+                  {(f.status === "preparing" ||
+                    f.status === "uploading" ||
+                    f.status === "processing") && (
                     <div>
                       <div className="mb-1 flex items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)]">
-                        <span>
-                          {formatBytes(f.uploadedBytes ?? 0)} / {formatBytes(f.file.size)}
-                        </span>
+                        {f.status === "preparing" ? (
+                          <span>Initialisiert · {formatBytes(f.file.size)}</span>
+                        ) : f.status === "processing" ? (
+                          <span>Datei übertragen · Server prüft, speichert und indexiert</span>
+                        ) : (
+                          <span>
+                            {formatBytes(f.uploadedBytes ?? 0)} / {formatBytes(f.file.size)}
+                            {f.speedBps
+                              ? ` · ${formatBytes(f.speedBps)}/s · Rest ${formatEta(f.etaSeconds)}`
+                              : ""}
+                          </span>
+                        )}
                         <span className="font-semibold text-[color:var(--ds-text)]">
                           {Math.round(f.progress)}%
                         </span>
@@ -774,6 +846,12 @@ export default function UploadPage() {
                         >
                           <Archive size={10} /> {t("upload.gobd_stamped")}
                         </Badge>
+                      )}
+                      {f.persistWarning && (
+                        <span className="flex items-center gap-1 text-xs text-amber-600">
+                          <AlertCircle size={11} />
+                          GoBD-Warnung: Original nicht gespeichert ({f.persistWarning})
+                        </span>
                       )}
                     </span>
                   )}
@@ -842,7 +920,9 @@ export default function UploadPage() {
                       <X size={14} />
                     </button>
                   )}
-                  {f.status === "uploading" && (
+                  {(f.status === "preparing" ||
+                    f.status === "uploading" ||
+                    f.status === "processing") && (
                     <Loader size={14} className="brand-text animate-spin" />
                   )}
                   {f.status === "done" && (

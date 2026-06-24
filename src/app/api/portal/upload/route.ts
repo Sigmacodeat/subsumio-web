@@ -4,11 +4,13 @@ import { clientIp } from "@/lib/auth/rate-limit";
 import { scanUpload } from "@/lib/upload-pipeline";
 import { verifyPortalToken } from "@/lib/portal-token";
 import { broadcastSseEvent } from "@/lib/realtime-bus";
-import { caseFrontmatter, type CaseFrontmatter, type DocumentEntry, type CommunicationEntry } from "@/lib/legal-types";
 import {
-  documentRequestFromPage,
-  type DocumentRequestFrontmatter,
-} from "@/lib/document-requests";
+  caseFrontmatter,
+  type CaseFrontmatter,
+  type DocumentEntry,
+  type CommunicationEntry,
+} from "@/lib/legal-types";
+import { documentRequestFromPage, type DocumentRequestFrontmatter } from "@/lib/document-requests";
 import {
   appendCaseDocument,
   buildPortalDocumentEntry,
@@ -38,13 +40,16 @@ async function getPage(brainId: string, slug: string): Promise<BrainPage | null>
   return (await res.json()) as BrainPage;
 }
 
-async function updatePage(brainId: string, input: {
-  slug: string;
-  title?: string;
-  type?: string;
-  content?: string;
-  frontmatter?: Record<string, unknown>;
-}): Promise<boolean> {
+async function updatePage(
+  brainId: string,
+  input: {
+    slug: string;
+    title?: string;
+    type?: string;
+    content?: string;
+    frontmatter?: Record<string, unknown>;
+  }
+): Promise<boolean> {
   const res = await fetch(`${ENGINE_URL}/api/pages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...engineHeadersForBrain(brainId) },
@@ -56,8 +61,13 @@ async function updatePage(brainId: string, input: {
 async function findOpenDocumentRequest(
   brainId: string,
   caseSlug: string,
-  preferredSlug?: string,
-): Promise<{ slug: string; frontmatter: DocumentRequestFrontmatter; content?: string; title: string } | null> {
+  preferredSlug?: string
+): Promise<{
+  slug: string;
+  frontmatter: DocumentRequestFrontmatter;
+  content?: string;
+  title: string;
+} | null> {
   if (preferredSlug) {
     const page = await getPage(brainId, preferredSlug);
     const request = page ? documentRequestFromPage(page) : null;
@@ -70,12 +80,24 @@ async function findOpenDocumentRequest(
   });
   if (!res.ok) return null;
 
-  return pagesFrom(await res.json())
-    .map(documentRequestFromPage)
-    .filter((request): request is NonNullable<ReturnType<typeof documentRequestFromPage>> => request !== null)
-    .filter((request) => request.frontmatter.case_slug === caseSlug)
-    .filter((request) => request.frontmatter.status !== "fulfilled" && request.frontmatter.status !== "expired")
-    .sort((a, b) => new Date(b.frontmatter.created_at).getTime() - new Date(a.frontmatter.created_at).getTime())[0] ?? null;
+  return (
+    pagesFrom(await res.json())
+      .map(documentRequestFromPage)
+      .filter(
+        (request): request is NonNullable<ReturnType<typeof documentRequestFromPage>> =>
+          request !== null
+      )
+      .filter((request) => request.frontmatter.case_slug === caseSlug)
+      .filter(
+        (request) =>
+          request.frontmatter.status !== "fulfilled" && request.frontmatter.status !== "expired"
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.frontmatter.created_at).getTime() -
+          new Date(a.frontmatter.created_at).getTime()
+      )[0] ?? null
+  );
 }
 
 export const POST = createPublicHandler(
@@ -98,7 +120,11 @@ export const POST = createPublicHandler(
       return apiError("invalid_or_expired_token", "Token ungueltig oder abgelaufen", 403);
     }
     if (!payload.brain_id) {
-      return apiError("new_portal_link_required", "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.", 403);
+      return apiError(
+        "new_portal_link_required",
+        "Bitte fordern Sie einen neuen Portal-Link bei Ihrer Kanzlei an.",
+        403
+      );
     }
 
     const scan = await scanUpload(file);
@@ -111,7 +137,11 @@ export const POST = createPublicHandler(
 
     const caseFm = caseFrontmatter(casePage);
     if (!caseFm.portal_enabled) {
-      return apiError("portal_disabled", "Diese Akte ist derzeit nicht fuer das Mandantenportal freigegeben.", 403);
+      return apiError(
+        "portal_disabled",
+        "Diese Akte ist derzeit nicht fuer das Mandantenportal freigegeben.",
+        403
+      );
     }
 
     const uploadForm = new FormData();
@@ -125,6 +155,18 @@ export const POST = createPublicHandler(
       method: "POST",
       headers: engineHeadersForBrain(payload.brain_id),
       body: uploadForm,
+      signal: AbortSignal.timeout(540_000),
+    }).catch((err: unknown) => {
+      if (err instanceof Error && err.name === "TimeoutError") {
+        return new Response(
+          JSON.stringify({
+            error: "engine_timeout",
+            message: "Die Verarbeitung dauerte zu lang. Bitte erneut versuchen.",
+          }),
+          { status: 504, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      throw err;
     });
     const uploadText = await upstream.text();
     if (!upstream.ok) {
@@ -134,20 +176,32 @@ export const POST = createPublicHandler(
       });
     }
 
-    const upload = JSON.parse(uploadText) as { slug?: string; title?: string };
-    if (!upload.slug) return apiError("upload_missing_slug", "Upload wurde gespeichert, aber ohne Dokument-Slug zurueckgegeben", 502);
+    const upload = JSON.parse(uploadText) as {
+      slug?: string;
+      title?: string;
+      original_persisted?: boolean;
+      persist_error?: string;
+    };
+    if (!upload.slug)
+      return apiError(
+        "upload_missing_slug",
+        "Upload wurde gespeichert, aber ohne Dokument-Slug zurueckgegeben",
+        502
+      );
 
     const request = await findOpenDocumentRequest(
       payload.brain_id,
       payload.case_slug,
-      typeof documentRequestSlug === "string" && documentRequestSlug ? documentRequestSlug : undefined,
+      typeof documentRequestSlug === "string" && documentRequestSlug
+        ? documentRequestSlug
+        : undefined
     );
     const fulfilled = request
       ? fulfillDocumentRequestItems(
           request.frontmatter,
           upload.slug,
           scan.cleanName,
-          typeof itemKey === "string" && itemKey ? itemKey : undefined,
+          typeof itemKey === "string" && itemKey ? itemKey : undefined
         )
       : null;
 
@@ -163,7 +217,12 @@ export const POST = createPublicHandler(
           updated_at: new Date().toISOString(),
         },
       });
-      if (!ok) return apiError("document_request_update_failed", "Dokumentenanfrage konnte nicht aktualisiert werden", 502);
+      if (!ok)
+        return apiError(
+          "document_request_update_failed",
+          "Dokumentenanfrage konnte nicht aktualisiert werden",
+          502
+        );
     }
 
     const now = new Date().toISOString();
@@ -182,7 +241,9 @@ export const POST = createPublicHandler(
     const updatedFrontmatter: Partial<CaseFrontmatter> = {
       documents: appendCaseDocument(caseFm.documents as DocumentEntry[] | undefined, documentEntry),
       communications: [
-        ...((Array.isArray(caseFm.communications) ? caseFm.communications : []) as CommunicationEntry[]),
+        ...((Array.isArray(caseFm.communications)
+          ? caseFm.communications
+          : []) as CommunicationEntry[]),
         communication,
       ],
     };
@@ -190,10 +251,17 @@ export const POST = createPublicHandler(
     const caseUpdated = await updatePage(payload.brain_id, {
       slug: casePage.slug,
       title: casePage.title,
-      type: String((casePage.frontmatter as Record<string, unknown> | undefined)?.type || "legal_case"),
+      type: String(
+        (casePage.frontmatter as Record<string, unknown> | undefined)?.type || "legal_case"
+      ),
       frontmatter: updatedFrontmatter as Record<string, unknown>,
     });
-    if (!caseUpdated) return apiError("case_update_failed", "Akte konnte nach dem Upload nicht aktualisiert werden", 502);
+    if (!caseUpdated)
+      return apiError(
+        "case_update_failed",
+        "Akte konnte nach dem Upload nicht aktualisiert werden",
+        502
+      );
 
     broadcastSseEvent(payload.brain_id, "portal.document_uploaded", {
       caseSlug: payload.case_slug,
@@ -215,6 +283,8 @@ export const POST = createPublicHandler(
       documentRequestSlug: request?.slug,
       documentRequestStatus: fulfilled?.status,
       matchedItem: fulfilled?.matchedItem,
+      original_persisted: upload.original_persisted ?? true,
+      ...(upload.original_persisted === false ? { persist_error: upload.persist_error } : {}),
     });
-  },
+  }
 );
