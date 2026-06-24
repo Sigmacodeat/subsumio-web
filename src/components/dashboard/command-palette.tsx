@@ -113,8 +113,6 @@ const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
   "nav.section.billing_compliance": "nav.section.billing_compliance",
   "nav.section.communication": "nav.section.communication",
   "nav.section.operations": "nav.section.operations",
-  "nav.section.billing": "nav.section.billing",
-  "nav.section.compliance": "nav.section.compliance",
   Verwaltung: "cmd.section.admin",
 };
 

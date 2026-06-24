@@ -20,6 +20,17 @@ function resolveLimit(key: string, fallback: number): number {
 export const MAX_FILE_SIZE = resolveLimit("MAX_UPLOAD_BYTES", 1024 * 1024 * 1024); // 1 GB
 export const MAX_IMAGE_SIZE = resolveLimit("MAX_IMAGE_BYTES", 200 * 1024 * 1024); // 200 MB
 
+// Browser uploads POST through the web app's /api/upload route. In the documented
+// Hetzner/self-hosted deployment the web upload limit is 1 GB; if the web app is
+// hosted behind a stricter platform/proxy, set NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES
+// to that lower transport limit so the UI fails before the network does.
+const directUploadRaw = process.env.NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES;
+const directUploadParsed = directUploadRaw ? Number(directUploadRaw) : NaN;
+export const DIRECT_UPLOAD_MAX_SIZE =
+  Number.isFinite(directUploadParsed) && directUploadParsed > 0
+    ? Math.floor(directUploadParsed)
+    : MAX_FILE_SIZE;
+
 const IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/tiff"]);
 
 export const ALLOWED_MIME_TYPES = new Set([

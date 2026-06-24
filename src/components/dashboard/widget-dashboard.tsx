@@ -13,6 +13,8 @@ import {
   Mail,
   MessageSquare,
   PenTool,
+  Pin,
+  PinOff,
   Scale,
   ShieldCheck,
   Upload,
@@ -20,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBrainStats, usePages, useRecentQueries } from "@/lib/queries/brain";
+import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
@@ -273,6 +276,7 @@ function QueueRow({
   badge,
   badgeVariant = "default",
   urgent = false,
+  pin,
 }: {
   href: string;
   icon: typeof Briefcase;
@@ -281,12 +285,10 @@ function QueueRow({
   badge?: string;
   badgeVariant?: "default" | "warning" | "danger" | "success" | "info" | "accent";
   urgent?: boolean;
+  pin?: { pinned: boolean; onToggle: () => void; pinLabel: string; unpinLabel: string };
 }) {
-  return (
-    <Link
-      href={href}
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
-    >
+  const inner = (
+    <>
       <div
         className={`flex h-9 w-9 items-center justify-center rounded-md border ${
           urgent
@@ -310,7 +312,44 @@ function QueueRow({
           {badge}
         </Badge>
       )}
-    </Link>
+    </>
+  );
+
+  if (!pin) {
+    return (
+      <Link
+        href={href}
+        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="group flex items-center border-b border-[color:var(--ds-border)] pr-2 last:border-b-0 hover:bg-[color:var(--ds-hover)]">
+      <Link
+        href={href}
+        className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
+      >
+        {inner}
+      </Link>
+      <button
+        type="button"
+        onClick={pin.onToggle}
+        aria-label={pin.pinned ? pin.unpinLabel : pin.pinLabel}
+        title={pin.pinned ? pin.unpinLabel : pin.pinLabel}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-surface-2)] hover:text-[color:var(--ds-text)] ${
+          pin.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        }`}
+      >
+        {pin.pinned ? (
+          <Pin size={13} className="fill-current text-[var(--brand-primary)]" />
+        ) : (
+          <Pin size={13} />
+        )}
+      </button>
+    </div>
   );
 }
 
@@ -391,8 +430,72 @@ function InboxList({ items }: { items: DashboardPageLike[] }) {
   );
 }
 
+function titleFromSlug(slug: string) {
+  const tail = slug.split("/").pop() ?? slug;
+  return tail.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
+  const { t } = useLang();
+  const { pinned, recent, togglePin, isPinned } = useRecentMatters();
+
+  const bySlug = new Map(cases.filter((c) => c.slug).map((c) => [c.slug, c]));
+  const orderedSlugs = [...pinned, ...recent.filter((s) => !pinned.includes(s))];
+  if (orderedSlugs.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Pin size={14} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+        <span className="text-sm font-semibold text-[color:var(--ds-text)]">
+          {t("cockpit.pinned_title")}
+        </span>
+        <span className="truncate text-xs text-[color:var(--ds-text-subtle)]">
+          {t("cockpit.pinned_hint")}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {orderedSlugs.map((slug) => {
+          const found = bySlug.get(slug);
+          const label = text(found?.title, titleFromSlug(slug));
+          const pinnedNow = isPinned(slug);
+          return (
+            <div
+              key={slug}
+              className="group flex items-center gap-1 rounded-full border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] pr-1 pl-1 transition-colors hover:border-[color:var(--ds-border-strong)]"
+            >
+              <Link
+                href={`/dashboard/cases/${slug}`}
+                title={label}
+                className="flex items-center gap-2 rounded-full py-1.5 pr-1 pl-2 text-sm text-[color:var(--ds-text)]"
+              >
+                <Briefcase size={13} className="shrink-0 text-[color:var(--ds-text-muted)]" />
+                <span className="max-w-[180px] truncate">{label}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => togglePin(slug)}
+                aria-label={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
+                title={pinnedNow ? t("cockpit.unpin") : t("cockpit.pin")}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--ds-text-subtle)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              >
+                {pinnedNow ? (
+                  <Pin size={12} className="fill-current text-[var(--brand-primary)]" />
+                ) : (
+                  <PinOff size={12} />
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
   const { t } = useLang();
+  const { togglePin, isPinned } = useRecentMatters();
   return (
     <QueuePanel
       icon={Briefcase}
@@ -416,6 +519,16 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
                 title={text(item.title, t("cases.empty_title"))}
                 meta={text(fm.legal_area, t("cockpit.case_area_fallback"))}
                 badge={text(fm.status, "open")}
+                pin={
+                  item.slug
+                    ? {
+                        pinned: isPinned(item.slug),
+                        onToggle: () => togglePin(item.slug),
+                        pinLabel: t("cockpit.pin"),
+                        unpinLabel: t("cockpit.unpin"),
+                      }
+                    : undefined
+                }
               />
             );
           })
@@ -786,6 +899,8 @@ export function WidgetDashboard() {
       />
 
       <SecondaryStats loading={data.loading} items={secondaryStats} />
+
+      <PinnedMatters cases={data.cases} />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DeadlineList items={data.deadlines} />

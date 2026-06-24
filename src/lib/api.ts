@@ -857,7 +857,7 @@ export const api = {
     async file(
       file: File,
       options?: { title?: string; source?: string; tags?: string[]; case_slug?: string },
-      onProgress?: (progress: number) => void
+      onProgress?: (progress: number, transfer?: { loaded: number; total: number }) => void
     ): Promise<{ slug: string; title: string }> {
       const formData = new FormData();
       formData.append("file", file);
@@ -878,7 +878,9 @@ export const api = {
 
         if (onProgress) {
           xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
+            if (e.lengthComputable) {
+              onProgress((e.loaded / e.total) * 100, { loaded: e.loaded, total: e.total });
+            }
           };
         }
 
@@ -893,9 +895,21 @@ export const api = {
             // Try to parse a meaningful error message from the JSON response body
             try {
               const errBody = JSON.parse(xhr.responseText);
-              reject(new Error(errBody.message || errBody.error || `HTTP ${xhr.status}`));
+              const message =
+                errBody.message ||
+                errBody.error ||
+                (xhr.status === 413
+                  ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                  : `HTTP ${xhr.status}`);
+              reject(new Error(message));
             } catch {
-              reject(new Error(xhr.statusText || `HTTP ${xhr.status}`));
+              reject(
+                new Error(
+                  xhr.status === 413
+                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                    : xhr.statusText || `HTTP ${xhr.status}`
+                )
+              );
             }
           }
         };

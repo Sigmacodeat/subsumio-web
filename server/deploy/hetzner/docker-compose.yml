@@ -1,13 +1,16 @@
 # Subsumio engine — single-box production stack for Hetzner Cloud (EU).
-#   db     — Postgres 16 + pgvector (the brain: pages, embeddings, tenants)
+#   db     — Postgres 16 + pgvector (brain + web auth store)
 #   engine — the gbrain HTTP API + in-process ingestion worker (parses PDFs,
 #            builds embeddings, answers queries) on :3131
-#   caddy  — reverse proxy with automatic Let's Encrypt HTTPS for ENGINE_DOMAIN
+#   web    — Next.js dashboard on :3000
+#   caddy  — reverse proxy with automatic Let's Encrypt HTTPS for APP_DOMAIN
+#            and ENGINE_DOMAIN
 #
 # Bring up:  cd server/deploy/hetzner && cp .env.example .env && <edit .env> &&
 #            docker compose up -d --build
 # All secrets come from .env (never committed). Files live on named volumes;
-# point ENGINE_DOMAIN's DNS A-record at this box first so Caddy can issue TLS.
+# point APP_DOMAIN + ENGINE_DOMAIN DNS A-records at this box first so Caddy
+# can issue TLS.
 
 services:
   db:
@@ -28,7 +31,7 @@ services:
 
   engine:
     build:
-      context: ../..          # = server/  (where the Dockerfile lives)
+      context: ../.. # = server/  (where the Dockerfile lives)
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file: .env
@@ -36,18 +39,60 @@ services:
       DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
       PORT: "3131"
       SUBSUMIO_HOME: /data
-      GBRAIN_HOME: /data   # legacy alias for engine internals
+      GBRAIN_HOME: /data # legacy alias for engine internals
     volumes:
-      - engine-data:/data     # uploaded files / vault on durable volume
+      - engine-data:/data # uploaded files / vault on durable volume
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3131/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://localhost:3131/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  web:
+    build:
+      context: ../../.. # = repo root (Next.js app)
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_APP_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
+        NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
+        NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: "${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}"
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SUBSUMIO_API_URL: http://engine:3131
+      NEXT_PUBLIC_APP_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
+      NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
+      SUBSUMIO_AUTH_DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
+      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
+      NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}
+    depends_on:
+      db:
+        condition: service_healthy
+      engine:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://localhost:3000/api/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   caddy:
     image: caddy:2
@@ -56,12 +101,14 @@ services:
       - "80:80"
       - "443:443"
     environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
       ENGINE_DOMAIN: ${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
+      - web
       - engine
 
 volumes:

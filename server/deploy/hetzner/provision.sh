@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-command Hetzner Cloud provisioning for the Subsumio engine.
+# One-command Hetzner Cloud provisioning for the Subsumio full stack.
 # Creates a firewall (22/80/443) + an EU server that auto-installs Docker.
 #
 # You do once, locally:
@@ -15,7 +15,7 @@ set -euo pipefail
 
 : "${HCLOUD_TOKEN:?export HCLOUD_TOKEN=<your Hetzner API token> first}"
 SSH_KEY="${SSH_KEY:?set SSH_KEY=<name of the ssh key you uploaded to hcloud>}"
-SERVER_NAME="${SERVER_NAME:-subsumio-engine}"
+SERVER_NAME="${SERVER_NAME:-subsumio}"
 SERVER_TYPE="${SERVER_TYPE:-cax21}"   # ARM Ampere · 4 vCPU · 8 GB · 80 GB · ~€7.49/mo
 LOCATION="${LOCATION:-fsn1}"          # Falkenstein, Germany — EU data residency
 IMAGE="${IMAGE:-ubuntu-24.04}"
@@ -45,14 +45,16 @@ cat <<EOF
 ✓ Server is up at: $IP
 
 NEXT STEPS (≈10 min, mostly DNS wait):
-  1. DNS — point your engine domain's A-record at $IP
-       e.g.  api.subsum.io  A  $IP
+  1. DNS — point your app and engine A-records at $IP
+       e.g.  subsum.io      A  $IP
+             api.subsum.io  A  $IP
   2. ssh root@$IP
   3. git clone <THIS_REPO_URL> /opt/subsumio
   4. cd /opt/subsumio/server/deploy/hetzner
-     cp .env.example .env && nano .env      # fill ENGINE_DOMAIN + secrets
+     cp .env.example .env && nano .env      # fill APP_DOMAIN, ENGINE_DOMAIN + secrets
   5. docker compose up -d --build           # first build ~3-5 min
-  6. curl https://api.subsum.io/health       # expect 200 once TLS issues
+  6. curl https://subsum.io/api/health       # expect 200 once TLS issues
+     curl https://api.subsum.io/health       # expect 200
   7. Import statutes (AT/DE/CH/EU) into shared read-only sources:
        cd /opt/subsumio
        docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
@@ -63,6 +65,5 @@ NEXT STEPS (≈10 min, mostly DNS wait):
          bun run server/scripts/import-statutes-split.ts --source law-ch
        docker compose -f server/deploy/hetzner/docker-compose.yml exec engine \\
          bun run server/scripts/import-statutes-split.ts --source law-eu
-  8. In Vercel, set SUBSUMIO_API_URL=https://api.subsum.io and
-     SUBSUMIO_WEB_API_KEY=<same as in .env>, then redeploy.
+  8. Sign in at https://subsum.io/signup and run the dashboard smoke test.
 EOF

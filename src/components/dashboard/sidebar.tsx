@@ -72,19 +72,14 @@ type NavItem = {
 };
 type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 
+// Workflow-ordered, consolidated sidebar. Low-frequency items (opponents,
+// contracts, brain) are intentionally NOT here — they stay reachable via the
+// sidebar filter + command palette through ALL_NAV_ITEMS / PREFERRED_SECTION_BY_HREF.
 export const NAV_SECTIONS: NavSection[] = [
-  {
-    titleKey: "nav.section.operations",
-    items: [
-      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
-      { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
-    ],
-  },
   {
     titleKey: "nav.section.cases_clients",
     items: [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
-      { href: "/dashboard/opponents", icon: User, labelKey: "nav.opponents" },
       { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
     ],
   },
@@ -100,23 +95,25 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
-      { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
     ],
   },
   {
     titleKey: "nav.section.research_knowledge",
+    items: [{ href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" }],
+  },
+  {
+    titleKey: "nav.section.operations",
     items: [
-      { href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" },
-      { href: "/dashboard/brain", icon: Brain, labelKey: "nav.brain" },
+      { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
+      { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
     ],
   },
   {
-    titleKey: "nav.section.billing",
-    items: [{ href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" }],
-  },
-  {
-    titleKey: "nav.section.compliance",
-    items: [{ href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" }],
+    titleKey: "nav.section.billing_compliance",
+    items: [
+      { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
+      { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
+    ],
   },
 ];
 
@@ -145,6 +142,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   ...BOTTOM_ITEMS,
   { href: "/dashboard/client-portal", icon: UserCircle, labelKey: "nav.client_portal" },
   { href: "/dashboard/opponents", icon: Scale, labelKey: "nav.opponents" },
+  { href: "/dashboard/contracts", icon: FileCheck, labelKey: "nav.contracts" },
   { href: "/dashboard/document-requests", icon: FileClock, labelKey: "nav.document_requests" },
   { href: "/dashboard/process-strategy", icon: Gavel, labelKey: "nav.process_strategy" },
   { href: "/dashboard/email-import", icon: FileText, labelKey: "nav.email_import" },
@@ -243,16 +241,16 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/review-queue", section: "nav.section.operations" },
   { href: "/dashboard/approvals", section: "nav.section.operations" },
   { href: "/dashboard/workflows", section: "nav.section.operations" },
-  { href: "/dashboard/invoicing", section: "nav.section.billing" },
-  { href: "/dashboard/cost-calculator", section: "nav.section.billing" },
-  { href: "/dashboard/datev-export", section: "nav.section.billing" },
-  { href: "/dashboard/controlling", section: "nav.section.billing" },
+  { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/controlling", section: "nav.section.billing_compliance" },
   { href: "/dashboard/billing", section: "nav.section.admin" },
-  { href: "/dashboard/compliance", section: "nav.section.compliance" },
-  { href: "/dashboard/compliance/retention", section: "nav.section.compliance" },
-  { href: "/dashboard/anonymize", section: "nav.section.compliance" },
-  { href: "/dashboard/verfahrensdoku", section: "nav.section.compliance" },
-  { href: "/dashboard/data-export", section: "nav.section.compliance" },
+  { href: "/dashboard/compliance", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/compliance/retention", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/anonymize", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/verfahrensdoku", section: "nav.section.billing_compliance" },
+  { href: "/dashboard/data-export", section: "nav.section.billing_compliance" },
   { href: "/dashboard/import-kanzlei", section: "nav.section.admin" },
   { href: "/dashboard/team", section: "nav.section.admin" },
   { href: "/dashboard/experience", section: "nav.section.admin" },

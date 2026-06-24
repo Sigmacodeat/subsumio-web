@@ -6,11 +6,9 @@ import { inferInitialExtractionStatus, createInitialMetadata } from "@/lib/extra
 import { brainDuplicateStore } from "@/lib/duplicate-store";
 import { MAX_FILE_SIZE } from "@/lib/upload-validation";
 
-// Large agency uploads (up to 1 GB) are scanned + proxied synchronously. Give the
-// route generous headroom so the framework doesn't abort a legitimate big upload.
-// Throttled client-side by the staggered upload pool, so few run at once.
-// The bodySizeLimit in next.config.ts (experimental.serverActions.bodySizeLimit)
-// must be >= this value, otherwise Next.js returns 413 before the handler runs.
+// Hetzner/self-hosted agency uploads can be scanned + proxied synchronously up
+// to MAX_FILE_SIZE. If this route runs behind a stricter web host/proxy, that
+// layer must be raised too; otherwise the request fails before this handler runs.
 export const maxDuration = 600;
 
 function encodeSlug(slug: string): string {
@@ -58,7 +56,10 @@ export const POST = createHandler(
     try {
       formData = await req.formData();
     } catch (parseErr) {
-      console.error("[upload] formData parse failed:", parseErr instanceof Error ? parseErr.message : String(parseErr));
+      console.error(
+        "[upload] formData parse failed:",
+        parseErr instanceof Error ? parseErr.message : String(parseErr)
+      );
       return apiError(
         "body_parse_failed",
         "Die Datei konnte nicht verarbeitet werden. Möglicherweise ist sie zu groß oder beschädigt.",

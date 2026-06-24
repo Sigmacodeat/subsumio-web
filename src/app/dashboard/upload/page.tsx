@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { MAX_FILE_SIZE } from "@/lib/upload-validation";
+import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
 import { runUploadPool } from "@/lib/upload-queue";
 import { inferUploadRouting, type KnownCase } from "@/lib/upload-routing";
 import { isOnline, enqueueFileUpload } from "@/lib/offline-store";
@@ -43,6 +43,7 @@ interface UploadFile {
   file: File;
   status: "pending" | "uploading" | "done" | "error" | "skipped";
   progress: number;
+  uploadedBytes?: number;
   error?: string;
   slug?: string;
   gobdStamped?: boolean;
@@ -67,7 +68,7 @@ const ACCEPTED_TYPES = {
   "image/tiff": [".tif", ".tiff"],
 };
 const FOLDER_ACCEPT_RE = /\.(md|txt|pdf|json|docx?|rtf|html?|png|jpe?g|tiff?)$/i;
-const FOLDER_MAX_BYTES = MAX_FILE_SIZE;
+const FOLDER_MAX_BYTES = DIRECT_UPLOAD_MAX_SIZE;
 
 function FileIcon({ name }: { name: string }) {
   const ext = name.split(".").pop()?.toLowerCase();
@@ -209,8 +210,28 @@ export default function UploadPage() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: addFiles,
+    onDropRejected: (rejections) => {
+      const rejectedFiles = rejections.map(({ file, errors }) => {
+        const tooLarge = errors.some((err) => err.code === "file-too-large");
+        const unsupported = errors.some((err) => err.code === "file-invalid-type");
+        const reason = tooLarge
+          ? `Datei zu groß (${formatBytes(file.size)}). Maximum für diesen Upload-Kanal: ${formatBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
+          : unsupported
+            ? "Dateityp wird nicht unterstützt."
+            : errors[0]?.message || "Datei wurde abgelehnt.";
+        return {
+          id: crypto.randomUUID(),
+          file,
+          status: "error" as const,
+          progress: 0,
+          uploadedBytes: 0,
+          error: reason,
+        };
+      });
+      setFiles((prev) => [...prev, ...rejectedFiles]);
+    },
     accept: ACCEPTED_TYPES,
-    maxSize: MAX_FILE_SIZE,
+    maxSize: DIRECT_UPLOAD_MAX_SIZE,
   });
 
   // Walk a chosen local folder (recursively, like an IDE "open folder") and pull
@@ -271,8 +292,9 @@ export default function UploadPage() {
     const effectiveSource = mode === "case" ? "documents" : source;
     const caseSlug = mode === "case" ? selectedCaseSlug : undefined;
 
-    // Staggered upload: large files (>= 50 MB) run max 2 at once, small files
-    // fill the remaining slots, so 1 GB uploads never pile up in memory.
+    // Staggered upload: large files run max 2 at once, small files fill the
+    // remaining slots. Self-hosted/direct-upload deployments can raise the
+    // browser limit without piling transfers up in memory.
     const items = pending.map((f) => ({ ...f, size: f.file.size }));
     await runUploadPool(items, async (uploadFile) => {
       // Per-file overrides win over the batch-wide defaults (bulk rules).
@@ -282,7 +304,9 @@ export default function UploadPage() {
       const fileTags = ov?.tags ?? tagList;
 
       setFiles((prev) =>
-        prev.map((f) => (f.id === uploadFile.id ? { ...f, status: "uploading", progress: 0 } : f))
+        prev.map((f) =>
+          f.id === uploadFile.id ? { ...f, status: "uploading", progress: 1, uploadedBytes: 0 } : f
+        )
       );
 
       try {
@@ -295,8 +319,22 @@ export default function UploadPage() {
             tags: fileTags.length > 0 ? fileTags : undefined,
             case_slug: fileCaseSlug,
           },
-          (progress) => {
-            setFiles((prev) => prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)));
+          (progress, transfer) => {
+            const nextProgress = Math.max(1, Math.min(95, Math.round(progress)));
+            const uploadedBytes =
+              transfer?.loaded ??
+              Math.min(uploadFile.file.size, Math.round((uploadFile.file.size * progress) / 100));
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadFile.id
+                  ? {
+                      ...f,
+                      progress: nextProgress,
+                      uploadedBytes: Math.min(uploadFile.file.size, uploadedBytes),
+                    }
+                  : f
+              )
+            );
           }
         );
 
@@ -326,7 +364,14 @@ export default function UploadPage() {
         setFiles((prev) =>
           prev.map((f) =>
             f.id === uploadFile.id
-              ? { ...f, status: "done", progress: 100, slug: result.slug, gobdStamped }
+              ? {
+                  ...f,
+                  status: "done",
+                  progress: 100,
+                  uploadedBytes: f.file.size,
+                  slug: result.slug,
+                  gobdStamped,
+                }
               : f
           )
         );
@@ -348,6 +393,15 @@ export default function UploadPage() {
 
   const pendingCount = files.filter((f) => f.status === "pending").length;
   const doneCount = files.filter((f) => f.status === "done").length;
+  const activeCount = files.filter((f) => f.status === "uploading").length;
+  const errorCount = files.filter((f) => f.status === "error").length;
+  const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
+  const transferredBytes = files.reduce((sum, f) => {
+    if (f.status === "done" || f.status === "skipped") return sum + f.file.size;
+    return sum + (f.uploadedBytes ?? 0);
+  }, 0);
+  const overallProgress =
+    totalBytes > 0 ? Math.min(100, Math.round((transferredBytes / totalBytes) * 100)) : 0;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
@@ -576,7 +630,7 @@ export default function UploadPage() {
               </Badge>
             ))}
             <span className="text-xs text-[color:var(--ds-text-muted)]">
-              · {t("upload.max_size")}
+              max. {formatBytes(DIRECT_UPLOAD_MAX_SIZE)} pro Datei
             </span>
           </div>
         </div>
@@ -637,6 +691,33 @@ export default function UploadPage() {
           </div>
 
           <div className="space-y-2">
+            {(activeCount > 0 || doneCount > 0 || errorCount > 0) && (
+              <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                  <span>
+                    {doneCount}/{files.length} fertig
+                    {activeCount > 0 ? ` · ${activeCount} aktiv` : ""}
+                    {errorCount > 0 ? ` · ${errorCount} Fehler` : ""}
+                  </span>
+                  <span className="font-semibold text-[color:var(--ds-text)]">
+                    {overallProgress}% · {formatBytes(transferredBytes)} / {formatBytes(totalBytes)}
+                  </span>
+                </div>
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={overallProgress}
+                  aria-label="Gesamtfortschritt Upload"
+                >
+                  <div
+                    className="brand-bg h-full rounded-full transition-all"
+                    style={{ width: `${overallProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
             {files.map((f) => (
               <div
                 key={f.id}
@@ -653,11 +734,28 @@ export default function UploadPage() {
                     </span>
                   </div>
                   {f.status === "uploading" && (
-                    <div className="h-1 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+                    <div>
+                      <div className="mb-1 flex items-center justify-between gap-2 text-xs text-[color:var(--ds-text-muted)]">
+                        <span>
+                          {formatBytes(f.uploadedBytes ?? 0)} / {formatBytes(f.file.size)}
+                        </span>
+                        <span className="font-semibold text-[color:var(--ds-text)]">
+                          {Math.round(f.progress)}%
+                        </span>
+                      </div>
                       <div
-                        className="brand-bg h-full rounded-full transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]"
-                        style={{ width: `${f.progress}%` }}
-                      />
+                        className="h-1.5 overflow-hidden rounded-full bg-[color:var(--ds-border)]"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(f.progress)}
+                        aria-label={`Upload ${f.file.name}`}
+                      >
+                        <div
+                          className="brand-bg h-full rounded-full transition-all"
+                          style={{ width: `${f.progress}%` }}
+                        />
+                      </div>
                     </div>
                   )}
                   {f.status === "done" && f.slug && (

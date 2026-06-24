@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLang } from "@/lib/use-lang";
 import { useUnsavedChanges } from "@/lib/use-unsaved-changes";
+import { recordMatterVisit } from "@/lib/use-recent-matters";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -50,7 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import { MAX_FILE_SIZE } from "@/lib/upload-validation";
+import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
 import { runUploadPool } from "@/lib/upload-queue";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
@@ -326,6 +327,9 @@ export default function CaseDetailPage() {
   const { addToast } = useToast();
   const params = useParams();
   const slug = Array.isArray(params.slug) ? params.slug.join("/") : (params.slug as string);
+  useEffect(() => {
+    if (slug) recordMatterVisit(slug);
+  }, [slug]);
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const { pendingCount: offlinePendingCount, syncing: offlineSyncing } = useMutationQueue();
@@ -958,7 +962,7 @@ export default function CaseDetailPage() {
       ".html",
       ".htm",
     ];
-    const MAX_SIZE = MAX_FILE_SIZE;
+    const MAX_SIZE = DIRECT_UPLOAD_MAX_SIZE;
 
     const validFiles: File[] = [];
     for (const file of files) {
@@ -969,7 +973,7 @@ export default function CaseDetailPage() {
       }
       if (file.size > MAX_SIZE) {
         setUploadError(
-          `${file.name} ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum: ${Math.round(MAX_FILE_SIZE / 1024 / 1024 / 1024)} GB`
+          `${file.name} ist zu groß (${formatUploadBytes(file.size)}). Maximum für diesen Upload-Kanal: ${formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)}.`
         );
         continue;
       }
@@ -1013,8 +1017,9 @@ export default function CaseDetailPage() {
     }));
     setUploadQueue((prev) => [...prev, ...queueItems]);
 
-    // Staggered upload: large files (>= 50 MB) run max 2 at once so 1 GB
-    // documents never pile up in memory; small files fill the idle slots.
+    // Staggered upload: large files run max 2 at once, small files fill idle
+    // slots. Direct-upload/self-hosted deployments can raise the browser limit
+    // without piling transfers up in memory.
     const poolItems = validFiles.map((file, i) => ({
       file,
       queueId: queueItems[i].id,
@@ -1111,7 +1116,7 @@ export default function CaseDetailPage() {
         for await (const entry of handle.values()) {
           if (entry.kind === "file" && entry.getFile) {
             const f = await entry.getFile();
-            if (ACCEPT_RE.test(f.name) && f.size <= MAX_FILE_SIZE) out.push(f);
+            if (ACCEPT_RE.test(f.name) && f.size <= DIRECT_UPLOAD_MAX_SIZE) out.push(f);
           } else if (entry.kind === "directory") {
             await walk(entry, depth + 1);
           }
@@ -2701,8 +2706,8 @@ export default function CaseDetailPage() {
                 Dokumente hochladen oder hier ablegen
               </p>
               <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                PDF, DOCX, EML, JPG, PNG · max. 1 GB pro Datei · wird automatisch dieser Akte
-                zugeordnet
+                PDF, DOCX, EML, JPG, PNG · max. {formatUploadBytes(DIRECT_UPLOAD_MAX_SIZE)} pro
+                Datei · wird automatisch dieser Akte zugeordnet
               </p>
               {!isOnline() && (
                 <p className="mt-2 text-xs text-amber-600">

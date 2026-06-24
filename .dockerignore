@@ -1,0 +1,14 @@
+.git
+.github
+.next
+.vercel
+node_modules
+test-results
+coverage
+.env
+.env.*
+!.env.example
+server/.env
+server/deploy/hetzner/.env
+*.log
+tsconfig.tsbuildinfo

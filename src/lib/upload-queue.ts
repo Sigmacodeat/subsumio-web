@@ -1,11 +1,12 @@
 /**
  * Staggered upload pool — bounds how many uploads run at once.
  *
- * Agency-level uploads accept files up to 1 GB. Each large upload buffers in
- * the browser, the web proxy, and the engine, so running many in parallel would
- * blow up RAM. This pool runs a *size-aware* concurrency limit: small files fill
- * idle slots quickly, while large files (>= `largeThreshold`) are capped at
- * `largeParallel` simultaneous transfers and the rest stagger in behind them.
+ * Agency-level deployments can accept very large originals when they use
+ * self-hosted or direct object-storage uploads. Each large upload buffers across
+ * the active transport path, so running many in parallel would blow up RAM. This
+ * pool runs a *size-aware* concurrency limit: small files fill idle slots
+ * quickly, while large files (>= `largeThreshold`) are capped at `largeParallel`
+ * simultaneous transfers and the rest stagger in behind them.
  *
  * Pure (no external dependency), framework-agnostic, and unit-testable.
  */

@@ -316,6 +316,13 @@ export const D = {
     de: "Noch keine aktive Akte im Cockpit.",
     en: "No active cases in the cockpit yet.",
   },
+  "cockpit.pinned_title": { de: "Schnellzugriff Akten", en: "Quick-access Matters" },
+  "cockpit.pinned_hint": {
+    de: "Angeheftete & zuletzt geöffnete Akten",
+    en: "Pinned & recently opened matters",
+  },
+  "cockpit.pin": { de: "Anheften", en: "Pin" },
+  "cockpit.unpin": { de: "Lösen", en: "Unpin" },
   "cockpit.untitled_inbox": { de: "Unbenannter Eingang", en: "Untitled inbox item" },
   "cockpit.case_area_fallback": { de: "Rechtsgebiet offen", en: "Legal area open" },
   "cockpit.task_deadlines": { de: "Fristen zuerst absichern", en: "Secure deadlines first" },
@@ -1807,7 +1814,7 @@ export const D = {
   "upload.drop_release": { de: "Loslassen zum Hochladen", en: "Release to upload" },
   "upload.click_browse": { de: "oder", en: "or" },
   "upload.browse_link": { de: "Dateien auswählen", en: "browse files" },
-  "upload.max_size": { de: "· max 1 GB", en: "· max 1 GB" },
+  "upload.max_size": { de: "max. aktuelles Upload-Limit", en: "current upload limit" },
   "upload.folder_scan": { de: "Ganzen Ordner einlesen", en: "Scan entire folder" },
   "upload.folder_scanning": { de: "Ordner wird gelesen…", en: "Scanning folder…" },
   "upload.folder_desc": {

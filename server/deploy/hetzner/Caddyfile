@@ -1,6 +1,11 @@
-# Auto-HTTPS reverse proxy for the Subsumio engine.
-# ENGINE_DOMAIN (e.g. api.subsum.io) must have a DNS A-record pointing at this
-# box BEFORE first boot — Caddy provisions a Let's Encrypt certificate on demand.
+# Auto-HTTPS reverse proxy for the full Subsumio stack.
+# APP_DOMAIN and ENGINE_DOMAIN must have DNS A-records pointing at this box
+# BEFORE first boot — Caddy provisions Let's Encrypt certificates on demand.
+{$APP_DOMAIN} {
+	encode gzip
+	reverse_proxy web:3000
+}
+
 {$ENGINE_DOMAIN} {
 	encode gzip
 	reverse_proxy engine:3131
