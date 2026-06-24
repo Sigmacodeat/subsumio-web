@@ -557,7 +557,15 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
   app.use("/register", cors(corsOAuthOptions));
   app.use("/revoke", cors(corsOAuthOptions));
   // Subsumio dashboard REST API — same CORS allowlist as OAuth when set.
-  app.use("/api", cors({ ...corsOAuthOptions, credentials: true }));
+  // Includes x-upload-token for direct-to-engine browser uploads (bypasses Vercel body cap).
+  app.use(
+    "/api",
+    cors({
+      ...corsOAuthOptions,
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization", "Accept", "x-upload-token"],
+    })
+  );
 
   // ---------------------------------------------------------------------------
   // Custom client_credentials handler (before mcpAuthRouter)
@@ -599,12 +607,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
       try {
         const { client_id, client_secret, scope } = req.body;
         if (!client_id || !client_secret) {
-          res
-            .status(400)
-            .json({
-              error: "invalid_request",
-              error_description: "client_id and client_secret required",
-            });
+          res.status(400).json({
+            error: "invalid_request",
+            error_description: "client_id and client_secret required",
+          });
           return;
         }
 
@@ -1400,12 +1406,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         const { ConnectorManager, SUPPORTED_CONNECTORS, CONNECTOR_REGISTRY } =
           await import("../core/ingestion/connectors/manager.ts");
         if (!SUPPORTED_CONNECTORS.includes(service)) {
-          res
-            .status(400)
-            .json({
-              error: "unsupported_service",
-              message: `Service "${service}" is not supported`,
-            });
+          res.status(400).json({
+            error: "unsupported_service",
+            message: `Service "${service}" is not supported`,
+          });
           return;
         }
         const mgr = new ConnectorManager();
@@ -1418,12 +1422,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           return;
         }
         if (!entry.enabled) {
-          res
-            .status(409)
-            .json({
-              error: "disabled",
-              message: `Connector "${service}" is disabled. Enable it first.`,
-            });
+          res.status(409).json({
+            error: "disabled",
+            message: `Connector "${service}" is disabled. Enable it first.`,
+          });
           return;
         }
         // Load raw registry to get config for instantiation.
@@ -1468,12 +1470,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         const { ConnectorManager, SUPPORTED_CONNECTORS } =
           await import("../core/ingestion/connectors/manager.ts");
         if (!SUPPORTED_CONNECTORS.includes(service)) {
-          res
-            .status(400)
-            .json({
-              error: "unsupported_service",
-              message: `Service "${service}" is not supported`,
-            });
+          res.status(400).json({
+            error: "unsupported_service",
+            message: `Service "${service}" is not supported`,
+          });
           return;
         }
         const mgr = new ConnectorManager();
@@ -1505,12 +1505,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
         const { ConnectorManager, SUPPORTED_CONNECTORS } =
           await import("../core/ingestion/connectors/manager.ts");
         if (!SUPPORTED_CONNECTORS.includes(service)) {
-          res
-            .status(400)
-            .json({
-              error: "unsupported_service",
-              message: `Service "${service}" is not supported`,
-            });
+          res.status(400).json({
+            error: "unsupported_service",
+            message: `Service "${service}" is not supported`,
+          });
           return;
         }
         const mgr = new ConnectorManager();
@@ -1766,12 +1764,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
           });
           return res.send(renderAbandonedThreadsCard(threads));
         }
-        res
-          .status(400)
-          .json({
-            error: "unknown_chart_type",
-            supported: ["brier-trend", "domain-bars", "pattern-statements", "abandoned-threads"],
-          });
+        res.status(400).json({
+          error: "unknown_chart_type",
+          supported: ["brier-trend", "domain-bars", "pattern-statements", "abandoned-threads"],
+        });
         return;
       } catch (err) {
         res.status(500).json({ error: err instanceof Error ? err.message : "unknown" });
@@ -2845,12 +2841,10 @@ export async function runServeHttp(engine: BrainEngine, options: ServeHttpOption
 
       const secret = cfg.webhook_secret;
       if (!secret || typeof secret !== "string") {
-        res
-          .status(401)
-          .json({
-            error: "webhook_not_configured",
-            message: "Run: gbrain sources webhook set " + source.id,
-          });
+        res.status(401).json({
+          error: "webhook_not_configured",
+          message: "Run: gbrain sources webhook set " + source.id,
+        });
         return;
       }
 
