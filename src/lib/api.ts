@@ -878,6 +878,38 @@ export const api = {
       const MAX_RETRIES = 2;
       const RETRYABLE_STATUS = new Set([502, 503, 504]);
 
+      // Determine upload target: direct-to-engine (bypasses Vercel body cap) or same-origin
+      const engineUrl =
+        typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ENGINE_URL || "" : "";
+      const useDirectUpload = !!engineUrl;
+
+      // If direct upload, fetch a short-lived token from the web app first
+      let uploadToken: string | null = null;
+      if (useDirectUpload) {
+        try {
+          const tokenRes = await csrfFetch(`${BASE_URL}/api/upload-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source: options?.source ?? "documents",
+              case_slug: options?.case_slug,
+              title: options?.title,
+              tags: options?.tags ? JSON.stringify(options.tags) : undefined,
+            }),
+          });
+          if (tokenRes.ok) {
+            const tokenData = await tokenRes.json();
+            uploadToken = tokenData.token as string;
+          }
+        } catch {
+          // Token fetch failed — fall back to same-origin upload
+        }
+      }
+
+      // If we couldn't get a token, fall back to same-origin
+      const targetUrl =
+        uploadToken && engineUrl ? `${engineUrl}/api/direct-upload` : `${BASE_URL}/api/upload`;
+
       const attemptUpload = (
         attempt: number
       ): Promise<{
@@ -888,12 +920,16 @@ export const api = {
       }> => {
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open("POST", `${BASE_URL}/api/upload`);
+          xhr.open("POST", targetUrl);
 
-          // Attach CSRF token for browser-side uploads
-          const csrfToken = getCsrfToken();
-          if (csrfToken) {
-            xhr.setRequestHeader("x-csrf-token", csrfToken);
+          if (uploadToken) {
+            xhr.setRequestHeader("x-upload-token", uploadToken);
+          } else {
+            // Same-origin upload needs CSRF token
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+              xhr.setRequestHeader("x-csrf-token", csrfToken);
+            }
           }
 
           if (onProgress) {
@@ -940,14 +976,14 @@ export const api = {
                   errBody.message ||
                   errBody.error ||
                   (xhr.status === 413
-                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bei Vercel-Hosting: Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                     : `HTTP ${xhr.status}`);
                 reject(new Error(message));
               } catch {
                 reject(
                   new Error(
                     xhr.status === 413
-                      ? "Datei zu groß für den aktuellen Upload-Kanal. Bitte Web-Host/Proxy-Limit prüfen; Hetzner/Caddy muss 1 GB durchlassen."
+                      ? "Datei zu groß für den aktuellen Upload-Kanal. Bei Vercel-Hosting: Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                       : xhr.statusText || `HTTP ${xhr.status}`
                   )
                 );

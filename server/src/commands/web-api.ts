@@ -11,6 +11,7 @@ import type { Application, Request, Response, NextFunction } from "express";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { join, dirname, extname } from "path";
 import { fileURLToPath } from "url";
+import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from "crypto";
 import type { BrainEngine } from "../core/engine.ts";
 import { dispatchToolCall, buildOperationContext } from "../mcp/dispatch.ts";
 import { importFromContent, ocrImageBuffer } from "../core/import-file.ts";
@@ -747,6 +748,87 @@ async function enrichCitations(
   }));
 }
 
+// ── Direct-to-Engine Upload Token ──────────────────────────────────────
+//
+// When the web app runs on a platform with a body-size cap (Vercel: 4.5–100 MB),
+// the browser uploads directly to the engine, bypassing the platform. The web
+// app issues a short-lived signed token (HMAC-SHA256 with SUBSUMIO_INTERNAL_SECRET)
+// that the engine validates without requiring the API key (which must never be
+// exposed to the browser).
+//
+// Token format: base64url(JSON_payload).base64url(HMAC_signature)
+
+interface UploadTokenPayload {
+  brain_id: string;
+  user_id: string;
+  case_slug?: string;
+  source: string;
+  title?: string;
+  tags?: string;
+  exp: number; // Unix seconds
+}
+
+function signUploadToken(payload: UploadTokenPayload): string {
+  const secret = process.env.SUBSUMIO_INTERNAL_SECRET ?? "";
+  const data = Buffer.from(JSON.stringify(payload));
+  const b64 = data.toString("base64url");
+  const sig = createHmac("sha256", secret).update(b64).digest("base64url");
+  return `${b64}.${sig}`;
+}
+
+function verifyUploadToken(token: string): UploadTokenPayload | null {
+  const secret = process.env.SUBSUMIO_INTERNAL_SECRET ?? "";
+  if (!secret || !token) return null;
+  const dotIdx = token.lastIndexOf(".");
+  if (dotIdx === -1) return null;
+  const b64 = token.slice(0, dotIdx);
+  const sig = token.slice(dotIdx + 1);
+  const expectedSig = createHmac("sha256", secret).update(b64).digest("base64url");
+  // Timing-safe comparison
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expectedSig);
+  if (a.length !== b.length) return null;
+  if (!cryptoTimingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(b64, "base64url").toString()) as UploadTokenPayload;
+    if (Date.now() / 1000 > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// ── CORS for direct-to-engine browser uploads ──────────────────────────
+
+function parseEngineCorsAllowlist(): Set<string> | null {
+  const v = process.env.GBRAIN_HTTP_CORS_ORIGIN;
+  if (!v) return null;
+  return new Set(
+    v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+}
+
+function engineCorsMiddleware(allowlist: Set<string> | null) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    if (origin && allowlist && allowlist.has(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-upload-token");
+      res.setHeader("Access-Control-Max-Age", "86400");
+    }
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+    next();
+  };
+}
+
 export function mountWebApi(app: Application, engine: BrainEngine, options: WebApiOptions = {}) {
   // SUBSUMIO_WEB_API_KEY is the canonical name (matches .env.example and the
   // signing key documented in identity-token.ts). The GBRAIN_/SIGMABRAIN_
@@ -782,6 +864,238 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
   }
 
   app.use("/api", guard);
+
+  // ── CORS for direct-to-engine browser uploads ────────────────────────
+  // Applied before the guard so OPTIONS preflight doesn't get 401'd.
+  const corsAllowlist = parseEngineCorsAllowlist();
+  app.use("/api/direct-upload", engineCorsMiddleware(corsAllowlist));
+
+  // ── Direct-to-Engine Upload ───────────────────────────────────────────
+  // Bypasses the API key guard — authenticates via a short-lived signed
+  // token issued by the web app. This lets the browser upload large files
+  // directly to the engine, avoiding platform body-size caps (Vercel).
+  app.post(
+    "/api/direct-upload",
+    express.raw({ type: () => true, limit: maxUploadBytes() }),
+    async (req: Request, res: Response) => {
+      try {
+        // Validate upload token
+        const token = req.headers["x-upload-token"] as string | undefined;
+        const payload = verifyUploadToken(token ?? "");
+        if (!payload) {
+          res
+            .status(401)
+            .json({
+              error: "invalid_upload_token",
+              message: "Upload token is missing, expired, or invalid.",
+            });
+          return;
+        }
+
+        // Content-Length pre-check
+        const declaredLength = parseInt(String(req.headers["content-length"] ?? "0"), 10);
+        if (declaredLength > maxUploadBytes()) {
+          res.status(413).json({
+            error: "file_too_large",
+            message: `Datei überschreitet das Limit von ${Math.round(maxUploadBytes() / 1024 / 1024 / 1024)} GB.`,
+          });
+          return;
+        }
+
+        const contentType = String(req.headers["content-type"] ?? "");
+        if (!contentType.includes("multipart/form-data")) {
+          res.status(400).json({ error: "expected_multipart" });
+          return;
+        }
+        if (!Buffer.isBuffer(req.body)) {
+          res.status(400).json({ error: "empty_body" });
+          return;
+        }
+
+        const { fields, file } = parseMultipart(req.body, contentType);
+        if (!file) {
+          res.status(400).json({ error: "missing_file" });
+          return;
+        }
+
+        // MIME-type allowlist (same as regular upload)
+        const ALLOWED_ENGINE_MIMES = new Set([
+          "application/pdf",
+          "text/markdown",
+          "text/plain",
+          "text/html",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.oasis.opendocument.text",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.oasis.opendocument.spreadsheet",
+          "application/rtf",
+          "image/png",
+          "image/jpeg",
+          "image/tiff",
+          "application/json",
+          "application/xml",
+          "application/octet-stream",
+        ]);
+        if (file.mimeType && !ALLOWED_ENGINE_MIMES.has(file.mimeType)) {
+          res.status(415).json({
+            error: "unsupported_file_type",
+            message: `Dateityp ${file.mimeType} ist nicht erlaubt.`,
+          });
+          return;
+        }
+
+        // Use token payload for routing
+        const source = payload.source || fields.source || "documents";
+        const title = payload.title || fields.title || undefined;
+
+        let tagList: string[] = [];
+        if (payload.tags) {
+          try {
+            const parsed = JSON.parse(payload.tags);
+            tagList = Array.isArray(parsed) ? parsed.map(String) : [];
+          } catch {
+            tagList = [];
+          }
+        } else if (fields.tags) {
+          try {
+            const parsed = JSON.parse(fields.tags);
+            tagList = Array.isArray(parsed)
+              ? parsed.map(String)
+              : fields.tags
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter(Boolean);
+          } catch {
+            tagList = fields.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean);
+          }
+        }
+
+        // Use the brain_id from the token as the source (tenant scoping)
+        const tenantSource = payload.brain_id;
+        await ensureSource(tenantSource);
+
+        const { isAvailable } = await import("../core/ai/gateway.ts");
+        const noEmbed = !isAvailable("embedding");
+
+        const opCtx = buildOperationContext(engine, {}, { remote: false, sourceId: tenantSource });
+
+        // beA-Export (XML)
+        if (file.filename.toLowerCase().endsWith(".xml")) {
+          try {
+            const { BeaImportConnector } =
+              await import("../core/ingestion/connectors/bea-import.ts");
+            const connector = new BeaImportConnector({});
+            const item = connector.parseBeaXmlContent(file.data.toString("utf8"), file.filename);
+            if (item) {
+              const event = await connector.toIngestionEvent(item);
+              const beaSlug =
+                String((event.metadata as Record<string, unknown> | undefined)?.slug ?? "") ||
+                slugFromUpload(source, file.filename, title);
+              await importFromContent(engine, beaSlug, event.content, {
+                noEmbed,
+                sourceId: tenantSource,
+                filename: file.filename,
+                source_kind: "web_upload",
+                source_uri: `subsumio-upload:${beaSlug}`,
+              });
+              const persistRes = await persistUploadBytes(
+                file,
+                beaSlug,
+                tenantSource,
+                opCtx.config.storage
+              );
+              const beaPage = await engine.getPage(beaSlug, { sourceId: tenantSource });
+              res.json({
+                slug: beaSlug,
+                title: beaPage?.title ?? item.title,
+                original_persisted: persistRes.ok,
+                ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+              });
+              return;
+            }
+          } catch (err) {
+            console.error(
+              `[direct-upload] beA XML parse failed, falling back to generic import: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        const slug = slugFromUpload(source, file.filename, title);
+        const caseSlug = payload.case_slug?.trim() || fields.case_slug?.trim();
+
+        const uploadFrontmatter: Record<string, unknown> = {
+          source: "upload",
+          source_format: extname(file.filename).replace(/^\./, "").toLowerCase() || undefined,
+          uploaded_by: payload.user_id,
+          upload_source: "direct",
+          ...(caseSlug ? { case_slug: caseSlug, assignment_status: "assigned" } : {}),
+        };
+        const markdown = await buildMarkdownFromUpload(
+          engine,
+          file.filename,
+          file.data,
+          title,
+          uploadFrontmatter
+        );
+
+        await importFromContent(engine, slug, markdown, {
+          noEmbed,
+          sourceId: tenantSource,
+          filename: file.filename,
+          source_kind: "web_upload",
+          source_uri: `subsumio-upload:${slug}`,
+        });
+
+        // Persist original bytes (GoBD § 147 AO)
+        const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
+
+        // Stamp case_slug via invokeOp (same as regular upload route)
+        if (caseSlug) {
+          try {
+            await invokeOp(
+              engine,
+              "put_page",
+              {
+                slug,
+                frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
+                merge: true,
+              },
+              tenantSource
+            );
+          } catch {
+            /* best effort — the document is imported, stamping is enrichment */
+          }
+        }
+
+        // Tag the page
+        if (tagList.length > 0) {
+          for (const tag of tagList) {
+            try {
+              await invokeOp(engine, "add_tag", { slug, tag }, tenantSource);
+            } catch {
+              /* best effort */
+            }
+          }
+        }
+
+        const page = await engine.getPage(slug, { sourceId: tenantSource });
+        res.json({
+          ok: true,
+          slug,
+          title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
+          original_persisted: persistRes.ok,
+          ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
+        });
+      } catch (err) {
+        console.error("[direct-upload] error:", err instanceof Error ? err.message : String(err));
+        res.status(500).json({ error: "upload_failed", message: "Upload fehlgeschlagen." });
+      }
+    }
+  );
 
   // Fail-closed tenant gate: in SaaS mode a missing/invalid tenant header
   // must NEVER silently widen to the all-seeing 'default' scope.
