@@ -345,6 +345,156 @@ async function buildMarkdownFromUpload(
   return withUploadFrontmatter(`${text}\n`, { title: t, type: "document", ...extraFrontmatter });
 }
 
+// ── Large Document Splitting ───────────────────────────────────────────
+// When extracted text exceeds SPLIT_THRESHOLD bytes, we split it into
+// multiple sub-pages (slug/part-001, slug/part-002, …). Each part gets
+// its own chunks + embeddings, staying well under all size limits.
+// A parent index page links all parts for unified retrieval.
+const SPLIT_THRESHOLD = 4_000_000; // 4MB — safe margin below 50MB limits
+const SPLIT_TARGET = 3_500_000; // Target ~3.5MB per part
+
+interface SplitPart {
+  slug: string;
+  title: string;
+  body: string;
+  partIndex: number;
+  partTotal: number;
+}
+
+/**
+ * Split extracted text into parts at natural boundaries (###***### page
+ * separators from PDF extraction, or paragraph boundaries). Each part is
+ * roughly SPLIT_TARGET bytes. Returns [] when the text is small enough
+ * to import as a single page.
+ */
+function splitExtractedText(text: string, baseSlug: string, baseTitle: string): SplitPart[] {
+  const byteLength = Buffer.byteLength(text, "utf-8");
+  if (byteLength <= SPLIT_THRESHOLD) return [];
+
+  // PDF extraction uses ###***### as page separators
+  const PAGE_SEP = "###***###";
+  const segments = text
+    .split(PAGE_SEP)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // Group segments into parts of ~SPLIT_TARGET bytes
+  const parts: SplitPart[] = [];
+  let currentBody = "";
+  let currentBytes = 0;
+
+  for (const seg of segments) {
+    const segBytes = Buffer.byteLength(seg, "utf-8");
+    if (currentBytes + segBytes > SPLIT_TARGET && currentBody) {
+      parts.push({ body: currentBody } as SplitPart);
+      currentBody = "";
+      currentBytes = 0;
+    }
+    currentBody += (currentBody ? "\n\n" + PAGE_SEP + "\n\n" : "") + seg;
+    currentBytes += segBytes;
+  }
+  if (currentBody.trim()) parts.push({ body: currentBody } as SplitPart);
+
+  // If splitting produced only 1 part (segments too large), force-split by chars
+  if (parts.length <= 1) {
+    parts.length = 0;
+    const chunkSize = SPLIT_TARGET;
+    for (let i = 0; i < text.length; i += chunkSize) {
+      const chunk = text.slice(i, i + chunkSize);
+      if (chunk.trim()) parts.push({ body: chunk } as SplitPart);
+    }
+  }
+
+  const total = parts.length;
+  return parts.map((p, i) => ({
+    slug: `${baseSlug}/part-${String(i + 1).padStart(3, "0")}`,
+    title: `${baseTitle} (Teil ${i + 1}/${total})`,
+    body: p.body,
+    partIndex: i + 1,
+    partTotal: total,
+  }));
+}
+
+/**
+ * Import a large document by splitting it into sub-pages. Each part gets
+ * its own chunks + embeddings. A parent index page is created that links
+ * all parts and contains a summary. Returns the parent slug.
+ */
+async function splitAndImportLargeDocument(
+  engine: BrainEngine,
+  slug: string,
+  title: string,
+  markdown: string,
+  frontmatter: Record<string, unknown>,
+  opts: {
+    noEmbed?: boolean;
+    sourceId: string;
+    filename: string;
+  }
+): Promise<{ parentSlug: string; partSlugs: string[] }> {
+  // Extract body from markdown (strip frontmatter)
+  const closeIdx = markdown.indexOf("\n---", 3);
+  const body =
+    closeIdx === -1 ? markdown : markdown.slice(closeIdx + "\n---".length).replace(/^\s*\n/, "");
+
+  const parts = splitExtractedText(body, slug, title);
+  if (parts.length === 0) {
+    // Not large enough to split — import as single page
+    await importFromContent(engine, slug, markdown, {
+      noEmbed: opts.noEmbed,
+      sourceId: opts.sourceId,
+      filename: opts.filename,
+      source_kind: "web_upload",
+      source_uri: `subsumio-upload:${slug}`,
+    });
+    return { parentSlug: slug, partSlugs: [] };
+  }
+
+  const partSlugs: string[] = [];
+  for (const part of parts) {
+    const partFrontmatter: Record<string, unknown> = {
+      ...frontmatter,
+      title: part.title,
+      type: "document",
+      part_of: slug,
+      part_index: part.partIndex,
+      part_total: part.partTotal,
+    };
+    const partMarkdown = await withUploadFrontmatter(part.body, partFrontmatter);
+    await importFromContent(engine, part.slug, partMarkdown, {
+      noEmbed: opts.noEmbed,
+      sourceId: opts.sourceId,
+      filename: opts.filename,
+      source_kind: "web_upload",
+      source_uri: `subsumio-upload:${part.slug}`,
+    });
+    partSlugs.push(part.slug);
+  }
+
+  // Create parent index page with links to all parts
+  const indexBody = parts.map((p) => `- [[${p.slug}|${p.title}]]`).join("\n");
+  const parentFrontmatter: Record<string, unknown> = {
+    ...frontmatter,
+    title,
+    type: "document",
+    is_split_parent: true,
+    part_count: parts.length,
+  };
+  const parentMarkdown = await withUploadFrontmatter(
+    `> 📄 Dieses Dokument wurde in ${parts.length} Teile aufgeteilt für optimale Durchsuchbarkeit.\n\n${indexBody}\n`,
+    parentFrontmatter
+  );
+  await importFromContent(engine, slug, parentMarkdown, {
+    noEmbed: opts.noEmbed,
+    sourceId: opts.sourceId,
+    filename: opts.filename,
+    source_kind: "web_upload",
+    source_uri: `subsumio-upload:${slug}`,
+  });
+
+  return { parentSlug: slug, partSlugs };
+}
+
 function cleanFrontmatter(input: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
@@ -1066,23 +1216,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           uploadFrontmatter
         );
 
-        const importResult = await importFromContent(engine, slug, markdown, {
-          noEmbed,
-          sourceId: tenantSource,
-          filename: file.filename,
-          source_kind: "web_upload",
-          source_uri: `subsumio-upload:${slug}`,
-        });
-
-        if (importResult.status === "skipped") {
-          res.status(413).json({
-            error: "content_too_large",
-            message:
-              importResult.error ??
-              "Extrahierter Text überschreitet das Limit. Bitte teilen Sie das Dokument in kleinere Teile auf.",
-          });
-          return;
-        }
+        const { parentSlug, partSlugs } = await splitAndImportLargeDocument(
+          engine,
+          slug,
+          title ?? file.filename.replace(/\.[^.]+$/, ""),
+          markdown,
+          uploadFrontmatter,
+          { noEmbed, sourceId: tenantSource, filename: file.filename }
+        );
 
         // Persist original bytes (GoBD § 147 AO)
         const persistRes = await persistUploadBytes(file, slug, tenantSource, opCtx.config.storage);
@@ -1105,13 +1246,16 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
         }
 
-        // Tag the page
+        // Tag the page (and all parts if split)
+        const allSlugs = [slug, ...partSlugs];
         if (tagList.length > 0) {
-          for (const tag of tagList) {
-            try {
-              await invokeOp(engine, "add_tag", { slug, tag }, tenantSource);
-            } catch {
-              /* best effort */
+          for (const s of allSlugs) {
+            for (const tag of tagList) {
+              try {
+                await invokeOp(engine, "add_tag", { slug: s, tag }, tenantSource);
+              } catch {
+                /* best effort */
+              }
             }
           }
         }
@@ -1122,6 +1266,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug,
           title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
           original_persisted: persistRes.ok,
+          ...(partSlugs.length > 0
+            ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
+            : {}),
           ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
         });
       } catch (err) {
@@ -2613,23 +2760,14 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           uploadFrontmatter
         );
 
-        const importResult = await importFromContent(engine, slug, markdown, {
-          noEmbed,
-          sourceId: tenantSource,
-          filename: file.filename,
-          source_kind: "web_upload",
-          source_uri: `subsumio-upload:${slug}`,
-        });
-
-        if (importResult.status === "skipped") {
-          res.status(413).json({
-            error: "content_too_large",
-            message:
-              importResult.error ??
-              "Extrahierter Text überschreitet das Limit. Bitte teilen Sie das Dokument in kleinere Teile auf.",
-          });
-          return;
-        }
+        const { parentSlug, partSlugs } = await splitAndImportLargeDocument(
+          engine,
+          slug,
+          title ?? file.filename.replace(/\.[^.]+$/, ""),
+          markdown,
+          uploadFrontmatter,
+          { noEmbed, sourceId: tenantSource, filename: file.filename }
+        );
 
         // Persist the ORIGINAL bytes via the binary-storage SSOT so the document
         // can be downloaded unaltered later (§ 147 AO / GoBD). Best-effort: the
@@ -2642,39 +2780,45 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
         // import above. This merge keeps older engine versions/routes aligned
         // if they imported before atomic upload frontmatter existed.
         if (caseSlug) {
-          try {
-            await invokeOp(
-              engine,
-              "put_page",
-              {
-                slug,
-                frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
-                merge: true,
-              },
-              tenantSource,
-              undefined,
-              req.matterScope ?? "all",
-              req.aclGroups ?? "all"
-            );
-          } catch {
-            /* best effort — the document is imported, stamping is enrichment */
-          }
-        }
-
-        if (tagList.length > 0) {
-          for (const tag of tagList) {
+          for (const s of [slug, ...partSlugs]) {
             try {
               await invokeOp(
                 engine,
-                "add_tag",
-                { slug, tag },
+                "put_page",
+                {
+                  slug: s,
+                  frontmatter: { case_slug: caseSlug, assignment_status: "assigned" },
+                  merge: true,
+                },
                 tenantSource,
                 undefined,
                 req.matterScope ?? "all",
                 req.aclGroups ?? "all"
               );
             } catch {
-              /* best effort */
+              /* best effort — the document is imported, stamping is enrichment */
+            }
+          }
+        }
+
+        // Tag the page (and all parts if split)
+        const allSlugs = [slug, ...partSlugs];
+        if (tagList.length > 0) {
+          for (const s of allSlugs) {
+            for (const tag of tagList) {
+              try {
+                await invokeOp(
+                  engine,
+                  "add_tag",
+                  { slug: s, tag },
+                  tenantSource,
+                  undefined,
+                  req.matterScope ?? "all",
+                  req.aclGroups ?? "all"
+                );
+              } catch {
+                /* best effort */
+              }
             }
           }
         }
@@ -2685,6 +2829,9 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           slug,
           title: page?.title ?? title ?? slug.split("/").pop() ?? slug,
           original_persisted: persistRes.ok,
+          ...(partSlugs.length > 0
+            ? { split: true, part_count: partSlugs.length, part_slugs: partSlugs }
+            : {}),
           ...(persistRes.ok ? {} : { persist_error: persistRes.error }),
         });
       } catch (e) {
