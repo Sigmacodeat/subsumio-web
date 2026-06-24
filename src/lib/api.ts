@@ -878,35 +878,33 @@ export const api = {
       const MAX_RETRIES = 2;
       const RETRYABLE_STATUS = new Set([502, 503, 504]);
 
-      // Determine upload target: direct-to-engine (bypasses Vercel body cap) or same-origin
-      const engineUrl =
-        typeof window !== "undefined" ? process.env.NEXT_PUBLIC_ENGINE_URL || "" : "";
-      const useDirectUpload = !!engineUrl;
-
-      // If direct upload, fetch a short-lived token from the web app first
+      // Always try to get an upload token from the web app. The server returns
+      // the engine URL (from SUBSUMIO_API_URL or NEXT_PUBLIC_ENGINE_URL) so the
+      // browser can upload directly to the engine, bypassing Vercel's body cap.
       let uploadToken: string | null = null;
-      if (useDirectUpload) {
-        try {
-          const tokenRes = await csrfFetch(`${BASE_URL}/api/upload-token`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              source: options?.source ?? "documents",
-              case_slug: options?.case_slug,
-              title: options?.title,
-              tags: options?.tags ? JSON.stringify(options.tags) : undefined,
-            }),
-          });
-          if (tokenRes.ok) {
-            const tokenData = await tokenRes.json();
-            uploadToken = tokenData.token as string;
-          }
-        } catch {
-          // Token fetch failed — fall back to same-origin upload
+      let engineUrl = "";
+      try {
+        const tokenRes = await csrfFetch(`${BASE_URL}/api/upload-token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: options?.source ?? "documents",
+            case_slug: options?.case_slug,
+            title: options?.title,
+            tags: options?.tags ? JSON.stringify(options.tags) : undefined,
+          }),
+        });
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json();
+          uploadToken = tokenData.token as string;
+          engineUrl = tokenData.engine_url as string;
         }
+      } catch {
+        // Token fetch failed — fall back to same-origin upload
       }
 
-      // If we couldn't get a token, fall back to same-origin
+      // If we have a token + engine URL, upload directly to the engine.
+      // Otherwise fall back to same-origin (Vercel-limited) upload.
       const targetUrl =
         uploadToken && engineUrl ? `${engineUrl}/api/direct-upload` : `${BASE_URL}/api/upload`;
 

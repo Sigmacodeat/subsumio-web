@@ -48,7 +48,16 @@ export const POST = createHandler(
 
     try {
       const token = signUploadToken(payload);
-      return Response.json({ token, expires_in: 600 });
+      // Return the engine URL so the browser knows where to send the file.
+      // Priority: NEXT_PUBLIC_ENGINE_URL (explicit public URL) > SUBSUMIO_API_URL
+      // (on Vercel this is the public engine URL; on Hetzner Docker it's internal
+      // so NEXT_PUBLIC_ENGINE_URL must be set in docker-compose).
+      const engineUrl = env("NEXT_PUBLIC_ENGINE_URL") || env("SUBSUMIO_API_URL") || "";
+      return Response.json({
+        token,
+        expires_in: 600,
+        ...(engineUrl ? { engine_url: engineUrl } : {}),
+      });
     } catch (err) {
       return Response.json(
         { error: "token_sign_failed", message: "Upload token could not be issued." },
