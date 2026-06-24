@@ -1,14 +1,17 @@
-// Subsumio service worker v3.
+// Subsumio service worker v4.
 // Stale-while-revalidate caching for dashboard API calls + static assets.
 // Background sync for offline mutations (POST/PUT/DELETE to Brain API).
 
-const STATIC_CACHE = "subsumio-static-v3";
-const API_CACHE = "subsumio-api-v3";
+const STATIC_CACHE = "subsumio-static-v4";
+const API_CACHE = "subsumio-api-v4";
 const PRECACHE = ["/offline.html", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()),
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -17,9 +20,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== API_CACHE).map((k) => caches.delete(k)))
+        Promise.all(
+          keys.filter((k) => k !== STATIC_CACHE && k !== API_CACHE).map((k) => caches.delete(k))
+        )
       )
-      .then(() => self.clients.claim()),
+      .then(() => self.clients.claim())
   );
 });
 
@@ -27,10 +32,12 @@ self.addEventListener("activate", (event) => {
 async function apiFetch(req) {
   const cache = await caches.open(API_CACHE);
   const cached = await cache.match(req);
-  const network = fetch(req).then(async (res) => {
-    if (res.ok) cache.put(req, res.clone());
-    return res;
-  }).catch(() => cached);
+  const network = fetch(req)
+    .then(async (res) => {
+      if (res.ok) cache.put(req, res.clone());
+      return res;
+    })
+    .catch(() => cached);
   return cached ?? network;
 }
 
@@ -53,9 +60,19 @@ async function processSyncQueue() {
   while (syncQueue.length > 0) {
     const item = syncQueue[0];
     try {
-      const res = await fetch(item.url, { method: item.method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.body) });
-      if (res.ok) { syncQueue.shift(); } else { break; }
-    } catch { break; }
+      const res = await fetch(item.url, {
+        method: item.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item.body),
+      });
+      if (res.ok) {
+        syncQueue.shift();
+      } else {
+        break;
+      }
+    } catch {
+      break;
+    }
   }
 }
 
@@ -66,7 +83,7 @@ self.addEventListener("fetch", (event) => {
   // Navigation fallback
   if (req.mode === "navigate") {
     event.respondWith(
-      fetch(req).catch(() => caches.match("/offline.html").then((res) => res ?? Response.error())),
+      fetch(req).catch(() => caches.match("/offline.html").then((res) => res ?? Response.error()))
     );
     return;
   }
@@ -80,29 +97,31 @@ self.addEventListener("fetch", (event) => {
           status: 202,
           headers: { "Content-Type": "application/json" },
         });
-      }),
+      })
     );
     return;
   }
 
   // Brain API GET → stale-while-revalidate
-  if (req.method === "GET" && (url.pathname.startsWith("/api/"))) {
+  if (req.method === "GET" && url.pathname.startsWith("/api/")) {
     event.respondWith(apiFetch(req));
     return;
   }
 
   // Static assets (JS, CSS, fonts, icons) → cache first
-  if (req.method === "GET" && (url.pathname.match(/\.(js|css|woff2?|png|svg|ico)$/))) {
+  if (req.method === "GET" && url.pathname.match(/\.(js|css|woff2?|png|svg|ico)$/)) {
     event.respondWith(
-      caches.match(req).then((cached) =>
-        cached ?? fetch(req).then(async (res) => {
-          if (res.ok) {
-            const cache = await caches.open(STATIC_CACHE);
-            cache.put(req, res.clone());
-          }
-          return res;
-        }),
-      ),
+      caches.match(req).then(
+        (cached) =>
+          cached ??
+          fetch(req).then(async (res) => {
+            if (res.ok) {
+              const cache = await caches.open(STATIC_CACHE);
+              cache.put(req, res.clone());
+            }
+            return res;
+          })
+      )
     );
     return;
   }
