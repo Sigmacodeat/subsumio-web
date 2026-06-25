@@ -24,6 +24,7 @@
  */
 
 const THIRTY_MIN_MS = 30 * 60 * 1000;
+const SIXTY_MIN_MS = 60 * 60 * 1000;
 
 /**
  * Default wall-clock budget (ms) for long-running handler types. A handler
@@ -32,8 +33,11 @@ const THIRTY_MIN_MS = 30 * 60 * 1000;
 export const HANDLER_DEFAULT_TIMEOUT_MS: Readonly<Record<string, number>> = {
   subagent: THIRTY_MIN_MS,
   subagent_aggregator: THIRTY_MIN_MS,
-  'embed-backfill': THIRTY_MIN_MS,
-  'autopilot-cycle': THIRTY_MIN_MS,
+  "embed-backfill": THIRTY_MIN_MS,
+  "autopilot-cycle": THIRTY_MIN_MS,
+  // v0.44 — legal-pipeline: 6 layers × Map-Reduce over 35+ sub-pages.
+  // Can exceed 30min for large case files (2021 pages, 179MB PDF).
+  "legal-pipeline": SIXTY_MIN_MS,
 };
 
 /**

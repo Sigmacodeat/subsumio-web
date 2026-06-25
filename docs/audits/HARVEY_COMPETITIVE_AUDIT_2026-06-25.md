@@ -160,22 +160,22 @@ Practice-Management (Invoicing, Zeiterfassung, Client Portal).
 
 ### P1 — Kritische Gaps (Wettbewerbsnachteil)
 
-| #   | Gap                                                                             | Harvey-Feature        | Subsumio-Status                | Aufwand      | Priorität |
-| --- | ------------------------------------------------------------------------------- | --------------------- | ------------------------------ | ------------ | --------- |
-| G1  | **SOC 2 Type II Zertifizierung**                                                | Zertifiziert          | Nicht zertifiziert             | External     | **R0**    |
-| G2  | **Vault Deep Analysis** — Bulk-Report über alle Dokumente mit Zitationen        | Deep Analysis Mode    | Pro-Dokument-Analyse           | M (2-3 Tage) | **R1**    |
-| G3  | **Contract Portfolio Insights** — Trends, Outlier, Obligations across contracts | Contract Intelligence | Nicht implementiert            | L (5-7 Tage) | **R6**    |
-| G4  | **Adoption Analytics Dashboard** — Usage by user/practice area/workflow         | Command Center        | Audit-Logs vorhanden, keine UI | M (3-4 Tage) | **R7**    |
+| #   | Gap                                                                             | Harvey-Feature        | Subsumio-Status                                                              | Aufwand  | Priorität |
+| --- | ------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------- | -------- | --------- |
+| G1  | **SOC 2 Type II Zertifizierung**                                                | Zertifiziert          | Nicht zertifiziert                                                           | External | **R0**    |
+| G2  | **Vault Deep Analysis** — Bulk-Report über alle Dokumente mit Zitationen        | Deep Analysis Mode    | ✅ Implementiert — `deep-analysis.ts` (303 Zeilen) + API + UI                | —        | **Done**  |
+| G3  | **Contract Portfolio Insights** — Trends, Outlier, Obligations across contracts | Contract Intelligence | ✅ Implementiert — `portfolio-insights.ts` (379 Zeilen) + API + Dashboard UI | —        | **Done**  |
+| G4  | **Adoption Analytics Dashboard** — Usage by user/practice area/workflow         | Command Center        | ✅ Implementiert — `adoption-analytics.ts` (202 Zeilen) + API + Dashboard UI | —        | **Done**  |
 
 ### P2 — Mittlere Gaps (Feature-Parität)
 
-| #   | Gap                                                                | Harvey-Feature        | Subsumio-Status           | Aufwand        | Priorität |
-| --- | ------------------------------------------------------------------ | --------------------- | ------------------------- | -------------- | --------- |
-| G5  | **Shared Spaces** — Cross-org Collaboration                        | Shared Spaces         | Client Portal (einseitig) | L (1-2 Wochen) | **R6**    |
-| G6  | **Auto-Playbook-Updates** — From executed agreements               | Contract Intelligence | Statische Playbooks       | M (3-5 Tage)   | **R6**    |
-| G7  | **Outlier Detection** — Deviating provisions across portfolio      | Contract Intelligence | Nicht implementiert       | M (2-3 Tage)   | **R6**    |
-| G8  | **IP Allow-listing**                                               | Enterprise Security   | Nicht implementiert       | S (1 Tag)      | **R1**    |
-| G9  | **Agent Conditionals** — Visual conditional logic in agent builder | Workflow Agents       | Rudimentär                | M (2-3 Tage)   | **R1**    |
+| #   | Gap                                                                | Harvey-Feature        | Subsumio-Status                                              | Aufwand        | Priorität |
+| --- | ------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------ | -------------- | --------- |
+| G5  | **Shared Spaces** — Cross-org Collaboration                        | Shared Spaces         | Client Portal (einseitig)                                    | L (1-2 Wochen) | **R6**    |
+| G6  | **Auto-Playbook-Updates** — From executed agreements               | Contract Intelligence | Statische Playbooks                                          | M (3-5 Tage)   | **R6**    |
+| G7  | **Outlier Detection** — Deviating provisions across portfolio      | Contract Intelligence | ✅ Implementiert in `portfolio-insights.ts` (detectOutliers) | —              | **Done**  |
+| G8  | **IP Allow-listing**                                               | Enterprise Security   | Nicht implementiert                                          | S (1 Tag)      | **R1**    |
+| G9  | **Agent Conditionals** — Visual conditional logic in agent builder | Workflow Agents       | Rudimentär                                                   | M (2-3 Tage)   | **R1**    |
 
 ### P3 — Niedrige Gaps (Nice-to-Have)
 

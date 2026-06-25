@@ -606,11 +606,7 @@ export default function WhatsAppDashboardPage() {
                   {t("whatsapp.media_storage")}
                 </span>
                 <div className="mt-1 font-mono break-all text-[color:var(--ds-text)]">
-                  {status?.mediaStorageProvider === "vercel-blob"
-                    ? status.blobConfigured
-                      ? "Vercel Blob"
-                      : t("whatsapp.blob_missing")
-                    : status?.mediaStorageDir || ".data/whatsapp-media"}
+                  {status?.mediaStorageDir || ".data/whatsapp-media"}
                 </div>
               </div>
               <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2">

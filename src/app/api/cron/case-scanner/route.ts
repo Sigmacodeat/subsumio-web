@@ -9,7 +9,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/case-scanner — Nightly Legal Case Scanner.
  *
- * Läuft als Vercel Cron (vercel.json) oder manuell:
+ * Läuft als supercronic Cron (Hetzner) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/case-scanner
  *
  * Pro Brain (Kanzlei): scannt alle legal_case Pages und startet
@@ -17,7 +17,9 @@ export const maxDuration = 300;
  * oder stale Analysen.
  */
 
-async function triggerCaseScanner(brainId: string): Promise<{ ok: boolean; job_id?: number; error?: string }> {
+async function triggerCaseScanner(
+  brainId: string
+): Promise<{ ok: boolean; job_id?: number; error?: string }> {
   try {
     const res = await fetch(`${ENGINE_URL}/api/legal/case-scanner`, {
       method: "POST",

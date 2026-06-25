@@ -44,15 +44,9 @@ export async function transcribeVoiceMessage(
   // Fetch the stored audio file
   let audioBytes: Buffer;
   try {
-    if (media.storageProvider === "vercel-blob" && media.url) {
-      const res = await withRetry(() => fetch(media.url!));
-      if (!res.ok) throw new Error(`Failed to fetch blob: HTTP ${res.status}`);
-      audioBytes = Buffer.from(await res.arrayBuffer());
-    } else {
-      // Local file — read from disk
-      const { readFile } = await import("node:fs/promises");
-      audioBytes = await readFile(media.storagePath);
-    }
+    // Local file — read from disk
+    const { readFile } = await import("node:fs/promises");
+    audioBytes = await readFile(media.storagePath);
   } catch (err) {
     console.error(
       "[whatsapp/transcribe] failed to read audio file:",

@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import { sendMail } from "@/lib/mail";
 import { createCronHandler } from "@/lib/api-handler";
-import { type EnginePage, fetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
+import {
+  type EnginePage,
+  fetchPages,
+  getRecipientsByBrain,
+  createDailyDedup,
+} from "@/lib/cron-utils";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -9,7 +14,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/retention — tägliche Aufbewahrungsfrist-Prüfung.
  *
- * Läuft als Vercel Cron oder manuell:
+ * Läuft als supercronic Cron (Hetzner) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/retention
  *
  * Pro Brain (Kanzlei): sammelt geschlossene Akten (legal_case mit closed_at),
@@ -69,7 +74,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
       if (!closedAt) continue;
       const action = classifyRetention(closedAt);
       if (!action) continue;
-      const years = Math.round((Date.now() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365) * 10) / 10;
+      const years =
+        Math.round(
+          ((Date.now() - new Date(closedAt).getTime()) / (1000 * 60 * 60 * 24 * 365)) * 10
+        ) / 10;
       items.push({
         slug: page.slug,
         title: page.title,
@@ -92,14 +100,18 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     if (toDelete.length > 0) {
       parts.push("🔴 LÖSCHFÄLLIG (≥ 10 Jahre nach Abschluss, § 50 BRAO):");
       for (const i of toDelete) {
-        parts.push(`  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`);
+        parts.push(
+          `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
+        );
       }
       parts.push("");
     }
     if (toReview.length > 0) {
       parts.push("🟡 PRÜFUNG EMPFOHLEN (≥ 6 Jahre nach Abschluss, § 147 AO):");
       for (const i of toReview) {
-        parts.push(`  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`);
+        parts.push(
+          `  • ${i.caseNumber} — ${i.title} (geschlossen ${i.closedAt}, ${i.yearsSinceClosure} J.)`
+        );
       }
       parts.push("");
     }

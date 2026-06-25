@@ -25,7 +25,7 @@ export const maxDuration = 300;
 /**
  * GET /api/cron/regulatory-monitors — Regulatory Monitoring Cron.
  *
- * Läuft als Vercel Cron (vercel.json) oder manuell:
+ * Läuft als supercronic Cron (Hetzner) oder manuell:
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://…/api/cron/regulatory-monitors
  *
  * Pro Brain (Kanzlei):
@@ -67,9 +67,17 @@ async function fetchLegacyWatchlist(brainId: string): Promise<BrainPage | null> 
   }
 }
 
-async function persistAlertPage(brainId: string, monitor: RegulatoryMonitor, hit: JudgementHit): Promise<void> {
+async function persistAlertPage(
+  brainId: string,
+  monitor: RegulatoryMonitor,
+  hit: JudgementHit
+): Promise<void> {
   const slug = alertSlug(monitor.monitor_id, hit.id);
-  const severity = inferSeverity({ legalArea: hit.legalArea, keywords: hit.keywords, snippet: hit.snippet });
+  const severity = inferSeverity({
+    legalArea: hit.legalArea,
+    keywords: hit.keywords,
+    snippet: hit.snippet,
+  });
   const changeType = inferChangeType({ type: hit.type, snippet: hit.snippet });
   const alert: Partial<RegulatoryAlert> = {
     monitor_id: monitor.monitor_id,
@@ -105,7 +113,12 @@ async function persistAlertPage(brainId: string, monitor: RegulatoryMonitor, hit
   }
 }
 
-async function updateMonitorStatus(brainId: string, monitor: RegulatoryMonitor, hits: number, status: "ok" | "error"): Promise<void> {
+async function updateMonitorStatus(
+  brainId: string,
+  monitor: RegulatoryMonitor,
+  hits: number,
+  status: "ok" | "error"
+): Promise<void> {
   try {
     await fetch(`${ENGINE_URL}/api/pages`, {
       method: "POST",
@@ -128,7 +141,11 @@ async function updateMonitorStatus(brainId: string, monitor: RegulatoryMonitor, 
   }
 }
 
-async function filterNewHits(brainId: string, monitorId: string, hits: JudgementHit[]): Promise<JudgementHit[]> {
+async function filterNewHits(
+  brainId: string,
+  monitorId: string,
+  hits: JudgementHit[]
+): Promise<JudgementHit[]> {
   const hitIds = hits.map((h) => `${monitorId}:${h.id}`);
   const freshIndices = await filterNewHitIds(brainId, hitIds);
   return hits.filter((_, i) => freshIndices.has(i));
@@ -137,14 +154,13 @@ async function filterNewHits(brainId: string, monitorId: string, hits: Judgement
 function renderMonitorDigest(
   monitor: RegulatoryMonitor,
   hits: JudgementHit[],
-  appUrl: string,
+  appUrl: string
 ): { subject: string; text: string } {
-  const parts: string[] = [
-    `Monitor "${monitor.topic}" — ${hits.length} neue Treffer:`,
-    "",
-  ];
+  const parts: string[] = [`Monitor "${monitor.topic}" — ${hits.length} neue Treffer:`, ""];
   for (const h of hits) {
-    parts.push(`  • ${h.date?.slice(0, 10) || "—"} — ${h.court} ${h.caseNumber}${h.ecli ? ` (${h.ecli})` : ""}`);
+    parts.push(
+      `  • ${h.date?.slice(0, 10) || "—"} — ${h.court} ${h.caseNumber}${h.ecli ? ` (${h.ecli})` : ""}`
+    );
     if (h.url) parts.push(`    ${h.url}`);
   }
   parts.push("");
@@ -227,7 +243,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
           for (const keyword of monitor.keywords.slice(0, 20)) {
             const { results } = await searchJudgements({
               q: keyword,
-              jurisdiction: monitor.jurisdiction === "eu" ? "all" : monitor.jurisdiction as "at" | "de" | "ch" | "all",
+              jurisdiction:
+                monitor.jurisdiction === "eu"
+                  ? "all"
+                  : (monitor.jurisdiction as "at" | "de" | "ch" | "all"),
               from,
               limit: 20,
             });
@@ -248,7 +267,9 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         // 6. Send email notifications
         if (allFreshHits.length > 0 && monitor.email_notifications) {
           const { subject, text } = renderMonitorDigest(monitor, allFreshHits, appUrl);
-          const emails = monitor.notify_emails?.length ? monitor.notify_emails : recipients.map((u) => u.email);
+          const emails = monitor.notify_emails?.length
+            ? monitor.notify_emails
+            : recipients.map((u) => u.email);
           for (const email of emails) {
             const r = await sendMail({ to: email, subject, text });
             if (r.sent) mailsSent++;
@@ -256,7 +277,10 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
         }
       } catch (err) {
         errors++;
-        console.error(`[regulatory-monitors] Monitor ${monitor.monitor_id} failed:`, err instanceof Error ? err.message : String(err));
+        console.error(
+          `[regulatory-monitors] Monitor ${monitor.monitor_id} failed:`,
+          err instanceof Error ? err.message : String(err)
+        );
         await updateMonitorStatus(brainId, monitor, 0, "error");
       }
     }

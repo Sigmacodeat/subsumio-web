@@ -90,7 +90,7 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
         {
           icon: "FolderOpen",
           title: "Document vault with durable storage",
-          desc: "Matter documents, WhatsApp media and uploaded evidence are kept in the vault with hash, source, size and storage metadata — local for self-hosting, Vercel Blob/S3-style cloud storage for hosted plans.",
+          desc: "Matter documents, WhatsApp media and uploaded evidence are kept in the vault with hash, source, size and storage metadata — local disk on Hetzner EU servers, or S3-compatible object storage (Cloudflare R2) for hosted plans.",
         },
         {
           icon: "Mail",
@@ -224,7 +224,7 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
         {
           icon: "FolderOpen",
           title: "Dokumenten-Vault mit dauerhaftem Speicher",
-          desc: "Aktendokumente, WhatsApp-Medien und Beweise liegen im Vault mit Hash, Quelle, Größe und Storage-Metadaten — lokal self-hosted oder in der Cloud über Vercel Blob/S3-artigen Objektspeicher.",
+          desc: "Aktendokumente, WhatsApp-Medien und Beweise liegen im Vault mit Hash, Quelle, Größe und Storage-Metadaten — lokal auf Hetzner EU-Servern oder in der Cloud über S3-kompatiblen Objektspeicher (Cloudflare R2).",
         },
         {
           icon: "Mail",

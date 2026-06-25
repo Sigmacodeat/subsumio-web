@@ -1260,6 +1260,30 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
         }
 
+        // ── v0.44: Auto-trigger Legal Agent Pipeline for large documents ──
+        if (partSlugs.length > 0) {
+          try {
+            const { MinionQueue } = await import("../core/minions/queue.ts");
+            const queue = new MinionQueue(engine);
+            await queue.add(
+              "legal-pipeline",
+              {
+                case_slug: slug,
+                part_slugs: partSlugs,
+                ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+                trigger: "post_upload",
+              },
+              { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
+              { allowProtectedSubmit: true }
+            );
+          } catch (pipelineErr) {
+            console.error(
+              `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
+                (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+            );
+          }
+        }
+
         const page = await engine.getPage(slug, { sourceId: tenantSource });
         res.json({
           ok: true,
@@ -2823,6 +2847,35 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
           }
         }
 
+        // ── v0.44: Auto-trigger Legal Agent Pipeline for large documents ──
+        // When a document is split into parts (large PDF), automatically
+        // submit a legal-pipeline job to process the case file through the
+        // 6-layer agent pipeline (ON-Scanner → Entity → Forensic → Damage
+        // → Drafter → Critic). Best-effort: if queue submission fails, the
+        // upload itself still succeeds.
+        if (partSlugs.length > 0) {
+          try {
+            const { MinionQueue } = await import("../core/minions/queue.ts");
+            const queue = new MinionQueue(engine);
+            await queue.add(
+              "legal-pipeline",
+              {
+                case_slug: slug,
+                part_slugs: partSlugs,
+                ...(tenantSource !== "default" ? { source_id: tenantSource } : {}),
+                trigger: "post_upload",
+              },
+              { timeout_ms: 60 * 60 * 1000, max_attempts: 1 },
+              { allowProtectedSubmit: true }
+            );
+          } catch (pipelineErr) {
+            console.error(
+              `[web-api] legal-pipeline auto-trigger failed for ${slug}: ` +
+                (pipelineErr instanceof Error ? pipelineErr.message : String(pipelineErr))
+            );
+          }
+        }
+
         assertMatterScope(req.matterScope, slug);
         const page = await engine.getPage(slug, { sourceId: opCtx.sourceId });
         res.json({
@@ -3462,6 +3515,111 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
       } catch (e) {
         const msg = e instanceof Error ? e.message : "unknown";
         res.status(500).json({ error: "tabular_review_failed", message: msg });
+      }
+    }
+  );
+
+  // Deep Analysis (G2: Vault Deep Analysis): Bulk narrative report across
+  // multiple Vault documents. Reads all specified documents and produces a
+  // cohesive report with cross-document insights, themes, and risks — every
+  // claim grounded with verbatim citations. Source-scoped.
+  app.post(
+    "/api/legal/deep-analysis",
+    express.json({ limit: "256kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const slugs = (Array.isArray(body.slugs) ? body.slugs : [])
+          .map((s) => String(s).trim())
+          .filter(Boolean)
+          .slice(0, 25);
+        if (slugs.length === 0) {
+          res
+            .status(400)
+            .json({ error: "missing_slugs", message: "At least one document slug is required." });
+          return;
+        }
+        for (const s of slugs) assertMatterScope(req.matterScope, s);
+        const prompt = typeof body.prompt === "string" ? body.prompt : "";
+        const jurisdiction = typeof body.jurisdiction === "string" ? body.jurisdiction : "all";
+
+        const { deepAnalysis } = await import("../core/legal/deep-analysis.ts");
+        const result = await deepAnalysis(engine, {
+          slugs,
+          ...legalScope(req),
+          ...(prompt ? { prompt } : {}),
+          jurisdiction,
+        });
+        res.json(result);
+      } catch (e) {
+        legalErr(res, "deep_analysis", e);
+      }
+    }
+  );
+
+  // Contract Portfolio Insights (G3+G7): Cross-contract analytics with
+  // clause frequencies, outlier detection, risk distribution, obligation
+  // summary, and negotiation patterns. Source-scoped.
+  app.get("/api/legal/portfolio-insights", async (req: Request, res: Response) => {
+    try {
+      const daysBack = Math.min(Number(req.query?.daysBack) || 180, 365);
+      const { portfolioInsights } = await import("../core/legal/portfolio-insights.ts");
+      const result = await portfolioInsights(engine, {
+        ...legalScope(req),
+        daysBack,
+      });
+      res.json(result);
+    } catch (e) {
+      legalErr(res, "portfolio_insights", e);
+    }
+  });
+
+  // Adoption Analytics (G4: Command Center equivalent): Usage analytics
+  // aggregated from the engine's request log. Shows who's using the platform,
+  // what features they use, and how usage trends over time. Admin-only.
+  app.get("/api/analytics/adoption", async (req: Request, res: Response) => {
+    try {
+      const daysBack = Math.min(Number(req.query?.daysBack) || 30, 365);
+      const { adoptionAnalytics } = await import("../core/legal/adoption-analytics.ts");
+      const result = await adoptionAnalytics(engine, {
+        ...legalScope(req),
+        daysBack,
+      });
+      res.json(result);
+    } catch (e) {
+      legalErr(res, "adoption_analytics", e);
+    }
+  });
+
+  // Auto-Playbook Updates (G6): Automatically extract negotiated clause
+  // positions from executed contracts and update playbooks. Stages updates
+  // as pending by default; auto_apply=true applies directly.
+  app.post(
+    "/api/legal/auto-playbook",
+    express.json({ limit: "64kb" }),
+    async (req: Request, res: Response) => {
+      try {
+        const body = req.body as Record<string, unknown>;
+        const contractSlug = String(body.contract_slug ?? "").trim();
+        if (!contractSlug) {
+          res.status(400).json({ error: "missing_contract_slug" });
+          return;
+        }
+        assertMatterScope(req.matterScope, contractSlug);
+        const playbookSlug =
+          typeof body.playbook_slug === "string" ? body.playbook_slug : undefined;
+        const autoApply = body.auto_apply === true;
+
+        const { autoPlaybookUpdate } = await import("../core/legal/auto-playbook.ts");
+        const result = await autoPlaybookUpdate(engine, {
+          contract_slug: contractSlug,
+          ...(playbookSlug ? { playbook_slug: playbookSlug } : {}),
+          auto_apply: autoApply,
+          ...legalScope(req),
+        });
+        res.json(result);
+      } catch (e) {
+        legalErr(res, "auto_playbook", e);
       }
     }
   );

@@ -1,0 +1,33 @@
+# Subsumio cron jobs — triggered by supercronic inside the Docker stack.
+# Each job calls the Next.js /api/cron/* endpoint with CRON_SECRET auth.
+# Times are in UTC (Hetzner default). Adjust for CET/CEST if needed.
+
+# ── 03:00 UTC (05:00 CEST) — Law corpus sync ──
+0 3 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/law-sync || true
+
+# ── 03:30 UTC (05:30 CEST) — Judgements sync ──
+30 3 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/judgements-sync || true
+
+# ── 06:00 UTC (08:00 CEST) — Daily deadlines digest ──
+0 6 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadlines || true
+
+# ── 06:30 UTC (08:30 CEST) — Daily briefing ──
+30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/daily-briefing || true
+
+# ── 07:00 UTC (09:00 CEST) — Deadline reminders ──
+0 7 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/deadline-reminders || true
+
+# ── 06:30 UTC (08:30 CEST) — Case law monitoring ──
+30 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-law || true
+
+# ── 06:45 UTC (08:45 CEST) — Regulatory monitors ──
+45 6 * * *     curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/regulatory-monitors || true
+
+# ── 02:00 UTC (04:00 CEST) — Nightly case scanner ──
+0 2 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/case-scanner || true
+
+# ── 08:00 UTC (10:00 CEST) — Retention policy check ──
+0 8 * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/retention || true
+
+# ── Every hour — Appointment reminders ──
+0 * * * *      curl -fsS -H "Authorization: Bearer ${CRON_SECRET}" http://web:3000/api/cron/appointment-reminders || true

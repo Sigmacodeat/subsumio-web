@@ -125,8 +125,25 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Akte",
     description: "Rechtliche Akte / Matter mit Metadaten, Parteien, Fristen",
     required_frontmatter: ["case_number", "status", "practice_area"],
-    optional_frontmatter: ["client", "opponent", "court", "judge", "value_in_dispute", "deadline_next", "privileged", "ethical_wall", "permissions"],
-    outgoing_links: ["has_document", "has_party", "has_deadline", "has_fact", "has_activity", "has_communication"],
+    optional_frontmatter: [
+      "client",
+      "opponent",
+      "court",
+      "judge",
+      "value_in_dispute",
+      "deadline_next",
+      "privileged",
+      "ethical_wall",
+      "permissions",
+    ],
+    outgoing_links: [
+      "has_document",
+      "has_party",
+      "has_deadline",
+      "has_fact",
+      "has_activity",
+      "has_communication",
+    ],
     incoming_links: [],
     matter_scoped: true,
     can_be_privileged: true,
@@ -137,7 +154,16 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Dokument",
     description: "Rechtliches Dokument (Klage, Vertrag, Schriftsatz, Urteil)",
     required_frontmatter: ["title", "document_type"],
-    optional_frontmatter: ["case_ref", "author", "date", "status", "privileged", "version", "source", "language"],
+    optional_frontmatter: [
+      "case_ref",
+      "author",
+      "date",
+      "status",
+      "privileged",
+      "version",
+      "source",
+      "language",
+    ],
     outgoing_links: ["cites", "references", "supersedes"],
     incoming_links: ["has_document", "cited_by", "referenced_by", "superseded_by"],
     matter_scoped: true,
@@ -149,7 +175,15 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Person",
     description: "Person (Mandant, Anwalt, Richter, Gegner, Zeuge)",
     required_frontmatter: ["name"],
-    optional_frontmatter: ["email", "phone", "role", "organization", "bar_number", "address", "aliases"],
+    optional_frontmatter: [
+      "email",
+      "phone",
+      "role",
+      "organization",
+      "bar_number",
+      "address",
+      "aliases",
+    ],
     outgoing_links: ["represents", "employed_by", "related_to"],
     incoming_links: ["represented_by", "employs", "related_to"],
     matter_scoped: false,
@@ -173,7 +207,14 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Frist",
     description: "Prozessuale oder materielle Frist",
     required_frontmatter: ["case_ref", "rule_key", "date", "status"],
-    optional_frontmatter: ["description", "days_remaining", "is_statutory", "is_court_ordered", "completed_at", "completed_by"],
+    optional_frontmatter: [
+      "description",
+      "days_remaining",
+      "is_statutory",
+      "is_court_ordered",
+      "completed_at",
+      "completed_by",
+    ],
     outgoing_links: [],
     incoming_links: ["has_deadline"],
     matter_scoped: true,
@@ -185,7 +226,15 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Fakt",
     description: "Relevanter Fakt in einer Akte",
     required_frontmatter: ["case_ref", "content", "confidence"],
-    optional_frontmatter: ["source", "contradicts", "superseded_by", "supersedes", "created_at", "verified", "legal_hold"],
+    optional_frontmatter: [
+      "source",
+      "contradicts",
+      "superseded_by",
+      "supersedes",
+      "created_at",
+      "verified",
+      "legal_hold",
+    ],
     outgoing_links: ["contradicts", "supersedes"],
     incoming_links: ["has_fact", "contradicted_by", "superseded_by"],
     matter_scoped: true,
@@ -209,7 +258,14 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Urteil",
     description: "Gerichtliches Urteil / Entscheidung",
     required_frontmatter: ["title", "court", "date"],
-    optional_frontmatter: ["case_number", "parties", "outcome", "cites", "jurisdiction", "instance"],
+    optional_frontmatter: [
+      "case_number",
+      "parties",
+      "outcome",
+      "cites",
+      "jurisdiction",
+      "instance",
+    ],
     outgoing_links: ["cites", "references"],
     incoming_links: ["cited_by", "referenced_by"],
     matter_scoped: false,
@@ -221,7 +277,14 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Vertrag",
     description: "Vertrag oder vertragliches Dokument",
     required_frontmatter: ["title", "parties", "date"],
-    optional_frontmatter: ["case_ref", "contract_type", "value", "termination_date", "status", "clauses"],
+    optional_frontmatter: [
+      "case_ref",
+      "contract_type",
+      "value",
+      "termination_date",
+      "status",
+      "clauses",
+    ],
     outgoing_links: ["references", "amends"],
     incoming_links: ["referenced_by", "amended_by", "has_document"],
     matter_scoped: true,
@@ -233,7 +296,15 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     label: "Kommunikation",
     description: "E-Mail, Brief, WhatsApp, beA-Nachricht",
     required_frontmatter: ["channel", "direction", "subject"],
-    optional_frontmatter: ["case_ref", "sender", "recipient", "date", "body", "attachments", "privileged"],
+    optional_frontmatter: [
+      "case_ref",
+      "sender",
+      "recipient",
+      "date",
+      "body",
+      "attachments",
+      "privileged",
+    ],
     outgoing_links: ["references"],
     incoming_links: ["has_communication"],
     matter_scoped: true,
@@ -264,96 +335,442 @@ export const LEGAL_PAGE_TYPES: PageTypeSpec[] = [
     can_be_privileged: true,
     gobd_relevant: true,
   },
+  // ── Pipeline Page Types (v2.2.0 — Legal Agent Pipeline V2) ────────
+  {
+    type: "on_index",
+    label: "ON-Verzeichnis",
+    description: "Strukturierte ON-Tabelle eines Gerichtsakts",
+    required_frontmatter: ["case_ref", "total_on", "total_pages"],
+    optional_frontmatter: ["aktenzeichen", "source_document"],
+    outgoing_links: ["references"],
+    incoming_links: [],
+    matter_scoped: true,
+    can_be_privileged: false,
+    gobd_relevant: true,
+  },
+  {
+    type: "forensic_report",
+    label: "Forensischer Bericht",
+    description: "Forensische Analyse eines Strafverfahrens",
+    required_frontmatter: ["case_ref", "status", "critic_score"],
+    optional_frontmatter: ["focus", "model", "generated_at"],
+    outgoing_links: ["references", "cites"],
+    incoming_links: ["has_document"],
+    matter_scoped: true,
+    can_be_privileged: true,
+    gobd_relevant: true,
+  },
+  {
+    type: "damage_table",
+    label: "Schadenstabelle",
+    description: "Strukturierte Schadenspositionen pro Topf",
+    required_frontmatter: ["case_ref", "total_pots", "currency"],
+    optional_frontmatter: ["total_amount_conservative", "total_amount_optimistic"],
+    outgoing_links: ["references"],
+    incoming_links: ["has_document"],
+    matter_scoped: true,
+    can_be_privileged: false,
+    gobd_relevant: true,
+  },
+  {
+    type: "deadline_calendar",
+    label: "Fristenkalender",
+    description: "Alle Fristen mit Ampel-System",
+    required_frontmatter: ["case_ref", "critical_count"],
+    optional_frontmatter: ["warning_count", "info_count"],
+    outgoing_links: ["references"],
+    incoming_links: ["has_deadline"],
+    matter_scoped: true,
+    can_be_privileged: false,
+    gobd_relevant: true,
+  },
+  {
+    type: "legal_draft",
+    label: "Schriftsatz-Entwurf",
+    description: "KI-generierter Entwurf für Schriftsatz, Antrag oder Klage",
+    required_frontmatter: ["case_ref", "draft_type", "status", "attorney_review_required"],
+    optional_frontmatter: ["recipient", "model", "generated_at", "streitwert"],
+    outgoing_links: ["references", "cites"],
+    incoming_links: ["has_document"],
+    matter_scoped: true,
+    can_be_privileged: true,
+    gobd_relevant: true,
+  },
+  {
+    type: "quality_audit",
+    label: "Qualitäts-Audit",
+    description: "Critic-Audit aller Pipeline-Outputs",
+    required_frontmatter: ["case_ref", "total_score", "recommendation"],
+    optional_frontmatter: ["audited_layers", "issues_found", "model"],
+    outgoing_links: ["references"],
+    incoming_links: [],
+    matter_scoped: true,
+    can_be_privileged: false,
+    gobd_relevant: false,
+  },
+  {
+    type: "pipeline_state",
+    label: "Pipeline-Status",
+    description: "State-Tracking der Agent-Pipeline",
+    required_frontmatter: ["case_ref", "status"],
+    optional_frontmatter: ["current_layer", "layers", "manual_overrides", "total_duration_ms"],
+    outgoing_links: [],
+    incoming_links: [],
+    matter_scoped: true,
+    can_be_privileged: false,
+    gobd_relevant: false,
+  },
 ];
 
 // ── Link Verbs ────────────────────────────────────────────────────────
 
 export const LEGAL_LINK_VERBS: LinkVerbSpec[] = [
-  { verb: "has_document", label: "hat Dokument", from_types: ["case"], to_types: ["document", "contract"], directional: true },
-  { verb: "has_party", label: "hat Beteiligte(n)", from_types: ["case"], to_types: ["person", "organization"], directional: true },
-  { verb: "has_deadline", label: "hat Frist", from_types: ["case"], to_types: ["deadline"], directional: true },
-  { verb: "has_fact", label: "hat Fakt", from_types: ["case"], to_types: ["fact"], directional: true },
-  { verb: "has_activity", label: "hat Aktivität", from_types: ["case"], to_types: ["activity"], directional: true },
-  { verb: "has_communication", label: "hat Kommunikation", from_types: ["case"], to_types: ["communication", "bea_message"], directional: true },
-  { verb: "represents", label: "vertritt", from_types: ["person"], to_types: ["person", "organization"], directional: true, inverse: "represented_by" },
-  { verb: "employed_by", label: "angestellt bei", from_types: ["person"], to_types: ["organization"], directional: true, inverse: "employs" },
-  { verb: "related_to", label: "verwandt/verbunden mit", from_types: ["person", "organization"], to_types: ["person", "organization"], directional: false },
-  { verb: "cites", label: "zitiert", from_types: ["document", "judgment", "contract"], to_types: ["statute", "judgment", "document"], directional: true, inverse: "cited_by" },
-  { verb: "references", label: "referenziert", from_types: ["document", "contract", "communication"], to_types: ["document", "statute", "judgment"], directional: true, inverse: "referenced_by" },
-  { verb: "supersedes", label: "ersetzt", from_types: ["document", "fact", "statute"], to_types: ["document", "fact", "statute"], directional: true, inverse: "superseded_by" },
-  { verb: "contradicts", label: "widerspricht", from_types: ["fact"], to_types: ["fact"], directional: false },
-  { verb: "amends", label: "ändert", from_types: ["statute", "contract"], to_types: ["statute", "contract"], directional: true, inverse: "amended_by" },
-  { verb: "subsidiary_of", label: "Tochtergesellschaft von", from_types: ["organization"], to_types: ["organization"], directional: true },
+  {
+    verb: "has_document",
+    label: "hat Dokument",
+    from_types: ["case"],
+    to_types: ["document", "contract"],
+    directional: true,
+  },
+  {
+    verb: "has_party",
+    label: "hat Beteiligte(n)",
+    from_types: ["case"],
+    to_types: ["person", "organization"],
+    directional: true,
+  },
+  {
+    verb: "has_deadline",
+    label: "hat Frist",
+    from_types: ["case"],
+    to_types: ["deadline"],
+    directional: true,
+  },
+  {
+    verb: "has_fact",
+    label: "hat Fakt",
+    from_types: ["case"],
+    to_types: ["fact"],
+    directional: true,
+  },
+  {
+    verb: "has_activity",
+    label: "hat Aktivität",
+    from_types: ["case"],
+    to_types: ["activity"],
+    directional: true,
+  },
+  {
+    verb: "has_communication",
+    label: "hat Kommunikation",
+    from_types: ["case"],
+    to_types: ["communication", "bea_message"],
+    directional: true,
+  },
+  {
+    verb: "represents",
+    label: "vertritt",
+    from_types: ["person"],
+    to_types: ["person", "organization"],
+    directional: true,
+    inverse: "represented_by",
+  },
+  {
+    verb: "employed_by",
+    label: "angestellt bei",
+    from_types: ["person"],
+    to_types: ["organization"],
+    directional: true,
+    inverse: "employs",
+  },
+  {
+    verb: "related_to",
+    label: "verwandt/verbunden mit",
+    from_types: ["person", "organization"],
+    to_types: ["person", "organization"],
+    directional: false,
+  },
+  {
+    verb: "cites",
+    label: "zitiert",
+    from_types: ["document", "judgment", "contract"],
+    to_types: ["statute", "judgment", "document"],
+    directional: true,
+    inverse: "cited_by",
+  },
+  {
+    verb: "references",
+    label: "referenziert",
+    from_types: ["document", "contract", "communication"],
+    to_types: ["document", "statute", "judgment"],
+    directional: true,
+    inverse: "referenced_by",
+  },
+  {
+    verb: "supersedes",
+    label: "ersetzt",
+    from_types: ["document", "fact", "statute"],
+    to_types: ["document", "fact", "statute"],
+    directional: true,
+    inverse: "superseded_by",
+  },
+  {
+    verb: "contradicts",
+    label: "widerspricht",
+    from_types: ["fact"],
+    to_types: ["fact"],
+    directional: false,
+  },
+  {
+    verb: "amends",
+    label: "ändert",
+    from_types: ["statute", "contract"],
+    to_types: ["statute", "contract"],
+    directional: true,
+    inverse: "amended_by",
+  },
+  {
+    verb: "subsidiary_of",
+    label: "Tochtergesellschaft von",
+    from_types: ["organization"],
+    to_types: ["organization"],
+    directional: true,
+  },
 ];
 
 // ── Frontmatter Schemas ───────────────────────────────────────────────
 
 export const LEGAL_FRONTMATTER_SCHEMAS: Record<string, FrontmatterFieldSpec[]> = {
   case: [
-    { key: "case_number", type: "string", required: true, description: "Aktenzeichen", gobd_relevant: true },
-    { key: "status", type: "enum", required: true, enum_values: ["active", "closed", "archived", "pending"], description: "Aktenstatus" },
+    {
+      key: "case_number",
+      type: "string",
+      required: true,
+      description: "Aktenzeichen",
+      gobd_relevant: true,
+    },
+    {
+      key: "status",
+      type: "enum",
+      required: true,
+      enum_values: ["active", "closed", "archived", "pending"],
+      description: "Aktenstatus",
+    },
     { key: "practice_area", type: "string", required: true, description: "Rechtsgebiet" },
     { key: "client", type: "string", required: false, description: "Mandant", gdpr_relevant: true },
-    { key: "opponent", type: "string", required: false, description: "Gegner", gdpr_relevant: true },
+    {
+      key: "opponent",
+      type: "string",
+      required: false,
+      description: "Gegner",
+      gdpr_relevant: true,
+    },
     { key: "court", type: "string", required: false, description: "Gericht" },
     { key: "judge", type: "string", required: false, description: "Richter", gdpr_relevant: true },
     { key: "value_in_dispute", type: "number", required: false, description: "Streitwert" },
-    { key: "privileged", type: "boolean", required: false, description: "Privilegiert (Attorney-Client)", default: false },
-    { key: "ethical_wall", type: "boolean", required: false, description: "Ethical Wall aktiv", default: false },
+    {
+      key: "privileged",
+      type: "boolean",
+      required: false,
+      description: "Privilegiert (Attorney-Client)",
+      default: false,
+    },
+    {
+      key: "ethical_wall",
+      type: "boolean",
+      required: false,
+      description: "Ethical Wall aktiv",
+      default: false,
+    },
   ],
   document: [
     { key: "title", type: "string", required: true, description: "Dokumenttitel" },
-    { key: "document_type", type: "enum", required: true, enum_values: ["klage", "urteil", "vertrag", "schriftsatz", "gutachten", "korrespondenz", "rechnung", "other"], description: "Dokumenttyp" },
+    {
+      key: "document_type",
+      type: "enum",
+      required: true,
+      enum_values: [
+        "klage",
+        "urteil",
+        "vertrag",
+        "schriftsatz",
+        "gutachten",
+        "korrespondenz",
+        "rechnung",
+        "other",
+      ],
+      description: "Dokumenttyp",
+    },
     { key: "case_ref", type: "string", required: false, description: "Aktenreferenz" },
-    { key: "author", type: "string", required: false, description: "Verfasser", gdpr_relevant: true },
+    {
+      key: "author",
+      type: "string",
+      required: false,
+      description: "Verfasser",
+      gdpr_relevant: true,
+    },
     { key: "date", type: "date", required: false, description: "Datum" },
-    { key: "privileged", type: "boolean", required: false, description: "Privilegiert", default: false },
+    {
+      key: "privileged",
+      type: "boolean",
+      required: false,
+      description: "Privilegiert",
+      default: false,
+    },
     { key: "version", type: "string", required: false, description: "Version", default: "1" },
   ],
   person: [
-    { key: "name", type: "string", required: true, description: "Vollständiger Name", gdpr_relevant: true },
+    {
+      key: "name",
+      type: "string",
+      required: true,
+      description: "Vollständiger Name",
+      gdpr_relevant: true,
+    },
     { key: "email", type: "string", required: false, description: "E-Mail", gdpr_relevant: true },
     { key: "phone", type: "string", required: false, description: "Telefon", gdpr_relevant: true },
-    { key: "role", type: "enum", required: false, enum_values: ["client", "lawyer", "judge", "opponent", "witness", "third_party"], description: "Rolle" },
+    {
+      key: "role",
+      type: "enum",
+      required: false,
+      enum_values: ["client", "lawyer", "judge", "opponent", "witness", "third_party"],
+      description: "Rolle",
+    },
     { key: "organization", type: "string", required: false, description: "Organisation" },
     { key: "bar_number", type: "string", required: false, description: "Aktenzeichen des Anwalts" },
     { key: "aliases", type: "array", required: false, description: "Alternative Namen" },
   ],
   deadline: [
-    { key: "case_ref", type: "string", required: true, description: "Aktenreferenz", gobd_relevant: true },
+    {
+      key: "case_ref",
+      type: "string",
+      required: true,
+      description: "Aktenreferenz",
+      gobd_relevant: true,
+    },
     { key: "rule_key", type: "string", required: true, description: "Fristen-Regel-Key" },
     { key: "date", type: "date", required: true, description: "Fristdatum", gobd_relevant: true },
-    { key: "status", type: "enum", required: true, enum_values: ["pending", "completed", "overdue", "waived"], description: "Friststatus" },
-    { key: "is_statutory", type: "boolean", required: false, description: "Gesetzliche Frist", default: false },
-    { key: "is_court_ordered", type: "boolean", required: false, description: "Gerichtlich angeordnet", default: false },
+    {
+      key: "status",
+      type: "enum",
+      required: true,
+      enum_values: ["pending", "completed", "overdue", "waived"],
+      description: "Friststatus",
+    },
+    {
+      key: "is_statutory",
+      type: "boolean",
+      required: false,
+      description: "Gesetzliche Frist",
+      default: false,
+    },
+    {
+      key: "is_court_ordered",
+      type: "boolean",
+      required: false,
+      description: "Gerichtlich angeordnet",
+      default: false,
+    },
   ],
   fact: [
     { key: "case_ref", type: "string", required: true, description: "Aktenreferenz" },
     { key: "content", type: "string", required: true, description: "Fakteninhalt" },
-    { key: "confidence", type: "enum", required: true, enum_values: ["high", "medium", "low"], description: "Konfidenzniveau" },
+    {
+      key: "confidence",
+      type: "enum",
+      required: true,
+      enum_values: ["high", "medium", "low"],
+      description: "Konfidenzniveau",
+    },
     { key: "source", type: "string", required: false, description: "Quelle" },
-    { key: "verified", type: "boolean", required: false, description: "Verifiziert", default: false },
-    { key: "legal_hold", type: "boolean", required: false, description: "Legal Hold", default: false },
+    {
+      key: "verified",
+      type: "boolean",
+      required: false,
+      description: "Verifiziert",
+      default: false,
+    },
+    {
+      key: "legal_hold",
+      type: "boolean",
+      required: false,
+      description: "Legal Hold",
+      default: false,
+    },
   ],
   statute: [
     { key: "title", type: "string", required: true, description: "Gesetzestitel" },
-    { key: "jurisdiction", type: "enum", required: true, enum_values: ["DE", "AT", "CH"], description: "Rechtsordnung" },
+    {
+      key: "jurisdiction",
+      type: "enum",
+      required: true,
+      enum_values: ["DE", "AT", "CH"],
+      description: "Rechtsordnung",
+    },
     { key: "section", type: "string", required: false, description: "Paragraph/Section" },
     { key: "effective_date", type: "date", required: false, description: "Inkrafttretedatum" },
   ],
   communication: [
-    { key: "channel", type: "enum", required: true, enum_values: ["email", "whatsapp", "phone", "letter", "portal", "bea", "other"], description: "Kommunikationskanal" },
-    { key: "direction", type: "enum", required: true, enum_values: ["incoming", "outgoing"], description: "Richtung" },
+    {
+      key: "channel",
+      type: "enum",
+      required: true,
+      enum_values: ["email", "whatsapp", "phone", "letter", "portal", "bea", "other"],
+      description: "Kommunikationskanal",
+    },
+    {
+      key: "direction",
+      type: "enum",
+      required: true,
+      enum_values: ["incoming", "outgoing"],
+      description: "Richtung",
+    },
     { key: "subject", type: "string", required: true, description: "Betreff" },
     { key: "case_ref", type: "string", required: false, description: "Aktenreferenz" },
-    { key: "sender", type: "string", required: false, description: "Absender", gdpr_relevant: true },
-    { key: "recipient", type: "string", required: false, description: "Empfänger", gdpr_relevant: true },
-    { key: "privileged", type: "boolean", required: false, description: "Privilegiert", default: false },
+    {
+      key: "sender",
+      type: "string",
+      required: false,
+      description: "Absender",
+      gdpr_relevant: true,
+    },
+    {
+      key: "recipient",
+      type: "string",
+      required: false,
+      description: "Empfänger",
+      gdpr_relevant: true,
+    },
+    {
+      key: "privileged",
+      type: "boolean",
+      required: false,
+      description: "Privilegiert",
+      default: false,
+    },
   ],
   organization: [
-    { key: "name", type: "string", required: true, description: "Organisationsname", gdpr_relevant: true },
-    { key: "type", type: "enum", required: false, enum_values: ["law_firm", "court", "company", "government", "other"], description: "Organisationstyp" },
-    { key: "address", type: "string", required: false, description: "Adresse", gdpr_relevant: true },
+    {
+      key: "name",
+      type: "string",
+      required: true,
+      description: "Organisationsname",
+      gdpr_relevant: true,
+    },
+    {
+      key: "type",
+      type: "enum",
+      required: false,
+      enum_values: ["law_firm", "court", "company", "government", "other"],
+      description: "Organisationstyp",
+    },
+    {
+      key: "address",
+      type: "string",
+      required: false,
+      description: "Adresse",
+      gdpr_relevant: true,
+    },
     { key: "registration_number", type: "string", required: false, description: "Registernummer" },
   ],
   judgment: [
@@ -366,27 +783,97 @@ export const LEGAL_FRONTMATTER_SCHEMAS: Record<string, FrontmatterFieldSpec[]> =
   ],
   contract: [
     { key: "title", type: "string", required: true, description: "Vertragstitel" },
-    { key: "parties", type: "array", required: true, description: "Vertragsparteien", gdpr_relevant: true },
-    { key: "date", type: "date", required: true, description: "Vertragsdatum", gobd_relevant: true },
+    {
+      key: "parties",
+      type: "array",
+      required: true,
+      description: "Vertragsparteien",
+      gdpr_relevant: true,
+    },
+    {
+      key: "date",
+      type: "date",
+      required: true,
+      description: "Vertragsdatum",
+      gobd_relevant: true,
+    },
     { key: "case_ref", type: "string", required: false, description: "Aktenreferenz" },
     { key: "contract_type", type: "string", required: false, description: "Vertragstyp" },
     { key: "value", type: "number", required: false, description: "Vertragswert" },
   ],
   activity: [
-    { key: "case_ref", type: "string", required: true, description: "Aktenreferenz", gobd_relevant: true },
-    { key: "type", type: "enum", required: true, enum_values: ["filing", "hearing", "deadline", "meeting", "call", "research", "drafting", "review", "other"], description: "Aktivitätstyp" },
-    { key: "timestamp", type: "datetime", required: true, description: "Zeitstempel", gobd_relevant: true },
+    {
+      key: "case_ref",
+      type: "string",
+      required: true,
+      description: "Aktenreferenz",
+      gobd_relevant: true,
+    },
+    {
+      key: "type",
+      type: "enum",
+      required: true,
+      enum_values: [
+        "filing",
+        "hearing",
+        "deadline",
+        "meeting",
+        "call",
+        "research",
+        "drafting",
+        "review",
+        "other",
+      ],
+      description: "Aktivitätstyp",
+    },
+    {
+      key: "timestamp",
+      type: "datetime",
+      required: true,
+      description: "Zeitstempel",
+      gobd_relevant: true,
+    },
     { key: "description", type: "string", required: false, description: "Beschreibung" },
-    { key: "actor", type: "string", required: false, description: "Durchgeführt von", gdpr_relevant: true },
+    {
+      key: "actor",
+      type: "string",
+      required: false,
+      description: "Durchgeführt von",
+      gdpr_relevant: true,
+    },
   ],
   bea_message: [
-    { key: "sender", type: "string", required: true, description: "Absender (beA-Id)", gdpr_relevant: true },
-    { key: "recipient", type: "string", required: true, description: "Empfänger (beA-Id)", gdpr_relevant: true },
+    {
+      key: "sender",
+      type: "string",
+      required: true,
+      description: "Absender (beA-Id)",
+      gdpr_relevant: true,
+    },
+    {
+      key: "recipient",
+      type: "string",
+      required: true,
+      description: "Empfänger (beA-Id)",
+      gdpr_relevant: true,
+    },
     { key: "subject", type: "string", required: true, description: "Betreff" },
-    { key: "sent_date", type: "datetime", required: true, description: "Sendezeitpunkt", gobd_relevant: true },
+    {
+      key: "sent_date",
+      type: "datetime",
+      required: true,
+      description: "Sendezeitpunkt",
+      gobd_relevant: true,
+    },
     { key: "case_ref", type: "string", required: false, description: "Aktenreferenz" },
     { key: "bea_id", type: "string", required: false, description: "beA-Message-Id" },
-    { key: "delivery_status", type: "enum", required: false, enum_values: ["sent", "delivered", "read", "failed"], description: "Zustellstatus" },
+    {
+      key: "delivery_status",
+      type: "enum",
+      required: false,
+      enum_values: ["sent", "delivered", "read", "failed"],
+      description: "Zustellstatus",
+    },
   ],
 };
 
@@ -407,6 +894,7 @@ export const LEGAL_ENTITY_TYPES = [
 // ── Deadline Rule Keys (coupled with legal-deadlines.ts) ──────────────
 
 export const LEGAL_DEADLINE_RULE_KEYS = [
+  // DE-spezifisch
   "zpo_klageerwiderung",
   "zpo_berufung",
   "zpo_revision",
@@ -420,6 +908,19 @@ export const LEGAL_DEADLINE_RULE_KEYS = [
   "vvg_klaerungsfrist",
   "rvg_verjaehrung",
   "gkg_zahlungsfrist",
+  // AT-spezifisch (v2.2.0)
+  "ahg_verjaehrung",
+  "ahg_aufforderung_hemmung",
+  "ahg_klagefrist",
+  "abgb_1489_verjaehrung",
+  "abgb_1489_hemmung",
+  "spo_106_einspruch",
+  "spo_195_fortfuehrung",
+  "spo_193_abs2_neue_beweise",
+  "spo_28_ermittlungsantrag",
+  "dsgvo_art82_schadensersatz",
+  "dsgvo_art77_beschwerde",
+  "emrk_art6_verzoegerung",
 ] as const;
 
 // ── Migrations ────────────────────────────────────────────────────────
@@ -469,6 +970,15 @@ export const LEGAL_SCHEMA_MIGRATIONS: MigrationStep[] = [
     ],
     breaking: false,
   },
+  {
+    from_version: "2.1.0",
+    to_version: "2.2.0",
+    description:
+      "Add pipeline page types (on_index, forensic_report, damage_table, deadline_calendar, legal_draft, quality_audit, pipeline_state) and AT-specific deadline rules",
+    ddl: [],
+    frontmatter_transforms: [],
+    breaking: false,
+  },
 ];
 
 // ── Schema Pack Definition ────────────────────────────────────────────
@@ -476,8 +986,9 @@ export const LEGAL_SCHEMA_MIGRATIONS: MigrationStep[] = [
 export const LEGAL_SCHEMA_PACK: SchemaPackDefinition = {
   id: "subsumio-legal",
   name: "Subsumio Legal Schema Pack",
-  version: "2.1.0",
-  description: "Versionierter Datenvertrag für das Legal Brain — Page-Types, Link-Verbs, Frontmatter-Schema, Entity-Types, Deadline-Rules",
+  version: "2.2.0",
+  description:
+    "Versionierter Datenvertrag für das Legal Brain — Page-Types, Link-Verbs, Frontmatter-Schema, Entity-Types, Deadline-Rules",
   page_types: LEGAL_PAGE_TYPES,
   link_verbs: LEGAL_LINK_VERBS,
   frontmatter_schemas: LEGAL_FRONTMATTER_SCHEMAS,
@@ -510,7 +1021,8 @@ export function validateSchemaPack(pack: SchemaPackDefinition): SchemaPackValida
     pageTypeNames.add(pt.type);
 
     if (!pt.type || pt.type.trim().length === 0) errors.push("Page type has empty type field");
-    if (!pt.label || pt.label.trim().length === 0) errors.push(`Page type ${pt.type} has empty label`);
+    if (!pt.label || pt.label.trim().length === 0)
+      errors.push(`Page type ${pt.type} has empty label`);
 
     // Check frontmatter schema exists
     if (!pack.frontmatter_schemas[pt.type] && pt.required_frontmatter.length > 0) {
@@ -522,7 +1034,9 @@ export function validateSchemaPack(pack: SchemaPackDefinition): SchemaPackValida
       const schemaKeys = new Set(pack.frontmatter_schemas[pt.type].map((f) => f.key));
       for (const req of pt.required_frontmatter) {
         if (!schemaKeys.has(req)) {
-          errors.push(`Page type ${pt.type} requires frontmatter field "${req}" but it's not in the schema`);
+          errors.push(
+            `Page type ${pt.type} requires frontmatter field "${req}" but it's not in the schema`
+          );
         }
       }
     }
@@ -549,15 +1063,23 @@ export function validateSchemaPack(pack: SchemaPackDefinition): SchemaPackValida
     }
 
     // Check inverse references valid verb
-    if (verb.inverse && !verbNames.has(verb.inverse) && !pack.link_verbs.some((v) => v.verb === verb.inverse)) {
-      warnings.push(`Link verb ${verb.verb} has inverse "${verb.inverse}" which is not defined yet`);
+    if (
+      verb.inverse &&
+      !verbNames.has(verb.inverse) &&
+      !pack.link_verbs.some((v) => v.verb === verb.inverse)
+    ) {
+      warnings.push(
+        `Link verb ${verb.verb} has inverse "${verb.inverse}" which is not defined yet`
+      );
     }
   }
 
   // Check migrations are ordered
   for (let i = 1; i < pack.migrations.length; i++) {
     if (pack.migrations[i].from_version !== pack.migrations[i - 1].to_version) {
-      errors.push(`Migration ${i} from_version (${pack.migrations[i].from_version}) doesn't match previous to_version (${pack.migrations[i - 1].to_version})`);
+      errors.push(
+        `Migration ${i} from_version (${pack.migrations[i].from_version}) doesn't match previous to_version (${pack.migrations[i - 1].to_version})`
+      );
     }
   }
 
@@ -565,7 +1087,9 @@ export function validateSchemaPack(pack: SchemaPackDefinition): SchemaPackValida
   if (pack.migrations.length > 0) {
     const lastMigration = pack.migrations[pack.migrations.length - 1];
     if (lastMigration.to_version !== pack.version) {
-      warnings.push(`Pack version (${pack.version}) doesn't match last migration to_version (${lastMigration.to_version})`);
+      warnings.push(
+        `Pack version (${pack.version}) doesn't match last migration to_version (${lastMigration.to_version})`
+      );
     }
   }
 
@@ -577,7 +1101,7 @@ export function validateSchemaPack(pack: SchemaPackDefinition): SchemaPackValida
 export function getMigrationPath(
   pack: SchemaPackDefinition,
   fromVersion: string,
-  toVersion: string,
+  toVersion: string
 ): MigrationStep[] {
   const path: MigrationStep[] = [];
   let current = fromVersion;
@@ -610,7 +1134,10 @@ export function getLinkVerb(pack: SchemaPackDefinition, verb: string): LinkVerbS
   return pack.link_verbs.find((v) => v.verb === verb);
 }
 
-export function getFrontmatterSchema(pack: SchemaPackDefinition, pageType: string): FrontmatterFieldSpec[] {
+export function getFrontmatterSchema(
+  pack: SchemaPackDefinition,
+  pageType: string
+): FrontmatterFieldSpec[] {
   return pack.frontmatter_schemas[pageType] ?? [];
 }
 
@@ -649,11 +1176,17 @@ export function isGoBdRelevant(pack: SchemaPackDefinition, pageType: string): bo
   return spec?.gobd_relevant ?? false;
 }
 
-export function getGdprRelevantFields(pack: SchemaPackDefinition, pageType: string): FrontmatterFieldSpec[] {
+export function getGdprRelevantFields(
+  pack: SchemaPackDefinition,
+  pageType: string
+): FrontmatterFieldSpec[] {
   return getFrontmatterSchema(pack, pageType).filter((f) => f.gdpr_relevant);
 }
 
-export function getGoBdRelevantFields(pack: SchemaPackDefinition, pageType: string): FrontmatterFieldSpec[] {
+export function getGoBdRelevantFields(
+  pack: SchemaPackDefinition,
+  pageType: string
+): FrontmatterFieldSpec[] {
   return getFrontmatterSchema(pack, pageType).filter((f) => f.gobd_relevant);
 }
 
@@ -671,7 +1204,9 @@ export interface SchemaPackSummary {
   rvg_version: string;
 }
 
-export function getSchemaPackSummary(pack: SchemaPackDefinition = LEGAL_SCHEMA_PACK): SchemaPackSummary {
+export function getSchemaPackSummary(
+  pack: SchemaPackDefinition = LEGAL_SCHEMA_PACK
+): SchemaPackSummary {
   return {
     version: pack.version,
     page_type_count: pack.page_types.length,

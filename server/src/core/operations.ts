@@ -5872,6 +5872,57 @@ const legal_summarize: Operation = {
   },
 };
 
+const legal_deep_analysis: Operation = {
+  name: "legal_deep_analysis",
+  description:
+    "Bulk narrative report across multiple Vault documents. Reads all specified documents and produces a cohesive report with cross-document insights, themes, and risks. Every citation is grounded verbatim. Returns attorney_review_required: true.",
+  params: {
+    slugs: {
+      type: "array",
+      items: { type: "string" },
+      required: true,
+      description: "Page slugs of documents to analyze (max 25)",
+    },
+    prompt: {
+      type: "string",
+      description: "Custom analysis prompt (default: identify cross-document themes and risks)",
+    },
+    jurisdiction: { type: "string", description: "Jurisdiction code (de, at, ch, or all)" },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { deepAnalysis } = await import("./legal/deep-analysis.ts");
+    const slugs = Array.isArray(p.slugs)
+      ? (p.slugs as unknown[]).filter((s): s is string => typeof s === "string").slice(0, 25)
+      : [];
+    return deepAnalysis(ctx.engine, {
+      slugs,
+      ...scope,
+      ...(typeof p.prompt === "string" ? { prompt: p.prompt } : {}),
+      jurisdiction: typeof p.jurisdiction === "string" ? p.jurisdiction : "all",
+    });
+  },
+};
+
+const legal_portfolio_insights: Operation = {
+  name: "legal_portfolio_insights",
+  description:
+    "Cross-contract analytics: clause frequencies, outlier detection, risk distribution, obligation summary, and negotiation patterns across the contract portfolio. Read-only, source-scoped.",
+  params: {
+    daysBack: { type: "number", description: "Lookback period in days (default: 180, max: 365)" },
+  },
+  scope: "read",
+  handler: async (ctx, p) => {
+    const scope = sourceScopeOpts(ctx);
+    const { portfolioInsights } = await import("./legal/portfolio-insights.ts");
+    return portfolioInsights(ctx.engine, {
+      ...scope,
+      daysBack: typeof p.daysBack === "number" ? Math.min(p.daysBack, 365) : 180,
+    });
+  },
+};
+
 const legal_memo: Operation = {
   name: "legal_memo",
   description:
@@ -7275,6 +7326,8 @@ export const operations: Operation[] = [
   legal_analyze_document,
   legal_document_review,
   legal_summarize,
+  legal_deep_analysis,
+  legal_portfolio_insights,
   legal_memo,
   legal_risk_analysis,
   legal_contract_draft,

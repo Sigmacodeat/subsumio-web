@@ -9,7 +9,7 @@ import { useEffect, useRef } from "react";
  *
  * Wenn kein WS-Backend konfiguriert ist (NEXT_PUBLIC_WS_URL leer),
  * fällt das System auf Server-Sent Events (SSE) via /api/realtime/sse zurück.
- * SSE ist Vercel-native und benötigt keine externe Infrastruktur.
+ * SSE ist eine Standard-Technologie und benötigt keine externe Infrastruktur.
  *
  * Events:
  *   - case.updated { slug, by, at }

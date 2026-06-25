@@ -59,6 +59,8 @@ export type RouteAction =
   | "legal.tabular"
   | "legal.contract_draft"
   | "legal.document_review"
+  | "legal.deep_analysis"
+  | "legal.portfolio_insights"
   | "legal.due_diligence"
   | "legal.risk_analysis"
   | "legal.memo"
@@ -100,6 +102,8 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "legal.tabular": ["admin", "lawyer", "assistant"],
   "legal.contract_draft": ["admin", "lawyer"],
   "legal.document_review": ["admin", "lawyer", "assistant"],
+  "legal.deep_analysis": ["admin", "lawyer", "assistant"],
+  "legal.portfolio_insights": ["admin", "lawyer", "assistant"],
   "legal.due_diligence": ["admin", "lawyer"],
   "legal.risk_analysis": ["admin", "lawyer", "assistant"],
   "legal.memo": ["admin", "lawyer", "assistant"],
@@ -162,6 +166,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "legal.tabular": "query.submit",
     "legal.contract_draft": "legal.contract_draft",
     "legal.document_review": "legal.document_review",
+    "legal.deep_analysis": "legal.deep_analysis",
+    "legal.portfolio_insights": "legal.deep_analysis",
     "legal.due_diligence": "legal.due_diligence",
     "legal.risk_analysis": "legal.risk_analysis",
     "legal.memo": "legal.memo",

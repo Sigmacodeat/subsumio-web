@@ -39,6 +39,7 @@ export type AuditAction =
   | "judgements.search"
   | "legal.contract_draft"
   | "legal.document_review"
+  | "legal.deep_analysis"
   | "legal.due_diligence"
   | "legal.risk_analysis"
   | "legal.memo"

@@ -48,6 +48,25 @@
     <div id="docsList"></div>
   </div>
 
+  <div class="section" id="pipelineSection" style="display:none">
+    <div class="section-title">Pipeline</div>
+    <input type="text" id="caseSlug" placeholder="Case Slug (z.B. 2023-on-001)">
+    <button id="pipelineBtn" onclick="triggerPipeline()">Pipeline starten</button>
+    <div id="pipelineStatus" class="status" style="display:none"></div>
+  </div>
+
+  <div class="section" id="chronoSection" style="display:none">
+    <div class="section-title">Chronologie einfügen</div>
+    <input type="text" id="chronoCase" placeholder="Case Slug">
+    <button id="chronoBtn" onclick="insertChronology()">Chronologie generieren & einfügen</button>
+  </div>
+
+  <div class="section" id="exportSection" style="display:none">
+    <div class="section-title">Als Word exportieren</div>
+    <input type="text" id="exportSlug" placeholder="Page Slug">
+    <button id="exportBtn" onclick="exportDocx()">.docx herunterladen</button>
+  </div>
+
   <script src="taskpane.js"></script>
 </body>
 </html>

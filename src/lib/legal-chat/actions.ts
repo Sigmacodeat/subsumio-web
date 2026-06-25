@@ -927,8 +927,7 @@ async function createMediaVaultPage(
 
 async function queueWhatsAppDocumentAnalysis(brainId: string, documentSlug: string): Promise<void> {
   const internalSecret = process.env.SUBSUMIO_INTERNAL_SECRET;
-  const appUrlRaw =
-    process.env.NEXT_PUBLIC_APP_URL || process.env.SUBSUMIO_APP_URL || process.env.VERCEL_URL;
+  const appUrlRaw = process.env.NEXT_PUBLIC_APP_URL || process.env.SUBSUMIO_APP_URL;
   if (!internalSecret || !appUrlRaw) return;
 
   const appUrl = appUrlRaw.startsWith("http") ? appUrlRaw : `https://${appUrlRaw}`;

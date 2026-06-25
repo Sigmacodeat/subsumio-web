@@ -1,6 +1,6 @@
 "use client";
 
-// DSGVO/TTDSG cookie consent banner for analytics (PostHog, Vercel Analytics).
+// DSGVO/TTDSG cookie consent banner for analytics (PostHog).
 // Shows on first visit, asks for consent before setting non-essential cookies.
 // Decision is stored in localStorage (sb_analytics_consent) — no cookie needed.
 // § 25 TTDSG: consent must be voluntary, informed, and revocable.
@@ -74,8 +74,8 @@ export default function AnalyticsConsentBanner() {
       </p>
       <p className="mb-3 text-[11px] leading-relaxed [color:var(--mk-text-muted)] sm:text-xs">
         {isGerman
-          ? "Wir nutzen PostHog und Vercel Analytics, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen."
-          : "We use PostHog and Vercel Analytics to improve the site anonymously. You can revoke consent at any time."}
+          ? "Wir nutzen PostHog, um die Website anonym zu verbessern. Du kannst jederzeit widerrufen."
+          : "We use PostHog to improve the site anonymously. You can revoke consent at any time."}
       </p>
       <div className="flex gap-2">
         <button

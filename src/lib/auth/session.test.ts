@@ -55,17 +55,9 @@ describe("getAuthSecret", () => {
     expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
   });
 
-  test("throws on any Vercel deployment (e.g. preview) without secret", () => {
-    delete process.env.NODE_ENV;
-    process.env.VERCEL_ENV = "preview";
-    delete process.env.AUTH_SECRET;
-    expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
-  });
-
   test("returns fallback in dev", () => {
     process.env.NODE_ENV = "development";
     delete process.env.AUTH_SECRET;
-    delete process.env.VERCEL_ENV;
     expect(getAuthSecret()).toBe("subsumio-dev-secret-change-me");
   });
 });

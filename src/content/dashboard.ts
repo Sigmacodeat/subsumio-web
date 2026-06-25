@@ -38,6 +38,10 @@ export const D = {
   "nav.graph": { de: "Graph", en: "Graph" },
   "nav.upload": { de: "Upload", en: "Upload" },
   "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
+  "nav.portfolio_insights": { de: "Portfolio Insights", en: "Portfolio Insights" },
+  "nav.adoption_analytics": { de: "Adoption Analytics", en: "Adoption Analytics" },
+  "nav.analytics": { de: "Analytics", en: "Analytics" },
+  "nav.shared_spaces": { de: "Geteilte Räume", en: "Shared Spaces" },
 
   // ── Sidebar: nav items (cases & deadlines) ──
   "nav.cases": { de: "Akten", en: "Cases" },

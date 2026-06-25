@@ -880,7 +880,7 @@ export const api = {
 
       // Always try to get an upload token from the web app. The server returns
       // the engine URL (from SUBSUMIO_API_URL or NEXT_PUBLIC_ENGINE_URL) so the
-      // browser can upload directly to the engine, bypassing Vercel's body cap.
+      // browser can upload directly to the engine, bypassing proxy body limits.
       let uploadToken: string | null = null;
       let engineUrl = "";
       try {
@@ -904,7 +904,7 @@ export const api = {
       }
 
       // If we have a token + engine URL, upload directly to the engine.
-      // Otherwise fall back to same-origin (Vercel-limited) upload.
+      // Otherwise fall back to same-origin upload.
       const targetUrl =
         uploadToken && engineUrl ? `${engineUrl}/api/direct-upload` : `${BASE_URL}/api/upload`;
 
@@ -974,14 +974,14 @@ export const api = {
                   errBody.message ||
                   errBody.error ||
                   (xhr.status === 413
-                    ? "Datei zu groß für den aktuellen Upload-Kanal. Bei Vercel-Hosting: Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
+                    ? "Datei zu groß für den aktuellen Upload-Kanal. Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                     : `HTTP ${xhr.status}`);
                 reject(new Error(message));
               } catch {
                 reject(
                   new Error(
                     xhr.status === 413
-                      ? "Datei zu groß für den aktuellen Upload-Kanal. Bei Vercel-Hosting: Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
+                      ? "Datei zu groß für den aktuellen Upload-Kanal. Engine-Direct-Upload prüfen (NEXT_PUBLIC_ENGINE_URL)."
                       : xhr.statusText || `HTTP ${xhr.status}`
                   )
                 );

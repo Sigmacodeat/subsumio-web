@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  *
  * Uses lightweight session-only auth (no RBAC, rate limiting, or quota)
  * because this is a long-lived streaming endpoint. Rate limiting would
- * block reconnections after Vercel serverless function timeouts, causing
+ * block reconnections after proxy timeouts, causing
  * the SSE error loop the client can't recover from.
  */
 export async function GET(req: NextRequest) {

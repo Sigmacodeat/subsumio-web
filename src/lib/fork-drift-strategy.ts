@@ -368,12 +368,17 @@ export const FORK_DRIFT_CI_GATES: CiGate[] = [
     description: "Verifies that protected fork files are not overwritten by upstream merges",
     command: "bun run scripts/check-protected-files.ts",
     blocking: true,
-    trigger_files: ["src/lib/legal-types.ts", "src/lib/matter-context.ts", "src/lib/experience-layer.ts"],
+    trigger_files: [
+      "src/lib/legal-types.ts",
+      "src/lib/matter-context.ts",
+      "src/lib/experience-layer.ts",
+    ],
   },
   {
     gate_name: "llms-regenerated",
     description: "Verifies that llms.txt and llms-full.txt are regenerated with fork URL base",
-    command: "LLMS_REPO_BASE=https://raw.githubusercontent.com/Sigmacodeat/subsumio-web/main bun run build:llms && git diff --exit-code llms.txt llms-full.txt",
+    command:
+      "LLMS_REPO_BASE=https://raw.githubusercontent.com/Sigmacodeat/subsumio-web/main bun run build:llms && git diff --exit-code llms.txt llms-full.txt",
     blocking: false,
     trigger_files: ["llms.txt", "llms-full.txt"],
   },
@@ -403,7 +408,13 @@ export const FORK_DRIFT_CI_GATES: CiGate[] = [
     description: "Verifies unified eval harness still passes with upstream changes",
     command: "bunx vitest run src/lib/eval-harness-reuse.test.ts",
     blocking: true,
-    trigger_files: ["src/lib/eval-harness-reuse.ts", "src/lib/superbrain-eval.ts", "src/lib/rag-eval.ts", "src/lib/release-gate.ts", "src/lib/ai-quality.ts"],
+    trigger_files: [
+      "src/lib/eval-harness-reuse.ts",
+      "src/lib/superbrain-eval.ts",
+      "src/lib/rag-eval.ts",
+      "src/lib/release-gate.ts",
+      "src/lib/ai-quality.ts",
+    ],
   },
 ];
 
@@ -436,7 +447,7 @@ export const REGRESSION_PINNED_VERSIONS: PinnedVersion[] = [
 // ── Fork Drift Strategy Definition ────────────────────────────────────
 
 export const FORK_DRIFT_STRATEGY: ForkDriftStrategy = {
-  upstream_repo: "github:garrytan/gbrain",
+  upstream_repo: "subsumio-engine",
   fork_repo: "github:Sigmacodeat/subsumio-web",
   upstream_branch: "main",
   fork_branch: "main",
@@ -500,7 +511,7 @@ export function getCiGatesForFile(path: string): CiGate[] {
         return path.startsWith(prefix);
       }
       return path === pattern;
-    }),
+    })
   );
 }
 
@@ -516,12 +527,15 @@ export function buildDriftReport(
   commitsBehind: number,
   commitsAhead: number,
   newUpstreamFiles: string[] = [],
-  deletedUpstreamFiles: string[] = [],
+  deletedUpstreamFiles: string[] = []
 ): DriftReport {
   const divergedFiles = getModifiedFromUpstreamFiles();
   const highRiskCount = divergedFiles.filter((f) => f.merge_risk === "high").length;
 
-  const expectedConflicts = Math.min(highRiskCount, newUpstreamFiles.length + deletedUpstreamFiles.length);
+  const expectedConflicts = Math.min(
+    highRiskCount,
+    newUpstreamFiles.length + deletedUpstreamFiles.length
+  );
 
   const urgency: "low" | "medium" | "high" =
     commitsBehind > 50 ? "high" : commitsBehind > 20 ? "medium" : "low";
@@ -570,7 +584,9 @@ export function validateDriftStrategy(): DriftStrategyValidation {
     if (!classification) {
       warnings.push(`Protected file not in classifications: ${protectedFile}`);
     } else if (!classification.fork_specific) {
-      warnings.push(`Protected file ${protectedFile} is not fork-specific — it may be overwritten by upstream`);
+      warnings.push(
+        `Protected file ${protectedFile} is not fork-specific — it may be overwritten by upstream`
+      );
     }
   }
 
@@ -579,7 +595,9 @@ export function validateDriftStrategy(): DriftStrategyValidation {
     const prev = REGRESSION_PINNED_VERSIONS[i - 1];
     const curr = REGRESSION_PINNED_VERSIONS[i];
     if (prev.pinned_at > curr.pinned_at) {
-      errors.push(`Pinned versions not ordered: ${prev.upstream_version} (${prev.pinned_at}) before ${curr.upstream_version} (${curr.pinned_at})`);
+      errors.push(
+        `Pinned versions not ordered: ${prev.upstream_version} (${prev.pinned_at}) before ${curr.upstream_version} (${curr.pinned_at})`
+      );
     }
   }
 

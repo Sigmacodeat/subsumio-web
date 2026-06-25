@@ -55,6 +55,8 @@ import {
   Calculator,
   Database,
   GitCompare,
+  Share2,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutationQueue } from "@/lib/use-mutation";
@@ -95,6 +97,11 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
+      {
+        href: "/dashboard/portfolio-insights",
+        icon: BarChart3,
+        labelKey: "nav.portfolio_insights",
+      },
     ],
   },
   {
@@ -106,6 +113,8 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
+      { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+      { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
     ],
   },
   {
@@ -201,6 +210,10 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     labelKey: "nav.whatsapp_templates",
   },
   { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
+  { href: "/dashboard/portfolio-insights", icon: BarChart3, labelKey: "nav.portfolio_insights" },
+  { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
+  { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+  { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
 ];
 
 export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: DashboardKey }> = [
@@ -266,6 +279,10 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/mobile", section: "nav.section.admin" },
   { href: "/dashboard/onboarding", section: "nav.section.admin" },
   { href: "/dashboard/rag-eval", section: "nav.section.admin" },
+  { href: "/dashboard/portfolio-insights", section: "nav.section.admin" },
+  { href: "/dashboard/adoption-analytics", section: "nav.section.admin" },
+  { href: "/dashboard/analytics", section: "nav.section.operations" },
+  { href: "/dashboard/shared-spaces", section: "nav.section.operations" },
   { href: "/dashboard/chat/analytics", section: "nav.section.admin" },
   { href: "/dashboard/chat/compare", section: "nav.section.admin" },
   { href: "/dashboard/assistant", section: "nav.section.admin" },

@@ -3,11 +3,13 @@
 import * as React from "react";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
-import { Analytics } from "@vercel/analytics/react";
 import { useAnalyticsConsent } from "@/components/marketing/analytics-consent";
 
 const POSTHOG_KEY = typeof window !== "undefined" ? process.env.NEXT_PUBLIC_POSTHOG_KEY : "";
-const POSTHOG_HOST = typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com") : "";
+const POSTHOG_HOST =
+  typeof window !== "undefined"
+    ? process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com"
+    : "";
 
 function usePostHogInit() {
   const { consent } = useAnalyticsConsent();
@@ -32,22 +34,12 @@ export function MonitoringProvider({ children }: { children: React.ReactNode }) 
   const analyticsEnabled = consent === "accepted";
 
   if (!POSTHOG_KEY) {
-    return (
-      <>
-        {children}
-        {analyticsEnabled && <Analytics />}
-      </>
-    );
+    return <>{children}</>;
   }
 
   if (!analyticsEnabled) {
     return <>{children}</>;
   }
 
-  return (
-    <PostHogProvider client={posthog}>
-      {children}
-      <Analytics />
-    </PostHogProvider>
-  );
+  return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 }

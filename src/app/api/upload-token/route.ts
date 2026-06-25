@@ -50,8 +50,8 @@ export const POST = createHandler(
       const token = signUploadToken(payload);
       // Return the engine URL so the browser knows where to send the file.
       // Priority: NEXT_PUBLIC_ENGINE_URL (explicit public URL) > SUBSUMIO_API_URL
-      // (on Vercel this is the public engine URL; on Hetzner Docker it's internal
-      // so NEXT_PUBLIC_ENGINE_URL must be set in docker-compose).
+      // (on Hetzner Docker, SUBSUMIO_API_URL is internal so NEXT_PUBLIC_ENGINE_URL
+      // must be set in docker-compose for browser-direct uploads).
       const engineUrl = env("NEXT_PUBLIC_ENGINE_URL") || env("SUBSUMIO_API_URL") || "";
       return Response.json({
         token,

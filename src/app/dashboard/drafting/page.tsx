@@ -190,53 +190,50 @@ export default function DraftingPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function downloadDocx(text: string) {
-    const escTitle = (formData.title || "Entwurf")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const escKlaeger = (formData.klaeger || "—")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const escBeklagter = (formData.beklagter || "—")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const escLegalBasis = (formData.legalBasis || "—")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><title>${escTitle}</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
-<style>
-@page { margin: 2.5cm; }
-body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; }
-h1 { font-size: 16pt; margin-bottom: 12pt; }
-table { border-collapse: collapse; width: 100%; }
-td, th { border: 1px solid #999; padding: 6pt; }
-</style>
-</head>
-<body>
-<h1>${template.label}: ${escTitle}</h1>
-<p><strong>Kläger/Absender:</strong> ${escKlaeger}</p>
-<p><strong>Beklagter/Empfänger:</strong> ${escBeklagter}</p>
-<p><strong>Rechtsgrundlage:</strong> ${escLegalBasis}</p>
-<hr/>
-<pre style="font-family:Calibri,sans-serif;white-space:pre-wrap;">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
-<hr/>
-<p style="font-size:9pt;color:#777;font-style:italic;">${AI_NOTICE}</p>
-</body></html>`;
-    const blob = new Blob([html], { type: "application/vnd.ms-word" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${template.label}_${(formData.title || "Entwurf").slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setDocxReady(true);
-    setTimeout(() => setDocxReady(false), 2000);
+  async function downloadDocx(text: string) {
+    setDocxReady(false);
+    try {
+      const draftSlug = draftSaved ?? null;
+      const res = await fetch("/api/word-export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: draftSlug,
+          title: `${template.label}: ${formData.title || "Entwurf"}`,
+          markdown: text,
+          formData,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Export failed: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${template.label}_${(formData.title || "Entwurf").slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDocxReady(true);
+      setTimeout(() => setDocxReady(false), 2000);
+    } catch (err) {
+      console.error("docx export failed:", err);
+      // Fallback: old HTML method
+      const escTitle = (formData.title || "Entwurf")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>${escTitle}</title><style>@page{margin:2.5cm}body{font-family:Calibri,Arial,sans-serif;font-size:11pt}</style></head><body><pre style="white-space:pre-wrap">${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre></body></html>`;
+      const blob = new Blob([html], { type: "application/vnd.ms-word" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${template.label}_${(formData.title || "Entwurf").slice(0, 40).replace(/[^a-zA-Z0-9äöüß]/g, "_")}.doc`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDocxReady(true);
+      setTimeout(() => setDocxReady(false), 2000);
+    }
   }
 
   async function saveDraftToBrain(text: string) {

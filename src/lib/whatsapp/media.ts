@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { put } from "@vercel/blob";
 import { withRetry } from "@/lib/retry";
 import { scanFile } from "@/lib/virus-scan";
 import type { WhatsAppMediaMessage } from "./types";
@@ -14,11 +13,8 @@ export interface StoredWhatsAppMedia {
   filename: string;
   sizeBytes: number;
   sha256: string;
-  storageProvider: "local" | "vercel-blob";
+  storageProvider: "local";
   storagePath: string;
-  url?: string;
-  pathname?: string;
-  access?: "public" | "private";
   graphUrlExpiresQuickly: boolean;
 }
 
@@ -45,16 +41,6 @@ function storageDir(): string {
   return (
     process.env.WHATSAPP_MEDIA_STORAGE_DIR || path.join(process.cwd(), ".data", "whatsapp-media")
   );
-}
-
-function storageProvider(): "local" | "vercel-blob" {
-  const configured = process.env.WHATSAPP_MEDIA_STORAGE_PROVIDER;
-  if (configured === "local" || configured === "vercel-blob") return configured;
-  return process.env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : "local";
-}
-
-function blobAccess(): "public" | "private" {
-  return process.env.WHATSAPP_MEDIA_BLOB_ACCESS === "public" ? "public" : "private";
 }
 
 function extensionFromMime(mimeType: string, fallback = "bin"): string {
@@ -155,36 +141,6 @@ export async function downloadAndStoreWhatsAppMedia(
   );
   const date = new Date().toISOString().slice(0, 10);
   const relativePath = path.posix.join(date, `${hash.slice(0, 16)}-${filename}`);
-  const provider = storageProvider();
-
-  if (provider === "vercel-blob") {
-    if (!process.env.BLOB_READ_WRITE_TOKEN)
-      throw new Error("BLOB_READ_WRITE_TOKEN fehlt für WhatsApp Cloud Storage.");
-    const access = blobAccess();
-    const pathname = `whatsapp-media/${relativePath}`;
-    const blob = await put(pathname, bytes, {
-      access,
-      contentType: mimeType,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
-    return {
-      provider: "whatsapp",
-      mediaId: message.mediaId,
-      kind: message.type,
-      mimeType,
-      filename,
-      sizeBytes: bytes.length,
-      sha256: hash,
-      storageProvider: "vercel-blob",
-      storagePath: blob.pathname,
-      pathname: blob.pathname,
-      url: blob.url,
-      access,
-      graphUrlExpiresQuickly: true,
-    };
-  }
-
   const absolutePath = path.join(storageDir(), relativePath);
 
   await mkdir(path.dirname(absolutePath), { recursive: true });

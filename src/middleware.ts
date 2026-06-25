@@ -17,6 +17,54 @@ const APP_HOSTS = new Set(
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean)
 );
+
+// --- IP Allow-listing (G8: Enterprise Security) ---
+// When SUBSUMIO_IP_ALLOWLIST is set, only requests from these IPs/CIDRs
+// can access dashboard/api/admin paths. Health endpoints are always allowed.
+// Read dynamically so env changes (e.g. via admin UI) take effect without restart.
+const HEALTH_PATHS = new Set(["/api/health", "/api/readiness", "/health", "/healthz"]);
+
+function getIpAllowlist(): string[] {
+  return (process.env.SUBSUMIO_IP_ALLOWLIST ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function ipInAllowlist(ip: string, allowlist: string[]): boolean {
+  if (allowlist.length === 0) return true; // not configured → allow all
+  // Always allow localhost (container-internal health checks)
+  if (ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1") return true;
+  for (const entry of allowlist) {
+    if (entry.includes("/")) {
+      // CIDR notation
+      if (cidrMatch(ip, entry)) return true;
+    } else {
+      if (ip === entry || ip === `::ffff:${entry}`) return true;
+    }
+  }
+  return false;
+}
+
+function cidrMatch(ip: string, cidr: string): boolean {
+  try {
+    const [range, bitsStr] = cidr.split("/");
+    const bits = parseInt(bitsStr, 10);
+    if (isNaN(bits) || bits < 0 || bits > 32) return false;
+    const ipParts = ip.replace("::ffff:", "").split(".").map(Number);
+    const rangeParts = range.split(".").map(Number);
+    if (ipParts.length !== 4 || rangeParts.length !== 4) return false;
+    if (ipParts.some((n) => isNaN(n) || n < 0 || n > 255)) return false;
+    if (rangeParts.some((n) => isNaN(n) || n < 0 || n > 255)) return false;
+    const ipNum = (ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3];
+    const rangeNum =
+      (rangeParts[0] << 24) | (rangeParts[1] << 16) | (rangeParts[2] << 8) | rangeParts[3];
+    const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+    return (ipNum & mask) === (rangeNum & mask);
+  } catch {
+    return false;
+  }
+}
 const WEBHOOK_CSRF_EXEMPT_PREFIXES = [
   "/api/webhook/",
   "/api/billing/webhook",
@@ -41,6 +89,22 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
   const host = req.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+
+  // --- IP Allow-listing (G8) ---
+  // Block non-whitelisted IPs from all paths except health endpoints.
+  const allowlist = getIpAllowlist();
+  if (allowlist.length > 0 && !HEALTH_PATHS.has(pathname)) {
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip")?.trim() ??
+      "";
+    if (clientIp && !ipInAllowlist(clientIp, allowlist)) {
+      return NextResponse.json(
+        { error: "ip_not_allowed", message: "Access denied: IP not in allowlist." },
+        { status: 403 }
+      );
+    }
+  }
 
   if (APP_HOSTS.has(host) && pathname === "/") {
     const dashboard = req.nextUrl.clone();

@@ -113,6 +113,23 @@ services:
       - web
       - engine
 
+  cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET in .env}
+    volumes:
+      - ./crontab:/etc/crontab:ro
+    entrypoint: >
+      sh -c "
+        apk add --no-cache curl supercronic &&
+        export CRON_SECRET &&
+        supercronic /etc/crontab
+      "
+
 volumes:
   db-data:
   engine-data:

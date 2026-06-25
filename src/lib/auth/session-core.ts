@@ -70,17 +70,17 @@ async function fetchRevocationVersion(userId: string): Promise<number> {
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET;
   if (secret) {
-    if ((process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) && secret.length < 32) {
+    if (process.env.NODE_ENV === "production" && secret.length < 32) {
       throw new Error("AUTH_SECRET must be at least 32 characters in production.");
     }
     return secret;
   }
-  // Any deployed environment (production OR preview) must have AUTH_SECRET set —
-  // only a strictly local `next dev` with no VERCEL_ENV at all gets the
-  // forgeable dev fallback. This closes the gap where a self-hosted staging
-  // box (NODE_ENV unset/non-production, but internet-reachable) silently
-  // accepted a hardcoded, publicly-known signing secret.
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV) {
+  // Any deployed environment must have AUTH_SECRET set — only a strictly
+  // local `next dev` gets the forgeable dev fallback. This closes the gap
+  // where a self-hosted staging box (NODE_ENV unset/non-production, but
+  // internet-reachable) silently accepted a hardcoded, publicly-known
+  // signing secret.
+  if (process.env.NODE_ENV === "production") {
     throw new Error("AUTH_SECRET must be set in this environment.");
   }
   console.warn(

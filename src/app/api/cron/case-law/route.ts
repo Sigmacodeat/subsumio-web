@@ -17,7 +17,7 @@ export const maxDuration = 300;
  * Urteile der letzten 7 Tage gesucht; neue Treffer (per Postgres-Dedup) gehen
  * als E-Mail-Digest an die Brain-Nutzer.
  *
- * Schutz via CRON_SECRET (Bearer). Vercel-Cron in vercel.json.
+ * Schutz via CRON_SECRET (Bearer). Gesteuert via supercronic im Hetzner Stack.
  */
 
 const WATCHLIST_SLUG = "monitoring/case-law-watchlist";

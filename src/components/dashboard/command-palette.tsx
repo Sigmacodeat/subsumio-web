@@ -102,6 +102,8 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "settings-kanzlei": "nav.kanzlei",
   "settings-security": "nav.security",
   "settings-ai-model": "nav.ai_model",
+  "portfolio-insights": "nav.portfolio_insights",
+  "adoption-analytics": "nav.adoption_analytics",
 };
 
 const CMD_SECTION_KEYS: Record<string, DashboardKey> = {

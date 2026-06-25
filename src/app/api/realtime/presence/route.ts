@@ -8,8 +8,8 @@ const presenceSchema = z.object({
 });
 
 // In-memory presence store (per server instance). For multi-instance deployments,
-// this would need Redis or a shared store. For Vercel serverless, presence is
-// best-effort — each instance tracks its own connected clients.
+// this would need Redis or a shared store. On a single-box Hetzner deployment,
+// presence is reliable — one process tracks all connected clients.
 const presenceMap = new Map<
   string,
   Map<string, { email: string; joinedAt: string; lastHeartbeat: string }>

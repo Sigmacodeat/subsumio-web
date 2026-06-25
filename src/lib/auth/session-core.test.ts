@@ -51,14 +51,6 @@ describe("session-core", () => {
       const { getAuthSecret } = await import("./session-core");
       expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
     });
-
-    test("throws in Vercel production without AUTH_SECRET", async () => {
-      delete process.env.AUTH_SECRET;
-      process.env.NODE_ENV = "development";
-      process.env.VERCEL_ENV = "production";
-      const { getAuthSecret } = await import("./session-core");
-      expect(() => getAuthSecret()).toThrow("AUTH_SECRET must be set");
-    });
   });
 
   describe("b64url / b64urlDecode", () => {
@@ -138,7 +130,9 @@ describe("session-core", () => {
       process.env.AUTH_SECRET = "test-secret";
       const { signSession, verifySessionCore } = await import("./session-core");
       const token = await signSession({
-        uid: "user-1", email: "test@example.com", role: "lawyer",
+        uid: "user-1",
+        email: "test@example.com",
+        role: "lawyer",
       });
       // Tamper with the body
       const [body, sig] = token.split(".");
@@ -150,7 +144,9 @@ describe("session-core", () => {
       process.env.AUTH_SECRET = "secret-a";
       const { signSession, verifySessionCore } = await import("./session-core");
       const token = await signSession({
-        uid: "user-1", email: "test@example.com", role: "lawyer",
+        uid: "user-1",
+        email: "test@example.com",
+        role: "lawyer",
       });
       expect(await verifySessionCore(token, "secret-b")).toBeNull();
     });
@@ -161,7 +157,7 @@ describe("session-core", () => {
       const token = await signSession(
         { uid: "user-1", email: "test@example.com", role: "lawyer" },
         "test-secret",
-        -1, // already expired
+        -1 // already expired
       );
       expect(await verifySessionCore(token)).toBeNull();
     });
@@ -173,7 +169,7 @@ describe("session-core", () => {
         { uid: "user-1", email: "test@example.com", role: "lawyer" },
         "test-secret",
         3600,
-        5,
+        5
       );
       const payload = await verifySessionCore(token);
       expect(payload?.v).toBe(5);
