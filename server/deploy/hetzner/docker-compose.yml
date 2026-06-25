@@ -17,13 +17,13 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: subsumio
+      POSTGRES_USER: ${POSTGRES_USER:-subsumio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: subsumio
+      POSTGRES_DB: ${POSTGRES_DB:-subsumio}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U subsumio -d subsumio"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-subsumio} -d ${POSTGRES_DB:-subsumio}"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
+      DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}
       PORT: "3131"
       SUBSUMIO_HOME: /data
       GBRAIN_HOME: /data # legacy alias for engine internals
@@ -75,8 +75,8 @@ services:
       SUBSUMIO_API_URL: http://engine:3131
       NEXT_PUBLIC_APP_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
       NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
-      SUBSUMIO_AUTH_DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio?sslmode=disable
-      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio?sslmode=disable
+      SUBSUMIO_AUTH_DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-subsumio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-subsumio}?sslmode=disable
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
       NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"
