@@ -260,10 +260,11 @@ export async function autoPlaybookUpdate(
     const newLanguage = String(o.preferred_language ?? "");
     const sourceQuote = String(o.source_quote ?? "");
 
-    const deviates =
+    const deviates = Boolean(
       !existing ||
       (existing.fallback_position && existing.fallback_position !== newFallback) ||
-      (existing.preferred_language && existing.preferred_language !== newLanguage);
+      (existing.preferred_language && existing.preferred_language !== newLanguage)
+    );
 
     updates.push({
       clause_type: clauseType,

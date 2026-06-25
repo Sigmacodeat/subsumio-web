@@ -3,11 +3,18 @@
 // Idempotency: tracks processed event IDs to prevent duplicate plan updates.
 
 import { NextRequest, NextResponse } from "next/server";
-import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
+import { getStore, getOrgStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
 import { planForPriceId } from "@/lib/billing/plans";
+import {
+  incrementFailure,
+  resetFailure,
+  applyDunningToPlan,
+  buildDunningEmailBody,
+  buildReactivationEmailBody,
+} from "@/lib/billing/dunning";
 
 // In-memory fallback for dev mode (no Postgres)
 const processedEventIds = new Set<string>();
@@ -138,16 +145,99 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       break;
     }
     case "invoice.payment_failed": {
-      // Payment failed — log but don't downgrade immediately.
-      // Stripe retries 3 times over ~4 days before canceling.
+      // Dunning escalation: Warning → Grace-Period → Suspension
+      const customerId = typeof obj.customer === "string" ? obj.customer : null;
+      const invoiceObj = obj as {
+        customer?: string;
+        next_payment_attempt?: number | null;
+        hosted_invoice_url?: string;
+      };
+      const nextRetryAt = invoiceObj.next_payment_attempt
+        ? new Date(invoiceObj.next_payment_attempt * 1000)
+        : null;
+
+      if (customerId) {
+        const orgStore = getOrgStore();
+        const orgs = (await orgStore?.listOrgs?.()) ?? [];
+        const org = orgs.find(
+          (o: { stripeCustomerId?: string }) => o.stripeCustomerId === customerId
+        );
+        if (org) {
+          const dunningState = await incrementFailure(org.id, nextRetryAt);
+          await applyDunningToPlan(org.id, dunningState);
+
+          // Send dunning email (best-effort)
+          try {
+            const { subject, body: emailBody } = buildDunningEmailBody(
+              org.name ?? org.id,
+              dunningState.failureCount,
+              nextRetryAt,
+              invoiceObj.hosted_invoice_url
+            );
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/notifications`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
+              },
+              body: JSON.stringify({
+                orgId: org.id,
+                subject,
+                body: emailBody,
+                type: "billing_dunning",
+              }),
+            }).catch(() => {}); // fire-and-forget
+          } catch {
+            /* non-fatal */
+          }
+
+          console.warn(
+            `[stripe-webhook] payment_failed dunning: org=${org.id} failure=${dunningState.failureCount} status=${dunningState.status}`
+          );
+        }
+      }
+      break;
+    }
+    case "invoice.payment_succeeded": {
+      // Reset dunning state after successful payment
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
       if (customerId) {
-        const users = await store.list();
-        const user = users.find((u) => u.stripeCustomerId === customerId);
-        if (user) {
-          console.warn(
-            `[stripe-webhook] payment failed for user ${user.email} (customer ${customerId})`
-          );
+        const orgStore = getOrgStore();
+        const orgs = (await orgStore?.listOrgs?.()) ?? [];
+        const org = orgs.find(
+          (o: { stripeCustomerId?: string }) => o.stripeCustomerId === customerId
+        );
+        if (org) {
+          await resetFailure(org.id);
+          // Reactivate if suspended/past_due
+          const currentOrg = await orgStore?.getOrg?.(org.id);
+          if (currentOrg?.plan === "suspended" || currentOrg?.plan === "past_due") {
+            // Resolve actual plan from subscription
+            const priceId = (obj as { items?: { data?: Array<{ price?: { id?: string } }> } }).items
+              ?.data?.[0]?.price?.id;
+            const resolvedPlan = planForPriceId(priceId) ?? "pro";
+            await orgStore?.updateOrg?.(org.id, { plan: resolvedPlan as Plan });
+
+            // Reactivation email
+            try {
+              const { subject, body: emailBody } = buildReactivationEmailBody(org.name ?? org.id);
+              await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/notifications`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
+                },
+                body: JSON.stringify({
+                  orgId: org.id,
+                  subject,
+                  body: emailBody,
+                  type: "billing_reactivated",
+                }),
+              }).catch(() => {});
+            } catch {
+              /* non-fatal */
+            }
+          }
         }
       }
       break;

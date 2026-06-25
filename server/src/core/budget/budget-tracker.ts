@@ -28,17 +28,18 @@
  * best-effort: a disk-full audit never gates the run.
  */
 
-import { mkdirSync, appendFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { gbrainPath } from '../config.ts';
-import { ANTHROPIC_PRICING, type ModelPricing } from '../anthropic-pricing.ts';
-import { EMBEDDING_PRICING, lookupEmbeddingPrice } from '../embedding-pricing.ts';
-import { splitProviderModelId } from '../model-id.ts';
-import { isoWeekFilename, resolveAuditDir } from '../audit-week-file.ts';
+import { mkdirSync, appendFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { gbrainPath } from "../config.ts";
+import { ANTHROPIC_PRICING, type ModelPricing } from "../anthropic-pricing.ts";
+import { canonicalLookup } from "../model-pricing.ts";
+import { EMBEDDING_PRICING, lookupEmbeddingPrice } from "../embedding-pricing.ts";
+import { splitProviderModelId } from "../model-id.ts";
+import { isoWeekFilename, resolveAuditDir } from "../audit-week-file.ts";
 
-export type BudgetKind = 'chat' | 'embed' | 'rerank';
+export type BudgetKind = "chat" | "embed" | "rerank";
 
-export type BudgetReason = 'cost' | 'runtime' | 'no_pricing';
+export type BudgetReason = "cost" | "runtime" | "no_pricing";
 
 export interface BudgetEstimate {
   modelId: string;
@@ -80,17 +81,17 @@ export interface BudgetTrackerOpts {
 }
 
 export class BudgetExhausted extends Error {
-  readonly tag = 'BUDGET_EXHAUSTED' as const;
+  readonly tag = "BUDGET_EXHAUSTED" as const;
   reason: BudgetReason;
   spent: number;
   cap: number;
   modelId?: string;
   constructor(
     message: string,
-    opts: { reason: BudgetReason; spent: number; cap: number; modelId?: string },
+    opts: { reason: BudgetReason; spent: number; cap: number; modelId?: string }
   ) {
     super(message);
-    this.name = 'BudgetExhausted';
+    this.name = "BudgetExhausted";
     this.reason = opts.reason;
     this.spent = opts.spent;
     this.cap = opts.cap;
@@ -113,7 +114,7 @@ export function _resetBudgetTrackerWarningsForTest(): void {
 function appendAuditLine(path: string, entry: object): void {
   try {
     mkdirSync(dirname(path), { recursive: true });
-    appendFileSync(path, JSON.stringify(entry) + '\n');
+    appendFileSync(path, JSON.stringify(entry) + "\n");
   } catch {
     // swallow — audit failures must not block the LLM call
   }
@@ -121,7 +122,7 @@ function appendAuditLine(path: string, entry: object): void {
 
 function defaultAuditPath(): string {
   const dir = resolveAuditDir();
-  return `${dir}/${isoWeekFilename('budget')}`;
+  return `${dir}/${isoWeekFilename("budget")}`;
 }
 
 /**
@@ -131,9 +132,7 @@ function defaultAuditPath(): string {
  * against the provider half of the `provider:model` string. Extend this set
  * when adding new local-inference rerank recipes.
  */
-const FREE_LOCAL_RERANK_PROVIDERS: ReadonlySet<string> = new Set([
-  'llama-server-reranker',
-]);
+const FREE_LOCAL_RERANK_PROVIDERS: ReadonlySet<string> = new Set(["llama-server-reranker"]);
 
 /**
  * Provider id prefixes whose embeddings run on local inference (electricity,
@@ -150,10 +149,7 @@ const FREE_LOCAL_RERANK_PROVIDERS: ReadonlySet<string> = new Set([
  * Sibling to FREE_LOCAL_RERANK_PROVIDERS; v0.41+ TODO unifies them via
  * recipe-cost-driven resolution.
  */
-const FREE_LOCAL_EMBED_PROVIDERS: ReadonlySet<string> = new Set([
-  'ollama',
-  'llama-server',
-]);
+const FREE_LOCAL_EMBED_PROVIDERS: ReadonlySet<string> = new Set(["ollama", "llama-server"]);
 
 /**
  * Look up `modelId` in the chat or embedding pricing maps. Returns a
@@ -171,26 +167,28 @@ const FREE_LOCAL_EMBED_PROVIDERS: ReadonlySet<string> = new Set([
  *     local inference recipes (electricity, not tokens); else unknown.
  */
 function lookupPricing(modelId: string, kind: BudgetKind): ModelPricing | null {
-  if (kind === 'embed') {
+  if (kind === "embed") {
     const hit = lookupEmbeddingPrice(modelId);
-    if (hit.kind === 'known') {
+    if (hit.kind === "known") {
       return { input: hit.pricePerMTok, output: 0 };
     }
     // v0.40.x: local-inference embed providers cost electricity, not tokens.
-    if (hit.kind === 'unknown' && FREE_LOCAL_EMBED_PROVIDERS.has(hit.provider)) {
+    if (hit.kind === "unknown" && FREE_LOCAL_EMBED_PROVIDERS.has(hit.provider)) {
       return { input: 0, output: 0 };
     }
     return null;
   }
-  // chat or rerank: try bare key first, then provider:model or provider/model.
-  // v0.41.21.0: route through splitProviderModelId so slash-prefixed ids
-  // (the form `--judge-model` and OpenRouter recipes emit) hit the pricing
-  // table. Pre-fix, slash-form silently no_pricing-failed `--max-cost` on
-  // brainstorm/lsd.
+  // chat or rerank: canonical pricing table is the primary source (single
+  // source of truth per CLAUDE.md invariant). Fall back to ANTHROPIC_PRICING
+  // for legacy keys not yet in canonical, then try provider:model split.
+  const canonical = canonicalLookup(modelId);
+  if (canonical) return canonical;
   const bare = ANTHROPIC_PRICING[modelId];
   if (bare) return bare;
   const { provider: providerId, model: modelTail } = splitProviderModelId(modelId);
   if (modelTail) {
+    const canonicalTail = canonicalLookup(modelTail);
+    if (canonicalTail) return canonicalTail;
     const tailHit = ANTHROPIC_PRICING[modelTail];
     if (tailHit) return tailHit;
   }
@@ -198,13 +196,18 @@ function lookupPricing(modelId: string, kind: BudgetKind): ModelPricing | null {
   // tracker's TX2 hard-fail doesn't trip on `llama-server-reranker:<model>`
   // under `--max-cost`. Only the rerank kind — chat/embed already have
   // their own provider-specific pricing surfaces.
-  if (kind === 'rerank' && providerId && FREE_LOCAL_RERANK_PROVIDERS.has(providerId)) {
+  if (kind === "rerank" && providerId && FREE_LOCAL_RERANK_PROVIDERS.has(providerId)) {
     return { input: 0, output: 0 };
   }
   return null;
 }
 
-function costForUsage(modelId: string, inputTokens: number, outputTokens: number, kind: BudgetKind): number | null {
+function costForUsage(
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number,
+  kind: BudgetKind
+): number | null {
   const p = lookupPricing(modelId, kind);
   if (!p) return null;
   return (inputTokens / 1_000_000) * p.input + (outputTokens / 1_000_000) * p.output;
@@ -266,7 +269,7 @@ export class BudgetTracker {
       estimate.modelId,
       estimate.estimatedInputTokens,
       estimate.maxOutputTokens,
-      estimate.kind,
+      estimate.kind
     );
 
     if (projected === null) {
@@ -274,11 +277,12 @@ export class BudgetTracker {
         // TX2: hard-fail when a cap is set but pricing is missing — without
         // pricing we can't enforce the cap, and silently ignoring it would
         // void the contract.
-        const msg = `${this.opts.label}: no pricing entry for model "${estimate.modelId}" (kind=${estimate.kind}). ` +
-          `Add it to src/core/${estimate.kind === 'embed' ? 'embedding-pricing.ts' : 'anthropic-pricing.ts'} or drop --max-cost.`;
+        const msg =
+          `${this.opts.label}: no pricing entry for model "${estimate.modelId}" (kind=${estimate.kind}). ` +
+          `Add it to src/core/${estimate.kind === "embed" ? "embedding-pricing.ts" : "anthropic-pricing.ts"} or drop --max-cost.`;
         this.fireExhausted();
         throw new BudgetExhausted(msg, {
-          reason: 'no_pricing',
+          reason: "no_pricing",
           spent: this.cumulativeUsd,
           cap: this.opts.maxCostUsd,
           modelId: estimate.modelId,
@@ -290,13 +294,13 @@ export class BudgetTracker {
         _unpricedWarnings.add(memoKey);
         process.stderr.write(
           `[budget] BUDGET_TRACKER_NO_PRICING: model "${estimate.modelId}" (kind=${estimate.kind}) not in pricing maps. ` +
-            `Cost gate disabled for this call.\n`,
+            `Cost gate disabled for this call.\n`
         );
       }
       appendAuditLine(this.auditPath, {
         schema_version: 1,
         ts: new Date().toISOString(),
-        event: 'reserve_unpriced',
+        event: "reserve_unpriced",
         label: this.opts.label,
         kind: estimate.kind,
         model: estimate.modelId,
@@ -313,7 +317,7 @@ export class BudgetTracker {
         appendAuditLine(this.auditPath, {
           schema_version: 1,
           ts: new Date().toISOString(),
-          event: 'reserve_denied',
+          event: "reserve_denied",
           label: this.opts.label,
           kind: estimate.kind,
           model: estimate.modelId,
@@ -326,7 +330,12 @@ export class BudgetTracker {
         throw new BudgetExhausted(
           `${this.opts.label}: projected cost $${after.toFixed(4)} exceeds --max-cost $${this.opts.maxCostUsd.toFixed(2)} ` +
             `(cumulative $${this.cumulativeUsd.toFixed(4)} + this call $${projected.toFixed(4)})`,
-          { reason: 'cost', spent: this.cumulativeUsd, cap: this.opts.maxCostUsd, modelId: estimate.modelId },
+          {
+            reason: "cost",
+            spent: this.cumulativeUsd,
+            cap: this.opts.maxCostUsd,
+            modelId: estimate.modelId,
+          }
         );
       }
     }
@@ -334,7 +343,7 @@ export class BudgetTracker {
     appendAuditLine(this.auditPath, {
       schema_version: 1,
       ts: new Date().toISOString(),
-      event: 'reserve',
+      event: "reserve",
       label: this.opts.label,
       kind: estimate.kind,
       model: estimate.modelId,
@@ -356,7 +365,7 @@ export class BudgetTracker {
    */
   record(actual: BudgetActualUsage & { kind?: BudgetKind }): void {
     this.callsRecorded++;
-    const kind: BudgetKind = actual.kind ?? 'chat';
+    const kind: BudgetKind = actual.kind ?? "chat";
     const cost = costForUsage(actual.modelId, actual.inputTokens, actual.outputTokens ?? 0, kind);
 
     if (cost === null) {
@@ -366,7 +375,7 @@ export class BudgetTracker {
       appendAuditLine(this.auditPath, {
         schema_version: 1,
         ts: new Date().toISOString(),
-        event: 'record_unpriced',
+        event: "record_unpriced",
         label: this.opts.label,
         kind,
         model: actual.modelId,
@@ -382,7 +391,7 @@ export class BudgetTracker {
     appendAuditLine(this.auditPath, {
       schema_version: 1,
       ts: new Date().toISOString(),
-      event: 'record',
+      event: "record",
       label: this.opts.label,
       kind,
       model: actual.modelId,
@@ -400,7 +409,12 @@ export class BudgetTracker {
       this.fireExhausted();
       throw new BudgetExhausted(
         `${this.opts.label}: cumulative cost $${this.cumulativeUsd.toFixed(4)} exceeded --max-cost $${this.opts.maxCostUsd.toFixed(2)} after recording ${kind} call to ${actual.modelId}`,
-        { reason: 'cost', spent: this.cumulativeUsd, cap: this.opts.maxCostUsd, modelId: actual.modelId },
+        {
+          reason: "cost",
+          spent: this.cumulativeUsd,
+          cap: this.opts.maxCostUsd,
+          modelId: actual.modelId,
+        }
       );
     }
   }
@@ -424,7 +438,7 @@ export class BudgetTracker {
       appendAuditLine(this.auditPath, {
         schema_version: 1,
         ts: new Date().toISOString(),
-        event: 'runtime_denied',
+        event: "runtime_denied",
         label: this.opts.label,
         elapsed_ms: elapsed,
         max_runtime_ms: this.opts.maxRuntimeMs,
@@ -433,7 +447,7 @@ export class BudgetTracker {
       this.fireExhausted();
       throw new BudgetExhausted(
         `${this.opts.label}: wall-clock ${(elapsed / 1000).toFixed(1)}s exceeded --max-runtime ${(this.opts.maxRuntimeMs / 1000).toFixed(1)}s`,
-        { reason: 'runtime', spent: elapsed, cap: this.opts.maxRuntimeMs, modelId },
+        { reason: "runtime", spent: elapsed, cap: this.opts.maxRuntimeMs, modelId }
       );
     }
   }
@@ -461,14 +475,19 @@ export class BudgetTracker {
  */
 export function extractUsageFromError(
   err: unknown,
-  fallback: { inputTokens: number; outputTokens: number },
+  fallback: { inputTokens: number; outputTokens: number }
 ): { inputTokens: number; outputTokens: number } {
-  if (err && typeof err === 'object') {
+  if (err && typeof err === "object") {
     const top = (err as { usage?: unknown }).usage;
     const nested = (err as { response?: { usage?: unknown } }).response?.usage;
-    const candidate = (top && typeof top === 'object' ? top : nested && typeof nested === 'object' ? nested : null) as
-      | { input_tokens?: number; output_tokens?: number; inputTokens?: number; outputTokens?: number }
-      | null;
+    const candidate = (
+      top && typeof top === "object" ? top : nested && typeof nested === "object" ? nested : null
+    ) as {
+      input_tokens?: number;
+      output_tokens?: number;
+      inputTokens?: number;
+      outputTokens?: number;
+    } | null;
     if (candidate) {
       const inputTokens = numericOrNull(candidate.input_tokens ?? candidate.inputTokens);
       const outputTokens = numericOrNull(candidate.output_tokens ?? candidate.outputTokens);
@@ -484,7 +503,7 @@ export function extractUsageFromError(
 }
 
 function numericOrNull(v: unknown): number | null {
-  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
 /** Re-export the pricing maps for introspection / test setup. */

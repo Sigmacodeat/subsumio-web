@@ -39,6 +39,7 @@ export const D = {
   "nav.upload": { de: "Upload", en: "Upload" },
   "nav.rag_eval": { de: "RAG-Eval", en: "RAG Eval" },
   "nav.portfolio_insights": { de: "Portfolio Insights", en: "Portfolio Insights" },
+  "nav.deep_analysis": { de: "Deep Analysis", en: "Deep Analysis" },
   "nav.adoption_analytics": { de: "Adoption Analytics", en: "Adoption Analytics" },
   "nav.analytics": { de: "Analytics", en: "Analytics" },
   "nav.shared_spaces": { de: "Geteilte Räume", en: "Shared Spaces" },

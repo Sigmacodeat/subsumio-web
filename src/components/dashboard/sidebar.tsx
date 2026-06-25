@@ -102,6 +102,11 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: BarChart3,
         labelKey: "nav.portfolio_insights",
       },
+      {
+        href: "/dashboard/deep-analysis",
+        icon: FileSearch,
+        labelKey: "nav.deep_analysis",
+      },
     ],
   },
   {
@@ -211,6 +216,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   { href: "/dashboard/rag-eval", icon: FileSearch, labelKey: "nav.rag_eval" },
   { href: "/dashboard/portfolio-insights", icon: BarChart3, labelKey: "nav.portfolio_insights" },
+  { href: "/dashboard/deep-analysis", icon: FileSearch, labelKey: "nav.deep_analysis" },
   { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
   { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
   { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
@@ -280,6 +286,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/onboarding", section: "nav.section.admin" },
   { href: "/dashboard/rag-eval", section: "nav.section.admin" },
   { href: "/dashboard/portfolio-insights", section: "nav.section.admin" },
+  { href: "/dashboard/deep-analysis", section: "nav.section.documents_drafting" },
   { href: "/dashboard/adoption-analytics", section: "nav.section.admin" },
   { href: "/dashboard/analytics", section: "nav.section.operations" },
   { href: "/dashboard/shared-spaces", section: "nav.section.operations" },

@@ -5,15 +5,121 @@ import { z } from "zod";
 const presenceSchema = z.object({
   page: z.string().min(1),
   action: z.enum(["join", "leave", "heartbeat"]).optional(),
+  /** Optional cursor position for co-editing awareness */
+  cursor: z.object({ x: z.number(), y: z.number() }).optional(),
 });
 
-// In-memory presence store (per server instance). For multi-instance deployments,
-// this would need Redis or a shared store. On a single-box Hetzner deployment,
-// presence is reliable — one process tracks all connected clients.
-const presenceMap = new Map<
-  string,
-  Map<string, { email: string; joinedAt: string; lastHeartbeat: string }>
+// ── Presence Store Abstraction ────────────────────────────────────────
+// Automatically upgrades to Redis when REDIS_URL is set.
+// Falls back to in-memory Map for single-instance deployments (Hetzner).
+
+interface PresenceEntry {
+  email: string;
+  joinedAt: string;
+  lastHeartbeat: string;
+  cursor?: { x: number; y: number };
+}
+
+interface PresenceStore {
+  get(page: string, orgId: string): Promise<Map<string, PresenceEntry>>;
+  set(page: string, orgId: string, userId: string, entry: PresenceEntry): Promise<void>;
+  delete(page: string, orgId: string, userId: string): Promise<void>;
+  pruneStale(orgId: string): Promise<void>;
+}
+
+// ── In-Memory Store (default, single-instance) ────────────────────────
+
+const inMemoryStore = new Map<
+  string, // key = `${orgId}:${page}`
+  Map<string, PresenceEntry>
 >();
+
+const memoryPresenceStore: PresenceStore = {
+  async get(page, orgId) {
+    const key = `${orgId}:${page}`;
+    return inMemoryStore.get(key) ?? new Map();
+  },
+  async set(page, orgId, userId, entry) {
+    const key = `${orgId}:${page}`;
+    if (!inMemoryStore.has(key)) inMemoryStore.set(key, new Map());
+    inMemoryStore.get(key)!.set(userId, entry);
+  },
+  async delete(page, orgId, userId) {
+    const key = `${orgId}:${page}`;
+    inMemoryStore.get(key)?.delete(userId);
+  },
+  async pruneStale(orgId) {
+    const cutoff = Date.now() - 120_000; // 2 minutes
+    for (const [key, pageMap] of inMemoryStore) {
+      if (!key.startsWith(`${orgId}:`)) continue;
+      for (const [userId, entry] of pageMap) {
+        if (new Date(entry.lastHeartbeat).getTime() < cutoff) pageMap.delete(userId);
+      }
+    }
+  },
+};
+
+// ── Redis Store (multi-instance, auto-enabled when REDIS_URL is set) ──
+
+let redisStore: PresenceStore | null = null;
+
+async function getRedisStore(): Promise<PresenceStore | null> {
+  if (redisStore) return redisStore;
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) return null;
+
+  try {
+    // Dynamic import — ioredis optional dependency
+    const { default: Redis } = await import("ioredis");
+    const client = new Redis(redisUrl, { lazyConnect: true, maxRetriesPerRequest: 2 });
+    await client.ping();
+
+    const TTL = 120; // 2 minutes — auto-expires stale entries
+
+    redisStore = {
+      async get(page, orgId) {
+        const key = `presence:${orgId}:${page}`;
+        const raw = await client.hgetall(key);
+        const result = new Map<string, PresenceEntry>();
+        for (const [userId, json] of Object.entries(raw)) {
+          try {
+            result.set(userId, JSON.parse(json) as PresenceEntry);
+          } catch {
+            /* skip corrupt */
+          }
+        }
+        return result;
+      },
+      async set(page, orgId, userId, entry) {
+        const key = `presence:${orgId}:${page}`;
+        await client.hset(key, userId, JSON.stringify(entry));
+        await client.expire(key, TTL);
+      },
+      async delete(page, orgId, userId) {
+        const key = `presence:${orgId}:${page}`;
+        await client.hdel(key, userId);
+      },
+      async pruneStale(_orgId) {
+        // Redis TTL handles expiry automatically — prune stale individual fields
+        // (Redis doesn't support per-field TTL on hashes; this is best-effort)
+      },
+    };
+    return redisStore;
+  } catch (err) {
+    console.warn(
+      "[presence] Redis unavailable, falling back to in-memory:",
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
+}
+
+async function getStore(): Promise<PresenceStore> {
+  const redis = await getRedisStore();
+  return redis ?? memoryPresenceStore;
+}
+
+// ── Handlers ──────────────────────────────────────────────────────────
 
 export const POST = createHandler(
   {
@@ -23,73 +129,64 @@ export const POST = createHandler(
     skipCsrf: true,
   },
   async (ctx, body) => {
-    const { page, action = "heartbeat" } = body;
+    const { page, action = "heartbeat", cursor } = body;
     const userId = ctx.user.id;
     const email = ctx.user.email;
+    const orgId = ctx.brainId; // org-scoped presence
     const now = new Date().toISOString();
-
-    if (!presenceMap.has(page)) {
-      presenceMap.set(page, new Map());
-    }
-    const pagePresence = presenceMap.get(page)!;
+    const store = await getStore();
 
     if (action === "leave") {
-      pagePresence.delete(userId);
-      broadcastSseEvent(ctx.brainId, "presence.left", { userId, email, page });
+      await store.delete(page, orgId, userId);
+      broadcastSseEvent(orgId, "presence.left", { userId, email, page });
       return Response.json({ ok: true });
     }
 
     // join or heartbeat
+    const pagePresence = await store.get(page, orgId);
     const existing = pagePresence.get(userId);
-    const entry = {
+    const entry: PresenceEntry = {
       email,
       joinedAt: existing?.joinedAt ?? now,
       lastHeartbeat: now,
+      cursor: cursor ?? existing?.cursor,
     };
-    pagePresence.set(userId, entry);
+    await store.set(page, orgId, userId, entry);
 
     if (!existing) {
-      broadcastSseEvent(ctx.brainId, "presence.joined", {
+      broadcastSseEvent(orgId, "presence.joined", {
         userId,
         email,
         page,
         joinedAt: entry.joinedAt,
         lastHeartbeat: now,
+        cursor: entry.cursor,
       });
     } else {
-      broadcastSseEvent(ctx.brainId, "presence.heartbeat", {
+      broadcastSseEvent(orgId, "presence.heartbeat", {
         userId,
         email,
         page,
         joinedAt: entry.joinedAt,
         lastHeartbeat: now,
+        cursor: entry.cursor,
       });
     }
 
-    // Return current presence list for this page
-    const users = Array.from(pagePresence.entries()).map(([uid, e]) => ({
+    // Return fresh presence list for this page
+    const updatedPresence = await store.get(page, orgId);
+    const users = Array.from(updatedPresence.entries()).map(([uid, e]) => ({
       userId: uid,
       email: e.email,
       page,
       joinedAt: e.joinedAt,
       lastHeartbeat: e.lastHeartbeat,
+      cursor: e.cursor,
     }));
 
-    return Response.json({ ok: true, users });
+    return Response.json({ ok: true, users, backend: process.env.REDIS_URL ? "redis" : "memory" });
   }
 );
-
-// Prune stale entries (no heartbeat in 60s) — called on each request
-function pruneStale() {
-  const cutoff = Date.now() - 60000;
-  for (const [, pagePresence] of presenceMap) {
-    for (const [userId, entry] of pagePresence) {
-      if (new Date(entry.lastHeartbeat).getTime() < cutoff) {
-        pagePresence.delete(userId);
-      }
-    }
-  }
-}
 
 export const GET = createHandler(
   {
@@ -97,19 +194,28 @@ export const GET = createHandler(
     rateTier: "standard",
   },
   async (ctx, _body, _query, req) => {
-    pruneStale();
     const url = new URL(req.url);
-    const page = url.searchParams.get("page") || "";
+    const page = url.searchParams.get("page") ?? "";
     if (!page) return Response.json({ users: [] });
-    const pagePresence = presenceMap.get(page);
-    if (!pagePresence) return Response.json({ users: [] });
-    const users = Array.from(pagePresence.entries()).map(([userId, entry]) => ({
-      userId,
-      email: entry.email,
-      page,
-      joinedAt: entry.joinedAt,
-      lastHeartbeat: entry.lastHeartbeat,
-    }));
+
+    const orgId = ctx.brainId;
+    const store = await getStore();
+    await store.pruneStale(orgId);
+    const pagePresence = await store.get(page, orgId);
+
+    // Filter truly stale (older than 2 min)
+    const cutoff = Date.now() - 120_000;
+    const users = Array.from(pagePresence.entries())
+      .filter(([, e]) => new Date(e.lastHeartbeat).getTime() > cutoff)
+      .map(([userId, e]) => ({
+        userId,
+        email: e.email,
+        page,
+        joinedAt: e.joinedAt,
+        lastHeartbeat: e.lastHeartbeat,
+        cursor: e.cursor,
+      }));
+
     return Response.json({ users });
   }
 );

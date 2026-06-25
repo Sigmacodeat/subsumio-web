@@ -104,6 +104,8 @@ const CMD_LABEL_KEYS: Record<string, DashboardKey> = {
   "settings-ai-model": "nav.ai_model",
   "portfolio-insights": "nav.portfolio_insights",
   "adoption-analytics": "nav.adoption_analytics",
+  analytics: "nav.analytics",
+  "shared-spaces": "nav.shared_spaces",
 };
 
 const CMD_SECTION_KEYS: Record<string, DashboardKey> = {
