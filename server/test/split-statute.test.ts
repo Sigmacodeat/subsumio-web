@@ -101,7 +101,12 @@ describe("splitStatute — Article-based statutes (CH OR/ZGB, Grundgesetz)", () 
 
   test("parses Art. headings (with and without dot)", () => {
     expect(sections.length).toBe(3);
-    expect(sections[0]).toMatchObject({ marker: "Art.", ref: "1", id: "art-1", title: "Vertragsfreiheit" });
+    expect(sections[0]).toMatchObject({
+      marker: "Art.",
+      ref: "1",
+      id: "art-1",
+      title: "Vertragsfreiheit",
+    });
     expect(sections[1]).toMatchObject({ marker: "Art.", ref: "8", id: "art-8" });
     expect(sections[2]).toMatchObject({ marker: "Art.", ref: "19", id: "art-19" });
   });
@@ -110,6 +115,78 @@ describe("splitStatute — Article-based statutes (CH OR/ZGB, Grundgesetz)", () 
     expect(meta.abbreviation).toBe("OR");
     expect(sections[0].body).not.toContain("Obligationenrecht (OR) — Schweiz");
     expect(sections[0].body).toContain("Willensäusserung");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CH odat.ch format: bare `Art. NTitle` lines (no ## prefix, no space
+// between number and title). This is the actual format of law-corpus/ch/*.md
+// files from odat.ch, as opposed to the `## Art. N Title` format used in
+// the ART_FIXTURE above.
+// ---------------------------------------------------------------------------
+
+const CH_ODAT_FIXTURE = `---
+title: "OR — Obligationenrecht (Schweiz)"
+type: "law"
+jurisdiction: "ch"
+abbreviation: "OR"
+---
+
+## Bundesgesetz betreffend die Ergänzung des Schweizerischen Zivilgesetzbuches
+
+Art. 1Im Allgemeinen
+1
+
+Zum Abschlusse eines Vertrages ist die übereinstimmende gegenseitige Willensäusserung der Parteien erforderlich.
+
+2
+
+Sie kann eine ausdrückliche oder stillschweigende sein.
+
+Art. 2Betreffend Nebenpunkte
+1
+
+Haben sich die Parteien über alle wesentlichen Punkte geeinigt, so wird vermutet, dass der Vorbehalt von Nebenpunkten die Verbindlichkeit des Vertrages nicht hindern solle.
+
+Art. 6aZusendung unbestellter Sachen
+1
+
+Die Zusendung einer unbestellten Sache ist kein Antrag.
+`;
+
+describe("splitStatute — CH odat.ch bare Art. format (no ## prefix)", () => {
+  const { meta, sections } = splitStatute(CH_ODAT_FIXTURE);
+
+  test("parses bare Art. headings without ## prefix", () => {
+    expect(sections.length).toBe(3);
+    expect(sections[0]).toMatchObject({
+      marker: "Art.",
+      ref: "1",
+      id: "art-1",
+      title: "Im Allgemeinen",
+    });
+    expect(sections[1]).toMatchObject({
+      marker: "Art.",
+      ref: "2",
+      id: "art-2",
+      title: "Betreffend Nebenpunkte",
+    });
+  });
+
+  test("handles letter-suffix articles (Art. 6a)", () => {
+    const art6a = sections.find((s) => s.ref === "6a");
+    expect(art6a).toBeDefined();
+    expect(art6a!.id).toBe("art-6a");
+    expect(art6a!.title).toBe("Zusendung unbestellter Sachen");
+  });
+
+  test("captures article body correctly", () => {
+    expect(sections[0].body).toContain("Willensäusserung");
+    expect(sections[0].body).not.toContain("Art. 2");
+  });
+
+  test("ignores structural ## headings (not article headings)", () => {
+    expect(sections[0].body).not.toContain("Bundesgesetz betreffend");
   });
 });
 
@@ -135,8 +212,10 @@ Sonderbestimmung. § 3. Die Wirksamkeit eines Gesetzes; siehe dazu § 323a. übe
 describe("splitStatute — inline-§ recovery (AT PDF dumps, no headings)", () => {
   // The dump has fewer than the 10-marker trust floor, so exercise the pure
   // function directly with a body that clears the threshold.
-  const body = Array.from({ length: 14 }, (_, i) => `§ ${i + 1}. Inhalt von Paragraph ${i + 1}.`)
-    .join(" gemäß § 1 und § 2 ");
+  const body = Array.from(
+    { length: 14 },
+    (_, i) => `§ ${i + 1}. Inhalt von Paragraph ${i + 1}.`
+  ).join(" gemäß § 1 und § 2 ");
 
   test("recovers one section per inline § marker", () => {
     const secs = splitStatuteInline(body);
@@ -180,7 +259,7 @@ describe("splitStatute — inline-§ recovery (AT PDF dumps, no headings)", () =
   test("full integration: splitStatute falls back to inline mode for a heading-less AT dump", () => {
     const longDump = AT_DUMP.replace(
       "§ 5. Gesetze wirken nicht zurück.",
-      Array.from({ length: 12 }, (_, i) => `§ ${i + 5}. Paragraph ${i + 5}.`).join(" "),
+      Array.from({ length: 12 }, (_, i) => `§ ${i + 5}. Paragraph ${i + 5}.`).join(" ")
     );
     const { meta, sections } = splitStatute(longDump);
     expect(meta.abbreviation).toBe("ABGB");
@@ -196,7 +275,9 @@ describe("splitStatute — inline-§ recovery (AT PDF dumps, no headings)", () =
   test("last section spills its trailing appendix into a separate -anhang page", () => {
     // The final § marker has no following marker, so it would absorb a large
     // appendix (Anlagen/Übergangsrecht) and balloon past the embeddable size.
-    const head = Array.from({ length: 12 }, (_, i) => `§ ${i + 1}. kurzer Inhalt ${i + 1}.`).join(" ");
+    const head = Array.from({ length: 12 }, (_, i) => `§ ${i + 1}. kurzer Inhalt ${i + 1}.`).join(
+      " "
+    );
     // Appendix with word boundaries so the cut lands cleanly, not mid-word.
     const hugeAppendix = " Anlage zum Gesetz. " + "wort ".repeat(12000);
     const secs = splitStatuteInline(head + ` § 13. Schlussparagraph.` + hugeAppendix);

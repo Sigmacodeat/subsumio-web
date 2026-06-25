@@ -90,6 +90,14 @@ const SECTION_HEADING = /^##\s+(§+|Art\.?)\s+(.+?)\s*$/;
 /** EU regulation heading: `Artikel 12` (no ## prefix, full word).
  *  EUR-Lex exports use this format instead of `## Art. 12`. */
 const EU_ARTICLE_HEADING = /^Artikel\s+(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*$/i;
+/** CH odat.ch heading: `Art. 1Title` (no ## prefix, no space between number
+ *  and title). Swiss statute exports from odat.ch use this bare format — the
+ *  article marker starts the line without any markdown heading prefix, and
+ *  the title follows immediately after the number (e.g. `Art. 1Anwendung
+ *  des Rechts`). The `Art.` prefix + start-of-line anchor is specific enough
+ *  to avoid matching cross-references in running text (those use `Artikel`
+ *  or appear mid-line). */
+const CH_ARTICLE_HEADING = /^Art\.\s+(\d+[a-z]*(?:\s*(?:und|bis|,)\s*\d+[a-z]*)*)\s*(.*)$/;
 
 /** Extract the bare ref + title from a heading's text after the marker.
  *  Works for "1 — Steuerpflicht" (DE em-dash), "1 Vertragsfreiheit" (CH plain),
@@ -163,10 +171,13 @@ export function splitStatute(markdown: string): SplitStatuteResult {
   for (const line of lines) {
     const m = line.match(SECTION_HEADING);
     const euM = !m ? line.match(EU_ARTICLE_HEADING) : null;
-    if (m || euM) {
+    const chM = !m && !euM ? line.match(CH_ARTICLE_HEADING) : null;
+    if (m || euM || chM) {
       flush();
       const marker: "§" | "Art." = m ? (m[1].startsWith("§") ? "§" : "Art.") : "Art.";
-      const { ref, title } = parseHeading(m ? m[2] : euM![1] || "");
+      const { ref, title } = parseHeading(
+        m ? m[2] : euM ? euM![1] || "" : `${chM![1]} ${chM![2] || ""}`
+      );
       let id = refToId(ref, marker);
       // Disambiguate accidental id collisions deterministically.
       const n = seenIds.get(id) ?? 0;
