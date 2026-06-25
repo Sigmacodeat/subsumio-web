@@ -2,14 +2,15 @@
 # APP_DOMAIN and ENGINE_DOMAIN must have DNS A-records pointing at this box
 # BEFORE first boot — Caddy provisions Let's Encrypt certificates on demand.
 #
-# Body limit matches MAX_UPLOAD_BYTES (1 GB). Transport timeouts are generous
-# because legal-document uploads + server-side extraction (PDF parse, OCR) can
-# take minutes on large files. flush_interval keeps SSE streams responsive.
-
+# Body limit matches MAX_UPLOAD_BYTES (1 GB).
 (common) {
 	request_body {
 		max_size 1073741824
 	}
+}
+
+# Long timeouts for legal-document uploads + server-side extraction.
+(proxy-transport) {
 	transport http {
 		read_timeout 600s
 		write_timeout 600s
@@ -22,10 +23,7 @@
 	import common
 	reverse_proxy web:3000 {
 		flush_interval -1
-		transport http {
-			read_timeout 600s
-			write_timeout 600s
-		}
+		import proxy-transport
 	}
 }
 
@@ -34,9 +32,6 @@
 	import common
 	reverse_proxy engine:3131 {
 		flush_interval -1
-		transport http {
-			read_timeout 600s
-			write_timeout 600s
-		}
+		import proxy-transport
 	}
 }
