@@ -75,8 +75,8 @@ services:
       SUBSUMIO_API_URL: http://engine:3131
       NEXT_PUBLIC_APP_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
       NEXT_PUBLIC_SITE_URL: "https://${APP_DOMAIN:?set APP_DOMAIN in .env}"
-      SUBSUMIO_AUTH_DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
-      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio
+      SUBSUMIO_AUTH_DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio?sslmode=disable
+      DATABASE_URL: postgres://subsumio:${POSTGRES_PASSWORD}@db:5432/subsumio?sslmode=disable
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-1073741824}
       NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES: ${NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES:-1073741824}
       NEXT_PUBLIC_ENGINE_URL: "https://${ENGINE_DOMAIN:?set ENGINE_DOMAIN in .env}"

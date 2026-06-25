@@ -304,7 +304,10 @@ function authPool(): Pool {
     };
     // Only disable cert verification for explicitly self-signed setups.
     // Never blanket-disable in production — that's a MitM vector.
-    if (AUTH_DB_URL.includes("sslmode=require") && AUTH_DB_URL.includes("sslrootcert=")) {
+    if (AUTH_DB_URL.includes("sslmode=disable")) {
+      // Explicit opt-out: internal Docker Compose Postgres has no TLS.
+      config.ssl = false;
+    } else if (AUTH_DB_URL.includes("sslmode=require") && AUTH_DB_URL.includes("sslrootcert=")) {
       config.ssl = { rejectUnauthorized: true };
     } else if (AUTH_DB_URL.includes("sslmode=require")) {
       config.ssl = { rejectUnauthorized: false };

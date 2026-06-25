@@ -48,13 +48,38 @@ export async function GET(_req: NextRequest) {
       headers,
       signal: AbortSignal.timeout(4_000),
     });
-    checks.engine = res.ok
-      ? { status: "ok", latencyMs: Date.now() - engineStart }
-      : {
+    if (res.ok) {
+      checks.engine = { status: "ok", latencyMs: Date.now() - engineStart };
+    } else if (res.status === 400) {
+      // 400 likely means SUBSUMIO_REQUIRE_TENANT=true but no tenant header
+      // was available (e.g. fresh install with no users yet). Fall back to
+      // /health which doesn't require tenant — if that passes, the engine
+      // is alive and the 400 is just the tenant gate, not a real outage.
+      try {
+        const healthRes = await fetch(`${ENGINE_URL}/health`, {
+          signal: AbortSignal.timeout(4_000),
+        });
+        checks.engine = healthRes.ok
+          ? { status: "ok", latencyMs: Date.now() - engineStart }
+          : {
+              status: "down",
+              latencyMs: Date.now() - engineStart,
+              detail: `Engine /health returned ${healthRes.status}`,
+            };
+      } catch {
+        checks.engine = {
           status: "down",
           latencyMs: Date.now() - engineStart,
-          detail: `Engine returned ${res.status}`,
+          detail: `Engine returned 400 and /health unreachable`,
         };
+      }
+    } else {
+      checks.engine = {
+        status: "down",
+        latencyMs: Date.now() - engineStart,
+        detail: `Engine returned ${res.status}`,
+      };
+    }
   } catch (err) {
     checks.engine = {
       status: "down",
