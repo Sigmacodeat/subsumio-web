@@ -44,15 +44,16 @@ export default function MobileCasesPage() {
     (async () => {
       try {
         const pages = await api.brain.search("Akte Mandat Fall Klient", 100);
-        const parsed: Matter[] = pages.map((p: Record<string, unknown>) => {
-          const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+        const parsed: Matter[] = pages.map((p) => {
+          const r = p as unknown as Record<string, unknown>;
+          const fm = (r.frontmatter ?? {}) as Record<string, unknown>;
           return {
-            slug: String(p.slug ?? ""),
-            title: String(p.title ?? ""),
-            status: String(fm.status ?? p.status ?? "active"),
+            slug: String(r.slug ?? ""),
+            title: String(r.title ?? ""),
+            status: String(fm.status ?? r.status ?? "active"),
             client: String(fm.client ?? fm.klient ?? ""),
             legalArea: String(fm.legal_area ?? fm.rechtsgebiet ?? ""),
-            updatedAt: String(p.updated_at ?? p.created_at ?? ""),
+            updatedAt: String(r.updated_at ?? r.created_at ?? ""),
             urgent: Boolean(fm.urgent ?? false),
           };
         });

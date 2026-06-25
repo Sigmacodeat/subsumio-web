@@ -133,17 +133,17 @@ export async function resetFailure(orgId: string): Promise<void> {
 export async function applyDunningToPlan(orgId: string, dunningState: DunningState): Promise<void> {
   if (dunningState.status === "ok") return;
   const store = getStore();
-  const org = await store.getOrg(orgId);
-  if (!org) return;
+  const user = await store.getById(orgId);
+  if (!user) return;
 
   const planMap: Record<DunningState["status"], Plan> = {
-    ok: org.plan, // no change
+    ok: user.plan, // no change
     past_due: "past_due" as Plan,
     suspended: "suspended" as Plan,
   };
   const newPlan = planMap[dunningState.status];
-  if (newPlan && newPlan !== org.plan) {
-    await store.updateOrg(orgId, { plan: newPlan });
+  if (newPlan && newPlan !== user.plan) {
+    await store.update(orgId, { plan: newPlan });
   }
 }
 

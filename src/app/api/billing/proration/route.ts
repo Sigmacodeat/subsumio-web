@@ -10,7 +10,7 @@
 
 import { NextRequest } from "next/server";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getStore, getOrgStore } from "@/lib/auth/store";
+import { getStore } from "@/lib/auth/store";
 import { z } from "zod";
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY ?? "";

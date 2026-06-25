@@ -70,8 +70,21 @@ async function getRedisStore(): Promise<PresenceStore | null> {
 
   try {
     // Dynamic import — ioredis optional dependency
-    const { default: Redis } = await import("ioredis");
-    const client = new Redis(redisUrl, { lazyConnect: true, maxRetriesPerRequest: 2 });
+    // @ts-expect-error — ioredis is an optional peer dependency, not installed by default
+    const ioredis = await import("ioredis");
+    const Redis =
+      (ioredis as { default?: unknown; Redis?: unknown }).default ??
+      (ioredis as { Redis?: unknown }).Redis;
+    const client = new (Redis as new (
+      url: string,
+      opts?: Record<string, unknown>
+    ) => {
+      hgetall: (key: string) => Promise<Record<string, string>>;
+      hset: (key: string, field: string, value: string) => Promise<number>;
+      expire: (key: string, ttl: number) => Promise<number>;
+      hdel: (key: string, field: string) => Promise<number>;
+      ping: () => Promise<string>;
+    })(redisUrl, { lazyConnect: true, maxRetriesPerRequest: 2 });
     await client.ping();
 
     const TTL = 120; // 2 minutes — auto-expires stale entries

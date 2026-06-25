@@ -3,7 +3,7 @@
 // Idempotency: tracks processed event IDs to prevent duplicate plan updates.
 
 import { NextRequest, NextResponse } from "next/server";
-import { getStore, getOrgStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
+import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { verifyStripeSignature } from "@/lib/stripe-webhook";
 import { createWebhookHandler } from "@/lib/api-handler";
@@ -157,19 +157,16 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
         : null;
 
       if (customerId) {
-        const orgStore = getOrgStore();
-        const orgs = (await orgStore?.listOrgs?.()) ?? [];
-        const org = orgs.find(
-          (o: { stripeCustomerId?: string }) => o.stripeCustomerId === customerId
-        );
-        if (org) {
-          const dunningState = await incrementFailure(org.id, nextRetryAt);
-          await applyDunningToPlan(org.id, dunningState);
+        const users = await store.list();
+        const user = users.find((u) => u.stripeCustomerId === customerId);
+        if (user) {
+          const dunningState = await incrementFailure(user.id, nextRetryAt);
+          await applyDunningToPlan(user.id, dunningState);
 
           // Send dunning email (best-effort)
           try {
             const { subject, body: emailBody } = buildDunningEmailBody(
-              org.name ?? org.id,
+              user.email ?? user.id,
               dunningState.failureCount,
               nextRetryAt,
               invoiceObj.hosted_invoice_url
@@ -181,7 +178,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                 "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
               },
               body: JSON.stringify({
-                orgId: org.id,
+                orgId: user.id,
                 subject,
                 body: emailBody,
                 type: "billing_dunning",
@@ -192,7 +189,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
           }
 
           console.warn(
-            `[stripe-webhook] payment_failed dunning: org=${org.id} failure=${dunningState.failureCount} status=${dunningState.status}`
+            `[stripe-webhook] payment_failed dunning: user=${user.id} failure=${dunningState.failureCount} status=${dunningState.status}`
           );
         }
       }
@@ -202,25 +199,23 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
       // Reset dunning state after successful payment
       const customerId = typeof obj.customer === "string" ? obj.customer : null;
       if (customerId) {
-        const orgStore = getOrgStore();
-        const orgs = (await orgStore?.listOrgs?.()) ?? [];
-        const org = orgs.find(
-          (o: { stripeCustomerId?: string }) => o.stripeCustomerId === customerId
-        );
-        if (org) {
-          await resetFailure(org.id);
+        const users = await store.list();
+        const user = users.find((u) => u.stripeCustomerId === customerId);
+        if (user) {
+          await resetFailure(user.id);
           // Reactivate if suspended/past_due
-          const currentOrg = await orgStore?.getOrg?.(org.id);
-          if (currentOrg?.plan === "suspended" || currentOrg?.plan === "past_due") {
+          if ((user.plan as string) === "suspended" || (user.plan as string) === "past_due") {
             // Resolve actual plan from subscription
             const priceId = (obj as { items?: { data?: Array<{ price?: { id?: string } }> } }).items
               ?.data?.[0]?.price?.id;
             const resolvedPlan = planForPriceId(priceId) ?? "pro";
-            await orgStore?.updateOrg?.(org.id, { plan: resolvedPlan as Plan });
+            await store.update(user.id, { plan: resolvedPlan as Plan });
 
             // Reactivation email
             try {
-              const { subject, body: emailBody } = buildReactivationEmailBody(org.name ?? org.id);
+              const { subject, body: emailBody } = buildReactivationEmailBody(
+                user.email ?? user.id
+              );
               await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/notifications`, {
                 method: "POST",
                 headers: {
@@ -228,7 +223,7 @@ export const POST = createWebhookHandler({}, async (_body, req: NextRequest) => 
                   "x-internal-key": process.env.INTERNAL_API_KEY ?? "",
                 },
                 body: JSON.stringify({
-                  orgId: org.id,
+                  orgId: user.id,
                   subject,
                   body: emailBody,
                   type: "billing_reactivated",

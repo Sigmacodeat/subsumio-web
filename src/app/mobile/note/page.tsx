@@ -24,7 +24,7 @@ export default function MobileNotePage() {
   const [error, setError] = useState<string | null>(null);
   const [tags, setTags] = useState("");
   const [matter, setMatter] = useState("");
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<unknown>(null);
 
   // ── Voice Recording ───────────────────────────────────────────────
 
@@ -32,11 +32,29 @@ export default function MobileNotePage() {
     const SpeechRecognition =
       (
         window as unknown as {
-          SpeechRecognition?: typeof window.SpeechRecognition;
-          webkitSpeechRecognition?: typeof window.SpeechRecognition;
+          SpeechRecognition?: new () => {
+            lang: string;
+            continuous: boolean;
+            interimResults: boolean;
+            onresult: (event: unknown) => void;
+            onend: () => void;
+            onerror: () => void;
+            start: () => void;
+            stop: () => void;
+          };
+          webkitSpeechRecognition?: new () => {
+            lang: string;
+            continuous: boolean;
+            interimResults: boolean;
+            onresult: (event: unknown) => void;
+            onend: () => void;
+            onerror: () => void;
+            start: () => void;
+            stop: () => void;
+          };
         }
       ).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition })
+      (window as unknown as { webkitSpeechRecognition?: new () => unknown })
         .webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -44,18 +62,31 @@ export default function MobileNotePage() {
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognition() as {
+      lang: string;
+      continuous: boolean;
+      interimResults: boolean;
+      onresult: (event: unknown) => void;
+      onend: () => void;
+      onerror: () => void;
+      start: () => void;
+      stop: () => void;
+    };
     recognition.lang = "de-AT";
     recognition.continuous = true;
     recognition.interimResults = true;
 
     let finalTranscript = text;
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: unknown) => {
+      const e = event as {
+        resultIndex: number;
+        results: Array<Array<{ transcript: string }> & { isFinal: boolean }>;
+      };
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
           finalTranscript += (finalTranscript ? " " : "") + t;
         } else {
           interim = t;
@@ -81,7 +112,7 @@ export default function MobileNotePage() {
   }, [text]);
 
   const stopRecording = useCallback(() => {
-    recognitionRef.current?.stop();
+    (recognitionRef.current as { stop?: () => void })?.stop?.();
     setRecording(false);
   }, []);
 
@@ -99,10 +130,10 @@ export default function MobileNotePage() {
       const title = text.slice(0, 60) + (text.length > 60 ? "…" : "");
       const now = new Date().toISOString();
       const result = await api.brain.createPage({
+        slug: `note-${Date.now()}`,
         title: `Notiz ${new Date().toLocaleDateString("de-AT")} – ${title}`,
         content: text,
         type: "note",
-        tags: tagList,
         frontmatter: {
           type: "note",
           created_at: now,

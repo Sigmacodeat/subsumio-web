@@ -295,6 +295,8 @@ export interface DecisionFrontmatter {
   legal_area?: string;
   keywords?: string[];
   source_url?: string;
+  jurisdiction?: string;
+  outcome?: string;
 }
 
 export interface AuditLogEntry {

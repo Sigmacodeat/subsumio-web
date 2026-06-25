@@ -11,7 +11,7 @@
 
 import { NextRequest } from "next/server";
 import { createHandler, apiError } from "@/lib/api-handler";
-import { getStore, getOrgStore } from "@/lib/auth/store";
+import { getStore } from "@/lib/auth/store";
 import { z } from "zod";
 
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY ?? "";
@@ -64,14 +64,14 @@ async function stripePost<T>(path: string, body: Record<string, unknown>): Promi
 export const GET = createHandler(
   { action: "billing.read", rateTier: "standard" },
   async (ctx, _body, _query, _req: NextRequest) => {
-    if (!STRIPE_SECRET) return apiError("stripe_not_configured", 501);
+    if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 
-    const orgStore = getOrgStore();
-    const org = await orgStore.getById(ctx.user.orgId);
-    if (!org) return apiError("org_not_found", 404);
+    const store = getStore();
+    const user = await store.getById(ctx.user.id);
+    if (!user) return apiError("user_not_found", "User not found", 404);
 
     // Get members: users in the same org
-    const allUsers = await getStore().list();
+    const allUsers = await store.list();
     const members = allUsers.filter((u) => u.orgId === ctx.user.orgId);
     const usedSeats = members.length;
 
@@ -81,7 +81,7 @@ export const GET = createHandler(
     let currency = "EUR";
     let subscriptionId: string | null = null;
 
-    if (org.stripeCustomerId) {
+    if (user.stripeCustomerId) {
       try {
         const subs = await stripeGet<{
           data: Array<{
@@ -95,7 +95,7 @@ export const GET = createHandler(
             };
           }>;
         }>(
-          `/subscriptions?customer=${encodeURIComponent(org.stripeCustomerId)}&status=active&limit=1`
+          `/subscriptions?customer=${encodeURIComponent(user.stripeCustomerId)}&status=active&limit=1`
         );
 
         const sub = subs.data[0];
@@ -136,20 +136,23 @@ export const GET = createHandler(
 export const POST = createHandler(
   { action: "billing.write", rateTier: "standard", body: seatChangeSchema },
   async (ctx, body, _query, _req) => {
-    if (!STRIPE_SECRET) return apiError("stripe_not_configured", 501);
+    if (!STRIPE_SECRET) return apiError("stripe_not_configured", "Stripe secret key not set", 501);
 
     const { quantity } = body;
-    const orgStore = getOrgStore();
-    const org = await orgStore.getById(ctx.user.orgId);
-    if (!org?.stripeCustomerId) return apiError("no_stripe_customer", 400);
+    const store = getStore();
+    const user = await store.getById(ctx.user.id);
+    const stripeCustomerId = user?.stripeCustomerId ?? null;
+    if (!stripeCustomerId)
+      return apiError("no_stripe_customer", "No Stripe customer ID found", 400);
 
     // Validate: can't reduce below current member count
-    const allUsers = await getStore().list();
+    const allUsers = await store.list();
     const members = allUsers.filter((u) => u.orgId === ctx.user.orgId);
     const usedSeats = members.length;
     if (quantity < usedSeats) {
       return apiError(
-        `seat_count_too_low: Cannot reduce to ${quantity} seats — ${usedSeats} seats currently in use. Remove members first.`,
+        "seat_count_too_low",
+        `Cannot reduce to ${quantity} seats — ${usedSeats} seats currently in use. Remove members first.`,
         400
       );
     }
@@ -157,14 +160,12 @@ export const POST = createHandler(
     // Get active subscription
     const subs = await stripeGet<{
       data: Array<{ id: string; items: { data: Array<{ id: string; price: { id: string } }> } }>;
-    }>(
-      `/subscriptions?customer=${encodeURIComponent(org.stripeCustomerId!)}&status=active&limit=1`
-    );
+    }>(`/subscriptions?customer=${encodeURIComponent(stripeCustomerId)}&status=active&limit=1`);
 
     const sub = subs.data[0];
-    if (!sub) return apiError("no_active_subscription", 400);
+    if (!sub) return apiError("no_active_subscription", "No active subscription found", 400);
     const subItem = sub.items.data[0];
-    if (!subItem) return apiError("no_subscription_item", 400);
+    if (!subItem) return apiError("no_subscription_item", "No subscription item found", 400);
 
     // Preview proration before applying
     const preview = await stripeGet<{
@@ -172,7 +173,7 @@ export const POST = createHandler(
       currency: string;
       next_payment_attempt: number | null;
     }>(
-      `/invoices/upcoming?customer=${org.stripeCustomerId}&subscription=${sub.id}` +
+      `/invoices/upcoming?customer=${stripeCustomerId}&subscription=${sub.id}` +
         `&subscription_items[0][id]=${subItem.id}` +
         `&subscription_items[0][price]=${subItem.price.id}` +
         `&subscription_items[0][quantity]=${quantity}` +

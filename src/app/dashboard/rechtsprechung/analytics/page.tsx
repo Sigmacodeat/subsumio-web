@@ -220,7 +220,7 @@ export default function LitigationAnalyticsPage() {
       try {
         // Pull all court decisions from the brain
         const pages = await api.brain.search("court_decision Urteil Beschluss Entscheidung", 200);
-        const all = parseDecisions(pages as StoredDecision[]).filter(
+        const all = parseDecisions(pages as unknown as StoredDecision[]).filter(
           (d) => d.court !== "Unbekannt" || d.legalArea !== "Allgemein"
         );
         setDecisions(all);
@@ -294,7 +294,6 @@ export default function LitigationAnalyticsPage() {
       style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", padding: "0 0 40px" }}
     >
       <PageHeader
-        icon={<BarChart3 size={18} />}
         title="Judikatur-Analytics"
         description="Rechtsprechungsanalyse aus dem Kanzlei-Brain"
       />
@@ -610,7 +609,7 @@ export default function LitigationAnalyticsPage() {
                       .map(([kw, count]) => (
                         <Badge
                           key={kw}
-                          variant="secondary"
+                          variant="default"
                           style={{ fontSize: 11, cursor: "pointer" }}
                         >
                           {kw} {count > 1 && <span style={{ opacity: 0.6 }}>×{count}</span>}
@@ -707,7 +706,7 @@ export default function LitigationAnalyticsPage() {
                         </td>
                         <td style={{ padding: "8px 12px" }}>
                           <Badge
-                            variant="secondary"
+                            variant="default"
                             style={{
                               fontSize: 10,
                               background: `${areaColors[d.legalArea] ?? "#1e1e3a"}20`,
@@ -719,7 +718,7 @@ export default function LitigationAnalyticsPage() {
                           </Badge>
                         </td>
                         <td style={{ padding: "8px 12px" }}>
-                          <Badge variant="outline" style={{ fontSize: 10 }}>
+                          <Badge variant="default" style={{ fontSize: 10 }}>
                             {d.jurisdiction.toUpperCase()}
                           </Badge>
                         </td>

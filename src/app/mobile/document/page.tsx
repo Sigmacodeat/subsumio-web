@@ -45,7 +45,7 @@ export default function MobileDocumentPage() {
       setLoading(true);
       try {
         const pages = await api.brain.search(query, 30);
-        setResults(pages as BrainPage[]);
+        setResults(pages as unknown as BrainPage[]);
       } catch (e) {
         console.error(e);
       } finally {
@@ -60,7 +60,9 @@ export default function MobileDocumentPage() {
     setFullContent(null);
     try {
       const detail = await api.brain.getPage(page.slug);
-      setFullContent((detail as BrainPage).content ?? page.snippet ?? "Kein Inhalt verfügbar.");
+      setFullContent(
+        (detail as unknown as BrainPage).content ?? page.snippet ?? "Kein Inhalt verfügbar."
+      );
     } catch {
       setFullContent(page.snippet ?? "Kein Inhalt verfügbar.");
     }
@@ -76,7 +78,6 @@ export default function MobileDocumentPage() {
         title: selected.title,
         text: fullContent?.slice(0, 200) ?? selected.snippet ?? "",
         url: `${window.location.origin}/dashboard/pages/${selected.slug}`,
-        dialogTitle: "Dokument teilen",
       });
     } catch {
       // Web fallback — copy to clipboard

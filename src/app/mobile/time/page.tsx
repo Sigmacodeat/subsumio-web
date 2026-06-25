@@ -99,6 +99,7 @@ export default function MobileTimePage() {
       // Fallback: save as brain page
       if (!ttRes.ok) {
         await api.brain.createPage({
+          slug: `time-${Date.now()}`,
           title: `Zeit ${now.toLocaleDateString("de-AT")} — ${description || "Zeiteintrag"}`,
           content: `## Zeiteintrag\n\n**Dauer:** ${formatDuration(durationSecs)}\n**Beschreibung:** ${description || "—"}\n**Akte:** ${matter || "—"}\n**Datum:** ${now.toLocaleDateString("de-AT")}`,
           type: "time_entry",

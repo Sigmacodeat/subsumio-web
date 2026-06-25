@@ -300,7 +300,6 @@ export default function EngineAPMPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a18", color: "#e8e8f0", paddingBottom: 40 }}>
       <PageHeader
-        icon={<Activity size={18} />}
         title="Engine Performance"
         description="Subsumio Engine — Latenz, Qualität, Quota"
       />
@@ -714,7 +713,7 @@ export default function EngineAPMPage() {
                 >
                   <span style={{ fontSize: 12, fontWeight: 700, color: m.color }}>{m.mode}</span>
                   <Badge
-                    variant="outline"
+                    variant="default"
                     style={{ fontSize: 10, border: `1px solid ${m.color}40`, color: m.color }}
                   >
                     {m.desc}
