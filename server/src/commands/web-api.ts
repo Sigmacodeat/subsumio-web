@@ -4076,6 +4076,17 @@ export function mountWebApi(app: Application, engine: BrainEngine, options: WebA
     }
   });
 
+  app.post("/api/admin/dream", async (req: Request, res: Response) => {
+    try {
+      const { runDream } = await import("../commands/dream.ts");
+      const report = await runDream(engine, ["--json"]);
+      res.json(report);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      res.status(500).json({ error: "dream_failed", message: msg });
+    }
+  });
+
   console.error(
     `[web-api] Subsumio dashboard REST API mounted at /api/* (engine: ${config.engine})`
   );

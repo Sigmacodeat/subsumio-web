@@ -110,7 +110,8 @@ async function loadDocuments(
       const page = await engine.getPage(slug, {
         ...(opts.sourceId !== undefined ? { sourceId: opts.sourceId } : {}),
       });
-      const content = String(page.compiled_truth ?? page.content ?? "").slice(0, maxChars);
+      if (!page) continue;
+      const content = String(page.compiled_truth ?? "").slice(0, maxChars);
       if (content.trim()) {
         docs.push({ slug, title: String(page.title ?? slug), content });
       }
