@@ -71,7 +71,15 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "1gb",
     },
   },
-  serverExternalPackages: ["pg", "isomorphic-dompurify"],
+  serverExternalPackages: ["pg", "isomorphic-dompurify", "ioredis"],
+  webpack: (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = config.resolve.alias || {};
+    // ioredis is an optional dynamic import for Redis presence.
+    // Mark it as externals so webpack doesn't try to bundle it.
+    config.externals = [...(config.externals || []), { ioredis: "ioredis" }];
+    return config;
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);

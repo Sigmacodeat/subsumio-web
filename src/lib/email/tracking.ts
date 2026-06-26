@@ -16,6 +16,9 @@ import { randomUUID, createHash } from "node:crypto";
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
 import { siteUrl } from "@/lib/mail";
+import { logger } from "@/lib/logger";
+
+const log = logger("email-tracking");
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -165,11 +168,12 @@ export async function logTrackingEvent(input: TrackingEventInput): Promise<Track
   const pool = getSharedPgPool();
   if (!pool) {
     // Dev mode: log to console for visibility
-    console.log(
-      `[email-tracking] ${input.eventType} for ${input.trackingId}` +
-        (input.targetUrl ? ` → ${input.targetUrl}` : "") +
-        (input.ipAddress ? ` from ${input.ipAddress}` : "")
-    );
+    log.info("event", {
+      eventType: input.eventType,
+      trackingId: input.trackingId,
+      targetUrl: input.targetUrl,
+      ipAddress: input.ipAddress,
+    });
     return null;
   }
 
@@ -207,9 +211,7 @@ export async function logTrackingEvent(input: TrackingEventInput): Promise<Track
 
     return rowToTrackingEvent(rows[0]);
   } catch (err) {
-    console.error(
-      `[email-tracking] failed to log event: ${err instanceof Error ? err.message : String(err)}`
-    );
+    log.error("failed to log event", { error: err instanceof Error ? err.message : String(err) });
     return null;
   }
 }
@@ -279,9 +281,9 @@ async function updateMessageTrackingStatus(
       );
     }
   } catch (err) {
-    console.error(
-      `[email-tracking] failed to update message status: ${err instanceof Error ? err.message : String(err)}`
-    );
+    log.error("failed to update message status", {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 

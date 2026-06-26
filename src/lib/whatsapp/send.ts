@@ -1,10 +1,13 @@
 import { withRetry } from "@/lib/retry";
+import { logger } from "@/lib/logger";
 import type {
   WhatsAppTemplateMessage,
   WhatsAppInteractiveMessage,
   WhatsAppMediaSendOptions,
   WhatsAppOutboundMessage,
 } from "./types";
+
+const log = logger("whatsapp");
 
 function graphVersion(): string {
   return process.env.WHATSAPP_GRAPH_VERSION || "v20.0";
@@ -14,9 +17,7 @@ function getCredentials(): { token: string; phoneNumberId: string } | null {
   const token = process.env.WHATSAPP_ACCESS_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneNumberId) {
-    console.warn(
-      "[whatsapp] outbound skipped: WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID missing"
-    );
+    log.warn("outbound skipped: WHATSAPP_ACCESS_TOKEN or WHATSAPP_PHONE_NUMBER_ID missing");
     return null;
   }
   return { token, phoneNumberId };

@@ -7,6 +7,9 @@ import { externalFetchTimeout } from "@/lib/retry";
 import { sendMail, type MailInput } from "@/lib/mail";
 import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
+import { logger } from "@/lib/logger";
+
+const log = logger("mailbox");
 
 export type MailDirection = "inbound" | "outbound";
 export type MailStatus = "received" | "sent" | "failed";
@@ -298,9 +301,11 @@ async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail 
   );
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    console.error(
-      `[mailbox] failed to retrieve received email ${emailId}: ${res.status} ${detail.slice(0, 200)}`
-    );
+    log.error("failed to retrieve received email", {
+      emailId,
+      status: res.status,
+      detail: detail.slice(0, 200),
+    });
     return null;
   }
   return (await res.json().catch(() => null)) as ResendReceivedEmail | null;
@@ -616,7 +621,7 @@ export async function handleResendTrackingEvent(event: ResendWebhookEvent): Prom
   // Look up the message by provider_id to get the tracking_id
   const pool = getSharedPgPool();
   if (!pool) {
-    console.log(`[email-tracking] Resend webhook ${type} for ${emailId} (no DB — skipping)`);
+    log.info("Resend webhook (no DB — skipping)", { type, emailId });
     return true;
   }
 
@@ -653,16 +658,15 @@ export async function handleResendTrackingEvent(event: ResendWebhookEvent): Prom
           [messageId, eventType]
         );
       }
-      console.log(
-        `[email-tracking] Resend webhook ${type} for ${emailId} — no tracking_id found, status updated only`
-      );
+      log.info("Resend webhook — no tracking_id found, status updated only", { type, emailId });
     }
 
     return true;
   } catch (err) {
-    console.error(
-      `[email-tracking] failed to handle Resend webhook ${type}: ${err instanceof Error ? err.message : String(err)}`
-    );
+    log.error("failed to handle Resend webhook", {
+      type,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return true; // Still return true to avoid re-processing
   }
 }

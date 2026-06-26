@@ -237,7 +237,7 @@ describe("detectForward", () => {
 describe("logTrackingEvent (dev mode — no DB)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   });
 
   test("returns null and logs when no pool", async () => {
@@ -248,6 +248,6 @@ describe("logTrackingEvent (dev mode — no DB)", () => {
       ipAddress: "1.2.3.4",
     });
     expect(result).toBeNull();
-    expect(console.log).toHaveBeenCalled();
+    expect(process.stdout.write).toHaveBeenCalled();
   });
 });

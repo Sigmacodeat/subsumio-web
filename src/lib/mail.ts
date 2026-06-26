@@ -7,6 +7,9 @@
 // provider behind the same signature if needed.
 
 import { externalFetchTimeout } from "@/lib/retry";
+import { logger } from "@/lib/logger";
+
+const log = logger("mail");
 
 export interface MailInput {
   to: string | string[];
@@ -66,16 +69,11 @@ export async function sendMail({
   }
 
   if (!apiKey) {
-    console.log(
-      [
-        "┌─ [mail] RESEND_API_KEY not set — printing instead of sending ─┐",
-        `To:      ${Array.isArray(to) ? to.join(", ") : to}`,
-        `Subject: ${subject}`,
-        "",
-        bodyText,
-        "└────────────────────────────────────────────────────────────────┘",
-      ].join("\n")
-    );
+    log.info("RESEND_API_KEY not set — printing instead of sending", {
+      to: Array.isArray(to) ? to.join(", ") : to,
+      subject,
+      body: bodyText,
+    });
     return { sent: false, trackingId, error: "mail_not_configured" };
   }
 
@@ -102,13 +100,13 @@ export async function sendMail({
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
-      console.error(`[mail] send failed (${res.status}): ${detail.slice(0, 300)}`);
+      log.error("send failed", { status: res.status, detail: detail.slice(0, 300) });
       return { sent: false, error: `provider_${res.status}` };
     }
     const data = await res.json().catch(() => ({}) as { id?: string });
     return { sent: true, id: typeof data.id === "string" ? data.id : undefined, trackingId };
   } catch (err) {
-    console.error(`[mail] send failed: ${err instanceof Error ? err.message : String(err)}`);
+    log.error("send failed", { error: err instanceof Error ? err.message : String(err) });
     return { sent: false, error: "network" };
   }
 }

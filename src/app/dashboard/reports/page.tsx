@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
+import { renderMarkdown } from "@/lib/markdown";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -261,9 +261,10 @@ function RundownPanel({ t }: { t: TFunc }) {
             </span>
           </div>
           {latest.result ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
-              {latest.result}
-            </p>
+            <div
+              className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
+            />
           ) : (
             <p className="text-sm text-[color:var(--ds-text-subtle)]">
               {t("reports.rundown_none")}

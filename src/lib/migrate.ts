@@ -11,6 +11,9 @@
  */
 
 import { getSharedPgPool } from "@/lib/auth/store";
+import { logger } from "@/lib/logger";
+
+const log = logger("migrate");
 
 export interface Migration {
   id: number;
@@ -35,7 +38,7 @@ export async function getAppliedMigrations(): Promise<Migration[]> {
   if (!pool) return [];
   await ensureMigrationsTable();
   const { rows } = await pool.query<Migration>(
-    "SELECT id, name, applied_at::text as applied_at FROM _migrations ORDER BY id ASC",
+    "SELECT id, name, applied_at::text as applied_at FROM _migrations ORDER BY id ASC"
   );
   return rows;
 }
@@ -49,10 +52,10 @@ export async function applyMigration(id: number, name: string, sql: string): Pro
     await client.query(sql);
     await client.query(
       "INSERT INTO _migrations (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-      [id, name],
+      [id, name]
     );
     await client.query("COMMIT");
-    console.log(`[migrate] applied #${id} ${name}`);
+    log.info("applied migration", { id, name });
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -61,7 +64,9 @@ export async function applyMigration(id: number, name: string, sql: string): Pro
   }
 }
 
-export async function runMigrations(migrations: { id: number; name: string; sql: string }[]): Promise<void> {
+export async function runMigrations(
+  migrations: { id: number; name: string; sql: string }[]
+): Promise<void> {
   const applied = await getAppliedMigrations();
   const appliedIds = new Set(applied.map((m) => m.id));
 
@@ -70,5 +75,8 @@ export async function runMigrations(migrations: { id: number; name: string; sql:
     await applyMigration(migration.id, migration.name, migration.sql);
   }
 
-  console.log(`[migrate] ${migrations.length - appliedIds.size} new, ${appliedIds.size} already applied.`);
+  log.info("migrations complete", {
+    new: migrations.length - appliedIds.size,
+    alreadyApplied: appliedIds.size,
+  });
 }

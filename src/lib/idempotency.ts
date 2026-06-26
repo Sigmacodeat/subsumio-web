@@ -8,6 +8,9 @@
 
 import { getSharedPgPool } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
+import { logger } from "@/lib/logger";
+
+const log = logger("idempotency");
 
 export interface IdempotencyStore {
   /** Returns true if the event ID has already been processed. */
@@ -37,7 +40,7 @@ export function createIdempotencyStore(
     primaryKeyColumn?: string;
     maxInMemory?: number;
     ttlMs?: number;
-  },
+  }
 ): IdempotencyStore {
   const pkCol = opts?.primaryKeyColumn ?? "event_id";
   const maxInMemory = opts?.maxInMemory ?? 5_000;
@@ -59,11 +62,14 @@ export function createIdempotencyStore(
         await ensureSchema();
         const result = await pool.query<{ exists: boolean }>(
           `SELECT 1 AS exists FROM ${tableName} WHERE ${pkCol} = $1`,
-          [id],
+          [id]
         );
         return result.rows.length > 0;
       } catch (err) {
-        console.error(`[idempotency:${tableName}] check failed: ${err instanceof Error ? err.message : String(err)}`);
+        log.error("check failed", {
+          table: tableName,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     const now = Date.now();
@@ -83,18 +89,21 @@ export function createIdempotencyStore(
           await pool.query(
             `INSERT INTO ${tableName} (${cols}) VALUES ($1, ${params})
              ON CONFLICT (${pkCol}) DO NOTHING`,
-            [id, ...extra],
+            [id, ...extra]
           );
         } else {
           await pool.query(
             `INSERT INTO ${tableName} (${pkCol}) VALUES ($1)
              ON CONFLICT (${pkCol}) DO NOTHING`,
-            [id],
+            [id]
           );
         }
         return;
       } catch (err) {
-        console.error(`[idempotency:${tableName}] mark failed: ${err instanceof Error ? err.message : String(err)}`);
+        log.error("mark failed", {
+          table: tableName,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
     memory.set(id, Date.now());

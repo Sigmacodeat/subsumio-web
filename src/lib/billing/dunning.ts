@@ -10,6 +10,9 @@
 
 import { getStore, getSharedPgPool, type Plan } from "@/lib/auth/store";
 import { createSchemaInit } from "@/lib/schema-init";
+import { logger } from "@/lib/logger";
+
+const log = logger("dunning");
 
 export interface DunningState {
   orgId: string;
@@ -54,7 +57,9 @@ export async function getDunningState(orgId: string): Promise<DunningState> {
       );
       if (result.rows[0]) return result.rows[0];
     } catch (err) {
-      console.error("[dunning] getDunningState error:", err);
+      log.error("getDunningState error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
   return (
@@ -102,7 +107,9 @@ export async function incrementFailure(
         [orgId, newCount, updated.firstFailedAt, now, nextRetryIso, newStatus]
       );
     } catch (err) {
-      console.error("[dunning] incrementFailure DB error:", err);
+      log.error("incrementFailure DB error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
   inMemoryDunning.set(orgId, updated);
@@ -124,7 +131,9 @@ export async function resetFailure(orgId: string): Promise<void> {
         [orgId]
       );
     } catch (err) {
-      console.error("[dunning] resetFailure DB error:", err);
+      log.error("resetFailure DB error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
   inMemoryDunning.delete(orgId);

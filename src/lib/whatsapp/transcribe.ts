@@ -10,7 +10,10 @@
  */
 
 import { withRetry } from "@/lib/retry";
+import { logger } from "@/lib/logger";
 import type { StoredWhatsAppMedia } from "./media";
+
+const log = logger("whatsapp/transcribe");
 
 interface TranscriptionResult {
   text: string;
@@ -32,9 +35,7 @@ export async function transcribeVoiceMessage(
   const openaiKey = process.env.OPENAI_API_KEY;
 
   if (!openaiKey) {
-    console.warn(
-      "[whatsapp/transcribe] OPENAI_API_KEY not configured — voice transcription skipped"
-    );
+    log.warn("OPENAI_API_KEY not configured — voice transcription skipped");
     return {
       text: "",
       provider: "none",
@@ -48,10 +49,9 @@ export async function transcribeVoiceMessage(
     const { readFile } = await import("node:fs/promises");
     audioBytes = await readFile(media.storagePath);
   } catch (err) {
-    console.error(
-      "[whatsapp/transcribe] failed to read audio file:",
-      err instanceof Error ? err.message : String(err)
-    );
+    log.error("failed to read audio file", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       text: "",
       provider: "none",
@@ -80,7 +80,7 @@ export async function transcribeVoiceMessage(
 
     if (!res.ok) {
       const error = await res.text().catch(() => "");
-      console.error("[whatsapp/transcribe] Whisper API error:", error || `HTTP ${res.status}`);
+      log.error("Whisper API error", { error: error || `HTTP ${res.status}` });
       return {
         text: "",
         provider: "none",
@@ -99,10 +99,9 @@ export async function transcribeVoiceMessage(
       provider: "openai-whisper",
     };
   } catch (err) {
-    console.error(
-      "[whatsapp/transcribe] Whisper request failed:",
-      err instanceof Error ? err.message : String(err)
-    );
+    log.error("Whisper request failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       text: "",
       provider: "none",
