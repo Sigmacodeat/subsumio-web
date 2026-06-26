@@ -680,7 +680,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       "group relative flex items-center gap-3 rounded-lg text-sm font-semibold transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                       collapsed ? "h-10 justify-center px-0" : "h-10 px-3",
                       active
-                        ? "brand-soft brand-text"
+                        ? "brand-soft brand-text shadow-[0_0_12px_-2px_var(--brand-glow)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
                     )}
                   >
@@ -878,7 +878,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   className={cn(
                                     "sidebar-item-in relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99]",
                                     active
-                                      ? "brand-soft brand-text font-semibold"
+                                      ? "brand-soft brand-text font-semibold shadow-[0_0_10px_-2px_var(--brand-glow)]"
                                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                                   )}
                                 >

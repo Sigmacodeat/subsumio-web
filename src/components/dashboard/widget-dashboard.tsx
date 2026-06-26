@@ -26,6 +26,7 @@ import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
+import { StaggerContainer, StaggerItem, GlowCard } from "@/components/marketing/motion-system";
 
 type DashboardPageLike = BrainPage & {
   frontmatter?: Record<string, unknown>;
@@ -247,7 +248,7 @@ function QueuePanel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)]">
       <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <Icon size={15} className="shrink-0 text-[color:var(--ds-text-muted)]" />
@@ -566,7 +567,7 @@ function QuickActions() {
   ];
 
   return (
-    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)]">
       <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-2.5">
         <div>
           <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
@@ -697,7 +698,7 @@ function CockpitHero({
   return (
     <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
       <section
-        className={`flex flex-col justify-between rounded-xl border p-5 md:p-6 ${
+        className={`flex flex-col justify-between rounded-xl border p-5 shadow-[var(--card-shadow)] md:p-6 ${
           hasCritical
             ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
             : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
@@ -763,7 +764,7 @@ function CockpitHero({
         </div>
       </section>
 
-      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">
+      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-[var(--card-shadow)]">
         <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
           {t("cockpit.hero_next_action")}
         </h2>
@@ -887,24 +888,36 @@ export function WidgetDashboard() {
         </div>
       )}
 
-      <CockpitHero
-        loading={data.loading}
-        criticalDeadlines={data.criticalDeadlines}
-        deadlines={data.deadlines}
-        inboxCount={data.inboxItems.length}
-        reviewCount={reviewCount}
-        documentRequestCount={documentRequestCount}
-        signatureCount={signatureCount}
-        gapsCount={gapsCount}
-      />
+      <StaggerContainer className="space-y-6">
+        <StaggerItem>
+          <CockpitHero
+            loading={data.loading}
+            criticalDeadlines={data.criticalDeadlines}
+            deadlines={data.deadlines}
+            inboxCount={data.inboxItems.length}
+            reviewCount={reviewCount}
+            documentRequestCount={documentRequestCount}
+            signatureCount={signatureCount}
+            gapsCount={gapsCount}
+          />
+        </StaggerItem>
 
-      <SecondaryStats loading={data.loading} items={secondaryStats} />
+        <StaggerItem>
+          <SecondaryStats loading={data.loading} items={secondaryStats} />
+        </StaggerItem>
 
-      <PinnedMatters cases={data.cases} />
+        <StaggerItem>
+          <PinnedMatters cases={data.cases} />
+        </StaggerItem>
+      </StaggerContainer>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <DeadlineList items={data.deadlines} />
-        <InboxList items={data.inboxItems} />
+        <GlowCard className="rounded-lg" glowColor="var(--brand-primary)" intensity={0.12}>
+          <DeadlineList items={data.deadlines} />
+        </GlowCard>
+        <GlowCard className="rounded-lg" glowColor="var(--brand-primary)" intensity={0.12}>
+          <InboxList items={data.inboxItems} />
+        </GlowCard>
       </div>
 
       {/* Review-Lücken & Unzugeordnete Dokumente — höher priorisiert als generische Metriken */}

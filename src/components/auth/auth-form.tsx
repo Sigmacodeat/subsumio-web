@@ -13,6 +13,7 @@ import { SubsumioLogo } from "@/components/brand/subsumio-logo";
 import { MarketingBackground } from "@/components/marketing/chrome";
 import { p, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
+import { ClipReveal, MagneticButton, StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
 const COPY = {
   en: {
@@ -161,13 +162,21 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
     >
       <MarketingBackground />
       <div className="relative z-10 w-full max-w-md">
-        <Link href={p(lang, "")} className="mb-8 flex justify-center" aria-label="Subsumio home">
-          <SubsumioLogo size={40} />
-        </Link>
+        <StaggerContainer className="flex flex-col items-center">
+          <StaggerItem>
+            <Link href={p(lang, "")} className="mb-8 flex justify-center" aria-label="Subsumio home">
+              <SubsumioLogo size={40} />
+            </Link>
+          </StaggerItem>
+        </StaggerContainer>
 
         <div className="glass rounded-2xl p-8 shadow-2xl shadow-black/50">
-          <h1 className="mb-1 text-2xl font-black [color:var(--mk-text)]">{m.title}</h1>
-          <p className="mb-7 text-sm [color:var(--mk-text-muted)]">{m.sub}</p>
+          <ClipReveal delay={0.1} duration={0.6} direction="up">
+            <h1 className="mb-1 text-2xl font-black [color:var(--mk-text)]">{m.title}</h1>
+          </ClipReveal>
+          <ClipReveal delay={0.2} duration={0.6} direction="up">
+            <p className="mb-7 text-sm [color:var(--mk-text-muted)]">{m.sub}</p>
+          </ClipReveal>
 
           <form onSubmit={submit} className="space-y-4" noValidate>
             {mode === "signup" && (
@@ -260,9 +269,11 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
               </div>
             )}
 
-            <Button type="submit" variant="glow" size="lg" className="w-full" loading={loading}>
-              {m.cta} <ArrowRight size={15} />
-            </Button>
+            <MagneticButton strength={0.2} className="w-full">
+              <Button type="submit" variant="glow" size="lg" className="w-full" loading={loading}>
+                {m.cta} <ArrowRight size={15} />
+              </Button>
+            </MagneticButton>
           </form>
 
           {ssoConfigured && (
@@ -322,15 +333,17 @@ function AuthFormInner({ mode, lang }: { mode: "login" | "signup"; lang: Lang })
             </div>
           )}
 
-          <p className="mt-6 text-center text-xs [color:var(--mk-text-muted)]">
-            {m.switchText}{" "}
-            <Link
-              href={`${p(lang, mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
-              className="font-medium text-[var(--brand-primary)] hover:underline"
-            >
-              {m.switchCta}
-            </Link>
-          </p>
+          <ClipReveal delay={0.3} duration={0.5} direction="up">
+            <p className="mt-6 text-center text-xs [color:var(--mk-text-muted)]">
+              {m.switchText}{" "}
+              <Link
+                href={`${p(lang, mode === "login" ? "/signup" : "/login")}${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
+                className="font-medium text-[var(--brand-primary)] hover:underline"
+              >
+                {m.switchCta}
+              </Link>
+            </p>
+          </ClipReveal>
         </div>
       </div>
     </div>

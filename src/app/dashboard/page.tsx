@@ -10,6 +10,7 @@ import { WidgetDashboard } from "@/components/dashboard/widget-dashboard";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useLang } from "@/lib/use-lang";
 import type { BrainStats, RecentQuery } from "@/lib/types";
+import { ClipReveal, MagneticButton, StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
 
 export default function DashboardPage() {
   const statsQuery = useBrainStats();
@@ -39,33 +40,38 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       {isFirstTime && (
-        <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-gradient-to-br from-[color:var(--brand-glow)] to-transparent p-5 md:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-base font-bold text-[color:var(--ds-text)]">
-                {t("dashboard.welcome")}
-              </h2>
-              <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-                {t("dashboard.welcome_desc")}
-              </p>
+        <StaggerContainer>
+          <StaggerItem>
+            <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-gradient-to-br from-[color:var(--brand-glow)] to-transparent p-5 md:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-[color:var(--ds-text)]">
+                    {t("dashboard.welcome")}
+                  </h2>
+                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                    {t("dashboard.welcome_desc")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/dashboard/cases/new">
+                    <Button size="sm" variant="glow">
+                      <Briefcase size={14} /> {t("cockpit.action_case")}
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/import-kanzlei">
+                    <Button size="sm" variant="outline">
+                      <Upload size={14} /> {t("dashboard.welcome_upload")}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/dashboard/cases/new">
-                <Button size="sm" variant="glow">
-                  <Briefcase size={14} /> {t("cockpit.action_case")}
-                </Button>
-              </Link>
-              <Link href="/dashboard/import-kanzlei">
-                <Button size="sm" variant="outline">
-                  <Upload size={14} /> {t("dashboard.welcome_upload")}
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+          </StaggerItem>
+        </StaggerContainer>
       )}
 
-      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-5 py-4">
+      <ClipReveal delay={0.05} duration={0.5} direction="up">
+        <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-5 py-4 shadow-[var(--card-shadow)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -104,14 +110,17 @@ export default function DashboardPage() {
                 {degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
               </Badge>
             )}
-            <Link href="/dashboard/cases/new">
-              <Button size="sm" variant="glow">
-                <Briefcase size={14} /> {t("cockpit.action_case")}
-              </Button>
-            </Link>
+            <MagneticButton strength={0.15}>
+              <Link href="/dashboard/cases/new">
+                <Button size="sm" variant="glow">
+                  <Briefcase size={14} /> {t("cockpit.action_case")}
+                </Button>
+              </Link>
+            </MagneticButton>
           </div>
         </div>
       </section>
+      </ClipReveal>
 
       <WidgetDashboard />
     </div>
