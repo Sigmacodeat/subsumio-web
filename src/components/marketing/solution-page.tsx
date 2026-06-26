@@ -9,7 +9,7 @@ import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
 import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
+import { GlowCard, ClipReveal, MagneticButton, GradientMesh, EASE } from "./motion-system";
 
 /** Per-vertical hero motif: a small floating constellation built from this
  *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
@@ -21,7 +21,7 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
       className="mt-10 flex items-center justify-center gap-4"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.55, delay: 0.3, ease: EASE.out }}
     >
       {icons.map((feat, i) => {
         const Icon = ICONS[feat.icon] ?? ICONS.Layers;
@@ -51,15 +51,13 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: EASE.out }}
           >
             <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {content.badge}
           </motion.span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-            <h1
-              className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
-            >
+            <h1 className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl">
               {content.h1a}
               <br />
               <span className="brand-text">{content.h1b}</span>
@@ -69,7 +67,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.55, delay: 0.1, ease: EASE.out }}
           >
             {content.sub}
           </motion.p>
@@ -77,7 +75,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.55, delay: 0.2, ease: EASE.out }}
           >
             <Link href={p(lang, "/signup")}>
               <Button size="lg" variant="glow" className="group min-h-[48px]">
@@ -109,14 +107,20 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-                transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.45, delay: i * 0.08, ease: EASE.out }}
               >
-                <GlowCard glowColor="#be123c" intensity={0.1} className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-rose-500/10 dark:bg-rose-500/5">
+                <GlowCard
+                  glowColor="#be123c"
+                  intensity={0.1}
+                  className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-rose-500/10 dark:bg-rose-500/5"
+                >
                   <AlertCircle size={20} className="mb-3 text-rose-500" />
                   <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
                     {pain.title}
                   </h3>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{pain.desc}</p>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {pain.desc}
+                  </p>
                 </GlowCard>
               </motion.div>
             ))}
@@ -137,7 +141,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-                  transition={{ duration: 0.45, delay: (i % 4) * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.45, delay: (i % 4) * 0.06, ease: EASE.out }}
                 >
                   <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg">
                     <div
@@ -167,7 +171,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: EASE.out }}
             className="rounded-3xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-12"
           >
             <div className="brand-soft brand-border mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border">
@@ -186,10 +190,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       {/* FAQ */}
       <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
-          <SectionHeading
-            title={ui.questionsAnswered}
-            tone="light"
-          />
+          <SectionHeading title={ui.questionsAnswered} tone="light" />
           <AnimatedFaqList items={content.faq} tone="light" />
         </div>
       </Section>
@@ -226,7 +227,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.5, ease: EASE.out }}
         >
           <h2 className="mb-4 text-3xl font-black tracking-tight [color:var(--mk-text)] md:text-4xl">
             {content.ctaTitle}

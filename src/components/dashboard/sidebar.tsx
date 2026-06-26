@@ -118,6 +118,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
+      { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
       { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
       { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
     ],
@@ -219,6 +220,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/deep-analysis", icon: FileSearch, labelKey: "nav.deep_analysis" },
   { href: "/dashboard/adoption-analytics", icon: BarChart3, labelKey: "nav.adoption_analytics" },
   { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "nav.analytics" },
+  { href: "/dashboard/reports", icon: FileText, labelKey: "nav.reports" },
   { href: "/dashboard/shared-spaces", icon: Share2, labelKey: "nav.shared_spaces" },
 ];
 
@@ -260,6 +262,7 @@ export const PREFERRED_SECTION_BY_HREF: Array<{ href: string; section: Dashboard
   { href: "/dashboard/review-queue", section: "nav.section.operations" },
   { href: "/dashboard/approvals", section: "nav.section.operations" },
   { href: "/dashboard/workflows", section: "nav.section.operations" },
+  { href: "/dashboard/reports", section: "nav.section.operations" },
   { href: "/dashboard/invoicing", section: "nav.section.billing_compliance" },
   { href: "/dashboard/cost-calculator", section: "nav.section.billing_compliance" },
   { href: "/dashboard/datev-export", section: "nav.section.billing_compliance" },
@@ -389,7 +392,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const { t, lang } = useLang();
   const { panelTransition: sidebarPanelTransition } = useDashboardMotion();
   const sidebarShellTransition = sidebarPanelTransition;
-  const sidebarWidth = collapsed && isDesktop ? 64 : 256;
+  const sidebarWidth = collapsed && isDesktop ? 64 : 220;
 
   const brainStatusLabel =
     brainReachable === true
@@ -526,13 +529,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       <div
         className={cn(
           "flex h-full flex-col transition-[width] duration-[var(--ds-duration-panel)] ease-[var(--ds-ease-panel)] motion-reduce:transition-none",
-          collapsed ? "w-16" : "w-64"
+          collapsed ? "w-16" : "w-[220px]"
         )}
       >
         {/* Logo */}
         <div
           className={cn(
-            "flex h-16 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
+            "flex h-14 items-center gap-2.5 border-b border-[color:var(--ds-border)] px-4",
             collapsed && "md:w-16 md:justify-center md:px-0"
           )}
         >
@@ -548,12 +551,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-label="Subsumio Dashboard"
             onClick={() => setMobileOpen(false)}
           >
-            <SubsumioMark size={32} />
+            <SubsumioMark size={28} />
           </Link>
           <Link
             href="/dashboard"
             className={cn(
-              "font-display text-[15px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
+              "font-display text-[13px] font-bold tracking-tight text-[color:var(--ds-text)] transition-[opacity] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)]",
               collapsed ? "pointer-events-none opacity-0" : "opacity-100"
             )}
             onClick={() => setMobileOpen(false)}
@@ -637,7 +640,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("sidebar.filter_placeholder")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-3 pl-9 text-sm text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
+                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-3 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--ds-border-strong)] focus:ring-0 focus:outline-none"
                 aria-label={t("sidebar.filter_placeholder")}
               />
               {searchQuery && (
@@ -677,8 +680,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     onClick={() => setMobileOpen(false)}
                     title={collapsed ? t(item.labelKey) : undefined}
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-lg text-sm font-semibold transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
-                      collapsed ? "h-10 justify-center px-0" : "h-10 px-3",
+                      "group relative flex items-center gap-3 rounded-lg text-[13px] font-semibold transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                      collapsed ? "h-9 justify-center px-0" : "h-9 px-3",
                       active
                         ? "brand-soft brand-text shadow-[0_0_12px_-2px_var(--brand-glow)]"
                         : "text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
@@ -686,12 +689,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   >
                     {collapsed && active && (
                       <span
-                        className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                        className="absolute top-1/2 left-0 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
                         aria-hidden
                       />
                     )}
                     <Icon
-                      size={collapsed ? 20 : 17}
+                      size={collapsed ? 18 : 15}
                       className="shrink-0"
                       strokeWidth={active && collapsed ? 2.25 : 1.75}
                     />
@@ -738,7 +741,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             onClick={() => setMobileOpen(false)}
                             title={t(item.labelKey)}
                             className={cn(
-                              "group relative flex h-9 items-center justify-center rounded-lg text-sm transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+                              "group relative flex h-8 items-center justify-center rounded-lg text-[13px] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
                               active
                                 ? "brand-soft brand-text"
                                 : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -746,12 +749,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           >
                             {active && (
                               <span
-                                className="absolute top-1/2 left-0 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                                className="absolute top-1/2 left-0 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
                                 aria-hidden
                               />
                             )}
                             <Icon
-                              size={20}
+                              size={18}
                               className="shrink-0"
                               strokeWidth={active ? 2.25 : 1.75}
                             />
@@ -791,12 +794,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <button
                         type="button"
                         onClick={() => toggleSection(section.titleKey)}
-                        className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                        className="flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                         aria-expanded={isOpen}
                         aria-controls={panelId}
                       >
                         <SectionIcon
-                          size={16}
+                          size={15}
                           className={cn(
                             "shrink-0 transition-colors",
                             sectionActive || isOpen
@@ -853,10 +856,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   <button
                                     key={item.href}
                                     disabled
-                                    className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[color:var(--ds-text-subtle)] select-none"
+                                    className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-subtle)] select-none"
                                     aria-disabled="true"
                                   >
-                                    <Icon size={16} className="shrink-0 opacity-50" />
+                                    <Icon size={15} className="shrink-0 opacity-50" />
                                     <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                       <span className="truncate">{t(item.labelKey)}</span>
                                       <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
@@ -876,13 +879,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                   title={t(item.labelKey)}
                                   style={{ "--sidebar-item-index": index } as CSSProperties}
                                   className={cn(
-                                    "sidebar-item-in relative flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-[background-color,color,transform] duration-150 ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99]",
+                                    "sidebar-item-in relative flex h-8 items-center gap-3 rounded-md px-3 text-[13px] font-medium transition-[background-color,color,transform] duration-[120ms] ease-[var(--ds-ease-panel)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none active:scale-[0.99]",
                                     active
                                       ? "brand-soft brand-text font-semibold shadow-[0_0_10px_-2px_var(--brand-glow)]"
                                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                                   )}
                                 >
-                                  <Icon size={16} className="shrink-0" />
+                                  <Icon size={15} className="shrink-0" />
                                   <span className="min-w-0 flex-1 truncate">
                                     {highlightMatch(t(item.labelKey), searchQuery)}
                                   </span>
@@ -930,17 +933,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               onClick={() => setMobileOpen(false)}
               title={collapsed ? (userName ?? t("sidebar.user")) : undefined}
               className={cn(
-                "group flex items-center rounded-lg transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
-                collapsed ? "h-10 justify-center px-0" : "gap-3 px-3 py-2"
+                "group flex items-center rounded-lg transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)]",
+                collapsed ? "h-9 justify-center px-0" : "gap-3 px-3 py-1.5"
               )}
             >
-              <div className="brand-soft brand-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full border">
+              <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
                 {userName ? (
-                  <span className="brand-text text-[11px] font-bold uppercase">
+                  <span className="brand-text text-[10px] font-bold uppercase">
                     {userName.slice(0, 2)}
                   </span>
                 ) : (
-                  <User size={15} className="brand-text" />
+                  <User size={13} className="brand-text" />
                 )}
               </div>
               <div className={cn("min-w-0 flex-1", collapsed && "hidden")}>
@@ -966,8 +969,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
             aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse_aria")}
             aria-expanded={!collapsed}
             className={cn(
-              "hidden w-full items-center gap-3 rounded-lg text-sm text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-150 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
-              collapsed ? "h-9 justify-center px-0" : "px-3 py-2.5"
+              "hidden w-full items-center gap-3 rounded-lg text-[13px] text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[120ms] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] md:flex",
+              collapsed ? "h-9 justify-center px-0" : "px-3 py-2"
             )}
           >
             {collapsed ? (

@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  type ColumnDef,
+  type SortingState,
+  type ColumnPinningState,
+} from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +25,8 @@ import {
   Trash2,
   FileText,
   Loader2,
+  Pin,
+  PinOff,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +48,7 @@ export interface Column<T> {
   cell: (row: T) => React.ReactNode;
   cardLabel?: (row: T) => string;
   hideOnMobile?: boolean;
+  pinLeft?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -57,9 +70,8 @@ interface DataTableProps<T> {
   bulkActionLoading?: boolean;
   bulkActions?: BulkAction[];
   rowKey?: (row: T, index: number) => string;
+  enableVirtualization?: boolean;
 }
-
-type SortDirection = "asc" | "desc";
 
 export function DataTable<T>({
   columns,
@@ -80,12 +92,15 @@ export function DataTable<T>({
   bulkActionLoading = false,
   bulkActions,
   rowKey,
+  enableVirtualization = false,
 }: DataTableProps<T>) {
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<SortDirection>("asc");
-  const [page, setPage] = useState(0);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmAction, setConfirmAction] = useState<BulkAction | null>(null);
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
+    const pinned = columns.filter((c) => c.pinLeft).map((c) => c.key);
+    return pinned.length > 0 ? { left: pinned } : {};
+  });
 
   const getKey = useCallback(
     (row: T, index: number) =>
@@ -93,52 +108,61 @@ export function DataTable<T>({
     [rowKey]
   );
 
-  const sorted = useMemo(() => {
-    if (!sortKey) return data;
-    const col = columns.find((c) => c.key === sortKey);
-    if (!col?.sortAccessor) return data;
-    const accessor = col.sortAccessor;
-    const sortedData = [...data].sort((a, b) => {
-      const av = accessor(a);
-      const bv = accessor(b);
-      if (typeof av === "number" && typeof bv === "number") return av - bv;
-      return String(av).localeCompare(String(bv), "de");
-    });
-    return sortDir === "desc" ? sortedData.reverse() : sortedData;
-  }, [data, sortKey, sortDir, columns]);
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const currentPage = Math.min(page, totalPages - 1);
-  const pageData = sorted.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-
-  const toggleSort = useCallback(
-    (key: string) => {
-      setSortDir((prev) => {
-        if (sortKey !== key) return "asc";
-        return prev === "asc" ? "desc" : "asc";
-      });
-      setSortKey(key);
-    },
-    [sortKey]
+  const tanstackColumns = useMemo<ColumnDef<T>[]>(
+    () =>
+      columns.map((col) => ({
+        id: col.key,
+        header: col.header,
+        cell: ({ row }) => col.cell(row.original),
+        enableSorting: col.sortable,
+        accessorFn: col.sortAccessor ? (row) => col.sortAccessor!(row) : undefined,
+      })),
+    [columns]
   );
 
-  const allOnPageSelected =
-    pageData.length > 0 && pageData.every((row, i) => selected.has(getKey(row, i)));
-  const someOnPageSelected = pageData.some((row, i) => selected.has(getKey(row, i)));
+  const table = useReactTable({
+    data,
+    columns: tanstackColumns,
+    state: { sorting, columnPinning },
+    onSortingChange: setSorting,
+    onColumnPinningChange: setColumnPinning,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageSize } },
+    getRowId: (row, index) => getKey(row, index),
+  });
+
+  const rows = table.getRowModel().rows;
+  const totalPages = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex;
+
+  const tableBodyRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualize = enableVirtualization && rows.length > 50;
+
+  const rowVirtualizer = useVirtualizer({
+    count: shouldVirtualize ? rows.length : 0,
+    getScrollElement: () => tableBodyRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+    enabled: shouldVirtualize,
+  });
+
+  const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  const totalHeight = shouldVirtualize ? rowVirtualizer.getTotalSize() : 0;
+
+  const allOnPageSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const someOnPageSelected = rows.some((row) => selected.has(row.id));
 
   const toggleAllOnPage = useCallback(() => {
     const next = new Set(selected);
     if (allOnPageSelected) {
-      pageData.forEach((row, i) => {
-        next.delete(getKey(row, i));
-      });
+      rows.forEach((row) => next.delete(row.id));
     } else {
-      pageData.forEach((row, i) => {
-        next.add(getKey(row, i));
-      });
+      rows.forEach((row) => next.add(row.id));
     }
     setSelected(next);
-  }, [allOnPageSelected, pageData, selected, getKey]);
+  }, [allOnPageSelected, rows, selected]);
 
   const toggleRow = useCallback((key: string) => {
     setSelected((prev) => {
@@ -149,9 +173,22 @@ export function DataTable<T>({
     });
   }, []);
 
-  const selectedRows = useMemo(() => {
-    return sorted.filter((row, i) => selected.has(getKey(row, i)));
-  }, [sorted, selected, getKey]);
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selected.has(row.id)).map((row) => row.original),
+    [rows, selected]
+  );
+
+  const pinnedLeft = columnPinning.left ?? [];
+
+  const togglePin = useCallback((colKey: string) => {
+    setColumnPinning((prev) => {
+      const left = prev.left ?? [];
+      if (left.includes(colKey)) {
+        return { ...prev, left: left.filter((k) => k !== colKey) };
+      }
+      return { ...prev, left: [...left, colKey] };
+    });
+  }, []);
 
   const handleBulkAction = useCallback(() => {
     if (onBulkAction && selectedRows.length > 0) {
@@ -294,12 +331,16 @@ export function DataTable<T>({
 
       {/* Desktop table */}
       <div className="card-shadow hidden overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] md:block">
-        <div className="overflow-x-auto">
+        <div
+          ref={tableBodyRef}
+          className={cn("overflow-x-auto", shouldVirtualize && "overflow-y-auto")}
+          style={shouldVirtualize ? { maxHeight: "70vh" } : undefined}
+        >
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
                 {selectable && (
-                  <th className="w-10 px-4 py-3.5">
+                  <th className="w-10 px-4 py-3">
                     <Checkbox
                       checked={
                         allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false
@@ -309,72 +350,107 @@ export function DataTable<T>({
                     />
                   </th>
                 )}
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    className={cn(
-                      "px-4 py-3.5 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
-                      col.sortable &&
-                        "cursor-pointer transition-colors select-none hover:text-[color:var(--ds-text)]",
-                      col.width
-                    )}
-                    onClick={col.sortable ? () => toggleSort(col.key) : undefined}
-                    aria-sort={
-                      sortKey === col.key
-                        ? sortDir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : undefined
-                    }
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {col.header}
-                      {col.sortable && (
-                        <span className="shrink-0">
-                          {sortKey === col.key ? (
-                            sortDir === "asc" ? (
-                              <ChevronUp size={12} />
-                            ) : (
-                              <ChevronDown size={12} />
-                            )
-                          ) : (
-                            <ChevronsUpDown
-                              size={12}
-                              className="text-[color:var(--ds-text-subtle)]"
-                            />
-                          )}
-                        </span>
+                {columns.map((col) => {
+                  const isPinned = pinnedLeft.includes(col.key);
+                  const sortEntry = sorting.find((s) => s.id === col.key);
+                  return (
+                    <th
+                      key={col.key}
+                      className={cn(
+                        "px-4 py-3 text-left text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase",
+                        col.sortable &&
+                          "cursor-pointer transition-colors select-none hover:text-[color:var(--ds-text)]",
+                        col.width,
+                        isPinned &&
+                          "sticky left-0 z-10 bg-[color:var(--ds-surface-2)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
                       )}
-                    </span>
-                  </th>
-                ))}
+                      onClick={
+                        col.sortable
+                          ? () => {
+                              const header = table
+                                .getHeaderGroups()[0]
+                                ?.headers.find((h) => h.id === col.key);
+                              header?.column.toggleSorting();
+                            }
+                          : undefined
+                      }
+                      aria-sort={
+                        sortEntry ? (sortEntry.desc ? "descending" : "ascending") : undefined
+                      }
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.header}
+                        {col.sortable && (
+                          <span className="shrink-0">
+                            {sortEntry ? (
+                              sortEntry.desc ? (
+                                <ChevronDown size={12} />
+                              ) : (
+                                <ChevronUp size={12} />
+                              )
+                            ) : (
+                              <ChevronsUpDown
+                                size={12}
+                                className="text-[color:var(--ds-text-subtle)]"
+                              />
+                            )}
+                          </span>
+                        )}
+                        {col.sortable && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePin(col.key);
+                            }}
+                            className="ml-1 opacity-0 transition-opacity group-hover:opacity-100 hover:text-[color:var(--ds-text)]"
+                            aria-label={isPinned ? "Spalte lösen" : "Spalte anheften"}
+                            title={isPinned ? "Spalte lösen" : "Spalte anheften"}
+                          >
+                            {isPinned ? <PinOff size={10} /> : <Pin size={10} />}
+                          </button>
+                        )}
+                      </span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {loading
-                ? Array.from({ length: Math.min(5, pageSize) }).map((_, i) => (
-                    <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
-                      {selectable && (
-                        <td className="px-4 py-4">
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </td>
-                      )}
-                      {columns.map((col) => (
-                        <td key={col.key} className="px-4 py-4">
-                          <Skeleton className="h-4 w-full max-w-[120px] rounded" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : pageData.map((row, i) => {
-                    const key = getKey(row, i);
+              {loading ? (
+                Array.from({ length: Math.min(5, pageSize) }).map((_, i) => (
+                  <tr key={i} className="border-b border-[color:var(--ds-border)] last:border-0">
+                    {selectable && (
+                      <td className="px-4 py-4">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                    )}
+                    {columns.map((col) => (
+                      <td key={col.key} className="px-4 py-4">
+                        <Skeleton className="h-4 w-full max-w-[120px] rounded" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : shouldVirtualize ? (
+                <>
+                  {virtualRows.map((virtualRow) => {
+                    const row = rows[virtualRow.index];
+                    const key = row.id;
                     const isSelected = selected.has(key);
                     return (
                       <tr
                         key={key}
-                        onClick={() => onRowClick?.(row)}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${virtualRow.start}px)`,
+                          height: `${virtualRow.size}px`,
+                        }}
+                        onClick={() => onRowClick?.(row.original)}
                         className={cn(
-                          "group border-b border-[color:var(--ds-border)] transition-colors duration-150 last:border-0",
+                          "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
                           onRowClick &&
                             !selectable &&
                             "cursor-pointer hover:bg-[color:var(--ds-hover)]",
@@ -385,28 +461,83 @@ export function DataTable<T>({
                         )}
                       >
                         {selectable && (
-                          <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={() => toggleRow(key)}
-                              aria-label={`Eintrag ${i + 1} auswählen`}
+                              aria-label={`Eintrag ${virtualRow.index + 1} auswählen`}
                             />
                           </td>
                         )}
-                        {columns.map((col) => (
+                        {columns.map((col) => {
+                          const isPinned = pinnedLeft.includes(col.key);
+                          return (
+                            <td
+                              key={col.key}
+                              className={cn(
+                                "px-4 py-3 leading-snug text-[color:var(--ds-text)]",
+                                col.width,
+                                isPinned &&
+                                  "sticky left-0 z-10 bg-[color:var(--ds-surface)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
+                              )}
+                            >
+                              {col.cell(row.original)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                  {totalHeight > 0 && <tr style={{ height: totalHeight }} />}
+                </>
+              ) : (
+                rows.map((row, i) => {
+                  const key = row.id;
+                  const isSelected = selected.has(key);
+                  return (
+                    <tr
+                      key={key}
+                      onClick={() => onRowClick?.(row.original)}
+                      className={cn(
+                        "group border-b border-[color:var(--ds-border)] transition-colors duration-120 last:border-0",
+                        onRowClick &&
+                          !selectable &&
+                          "cursor-pointer hover:bg-[color:var(--ds-hover)]",
+                        isSelected ? "brand-soft/30" : "border-l-2 border-l-transparent",
+                        onRowClick &&
+                          !isSelected &&
+                          "hover:border-l-2 hover:border-l-[color:var(--brand-primary)]"
+                      )}
+                    >
+                      {selectable && (
+                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleRow(key)}
+                            aria-label={`Eintrag ${i + 1} auswählen`}
+                          />
+                        </td>
+                      )}
+                      {columns.map((col) => {
+                        const isPinned = pinnedLeft.includes(col.key);
+                        return (
                           <td
                             key={col.key}
                             className={cn(
                               "px-4 py-4 leading-snug text-[color:var(--ds-text)]",
-                              col.width
+                              col.width,
+                              isPinned &&
+                                "sticky left-0 z-10 bg-[color:var(--ds-surface)] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]"
                             )}
                           >
-                            {col.cell(row)}
+                            {col.cell(row.original)}
                           </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -424,13 +555,13 @@ export function DataTable<T>({
                 <Skeleton className="h-3 w-1/2 rounded" />
               </div>
             ))
-          : pageData.map((row, i) => {
-              const key = getKey(row, i);
+          : rows.map((row, i) => {
+              const key = row.id;
               const isSelected = selected.has(key);
               return (
                 <div
                   key={key}
-                  onClick={() => onRowClick?.(row)}
+                  onClick={() => onRowClick?.(row.original)}
                   className={cn(
                     "space-y-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
                     onRowClick &&
@@ -462,13 +593,13 @@ export function DataTable<T>({
                         )}
                       >
                         {colIdx === 0 ? (
-                          col.cell(row)
+                          col.cell(row.original)
                         ) : (
                           <div className="flex items-start gap-2">
                             <span className="shrink-0 font-medium text-[color:var(--ds-text-subtle)]">
                               {col.header}:
                             </span>
-                            <span className="flex-1">{col.cell(row)}</span>
+                            <span className="flex-1">{col.cell(row.original)}</span>
                           </div>
                         )}
                       </div>
@@ -479,18 +610,18 @@ export function DataTable<T>({
       </div>
 
       {/* Pagination */}
-      {sorted.length > pageSize && (
+      {rows.length > pageSize && (
         <div className="flex items-center justify-between px-1">
           <span className="text-xs text-[color:var(--ds-text-muted)]">
-            {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, sorted.length)} von{" "}
-            {sorted.length}
+            {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, data.length)} von{" "}
+            {data.length}
           </span>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               disabled={currentPage === 0}
-              onClick={() => setPage(currentPage - 1)}
+              onClick={() => table.previousPage()}
               className="h-8 w-8 p-0"
               aria-label="Vorherige Seite"
             >
@@ -503,7 +634,7 @@ export function DataTable<T>({
               variant="ghost"
               size="sm"
               disabled={currentPage >= totalPages - 1}
-              onClick={() => setPage(currentPage + 1)}
+              onClick={() => table.nextPage()}
               className="h-8 w-8 p-0"
               aria-label="Nächste Seite"
             >

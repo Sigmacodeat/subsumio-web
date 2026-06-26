@@ -89,9 +89,9 @@
   --ds-space-20: 5rem; /* 80px */
   --ds-space-24: 6rem; /* 96px — section padding */
 
-  /* ── Radius scale (S4) ── */
-  --ds-radius-sm: 0.5rem; /* 8px — inputs, buttons */
-  --ds-radius-md: 0.75rem; /* 12px — cards, panels */
+  /* ── Radius scale (S4) — Linear-density: sharper, more precise ── */
+  --ds-radius-sm: 0.375rem; /* 6px — inputs, buttons */
+  --ds-radius-md: 0.625rem; /* 10px — cards, panels */
   --ds-radius-lg: 1rem; /* 16px — large cards, mega-dropdown */
   --ds-radius-xl: 1.5rem; /* 24px — feature cards, CTA panels */
   --ds-radius-full: 9999px; /* pills, badges, dots */
@@ -103,8 +103,8 @@
   --mk-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.08);
   --mk-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
 
-  /* ── Motion tokens (M3-M4) ── */
-  --ds-duration-fast: 150ms;
+  /* ── Motion tokens (M3-M4) — Linear-calm: snappy feedback ── */
+  --ds-duration-fast: 120ms;
   --ds-duration-normal: 250ms;
   --ds-duration-slow: 400ms;
   --ds-duration-smooth: 500ms;
@@ -124,9 +124,25 @@
 
   /* ── Icon size scale ── */
   --ds-icon-sm: 14px;
-  --ds-icon-md: 16px;
+  --ds-icon-md: 15px; /* Linear: 16→15 for denser rows */
   --ds-icon-lg: 20px;
   --ds-icon-xl: 24px;
+
+  /* ── Linear-Calm surface tokens ── */
+  --ds-surface-elevated: #161630; /* modals, popovers — 1 step above --ds-surface-2 */
+  --ds-focus-ring: 0 0 0 2px var(--brand-primary); /* accessible focus */
+  --ds-transition-tap: 120ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── AI Activity Feed tokens ── */
+  --ai-activity-dot: 6px;
+  --ai-activity-success: var(--color-success);
+  --ai-activity-running: var(--brand-primary);
+  --ai-activity-pending: var(--ds-text-subtle);
+
+  /* ── Split-View tokens ── */
+  --split-divider: 1px solid var(--ds-border);
+  --split-divider-hover: var(--brand-primary);
+  --split-min-width: 320px;
 }
 
 :root {

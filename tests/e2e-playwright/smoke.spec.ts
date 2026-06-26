@@ -194,14 +194,17 @@ test.describe("Smoke: Dashboard Pages Render", () => {
   test("dashboard presents a Kanzlei-OS cockpit, not a brain admin console", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("heading", { name: /Kanzlei-Cockpit|Firm Cockpit/i })).toBeVisible({
+    // Redesign: CalmGreeting replaces old Kanzlei-Cockpit heading
+    await expect(page.locator("h1").first()).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText(/Critical Deadlines|Kritische Fristen/i).first()).toBeVisible();
-    await expect(page.getByText(/Open Cases|Offene Akten/i).first()).toBeVisible();
+    const h1Text = await page.locator("h1").first().textContent();
+    expect(h1Text).toMatch(/Guten (Morgen|Tag|Abend)|Good (morning|afternoon|evening)/i);
+
+    // HeutePanel and widget sections should be visible
+    await expect(page.getByText(/Heute|Today/i).first()).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Inbox|Eingang/i).first()).toBeVisible();
     await expect(page.getByText(/Reviews/i).first()).toBeVisible();
-    await expect(page.getByText(/Billing|Abrechnung/i).first()).toBeVisible();
 
     const nav = page.getByRole("navigation", { name: /Main navigation|Hauptnavigation/i });
     if ((await nav.isVisible().catch(() => false)) === false) {

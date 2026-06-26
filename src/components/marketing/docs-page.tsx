@@ -9,14 +9,14 @@ import { getDocs, type Lang } from "@/content/docs";
 import { p, UI_STRINGS } from "@/content/site";
 import { ICONS } from "./chrome";
 import DashboardReel from "./dashboard-reel";
-import { GlowCard, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
+import { GlowCard, ClipReveal, MagneticButton, GradientMesh, EASE } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
   viewport,
-  transition: { duration: 0.5, ease: "easeOut" as const },
+  transition: { duration: 0.5, ease: EASE.out },
 };
 
 function FeatureCard({
@@ -38,7 +38,7 @@ function FeatureCard({
       viewport={viewport}
       transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
     >
-      <GlowCard className="h-full rounded-2xl p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-surface-2)] hover:shadow-lg">
+      <GlowCard className="h-full rounded-2xl p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg hover:[background:var(--mk-surface-2)]">
         <div className="flex items-start gap-3.5">
           {Icon && (
             <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
@@ -47,9 +47,9 @@ function FeatureCard({
           )}
           <div>
             <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">{title}</h4>
-          <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
+            <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
+          </div>
         </div>
-      </div>
       </GlowCard>
     </motion.div>
   );
@@ -165,12 +165,12 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             {d.hero.badge}
           </div>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
-          <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
-            {d.hero.title}
-            <span className="sr-only"> </span>
-            <br />
-            <span className="gradient-text">{d.hero.claim}</span>
-          </h1>
+            <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+              {d.hero.title}
+              <span className="sr-only"> </span>
+              <br />
+              <span className="gradient-text">{d.hero.claim}</span>
+            </h1>
           </ClipReveal>
           <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
             {d.hero.sub}

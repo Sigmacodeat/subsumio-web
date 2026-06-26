@@ -79,6 +79,14 @@ function statusColor(status: AgentJob["status"]): string {
       return "bg-red-500";
     case "paused":
       return "bg-gray-500";
+    case "partial_success":
+      return "bg-amber-400";
+    case "needs_review":
+      return "bg-orange-500";
+    case "monitoring":
+      return "bg-blue-400";
+    default:
+      return "bg-gray-400";
   }
 }
 
@@ -99,6 +107,14 @@ function statusFill(status: AgentJob["status"]): string {
       return "var(--color-danger)";
     case "paused":
       return "var(--ds-text-muted)";
+    case "partial_success":
+      return "var(--color-warning)";
+    case "needs_review":
+      return "var(--color-warning)";
+    case "monitoring":
+      return "var(--color-info)";
+    default:
+      return "var(--ds-text-muted)";
   }
 }
 
@@ -114,6 +130,14 @@ function statusLabel(status: AgentJob["status"], t: TFunc): string {
       return t("agents.status_failed");
     case "paused":
       return t("agents.status_paused");
+    case "partial_success":
+      return t("reports.status_partial_success");
+    case "needs_review":
+      return t("reports.status_needs_review");
+    case "monitoring":
+      return t("reports.status_monitoring");
+    default:
+      return status;
   }
 }
 

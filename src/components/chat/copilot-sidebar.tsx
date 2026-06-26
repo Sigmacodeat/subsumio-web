@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Activity,
   MessageSquareText,
   X,
   PanelRightClose,
@@ -17,6 +18,9 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  CheckSquare,
+  Circle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfFetch } from "@/lib/csrf";
@@ -32,6 +36,8 @@ interface CopilotSidebarProps {
   onToggle: () => void;
   className?: string;
 }
+
+type PanelMode = "activity" | "chat";
 
 interface RouteContext {
   type: ChatContextType;
@@ -316,6 +322,108 @@ const ROUTE_PATTERNS: Array<{
   },
 ];
 
+interface ActivityItem {
+  slug: string;
+  title: string;
+  type: string;
+  status: string;
+  created_at: string;
+}
+
+function ActivityFeedPanel({ lang }: { lang: "de" | "en" }) {
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await csrfFetch("/api/pages?type=agent_action&limit=20");
+        if (cancelled || !res.ok) return;
+        const data = await res.json();
+        const pages: ActivityItem[] = (data.pages ?? []).map((p: Record<string, unknown>) => ({
+          slug: String(p.slug ?? ""),
+          title: String(p.title ?? p.type ?? "—"),
+          type: String(p.type ?? ""),
+          status: String((p.frontmatter as Record<string, unknown>)?.status ?? "pending"),
+          created_at: String(p.created_at ?? new Date().toISOString()),
+        }));
+        if (!cancelled) {
+          setItems(pages);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 px-3.5 py-3 text-[13px] text-[color:var(--ds-text-subtle)]">
+        <Loader2 size={13} className="animate-spin" />
+        {lang === "en" ? "Loading…" : "Laden…"}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="px-3.5 py-4 text-[13px] text-[color:var(--ds-text-muted)]">
+        {lang === "en"
+          ? "No active AI tasks. Start a workflow to delegate."
+          : "Keine aktiven KI-Aufgaben. Starten Sie einen Workflow."}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="space-y-1 px-3.5 py-3">
+        {items.map((item) => {
+          const status = item.status.toLowerCase();
+          const isDone = ["done", "completed", "approved", "signed", "fulfilled"].includes(status);
+          const isRunning = [
+            "processing",
+            "running",
+            "pending",
+            "in_progress",
+            "uploaded",
+            "ocr_processing",
+          ].includes(status);
+          const Icon = isDone ? CheckSquare : isRunning ? Loader2 : Circle;
+          const iconClass = isDone
+            ? "text-[color:var(--ds-success-text)]"
+            : isRunning
+              ? "text-[color:var(--brand-primary)]"
+              : "text-[color:var(--ds-text-subtle)]";
+          return (
+            <div key={item.slug} className="flex items-center gap-2.5 py-1.5 text-[13px]">
+              <Icon
+                size={14}
+                className={`shrink-0 ${iconClass} ${isRunning ? "animate-spin" : ""}`}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text)]">
+                {item.title}
+              </span>
+              <span className="shrink-0 text-[11px] text-[color:var(--ds-text-subtle)]">
+                {new Date(item.created_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+                  day: "2-digit",
+                  month: "short",
+                })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function resolveRouteContext(pathname: string, t: TFunc): RouteContext {
   for (const { pattern, context } of ROUTE_PATTERNS) {
     const match = pathname.match(pattern);
@@ -435,11 +543,11 @@ function QuickActionsChips({
             <button
               key={action.label}
               onClick={() => onAction(action)}
-              className="group/action flex items-center gap-2 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-2 text-left text-xs text-[color:var(--ds-text-muted)] shadow-sm transition-[border-color,background-color,color,box-shadow] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] hover:shadow-md focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
+              className="group/action flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-left text-[11px] text-[color:var(--ds-text-muted)] transition-[border-color,background-color,color] duration-200 ease-[var(--ds-ease-smooth)] hover:border-[var(--brand-primary)]/40 hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-1 focus-visible:ring-[var(--brand-primary)] focus-visible:outline-none"
             >
-              <span className="group-hover/action:brand-soft flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[color:var(--ds-surface-2)] transition-colors">
+              <span className="group-hover/action:brand-soft flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-surface-2)] transition-colors">
                 <Icon
-                  size={13}
+                  size={12}
                   className="group-hover/action:brand-text shrink-0 text-[color:var(--ds-text-subtle)] transition-colors"
                 />
               </span>
@@ -475,7 +583,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { reduceMotion, panelTransition, tapTransition: softTransition } = useDashboardMotion();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -485,6 +593,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
   const [mobileOpen, setMobileOpen] = useState(false);
   const [actionsExpanded, setActionsExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [panelMode, setPanelMode] = useState<PanelMode>("activity");
 
   // Keep onToggle ref current to avoid stale closure in route-change effect
   useEffect(() => {
@@ -498,8 +607,8 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     setWidth: setPanelWidth,
   } = useResizable({
     minWidth: 320,
-    maxWidth: 600,
-    initialWidth: 380,
+    maxWidth: 560,
+    initialWidth: 360,
     storageKey: "subsumio-copilot-width",
     side: "right",
   });
@@ -602,16 +711,20 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
 
   const routeContext = useMemo(() => resolveRouteContext(pathname, t), [pathname, t]);
 
-  // Keyboard shortcut: Cmd+J toggles on desktop, opens on mobile
+  // Keyboard shortcut: Cmd+J toggles on desktop and switches to chat mode, opens on mobile
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "j") {
         e.preventDefault();
         if (!isMobile) {
-          onToggle();
+          if (!open) {
+            onToggle();
+          }
+          setPanelMode("chat");
         } else {
           setMobileOpen((v) => !v);
           onToggle();
+          setPanelMode("chat");
         }
       }
       if (e.key === "Escape") {
@@ -620,7 +733,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [onToggle, mobileOpen, isMobile]);
+  }, [onToggle, mobileOpen, isMobile, open]);
 
   // Blur active element when desktop sidebar closes — prevents focus from
   // remaining inside an inert/aria-hidden subtree (WAI-ARIA violation).
@@ -735,7 +848,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 aria-hidden
               >
-                <MessageSquareText size={15} className="text-[color:var(--ds-text-muted)]" />
+                <Activity size={15} className="text-[color:var(--brand-secondary)]" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
@@ -743,27 +856,45 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   <span className="truncate">{routeContext.label}</span>
                 </div>
                 <p className="font-display text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-                  {t("copilot.title")}
+                  {lang === "en" ? "Activity" : "Aktivität"}
                 </p>
               </div>
             </div>
-            <button
-              ref={closeButtonRef}
-              onClick={() => {
-                setMobileOpen(false);
-                onToggle();
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-              aria-label={t("copilot.close_esc")}
-            >
-              <X size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPanelMode(panelMode === "chat" ? "activity" : "chat")}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                  panelMode === "chat"
+                    ? "brand-soft brand-text"
+                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                )}
+                aria-label="Chat ⌘J"
+                title="⌘J"
+              >
+                <MessageSquareText size={15} />
+              </button>
+              <button
+                ref={closeButtonRef}
+                onClick={() => {
+                  setMobileOpen(false);
+                  onToggle();
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                aria-label={t("copilot.close_esc")}
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {/* Proactive deadline alerts (G6) — mobile */}
           <ProactiveAlerts
             alerts={visibleAlerts}
-            onQuery={(q) => chatRef.current?.sendMessage(q)}
+            onQuery={(q) => {
+              setPanelMode("chat");
+              chatRef.current?.sendMessage(q);
+            }}
             onDismiss={handleDismissAlert}
             t={t}
           />
@@ -771,28 +902,36 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           {/* Quick actions — mobile */}
           <QuickActionsChips
             actions={routeContext.quickActions}
-            onAction={handleQuickAction}
+            onAction={(action) => {
+              if (action.query) setPanelMode("chat");
+              handleQuickAction(action);
+            }}
             expanded={actionsExpanded}
             onToggleExpanded={() => setActionsExpanded((v) => !v)}
             t={t}
             variant="mobile"
           />
 
-          {isMobile && (
-            <ChatPanel
-              ref={chatRef}
-              context={{
-                type: routeContext.type,
-                caseSlug: routeContext.caseSlug,
-                pageSlug: routeContext.pageSlug,
-              }}
-              className="h-full rounded-none border-0"
-              features={{
-                brainStatus: true,
-                tokenWidget: true,
-                sessionHistory: true,
-              }}
-            />
+          {/* Activity feed or Chat — mobile */}
+          {panelMode === "activity" ? (
+            <ActivityFeedPanel lang={lang} />
+          ) : (
+            isMobile && (
+              <ChatPanel
+                ref={chatRef}
+                context={{
+                  type: routeContext.type,
+                  caseSlug: routeContext.caseSlug,
+                  pageSlug: routeContext.pageSlug,
+                }}
+                className="h-full rounded-none border-0"
+                features={{
+                  brainStatus: true,
+                  tokenWidget: true,
+                  sessionHistory: true,
+                }}
+              />
+            )
           )}
         </div>
       </motion.div>
@@ -896,40 +1035,53 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             )}
             {...(!open ? { inert: true } : {})}
           >
-            {/* Context header — compact agency bar */}
+            {/* Context header — compact tab bar */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
-              <div className="absolute inset-x-0 top-0 h-[2px] bg-[color:var(--brand-primary)] opacity-90" />
-              <div className="flex items-center gap-2.5 px-3 py-2.5">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
-                  aria-hidden
-                >
-                  <MessageSquareText size={15} className="text-[color:var(--ds-text-muted)]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-secondary)]" />
-                    <span className="truncate">{routeContext.label}</span>
-                  </div>
-                  <p className="font-display text-[13px] font-semibold tracking-tight text-[color:var(--ds-text)]">
-                    {t("copilot.title")}
-                  </p>
+              <div className="flex items-center gap-2 px-3 py-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <Activity size={14} className="shrink-0 text-[color:var(--brand-secondary)]" />
+                  <span className="truncate text-[13px] font-semibold text-[color:var(--ds-text)]">
+                    {lang === "en" ? "Activity" : "Aktivität"}
+                  </span>
+                  <span className="hidden text-[11px] text-[color:var(--ds-text-subtle)] sm:inline">
+                    {routeContext.label}
+                  </span>
                 </div>
                 <button
+                  onClick={() => setPanelMode(panelMode === "chat" ? "activity" : "chat")}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+                    panelMode === "chat"
+                      ? "brand-soft brand-text"
+                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  )}
+                  aria-label={lang === "en" ? "Toggle chat (⌘J)" : "Chat öffnen (⌘J)"}
+                  title="⌘J"
+                >
+                  <MessageSquareText size={12} />
+                  {lang === "en" ? "Chat" : "Chat"}
+                  <kbd className="hidden rounded border border-[color:var(--ds-border)] px-1 font-mono text-[9px] sm:inline">
+                    ⌘J
+                  </kbd>
+                </button>
+                <button
                   onClick={onToggle}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                   aria-label={t("copilot.close_panel")}
                   title={t("copilot.close_panel")}
                 >
-                  <PanelRightClose size={15} />
+                  <PanelRightClose size={14} />
                 </button>
               </div>
             </div>
 
-            {/* Proactive deadline alerts (G6) — premium cards */}
+            {/* Proactive deadline alerts (G6) */}
             <ProactiveAlerts
               alerts={visibleAlerts}
-              onQuery={(q) => chatRef.current?.sendMessage(q)}
+              onQuery={(q) => {
+                setPanelMode("chat");
+                chatRef.current?.sendMessage(q);
+              }}
               onDismiss={handleDismissAlert}
               t={t}
             />
@@ -937,32 +1089,39 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             {/* Quick actions — contextual icon chips */}
             <QuickActionsChips
               actions={routeContext.quickActions}
-              onAction={handleQuickAction}
+              onAction={(action) => {
+                if (action.query) setPanelMode("chat");
+                handleQuickAction(action);
+              }}
               expanded={actionsExpanded}
               onToggleExpanded={() => setActionsExpanded((v) => !v)}
               t={t}
               variant="desktop"
             />
 
-            {/* Chat panel — desktop only, single instance */}
-            <div className="min-h-0 min-w-0 flex-1">
-              {!isMobile && (
-                <ChatPanel
-                  ref={chatRef}
-                  context={{
-                    type: routeContext.type,
-                    caseSlug: routeContext.caseSlug,
-                    pageSlug: routeContext.pageSlug,
-                  }}
-                  className="h-full rounded-none border-0"
-                  features={{
-                    brainStatus: true,
-                    tokenWidget: true,
-                    sessionHistory: true,
-                  }}
-                />
-              )}
-            </div>
+            {/* Activity feed or Chat panel — desktop */}
+            {panelMode === "activity" ? (
+              <ActivityFeedPanel lang={lang} />
+            ) : (
+              <div className="min-h-0 min-w-0 flex-1">
+                {!isMobile && (
+                  <ChatPanel
+                    ref={chatRef}
+                    context={{
+                      type: routeContext.type,
+                      caseSlug: routeContext.caseSlug,
+                      pageSlug: routeContext.pageSlug,
+                    }}
+                    className="h-full rounded-none border-0"
+                    features={{
+                      brainStatus: true,
+                      tokenWidget: true,
+                      sessionHistory: true,
+                    }}
+                  />
+                )}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </motion.aside>
@@ -993,7 +1152,11 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
         />
         <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
-          {t("copilot.copilot")}
+          {t("copilot.copilot") === "Copilot"
+            ? lang === "en"
+              ? "Activity"
+              : "Aktivität"
+            : t("copilot.copilot")}
         </span>
       </motion.button>
     </>

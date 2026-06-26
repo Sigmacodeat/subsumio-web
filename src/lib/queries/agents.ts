@@ -3,10 +3,60 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { csrfFetch } from "@/lib/csrf";
 
+export type AgentStatus =
+  | "waiting"
+  | "active"
+  | "completed"
+  | "failed"
+  | "paused"
+  | "partial_success"
+  | "needs_review"
+  | "monitoring";
+
+export type AgentRole =
+  | "planning"
+  | "review"
+  | "summary"
+  | "research"
+  | "draft"
+  | "supervisor"
+  | "custom";
+
+export const ROLE_LABELS: Record<AgentRole, { de: string; en: string; icon: string }> = {
+  planning: { de: "Planungs-Agent", en: "Planning Agent", icon: "CalendarCheck" },
+  review: { de: "Review-Agent", en: "Review Agent", icon: "ClipboardCheck" },
+  summary: { de: "Summary-Agent", en: "Summary Agent", icon: "FileText" },
+  research: { de: "Recherche-Agent", en: "Research Agent", icon: "Search" },
+  draft: { de: "Drafting-Agent", en: "Drafting Agent", icon: "PenTool" },
+  supervisor: { de: "Supervisor", en: "Supervisor", icon: "Cpu" },
+  custom: { de: "Spezial-Agent", en: "Custom Agent", icon: "Bot" },
+};
+
+function inferRole(job: { name: string; subagentDef?: string }): AgentRole {
+  const text = `${job.name} ${job.subagentDef ?? ""}`.toLowerCase();
+  if (text.includes("supervisor")) return "supervisor";
+  if (text.includes("plan") || text.includes("rundown") || text.includes("briefing"))
+    return "planning";
+  if (text.includes("review") || text.includes("critic") || text.includes("check")) return "review";
+  if (
+    text.includes("summary") ||
+    text.includes("summari") ||
+    text.includes("digest") ||
+    text.includes("report")
+  )
+    return "summary";
+  if (text.includes("research") || text.includes("recherch") || text.includes("search"))
+    return "research";
+  if (text.includes("draft") || text.includes("writ") || text.includes("schriftsatz"))
+    return "draft";
+  return "custom";
+}
+
 export interface AgentJob {
   id: number;
   name: string;
-  status: "waiting" | "active" | "completed" | "failed" | "paused";
+  status: AgentStatus;
+  role: AgentRole;
   prompt: string;
   model?: string;
   progress?: { step: number; total: number; message: string };
@@ -17,6 +67,7 @@ export interface AgentJob {
   parentId?: number;
   subagentDef?: string;
   result?: string;
+  isRundown?: boolean;
 }
 
 export interface InboxMessage {
@@ -29,13 +80,34 @@ export interface InboxMessage {
 }
 
 function mapJob(j: Record<string, unknown>): AgentJob {
+  const name = String(j.name ?? "");
+  const subagentDef = j.subagent_def ? String(j.subagent_def) : undefined;
+  const rawStatus = String(j.status ?? "waiting");
+  const status = (
+    [
+      "waiting",
+      "active",
+      "completed",
+      "failed",
+      "paused",
+      "partial_success",
+      "needs_review",
+      "monitoring",
+    ].includes(rawStatus)
+      ? rawStatus
+      : "waiting"
+  ) as AgentStatus;
+  const role = inferRole({ name, subagentDef });
   return {
     id: Number(j.id),
-    name: String(j.name ?? ""),
-    status: String(j.status ?? "waiting") as AgentJob["status"],
+    name,
+    status,
+    role,
     prompt: String(j.prompt ?? ""),
     model: j.model ? String(j.model) : undefined,
-    progress: j.progress ? (j.progress as { step: number; total: number; message: string }) : undefined,
+    progress: j.progress
+      ? (j.progress as { step: number; total: number; message: string })
+      : undefined,
     tokens: j.tokens ? (j.tokens as { input: number; output: number; cache: number }) : undefined,
     cost: j.tokens
       ? (() => {
@@ -46,8 +118,9 @@ function mapJob(j: Record<string, unknown>): AgentJob {
     startedAt: j.startedAt ? String(j.startedAt) : undefined,
     completedAt: j.finishedAt ? String(j.finishedAt) : undefined,
     parentId: j.parentId ? Number(j.parentId) : undefined,
-    subagentDef: j.subagent_def ? String(j.subagent_def) : undefined,
+    subagentDef,
     result: j.result ? JSON.stringify(j.result).slice(0, 500) : undefined,
+    isRundown: Boolean(j.is_rundown ?? name.toLowerCase().includes("rundown")),
   };
 }
 
@@ -105,7 +178,8 @@ export function useSendInboxMessage() {
 export function usePauseAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => csrfFetch(`/api/agents/${id}/pause`, { method: "POST" }).then((r) => r.ok),
+    mutationFn: (id: number) =>
+      csrfFetch(`/api/agents/${id}/pause`, { method: "POST" }).then((r) => r.ok),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -113,7 +187,8 @@ export function usePauseAgent() {
 export function useResumeAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => csrfFetch(`/api/agents/${id}/resume`, { method: "POST" }).then((r) => r.ok),
+    mutationFn: (id: number) =>
+      csrfFetch(`/api/agents/${id}/resume`, { method: "POST" }).then((r) => r.ok),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -121,7 +196,8 @@ export function useResumeAgent() {
 export function useCancelAgent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => csrfFetch(`/api/agents/${id}/cancel`, { method: "POST" }).then((r) => r.ok),
+    mutationFn: (id: number) =>
+      csrfFetch(`/api/agents/${id}/cancel`, { method: "POST" }).then((r) => r.ok),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
   });
 }
@@ -142,7 +218,11 @@ export function useReplayAgent() {
 export function useSubmitSupervisor() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { prompt: string; forceSpecialists?: string[]; skipCritic?: boolean }) => {
+    mutationFn: async (input: {
+      prompt: string;
+      forceSpecialists?: string[];
+      skipCritic?: boolean;
+    }) => {
       const res = await csrfFetch("/api/agents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,5 +237,39 @@ export function useSubmitSupervisor() {
       return data.jobId as number | null;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["agents"] }),
+  });
+}
+
+export function useRundown() {
+  return useQuery<AgentJob[]>({
+    queryKey: ["agents", "rundown"],
+    queryFn: async () => {
+      const res = await fetch("/api/agents?filter=rundown");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.jobs) return [];
+      return data.jobs.map(mapJob);
+    },
+    refetchInterval: (query) => {
+      const jobs = query.state.data;
+      const hasActive = jobs?.some((j) => j.status === "active" || j.status === "waiting");
+      return hasActive ? 5000 : false;
+    },
+  });
+}
+
+export function useTriggerRundown() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await csrfFetch("/api/agents/rundown", { method: "POST" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.jobId as number | null;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents"] });
+      qc.invalidateQueries({ queryKey: ["agents", "rundown"] });
+    },
   });
 }

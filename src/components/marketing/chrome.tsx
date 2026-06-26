@@ -45,6 +45,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EASE } from "./motion-system";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
 import { NAV, FOOTER, p, altPath, UI_STRINGS, type Lang } from "@/content/site";
 
@@ -513,7 +514,9 @@ export function MarketingNav({ lang }: { lang: Lang }) {
               href={altPath(lang, pathname)}
               onClick={() => setLangPref(lang === "en" ? "de" : "en")}
               className="hidden min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] lg:flex"
-              aria-label={lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish}
+              aria-label={
+                lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish
+              }
             >
               <Globe size={12} /> {lang.toUpperCase()}
             </Link>
@@ -639,10 +642,16 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   <Link
                     href={altPath(lang, pathname)}
                     className={mobileLinkCls(false)}
-                    onClick={() => { setMobileOpen(false); setLangPref(lang === "en" ? "de" : "en"); }}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setLangPref(lang === "en" ? "de" : "en");
+                    }}
                   >
                     <span className="flex items-center gap-1.5">
-                      <Globe size={13} /> {lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish}
+                      <Globe size={13} />{" "}
+                      {lang === "en"
+                        ? UI_STRINGS[lang].readInGerman
+                        : UI_STRINGS[lang].readInEnglish}
                     </span>
                   </Link>
                   <Link
@@ -810,7 +819,7 @@ export function SectionHeading({
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.55, ease: EASE.out }}
     >
       {badge && (
         <motion.span
@@ -818,7 +827,7 @@ export function SectionHeading({
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
-          transition={{ duration: 0.4, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.4, delay: 0.05, ease: EASE.out }}
         >
           <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
           {badge}

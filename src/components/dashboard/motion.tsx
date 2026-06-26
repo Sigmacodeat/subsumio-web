@@ -1,6 +1,11 @@
 "use client";
 
 import { motion, useReducedMotion, type Transition } from "framer-motion";
+import { EASE } from "@/components/marketing/motion-system";
+
+// Re-export EASE so dashboard components use the same easing curves as marketing.
+// These constants are 1:1 with the --ds-ease-* CSS tokens in globals.css.
+export { EASE };
 
 export const dashboardSpring: Transition = {
   type: "spring",

@@ -395,11 +395,11 @@ export function Topbar({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:px-6">
-      <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-md">
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 pt-[env(safe-area-inset-top)] shadow-[0_1px_3px_-1px_rgba(0,0,0,0.04)] md:px-6">
+      <div className="flex max-w-xs min-w-0 flex-1 items-center gap-3 md:max-w-sm lg:max-w-lg">
         <button
           onClick={mobileOpen ? onMobileMenuClose : onMobileMenuOpen}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
           aria-label={mobileOpen ? t("topbar.close_menu") : t("topbar.open_menu")}
           aria-expanded={mobileOpen}
         >
@@ -450,7 +450,7 @@ export function Topbar({
             aria-controls="topbar-search-results"
             role="combobox"
             autoComplete="off"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-3 pr-16 pl-9 text-sm text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:w-full focus:max-w-md focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
+            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2.5 pr-16 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[width,border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:w-full focus:max-w-lg focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
           />
           <kbd className="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 items-center gap-0.5 rounded border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-subtle)] md:flex">
             <Command size={9} />K
@@ -527,7 +527,7 @@ export function Topbar({
             // Dispatch ⌘K to trigger command palette
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none md:hidden"
           aria-label={t("topbar.search_aria")}
         >
           <Search size={18} />
@@ -541,7 +541,7 @@ export function Topbar({
           title={copilotOpen ? "Copilot schließen (Cmd+J)" : "Copilot öffnen (Cmd+J)"}
           aria-pressed={copilotOpen}
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
+            "flex h-9 w-9 items-center justify-center rounded-lg transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none",
             copilotOpen
               ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
               : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -553,17 +553,17 @@ export function Topbar({
           onClick={onGuideOpen}
           aria-label={t("guide.open")}
           title={t("guide.open")}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
         >
-          <HelpCircle size={16} />
+          <HelpCircle size={15} />
         </button>
         <button
           onClick={toggleTheme}
           title={theme === "dark" ? t("topbar.theme_light") : t("topbar.theme_dark")}
           aria-label={theme === "dark" ? t("topbar.theme_light_aria") : t("topbar.theme_dark_aria")}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
         >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
         <div className="relative max-md:hidden" ref={notifRef}>
           <button
@@ -575,7 +575,7 @@ export function Topbar({
             }
             aria-expanded={notifOpen}
             aria-haspopup="menu"
-            className="relative flex h-11 w-11 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
@@ -702,16 +702,19 @@ export function Topbar({
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
           >
-            <div className="brand-soft brand-border flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+            <div className="brand-soft brand-border flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
               {userName ? (
-                <span className="brand-text text-xs font-bold uppercase">
+                <span className="brand-text text-[10px] font-bold uppercase">
                   {userName.slice(0, 2)}
                 </span>
               ) : (
-                <User size={15} className="brand-text" />
+                <User size={13} className="brand-text" />
               )}
             </div>
-            <ChevronDown size={14} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
+            <span className="hidden max-w-[100px] truncate text-[13px] font-medium text-[color:var(--ds-text)] md:block">
+              {userName ?? t("topbar.user_fallback")}
+            </span>
+            <ChevronDown size={13} className="hidden text-[color:var(--ds-text-subtle)] md:block" />
           </button>
           <AnimatePresence initial={false}>
             {userMenuOpen && (

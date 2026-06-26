@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Quote, ScrollText } from "lucide-react";
 import type { Lang } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
-import { GlowCard } from "./motion-system";
+import { GlowCard, EASE } from "./motion-system";
 
 const COPY = {
   de: {
@@ -124,7 +124,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.5, delay: i * 0.09, ease: EASE.out }}
               >
                 <GlowCard
                   glowColor={sig.text}

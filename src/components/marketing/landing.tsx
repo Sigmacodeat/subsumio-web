@@ -19,7 +19,17 @@ import TrustBand from "./trust-band";
 import AudienceTabs from "./audience-tabs";
 import { SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, StaggerContainer, StaggerItem, EASE, ScrollProgress, AnimatedCounter, MagneticButton, MagneticCard, TextReveal } from "./motion-system";
+import {
+  GlowCard,
+  StaggerContainer,
+  StaggerItem,
+  EASE,
+  ScrollProgress,
+  AnimatedCounter,
+  MagneticButton,
+  MagneticCard,
+  TextReveal,
+} from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -28,7 +38,7 @@ const reveal = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
   viewport,
-  transition: { duration: 0.5, ease: "easeOut" as const },
+  transition: { duration: 0.5, ease: EASE.out },
 };
 
 const heroStagger: Variants = {
@@ -92,7 +102,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Hero band — hero on the light page surface */}
         <div className="relative">
           {/* Hero */}
-          <section className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24 text-center sm:px-6 lg:px-8 md:pt-36 md:pb-28">
+          <section className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24 text-center sm:px-6 md:pt-36 md:pb-28 lg:px-8">
             {/* Aurora wash — local to hero */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
               <div
@@ -199,11 +209,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]"
                   variants={trustContainer}
                 >
-                  {[
-                    ui.noCreditCard,
-                    ui.threeMinAnswer,
-                    ui.euHosted,
-                  ].map((label) => (
+                  {[ui.noCreditCard, ui.threeMinAnswer, ui.euHosted].map((label) => (
                     <motion.span
                       key={label}
                       className="inline-flex items-center gap-1.5"
@@ -225,7 +231,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               className="relative z-10 mx-auto max-w-3xl scroll-mt-24"
               initial={{ opacity: 0, y: 24, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+              transition={{ duration: 0.6, ease: EASE.out, delay: 0.15 }}
               role="region"
               aria-label={ui.liveDemoAria}
             >
@@ -255,16 +261,21 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                 const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
                 const isNumeric = !isNaN(num) && num > 0;
                 return (
-                <StaggerItem key={stat.label}>
-                  <p className="mb-1 text-3xl font-black [color:var(--signal-blue)]">
-                    {isNumeric ? (
-                      <AnimatedCounter to={num} prefix={prefix} suffix={suffix} decimals={stat.value.includes(".") ? 1 : 0} />
-                    ) : (
-                      stat.value
-                    )}
-                  </p>
-                  <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
-                </StaggerItem>
+                  <StaggerItem key={stat.label}>
+                    <p className="mb-1 text-3xl font-black [color:var(--signal-blue)]">
+                      {isNumeric ? (
+                        <AnimatedCounter
+                          to={num}
+                          prefix={prefix}
+                          suffix={suffix}
+                          decimals={stat.value.includes(".") ? 1 : 0}
+                        />
+                      ) : (
+                        stat.value
+                      )}
+                    </p>
+                    <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
+                  </StaggerItem>
                 );
               })}
             </StaggerContainer>
@@ -275,7 +286,10 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <SuperbrainAdvantage lang={lang} />
 
         {/* Dashboard in action — light section with dark mockup spotlight */}
-        <section data-tone="light" className="relative z-10 mx-auto max-w-5xl px-4 py-28 sm:px-6 lg:px-8">
+        <section
+          data-tone="light"
+          className="relative z-10 mx-auto max-w-5xl px-4 py-28 sm:px-6 lg:px-8"
+        >
           <motion.div {...reveal}>
             <SectionHeading
               badge={ui.inActionBadge}
@@ -293,7 +307,11 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         </section>
 
         {/* Features — alternating surface band */}
-        <section id="features" data-tone="light" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
+        <section
+          id="features"
+          data-tone="light"
+          className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
+        >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
@@ -410,15 +428,18 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <TrustBand lang={lang} />
 
         {/* Pricing */}
-        <section id="pricing" data-tone="light" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
+        <section
+          id="pricing"
+          data-tone="light"
+          className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
+        >
           <motion.div {...reveal} className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
             <PricingGrid lang={lang} />
             <div className="mt-10 text-center">
               <Link href={p(lang, "/pricing")}>
                 <Button size="lg" variant="secondary">
-                  {ui.seeFullPricing}{" "}
-                  <ArrowRight size={16} />
+                  {ui.seeFullPricing} <ArrowRight size={16} />
                 </Button>
               </Link>
             </div>

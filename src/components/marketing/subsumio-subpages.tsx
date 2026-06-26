@@ -16,13 +16,13 @@ import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { Section, SectionHeading } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
-import { Reveal } from "./motion-system";
+import { Reveal, EASE } from "./motion-system";
 
 const reveal = {
   initial: { opacity: 0, y: 22 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
-  transition: { duration: 0.5, ease: "easeOut" as const },
+  transition: { duration: 0.5, ease: EASE.out },
 };
 
 // --- Shared subpage shell --------------------------------------------------
@@ -197,7 +197,7 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
+                transition={{ duration: 0.4, delay: i * 0.08, ease: EASE.out }}
                 className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
                 style={{ boxShadow: "var(--mk-card-shadow)" }}
               >

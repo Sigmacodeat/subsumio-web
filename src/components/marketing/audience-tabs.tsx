@@ -17,6 +17,7 @@ import {
   type SolutionSlug,
 } from "@/content/solutions";
 import { ICONS } from "./chrome";
+import { EASE } from "./motion-system";
 
 export default function AudienceTabs({ lang }: { lang: Lang }) {
   const [active, setActive] = useState<SolutionSlug>(SOLUTION_SLUGS[0]);
@@ -55,7 +56,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.25, ease: EASE.out }}
             className="rounded-2xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-10"
           >
             <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold">

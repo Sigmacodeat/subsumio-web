@@ -1,20 +1,133 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { Briefcase, Upload } from "lucide-react";
+import { Briefcase, Upload, Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { WidgetDashboard } from "@/components/dashboard/widget-dashboard";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
+import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import type { BrainStats, RecentQuery } from "@/lib/types";
-import { ClipReveal, MagneticButton, StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+
+type Greeting = {
+  greeting: string;
+  sub: string;
+};
+
+function useGreeting(name: string | null, lang: "de" | "en"): Greeting {
+  const hour = new Date().getHours();
+  const isFirst = !name;
+  const firstName = name?.split(" ")[0] ?? "";
+  if (lang === "en") {
+    if (hour < 12)
+      return {
+        greeting: isFirst ? "Good morning" : `Good morning, ${firstName}`,
+        sub: "Here's what needs your attention today.",
+      };
+    if (hour < 18)
+      return {
+        greeting: isFirst ? "Good afternoon" : `Good afternoon, ${firstName}`,
+        sub: "Here's what needs your attention today.",
+      };
+    return {
+      greeting: isFirst ? "Good evening" : `Good evening, ${firstName}`,
+      sub: "Here's what needs your attention today.",
+    };
+  }
+  if (hour < 12)
+    return {
+      greeting: isFirst ? "Guten Morgen" : `Guten Morgen, ${firstName}`,
+      sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+    };
+  if (hour < 18)
+    return {
+      greeting: isFirst ? "Guten Tag" : `Guten Tag, ${firstName}`,
+      sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+    };
+  return {
+    greeting: isFirst ? "Guten Abend" : `Guten Abend, ${firstName}`,
+    sub: "Hier ist, was heute Ihre Aufmerksamkeit braucht.",
+  };
+}
+
+function CalmGreeting({
+  name,
+  engineOnline,
+  degraded,
+}: {
+  name: string | null;
+  engineOnline: boolean;
+  degraded: boolean;
+}) {
+  const { t, lang } = useLang();
+  const { greeting, sub } = useGreeting(name, lang);
+  const [query, setQuery] = useState("");
+  const onSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!query.trim()) return;
+      window.location.href = `/dashboard/chat?q=${encodeURIComponent(query.trim())}`;
+    },
+    [query]
+  );
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <p
+          className="text-xs font-medium text-[color:var(--ds-text-subtle)]"
+          suppressHydrationWarning
+        >
+          {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
+            weekday: "long",
+            day: "2-digit",
+            month: "long",
+          })}
+        </p>
+        <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-[color:var(--ds-text)] md:text-xl">
+          {greeting}
+        </h1>
+        <p className="mt-1 text-[13px] text-[color:var(--ds-text-muted)]">
+          {sub}
+          {!degraded && engineOnline && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[color:var(--ds-success-text)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--ds-success-text)]" />
+              {t("dashboard.connected")}
+            </span>
+          )}
+        </p>
+      </div>
+      <form onSubmit={onSubmit} className="relative w-full max-w-md shrink-0">
+        <Search
+          size={14}
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={lang === "en" ? "Ask AI anything…" : "KI fragen…"}
+          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] py-2 pr-9 pl-9 text-[13px] text-[color:var(--ds-text)] transition-[border-color,box-shadow] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-[color:var(--ds-text-subtle)] transition-colors hover:text-[color:var(--ds-text)]"
+          aria-label="Send"
+        >
+          <ArrowRight size={14} />
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const statsQuery = useBrainStats();
   const recentQuery = useRecentQueries(5);
+  const meQuery = useMe();
   const { t, lang } = useLang();
 
   const stats = (statsQuery.data ?? null) as BrainStats | null;
@@ -37,18 +150,20 @@ export default function DashboardPage() {
   const isFirstTime =
     !loading && !degraded && (stats?.total_pages ?? 0) === 0 && (stats?.total_queries ?? 0) === 0;
 
+  const userName = meQuery.data?.user?.name ?? meQuery.data?.user?.email ?? null;
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       {isFirstTime && (
         <StaggerContainer>
           <StaggerItem>
-            <div className="rounded-xl border border-[color:var(--brand-primary)]/20 bg-gradient-to-br from-[color:var(--brand-glow)] to-transparent p-5 md:p-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="rounded-lg border border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-glow)] p-4 md:p-5">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-[color:var(--ds-text)]">
+                  <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
                     {t("dashboard.welcome")}
                   </h2>
-                  <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
+                  <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-[color:var(--ds-text-muted)]">
                     {t("dashboard.welcome_desc")}
                   </p>
                 </div>
@@ -70,57 +185,7 @@ export default function DashboardPage() {
         </StaggerContainer>
       )}
 
-      <ClipReveal delay={0.05} duration={0.5} direction="up">
-        <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-5 py-4 shadow-[var(--card-shadow)]">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="accent" className="text-xs">
-                {t("cockpit.today_title")}
-              </Badge>
-              <span
-                className="text-xs font-medium text-[color:var(--ds-text-muted)]"
-                suppressHydrationWarning
-              >
-                {new Date().toLocaleDateString(lang === "en" ? "en-GB" : "de-DE", {
-                  weekday: "long",
-                  day: "2-digit",
-                  month: "long",
-                })}
-              </span>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-[color:var(--ds-text)] md:text-2xl">
-              {t("dashboard.title")}
-            </h1>
-            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
-              {t("dashboard.desc_online")}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5" role="status" aria-live="polite">
-            {!loading && (
-              <Badge
-                variant={degraded ? "warning" : engineOnline ? "success" : "info"}
-                className="text-xs"
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${degraded ? "bg-[color:var(--ds-warning-text)]" : "bg-[color:var(--ds-success-text)]"}`}
-                  role="img"
-                  aria-label={degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
-                />
-                {degraded ? t("cockpit.ai_limited") : t("dashboard.connected")}
-              </Badge>
-            )}
-            <MagneticButton strength={0.15}>
-              <Link href="/dashboard/cases/new">
-                <Button size="sm" variant="glow">
-                  <Briefcase size={14} /> {t("cockpit.action_case")}
-                </Button>
-              </Link>
-            </MagneticButton>
-          </div>
-        </div>
-      </section>
-      </ClipReveal>
+      <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
 
       <WidgetDashboard />
     </div>

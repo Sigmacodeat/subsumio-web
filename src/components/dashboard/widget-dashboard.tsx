@@ -7,26 +7,27 @@ import {
   Briefcase,
   CalendarClock,
   CheckSquare,
-  FileSignature,
+  Circle,
   FileText,
   Inbox,
+  Loader2,
   Mail,
   MessageSquare,
   PenTool,
   Pin,
   PinOff,
   Scale,
-  ShieldCheck,
+  Sparkles,
   Upload,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useBrainStats, usePages, useRecentQueries } from "@/lib/queries/brain";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
 import type { BrainPage, BrainStats, RecentQuery } from "@/lib/types";
-import { StaggerContainer, StaggerItem, GlowCard } from "@/components/marketing/motion-system";
+import { StaggerContainer, StaggerItem } from "@/components/marketing/motion-system";
+import { KanzleiInsights } from "./kanzlei-insights";
 
 type DashboardPageLike = BrainPage & {
   frontmatter?: Record<string, unknown>;
@@ -291,7 +292,7 @@ function QueueRow({
   const inner = (
     <>
       <div
-        className={`flex h-9 w-9 items-center justify-center rounded-md border ${
+        className={`flex h-7 w-7 items-center justify-center rounded-md border ${
           urgent
             ? "border-[color:var(--ds-warning-border)] bg-[color:var(--ds-warning-bg)]"
             : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
@@ -320,7 +321,7 @@ function QueueRow({
     return (
       <Link
         href={href}
-        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
+        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:var(--ds-border)] px-4 py-2.5 last:border-b-0 hover:bg-[color:var(--ds-hover)]"
       >
         {inner}
       </Link>
@@ -331,7 +332,7 @@ function QueueRow({
     <div className="group flex items-center border-b border-[color:var(--ds-border)] pr-2 last:border-b-0 hover:bg-[color:var(--ds-hover)]">
       <Link
         href={href}
-        className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
+        className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5"
       >
         {inner}
       </Link>
@@ -542,92 +543,39 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
 function QuickActions() {
   const { t } = useLang();
   const actions = [
-    {
-      href: "/dashboard/cases/new",
-      icon: Briefcase,
-      label: t("cockpit.action_case"),
-      tone: "primary",
-    },
-    {
-      href: "/dashboard/kollisionspruefung",
-      icon: Scale,
-      label: t("cockpit.action_conflict"),
-      tone: "urgent",
-    },
-    {
-      href: "/dashboard/deadlines",
-      icon: CalendarClock,
-      label: t("cockpit.action_deadline"),
-      tone: "urgent",
-    },
-    { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake"), tone: "urgent" },
+    { href: "/dashboard/cases/new", icon: Briefcase, label: t("cockpit.action_case") },
+    { href: "/dashboard/kollisionspruefung", icon: Scale, label: t("cockpit.action_conflict") },
+    { href: "/dashboard/deadlines", icon: CalendarClock, label: t("cockpit.action_deadline") },
+    { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake") },
     { href: "/dashboard/drafting", icon: PenTool, label: t("cockpit.action_draft") },
     { href: "/dashboard/upload", icon: Upload, label: t("cockpit.action_upload") },
     { href: "/dashboard/chat", icon: MessageSquare, label: t("cockpit.action_ai") },
   ];
 
   return (
-    <section className="overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-[var(--card-shadow)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-4 py-2.5">
-        <div>
-          <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-            {t("cockpit.quick_title")}
-          </h2>
-          <p className="mt-0.5 text-xs text-[color:var(--ds-text-muted)]">
-            {t("cockpit.quick_desc")}
-          </p>
-        </div>
-        <Link
-          href="/dashboard/workflows"
-          className="brand-text inline-flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
-        >
-          {t("cockpit.plan")}
-          <ArrowRight size={13} />
-        </Link>
-      </div>
-      <div className="grid gap-px bg-[color:var(--ds-border)] sm:grid-cols-2 xl:grid-cols-7">
-        {actions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link
-              key={action.href}
-              href={action.href}
-              className={`group flex h-12 items-center gap-2 bg-[color:var(--ds-surface)] px-3 text-sm font-medium transition-colors hover:bg-[color:var(--ds-hover)] ${
-                action.tone === "primary"
-                  ? "text-[color:var(--ds-text)]"
-                  : action.tone === "urgent"
-                    ? "text-[color:var(--accent-gold)]"
-                    : "text-[color:var(--ds-text-muted)]"
-              }`}
-            >
-              <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${
-                  action.tone === "primary"
-                    ? "brand-border brand-soft"
-                    : action.tone === "urgent"
-                      ? "border-[color:var(--accent-gold-border)] bg-[color:var(--accent-gold-soft)]"
-                      : "border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]"
-                }`}
-              >
-                <Icon size={14} className="shrink-0" />
-              </span>
-              <span className="min-w-0 truncate">{action.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </section>
+    <div className="flex flex-wrap items-center gap-1.5">
+      {actions.map((action) => {
+        const Icon = action.icon;
+        return (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          >
+            <Icon size={13} className="shrink-0" />
+            <span className="min-w-0 truncate">{action.label}</span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
-// ── Editorial cockpit hero ────────────────────────────────────────────
-// One dominant focus (critical deadlines) + a curated next-action column,
-// replacing the flat 5-up metric rail. Hierarchy by size/colour, not by
-// adding another identical card.
+// ── HeutePanel — calm "today" list, no hero numbers ───────────────────
 
 type DeadlineItem = ReturnType<typeof useKanzleiCockpitData>["deadlines"][number];
 
-function CockpitHero({
+function HeutePanel({
   loading,
   criticalDeadlines,
   deadlines,
@@ -657,156 +605,186 @@ function CockpitHero({
     return `${t("cockpit.hero_due_in")} ${lead.daysLeft}T`;
   })();
 
-  const actions = [
+  const items = [
     {
-      href: "/dashboard/intake",
-      icon: Inbox,
+      label: t("cockpit.stat_deadlines"),
+      count: criticalDeadlines.length,
+      href: "/dashboard/deadlines",
+      urgent: true,
+    },
+    {
       label: t("cockpit.na_inbox"),
       count: inboxCount,
+      href: "/dashboard/intake",
       urgent: inboxCount > 0,
     },
     {
-      href: "/dashboard/review-queue",
-      icon: CheckSquare,
       label: t("cockpit.na_reviews"),
       count: reviewCount,
+      href: "/dashboard/review-queue",
       urgent: reviewCount > 0,
     },
     {
-      href: "/dashboard/document-requests",
-      icon: FileText,
       label: t("cockpit.na_document_requests"),
       count: documentRequestCount,
+      href: "/dashboard/document-requests",
       urgent: documentRequestCount > 0,
     },
     {
-      href: "/dashboard/signature",
-      icon: FileSignature,
       label: t("cockpit.na_signatures"),
       count: signatureCount,
+      href: "/dashboard/signature",
       urgent: signatureCount > 0,
-    },
-    {
-      href: "/dashboard/vault",
-      icon: FileText,
-      label: t("cockpit.na_gaps"),
-      count: gapsCount,
-      urgent: false,
     },
   ].filter((a) => a.count > 0);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-      <section
-        className={`flex flex-col justify-between rounded-xl border p-5 shadow-[var(--card-shadow)] md:p-6 ${
-          hasCritical
-            ? "border-[color:var(--ds-danger-border)] bg-[color:var(--ds-danger-bg)]"
-            : "border-[color:var(--ds-success-border)] bg-[color:var(--ds-success-bg)]"
-        }`}
-      >
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          {hasCritical ? (
-            <AlertTriangle size={17} className="text-[color:var(--ds-danger-text)]" />
-          ) : (
-            <ShieldCheck size={17} className="text-[color:var(--ds-success-text)]" />
-          )}
-          <span
-            className={
-              hasCritical
-                ? "text-[color:var(--ds-danger-text)]"
-                : "text-[color:var(--ds-success-text)]"
-            }
-          >
-            {hasCritical ? t("cockpit.stat_deadlines") : t("cockpit.hero_all_clear")}
+    <section className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+          {t("cockpit.today_title")}
+        </span>
+        {hasCritical && (
+          <span className="flex items-center gap-1 text-xs text-[color:var(--ds-danger-text)]">
+            <AlertTriangle size={12} />
+            {criticalDeadlines.length} {t("cockpit.stat_deadlines")}
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <p className="text-[13px] text-[color:var(--ds-text-subtle)]">—</p>
+      ) : items.length === 0 ? (
+        <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+          {t("cockpit.hero_all_clear_desc")}
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          {items.map((item, i) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:underline"
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  item.urgent
+                    ? "bg-[color:var(--ds-danger-text)]"
+                    : "bg-[color:var(--ds-text-subtle)]"
+                }`}
+                aria-hidden
+              />
+              <span
+                className={
+                  item.urgent
+                    ? "font-medium text-[color:var(--ds-danger-text)]"
+                    : "text-[color:var(--ds-text-muted)]"
+                }
+              >
+                {item.count} {item.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {lead && (
+        <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--ds-border)] pt-3">
+          <Sparkles size={13} className="shrink-0 text-[color:var(--brand-primary)]" />
+          <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+            {leadDue && <span className="font-medium text-[color:var(--ds-text)]">{leadDue}</span>}
+            {" · "}
+            <Link
+              href={pageHref(lead.page, "/dashboard/deadlines")}
+              className="text-[color:var(--ds-text)] transition-colors hover:underline"
+            >
+              {text(lead.page.title, t("dashboard.unnamed_deadline"))}
+            </Link>
+            {" · "}
+            {formatDate(lead.due, lang)}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── AIActivityFeed — Attio-style background activity (✓ ⟳ ○) ──────────
+
+function AIActivityFeed({
+  reviews,
+  agentActions,
+}: {
+  reviews: DashboardPageLike[];
+  agentActions: DashboardPageLike[];
+}) {
+  const { t, lang } = useLang();
+  const items = [...reviews, ...agentActions].slice(0, 8);
+
+  if (items.length === 0) {
+    return (
+      <section className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+            {t("cockpit.ai_control_title")}
           </span>
         </div>
-
-        <div className="my-4 flex items-end gap-4">
-          {hasCritical ? (
-            <span className="text-5xl leading-none font-semibold tracking-tight text-[color:var(--ds-danger-text)] tabular-nums md:text-6xl">
-              {loading ? "—" : criticalDeadlines.length}
-            </span>
-          ) : null}
-          <div className="min-w-0 pb-1">
-            {lead ? (
-              <>
-                <p className="truncate text-sm font-medium text-[color:var(--ds-text)]">
-                  {text(lead.page.title, t("dashboard.unnamed_deadline"))}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
-                  {leadDue ? <span className="font-medium">{leadDue}</span> : null}
-                  {" · "}
-                  {formatDate(lead.due, lang)}
-                  {hasCritical && criticalDeadlines.length > 1
-                    ? ` · ${criticalDeadlines.length - 1} ${t("cockpit.hero_more_critical")}`
-                    : ""}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-[color:var(--ds-text-muted)]">
-                {t("cockpit.hero_all_clear_desc")}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard/deadlines">
-            <Button size="sm" variant={hasCritical ? "glow" : "outline"}>
-              <CalendarClock size={14} /> {t("cockpit.hero_open")}
-            </Button>
-          </Link>
-          <Link href="/dashboard/drafting">
-            <Button size="sm" variant="outline">
-              <PenTool size={14} /> {t("cockpit.action_draft")}
-            </Button>
-          </Link>
-        </div>
+        <p className="text-[13px] text-[color:var(--ds-text-muted)]">
+          {lang === "en"
+            ? "No active AI tasks. Start a workflow to delegate."
+            : "Keine aktiven KI-Aufgaben. Starten Sie einen Workflow."}
+        </p>
       </section>
+    );
+  }
 
-      <section className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5 shadow-[var(--card-shadow)]">
-        <h2 className="mb-3 text-sm font-semibold text-[color:var(--ds-text)]">
-          {t("cockpit.hero_next_action")}
-        </h2>
-        {actions.length === 0 ? (
-          <p className="py-4 text-sm text-[color:var(--ds-text-muted)]">{t("cockpit.na_clear")}</p>
-        ) : (
-          <div>
-            {actions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex items-center gap-3 border-b border-[color:var(--ds-border)] py-2.5 last:border-b-0 hover:opacity-80"
-                >
-                  <Icon
-                    size={17}
-                    className={
-                      action.urgent
-                        ? "text-[color:var(--ds-warning-text)]"
-                        : "text-[color:var(--ds-text-muted)]"
-                    }
-                  />
-                  <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--ds-text)]">
-                    {action.label}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold tabular-nums ${
-                      action.urgent
-                        ? "text-[color:var(--ds-warning-text)]"
-                        : "text-[color:var(--ds-text-muted)]"
-                    }`}
-                  >
-                    {action.count}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </div>
+  return (
+    <section className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="text-[13px] font-semibold text-[color:var(--ds-text)]">
+          {t("cockpit.ai_control_title")}
+        </span>
+        <span className="text-xs text-[color:var(--ds-text-subtle)]">
+          {items.length} {lang === "en" ? "active" : "aktiv"}
+        </span>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => {
+          const fm = item.frontmatter ?? {};
+          const status = String(fm.status ?? "pending").toLowerCase();
+          const isDone = ["done", "completed", "approved", "signed", "fulfilled"].includes(status);
+          const isRunning = [
+            "processing",
+            "running",
+            "pending",
+            "in_progress",
+            "uploaded",
+            "ocr_processing",
+          ].includes(status);
+          const Icon = isDone ? CheckSquare : isRunning ? Loader2 : Circle;
+          const iconClass = isDone
+            ? "text-[color:var(--ds-success-text)]"
+            : isRunning
+              ? "text-[color:var(--brand-primary)]"
+              : "text-[color:var(--ds-text-subtle)]";
+          return (
+            <div key={item.slug} className="flex items-center gap-2.5 text-[13px]">
+              <Icon
+                size={14}
+                className={`shrink-0 ${iconClass} ${isRunning ? "animate-spin" : ""}`}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-[color:var(--ds-text)]">
+                {text(item.title, item.type)}
+              </span>
+              <span className="shrink-0 text-xs text-[color:var(--ds-text-subtle)]">
+                {formatDate(new Date(item.created_at), lang)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -818,17 +796,18 @@ function SecondaryStats({
   items: Array<{ label: string; value: number; href: string }>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-border)] md:grid-cols-4">
-      {items.map((item) => (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-[color:var(--ds-text-muted)]">
+      {items.map((item, i) => (
         <Link
           key={item.label}
           href={item.href}
-          className="bg-[color:var(--ds-surface)] px-4 py-3 transition-colors hover:bg-[color:var(--ds-hover)]"
+          className="inline-flex items-center gap-1 transition-colors hover:underline"
         >
-          <span className="truncate text-xs text-[color:var(--ds-text-muted)]">{item.label}</span>
-          <div className="mt-1 text-2xl leading-none font-semibold tracking-tight text-[color:var(--ds-text)] tabular-nums">
+          <span className="font-semibold text-[color:var(--ds-text)] tabular-nums">
             {loading ? "—" : item.value}
-          </div>
+          </span>
+          <span>{item.label}</span>
+          {i < items.length - 1 && <span className="text-[color:var(--ds-text-subtle)]">·</span>}
         </Link>
       ))}
     </div>
@@ -888,9 +867,9 @@ export function WidgetDashboard() {
         </div>
       )}
 
-      <StaggerContainer className="space-y-6">
+      <StaggerContainer className="space-y-4">
         <StaggerItem>
-          <CockpitHero
+          <HeutePanel
             loading={data.loading}
             criticalDeadlines={data.criticalDeadlines}
             deadlines={data.deadlines}
@@ -911,13 +890,9 @@ export function WidgetDashboard() {
         </StaggerItem>
       </StaggerContainer>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <GlowCard className="rounded-lg" glowColor="var(--brand-primary)" intensity={0.12}>
-          <DeadlineList items={data.deadlines} />
-        </GlowCard>
-        <GlowCard className="rounded-lg" glowColor="var(--brand-primary)" intensity={0.12}>
-          <InboxList items={data.inboxItems} />
-        </GlowCard>
+      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <DeadlineList items={data.deadlines} />
+        <InboxList items={data.inboxItems} />
       </div>
 
       {/* Review-Lücken & Unzugeordnete Dokumente — höher priorisiert als generische Metriken */}
@@ -980,49 +955,16 @@ export function WidgetDashboard() {
 
       <QuickActions />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <ActiveCasesList cases={data.activeCases} />
-        <QueuePanel
-          icon={ShieldCheck}
-          title={t("cockpit.ai_control_title")}
-          href="/dashboard/review-queue"
-          action={t("cockpit.review")}
-        >
-          <div className="space-y-3 p-4">
-            <div className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <Scale size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-                <span className="truncate text-sm text-[color:var(--ds-text)]">
-                  {t("cockpit.conflicts")}
-                </span>
-              </div>
-              <Link href="/dashboard/kollisionspruefung">
-                <Button size="sm" variant="outline">
-                  {t("cockpit.check")}
-                </Button>
-              </Link>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-[color:var(--ds-border)] px-3 py-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <FileText size={16} className="shrink-0 text-[color:var(--ds-text-muted)]" />
-                <span className="truncate text-sm text-[color:var(--ds-text)]">
-                  {t("cockpit.documents")}
-                </span>
-              </div>
-              <Link href="/dashboard/analyze">
-                <Button size="sm" variant="outline">
-                  {t("cockpit.analyze")}
-                </Button>
-              </Link>
-            </div>
-            <div className="rounded-lg bg-[color:var(--ds-surface-2)] px-3 py-3 text-xs leading-relaxed text-[color:var(--ds-text-muted)]">
-              {data.stats
-                ? `${data.stats.total_pages} ${t("cockpit.brain_pages")} · ${data.stats.total_queries} ${t("cockpit.brain_queries")}`
-                : t("cockpit.brain_degraded")}
-            </div>
-          </div>
-        </QueuePanel>
+        <AIActivityFeed
+          reviews={data.pendingReviews}
+          agentActions={data.pendingReviews.filter((p) => p.type === "agent_action")}
+        />
       </div>
+
+      {/* Kanzlei Insights — Tremor Charts */}
+      <KanzleiInsights />
 
       {/* Recent Queries */}
       {data.recent.length > 0 && (

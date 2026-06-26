@@ -46,6 +46,7 @@ import {
   Archive,
   RotateCcw,
   CloudUpload,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -200,11 +201,31 @@ const STATUS_CONFIG: Record<
 const TABS = [
   { key: "overview", labelKey: "cases.detail_tab_overview", icon: FileText },
   { key: "documents", labelKey: "cases.detail_tab_documents", icon: FileText },
-  { key: "evidence", labelKey: "cases.detail_tab_evidence", icon: ShieldAlert },
   { key: "deadlines_tasks", labelKey: "cases.detail_tab_deadlines_tasks", icon: ListChecks },
+  { key: "evidence", labelKey: "cases.detail_tab_evidence", icon: ShieldAlert },
   { key: "strategy", labelKey: "cases.detail_tab_strategy", icon: Lightbulb },
   { key: "billing", labelKey: "cases.detail_tab_billing", icon: Receipt },
   { key: "activity", labelKey: "cases.detail_tab_activity", icon: ShieldCheck },
+];
+
+const WORKSPACE_TABS_DE: Array<{ key: string; label: string; icon: React.ElementType }> = [
+  { key: "overview", label: "Übersicht", icon: FileText },
+  { key: "documents", label: "Dokumente", icon: FolderOpen },
+  { key: "deadlines_tasks", label: "Fristen", icon: CalendarClock },
+  { key: "evidence", label: "Belege", icon: ShieldAlert },
+  { key: "strategy", label: "KI", icon: Sparkles },
+  { key: "billing", label: "Abrechnung", icon: Receipt },
+  { key: "activity", label: "Verlauf", icon: Activity },
+];
+
+const WORKSPACE_TABS_EN: Array<{ key: string; label: string; icon: React.ElementType }> = [
+  { key: "overview", label: "Overview", icon: FileText },
+  { key: "documents", label: "Documents", icon: FolderOpen },
+  { key: "deadlines_tasks", label: "Deadlines", icon: CalendarClock },
+  { key: "evidence", label: "Evidence", icon: ShieldAlert },
+  { key: "strategy", label: "AI", icon: Sparkles },
+  { key: "billing", label: "Billing", icon: Receipt },
+  { key: "activity", label: "Activity", icon: Activity },
 ];
 
 function parseCaseDetail(page: BrainPage): CaseDetail {
@@ -1679,104 +1700,83 @@ export default function CaseDetailPage() {
           </div>
         )}
       </div>
-      {/* Header */}
-      <div className="shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6 py-4">
-        <div className="mb-3 flex items-center gap-2">
+      {/* Workspace Header — Linear-style compact bar */}
+      <div className="shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            aria-label={t("aria.back_to_cases")}
+            className="flex items-center gap-1 text-[13px] text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>{lang === "en" ? "Home" : "Home"}</span>
+          </Link>
+          <ChevronRight size={12} className="text-[color:var(--ds-text-subtle)]" />
           <Link
             href="/dashboard/cases"
-            aria-label={t("aria.back_to_cases")}
-            className="text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text-muted)]"
+            className="text-[13px] text-[color:var(--ds-text-muted)] transition-colors hover:text-[color:var(--ds-text)]"
           >
-            <ArrowLeft size={16} aria-hidden="true" />
-          </Link>
-          <span className="text-xs text-[color:var(--ds-text-muted)]">
             {t("cases.detail_breadcrumb")}
+          </Link>
+          <ChevronRight size={12} className="text-[color:var(--ds-text-subtle)]" />
+          <span className="truncate text-[13px] font-medium text-[color:var(--ds-text)]">
+            {caseData.title}
           </span>
-          <ChevronRight size={12} className="text-[color:var(--ds-text-muted)]" />
-          <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">
+          <span className="shrink-0 font-mono text-[11px] text-[color:var(--ds-text-subtle)]">
             {caseData.caseNumber}
           </span>
-        </div>
-
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-xl border",
-                STATUS_BG[statusCfg.color],
-                STATUS_BORDER[statusCfg.color]
-              )}
-              aria-hidden="true"
-            >
-              <StatusIcon size={22} className={STATUS_TEXT[statusCfg.color]} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-[color:var(--ds-text)]">{caseData.title}</h1>
-              <div className="mt-1 flex items-center gap-2">
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "border text-xs",
-                    caseData.priority === "critical"
-                      ? "border-red-500/20 bg-red-500/10 text-red-600"
-                      : caseData.priority === "high"
-                        ? "border-amber-500/20 bg-amber-500/10 text-amber-600"
-                        : caseData.priority === "low"
-                          ? "border-gray-500/20 bg-gray-500/10 text-gray-400"
-                          : "border-blue-500/20 bg-blue-500/10 text-blue-600"
-                  )}
-                >
-                  {caseData.priority}
-                </Badge>
-                {caseData.legalArea && (
-                  <span className="flex items-center gap-1 text-xs text-[color:var(--ds-text-muted)]">
-                    <Scale size={10} />
-                    {caseData.legalArea}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <Badge
-              variant="default"
-              className={cn("border text-xs", statusBadgeClasses(statusCfg.color))}
-            >
-              {t(statusCfg.labelKey as DashboardKey)}
-            </Badge>
+          <span
+            className={cn(
+              "ml-1 h-1.5 w-1.5 shrink-0 rounded-full",
+              statusCfg.color === "emerald"
+                ? "bg-emerald-500"
+                : statusCfg.color === "blue"
+                  ? "bg-blue-500"
+                  : statusCfg.color === "amber"
+                    ? "bg-amber-500"
+                    : statusCfg.color === "red"
+                      ? "bg-red-500"
+                      : statusCfg.color === "orange"
+                        ? "bg-orange-500"
+                        : "bg-gray-400"
+            )}
+            aria-hidden
+          />
+          <div className="ml-auto flex items-center gap-2">
             {activeUsers.length > 0 && (
-              <div className="mt-1.5 flex items-center justify-end gap-1">
-                {activeUsers.slice(0, 4).map((u) => (
+              <div className="flex items-center gap-1">
+                {activeUsers.slice(0, 3).map((u) => (
                   <div
                     key={u.userId}
-                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-[color:var(--ds-surface)] bg-emerald-500/20 text-[10px] font-medium text-emerald-600"
-                    title={`${u.email} ist gerade hier aktiv`}
+                    className="flex h-5 w-5 items-center justify-center rounded-full border border-[color:var(--ds-surface)] bg-emerald-500/20 text-[9px] font-medium text-emerald-600"
+                    title={`${u.email} ${lang === "en" ? "is active" : "ist aktiv"}`}
                   >
                     {u.email.slice(0, 2).toUpperCase()}
                   </div>
                 ))}
-                {activeUsers.length > 4 && (
-                  <span className="text-[10px] text-[color:var(--ds-text-muted)]">
-                    +{activeUsers.length - 4}
+                {activeUsers.length > 3 && (
+                  <span className="text-[10px] text-[color:var(--ds-text-subtle)]">
+                    +{activeUsers.length - 3}
                   </span>
                 )}
               </div>
             )}
-            {caseData.estimatedValue && (
-              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
-                {t("cases.detail_streitwert")}: {caseData.estimatedValue.min.toLocaleString()}–
-                {caseData.estimatedValue.max.toLocaleString()} {caseData.estimatedValue.currency}
-              </p>
+            {caseData.status !== "archived" && (
+              <button
+                onClick={() => setShowStatusDialog(true)}
+                className="rounded-md border border-[color:var(--ds-border)] px-2 py-1 text-[11px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+              >
+                {t(statusCfg.labelKey as DashboardKey)}
+              </button>
             )}
           </div>
         </div>
 
-        {/* Meta bar */}
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
+        {/* Meta bar — inline, subtle */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--ds-text-subtle)]">
           {caseData.clientName && (
             <span className="flex items-center gap-1">
               <Users size={10} />
-              {t("cases.detail_client")}:{" "}
               {caseData.clientSlug ? (
                 <Link
                   href={`/dashboard/contacts?highlight=${encodeURIComponent(caseData.clientSlug)}`}
@@ -1785,15 +1785,14 @@ export default function CaseDetailPage() {
                   {caseData.clientName}
                 </Link>
               ) : (
-                <span className="text-[color:var(--ds-text-muted)]">{caseData.clientName}</span>
+                <span>{caseData.clientName}</span>
               )}
             </span>
           )}
           {caseData.opponentName && (
             <span className="flex items-center gap-1">
               <ShieldAlert size={10} />
-              {t("cases.detail_opponent")}:{" "}
-              <span className="text-[color:var(--ds-text-muted)]">{caseData.opponentName}</span>
+              {caseData.opponentName}
             </span>
           )}
           {caseData.courtName && (
@@ -1903,32 +1902,33 @@ export default function CaseDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-6">
-        <div className="flex gap-1 overflow-x-auto">
-          {TABS.map((tab) => {
+      {/* Workspace Tabs — Linear-style compact */}
+      <div className="shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4">
+        <div className="flex gap-0.5 overflow-x-auto">
+          {(lang === "en" ? WORKSPACE_TABS_EN : WORKSPACE_TABS_DE).map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                  activeTab === tab.key
+                  "flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-[border-color,color] duration-120 ease-[var(--ds-ease-smooth)]",
+                  isActive
                     ? "brand-text border-[color:var(--brand-primary)]"
                     : "border-transparent text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
                 )}
               >
-                <Icon size={14} />
-                {t(tab.labelKey as DashboardKey)}
+                <Icon size={13} />
+                {tab.label}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      {/* Workspace Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-3">
         {activeTab === "overview" && (
           <div className="max-w-3xl space-y-4">
             {/* Quick Actions */}
