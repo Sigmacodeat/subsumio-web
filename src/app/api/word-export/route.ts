@@ -1,106 +1,76 @@
-/**
- * Gap 13: Word-Export API Endpoint.
- *
- * POST /api/word-export
- * Body: { slug: string, title?: string }
- *
- * Lädt eine Brain-Page, konvertiert den compiled_truth (Markdown) zu .docx,
- * und gibt die Datei als Download zurück.
- */
-
-import { NextRequest, NextResponse } from "next/server";
-import { generateDocx } from "@/lib/docx-export";
+import { z } from "zod";
+import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { generateDocx } from "@/lib/docx-export";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const slug = body.slug;
-    const title = body.title || "Subsumio Dokument";
-    const directMarkdown = body.markdown;
-    const formData = body.formData;
+const postSchema = z.object({
+  slug: z.string().optional(),
+  title: z.string().optional(),
+  markdown: z.string().optional(),
+  formData: z.record(z.unknown()).optional(),
+});
 
-    let md: string;
-    let caseRef = "";
-
-    if (directMarkdown && typeof directMarkdown === "string") {
-      // Direct markdown mode — build a formatted document from the text + form data
-      md = buildMarkdownFromDraft(directMarkdown, title, formData);
-    } else if (slug && typeof slug === "string") {
-      // Fetch page from engine
-      const engineRes = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(slug)}`, {
-        headers: {
-          Authorization: req.headers.get("authorization") ?? "",
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!engineRes.ok) {
-        return NextResponse.json(
-          { error: `Failed to fetch page: ${engineRes.status}` },
-          { status: engineRes.status }
-        );
-      }
-
-      const page = await engineRes.json();
-      md = String(page.compiled_truth ?? page.content ?? "");
-      caseRef = String(page.frontmatter?.case_ref ?? "");
-    } else {
-      return NextResponse.json({ error: "either slug or markdown is required" }, { status: 400 });
-    }
-
-    const docxBytes = await generateDocx(md, {
-      title,
-      caseRef: caseRef || undefined,
-    });
-
-    // Return as downloadable .docx file
-    const filename = `${title.replace(/[^a-zA-Z0-9äöüßÄÖÜ]/g, "_").slice(0, 60)}.docx`;
-    return new NextResponse(Buffer.from(docxBytes), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Content-Length": String(docxBytes.byteLength),
-      },
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-/**
- * Build a formatted Markdown document from draft text and form metadata.
- * Produces proper headings, metadata block, and AI notice.
- */
 function buildMarkdownFromDraft(
-  text: string,
+  md: string,
   title: string,
   formData?: Record<string, unknown>
 ): string {
-  const lines: string[] = [];
-  lines.push(`# ${title}`);
-  lines.push("");
+  let result = `# ${title}\n\n${md}`;
   if (formData) {
-    const klaeger = String(formData.klaeger ?? "—");
-    const beklagter = String(formData.beklagter ?? "—");
-    const legalBasis = String(formData.legalBasis ?? "—");
-    lines.push(`**Kläger/Absender:** ${klaeger}`);
-    lines.push("");
-    lines.push(`**Beklagter/Empfänger:** ${beklagter}`);
-    lines.push("");
-    lines.push(`**Rechtsgrundlage:** ${legalBasis}`);
-    lines.push("");
-    lines.push("---");
-    lines.push("");
+    const entries = Object.entries(formData).filter(([, v]) => v != null && v !== "");
+    if (entries.length > 0) {
+      result += "\n\n---\n\n## Metadaten\n\n";
+      for (const [key, value] of entries) {
+        result += `- **${key}:** ${String(value)}\n`;
+      }
+    }
   }
-  lines.push(text);
-  lines.push("");
-  lines.push("---");
-  lines.push("");
-  lines.push(
-    "> Dieses Dokument wurde mit Unterstützung von Subsumio Legal AI erstellt und erfordert anwaltliche Prüfung (§ 8 RVG, § 3 RAO)."
-  );
-  return lines.join("\n");
+  return result;
 }
+
+export const POST = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "standard",
+    body: postSchema,
+  },
+  async (ctx, body) => {
+    let md: string;
+    let caseRef = "";
+
+    if (body.markdown && typeof body.markdown === "string") {
+      md = buildMarkdownFromDraft(body.markdown, body.title || "Subsumio Dokument", body.formData);
+    } else if (body.slug && typeof body.slug === "string") {
+      const res = await fetch(`${ENGINE_URL}/api/pages/${encodeURIComponent(body.slug)}`, {
+        headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) {
+        return Response.json({ error: "page_not_found" }, { status: 404 });
+      }
+      const page = await res.json();
+      md = String(page.compiled_truth ?? page.content ?? "");
+      const fm = page.frontmatter ?? {};
+      caseRef = String(fm.case_number ?? fm.case_ref ?? "");
+    } else {
+      return Response.json({ error: "slug or markdown is required" }, { status: 400 });
+    }
+
+    const title = body.title || "Subsumio Dokument";
+    const docx = await generateDocx(md, { title, caseRef });
+    const buf = docx.buffer.slice(
+      docx.byteOffset,
+      docx.byteOffset + docx.byteLength
+    ) as ArrayBuffer;
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
+    return new Response(blob, {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(title)}.docx"`,
+      },
+    });
+  }
+);

@@ -1,11 +1,5 @@
-/**
- * Gap 14: Permissions & Governance API.
- *
- * GET /api/legal/permissions — list all roles + permissions
- * POST /api/legal/permissions/check — check if user has permission
- */
-
-import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createHandler } from "@/lib/api-handler";
 import {
   getRoles,
   checkPermission,
@@ -15,41 +9,48 @@ import {
   type PipelinePermission,
 } from "@/lib/legal/pipeline-permissions";
 
-export async function GET() {
-  return NextResponse.json({
-    roles: getRoles(),
-    permissions: [
-      "pipeline:trigger",
-      "pipeline:resume",
-      "pipeline:view",
-      "pipeline:export",
-      "pipeline:delete",
-      "pipeline:config",
-      "pipeline:review",
-      "pipeline:override",
-    ] as PipelinePermission[],
-  });
-}
+const ALL_PERMISSIONS: PipelinePermission[] = [
+  "pipeline:trigger",
+  "pipeline:resume",
+  "pipeline:view",
+  "pipeline:export",
+  "pipeline:delete",
+  "pipeline:config",
+  "pipeline:review",
+  "pipeline:override",
+];
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
+export const GET = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "standard",
+    cacheMaxAge: 60,
+  },
+  async () => {
+    return Response.json({ roles: getRoles(), permissions: ALL_PERMISSIONS });
+  }
+);
+
+const postSchema = z.object({
+  permission: z.string().min(1),
+});
+
+export const POST = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "standard",
+    body: postSchema,
+  },
+  async (ctx, body) => {
+    const headers = new Headers(ctx.headers as Record<string, string>);
+    const user = getUserFromHeaders(headers) ?? DEFAULT_USER;
     const permission = body.permission as PipelinePermission;
-    const user = getUserFromHeaders(req.headers) ?? DEFAULT_USER;
-
-    if (!permission) {
-      return NextResponse.json({ error: "permission is required" }, { status: 400 });
-    }
-
     const hasPermission = checkPermission(user, permission);
-    return NextResponse.json({
+    return Response.json({
       user: { id: user.id, email: user.email, role: user.role },
       permission,
       granted: hasPermission,
       all_permissions: getUserPermissions(user),
     });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+);

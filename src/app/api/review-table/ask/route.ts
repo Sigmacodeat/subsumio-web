@@ -1,76 +1,14 @@
-/**
- * Gap 6: Ask Over Review API Endpoint.
- *
- * POST /api/review-table/ask
- * Body: { case_slug, table_title, query, columns, rows }
- *
- * Erlaubt dem Anwalt, Fragen über eine Review-Tabelle zu stellen
- * (Harvey-Feature: "Ask questions over any review table to summarize,
- * compare, or isolate key insights").
- */
-
-import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { case_slug, table_title, query, columns, rows } = body;
-
-    if (!query || typeof query !== "string") {
-      return NextResponse.json({ error: "query is required" }, { status: 400 });
-    }
-    if (!Array.isArray(columns) || !Array.isArray(rows)) {
-      return NextResponse.json({ error: "columns and rows are required" }, { status: 400 });
-    }
-
-    // Build a structured prompt from the table data
-    const tableText = formatTableForPrompt(columns, rows);
-    const prompt = `Du bist ein Legal AI Assistant. Ein Anwalt stellt eine Frage über eine Review-Tabelle.
-
-TABELLE: ${table_title}
-AKTE: ${case_slug || "—"}
-
-SPALTEN: ${columns.join(", ")}
-
-DATEN:
-${tableText}
-
-FRAGE DES ANWALTS: ${query}
-
-Antworte präzise und strukturiert. Beziehe dich auf konkrete Zeilen und Werte.
-Wenn die Frage nicht beantwortet werden kann, erkläre warum.
-Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`;
-
-    // Forward to engine chat endpoint
-    const engineRes = await fetch(`${ENGINE_URL}/api/chat`, {
-      method: "POST",
-      headers: {
-        Authorization: req.headers.get("authorization") ?? "",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        brain_id: process.env.LEGAL_BRAIN_ID ?? "default",
-        model: "anthropic:claude-sonnet-4-6",
-        max_turns: 5,
-      }),
-    });
-
-    if (!engineRes.ok) {
-      // Fallback: return a simple structured answer
-      const answer = generateSimpleAnswer(query, columns, rows, table_title);
-      return NextResponse.json({ answer });
-    }
-
-    const result = await engineRes.json();
-    const answer = String(result.response ?? result.text ?? result.answer ?? "");
-    return NextResponse.json({ answer });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
+const postSchema = z.object({
+  case_slug: z.string().optional(),
+  table_title: z.string().optional(),
+  query: z.string().min(1),
+  columns: z.array(z.string()),
+  rows: z.array(z.record(z.unknown())),
+});
 
 function formatTableForPrompt(columns: string[], rows: Array<Record<string, unknown>>): string {
   const header = `| ${columns.join(" | ")} |`;
@@ -96,12 +34,10 @@ function generateSimpleAnswer(
   title: string
 ): string {
   const lowerQuery = query.toLowerCase();
-  // Simple heuristics
   if (lowerQuery.includes("wie viele") || lowerQuery.includes("anzahl")) {
     return `Die Tabelle "${title}" enthält ${rows.length} Einträge.\n\nDiese Information ersetzt keine anwaltliche Prüfung.`;
   }
   if (lowerQuery.includes("höchst") || lowerQuery.includes("max") || lowerQuery.includes("größt")) {
-    // Find numeric max in first column
     let maxVal = -Infinity;
     let maxRow: Record<string, unknown> | null = null;
     for (const row of rows) {
@@ -122,3 +58,54 @@ function generateSimpleAnswer(
   }
   return `Ihre Frage "${query}" zur Tabelle "${title}" kann mit den verfügbaren Daten nicht automatisch beantwortet werden. Bitte prüfen Sie die Tabelle manuell.\n\nDiese Information ersetzt keine anwaltliche Prüfung.`;
 }
+
+export const POST = createHandler(
+  {
+    action: "brain.read",
+    rateTier: "heavy",
+    body: postSchema,
+  },
+  async (ctx, body) => {
+    const tableText = formatTableForPrompt(body.columns, body.rows);
+    const prompt = `Du bist ein Legal AI Assistant. Ein Anwalt stellt eine Frage über eine Review-Tabelle.
+
+TABELLE: ${body.table_title}
+AKTE: ${body.case_slug || "—"}
+
+SPALTEN: ${body.columns.join(", ")}
+
+DATEN:
+${tableText}
+
+FRAGE DES ANWALTS: ${body.query}
+
+Antworte präzise und strukturiert. Beziehe dich auf konkrete Zeilen und Werte.
+Wenn die Frage nicht beantwortet werden kann, erkläre warum.
+Beende die Antwort mit: "Diese Information ersetzt keine anwaltliche Prüfung."`;
+
+    const engineRes = await fetch(`${ENGINE_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...ctx.headers },
+      body: JSON.stringify({
+        prompt,
+        brain_id: ctx.brainId,
+        model: "anthropic:claude-sonnet-4-6",
+        max_turns: 5,
+      }),
+    });
+
+    if (!engineRes.ok) {
+      const answer = generateSimpleAnswer(
+        body.query,
+        body.columns,
+        body.rows,
+        body.table_title ?? ""
+      );
+      return Response.json({ answer });
+    }
+
+    const result = await engineRes.json();
+    const answer = String(result.response ?? result.text ?? result.answer ?? "");
+    return Response.json({ answer });
+  }
+);
