@@ -97,7 +97,14 @@ function mapJob(j: Record<string, unknown>): AgentJob {
       ? rawStatus
       : "waiting"
   ) as AgentStatus;
-  const role = inferRole({ name, subagentDef });
+  const explicitRole = j.role ? String(j.role) : undefined;
+  const role = (
+    ["planning", "review", "summary", "research", "draft", "supervisor", "custom"].includes(
+      explicitRole ?? ""
+    )
+      ? explicitRole
+      : inferRole({ name, subagentDef })
+  ) as AgentRole;
   return {
     id: Number(j.id),
     name,

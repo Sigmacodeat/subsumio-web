@@ -43,6 +43,7 @@ async function submitAndWait(
     body: JSON.stringify({
       prompt: RUNDOWN_PROMPT,
       name: "rundown",
+      role: "planning",
       force_specialists: ["legal-analyst", "legal-deadline-extractor"],
     }),
   });

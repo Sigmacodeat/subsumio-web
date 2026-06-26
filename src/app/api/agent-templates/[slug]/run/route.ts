@@ -59,8 +59,12 @@ export const POST = createHandler(
       : promptTemplate;
 
     // 3. Construct supervisor data from template frontmatter
-    const supervisorData: Record<string, unknown> = { prompt };
+    const supervisorData: Record<string, unknown> = {
+      prompt,
+      name: String(template.title ?? slug),
+    };
     if (fm.model) supervisorData.supervisor_model = String(fm.model);
+    if (fm.role) supervisorData.role = String(fm.role);
     if (fm.skip_critic) supervisorData.skip_critic = true;
     if (Array.isArray(fm.force_specialists))
       supervisorData.force_specialists = fm.force_specialists;

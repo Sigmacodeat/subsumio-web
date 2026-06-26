@@ -12,6 +12,9 @@ const updateSchema = z
     name: z.string().min(1, "name_required").max(120, "name_too_long").optional(),
     description: z.string().max(500).optional(),
     model: z.string().optional(),
+    role: z
+      .enum(["planning", "review", "summary", "research", "draft", "supervisor", "custom"])
+      .optional(),
     prompt_template: z.string().min(1, "prompt_required").max(20_000, "prompt_too_long").optional(),
     steps: z
       .array(
@@ -55,6 +58,7 @@ export const GET = createHandler(
         name: String(p.title ?? slug),
         description: String(fm.description ?? ""),
         model: fm.model ? String(fm.model) : undefined,
+        role: fm.role ? String(fm.role) : undefined,
         prompt_template: String(p.content ?? ""),
         steps: Array.isArray(fm.steps) ? fm.steps : [],
         playbook_ref: fm.playbook_ref ? String(fm.playbook_ref) : undefined,
@@ -94,6 +98,7 @@ export const PATCH = createHandler(
     const frontmatter: Record<string, unknown> = {};
     if (body.description !== undefined) frontmatter.description = body.description;
     if (body.model !== undefined) frontmatter.model = body.model;
+    if (body.role !== undefined) frontmatter.role = body.role;
     if (body.steps !== undefined) frontmatter.steps = body.steps;
     if (body.playbook_ref !== undefined) frontmatter.playbook_ref = body.playbook_ref;
     if (body.force_specialists !== undefined)

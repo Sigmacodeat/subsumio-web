@@ -11,6 +11,9 @@ const createSchema = z
     name: z.string().min(1, "name_required").max(120, "name_too_long"),
     description: z.string().max(500, "description_too_long").optional().default(""),
     model: z.string().optional(),
+    role: z
+      .enum(["planning", "review", "summary", "research", "draft", "supervisor", "custom"])
+      .optional(),
     prompt_template: z.string().min(1, "prompt_required").max(20_000, "prompt_too_long"),
     steps: z
       .array(
@@ -77,6 +80,7 @@ export const GET = createHandler(
           name: String(p.title ?? p.slug ?? ""),
           description: String(fm.description ?? ""),
           model: fm.model ? String(fm.model) : undefined,
+          role: fm.role ? String(fm.role) : undefined,
           prompt_template: String(p.content ?? ""),
           steps: Array.isArray(fm.steps) ? fm.steps : [],
           playbook_ref: fm.playbook_ref ? String(fm.playbook_ref) : undefined,
@@ -119,6 +123,7 @@ export const POST = createHandler(
       skip_critic: body.skip_critic,
     };
     if (body.model) frontmatter.model = body.model;
+    if (body.role) frontmatter.role = body.role;
     if (body.steps && body.steps.length > 0) frontmatter.steps = body.steps;
     if (body.playbook_ref) frontmatter.playbook_ref = body.playbook_ref;
     if (body.force_specialists) frontmatter.force_specialists = body.force_specialists;

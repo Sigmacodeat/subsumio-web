@@ -46,6 +46,7 @@ export const POST = createHandler(
         body: JSON.stringify({
           prompt: RUNDOWN_PROMPT,
           name: "rundown",
+          role: "planning",
           force_specialists: ["legal-analyst", "legal-deadline-extractor"],
         }),
       });
