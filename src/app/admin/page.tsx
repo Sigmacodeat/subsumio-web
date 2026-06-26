@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/server";
 import { getStore } from "@/lib/auth/store";
 import { listMarketingLeads } from "@/lib/marketing/leads";
+import { BILLABLE_PLANS } from "@/lib/billing/plans";
 import AuditTrail from "@/components/admin/audit-trail";
 
 export const metadata = { title: "Admin" };
@@ -65,10 +66,10 @@ export default async function AdminPage({
   const leads = await listMarketingLeads();
   const paying = users.filter((u) => u.plan !== "free");
   const referred = users.filter((u) => u.referredBy);
-  const mrr = paying.reduce(
-    (sum, u) => sum + (u.plan === "pro" ? 79 : u.plan === "team" ? 290 : 0),
-    0
-  );
+  const mrr = paying.reduce((sum, u) => {
+    const plan = BILLABLE_PLANS[u.plan as "pro" | "team"];
+    return sum + (plan?.monthlyEur ?? 0);
+  }, 0);
 
   const referralCounts = new Map<string, number>();
   for (const u of referred) {
