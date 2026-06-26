@@ -30,6 +30,8 @@ import {
   useRunAgentTemplate,
   SPECIALISTS,
   MODEL_OPTIONS,
+  AGENT_ROLES,
+  type AgentRole,
   type AgentTemplate,
   type AgentStep,
   type AgentTemplateInput,
@@ -42,6 +44,7 @@ interface BuilderForm {
   name: string;
   description: string;
   model: string;
+  role: AgentRole | "";
   prompt_template: string;
   steps: AgentStep[];
   playbook_ref: string;
@@ -53,6 +56,7 @@ const EMPTY_FORM: BuilderForm = {
   name: "",
   description: "",
   model: "",
+  role: "",
   prompt_template: "",
   steps: [],
   playbook_ref: "",
@@ -65,6 +69,7 @@ function templateToForm(t: AgentTemplate): BuilderForm {
     name: t.name,
     description: t.description ?? "",
     model: t.model ?? "",
+    role: t.role ?? "",
     prompt_template: t.prompt_template,
     steps: t.steps ?? [],
     playbook_ref: t.playbook_ref ?? "",
@@ -78,6 +83,7 @@ function formToInput(form: BuilderForm): AgentTemplateInput {
     name: form.name,
     description: form.description,
     model: form.model || undefined,
+    role: form.role || undefined,
     prompt_template: form.prompt_template,
     steps: form.steps.length > 0 ? form.steps : undefined,
     playbook_ref: form.playbook_ref || undefined,
@@ -316,6 +322,11 @@ function TemplateCard({
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        {template.role && (
+          <span className="brand-soft brand-text brand-border rounded-full border px-1.5 py-0.5 text-xs font-medium">
+            {AGENT_ROLES.find((r) => r.value === template.role)?.label ?? template.role}
+          </span>
+        )}
         {template.model && (
           <span className="rounded-full bg-[color:var(--ds-hover)] px-1.5 py-0.5 font-mono text-xs text-[color:var(--ds-text-muted)]">
             {template.model}
@@ -413,7 +424,7 @@ function RunDialog({
 // ── Main Agent Builder Component ──────────────────────────────
 
 export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number) => void }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -799,6 +810,28 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
                 />
               </div>
 
+              {/* Agent Role */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+                  {t("builder.role_label")}
+                </label>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value as AgentRole | "" })}
+                  className="focus:brand-border w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:outline-none"
+                >
+                  <option value="">{t("builder.role_auto")}</option>
+                  {AGENT_ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label} — {r.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-[color:var(--ds-text-subtle)]">
+                  {t("builder.role_hint")}
+                </p>
+              </div>
+
               {/* Model */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
@@ -950,6 +983,16 @@ export function AgentBuilder({ onRunComplete }: { onRunComplete?: (jobId: number
 
               {/* Metadata */}
               <div className="grid grid-cols-2 gap-3">
+                {selected.role && (
+                  <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
+                    <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">
+                      {t("builder.role_label")}
+                    </div>
+                    <div className="text-sm font-medium text-[color:var(--ds-text)]">
+                      {AGENT_ROLES.find((r) => r.value === selected.role)?.label ?? selected.role}
+                    </div>
+                  </div>
+                )}
                 {selected.model && (
                   <div className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-3">
                     <div className="mb-1 text-xs text-[color:var(--ds-text-muted)]">Modell</div>

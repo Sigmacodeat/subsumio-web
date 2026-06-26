@@ -24,7 +24,7 @@ import {
 
 describe("Fork Drift Strategy — Structure", () => {
   it("has correct upstream and fork repos", () => {
-    expect(FORK_DRIFT_STRATEGY.upstream_repo).toBe("github:garrytan/gbrain");
+    expect(FORK_DRIFT_STRATEGY.upstream_repo).toBe("subsumio-engine");
     expect(FORK_DRIFT_STRATEGY.fork_repo).toBe("github:Sigmacodeat/subsumio-web");
   });
 
@@ -145,7 +145,9 @@ describe("Fork Drift Strategy — Pinned Versions", () => {
 
   it("pinned versions are ordered by date", () => {
     for (let i = 1; i < REGRESSION_PINNED_VERSIONS.length; i++) {
-      expect(REGRESSION_PINNED_VERSIONS[i].pinned_at >= REGRESSION_PINNED_VERSIONS[i - 1].pinned_at).toBe(true);
+      expect(
+        REGRESSION_PINNED_VERSIONS[i].pinned_at >= REGRESSION_PINNED_VERSIONS[i - 1].pinned_at
+      ).toBe(true);
     }
   });
 });
@@ -229,7 +231,7 @@ describe("Fork Drift Strategy — Validation", () => {
 describe("Fork Drift Strategy — Summary", () => {
   it("getDriftStrategySummary returns correct stats", () => {
     const summary = getDriftStrategySummary();
-    expect(summary.upstream_repo).toBe("github:garrytan/gbrain");
+    expect(summary.upstream_repo).toBe("subsumio-engine");
     expect(summary.fork_repo).toBe("github:Sigmacodeat/subsumio-web");
     expect(summary.sync_cadence).toBe("biweekly");
     expect(summary.total_classified_files).toBe(FORK_FILE_CLASSIFICATIONS.length);

@@ -4483,6 +4483,23 @@ export const D = {
   "reports.active_now": { de: "Aktiv jetzt", en: "Active Now" },
   "reports.total_cost": { de: "Gesamtkosten", en: "Total Cost" },
   "reports.this_week": { de: "Diese Woche", en: "This Week" },
+
+  // ── Dashboard Rundown Widget ──
+  "rundown.widget_title": { de: "Heutiges Kanzlei-Briefing", en: "Today's Firm Briefing" },
+  "rundown.widget_empty": {
+    de: "Noch kein Rundown für heute. Jetzt generieren?",
+    en: "No Rundown for today. Generate now?",
+  },
+  "rundown.widget_view_all": { de: "Alle Berichte ansehen", en: "View all reports" },
+  "rundown.widget_loading": { de: "Rundown wird geladen…", en: "Loading Rundown…" },
+
+  // ── Agent Builder: Role Selector ──
+  "builder.role_label": { de: "Agent-Rolle", en: "Agent Role" },
+  "builder.role_hint": {
+    de: "Bestimmt Kategorisierung und Filterung in Berichten",
+    en: "Determines categorization and filtering in reports",
+  },
+  "builder.role_auto": { de: "Automatisch (aus Name)", en: "Auto (from name)" },
 } satisfies Record<string, BiString>;
 
 export type DashboardKey = keyof typeof D;

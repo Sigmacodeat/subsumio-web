@@ -106,7 +106,7 @@ describe("generateAllK6Scripts", () => {
 
   it("each script is non-empty", () => {
     const scripts = generateAllK6Scripts();
-    for (const [script] of Object.entries(scripts)) {
+    for (const [, script] of Object.entries(scripts)) {
       expect(script.length).toBeGreaterThan(100);
     }
   });

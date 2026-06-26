@@ -29,7 +29,7 @@ import {
 describe("Legal Schema Pack — Structure", () => {
   it("has correct id and version", () => {
     expect(LEGAL_SCHEMA_PACK.id).toBe("subsumio-legal");
-    expect(LEGAL_SCHEMA_PACK.version).toBe("2.1.0");
+    expect(LEGAL_SCHEMA_PACK.version).toBe("2.2.0");
   });
 
   it("has 12+ page types", () => {
@@ -120,8 +120,20 @@ describe("Legal Schema Pack — Validation", () => {
     const pack = {
       ...LEGAL_SCHEMA_PACK,
       migrations: [
-        { from_version: "1.0.0", to_version: "1.1.0", description: "first", ddl: [], breaking: false },
-        { from_version: "2.0.0", to_version: "2.1.0", description: "gap", ddl: [], breaking: false },
+        {
+          from_version: "1.0.0",
+          to_version: "1.1.0",
+          description: "first",
+          ddl: [],
+          breaking: false,
+        },
+        {
+          from_version: "2.0.0",
+          to_version: "2.1.0",
+          description: "gap",
+          ddl: [],
+          breaking: false,
+        },
       ],
     };
     const result = validateSchemaPack(pack);
@@ -215,12 +227,12 @@ describe("Legal Schema Pack — Migrations", () => {
   });
 
   it("getMigrationPath returns empty for same version", () => {
-    const path = getMigrationPath(LEGAL_SCHEMA_PACK, "2.1.0", "2.1.0");
+    const path = getMigrationPath(LEGAL_SCHEMA_PACK, "2.2.0", "2.2.0");
     expect(path).toHaveLength(0);
   });
 
   it("getLatestVersion returns pack version", () => {
-    expect(getLatestVersion(LEGAL_SCHEMA_PACK)).toBe("2.1.0");
+    expect(getLatestVersion(LEGAL_SCHEMA_PACK)).toBe("2.2.0");
   });
 
   it("needsMigration returns true for old version", () => {
@@ -228,12 +240,14 @@ describe("Legal Schema Pack — Migrations", () => {
   });
 
   it("needsMigration returns false for current version", () => {
-    expect(needsMigration(LEGAL_SCHEMA_PACK, "2.1.0")).toBe(false);
+    expect(needsMigration(LEGAL_SCHEMA_PACK, "2.2.0")).toBe(false);
   });
 
   it("migrations are ordered correctly", () => {
     for (let i = 1; i < LEGAL_SCHEMA_MIGRATIONS.length; i++) {
-      expect(LEGAL_SCHEMA_MIGRATIONS[i].from_version).toBe(LEGAL_SCHEMA_MIGRATIONS[i - 1].to_version);
+      expect(LEGAL_SCHEMA_MIGRATIONS[i].from_version).toBe(
+        LEGAL_SCHEMA_MIGRATIONS[i - 1].to_version
+      );
     }
   });
 
@@ -246,7 +260,7 @@ describe("Legal Schema Pack — Migrations", () => {
 describe("Legal Schema Pack — Summary", () => {
   it("getSchemaPackSummary returns correct stats", () => {
     const summary = getSchemaPackSummary();
-    expect(summary.version).toBe("2.1.0");
+    expect(summary.version).toBe("2.2.0");
     expect(summary.page_type_count).toBe(LEGAL_PAGE_TYPES.length);
     expect(summary.link_verb_count).toBe(LEGAL_LINK_VERBS.length);
     expect(summary.entity_type_count).toBe(9);

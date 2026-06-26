@@ -195,7 +195,7 @@ describe("completeIteration", () => {
     let state = createLoopState("brain-1", config);
     state = startLoop(state, "user-1");
     state = completeIteration(state, "sync", "user-1", 8).state;
-    const { state: warning } = completeIteration(state, "sync", "user-1", 0.5);
+    const { warning } = completeIteration(state, "sync", "user-1", 0.5);
     expect(warning).toBe(true);
   });
 });

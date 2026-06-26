@@ -6,6 +6,7 @@ import { Briefcase, Upload, Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
 import { WidgetDashboard } from "@/components/dashboard/widget-dashboard";
+import { RundownWidget } from "@/components/dashboard/rundown-widget";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
@@ -186,6 +187,8 @@ export default function DashboardPage() {
       )}
 
       <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
+
+      <RundownWidget />
 
       <WidgetDashboard />
     </div>

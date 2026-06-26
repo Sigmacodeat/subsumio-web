@@ -77,7 +77,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Akten & Mandanten/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -87,10 +87,6 @@ describe("Sidebar accordion", () => {
       "href",
       "/dashboard/contacts"
     );
-    expect(screen.getByRole("link", { name: "Mandanten-Portal" })).toHaveAttribute(
-      "href",
-      "/dashboard/client-portal"
-    );
   });
 
   test("keeps only one workflow section open at a time", async () => {
@@ -98,7 +94,7 @@ describe("Sidebar accordion", () => {
     renderSidebar();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Akten & Mandanten/i })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
         "aria-expanded",
         "true"
       );
@@ -110,7 +106,7 @@ describe("Sidebar accordion", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Kommunikation/i }));
-    expect(screen.getByRole("button", { name: /Akten & Mandanten/i })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Mandanten & Parteien/i })).toHaveAttribute(
       "aria-expanded",
       "false"
     );

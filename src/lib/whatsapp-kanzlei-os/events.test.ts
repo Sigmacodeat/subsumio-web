@@ -31,7 +31,11 @@ describe("conversation events", () => {
       type: "text",
       text: "zeit 20m akt 2026-014 telefonat",
     };
-    const risk = classifyWhatsAppRisk({ text: message.text, messageType: message.type, senderRole: "lawyer" });
+    const risk = classifyWhatsAppRisk({
+      text: message.text,
+      messageType: message.type,
+      senderRole: "lawyer",
+    });
     const event = buildConversationEvent(
       { message, sender: identity(), normalizedText: message.text, risk, status: "received" },
       new Date("2026-06-20T12:00:00.000Z")
@@ -54,15 +58,26 @@ describe("conversation events", () => {
   });
 
   it("writes conversation events as mergeable brain pages", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const fetchImpl = vi.fn(
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
     const message: WhatsAppTextMessage = {
       id: "wamid.WRITE",
       from: "+491701234567",
       type: "text",
       text: "hilfe",
     };
-    const risk = classifyWhatsAppRisk({ text: message.text, messageType: message.type, senderRole: "lawyer" });
-    const event = buildConversationEvent({ message, sender: identity(), normalizedText: message.text, risk });
+    const risk = classifyWhatsAppRisk({
+      text: message.text,
+      messageType: message.type,
+      senderRole: "lawyer",
+    });
+    const event = buildConversationEvent({
+      message,
+      sender: identity(),
+      normalizedText: message.text,
+      risk,
+    });
 
     await writeConversationEvent("brain-1", event, fetchImpl as unknown as typeof fetch);
 
@@ -71,6 +86,6 @@ describe("conversation events", () => {
     const body = JSON.parse(String(init?.body));
     expect(body.type).toBe("conversation_event");
     expect(body.merge).toBe(true);
-    expect(body.frontmatter.intent).toBe("free_text");
+    expect(body.frontmatter.intent).toBe("help");
   });
 });
