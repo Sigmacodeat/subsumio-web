@@ -160,6 +160,7 @@ export function parseIntent(text: string): ParsedIntent {
   if (/^(nein|no|abbrechen|verwerfen|stopp|stop)$/i.test(trimmed)) return { kind: "cancel" };
   if (/^(hilfe|help|\?)$/i.test(trimmed)) return { kind: "help" };
 
+  // Natural-language time entry: "30 Minuten für Müller telefoniert", "1,5h akt 2026-014 Recherche"
   const minutesMatch = trimmed.match(/(\d+(?:[,.]\d+)?)\s*(h|std|stunden|m|min|minute|minuten)\b/i);
   if (minutesMatch) {
     const raw = parseFloat(minutesMatch[1].replace(",", "."));
@@ -177,6 +178,13 @@ export function parseIntent(text: string): ParsedIntent {
         .replace(minutesMatch[0], "")
         .replace(caseMatch?.[0] ?? "", "")
         .replace(/^\s*zeit\s*/i, "")
+        .replace(/\bfür\b/gi, "")
+        .replace(/\bhabe\s+(?:ich\s+)?/gi, "")
+        .replace(/\bgearbeitet\b/gi, "")
+        .replace(/\btelefoniert\b/gi, "Telefonat")
+        .replace(/\bgemailt\b/gi, "E-Mail")
+        .replace(/\bgeschrieben\b/gi, "Schriftsatz")
+        .replace(/\brecherchiert\b/gi, "Recherche")
         .trim() || "Zeiterfassung via WhatsApp";
     return caseRef
       ? {
@@ -189,26 +197,39 @@ export function parseIntent(text: string): ParsedIntent {
       : { kind: "free_text", text: trimmed };
   }
 
-  const expenseMatch = trimmed.match(
+  // Natural-language expense: "12,50 Euro für Kopien ausgelegt", "Auslage akt 2026-014: 45 EUR Fahrtkosten", "spesen akt 2026-014: 25,00", "kosten akt 2026-014: 50€ gerichtskosten", "kosten 50000"
+  // Triggers on explicit expense keywords (auslage/spesen/kosten) or the word "ausgelegt".
+  const expenseKeywordMatch = trimmed.match(
     /^(?:auslage|kosten|spesen)\s+(?:(?:akt|akte)\s+([^:]+):\s*)?(.+)$/i
   );
-  if (expenseMatch) {
-    const body = expenseMatch[2].trim();
-    const amountMatch = body.match(/(\d+(?:[,.]\d{1,2})?)\s*(?:euro|eur|€)?/i);
+  const naturalExpenseMatch = /\bausgelegt\b/i.test(trimmed);
+  if (expenseKeywordMatch || naturalExpenseMatch) {
+    // With an explicit keyword (auslage/spesen/kosten), a plain number is enough.
+    // Search inside the body (after the case ref) so the case number itself is not mistaken for the amount.
+    // Natural-language "ausgelegt" still requires a currency marker to avoid matching random numbers.
+    const searchSpace = expenseKeywordMatch ? expenseKeywordMatch[2] : trimmed;
+    const amountRegex = expenseKeywordMatch
+      ? /(\d+(?:[,.]\d{1,2})?)\s*(?:euro|eur|€)?/i
+      : /(\d+(?:[,.]\d{1,2})?)\s*(?:euro|eur|€)/i;
+    const amountMatch = searchSpace.match(amountRegex);
     if (!amountMatch) {
       return { kind: "free_text", text: trimmed };
     }
     const amount = Math.max(0, Number.parseFloat(amountMatch[1].replace(",", ".")));
+    const body = expenseKeywordMatch ? expenseKeywordMatch[2].trim() : trimmed;
     const description =
       body
         .replace(amountMatch[0], "")
-        .replace(/\b(euro|eur)\b/gi, "")
+        .replace(/\b(euro|eur|€)\b/gi, "")
+        .replace(/\bausgelegt\b/gi, "")
+        .replace(/\bfür\b/gi, "")
+        .replace(/\bhabe\s+(?:ich\s+)?/gi, "")
         .replace(/^\s*[:,-]\s*/, "")
         .trim() || "Auslage via WhatsApp";
     return {
       kind: "expense",
       amount,
-      caseRef: (expenseMatch[1] ?? "").trim(),
+      caseRef: (expenseKeywordMatch?.[1] ?? "").trim(),
       description,
       billable: !/\bnicht\s+abrechenbar\b/i.test(trimmed),
     };
@@ -2060,7 +2081,7 @@ export async function handleLegalChatMessage(ctx: ChatContext): Promise<string> 
   return reply;
 }
 
-async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<string> {
+export async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<string> {
   if (intent.kind === "help") {
     return [
       "Kanzlei OS WhatsApp-Befehle:",

@@ -3,6 +3,7 @@ import {
   engineHeadersForBrain,
   engineHeadersForBrainWithMatterScope,
 } from "@/lib/engine";
+import { parseIntent, processIntent } from "@/lib/legal-chat/actions";
 import type { BrainPage } from "@/lib/types";
 import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
@@ -14,7 +15,13 @@ interface NaturalChatContext {
   text: string;
 }
 
-type ChatIntent = "greeting" | "smalltalk" | "dashboard_overview" | "legal_question" | "general";
+type ChatIntent =
+  | "greeting"
+  | "smalltalk"
+  | "dashboard_overview"
+  | "daily_ops"
+  | "legal_research"
+  | "general";
 
 interface ConversationMessage {
   role: "user" | "bot";
@@ -56,7 +63,17 @@ const SMALLTALK = [
 ];
 
 const DASHBOARD_OVERVIEW = [
-  /^(?:was\s+steht\s+an|überblick|dashboard|status|wie\s+sieht|wie\s+steht|was\s+gibt|was\s+ist\s+neu|news)/i,
+  /^(?:was\s+steht\s+an|überblick|dashboard|status|wie\s+sieht|wie\s+steht|was\s+gibt|was\s+ist\s+neu|news|tagesüberblick)/i,
+];
+
+// Daily law-firm operations: time, expenses, appointments, tasks, deadlines, clients, documents
+const DAILY_OPS_KEYWORDS = [
+  /\b(?:zeit|minuten|stunden|std|telefon|auslage|ausgelegt|euro|eur|€|termin|verhandlung|besprechung|aufgabe|todo|frist|deadline|mandant|kunde|klient|dokument|unterlage|akte|aktenzeichen|az|fall)\b/i,
+];
+
+// Legal research only: statutes, paragraphs, laws, substantive legal doctrine
+const LEGAL_RESEARCH_KEYWORDS = [
+  /\b(?:gesetz|paragraph|§|bgb|abgb|zgb|or|stgb|zpo|ao|dsgvo|recht|rechtsgrundlage|judikat|urteil|entscheidung|kommentar|literatur)\b/i,
 ];
 
 function classifyIntent(text: string): ChatIntent {
@@ -64,13 +81,8 @@ function classifyIntent(text: string): ChatIntent {
   if (GREETINGS.some((rx) => rx.test(trimmed))) return "greeting";
   if (SMALLTALK.some((rx) => rx.test(trimmed))) return "smalltalk";
   if (DASHBOARD_OVERVIEW.some((rx) => rx.test(trimmed))) return "dashboard_overview";
-  if (
-    /\b(?:recht|gesetz|paragraph|§|aktenzeichen|az|akte|fall|mandant|gegner|frist|termin|dokument|vertrag|klage|berufung|revision|rvg|gebühr|anwalt)\b/i.test(
-      trimmed
-    )
-  ) {
-    return "legal_question";
-  }
+  if (LEGAL_RESEARCH_KEYWORDS.some((rx) => rx.test(trimmed))) return "legal_research";
+  if (DAILY_OPS_KEYWORDS.some((rx) => rx.test(trimmed))) return "daily_ops";
   return "general";
 }
 
@@ -381,11 +393,11 @@ function buildDashboardOverviewReply(sender: WhatsAppIdentity, ctx: DashboardCon
 }
 
 function addDisclaimer(intent: ChatIntent, text: string): string {
-  if (intent === "legal_question") {
-    return `${text}\n\n⚖️ Hinweis: Diese Auswertung ersetzt keine anwaltliche Prüfung. Bitte überprüfe alle Rechtsfragen eigenverantwortlich.`;
+  if (intent === "legal_research") {
+    return `${text}\n\n⚖️ Hinweis: Diese Rechts-Recherche ersetzt keine anwaltliche Prüfung. Bitte überprüfe alle Rechtsfragen eigenverantwortlich.`;
   }
-  if (intent === "general") {
-    return `${text}\n\n🤖 Ich bin Subsumios KI-Assistent. Meine Antworten basieren auf deinen Daten und dem Gesetzes-Corpus.`;
+  if (intent === "general" || intent === "daily_ops") {
+    return `${text}\n\n🤖 Subsumio Kanzlei-Assistent — für den Alltag, nicht für Rechtsberatung.`;
   }
   return text;
 }
@@ -408,6 +420,37 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     return buildDashboardOverviewReply(ctx.sender, dashboard);
   }
 
+  // Natural command router: turn everyday language into structured actions and execute them
+  if (intent === "daily_ops") {
+    const structuredIntent = parseIntent(ctx.text);
+    if (structuredIntent.kind !== "free_text" && structuredIntent.kind !== "unknown") {
+      try {
+        return await processIntent(
+          {
+            sender: ctx.sender,
+            fromPhone: ctx.fromPhone,
+            messageId: ctx.messageId,
+            text: ctx.text,
+          },
+          structuredIntent
+        );
+      } catch (err) {
+        console.warn("[whatsapp-natural-chat] daily ops action failed:", err);
+      }
+    }
+    // Fallback: could not structure the daily ops request → ask clarifying question
+    return [
+      `Ich habe verstanden, dass es um einen Kanzlei-Alltag-Vorgang geht.`,
+      `Damit ich dir helfen kann, bitte präziser formulieren, z.B.:`,
+      `• "30 Minuten für Müller telefoniert"`,
+      `• "12,50 Euro für Kopien ausgelegt"`,
+      `• "Morgen 10 Uhr Termin mit Müller"`,
+      `• "Frist Berufung bis 15.07.2026"`,
+      `• "Aufgabe Klageentwurf prüfen bis 2026-07-01"`,
+      `• "Dokument Klageentwurf.pdf an akt 2026-014"`,
+    ].join("\n");
+  }
+
   // Build rich context for the brain query
   const historyText = formatHistory(history);
   const dashboardText = formatDashboardContext(dashboard);
@@ -419,7 +462,7 @@ export async function naturalWhatsAppReply(ctx: NaturalChatContext): Promise<str
     historyText ? `Letzte Nachrichten:\n${historyText}` : "",
     `Aktuelle Nutzer-Nachricht: ${ctx.text}`,
     "",
-    "Anweisung: Antworte in natürlichem, professionellem Deutsch. Gib konkrete, aus dem Brain/Dashboard belegte Informationen. Vermeide technische Ausgabeformate wie `## Answer` oder `## Gaps`. Wenn Daten fehlen, sage das ehrlich. Füge keine Rechtsberatung hinzu.",
+    "Anweisung: Du bist ein Kanzlei-Alltags-Assistent. Antworte in natürlichem, professionellem Deutsch. Hilf bei: Terminen, Mandanten-Infos, offenen Aufgaben/Fristen, Zeiterfassung und Kosten. Gib konkrete, aus dem Brain/Dashboard belegte Informationen. Vermeide technische Ausgabeformate wie `## Answer` oder `## Gaps`. Keine Rechtsberatung. Wenn Daten fehlen, sage das ehrlich.",
   ]
     .filter(Boolean)
     .join("\n\n");
