@@ -72,7 +72,7 @@ type NavItem = {
   labelKey: DashboardKey;
   comingSoon?: boolean;
 };
-type NavSection = { titleKey: DashboardKey; items: NavItem[] };
+type NavSection = { titleKey: DashboardKey; items: NavItem[]; colorVar?: string };
 
 // Workflow-ordered, consolidated sidebar. Low-frequency items (opponents,
 // contracts, brain) are intentionally NOT here — they stay reachable via the
@@ -80,6 +80,7 @@ type NavSection = { titleKey: DashboardKey; items: NavItem[] };
 export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.section.cases_clients",
+    colorVar: "--nav-cat-cases",
     items: [
       { href: "/dashboard/contacts", icon: Users, labelKey: "nav.contacts" },
       { href: "/dashboard/kollisionspruefung", icon: Scale, labelKey: "nav.kollisionspruefung" },
@@ -87,6 +88,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.communication",
+    colorVar: "--nav-cat-comm",
     items: [
       { href: "/dashboard/bea", icon: Mail, labelKey: "nav.bea" },
       { href: "/dashboard/whatsapp", icon: MessageCircle, labelKey: "nav.whatsapp" },
@@ -94,6 +96,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.documents_drafting",
+    colorVar: "--nav-cat-docs",
     items: [
       { href: "/dashboard/vault", icon: FolderOpen, labelKey: "nav.vault" },
       { href: "/dashboard/drafting", icon: PenTool, labelKey: "nav.drafting" },
@@ -111,10 +114,12 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.research_knowledge",
+    colorVar: "--nav-cat-research",
     items: [{ href: "/dashboard/research", icon: Globe, labelKey: "nav.legal_research" }],
   },
   {
     titleKey: "nav.section.operations",
+    colorVar: "--nav-cat-ops",
     items: [
       { href: "/dashboard/review-queue", icon: ClipboardCheck, labelKey: "nav.review_queue" },
       { href: "/dashboard/workflows", icon: ClipboardList, labelKey: "nav.workflows" },
@@ -125,6 +130,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     titleKey: "nav.section.billing_compliance",
+    colorVar: "--nav-cat-billing",
     items: [
       { href: "/dashboard/invoicing", icon: Receipt, labelKey: "nav.invoicing" },
       { href: "/dashboard/compliance", icon: ShieldCheck, labelKey: "nav.compliance" },
@@ -146,8 +152,17 @@ const PRIMARY_ITEMS: NavItem[] = [
   { href: "/dashboard/chat", icon: MessageSquareText, labelKey: "nav.chat" },
 ];
 
+const PRIMARY_COLOR_VARS: string[] = [
+  "--brand-primary",
+  "--nav-cat-cases",
+  "--nav-cat-cases",
+  "--nav-cat-cases",
+  "--nav-cat-comm",
+];
+
 const ADMIN_SECTION: NavSection = {
   titleKey: "nav.section.admin",
+  colorVar: "--nav-cat-admin",
   items: BOTTOM_ITEMS,
 };
 
@@ -668,9 +683,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               </div>
             )}
             <div className={cn("space-y-0.5", collapsed && "hidden md:block")}>
-              {PRIMARY_ITEMS.map((item) => {
+              {PRIMARY_ITEMS.map((item, index) => {
                 const Icon = item.icon;
                 const active = isActiveHref(pathname, item.href);
+                const colorVar = PRIMARY_COLOR_VARS[index] ?? "--nav-cat-cases";
                 return (
                   <Link
                     key={`primary-${item.href}`}
@@ -695,8 +711,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     )}
                     <Icon
                       size={collapsed ? 18 : 15}
-                      className="shrink-0"
+                      className="shrink-0 transition-[color,opacity] duration-150"
                       strokeWidth={active && collapsed ? 2.25 : 1.75}
+                      style={{ color: active ? `var(${colorVar})` : `color-mix(in srgb, var(${colorVar}) 55%, var(--ds-text-muted))` }}
                     />
                     <span
                       className={cn(
@@ -732,6 +749,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       {sectionItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActiveHref(pathname, item.href);
+                        const catVar = section.colorVar ?? "--nav-cat-ops";
                         return (
                           <Link
                             key={`collapsed-${item.href}`}
@@ -755,8 +773,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             )}
                             <Icon
                               size={18}
-                              className="shrink-0"
+                              className="shrink-0 transition-[color] duration-150"
                               strokeWidth={active ? 2.25 : 1.75}
+                              style={{ color: active ? `var(${catVar})` : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))` }}
                             />
                           </Link>
                         );
@@ -776,6 +795,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   );
                   const SectionIcon = section.items[0]?.icon ?? FolderOpen;
                   const panelId = sectionDomId(section.titleKey);
+                  const catVar = section.colorVar ?? "--nav-cat-ops";
                   return (
                     <div
                       key={section.titleKey}
@@ -800,12 +820,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       >
                         <SectionIcon
                           size={15}
-                          className={cn(
-                            "shrink-0 transition-colors",
-                            sectionActive || isOpen
-                              ? "brand-text"
-                              : "text-[color:var(--ds-text-muted)]"
-                          )}
+                          className="shrink-0 transition-[color] duration-150"
+                          style={{ color: sectionActive || isOpen ? `var(${catVar})` : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))` }}
                         />
                         <span
                           className={cn(
@@ -851,6 +867,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           >
                             {section.items.map((item, index) => {
                               const Icon = item.icon;
+                              const itemCatVar = section.colorVar ?? "--nav-cat-ops";
                               if (item.comingSoon) {
                                 return (
                                   <button
@@ -859,7 +876,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                     className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-subtle)] select-none"
                                     aria-disabled="true"
                                   >
-                                    <Icon size={15} className="shrink-0 opacity-50" />
+                                    <Icon size={15} className="shrink-0 opacity-50" style={{ color: `color-mix(in srgb, var(${itemCatVar}) 45%, var(--ds-text-subtle))` }} />
                                     <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                       <span className="truncate">{t(item.labelKey)}</span>
                                       <span className="rounded border border-[color:var(--ds-border-strong)] px-1 py-0.5 text-xs font-semibold tracking-wide uppercase">
@@ -885,7 +902,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                                       : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                                   )}
                                 >
-                                  <Icon size={15} className="shrink-0" />
+                                  <Icon
+                                    size={15}
+                                    className="shrink-0 transition-[color] duration-150"
+                                    style={{ color: active ? `var(${itemCatVar})` : `color-mix(in srgb, var(${itemCatVar}) 55%, var(--ds-text-muted))` }}
+                                  />
                                   <span className="min-w-0 flex-1 truncate">
                                     {highlightMatch(t(item.labelKey), searchQuery)}
                                   </span>

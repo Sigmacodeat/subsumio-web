@@ -108,7 +108,7 @@ export default function OpponentsPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader title="Gegner-Analyse" description="Intelligence über Gegner aus allen Akten" />
 
       {capped && <CappedResultsNotice limit={CASES_LIMIT} />}

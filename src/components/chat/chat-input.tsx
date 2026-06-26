@@ -283,24 +283,24 @@ export function ChatInput({
       <div className="px-4 pt-3 pb-4">
         <div
           className={cn(
-            "relative flex items-end gap-2 rounded-2xl border bg-[color:var(--ds-surface)] px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_rgba(15,23,42,0.08)]",
+            "relative flex items-end gap-2 rounded-xl border bg-[color:var(--ds-surface)] px-3 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow] duration-200 focus-within:shadow-[0_1px_2px_rgba(15,23,42,0.03),0_4px_12px_rgba(15,23,42,0.05)]",
             overLimit
               ? "border-red-500"
               : nearLimit
                 ? "border-amber-400/60"
-                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-border-strong)]"
+                : "border-[color:var(--ds-border)] focus-within:border-[color:var(--ds-control-border)]"
           )}
         >
-          {/* Template picker */}
+          {/* Template picker — compact icon */}
           <div ref={templateRef} className="relative">
             <button
               onClick={() => setShowTemplates((v) => !v)}
               disabled={isStreaming || disabled}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
               aria-label={t("chat.input.templates")}
               title={t("chat.input.templates")}
             >
-              <LayoutTemplate size={18} />
+              <LayoutTemplate size={16} />
             </button>
             <AnimatePresence initial={false}>
               {showTemplates && (
@@ -345,11 +345,11 @@ export function ChatInput({
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isStreaming || uploading || disabled}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95 disabled:opacity-50"
                 aria-label={t("chat.input.upload_file")}
                 title={t("chat.input.upload_file")}
               >
-                <Paperclip size={18} />
+                <Paperclip size={16} />
               </button>
               <input
                 ref={fileInputRef}
@@ -371,11 +371,13 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             disabled={disabled}
             placeholder={
-              isStreaming ? t("chat.input.ai_responding") : (placeholder ?? t("chat.placeholder"))
+              isStreaming
+                ? t("chat.input.ai_responding")
+                : (placeholder ?? t("chat.placeholder"))
             }
             rows={1}
             maxLength={50000}
-            className="min-h-[44px] flex-1 resize-none bg-transparent px-1 py-2.5 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
+            className="min-h-[40px] flex-1 resize-none bg-transparent px-1 py-2 text-[14px] leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-subtle)] focus:outline-none disabled:opacity-50"
             aria-label={t("chat.input.enter_message")}
           />
 
@@ -383,7 +385,7 @@ export function ChatInput({
           {nearLimit && (
             <span
               className={cn(
-                "absolute right-14 bottom-1 text-[10px] font-medium",
+                "absolute right-12 bottom-1 text-[10px] font-medium",
                 overLimit ? "text-red-500" : "text-amber-500"
               )}
             >
@@ -395,24 +397,24 @@ export function ChatInput({
           {isStreaming ? (
             <button
               onClick={() => onStop?.()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 hover:shadow-md active:scale-95"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition-[background-color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-600 hover:shadow-md active:scale-95"
               aria-label={t("chat.input.stop_generation")}
               title={t("chat.input.stop_esc")}
             >
-              <Square size={16} className="fill-current" />
+              <Square size={14} className="fill-current" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               disabled={!canSend}
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white shadow-sm transition-[background-color,transform,box-shadow] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--brand-primary-hover)] hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
                 overLimit && "bg-red-500"
               )}
               aria-label={t("chat.send")}
               title={t("chat.input.send_enter")}
             >
-              <Send size={18} />
+              <Send size={16} />
             </button>
           )}
         </div>

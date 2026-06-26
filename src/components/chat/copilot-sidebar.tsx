@@ -841,49 +841,67 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
         {...(!mobileOpen ? { inert: true } : {})}
       >
         <div className="flex h-full flex-col bg-[color:var(--ds-surface)] pt-[env(safe-area-inset-top)] shadow-2xl">
-          {/* Mobile header bar */}
+          {/* Mobile header bar — premium segmented tabs */}
           <div className="flex items-center justify-between border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5">
-            <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
               <div
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]"
                 aria-hidden
               >
                 <Activity size={15} className="text-[color:var(--brand-secondary)]" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-[color:var(--ds-text-subtle)]">
+              <div className="min-w-0">
+                <p className="font-display text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
+                  {t("copilot.copilot")}
+                </p>
+                <div className="flex items-center gap-1.5 text-[11px] text-[color:var(--ds-text-subtle)]">
                   <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--brand-secondary)]" />
                   <span className="truncate">{routeContext.label}</span>
                 </div>
-                <p className="font-display text-sm font-semibold tracking-tight text-[color:var(--ds-text)]">
-                  {lang === "en" ? "Activity" : "Aktivität"}
-                </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPanelMode(panelMode === "chat" ? "activity" : "chat")}
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-                  panelMode === "chat"
-                    ? "brand-soft brand-text"
-                    : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                )}
-                aria-label="Chat ⌘J"
-                title="⌘J"
-              >
-                <MessageSquareText size={15} />
-              </button>
+            <div className="flex items-center gap-1.5">
+              {/* Segmented Activity / Chat tabs */}
+              <div className="flex items-center rounded-lg bg-[color:var(--ds-surface)] p-0.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <button
+                  onClick={() => setPanelMode("activity")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all",
+                    panelMode === "activity"
+                      ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                      : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  )}
+                  aria-label={t("copilot.tab_activity")}
+                  title={t("copilot.tab_activity")}
+                >
+                  <Activity size={13} />
+                  {t("copilot.tab_activity")}
+                </button>
+                <button
+                  onClick={() => setPanelMode("chat")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all",
+                    panelMode === "chat"
+                      ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                      : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                  )}
+                  aria-label={t("copilot.tab_chat")}
+                  title={t("copilot.tab_chat")}
+                >
+                  <MessageSquareText size={13} />
+                  {t("copilot.tab_chat")}
+                </button>
+              </div>
               <button
                 ref={closeButtonRef}
                 onClick={() => {
                   setMobileOpen(false);
                   onToggle();
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
                 aria-label={t("copilot.close_esc")}
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>
@@ -925,6 +943,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                   pageSlug: routeContext.pageSlug,
                 }}
                 className="h-full rounded-none border-0"
+                placeholder={routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")}
                 features={{
                   brainStatus: true,
                   tokenWidget: true,
@@ -980,10 +999,10 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
               }
             }}
             className={cn(
-              "absolute top-0 left-0 z-40 h-full w-1 cursor-col-resize transition-[width,background-color] duration-150 select-none focus-visible:bg-[var(--brand-primary)] focus-visible:outline-none",
+              "absolute top-0 left-0 z-40 h-full w-1.5 cursor-col-resize transition-[width,background-color] duration-150 select-none focus-visible:bg-[var(--brand-primary)] focus-visible:outline-none",
               isResizing
-                ? "w-1.5 bg-[var(--brand-primary)]"
-                : "bg-transparent hover:w-1.5 hover:bg-[color:var(--ds-border-strong)]"
+                ? "w-2 bg-[var(--brand-primary)]"
+                : "bg-transparent hover:w-2 hover:bg-[color:var(--ds-border-strong)]"
             )}
             role="separator"
             aria-orientation="vertical"
@@ -1035,35 +1054,58 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
             )}
             {...(!open ? { inert: true } : {})}
           >
-            {/* Context header — compact tab bar */}
+            {/* Context header — premium tab bar with Copilot title */}
             <div className="relative shrink-0 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)]">
               <div className="flex items-center gap-2 px-3 py-2">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <Activity size={14} className="shrink-0 text-[color:var(--brand-secondary)]" />
-                  <span className="truncate text-[13px] font-semibold text-[color:var(--ds-text)]">
-                    {lang === "en" ? "Activity" : "Aktivität"}
-                  </span>
-                  <span className="hidden text-[11px] text-[color:var(--ds-text-subtle)] sm:inline">
-                    {routeContext.label}
-                  </span>
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)]">
+                    <Activity size={14} className="text-[color:var(--brand-secondary)]" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block truncate text-[13px] font-semibold leading-tight text-[color:var(--ds-text)]">
+                      {t("copilot.copilot")}
+                    </span>
+                    <span className="block truncate text-[11px] text-[color:var(--ds-text-subtle)]">
+                      {routeContext.label}
+                    </span>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setPanelMode(panelMode === "chat" ? "activity" : "chat")}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
-                    panelMode === "chat"
-                      ? "brand-soft brand-text"
-                      : "text-[color:var(--ds-text-muted)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
-                  )}
-                  aria-label={lang === "en" ? "Toggle chat (⌘J)" : "Chat öffnen (⌘J)"}
-                  title="⌘J"
-                >
-                  <MessageSquareText size={12} />
-                  {lang === "en" ? "Chat" : "Chat"}
-                  <kbd className="hidden rounded border border-[color:var(--ds-border)] px-1 font-mono text-[9px] sm:inline">
-                    ⌘J
-                  </kbd>
-                </button>
+
+                {/* Segmented Activity / Chat tabs */}
+                <div className="flex shrink-0 items-center rounded-lg bg-[color:var(--ds-surface)] p-0.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                  <button
+                    onClick={() => setPanelMode("activity")}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      panelMode === "activity"
+                        ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                        : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                    )}
+                    aria-label={t("copilot.tab_activity")}
+                    title={t("copilot.tab_activity")}
+                  >
+                    <Activity size={12} />
+                    {t("copilot.tab_activity")}
+                  </button>
+                  <button
+                    onClick={() => setPanelMode("chat")}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      panelMode === "chat"
+                        ? "bg-[color:var(--brand-primary)] text-white shadow-sm"
+                        : "text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
+                    )}
+                    aria-label={t("copilot.tab_chat")}
+                    title={t("copilot.tab_chat")}
+                  >
+                    <MessageSquareText size={12} />
+                    {t("copilot.tab_chat")}
+                    <kbd className="hidden rounded border border-[color:var(--ds-border)] px-1 font-mono text-[9px] sm:inline">
+                      ⌘J
+                    </kbd>
+                  </button>
+                </div>
+
                 <button
                   onClick={onToggle}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[color:var(--ds-text-subtle)] transition-[background-color,color] duration-[var(--ds-duration-normal)] ease-[var(--ds-ease-smooth)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
@@ -1113,6 +1155,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
                       pageSlug: routeContext.pageSlug,
                     }}
                     className="h-full rounded-none border-0"
+                    placeholder={routeContext.caseSlug ? t("chat.placeholder_case") : t("chat.placeholder_global")}
                     features={{
                       brainStatus: true,
                       tokenWidget: true,
@@ -1152,11 +1195,7 @@ export function CopilotSidebar({ open, onToggle, className }: CopilotSidebarProp
           className="group-hover:brand-text shrink-0 text-[color:var(--ds-text-muted)] transition-colors"
         />
         <span className="max-w-0 overflow-hidden text-xs font-medium whitespace-nowrap text-[color:var(--ds-text-muted)] opacity-0 transition-[max-width,opacity,color] duration-[var(--ds-duration-slow)] ease-[var(--ds-ease-smooth)] group-hover:max-w-[100px] group-hover:text-[color:var(--ds-text)] group-hover:opacity-100">
-          {t("copilot.copilot") === "Copilot"
-            ? lang === "en"
-              ? "Activity"
-              : "Aktivität"
-            : t("copilot.copilot")}
+          {t("copilot.copilot")}
         </span>
       </motion.button>
     </>

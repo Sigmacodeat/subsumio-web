@@ -11,7 +11,7 @@ export default function ChatPage() {
   const contextType = caseSlug ? "case" : pageSlug ? "brain_page" : "global";
 
   return (
-    <div className="flex h-full flex-col p-4 md:p-6">
+    <div className="flex h-full flex-col p-4 md:p-6 lg:p-8">
       <ChatPanel
         context={{ type: contextType, caseSlug, pageSlug }}
         initialQuery={initialQuery}

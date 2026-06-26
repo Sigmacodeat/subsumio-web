@@ -270,7 +270,7 @@ export default function VerfahrensdokuPage() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("verfahrensdoku.title")}
         description={t("verfahrensdoku.description")}

@@ -55,7 +55,7 @@ export default function AIModelSettingsPage() {
 
   if (query.isError) {
     return (
-      <div className="px-6 py-8">
+      <div className="p-4 md:p-6 lg:p-8">
         <PageHeader
           title={t("settings.aimodel.title")}
           description={t("settings.aimodel.description")}
@@ -78,7 +78,7 @@ export default function AIModelSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("settings.aimodel.title")}
         description={t("settings.aimodel.description")}

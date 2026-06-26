@@ -108,7 +108,7 @@ export default function DeepAnalysisPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-6">
+    <div className="mx-auto max-w-[1200px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Vault Deep Analysis"
         description="Bulk-Analyse mehrerer Dokumente mit übergreifenden Erkenntnissen, Themen und Risiken — jede Aussage mit wörtlichen Zitaten belegt."

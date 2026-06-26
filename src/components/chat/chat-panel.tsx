@@ -63,6 +63,7 @@ interface ChatPanelProps {
   className?: string;
   title?: string;
   initialQuery?: string;
+  placeholder?: string;
 }
 
 function queryModeToThinkMode(mode: QueryMode): ThinkMode {
@@ -425,7 +426,7 @@ export interface ChatPanelHandle {
 }
 
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
-  { context = { type: "global" }, features, persistHistory = true, className, title, initialQuery },
+  { context = { type: "global" }, features, persistHistory = true, className, title, initialQuery, placeholder },
   ref
 ) {
   const { t, lang } = useLang();
@@ -1715,6 +1716,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         }}
         onStop={handleStop}
         isStreaming={isStreaming}
+        placeholder={placeholder}
         features={{
           fileUpload: resolvedFeatures.fileUpload,
           modelSelector: false,

@@ -287,7 +287,7 @@ function BillingInner() {
   const currentPlan = me?.user?.plan ?? "free";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("billing.title")}
         description={t("billing.desc")}

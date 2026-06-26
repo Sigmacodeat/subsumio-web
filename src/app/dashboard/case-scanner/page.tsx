@@ -37,7 +37,7 @@ export default function CaseScannerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("scanner.title")}
         description={t("scanner.description")}

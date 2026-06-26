@@ -83,7 +83,7 @@ export default function VersionHistoryPage() {
     typeof page?.frontmatter?.version === "number" ? page.frontmatter.version : undefined;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1000px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Versionshistorie"
         description="Änderungshistorie einer Brain-Page — Audit-Trail mit Versionierung"

@@ -1739,6 +1739,11 @@ export const D = {
 
   // ── Unified Chat ──
   "chat.placeholder": { de: "Frage oder Aufgabe eingeben…", en: "Enter a question or task…" },
+  "chat.placeholder_case": { de: "Frage zur Akte, Rechtsfrage oder Aufgabe stellen…", en: "Ask about the matter, a legal question, or task…" },
+  "chat.placeholder_global": { de: "Rechtsfrage, Frist prüfen oder Schriftsatz entwerfen…", en: "Ask a legal question, check deadlines, or draft a document…" },
+  "chat.placeholder_deadline": { de: "Fristen prüfen, berechnen oder analysieren…", en: "Check, calculate or analyze deadlines…" },
+  "chat.placeholder_draft": { de: "Schriftsatz entwerfen, Klage oder Begründung…", en: "Draft a pleading, lawsuit, or brief…" },
+  "chat.placeholder_research": { de: "Rechtsprechung, Normen oder Gutachten recherchieren…", en: "Research case law, statutes, or opinions…" },
   "chat.title": { de: "Assistent", en: "Assistant" },
   "chat.empty_title": {
     de: "Was soll ich für die Akte prüfen?",
@@ -3141,6 +3146,11 @@ export const D = {
   "copilot.show_more_aria": { de: "Mehr anzeigen", en: "Show more" },
   "copilot.dismiss_hint": { de: "Hinweis ausblenden", en: "Dismiss hint" },
   "copilot.copilot": { de: "Copilot", en: "Copilot" },
+  "copilot.activity": { de: "Aktivität", en: "Activity" },
+  "copilot.chat": { de: "Chat", en: "Chat" },
+  "copilot.more_actions": { de: "Mehr Aktionen", en: "More actions" },
+  "copilot.tab_activity": { de: "Aktivität", en: "Activity" },
+  "copilot.tab_chat": { de: "Chat", en: "Chat" },
 
   // ── Copilot: route context labels ──
   "copilot.ctx.cases": { de: "Akten", en: "Cases" },

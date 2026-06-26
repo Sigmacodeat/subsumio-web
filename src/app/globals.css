@@ -334,7 +334,7 @@
   --ds-border: #e8ebf1;
   --ds-border-strong: #c7ceda;
   --ds-border-hover: #d7dde7;
-  --ds-control-border: #8a93a3;
+  --ds-control-border: #c7ceda;
   --ds-text: #0f172a;
   --ds-text-muted: #475569; /* 7.2:1 on white — AAA body    */
   --ds-text-subtle: #576072; /* 5.6:1 on #f1f3f6 — AA+ (was #64748b, 4.28:1 fail on surface-2) */
@@ -342,16 +342,16 @@
   --ds-accent: var(--brand-primary);
   --brand-primary: #1a365d;
   --brand-primary-hover: #274d7a;
-  --brand-secondary: #b48a2a;
-  --brand-tertiary: #1a365d;
+  --brand-secondary: #9a7a1f;
+  --brand-tertiary: #475569;
   --brand-glow: rgba(26, 54, 93, 0.1);
   --brand-gradient-from: #1a365d;
-  --brand-gradient-via: #b48a2a;
+  --brand-gradient-via: #9a7a1f;
   --brand-gradient-to: #0f172a;
   --brand-text: var(--brand-primary);
-  --accent-gold: #9f7b22;
-  --accent-gold-soft: rgba(180, 138, 42, 0.08);
-  --accent-gold-border: rgba(180, 138, 42, 0.2);
+  --accent-gold: #9a7a1f;
+  --accent-gold-soft: rgba(154, 122, 31, 0.08);
+  --accent-gold-border: rgba(154, 122, 31, 0.2);
   --card-shadow: 0 1px 1px rgba(15, 23, 42, 0.035), 0 8px 24px rgba(15, 23, 42, 0.035);
   --card-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 34px rgba(15, 23, 42, 0.065);
   --card-shadow-elevated: 0 1px 2px rgba(15, 23, 42, 0.06), 0 18px 48px rgba(15, 23, 42, 0.1);
@@ -385,6 +385,16 @@
   --ds-category-teal-text: #0f766e;
   --ds-category-teal-bg: rgba(15, 118, 110, 0.1);
   --ds-category-teal-border: rgba(15, 118, 110, 0.22);
+  /* Nav category icon tints — subtle, per-section color coding.
+     Only applied to icons, not text or backgrounds.
+     All AA-verified as non-text contrast (3:1) on white. */
+  --nav-cat-cases: #1a365d;
+  --nav-cat-comm: #0f766e;
+  --nav-cat-docs: #9a7a1f;
+  --nav-cat-research: #6d28d9;
+  --nav-cat-ops: #475569;
+  --nav-cat-billing: #1d6b54;
+  --nav-cat-admin: #475569;
   color-scheme: light;
 }
 
@@ -409,21 +419,21 @@
   --ds-border: #242b38;
   --ds-border-strong: #3a4558;
   --ds-border-hover: #323c4e;
-  --ds-control-border: #5b6a80;
+  --ds-control-border: #3a4558;
   --ds-text: #eef1f5;
   --ds-text-muted: #9aa5b8; /* AA on #12151c */
   --ds-text-subtle: #8792a6; /* AA on #12151c and #1a1e28 */
   --ds-ring: var(--brand-primary);
   --ds-accent: var(--brand-primary);
-  --brand-primary: #2f65c8;
-  --brand-primary-hover: #366fda;
+  --brand-primary: #3a6db5;
+  --brand-primary-hover: #4a7dc5;
   --brand-secondary: #c9a42f;
   --brand-tertiary: #7b8fa8;
-  --brand-glow: rgba(91, 141, 239, 0.12);
+  --brand-glow: rgba(58, 109, 181, 0.12);
   --brand-gradient-from: #c9a42f;
-  --brand-gradient-via: #5b8def;
+  --brand-gradient-via: #3a6db5;
   --brand-gradient-to: #0a0c10;
-  --brand-text: #8fb8ff;
+  --brand-text: #7ba8e0;
   --accent-gold: #d4b146;
   --accent-gold-soft: rgba(201, 164, 47, 0.1);
   --accent-gold-border: rgba(201, 164, 47, 0.22);
@@ -463,6 +473,15 @@
   --ds-category-teal-text: #5eead4;
   --ds-category-teal-bg: rgba(94, 234, 212, 0.1);
   --ds-category-teal-border: rgba(94, 234, 212, 0.22);
+  /* Nav category icon tints — dark mode variants.
+     All AA-verified as non-text contrast (3:1) on #11151c. */
+  --nav-cat-cases: #7ba8e0;
+  --nav-cat-comm: #5eead4;
+  --nav-cat-docs: #d4b146;
+  --nav-cat-research: #a78bfa;
+  --nav-cat-ops: #94a3b8;
+  --nav-cat-billing: #6fc9a6;
+  --nav-cat-admin: #94a3b8;
   color-scheme: dark;
 }
 
@@ -1744,15 +1763,6 @@ pre {
 [data-app="dashboard"] textarea[class*="border-[color:var(--ds-border)]"],
 [data-app="dashboard"] [role="combobox"][class*="border-[color:var(--ds-border)]"] {
   border-color: var(--ds-control-border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
-}
-
-[data-app="dashboard"][data-theme="light"] input[class*="border-[color:var(--ds-border)]"],
-[data-app="dashboard"][data-theme="light"] select[class*="border-[color:var(--ds-border)]"],
-[data-app="dashboard"][data-theme="light"] textarea[class*="border-[color:var(--ds-border)]"],
-[data-app="dashboard"][data-theme="light"]
-  [role="combobox"][class*="border-[color:var(--ds-border)]"] {
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
 /* ── Chat message entrance animation ── */

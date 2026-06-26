@@ -214,7 +214,7 @@ export default function BrainDetailPage() {
           </div>
         )}
         {page && (
-          <div className="mx-auto max-w-3xl px-6 py-8">
+          <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
             {/* Header */}
             <div className="mb-8">
               <div className="mb-3 flex items-center gap-3">

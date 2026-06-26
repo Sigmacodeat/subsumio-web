@@ -162,7 +162,7 @@ export default function ReviewQueuePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("review_queue.title")}
         description={t("review_queue.desc")}

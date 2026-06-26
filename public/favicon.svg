@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="tile" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#20d3c2"/>
-      <stop offset="52%" stop-color="#2f6bff"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
+      <stop offset="0%" stop-color="#1a365d"/>
+      <stop offset="52%" stop-color="#9a7a1f"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#2f6bff" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#1a365d" flood-opacity="0.35"/>
     </filter>
   </defs>
   <rect x="32" y="32" width="448" height="448" rx="135" fill="url(#tile)" filter="url(#shadow)"/>

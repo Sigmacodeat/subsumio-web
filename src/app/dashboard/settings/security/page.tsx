@@ -85,7 +85,7 @@ export default function SecuritySettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[900px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("settings.security.title")}
         description={t("settings.security.section_2fa")}

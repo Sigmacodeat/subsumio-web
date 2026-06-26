@@ -146,7 +146,7 @@ export default function PortfolioInsightsPage() {
       data.risk_distribution.critical || 1;
 
   return (
-    <div className="container mx-auto max-w-7xl space-y-6 p-6">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold">

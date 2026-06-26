@@ -68,8 +68,8 @@ function GraphHero({ lang }: { lang: Lang }) {
             <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0.7" />
           </radialGradient>
           <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0.72" />
-            <stop offset="100%" stopColor="#0f766e" stopOpacity="0.46" />
+            <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.72" />
+            <stop offset="100%" stopColor="var(--brand-secondary)" stopOpacity="0.46" />
           </linearGradient>
         </defs>
 

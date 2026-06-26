@@ -76,7 +76,7 @@ export default function TabularReviewPage() {
   }
 
   return (
-    <div className="max-w-full space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title={t("tabular.title")}
         description={t("tabular.description")}

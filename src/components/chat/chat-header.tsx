@@ -16,6 +16,7 @@ import {
   Pin,
   Tag,
   Share2,
+  MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useDashboardMotion } from "@/components/dashboard/motion";
@@ -74,8 +75,10 @@ export function ChatHeader(props: ChatHeaderProps) {
   const statsQuery = useBrainStats();
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [showSessions, setShowSessions] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const modeRef = useRef<HTMLDivElement>(null);
   const sessionsRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const { popoverTransition, popoverInitial, popoverAnimate, popoverExit } = useDashboardMotion();
 
   const stats = statsQuery.data;
@@ -97,6 +100,9 @@ export function ChatHeader(props: ChatHeaderProps) {
       }
       if (sessionsRef.current && !sessionsRef.current.contains(e.target as Node)) {
         setShowSessions(false);
+      }
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+        setShowActions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -125,21 +131,30 @@ export function ChatHeader(props: ChatHeaderProps) {
             </h2>
             <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--ds-text-subtle)]">
               {props.features.brainStatus && !compact && (
-                <span className="inline-flex items-center gap-1.5 font-medium">
+                <span
+                  className="inline-flex items-center gap-1.5 font-medium"
+                  title={
+                    brainDegraded
+                      ? t("chat.brain_degraded")
+                      : brainOnline
+                        ? t("chat.brain_online")
+                        : t("chat.brain_offline")
+                  }
+                >
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full",
                       brainDegraded ? "bg-amber-500" : brainOnline ? "bg-emerald-500" : "bg-red-500"
                     )}
                   />
-                  {brainDegraded
-                    ? t("chat.brain_degraded")
-                    : brainOnline
-                      ? t("chat.brain_online")
-                      : t("chat.brain_offline")}
+                  {props.messageCount > 0 && (
+                    <span>
+                      {props.messageCount} {t("chat.session_count")}
+                    </span>
+                  )}
                 </span>
               )}
-              {props.messageCount > 0 && (
+              {props.messageCount > 0 && !props.features.brainStatus && (
                 <span>
                   {props.messageCount} {t("chat.session_count")}
                 </span>
@@ -148,36 +163,67 @@ export function ChatHeader(props: ChatHeaderProps) {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
-          {props.onShare && props.messageCount > 0 && (
-            <button
-              onClick={props.onShare}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-              aria-label={t("chat.share")}
-              title={t("chat.share_title")}
-            >
-              <Share2 size={14} />
-            </button>
-          )}
-          {props.features.exportChat && props.messageCount > 0 && (
-            <button
-              onClick={props.onExport}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
-              aria-label={t("chat.export")}
-              title={t("chat.export")}
-            >
-              <Download size={14} />
-            </button>
-          )}
+        <div className="relative flex shrink-0 items-center gap-0.5" ref={actionsRef}>
           {props.messageCount > 0 && (
-            <button
-              onClick={props.onClear}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-red-500/10 hover:text-red-600 active:scale-95"
-              aria-label={t("chat.clear")}
-              title={t("chat.clear")}
-            >
-              <Trash2 size={14} />
-            </button>
+            <>
+              <button
+                onClick={() => setShowActions((v) => !v)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ds-text-muted)] transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)] active:scale-95"
+                aria-label={t("copilot.more_actions")}
+                title={t("copilot.more_actions")}
+                aria-haspopup="true"
+                aria-expanded={showActions}
+              >
+                <MoreVertical size={14} />
+              </button>
+              <AnimatePresence initial={false}>
+                {showActions && (
+                  <motion.div
+                    className="absolute top-full right-0 z-50 mt-1 w-48 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-1 shadow-lg"
+                    initial={popoverInitial}
+                    animate={popoverAnimate}
+                    exit={popoverExit}
+                    transition={popoverTransition}
+                  >
+                    {props.onShare && (
+                      <button
+                        onClick={() => {
+                          props.onShare?.();
+                          setShowActions(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <Share2 size={13} />
+                        {t("chat.share")}
+                      </button>
+                    )}
+                    {props.features.exportChat && (
+                      <button
+                        onClick={() => {
+                          props.onExport();
+                          setShowActions(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[color:var(--ds-text)] transition-colors hover:bg-[color:var(--ds-hover)]"
+                      >
+                        <Download size={13} />
+                        {t("chat.export")}
+                      </button>
+                    )}
+                    <div className="my-1 h-px bg-[color:var(--ds-border)]" />
+                    <button
+                      onClick={() => {
+                        props.onClear();
+                        setShowActions(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
+                    >
+                      <Trash2 size={13} />
+                      {t("chat.clear")}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
           )}
         </div>
       </div>

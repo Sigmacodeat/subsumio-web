@@ -599,7 +599,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-[color:var(--ds-text)]">{t("reports.title")}</h1>

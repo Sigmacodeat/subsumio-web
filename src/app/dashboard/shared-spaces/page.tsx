@@ -113,7 +113,7 @@ export default function SharedSpacesPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-7xl space-y-6 p-6">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Shared Spaces"
         description="Cross-Organisation-Kollaboration: Teilen Sie Dokumente, Akten und Playbooks mit anderen Kanzleien und Unternehmen."

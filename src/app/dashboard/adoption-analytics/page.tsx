@@ -154,7 +154,7 @@ export default function AdoptionAnalyticsPage() {
       : 1;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="Adoption Analytics"
         description="Platform-Nutzung: Wer nutzt was, wie oft und woran — das Subsumio Command Center"
