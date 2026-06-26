@@ -8,14 +8,7 @@ import { createSchemaInit } from "@/lib/schema-init";
 
 const widgetSchema = z.object({
   id: z.string(),
-  type: z.enum([
-    "stats",
-    "recent-activity",
-    "deadlines",
-    "quick-actions",
-    "dream-cycle",
-    "getting-started",
-  ]),
+  type: z.string().optional(),
   visible: z.boolean(),
   order: z.number(),
 });
