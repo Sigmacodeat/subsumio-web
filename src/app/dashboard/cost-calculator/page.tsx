@@ -4,6 +4,14 @@ import { useState, useEffect } from "react";
 import { Calculator, Euro, Info, AlertTriangle, CheckCircle2, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -74,7 +82,7 @@ export default function CostCalculatorPage() {
   const [streitwert, setStreitwert] = useState("");
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [cases, setCases] = useState<BrainPage[]>([]);
-  const [selectedCaseSlug, setSelectedCaseSlug] = useState("");
+  const [selectedCaseSlug, setSelectedCaseSlug] = useState("none");
   const [saving, setSaving] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
 
@@ -86,7 +94,7 @@ export default function CostCalculatorPage() {
   }, []);
 
   async function saveToCase() {
-    if (!result || !selectedCaseSlug) return;
+    if (!result || !selectedCaseSlug || selectedCaseSlug === "none") return;
     setSaving(true);
     setSaveNotice(null);
     try {
@@ -225,26 +233,30 @@ export default function CostCalculatorPage() {
 
         {/* Case selector */}
         {cases.length > 0 && (
-          <div>
-            <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-[color:var(--ds-text-muted)]">
               {t("cost_calc.link_case")}
-            </label>
-            <select
+            </Label>
+            <Select
               value={selectedCaseSlug}
-              onChange={(e) => setSelectedCaseSlug(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              onValueChange={setSelectedCaseSlug}
             >
-              <option value="">{t("cost_calc.no_case")}</option>
-              {cases.map((c) => {
-                const fm = caseFrontmatter(c);
-                return (
-                  <option key={c.slug} value={c.slug}>
-                    {fm.case_number ? `${fm.case_number} - ` : ""}
-                    {c.title}
-                  </option>
-                );
-              })}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder={t("cost_calc.no_case")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("cost_calc.no_case")}</SelectItem>
+                {cases.map((c) => {
+                  const fm = caseFrontmatter(c);
+                  return (
+                    <SelectItem key={c.slug} value={c.slug}>
+                      {fm.case_number ? `${fm.case_number} - ` : ""}
+                      {c.title}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
@@ -357,7 +369,7 @@ export default function CostCalculatorPage() {
           </div>
 
           {/* Save to case */}
-          {selectedCaseSlug && (
+          {selectedCaseSlug && selectedCaseSlug !== "none" && (
             <div className="flex items-center gap-3 border-t border-[color:var(--ds-border)] pt-3">
               <Button
                 onClick={saveToCase}

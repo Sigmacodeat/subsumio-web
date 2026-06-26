@@ -33,7 +33,7 @@ const ROUTE_HELP: Array<{
     title: "Akten sauber fuehren",
     desc: "Jede Akte sollte Mandant, Gegner, Fristen, Dokumente und naechste Aufgabe enthalten.",
     links: [
-      { href: "/dashboard/cases/new", label: "Neue Akte" },
+      { href: "/dashboard/cases", label: "Neue Akte" },
       { href: "/dashboard/contacts", label: "Kontakte" },
     ],
   },
@@ -78,7 +78,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
     title: t("guide.default_title"),
     desc: t("guide.default_desc"),
     links: [
-      { href: "/dashboard/cases/new", label: t("cockpit.action_case") },
+      { href: "/dashboard/cases", label: t("cockpit.action_case") },
       { href: "/dashboard/deadlines", label: t("nav.deadlines") },
       { href: "/dashboard/settings/kanzlei", label: t("nav.kanzlei") },
     ],
@@ -170,7 +170,7 @@ export function DashboardGuide({ open, onClose }: DashboardGuideProps) {
                     key={item}
                     className="flex items-center gap-2 rounded-lg border border-[color:var(--ds-border)] px-3 py-2 text-sm text-[color:var(--ds-text-muted)]"
                   >
-                    <CheckCircle2 size={14} className="text-[color:var(--accent-gold)]" />
+                    <CheckCircle2 size={14} className="text-[color:var(--accent-premium)]" />
                     <span>{item}</span>
                   </div>
                 ))}

@@ -29,6 +29,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import type { BrainPage, TabularReviewResponse } from "@/lib/types";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
@@ -141,8 +148,8 @@ export default function VaultPage() {
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<VaultDoc[] | null>(null);
   const [searching, setSearching] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string>("");
-  const [tagFilter, setTagFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
 
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
@@ -250,8 +257,8 @@ export default function VaultPage() {
         (d) => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q)
       );
     }
-    if (typeFilter) result = result.filter((d) => d.type === typeFilter);
-    if (tagFilter) result = result.filter((d) => d.tags.includes(tagFilter));
+    if (typeFilter !== "all") result = result.filter((d) => d.type === typeFilter);
+    if (tagFilter !== "all") result = result.filter((d) => d.tags.includes(tagFilter));
     // Sort
     const sorted = [...result];
     switch (sortBy) {
@@ -576,30 +583,32 @@ export default function VaultPage() {
         </div>
         <div className="flex items-center gap-2">
           <Filter size={15} className="text-[color:var(--ds-text-subtle)]" />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-          >
-            <option value="">{t("vault.all_types")}</option>
-            {allTypes.map((t) => (
-              <option key={t} value={t}>
-                {TYPE_LABELS[t] || t}
-              </option>
-            ))}
-          </select>
-          <select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-          >
-            <option value="">{t("vault.all_tags")}</option>
-            {allTags.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t("vault.all_types")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("vault.all_types")}</SelectItem>
+              {allTypes.map((tp) => (
+                <SelectItem key={tp} value={tp}>
+                  {TYPE_LABELS[tp] || tp}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={tagFilter} onValueChange={setTagFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder={t("vault.all_tags")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("vault.all_tags")}</SelectItem>
+              {allTags.map((tp) => (
+                <SelectItem key={tp} value={tp}>
+                  {tp}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

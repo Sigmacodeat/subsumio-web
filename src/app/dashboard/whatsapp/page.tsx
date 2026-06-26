@@ -22,6 +22,15 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import type { BrainPage } from "@/lib/types";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -493,36 +502,51 @@ export default function WhatsAppDashboardPage() {
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1fr_160px_auto]">
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder={t("whatsapp.phone_placeholder")}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-              />
-              <input
-                value={identityName}
-                onChange={(e) => setIdentityName(e.target.value)}
-                placeholder={t("whatsapp.name_placeholder")}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-              />
-              <select
-                value={identityRole}
-                onChange={(e) => setIdentityRole(e.target.value as typeof identityRole)}
-                className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-              >
-                <option value="lawyer">{t("whatsapp.role_lawyer")}</option>
-                <option value="assistant">{t("whatsapp.role_assistant")}</option>
-                <option value="client">{t("whatsapp.role_client")}</option>
-                <option value="intake">{t("whatsapp.role_intake")}</option>
-              </select>
-              <Button onClick={() => void addIdentity()} disabled={savingIdentity || !phone.trim()}>
-                {savingIdentity ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <CheckCircle2 size={14} />
-                )}
-                {t("whatsapp.activate")}
-              </Button>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-phone" className="text-xs">Telefon</Label>
+                <Input
+                  id="whatsapp-phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t("whatsapp.phone_placeholder")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-name" className="text-xs">Name</Label>
+                <Input
+                  id="whatsapp-name"
+                  value={identityName}
+                  onChange={(e) => setIdentityName(e.target.value)}
+                  placeholder={t("whatsapp.name_placeholder")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-role" className="text-xs">Rolle</Label>
+                <Select
+                  value={identityRole}
+                  onValueChange={(v) => setIdentityRole(v as typeof identityRole)}
+                >
+                  <SelectTrigger id="whatsapp-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lawyer">{t("whatsapp.role_lawyer")}</SelectItem>
+                    <SelectItem value="assistant">{t("whatsapp.role_assistant")}</SelectItem>
+                    <SelectItem value="client">{t("whatsapp.role_client")}</SelectItem>
+                    <SelectItem value="intake">{t("whatsapp.role_intake")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button onClick={() => void addIdentity()} disabled={savingIdentity || !phone.trim()}>
+                  {savingIdentity ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={14} />
+                  )}
+                  {t("whatsapp.activate")}
+                </Button>
+              </div>
             </div>
             {status?.identities?.length ? (
               <div className="space-y-2">

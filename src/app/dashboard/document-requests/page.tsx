@@ -18,6 +18,8 @@ import {
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -207,26 +209,37 @@ export default function DocumentRequestsPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <input
-            value={createForm.case_slug}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, case_slug: e.target.value }))}
-            placeholder="Akte, z. B. legal/cases/2026-014"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
-          />
-          <textarea
-            value={createForm.items}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, items: e.target.value }))}
-            placeholder="Unterlagen, eine pro Zeile"
-            rows={3}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
-          />
-          <textarea
-            value={createForm.message_draft}
-            onChange={(e) => setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))}
-            placeholder="Nachrichtenentwurf"
-            rows={3}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] outline-none focus:border-[color:var(--ds-border-strong)] md:col-span-2"
-          />
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="doc-req-case" className="text-xs text-[color:var(--ds-text-muted)]">Akte</Label>
+            <Input
+              id="doc-req-case"
+              value={createForm.case_slug}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, case_slug: e.target.value }))}
+              placeholder="Akte, z. B. legal/cases/2026-014"
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="doc-req-items" className="text-xs text-[color:var(--ds-text-muted)]">Unterlagen</Label>
+            <textarea
+              id="doc-req-items"
+              value={createForm.items}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, items: e.target.value }))}
+              placeholder="Unterlagen, eine pro Zeile"
+              rows={3}
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="doc-req-msg" className="text-xs text-[color:var(--ds-text-muted)]">Nachrichtenentwurf</Label>
+            <textarea
+              id="doc-req-msg"
+              value={createForm.message_draft}
+              onChange={(e) => setCreateForm((prev) => ({ ...prev, message_draft: e.target.value }))}
+              placeholder="Nachrichtenentwurf"
+              rows={3}
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--ds-border-strong)] focus:outline-none"
+            />
+          </div>
         </div>
         <label className="inline-flex items-center gap-2 text-xs text-[color:var(--ds-text-muted)]">
           <input

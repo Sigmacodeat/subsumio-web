@@ -168,6 +168,20 @@ export const api = {
     recentQueries(limit = 10): Promise<RecentQuery[]> {
       return request(`/api/queries/recent?limit=${limit}`);
     },
+
+    cockpit(opts?: {
+      types?: string;
+      recentLimit?: number;
+    }): Promise<{
+      stats: BrainStats | null;
+      recent: RecentQuery[];
+      pages: Record<string, BrainPage[]>;
+    }> {
+      const params = new URLSearchParams();
+      if (opts?.types) params.set("types", opts.types);
+      if (opts?.recentLimit) params.set("recent_limit", String(opts.recentLimit));
+      return request(`/api/dashboard/cockpit?${params.toString()}`);
+    },
   },
 
   query: {

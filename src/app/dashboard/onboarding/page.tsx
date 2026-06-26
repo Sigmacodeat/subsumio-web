@@ -19,6 +19,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
 import { api } from "@/lib/api";
@@ -371,81 +380,89 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-firm" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_firm")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-firm"
                       value={profile.kanzleiName}
                       onChange={(e) => updateProfile("kanzleiName", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder="Kanzlei Muster"
                     />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-owner" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_owner")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-owner"
                       value={profile.anwaltName}
                       onChange={(e) => updateProfile("anwaltName", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder={userName || "Dr. Muster"}
                     />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-email" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_email")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-email"
                       value={profile.kanzleiEmail}
                       onChange={(e) => updateProfile("kanzleiEmail", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder={userEmail || "office@kanzlei.at"}
                     />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-country" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_country")}
-                    </span>
-                    <select
+                    </Label>
+                    <Select
                       value={profile.country}
-                      onChange={(e) => updateProfile("country", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      onValueChange={(v) => updateProfile("country", v)}
                     >
-                      <option value="AT">Österreich</option>
-                      <option value="DE">Deutschland</option>
-                      <option value="CH">Schweiz</option>
-                    </select>
-                  </label>
+                      <SelectTrigger id="ob-country">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AT">Österreich</SelectItem>
+                        <SelectItem value="DE">Deutschland</SelectItem>
+                        <SelectItem value="CH">Schweiz</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-[0.9fr_1.1fr]">
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-role" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_role")}
-                    </span>
-                    <select
+                    </Label>
+                    <Select
                       value={profile.role}
-                      onChange={(e) => updateProfile("role", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      onValueChange={(v) => updateProfile("role", v)}
                     >
-                      <option value="lawyer">{t("onboarding.role_lawyer")}</option>
-                      <option value="assistant">{t("onboarding.role_assistant")}</option>
-                      <option value="management">{t("onboarding.role_management")}</option>
-                    </select>
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      <SelectTrigger id="ob-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lawyer">{t("onboarding.role_lawyer")}</SelectItem>
+                        <SelectItem value="assistant">{t("onboarding.role_assistant")}</SelectItem>
+                        <SelectItem value="management">{t("onboarding.role_management")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-focus" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.profile_focus")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-focus"
                       value={profile.focus}
                       onChange={(e) => updateProfile("focus", e.target.value)}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder={t("onboarding.profile_focus_hint")}
                     />
-                  </label>
+                  </div>
                 </div>
 
                 {error && <p className="text-xs text-red-600">{error}</p>}
@@ -489,17 +506,17 @@ export default function OnboardingPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <label className="space-y-1.5">
-                      <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
-                        {t("onboarding.whatsapp_phone")}
-                      </span>
-                      <input
-                        value={whatsappPhone}
-                        onChange={(e) => setWhatsappPhone(e.target.value)}
-                        className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                        placeholder={t("onboarding.whatsapp_phone_hint")}
-                      />
-                    </label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-wa-phone" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      {t("onboarding.whatsapp_phone")}
+                    </Label>
+                    <Input
+                      id="ob-wa-phone"
+                      value={whatsappPhone}
+                      onChange={(e) => setWhatsappPhone(e.target.value)}
+                      placeholder={t("onboarding.whatsapp_phone_hint")}
+                    />
+                  </div>
                     <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
                       <p className="text-xs text-amber-600">
                         Für WhatsApp Business wird ein Meta-Webhook benötigt. Nach dem Onboarding
@@ -556,57 +573,59 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-rate" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.billing_rate")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-rate"
                       type="number"
                       value={billing.stundensatz}
                       onChange={(e) => setBilling((b) => ({ ...b, stundensatz: e.target.value }))}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder="220"
                     />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-increment" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.billing_increment")}
-                    </span>
-                    <select
+                    </Label>
+                    <Select
                       value={billing.abrechnungstakt}
-                      onChange={(e) =>
-                        setBilling((b) => ({ ...b, abrechnungstakt: e.target.value }))
-                      }
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+                      onValueChange={(v) => setBilling((b) => ({ ...b, abrechnungstakt: v }))}
                     >
-                      <option value="5">{t("onboarding.billing_increment_5")}</option>
-                      <option value="10">{t("onboarding.billing_increment_10")}</option>
-                      <option value="15">{t("onboarding.billing_increment_15")}</option>
-                      <option value="30">{t("onboarding.billing_increment_30")}</option>
-                    </select>
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                      <SelectTrigger id="ob-increment">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">{t("onboarding.billing_increment_5")}</SelectItem>
+                        <SelectItem value="10">{t("onboarding.billing_increment_10")}</SelectItem>
+                        <SelectItem value="15">{t("onboarding.billing_increment_15")}</SelectItem>
+                        <SelectItem value="30">{t("onboarding.billing_increment_30")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-iban" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.billing_iban")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-iban"
                       value={billing.iban}
                       onChange={(e) => setBilling((b) => ({ ...b, iban: e.target.value }))}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder="AT60 1234 5678 9012 3456"
                     />
-                  </label>
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-medium text-[color:var(--ds-text-muted)]">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ob-bank" className="text-xs font-medium text-[color:var(--ds-text-muted)]">
                       {t("onboarding.billing_bank")}
-                    </span>
-                    <input
+                    </Label>
+                    <Input
+                      id="ob-bank"
                       value={billing.bankName}
                       onChange={(e) => setBilling((b) => ({ ...b, bankName: e.target.value }))}
-                      className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
                       placeholder="Bank Austria"
                     />
-                  </label>
+                  </div>
                 </div>
 
                 {error && <p className="text-xs text-red-600">{error}</p>}

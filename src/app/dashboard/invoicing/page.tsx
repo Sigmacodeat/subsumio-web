@@ -33,16 +33,15 @@ import {
   type InvoiceExpenseEntry,
   type TimeEntry,
 } from "@/lib/legal-types";
-import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { generateInvoicePdf } from "@/lib/invoice-pdf";
-import { calculateRvg, type RvgResult } from "@/lib/rvg";
 import { OFFLINE_KEYS, enqueueMutation, getCache, isOnline, setCache } from "@/lib/offline-store";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
+import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
 
 interface InvoiceItem {
   description: string;
@@ -127,45 +126,13 @@ function escapeHtmlLines(text: string): string {
   return escapeHtml(text).replace(/\n/g, "<br>");
 }
 
-/**
- * Fortlaufende Rechnungsnummer pro Jahr (§ 14 Abs. 4 Nr. 4 UStG verlangt
- * einmalige, fortlaufende Nummern — Zufallsnummern sind unzulässig).
- * Die nächste Nummer wird aus den bereits im Brain gespeicherten Rechnungen
- * des laufenden Jahres abgeleitet: R-<Jahr>-<lfd. Nr., 4-stellig>.
- * Bei Kollision (Race Condition bei gleichzeitiger Erstellung) wird ein
- * Suffix-Buchstabe angehängt, um Eindeutigkeit zu garantieren.
- */
-function nextInvoiceNumber(existing: Invoice[]): string {
-  const year = new Date().getFullYear();
-  const prefix = `R-${year}-`;
-  let maxSeq = 0;
-  for (const inv of existing) {
-    if (typeof inv.number === "string" && inv.number.startsWith(prefix)) {
-      const seq = parseInt(inv.number.slice(prefix.length), 10);
-      if (Number.isFinite(seq) && seq > maxSeq) maxSeq = seq;
-    }
-  }
-  let candidate = `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
-  const existingNumbers = new Set(existing.map((i) => i.number));
-  if (existingNumbers.has(candidate)) {
-    let suffix = "A";
-    while (existingNumbers.has(`${candidate}-${suffix}`)) {
-      suffix = String.fromCharCode(suffix.charCodeAt(0) + 1);
-    }
-    candidate = `${candidate}-${suffix}`;
-  }
-  return candidate;
-}
 
 export default function InvoicingPage() {
   const confirm = useConfirm();
   const { t, lang } = useLang();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [cases, setCases] = useState<InvoiceCase[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [selectedCase, setSelectedCase] = useState("");
-  const [invoiceType, setInvoiceType] = useState<Invoice["invoiceType"]>("standard");
-  const [advancePayment, setAdvancePayment] = useState("");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [kanzlei, setKanzlei] = useState<KanzleiSettings | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,6 +151,12 @@ export default function InvoicingPage() {
       .catch(() => {});
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-invoice", handler);
+    return () => window.removeEventListener("subsumio:create-invoice", handler);
   }, []);
 
   async function loadAll() {
@@ -341,178 +314,6 @@ export default function InvoicingPage() {
       );
       const cached = await getCache<InvoicingCache>(OFFLINE_KEYS.invoices);
       setCases(cached?.cases ?? []);
-    }
-  }
-
-  async function createInvoice() {
-    const c = cases.find((ca) => ca.slug === selectedCase);
-    if (!c) return;
-
-    const settings = kanzlei ?? (await loadKanzleiSettings());
-    let clientAddress: string | undefined;
-    if (c.clientSlug) {
-      try {
-        const page = await api.brain.getPage(c.clientSlug);
-        const fm = page.frontmatter as Record<string, unknown>;
-        const addr = String(fm.address ?? "");
-        const company = String(fm.company ?? "");
-        const name = String(fm.name ?? c.clientName ?? "");
-        clientAddress = [name, company, addr].filter(Boolean).join("\n");
-      } catch (err) {
-        console.error(
-          "[invoice-create] failed to load contact:",
-          err instanceof Error ? err.message : String(err)
-        );
-      }
-    }
-    const defaultRate = parseInt(settings?.stundensatz || "200", 10);
-    const billableTime = (c.timeEntries ?? []).filter(
-      (entry) => entry.billable !== false && !entry.billed
-    );
-    const billableExpenses = (c.expenses ?? []).filter(
-      (entry) => entry.billable !== false && !entry.billed
-    );
-    if (billableTime.length === 0 && billableExpenses.length === 0) return;
-
-    const items: InvoiceItem[] = billableTime.map((entry) => {
-      const hours = entry.minutes / 60;
-      const rate = entry.rate || defaultRate;
-      return {
-        description: entry.description,
-        date: entry.date.split("T")[0],
-        hours: Math.round(hours * 100) / 100,
-        rate,
-        amount: Math.round(hours * rate * 100) / 100,
-      };
-    });
-    const expenses: InvoiceExpenseEntry[] = billableExpenses.map((entry) => ({
-      description: entry.description,
-      date: entry.date.split("T")[0],
-      amount: entry.amount,
-    }));
-
-    const subtotal = items.reduce((s, i) => s + i.amount, 0);
-    const expenseTotal = expenses.reduce((s, i) => s + i.amount, 0);
-    const parsedAdvance = Math.max(0, parseFloat(advancePayment) || 0);
-    // RATG = Austria (20% VAT), RVG/custom = Germany (19% VAT)
-    const vatRate = settings?.tarifModell === "ratg" ? 0.2 : 0.19;
-    const taxableBase = subtotal + expenseTotal;
-    const tax = Math.round(taxableBase * vatRate * 100) / 100;
-    const total = Math.max(0, Math.round((taxableBase + tax - parsedAdvance) * 100) / 100);
-    const paymentDays = Math.max(1, parseInt(settings?.zahlungszielTage || "14", 10) || 14);
-
-    const invoice: Invoice = {
-      id: `invoice/${Date.now()}`,
-      number: nextInvoiceNumber(invoices),
-      client: c.clientName || t("inv.unknown_client"),
-      clientSlug: c.clientSlug,
-      clientAddress,
-      caseNumber: c.caseNumber,
-      date: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + paymentDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      items,
-      expenses,
-      status: "draft",
-      subtotal,
-      expenseTotal,
-      advancePayment: parsedAdvance,
-      vatRate,
-      tax,
-      total,
-      paymentTerms: `${paymentDays} ${t("inv.days_net")}`,
-      bank: {
-        name: settings?.bankName,
-        iban: settings?.iban,
-        bic: settings?.bic,
-      },
-      notes: `${t("inv.invoice_for_case")} ${c.caseNumber}`,
-    };
-
-    // GoBD-Baustein: Manipulations-Evidenz über die belegrelevanten Felder.
-    // Eine spätere Änderung an Nummer/Betrag/Positionen ändert den Hash, die
-    // Unveränderbarkeit wird so nachprüfbar (§ 146 Abs. 4 AO, GoBD Rz. 107 ff.).
-    const issuedAt = new Date();
-    const hash = await sha256Hex(invoiceContentString(invoice));
-
-    try {
-      const invoicePayload = {
-        slug: invoice.id,
-        title: `Rechnung ${invoice.number}`,
-        type: "invoice",
-        frontmatter: {
-          type: "invoice",
-          invoice_number: invoice.number,
-          client: invoice.client,
-          client_slug: invoice.clientSlug,
-          client_address: invoice.clientAddress,
-          case_number: invoice.caseNumber,
-          date: invoice.date,
-          due_date: invoice.dueDate,
-          items: invoice.items,
-          expenses: invoice.expenses,
-          status: invoice.status,
-          subtotal: invoice.subtotal,
-          expense_total: invoice.expenseTotal,
-          advance_payment: invoice.advancePayment,
-          vat_rate: invoice.vatRate,
-          tax: invoice.tax,
-          total: invoice.total,
-          payment_terms: invoice.paymentTerms,
-          bank: invoice.bank,
-          notes: invoice.notes,
-          invoice_type: invoiceType,
-          ...gobdFrontmatter(hash, issuedAt),
-        },
-      };
-      if (isOnline()) {
-        await api.brain.createPage(invoicePayload);
-      } else {
-        await enqueueMutation({ type: "createPage", payload: invoicePayload });
-      }
-      const billedTimeIds = new Set(billableTime.map((entry) => entry.id));
-      const billedExpenseIds = new Set(billableExpenses.map((entry) => entry.id));
-      const updatedTimeEntries = (c.timeEntries ?? []).map((entry) =>
-        billedTimeIds.has(entry.id)
-          ? { ...entry, billed: true, invoice_number: invoice.number }
-          : entry
-      );
-      const updatedExpenses = (c.expenses ?? []).map((entry) =>
-        billedExpenseIds.has(entry.id)
-          ? { ...entry, billed: true, invoice_number: invoice.number }
-          : entry
-      );
-      const caseUpdatePayload = {
-        slug: c.slug,
-        frontmatter: {
-          time_entries: updatedTimeEntries,
-          expenses: updatedExpenses,
-        },
-      };
-      if (isOnline()) {
-        await api.brain.updatePage(caseUpdatePayload);
-      } else {
-        await enqueueMutation({ type: "updatePage", payload: caseUpdatePayload });
-      }
-      const nextInvoices = [invoice, ...invoices];
-      const nextCases = cases.map((ca) =>
-        ca.slug === c.slug
-          ? { ...ca, timeEntries: updatedTimeEntries, expenses: updatedExpenses }
-          : ca
-      );
-      setInvoices(nextInvoices);
-      setCases(nextCases);
-      await setCache<InvoicingCache>(OFFLINE_KEYS.invoices, {
-        invoices: nextInvoices,
-        cases: nextCases,
-      });
-      setShowCreate(false);
-      setSelectedCase("");
-      setAdvancePayment("");
-    } catch (err) {
-      console.error(
-        "[invoicing] failed to create invoice:",
-        err instanceof Error ? err.message : String(err)
-      );
     }
   }
 
@@ -821,10 +622,10 @@ export default function InvoicingPage() {
           <Button
             variant="primary"
             className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => setQuickCreateOpen(true)}
           >
-            {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
-            {showCreate ? t("inv.cancel") : t("inv.create")}
+            <Plus size={14} />
+            {t("inv.create")}
           </Button>
         }
       />
@@ -880,101 +681,12 @@ export default function InvoicingPage() {
         </div>
       )}
 
-      {/* Create Invoice */}
-      {showCreate && (
-        <div className="space-y-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <h2 className="text-sm font-semibold text-emerald-600">{t("inv.create_from_case")}</h2>
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                  {t("inv.select_case")}
-                </label>
-                <select
-                  value={selectedCase}
-                  onChange={(e) => setSelectedCase(e.target.value)}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
-                >
-                  <option value="">— {t("inv.select_case")} —</option>
-                  {cases.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.caseNumber} — {c.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                  {t("inv.invoice_type")}
-                </label>
-                <select
-                  value={invoiceType}
-                  onChange={(e) => setInvoiceType(e.target.value as Invoice["invoiceType"])}
-                  className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
-                >
-                  <option value="standard">{t("inv.type_standard")}</option>
-                  <option value="teilrechnung">{t("inv.type_teilrechnung")}</option>
-                  <option value="sammelrechnung">{t("inv.type_sammelrechnung")}</option>
-                  <option value="gutschrift">{t("inv.type_gutschrift")}</option>
-                </select>
-              </div>
-            </div>
-            {selectedCase &&
-              (() => {
-                const c = cases.find((ca) => ca.slug === selectedCase);
-                const openTime = (c?.timeEntries ?? []).filter(
-                  (entry) => entry.billable !== false && !entry.billed
-                );
-                const openExpenses = (c?.expenses ?? []).filter(
-                  (entry) => entry.billable !== false && !entry.billed
-                );
-                if (openTime.length === 0 && openExpenses.length === 0)
-                  return <div className="text-sm text-amber-600">{t("inv.no_billable")}</div>;
-                const totalMinutes = openTime.reduce((s, e) => s + (e.minutes || 0), 0);
-                const expenseTotal = openExpenses.reduce((s, e) => s + e.amount, 0);
-                return (
-                  <div className="text-sm text-[color:var(--ds-text-muted)]">
-                    {openTime.length} {t("inv.open_bookings")} · {Math.floor(totalMinutes / 60)}h{" "}
-                    {totalMinutes % 60}min · {openExpenses.length} {t("inv.expenses")} (
-                    {expenseTotal.toFixed(2)} €) · {t("inv.fee_estimated")}:{" "}
-                    {Math.round(
-                      (totalMinutes / 60) * parseInt(kanzlei?.stundensatz || "200", 10)
-                    ).toLocaleString(lang === "en" ? "en-GB" : "de-DE")}{" "}
-                    €
-                  </div>
-                );
-              })()}
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("inv.advance_payment")}
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={advancePayment}
-                onChange={(e) => setAdvancePayment(e.target.value)}
-                placeholder="0,00"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-emerald-500/50 focus:outline-none"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="primary"
-                className="gap-2 bg-emerald-600 text-sm text-white hover:bg-emerald-500"
-                onClick={createInvoice}
-                disabled={!selectedCase || (userRole !== "admin" && userRole !== "lawyer")}
-                title={
-                  userRole !== "admin" && userRole !== "lawyer" ? t("inv.admin_lawyer_only") : ""
-                }
-              >
-                <FileText size={14} />
-                {t("inv.create")}
-              </Button>
-              <RvgDialog />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Quick create dialog */}
+      <InvoiceQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => void loadAll()}
+      />
 
       {/* Search */}
       <SearchBar
@@ -1008,7 +720,7 @@ export default function InvoicingPage() {
           <p className="mb-6 max-w-sm text-sm leading-relaxed text-[color:var(--ds-text-muted)]">
             {t("inv.empty_desc")}
           </p>
-          <Button variant="glow" size="md" onClick={() => setShowCreate(true)}>
+          <Button variant="glow" size="md" onClick={() => setQuickCreateOpen(true)}>
             <Plus size={15} /> {t("inv.create")}
           </Button>
         </div>
@@ -1146,115 +858,6 @@ export default function InvoicingPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function RvgDialog() {
-  const { t } = useLang();
-  const [open, setOpen] = useState(false);
-  const [streitwert, setStreitwert] = useState("");
-  const [result, setResult] = useState<RvgResult | null>(null);
-
-  return (
-    <>
-      <Button
-        variant="outline"
-        className="border-[color:var(--ds-border)] text-sm text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]"
-        onClick={() => setOpen(true)}
-      >
-        RVG {t("inv.rvg_calculate")}
-      </Button>
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-md space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-semibold text-[color:var(--ds-text)]">
-              {t("inv.rvg_title")}
-            </h3>
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                {t("inv.rvg_streitwert")} (€)
-              </label>
-              <input
-                type="number"
-                value={streitwert}
-                onChange={(e) => {
-                  setStreitwert(e.target.value);
-                  const sv = parseFloat(e.target.value);
-                  if (sv > 0) {
-                    setResult(calculateRvg(sv));
-                  } else {
-                    setResult(null);
-                  }
-                }}
-                placeholder="z. B. 10000"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              />
-            </div>
-            {result && (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--ds-text-muted)]">
-                    {t("inv.rvg_basis")} (1,0)
-                  </span>
-                  <span className="text-[color:var(--ds-text)]">
-                    {result.basisGebuehr.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--ds-text-muted)]">
-                    {t("inv.rvg_verfahren")} (1,3)
-                  </span>
-                  <span className="text-[color:var(--ds-text)]">
-                    {result.verfahrensgebuehr.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--ds-text-muted)]">
-                    {t("inv.rvg_termins")} (1,2)
-                  </span>
-                  <span className="text-[color:var(--ds-text)]">
-                    {result.terminsgebuehr.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_auslagen")}</span>
-                  <span className="text-[color:var(--ds-text)]">
-                    {result.auslagenpauschale.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-[color:var(--ds-border)] pt-2">
-                  <span className="text-[color:var(--ds-text-muted)]">{t("inv.rvg_netto")}</span>
-                  <span className="font-medium text-[color:var(--ds-text)]">
-                    {result.summeNetto.toFixed(2)} €
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--ds-text-muted)]">
-                    {t("inv.rvg_vat")} (19 %)
-                  </span>
-                  <span className="text-[color:var(--ds-text)]">{result.mwst.toFixed(2)} €</span>
-                </div>
-                <div className="flex justify-between font-semibold text-emerald-600">
-                  <span>{t("inv.rvg_brutto")}</span>
-                  <span>{result.summeBrutto.toFixed(2)} €</span>
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-                {t("inv.rvg_close")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 

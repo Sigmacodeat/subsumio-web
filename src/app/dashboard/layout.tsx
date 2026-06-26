@@ -9,6 +9,12 @@ import { CommandPalette } from "@/components/dashboard/command-palette";
 import { KeyboardShortcuts } from "@/components/dashboard/keyboard-shortcuts";
 import { DashboardGuide } from "@/components/dashboard/dashboard-guide";
 import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
+import { CaseQuickCreateDialog } from "@/components/legal/CaseQuickCreateDialog";
+import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
+import { InvoiceQuickCreateDialog } from "@/components/legal/InvoiceQuickCreateDialog";
+import { SignatureQuickCreateDialog } from "@/components/legal/SignatureQuickCreateDialog";
+import { ClauseQuickCreateDialog } from "@/components/legal/ClauseQuickCreateDialog";
+import { ContractQuickCreateDialog } from "@/components/legal/ContractQuickCreateDialog";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar, type Theme } from "@/components/dashboard/topbar";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
@@ -48,6 +54,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [guideOpen, setGuideOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(true);
+  const [globalQuickCreateOpen, setGlobalQuickCreateOpen] = useState(false);
+  const [globalDeadlineCreateOpen, setGlobalDeadlineCreateOpen] = useState(false);
+  const [globalInvoiceCreateOpen, setGlobalInvoiceCreateOpen] = useState(false);
+  const [globalSignatureCreateOpen, setGlobalSignatureCreateOpen] = useState(false);
+  const [globalClauseCreateOpen, setGlobalClauseCreateOpen] = useState(false);
+  const [globalContractCreateOpen, setGlobalContractCreateOpen] = useState(false);
 
   // Persist copilot panel state
   useEffect(() => {
@@ -144,6 +156,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     ensureRealtime();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-case", handler);
+    return () => window.removeEventListener("subsumio:create-case", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalDeadlineCreateOpen(true);
+    window.addEventListener("subsumio:create-deadline", handler);
+    return () => window.removeEventListener("subsumio:create-deadline", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalInvoiceCreateOpen(true);
+    window.addEventListener("subsumio:create-invoice", handler);
+    return () => window.removeEventListener("subsumio:create-invoice", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalSignatureCreateOpen(true);
+    window.addEventListener("subsumio:create-signature", handler);
+    return () => window.removeEventListener("subsumio:create-signature", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalClauseCreateOpen(true);
+    window.addEventListener("subsumio:create-clause", handler);
+    return () => window.removeEventListener("subsumio:create-clause", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setGlobalContractCreateOpen(true);
+    window.addEventListener("subsumio:create-contract", handler);
+    return () => window.removeEventListener("subsumio:create-contract", handler);
   }, []);
 
   useEffect(() => {
@@ -259,6 +307,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <DashboardGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
       <CopilotSidebar open={copilotOpen} onToggle={() => setCopilotOpen((v) => !v)} />
+
+      <CaseQuickCreateDialog
+        open={globalQuickCreateOpen}
+        onOpenChange={setGlobalQuickCreateOpen}
+      />
+
+      <DeadlineQuickCreateDialog
+        open={globalDeadlineCreateOpen}
+        onOpenChange={setGlobalDeadlineCreateOpen}
+      />
+
+      <InvoiceQuickCreateDialog
+        open={globalInvoiceCreateOpen}
+        onOpenChange={setGlobalInvoiceCreateOpen}
+      />
+
+      <SignatureQuickCreateDialog
+        open={globalSignatureCreateOpen}
+        onOpenChange={setGlobalSignatureCreateOpen}
+      />
+
+      <ClauseQuickCreateDialog
+        open={globalClauseCreateOpen}
+        onOpenChange={setGlobalClauseCreateOpen}
+      />
+
+      <ContractQuickCreateDialog
+        open={globalContractCreateOpen}
+        onOpenChange={setGlobalContractCreateOpen}
+      />
 
       {/* Mobile bottom tab bar — agency-level navigation */}
       <MobileTabBar

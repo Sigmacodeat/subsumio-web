@@ -14,6 +14,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
@@ -178,39 +187,60 @@ export default function WhatsAppTemplatesPage() {
                   <X size={16} />
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder="Template-Name (z.B. termin_erinnerung)"
-                value={newTemplate.name}
-                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-              />
-              <div className="flex gap-2">
-                <select
-                  value={newTemplate.language}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, language: e.target.value })}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-                >
-                  <option value="de">Deutsch</option>
-                  <option value="en">Englisch</option>
-                </select>
-                <select
-                  value={newTemplate.category}
-                  onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                  className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-                >
-                  <option value="UTILITY">Utility</option>
-                  <option value="MARKETING">Marketing</option>
-                  <option value="AUTHENTICATION">Authentication</option>
-                </select>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-tpl-name" className="text-xs">Template-Name</Label>
+                <Input
+                  id="new-tpl-name"
+                  type="text"
+                  placeholder="z.B. termin_erinnerung"
+                  value={newTemplate.name}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                />
               </div>
-              <textarea
-                placeholder="Template-Inhalt mit Platzhaltern: Hallo {{1}}, Ihr Termin am {{2}}..."
-                value={newTemplate.body}
-                onChange={(e) => setNewTemplate({ ...newTemplate, body: e.target.value })}
-                rows={4}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-tpl-lang" className="text-xs">Sprache</Label>
+                  <Select
+                    value={newTemplate.language}
+                    onValueChange={(v) => setNewTemplate({ ...newTemplate, language: v })}
+                  >
+                    <SelectTrigger id="new-tpl-lang">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="de">Deutsch</SelectItem>
+                      <SelectItem value="en">Englisch</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-tpl-cat" className="text-xs">Kategorie</Label>
+                  <Select
+                    value={newTemplate.category}
+                    onValueChange={(v) => setNewTemplate({ ...newTemplate, category: v })}
+                  >
+                    <SelectTrigger id="new-tpl-cat">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UTILITY">Utility</SelectItem>
+                      <SelectItem value="MARKETING">Marketing</SelectItem>
+                      <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-tpl-body" className="text-xs">Inhalt</Label>
+                <textarea
+                  id="new-tpl-body"
+                  placeholder="Hallo {{1}}, Ihr Termin am {{2}}..."
+                  value={newTemplate.body}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, body: e.target.value })}
+                  rows={4}
+                  className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-blue-500/50 focus:outline-none"
+                />
+              </div>
               <Button
                 variant="primary"
                 className="gap-2 bg-blue-600 text-sm text-white hover:bg-blue-500"
@@ -254,46 +284,57 @@ export default function WhatsAppTemplatesPage() {
                             <X size={16} />
                           </button>
                         </div>
-                        <input
+                        <Input
                           type="text"
                           value={editing.name}
                           onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
                         />
-                        <div className="flex gap-2">
-                          <select
+                        <div className="grid grid-cols-3 gap-2">
+                          <Select
                             value={editing.language}
-                            onChange={(e) => setEditing({ ...editing, language: e.target.value })}
-                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                            onValueChange={(v) => setEditing({ ...editing, language: v })}
                           >
-                            <option value="de">Deutsch</option>
-                            <option value="en">Englisch</option>
-                          </select>
-                          <select
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="de">Deutsch</SelectItem>
+                              <SelectItem value="en">Englisch</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
                             value={editing.category}
-                            onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                            onValueChange={(v) => setEditing({ ...editing, category: v })}
                           >
-                            <option value="UTILITY">Utility</option>
-                            <option value="MARKETING">Marketing</option>
-                            <option value="AUTHENTICATION">Authentication</option>
-                          </select>
-                          <select
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="UTILITY">Utility</SelectItem>
+                              <SelectItem value="MARKETING">Marketing</SelectItem>
+                              <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
                             value={editing.status}
-                            onChange={(e) => setEditing({ ...editing, status: e.target.value })}
-                            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                            onValueChange={(v) => setEditing({ ...editing, status: v })}
                           >
-                            <option value="draft">Draft</option>
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                            <option value="rejected">Rejected</option>
-                          </select>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">Draft</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <textarea
                           value={editing.body}
                           onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                           rows={4}
-                          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
+                          className="w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-blue-500/50 focus:outline-none"
                         />
                         <Button
                           variant="primary"

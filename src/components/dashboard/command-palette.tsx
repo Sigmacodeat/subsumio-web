@@ -22,6 +22,9 @@ import {
   Network,
   Database,
   GitCompare,
+  FileSignature,
+  Library,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLang } from "@/lib/use-lang";
@@ -244,7 +247,9 @@ export function CommandPalette({
       id: "create-case",
       label: t("cmd.action.new_case"),
       icon: Briefcase,
-      href: "/dashboard/cases/new",
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-case"));
+      },
       section: t("cmd.section.create"),
       keywords: "neue akte mandant fall matter create",
     });
@@ -252,7 +257,9 @@ export function CommandPalette({
       id: "create-deadline",
       label: t("cmd.action.new_deadline"),
       icon: CalendarClock,
-      href: "/dashboard/deadlines",
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-deadline"));
+      },
       section: t("cmd.section.create"),
       keywords: "neue frist termin deadline create",
     });
@@ -260,7 +267,9 @@ export function CommandPalette({
       id: "create-invoice",
       label: t("cmd.action.new_invoice"),
       icon: FileText,
-      href: "/dashboard/invoicing",
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-invoice"));
+      },
       section: t("cmd.section.create"),
       keywords: "neue rechnung invoice create",
     });
@@ -268,9 +277,41 @@ export function CommandPalette({
       id: "create-contract",
       label: t("cmd.action.new_contract"),
       icon: FileText,
-      href: "/dashboard/contracts",
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-contract"));
+      },
       section: t("cmd.section.create"),
       keywords: "neuer vertrag contract create",
+    });
+    cmds.push({
+      id: "create-space",
+      label: t("cmd.action.new_space" as DashboardKey),
+      icon: Share2,
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-space"));
+      },
+      section: t("cmd.section.create"),
+      keywords: "shared space kollaboration create",
+    });
+    cmds.push({
+      id: "create-signature",
+      label: t("cmd.action.new_signature" as DashboardKey),
+      icon: FileSignature,
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-signature"));
+      },
+      section: t("cmd.section.create"),
+      keywords: "unterschrift signature sign create",
+    });
+    cmds.push({
+      id: "create-clause",
+      label: t("cmd.action.new_clause" as DashboardKey),
+      icon: Library,
+      action: () => {
+        window.dispatchEvent(new CustomEvent("subsumio:create-clause"));
+      },
+      section: t("cmd.section.create"),
+      keywords: "klausel clause bibliothek create",
     });
     cmds.push({
       id: "upload-document",

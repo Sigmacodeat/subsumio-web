@@ -19,6 +19,15 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { csrfFetch } from "@/lib/csrf";
 import { cn, encodeSlugPath } from "@/lib/utils";
@@ -39,6 +48,7 @@ import { DataTable, type Column } from "@/components/dashboard/data-table";
 import { useToast } from "@/components/ui/toast";
 import { useLang } from "@/lib/use-lang";
 import type { DashboardKey } from "@/content/dashboard";
+import { DeadlineQuickCreateDialog } from "@/components/legal/DeadlineQuickCreateDialog";
 
 interface DeadlineItem {
   id: string;
@@ -99,7 +109,7 @@ export default function DeadlinesPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [showCalc, setShowCalc] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [calcTemplate, setCalcTemplate] = useState<DeadlineRule>(DEADLINE_RULES[0]);
   const [calcDate, setCalcDate] = useState(new Date().toISOString().split("T")[0]);
   const [calcResult, setCalcResult] = useState<{
@@ -116,16 +126,6 @@ export default function DeadlinesPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [savingDetected, setSavingDetected] = useState<number | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
-  const [caseOptions, setCaseOptions] = useState<Array<{ slug: string; title: string }>>([]);
-  const [createForm, setCreateForm] = useState({
-    description: "",
-    date: new Date().toISOString().split("T")[0],
-    caseSlug: "",
-    type: "deadline" as DeadlineItem["type"],
-    law: "",
-    source: "manual",
-    ruleKey: "",
-  });
 
   const loadDeadlines = useCallback(async () => {
     setLoading(true);
@@ -164,10 +164,6 @@ export default function DeadlinesPage() {
           confidence: typeof fm.confidence === "string" ? fm.confidence : undefined,
         });
       }
-
-      setCaseOptions(
-        casePages.map((page) => ({ slug: page.slug, title: page.title || page.slug }))
-      );
 
       for (const page of casePages) {
         const fm = caseFrontmatter(page);
@@ -249,61 +245,6 @@ export default function DeadlinesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function createDeadline() {
-    const description = createForm.description.trim();
-    if (!description || !createForm.date) return;
-    const selectedCase = caseOptions.find((c) => c.slug === createForm.caseSlug);
-    const rule = DEADLINE_RULES.find((r) => r.key === createForm.ruleKey);
-    const now = new Date();
-    const titlePart = description
-      .toLowerCase()
-      .replace(/[^a-z0-9äöüß]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 56);
-    const slug = `legal/deadlines/${createForm.date}-${titlePart || "frist"}-${now.getTime().toString(36)}`;
-    try {
-      await api.brain.createPage({
-        slug,
-        title: description,
-        type: "legal_deadline",
-        content: rule
-          ? `${rule.label}\n${rule.description}\n${rule.law}`
-          : t("deadlines.manual_content"),
-        frontmatter: {
-          type: "legal_deadline",
-          event_type: createForm.type,
-          due_date: createForm.date,
-          description,
-          status: "pending",
-          review_status: "unreviewed",
-          case_slug: createForm.caseSlug || undefined,
-          case_title: selectedCase?.title,
-          source: createForm.source,
-          law: createForm.law.trim() || rule?.law,
-          rule_key: rule?.key,
-          created_at: now.toISOString(),
-        },
-      });
-      addToast({ type: "success", title: t("deadlines.created") });
-      setCreateForm({
-        description: "",
-        date: new Date().toISOString().split("T")[0],
-        caseSlug: "",
-        type: "deadline",
-        law: "",
-        source: "manual",
-        ruleKey: "",
-      });
-      setShowCreate(false);
-      await loadDeadlines();
-    } catch (err) {
-      addToast({
-        type: "error",
-        title: err instanceof Error ? err.message : t("deadlines.create_failed"),
-      });
-    }
-  }
-
   async function updateDeadlinePage(item: DeadlineItem, frontmatter: Record<string, unknown>) {
     if (!item.slug) return;
     setActionBusy(item.slug);
@@ -377,6 +318,12 @@ export default function DeadlinesPage() {
       cancelled = true;
     };
   }, [loadDeadlines]);
+
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-deadline", handler);
+    return () => window.removeEventListener("subsumio:create-deadline", handler);
+  }, []);
 
   async function sendReminders() {
     addToast({ type: "info", title: t("deadlines.toast_sending") });
@@ -615,7 +562,7 @@ export default function DeadlinesPage() {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => setShowCreate(!showCreate)}
+              onClick={() => setQuickCreateOpen(true)}
               className="gap-2 text-xs"
             >
               <Plus size={14} />
@@ -647,160 +594,12 @@ export default function DeadlinesPage() {
         }
       />
 
-      {/* Manual deadline creation */}
-      {showCreate && (
-        <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
-              {t("deadlines.create_title")}
-            </h2>
-            <button
-              onClick={() => setShowCreate(false)}
-              aria-label={t("cmd.close")}
-              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-            >
-              <XCircle size={16} />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="xl:col-span-2">
-              <label
-                htmlFor="deadline-description"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.create_description")}
-              </label>
-              <input
-                id="deadline-description"
-                value={createForm.description}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                placeholder={t("deadlines.create_description_placeholder")}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="deadline-date"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.col_date")}
-              </label>
-              <input
-                id="deadline-date"
-                type="date"
-                value={createForm.date}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, date: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="deadline-case"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.col_case")}
-              </label>
-              <select
-                id="deadline-case"
-                value={createForm.caseSlug}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, caseSlug: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                <option value="">{t("deadlines.no_case")}</option>
-                {caseOptions.map((item) => (
-                  <option key={item.slug} value={item.slug}>
-                    {item.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="deadline-type"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.create_type")}
-              </label>
-              <select
-                id="deadline-type"
-                value={createForm.type}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    type: e.target.value as DeadlineItem["type"],
-                  }))
-                }
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                {Object.entries(TYPE_CONFIG).map(([value, labelKey]) => (
-                  <option key={value} value={value}>
-                    {t(labelKey)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="deadline-rule"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.create_rule")}
-              </label>
-              <select
-                id="deadline-rule"
-                value={createForm.ruleKey}
-                onChange={(e) => {
-                  const rule = DEADLINE_RULES.find((r) => r.key === e.target.value);
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    ruleKey: e.target.value,
-                    law: rule?.law ?? prev.law,
-                  }));
-                }}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-              >
-                <option value="">{t("deadlines.create_rule_none")}</option>
-                {DEADLINE_RULES.map((rule) => (
-                  <option key={rule.key} value={rule.key}>
-                    {rule.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                htmlFor="deadline-law"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
-                {t("deadlines.create_law")}
-              </label>
-              <input
-                id="deadline-law"
-                value={createForm.law}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, law: e.target.value }))}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                placeholder="§ 222 ZPO"
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-[color:var(--ds-text-muted)]">
-              {t("deadlines.create_review_note")}
-            </p>
-            <Button
-              variant="primary"
-              onClick={() => void createDeadline()}
-              disabled={!createForm.description.trim() || !createForm.date}
-              className="gap-2"
-            >
-              <Plus size={14} />
-              {t("deadlines.create")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Quick create dialog */}
+      <DeadlineQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => void loadDeadlines()}
+      />
 
       {/* Deadline Calculator */}
       {showCalc && (
@@ -818,52 +617,42 @@ export default function DeadlinesPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div>
-              <label
-                htmlFor="calc-template"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+            <div className="space-y-1">
+              <Label htmlFor="calc-template" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("deadlines.calc_type")}
-              </label>
-              <div className="relative">
-                <select
-                  id="calc-template"
-                  value={calcTemplate.key}
-                  onChange={(e) =>
-                    setCalcTemplate(
-                      DEADLINE_RULES.find((r) => r.key === e.target.value) || DEADLINE_RULES[0]
-                    )
-                  }
-                  className="w-full appearance-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-                >
+              </Label>
+              <Select
+                value={calcTemplate.key}
+                onValueChange={(v) =>
+                  setCalcTemplate(
+                    DEADLINE_RULES.find((r) => r.key === v) || DEADLINE_RULES[0]
+                  )
+                }
+              >
+                <SelectTrigger id="calc-template">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {DEADLINE_RULES.map((rule) => (
-                    <option key={rule.key} value={rule.key}>
+                    <SelectItem key={rule.key} value={rule.key}>
                       {rule.label} ({rule.law})
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
-                />
-              </div>
-              <p className="mt-1 text-xs text-[color:var(--ds-text-muted)]">
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-[color:var(--ds-text-muted)]">
                 {calcTemplate.description}
               </p>
             </div>
-            <div>
-              <label
-                htmlFor="calc-date"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+            <div className="space-y-1">
+              <Label htmlFor="calc-date" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("deadlines.calc_start_date")}
-              </label>
-              <input
+              </Label>
+              <Input
                 id="calc-date"
                 type="date"
                 value={calcDate}
                 onChange={(e) => setCalcDate(e.target.value)}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
               />
             </div>
             <div className="flex items-end">
@@ -935,7 +724,7 @@ export default function DeadlinesPage() {
               onChange={(e) => setAiText(e.target.value)}
               placeholder={t("deadlines.detect_placeholder")}
               rows={4}
-              className="flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+              className="flex-1 resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             />
           </div>
           <button

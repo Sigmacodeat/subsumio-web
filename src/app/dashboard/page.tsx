@@ -5,8 +5,7 @@ import Link from "next/link";
 import { Briefcase, Upload, Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/dashboard/skeleton";
-import { WidgetDashboard } from "@/components/dashboard/widget-dashboard";
-import { RundownWidget } from "@/components/dashboard/rundown-widget";
+import { WidgetBoard } from "@/components/dashboard/widget-board";
 import { useBrainStats, useRecentQueries } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
 import { useLang } from "@/lib/use-lang";
@@ -129,7 +128,7 @@ export default function DashboardPage() {
   const statsQuery = useBrainStats();
   const recentQuery = useRecentQueries(5);
   const meQuery = useMe();
-  const { t, lang } = useLang();
+  const { t } = useLang();
 
   const stats = (statsQuery.data ?? null) as BrainStats | null;
   const recent = (recentQuery.data ?? []) as RecentQuery[];
@@ -169,11 +168,13 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href="/dashboard/cases/new">
-                    <Button size="sm" variant="glow">
-                      <Briefcase size={14} /> {t("cockpit.action_case")}
-                    </Button>
-                  </Link>
+                  <Button
+                    size="sm"
+                    variant="glow"
+                    onClick={() => window.dispatchEvent(new CustomEvent("subsumio:create-case"))}
+                  >
+                    <Briefcase size={14} /> {t("cockpit.action_case")}
+                  </Button>
                   <Link href="/dashboard/import-kanzlei">
                     <Button size="sm" variant="outline">
                       <Upload size={14} /> {t("dashboard.welcome_upload")}
@@ -188,9 +189,7 @@ export default function DashboardPage() {
 
       <CalmGreeting name={userName} engineOnline={engineOnline} degraded={degraded} />
 
-      <RundownWidget />
-
-      <WidgetDashboard />
+      <WidgetBoard />
     </div>
   );
 }

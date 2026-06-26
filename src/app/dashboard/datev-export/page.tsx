@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { Download, Copy, Check, AlertTriangle, Clock, Briefcase, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { caseFrontmatter } from "@/lib/legal-types";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
@@ -128,53 +137,57 @@ export default function DatevExportPage() {
         </h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.from")}</label>
-            <input
+            <Label htmlFor="datev-from" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.from")}</Label>
+            <Input
+              id="datev-from"
               type="date"
               value={periodFrom}
               onChange={(e) => setPeriodFrom(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.to")}</label>
-            <input
+            <Label htmlFor="datev-to" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.to")}</Label>
+            <Input
+              id="datev-to"
               type="date"
               value={periodTo}
               onChange={(e) => setPeriodTo(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.chart")}</label>
-            <select
+            <Label htmlFor="datev-chart" className="text-xs text-[color:var(--ds-text-muted)]">{t("datev.chart")}</Label>
+            <Select
               value={settings?.datevKontenrahmen || "SKR03"}
-              onChange={(e) => {
+              onValueChange={(v) => {
                 const next = {
                   ...settings,
-                  datevKontenrahmen: e.target.value as "SKR03" | "SKR04" | "SKR49",
+                  datevKontenrahmen: v as "SKR03" | "SKR04" | "SKR49",
                 } as KanzleiSettings;
                 setSettings(next);
               }}
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-green-500/50 focus:outline-none"
             >
-              <option value="SKR03">SKR03 (DE)</option>
-              <option value="SKR04">SKR04 (DE)</option>
-              <option value="SKR49">SKR49 (AT)</option>
-            </select>
+              <SelectTrigger id="datev-chart">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SKR03">SKR03 (DE)</SelectItem>
+                <SelectItem value="SKR04">SKR04 (DE)</SelectItem>
+                <SelectItem value="SKR49">SKR49 (AT)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-[color:var(--ds-text-muted)]">
+            <Label htmlFor="datev-consultant" className="text-xs text-[color:var(--ds-text-muted)]">
               {t("datev.consultant_nr")}
-            </label>
-            <input
+            </Label>
+            <Input
+              id="datev-consultant"
               type="text"
               value={settings?.datevBeraterNr || ""}
               onChange={(e) =>
                 setSettings({ ...settings, datevBeraterNr: e.target.value } as KanzleiSettings)
               }
               placeholder="12345"
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-green-500/50 focus:outline-none"
             />
           </div>
         </div>

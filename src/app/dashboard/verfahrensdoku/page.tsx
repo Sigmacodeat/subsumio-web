@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Save, Printer, Download, Info, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { buildVerfahrensdoku, type VerfahrensdokuInput } from "@/lib/gobd-verfahrensdoku";
 import { loadKanzleiSettings } from "@/lib/kanzlei-settings";
@@ -246,21 +248,20 @@ export default function VerfahrensdokuPage() {
     placeholder: string,
     textarea = false
   ) => (
-    <div>
-      <label className="mb-1.5 block text-xs text-[color:var(--ds-text-muted)]">{label}</label>
+    <div className="space-y-1.5">
+      <Label className="text-xs text-[color:var(--ds-text-muted)]">{label}</Label>
       {textarea ? (
         <textarea
           {...dokuForm.register(name)}
           placeholder={placeholder}
           rows={3}
-          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       ) : (
-        <input
+        <Input
           type="text"
           {...dokuForm.register(name)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       )}
       {dokuForm.formState.errors[name] && (

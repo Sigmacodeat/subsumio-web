@@ -17,6 +17,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -587,45 +596,48 @@ function PlaybookEditor(props: {
 
       {/* Basic fields */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <div>
-          <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+        <div className="space-y-1">
+          <Label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
             {t("playbooks.field_name")}
-          </label>
-          <input
+          </Label>
+          <Input
             value={props.title}
             onChange={(e) => props.onTitleChange(e.target.value)}
             placeholder={t("playbooks.placeholder_name")}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+        <div className="space-y-1">
+          <Label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
             {t("playbooks.field_jurisdiction")}
-          </label>
-          <select
+          </Label>
+          <Select
             value={props.jurisdiction}
-            onChange={(e) => props.onJurisdictionChange(e.target.value)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+            onValueChange={props.onJurisdictionChange}
           >
-            {JURISDICTION_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {jurisdictionLabel(key)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {JURISDICTION_KEYS.map((key) => (
+                <SelectItem key={key} value={key}>
+                  {jurisdictionLabel(key)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-[color:var(--ds-text-muted)]">
+      <div className="space-y-1">
+        <Label className="text-xs font-medium text-[color:var(--ds-text-muted)]">
           {t("playbooks.field_description")}
-        </label>
+        </Label>
         <textarea
           value={props.description}
           onChange={(e) => props.onDescriptionChange(e.target.value)}
           rows={2}
           placeholder={t("playbooks.placeholder_description")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
+          className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
         />
       </div>
 

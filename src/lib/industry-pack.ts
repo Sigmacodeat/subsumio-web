@@ -30,14 +30,14 @@ export interface IndustryProfile {
 }
 
 export const SUBSUMIO_THEME: IndustryTheme = {
-  primary: "#1a365d",
-  primaryHover: "#274d7a",
-  secondary: "#9a7a1f",
-  tertiary: "#475569",
-  glow: "rgba(26, 54, 93, 0.1)",
-  gradientFrom: "#1a365d",
-  gradientVia: "#9a7a1f",
-  gradientTo: "#0f172a",
+  primary: "#1e40af",
+  primaryHover: "#2563eb",
+  secondary: "#3b82f6",
+  tertiary: "#6366f1",
+  glow: "rgba(30, 64, 175, 0.12)",
+  gradientFrom: "#1e40af",
+  gradientVia: "#3b82f6",
+  gradientTo: "#6366f1",
 };
 
 export const INDUSTRY_PROFILES = {

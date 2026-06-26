@@ -71,6 +71,12 @@ export default function SharedSpacesPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const handler = () => setShowCreate(true);
+    window.addEventListener("subsumio:create-space", handler);
+    return () => window.removeEventListener("subsumio:create-space", handler);
+  }, []);
+
   const handleCreate = async (title: string, description: string) => {
     setCreating(true);
     try {

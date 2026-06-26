@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   FileSignature,
   Send,
@@ -20,10 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { signatureRequestSchema, type SignatureRequestFormData } from "@/lib/schemas/signature";
 import { PageHeader } from "@/components/dashboard/page-header";
-import type { BrainPage } from "@/lib/types";
 import { useLang } from "@/lib/use-lang";
+import { SignatureQuickCreateDialog } from "@/components/legal/SignatureQuickCreateDialog";
 
 interface SignatureRequest {
   id: string;
@@ -86,38 +83,18 @@ const STATUS_CONFIG: Record<
 export default function SignaturePage() {
   const { t, lang } = useLang();
   const [requests, setRequests] = useState<SignatureRequest[]>([]);
-  const [drafts, setDrafts] = useState<BrainPage[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const sigForm = useForm<SignatureRequestFormData>({
-    resolver: zodResolver(signatureRequestSchema) as never,
-    defaultValues: {
-      documentName: "",
-      recipientName: "",
-      recipientEmail: "",
-      expiresDays: "14",
-    },
-  });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [sigPages, draftPages] = await Promise.all([
-          api.brain.listPages({ type: "signature_request", limit: 100 }),
-          api.brain
-            .listPages({ type: "legal_document", limit: 100 })
-            .catch(() => [] as BrainPage[]),
-        ]);
-        if (cancelled) return;
-        setDrafts(draftPages);
-        const pages = sigPages;
+        const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
         if (cancelled) return;
         setRequests(
-          pages.map((p) => {
+          sigPages.map((p) => {
             const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
             return {
               id: p.slug,
@@ -142,56 +119,11 @@ export default function SignaturePage() {
     };
   }, []);
 
-  async function createRequest() {
-    const isValid = await sigForm.trigger();
-    if (!isValid) return;
-    const data = sigForm.getValues();
-    setSaving(true);
-    setNotice(null);
-    const now = new Date();
-    const slug = `legal/signatures/${now.toISOString().split("T")[0]}-${data.documentName
-      .toLowerCase()
-      .replace(/[^a-z0-9äöüß]+/g, "-")
-      .slice(0, 60)}`;
-    const req: SignatureRequest = {
-      id: slug,
-      documentName: data.documentName,
-      recipientName: data.recipientName,
-      recipientEmail: data.recipientEmail,
-      status: "draft",
-      expiresAt: new Date(Date.now() + parseInt(data.expiresDays) * 86400000).toISOString(),
-    };
-    try {
-      await api.brain.createPage({
-        slug,
-        title: `Signatur: ${data.documentName.trim()}`,
-        type: "signature_request",
-        content: `Empfänger: ${data.recipientName} <${data.recipientEmail}>`,
-        frontmatter: {
-          type: "signature_request",
-          document_name: data.documentName.trim(),
-          recipient_name: data.recipientName.trim(),
-          recipient_email: data.recipientEmail.trim(),
-          status: "draft",
-          expires_at: req.expiresAt,
-          created_at: now.toISOString(),
-          provider: "external",
-        },
-      });
-      setRequests([req, ...requests]);
-      sigForm.reset({ documentName: "", recipientName: "", recipientEmail: "", expiresDays: "14" });
-      setShowCreate(false);
-      setNotice("Signatur-Entwurf im Brain gespeichert.");
-    } catch (e) {
-      setNotice(
-        e instanceof Error
-          ? `${t("signature.error_save")}: ${e.message}`
-          : t("signature.error_save")
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-signature", handler);
+    return () => window.removeEventListener("subsumio:create-signature", handler);
+  }, []);
 
   async function markPrepared(req: SignatureRequest) {
     const sentAt = new Date().toISOString();
@@ -241,10 +173,10 @@ export default function SignaturePage() {
             <Button
               variant="primary"
               className="gap-2 bg-indigo-600 text-sm text-white hover:bg-indigo-500"
-              onClick={() => setShowCreate(!showCreate)}
+              onClick={() => setQuickCreateOpen(true)}
             >
-              {showCreate ? <XCircle size={14} /> : <Plus size={14} />}
-              {showCreate ? t("signature.btn_cancel") : t("signature.btn_request")}
+              <Plus size={14} />
+              {t("signature.btn_request")}
             </Button>
           </div>
         }
@@ -284,109 +216,30 @@ export default function SignaturePage() {
         </div>
       )}
 
-      {/* Create form */}
-      {showCreate && (
-        <div className="space-y-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4">
-          <h2 className="text-sm font-semibold text-indigo-600">
-            Unterschriften-Anfrage erstellen
-          </h2>
-          {drafts.length > 0 && (
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                Entwurf auswählen (optional)
-              </label>
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const draft = drafts.find((d) => d.slug === e.target.value);
-                    if (draft) {
-                      sigForm.setValue("documentName", draft.title);
-                    }
-                  }
-                }}
-                defaultValue=""
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-indigo-500/50 focus:outline-none"
-              >
-                <option value="">— Manuell eingeben —</option>
-                {drafts.map((d) => (
-                  <option key={d.slug} value={d.slug}>
-                    {d.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                Dokument
-              </label>
-              <input
-                {...sigForm.register("documentName")}
-                placeholder="z.B. Mandatsvereinbarung Muster GmbH"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
-              />
-              {sigForm.formState.errors.documentName && (
-                <p className="mt-1 text-xs text-red-600">
-                  {sigForm.formState.errors.documentName.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                Empfänger-Name
-              </label>
-              <input
-                {...sigForm.register("recipientName")}
-                placeholder="Max Mustermann"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">E-Mail</label>
-              <input
-                type="email"
-                {...sigForm.register("recipientEmail")}
-                placeholder="max@example.com"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
-              />
-              {sigForm.formState.errors.recipientEmail && (
-                <p className="mt-1 text-xs text-red-600">
-                  {sigForm.formState.errors.recipientEmail.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-[color:var(--ds-text-muted)]">
-                Gültigkeit (Tage)
-              </label>
-              <input
-                type="number"
-                {...sigForm.register("expiresDays")}
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-indigo-500/50 focus:outline-none"
-              />
-              {sigForm.formState.errors.expiresDays && (
-                <p className="mt-1 text-xs text-red-600">
-                  {sigForm.formState.errors.expiresDays.message}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="primary"
-              className="gap-2 bg-indigo-600 text-sm text-white hover:bg-indigo-500"
-              onClick={createRequest}
-              disabled={saving}
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <PenTool size={14} />}
-              Entwurf speichern
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Quick create dialog */}
+      <SignatureQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => {
+          setNotice(t("signature.quick_created"));
+          (async () => {
+            const sigPages = await api.brain.listPages({ type: "signature_request", limit: 100 });
+            setRequests(sigPages.map((p) => {
+              const fm = (p.frontmatter ?? {}) as Record<string, unknown>;
+              return {
+                id: p.slug,
+                documentName: String(fm.document_name ?? p.title),
+                recipientName: String(fm.recipient_name ?? "—"),
+                recipientEmail: String(fm.recipient_email ?? "—"),
+                status: String(fm.status ?? "draft") as SignatureRequest["status"],
+                sentAt: fm.sent_at ? String(fm.sent_at) : undefined,
+                signedAt: fm.signed_at ? String(fm.signed_at) : undefined,
+                expiresAt: String(fm.expires_at ?? p.created_at),
+              };
+            }));
+          })();
+        }}
+      />
 
       {/* List */}
       {loading ? (

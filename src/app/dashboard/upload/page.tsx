@@ -22,6 +22,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { DIRECT_UPLOAD_MAX_SIZE } from "@/lib/upload-validation";
@@ -533,29 +542,29 @@ export default function UploadPage() {
       {/* ── Mode: Case — Akten-Auswahl (Pflichtfeld) ── */}
       {mode === "case" && (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <label
+          <Label
             htmlFor="upload-case"
             className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
           >
             <Briefcase size={13} />
             Akte (Pflichtfeld)
-          </label>
-          <select
-            id="upload-case"
+          </Label>
+          <Select
             value={selectedCaseSlug}
-            onChange={(e) => setSelectedCaseSlug(e.target.value)}
+            onValueChange={setSelectedCaseSlug}
             disabled={casesLoading}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none disabled:opacity-50"
           >
-            <option value="">
-              {casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"}
-            </option>
-            {cases.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.title}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="upload-case" className="w-full">
+              <SelectValue placeholder={casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"} />
+            </SelectTrigger>
+            <SelectContent>
+              {cases.map((c) => (
+                <SelectItem key={c.slug} value={c.slug}>
+                  {c.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {!selectedCaseSlug && !casesLoading && cases.length > 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
               <AlertCircle size={12} />
@@ -574,25 +583,25 @@ export default function UploadPage() {
       {/* ── Mode: Knowledge — Source-Auswahl ── */}
       {mode === "knowledge" && (
         <div className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
-          <label
+          <Label
             htmlFor="upload-source"
             className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
           >
             <BookOpen size={13} />
             Wissensbereich
-          </label>
-          <select
-            id="upload-source"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
-          >
-            {KNOWLEDGE_SOURCES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label} — {s.desc}
-              </option>
-            ))}
-          </select>
+          </Label>
+          <Select value={source} onValueChange={setSource}>
+            <SelectTrigger id="upload-source" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KNOWLEDGE_SOURCES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label} — {s.desc}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="mt-3 flex items-start gap-2 rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs text-[color:var(--ds-text-muted)]">
             <Info size={13} className="mt-0.5 shrink-0 text-[color:var(--brand-primary)]" />
             <span>
@@ -607,19 +616,18 @@ export default function UploadPage() {
 
       {/* Tags — immer verfügbar */}
       <div>
-        <label
+        <Label
           htmlFor="upload-tags"
           className="mb-2 block text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
         >
           Tags (kommasepariert)
-        </label>
-        <input
+        </Label>
+        <Input
           id="upload-tags"
           type="text"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder={t("upload.tags_placeholder")}
-          className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-3 py-2.5 text-sm text-[color:var(--ds-text)] transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-1 focus:ring-offset-[var(--ds-surface)] focus:outline-none"
         />
       </div>
 

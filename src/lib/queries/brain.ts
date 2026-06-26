@@ -62,6 +62,24 @@ export function useRecentQueries(limit = 10) {
   });
 }
 
+export interface CockpitData {
+  stats: BrainStats | null;
+  recent: RecentQuery[];
+  pages: Record<string, BrainPage[]>;
+}
+
+export function useCockpitData(opts?: {
+  types?: string;
+  recentLimit?: number;
+  enabled?: boolean;
+}) {
+  return useQuery<CockpitData>({
+    queryKey: ["brain", "cockpit", opts],
+    queryFn: () => api.brain.cockpit(opts),
+    enabled: opts?.enabled ?? true,
+  });
+}
+
 // ── Mutations ──
 
 export function useCreatePage() {
