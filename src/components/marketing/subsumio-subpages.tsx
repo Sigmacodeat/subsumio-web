@@ -12,7 +12,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, MessageSquare, Clock, Paperclip, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { styleForIndustry } from "@/lib/industry-theme";
 import { Section, SectionHeading } from "./chrome";
 import { PhoneCopilot } from "./subsumio-showcase";
@@ -65,7 +65,7 @@ function Hero({
             <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />{" "}
             {eyebrow}
           </span>
-          <h1 className="mb-5 text-4xl leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+          <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
             {title}
             <br />
             <span className="gradient-text">{claim}</span>
@@ -81,7 +81,7 @@ function Hero({
             </Link>
             <Link href={p(lang, "/subsumio")}>
               <Button size="xl" variant="secondary" className="min-w-[180px]">
-                {lang === "de" ? "Zur Übersicht" : "Back to overview"} <ArrowRight size={16} />
+                {UI_STRINGS[lang].backToOverview} <ArrowRight size={16} />
               </Button>
             </Link>
           </div>
@@ -104,7 +104,7 @@ function CtaClose({
   label: string;
 }) {
   return (
-    <Section tone="dark" className="px-6 py-24 text-center">
+    <Section tone="dark" className="px-4 py-24 text-center sm:px-6 lg:px-8">
       <Reveal variant="upLg" className="mx-auto max-w-3xl">
         <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
@@ -124,7 +124,7 @@ function CtaClose({
 const COPY = {
   de: {
     whatsapp: {
-      eyebrow: "Der Winning USP",
+      eyebrow: "Das stärkste Argument",
       title: "Die Kanzlei",
       claim: "in der Hosentasche.",
       sub: "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
@@ -136,7 +136,7 @@ const COPY = {
   },
   en: {
     whatsapp: {
-      eyebrow: "The winning USP",
+      eyebrow: "The standout advantage",
       title: "The firm",
       claim: "in your pocket.",
       sub: "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation.",
@@ -153,30 +153,22 @@ const COPY = {
 export function WhatsAppPage({ lang }: { lang: Lang }) {
   const c = COPY[lang].whatsapp;
   const signup = p(lang, "/signup?industry=legal");
+  const ui = UI_STRINGS[lang];
   const flows = [
     {
       icon: Clock,
-      t: lang === "de" ? "Zeit & Auslagen in Sekunden" : "Time & expenses in seconds",
-      d:
-        lang === "de"
-          ? "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen."
-          : '"Time 0.5h matter Müller, call" → captured, linked to the matter, one tap to confirm.',
+      t: ui.timeExpenses,
+      d: ui.timeExpensesDesc,
     },
     {
       icon: Paperclip,
-      t: lang === "de" ? "Beleg-Foto → richtige Akte" : "Receipt photo → right matter",
-      d:
-        lang === "de"
-          ? "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault."
-          : "A document or photo with the case reference in the caption lands in the vault, audit-ready.",
+      t: ui.receiptPhoto,
+      d: ui.receiptPhotoDesc,
     },
     {
       icon: Mic,
-      t: lang === "de" ? "Sprachnotiz unterwegs" : "Voice note on the go",
-      d:
-        lang === "de"
-          ? "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist."
-          : "Dictate after the hearing — transcribed and attached before you're back at the office.",
+      t: ui.voiceNote,
+      d: ui.voiceNoteDesc,
     },
   ];
   return (
@@ -190,12 +182,12 @@ export function WhatsAppPage({ lang }: { lang: Lang }) {
         primaryHref={signup}
         primaryLabel={c.ctaLabel}
       />
-      <Section tone="dark" className="px-6 py-16">
+      <Section tone="dark" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <PhoneCopilot lang={lang} />
         </div>
       </Section>
-      <Section tone="light" className="px-6 py-20">
+      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.flowsTitle} />
           <div className="grid gap-5 md:grid-cols-3">

@@ -11,7 +11,7 @@ import { p, type Lang } from "@/content/site";
 import { SECURITY } from "@/content/security";
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
 
 const PILLAR_ICONS: Record<string, LucideIcon> = { Shield, Layers, Lock, Eye };
 
@@ -25,17 +25,19 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero */}
-      <section className="relative z-10 px-6 pt-20 pb-16">
+      <section className="relative z-10 px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-4xl text-center">
-          <span className="brand-text mb-6 inline-block rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1 text-xs font-medium">
+          <span className="brand-text mb-6 inline-block rounded-full border border-[var(--brand-primary)]/30 bg-[var(--brand-primary)]/10 px-3 py-1.5 text-xs font-medium">
             {t.badge}
           </span>
-          <h1 className="mb-6 text-[clamp(2.25rem,9.5vw,3rem)] leading-tight font-bold text-balance [color:var(--mk-text)] md:text-5xl">
-            {t.h1a}
-            <span className="sr-only"> </span>
-            <br />
-            <span className="brand-text">{t.h1b}</span>
-          </h1>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-5xl">
+              {t.h1a}
+              <span className="sr-only"> </span>
+              <br />
+              <span className="brand-text">{t.h1b}</span>
+            </h1>
+          </ClipReveal>
           <p className="mx-auto max-w-3xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
             {t.sub}
           </p>
@@ -43,20 +45,22 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Pillars */}
-      <section className="relative z-10 px-6 py-16">
+      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
         <StaggerContainer className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2" stagger={0.1}>
           {t.pillars.map((pillar) => {
             const Icon = PILLAR_ICONS[pillar.icon] ?? Shield;
             return (
               <StaggerItem
                 key={pillar.title}
-                className="rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]"
+                className="rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
-                <Icon size={22} className="brand-text mb-4" />
-                <h3 className="mb-2 text-base font-bold [color:var(--mk-text)]">{pillar.title}</h3>
-                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                  {pillar.desc}
-                </p>
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]">
+                  <Icon size={22} className="brand-text mb-4" />
+                  <h2 className="mb-2 text-base font-bold [color:var(--mk-text)]">{pillar.title}</h2>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {pillar.desc}
+                  </p>
+                </GlowCard>
               </StaggerItem>
             );
           })}
@@ -64,7 +68,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Hosting options */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-16 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-16 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.hostingTitle} sub={t.hostingSub} />
@@ -94,7 +98,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Compliance today */}
-      <section className="relative z-10 px-6 py-16">
+      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <Reveal variant="up">
             <SectionHeading title={t.complianceTitle} />
@@ -109,7 +113,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* EU AI Act */}
-      <section className="relative z-10 px-6 py-12">
+      <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/[0.04] p-7"
@@ -133,7 +137,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Honest roadmap */}
-      <section className="relative z-10 px-6 py-12">
+      <section className="relative z-10 px-4 py-12 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] p-7"
@@ -154,7 +158,7 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -166,27 +170,29 @@ export default function SecurityPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Responsible disclosure */}
-      <section className="relative z-10 px-6 py-16">
+      <section className="relative z-10 px-4 py-16 sm:px-6 lg:px-8">
         <Reveal
           variant="up"
           className="mx-auto max-w-4xl rounded-2xl border [border-color:var(--mk-border)] p-7 [background:var(--mk-surface)]"
         >
-          <h3 className="mb-2 text-sm font-bold [color:var(--mk-text)]">{t.disclosureTitle}</h3>
+          <h2 className="mb-2 text-sm font-bold [color:var(--mk-text)]">{t.disclosureTitle}</h2>
           <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{t.disclosureText}</p>
         </Reveal>
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 px-6 py-24">
+      <section className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
         <Reveal variant="upLg" className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-[clamp(1.75rem,7.5vw,2.25rem)] leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-8 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
+            <MagneticButton strength={0.25}>
+              <Button size="xl" variant="glow">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </MagneticButton>
           </Link>
         </Reveal>
       </section>

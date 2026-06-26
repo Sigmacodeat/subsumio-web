@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { p, type Lang } from "@/content/site";
 import { Button } from "@/components/ui/button";
+import { GradientMesh } from "./motion-system";
 
 const copy = {
   en: {
@@ -127,8 +128,9 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
   return (
     <section
       data-tone="slate"
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-6 py-28 [background:var(--mk-surface)]"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 [background:var(--mk-surface)] sm:px-6 lg:px-8"
     >
+      <GradientMesh className="opacity-60" />
       <div className="brand-glow-bg absolute inset-x-0 top-16 h-72 opacity-50 blur-3xl" />
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
         <motion.div
@@ -191,7 +193,9 @@ export default function SuperbrainAdvantage({ lang }: { lang: Lang }) {
                 <Brain size={34} className="brand-text mb-3" />
                 <span className="text-sm font-bold [color:var(--mk-text)]">{t.center}</span>
                 <span className="mt-1 text-xs [color:var(--mk-text-muted)]">
-                  queryable · cited · scoped
+                  {lang === "de"
+                    ? "abfragbar · belegt · isoliert"
+                    : "queryable · cited · scoped"}
                 </span>
               </motion.div>
               {orbitNodes.map((node, i) => {

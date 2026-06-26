@@ -1,13 +1,26 @@
 import type { Metadata } from "next";
 import PartnersPage from "@/components/marketing/partners-page";
+import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Partnerprogramm — 30 % wiederkehrend verdienen",
+  title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
   description:
-    "Subsumio empfehlen und wiederkehrende Provision über die Laufzeit jeder zahlenden Empfehlung verdienen. Affiliate-, Referral- und zertifizierte Partner-Tracks.",
+    "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
   alternates: { canonical: "/de/partners", languages: { en: "/partners", de: "/de/partners" } },
+  openGraph: {
+    title: "Subsumio Partnerprogramm — 30 % lebenslange Provision auf Empfehlungen",
+    description:
+      "Kanzleien zu Subsumio empfehlen und 30 % wiederkehrende Provision über die Laufzeit jedes zahlenden Mandanten erhalten. Drei Tracks: Affiliate, Kunden-Referral und zertifizierter Partner.",
+    url: "/de/partners",
+    type: "website",
+  },
 };
 
 export default function Page() {
-  return <PartnersPage lang="de" />;
+  return (
+    <>
+      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/de" }, { name: "Partnerprogramm", url: "/de/partners" }])} />
+      <PartnersPage lang="de" />
+    </>
+  );
 }

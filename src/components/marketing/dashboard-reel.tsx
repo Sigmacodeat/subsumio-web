@@ -22,6 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { GuidedCursor } from "./motion-system";
 
@@ -222,18 +223,18 @@ export default function DashboardReel({
       ? {
           x: "72%",
           y: "42%",
-          label: lang === "de" ? "Akte öffnen" : "Open matter",
+          label: UI_STRINGS[lang].openMatter,
         }
       : view === 1
         ? {
             x: "74%",
             y: "87%",
-            label: lang === "de" ? "Frage senden" : "Send question",
+            label: UI_STRINGS[lang].sendQuestion,
           }
         : {
             x: "70%",
             y: "52%",
-            label: lang === "de" ? "Frist prüfen" : "Check deadline",
+            label: UI_STRINGS[lang].checkDeadline,
           };
 
   return (
@@ -309,12 +310,12 @@ export default function DashboardReel({
             <div className="flex flex-1 items-center gap-2 rounded-lg border [border-color:var(--mk-border)] px-2.5 py-1.5 [background:var(--mk-bg)]">
               <Search size={13} className="[color:var(--mk-text-subtle)]" />
               <span className="text-xs [color:var(--mk-text-subtle)]">
-                {lang === "de" ? "Suchen…" : "Search…"}
+                {UI_STRINGS[lang].searchPlaceholder}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs [color:var(--mk-text-subtle)]">
               <Clock size={11} />
-              {lang === "de" ? "09:42" : "9:42 AM"}
+              {UI_STRINGS[lang].timeLabel}
             </div>
           </div>
 
@@ -333,10 +334,10 @@ export default function DashboardReel({
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-bold [color:var(--mk-text)]">
-                      {lang === "de" ? "Akten" : "Matters"}
+                      {UI_STRINGS[lang].mattersLabel}
                     </h3>
                     <span className="text-xs [color:var(--mk-text-subtle)]">
-                      {v.matters.length} {lang === "de" ? "Akten" : "matters"}
+                      {v.matters.length} {UI_STRINGS[lang].mattersCount}
                     </span>
                   </div>
                   {v.matters.map((m, i) => {
@@ -465,11 +466,11 @@ export default function DashboardReel({
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-bold [color:var(--mk-text)]">
-                      {lang === "de" ? "Fristen" : "Deadlines"}
+                      {UI_STRINGS[lang].deadlinesLabel}
                     </h3>
                     <span className="text-xs font-medium text-rose-400">
                       {v.deadlines.filter((d) => d.urgent).length}{" "}
-                      {lang === "de" ? "dringend" : "urgent"}
+                      {UI_STRINGS[lang].urgentLabel}
                     </span>
                   </div>
                   {v.deadlines.map((d, i) => (

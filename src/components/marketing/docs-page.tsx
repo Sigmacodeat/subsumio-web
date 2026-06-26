@@ -6,9 +6,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import { getDocs, type Lang } from "@/content/docs";
-import { p } from "@/content/site";
+import { p, UI_STRINGS } from "@/content/site";
 import { ICONS } from "./chrome";
 import DashboardReel from "./dashboard-reel";
+import { GlowCard, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 const reveal = {
@@ -36,21 +37,20 @@ function FeatureCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={viewport}
       transition={{ duration: 0.4, delay: (index % 3) * 0.06 }}
-      whileHover={{ y: -3 }}
-      className="rounded-2xl p-5 transition-colors duration-200 [background:var(--mk-surface)] hover:[background:var(--mk-surface-2)]"
-      style={{ boxShadow: "var(--mk-card-shadow)" }}
     >
-      <div className="flex items-start gap-3.5">
-        {Icon && (
-          <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-            <Icon size={17} className="brand-text" />
-          </div>
-        )}
-        <div>
-          <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">{title}</h4>
+      <GlowCard className="h-full rounded-2xl p-5 transition-all duration-200 [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-surface-2)] hover:shadow-lg">
+        <div className="flex items-start gap-3.5">
+          {Icon && (
+            <div className="brand-soft mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 hover:scale-110">
+              <Icon size={17} className="brand-text" />
+            </div>
+          )}
+          <div>
+            <h4 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">{title}</h4>
           <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{desc}</p>
         </div>
       </div>
+      </GlowCard>
     </motion.div>
   );
 }
@@ -98,17 +98,13 @@ function DocsProof({ lang }: { lang: Lang }) {
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
         <motion.div {...reveal}>
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
-            {lang === "de" ? "Dashboard statt Datenblatt" : "Dashboard, not a datasheet"}
+            {UI_STRINGS[lang].dashboardNotDatasheet}
           </p>
           <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
-            {lang === "de"
-              ? "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow."
-              : "Every description points to a real legal workflow."}
+            {UI_STRINGS[lang].docsTitle}
           </h2>
           <p className="mb-7 max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
-            {lang === "de"
-              ? "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht."
-              : "The docs are not a raw API inventory. They show which dashboard surface exists, which legal workflow it improves and which security assumption sits underneath it."}
+            {UI_STRINGS[lang].docsSub}
           </p>
           <div className="grid gap-3">
             {items.map((item) => {
@@ -146,9 +142,10 @@ export default function DocsPage({ lang }: { lang: Lang }) {
   return (
     <div
       data-tone="dark"
-      className="min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
+      className="relative min-h-screen overflow-x-hidden [background:var(--mk-bg)]"
       lang={lang}
     >
+      <GradientMesh className="opacity-30" />
       {/* Hero */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16 text-center">
         <motion.div
@@ -167,12 +164,14 @@ export default function DocsPage({ lang }: { lang: Lang }) {
             />
             {d.hero.badge}
           </div>
-          <h1 className="mb-5 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.05] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+          <h1 className="mb-5 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
             {d.hero.title}
             <span className="sr-only"> </span>
             <br />
             <span className="gradient-text">{d.hero.claim}</span>
           </h1>
+          </ClipReveal>
           <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]">
             {d.hero.sub}
           </p>
@@ -212,7 +211,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Architecture */}
-      <section className="relative z-10 px-6 py-24 [background:var(--mk-surface)]">
+      <section className="relative z-10 px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <motion.div {...reveal} className="mb-12 text-center">
             <h2 className="mb-3 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
@@ -237,7 +236,7 @@ export default function DocsPage({ lang }: { lang: Lang }) {
       {/* CTA */}
       <motion.section
         {...reveal}
-        className="relative z-10 mx-auto max-w-3xl px-6 py-28 text-center"
+        className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
       >
         <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
@@ -245,9 +244,11 @@ export default function DocsPage({ lang }: { lang: Lang }) {
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{d.cta.sub}</p>
         <Link href={p(lang, "/login")}>
-          <Button size="lg" variant="glow">
-            <SubsumioMark size={16} tile={false} /> {d.cta.button} <ArrowRight size={16} />
-          </Button>
+          <MagneticButton strength={0.25}>
+            <Button size="lg" variant="glow">
+              <SubsumioMark size={16} tile={false} /> {d.cta.button} <ArrowRight size={16} />
+            </Button>
+          </MagneticButton>
         </Link>
       </motion.section>
     </div>

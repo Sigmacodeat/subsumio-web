@@ -4,11 +4,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import type { SolutionContent, SolutionSlug } from "@/content/solutions";
 import { SOLUTION_SLUGS, SOLUTION_CROSS_LINKS } from "@/content/solutions";
 import { Section, SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
+import { GlowCard, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
 
 /** Per-vertical hero motif: a small floating constellation built from this
  *  vertical's own first 3 feature icons, so each of the 4 /solutions/* pages
@@ -40,13 +41,14 @@ function HeroIconConstellation({ content }: { content: SolutionContent }) {
 }
 
 export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionContent }) {
+  const ui = UI_STRINGS[lang];
   return (
     <>
       {/* Hero */}
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span
-            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -54,16 +56,15 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {content.badge}
           </motion.span>
-          <motion.h1
-            className="text-4xl font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {content.h1a}
-            <br />
-            <span className="brand-text">{content.h1b}</span>
-          </motion.h1>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1
+              className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
+            >
+              {content.h1a}
+              <br />
+              <span className="brand-text">{content.h1b}</span>
+            </h1>
+          </ClipReveal>
           <motion.p
             className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]"
             initial={{ opacity: 0, y: 20 }}
@@ -89,7 +90,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             </Link>
             <Link href={p(lang, "/subsumio")}>
               <Button size="lg" variant="ghost" className="min-h-[48px] [color:var(--mk-text)]">
-                {lang === "de" ? "Plattform ansehen" : "See the platform"}
+                {ui.seePlatform}
               </Button>
             </Link>
           </motion.div>
@@ -98,24 +99,25 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* Pains */}
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={content.painsTitle} tone="light" />
           <div className="grid gap-4 md:grid-cols-3">
             {content.pains.map((pain, i) => (
               <motion.div
                 key={pain.title}
-                className="rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 dark:border-rose-500/10 dark:bg-rose-500/5"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
                 transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
               >
-                <AlertCircle size={20} className="mb-3 text-rose-500" />
-                <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
-                  {pain.title}
-                </h3>
-                <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{pain.desc}</p>
+                <GlowCard glowColor="#be123c" intensity={0.1} className="h-full rounded-2xl border border-rose-200/40 bg-rose-50/30 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-rose-500/10 dark:bg-rose-500/5">
+                  <AlertCircle size={20} className="mb-3 text-rose-500" />
+                  <h3 className="mb-2 text-base font-semibold [color:var(--mk-text)]">
+                    {pain.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{pain.desc}</p>
+                </GlowCard>
               </motion.div>
             ))}
           </div>
@@ -123,7 +125,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* Features */}
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <SectionHeading title={content.featuresTitle} tone="light" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -132,23 +134,24 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
               return (
                 <motion.div
                   key={feat.title}
-                  className="rounded-2xl border [border-color:var(--mk-border)] p-5 [background:var(--mk-surface)]"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "0px 0px 80px 0px", amount: 0.15 }}
                   transition={{ duration: 0.45, delay: (i % 4) * 0.06, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div
-                    className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border ${accentTile("violet", "light")}`}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="mb-1.5 text-sm font-semibold [color:var(--mk-text)]">
-                    {feat.title}
-                  </h3>
-                  <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
-                    {feat.desc}
-                  </p>
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-5 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-lg">
+                    <div
+                      className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110 ${accentTile("violet", "light")}`}
+                    >
+                      <Icon size={18} />
+                    </div>
+                    <h3 className="mb-1.5 text-base font-semibold [color:var(--mk-text)]">
+                      {feat.title}
+                    </h3>
+                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">
+                      {feat.desc}
+                    </p>
+                  </GlowCard>
                 </motion.div>
               );
             })}
@@ -157,7 +160,8 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* Proof band */}
-      <Section tone="dark" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="dark" className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8">
+        <GradientMesh className="opacity-50" />
         <div className="mx-auto max-w-4xl text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -180,10 +184,10 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* FAQ */}
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <SectionHeading
-            title={lang === "de" ? "Fragen, beantwortet" : "Questions, answered"}
+            title={ui.questionsAnswered}
             tone="light"
           />
           <AnimatedFaqList items={content.faq} tone="light" />
@@ -191,10 +195,10 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* Cross-link: not quite the right fit? */}
-      <Section tone="light" className="px-4 py-10 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="mb-4 text-sm font-medium [color:var(--mk-text-subtle)]">
-            {lang === "de" ? "Nicht ganz das Richtige für dich?" : "Not quite the right fit?"}
+            {ui.notQuiteRight}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {SOLUTION_SLUGS.filter((slug) => slug !== content.slug).map((slug: SolutionSlug) => {
@@ -216,7 +220,7 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
       </Section>
 
       {/* CTA */}
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-28 sm:px-6 lg:px-8">
         <motion.div
           className="mx-auto max-w-3xl text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -231,13 +235,15 @@ export function SolutionPage({ lang, content }: { lang: Lang; content: SolutionC
             {content.ctaSub}
           </p>
           <Link href={p(lang, "/signup")}>
-            <Button size="lg" variant="glow" className="group min-h-[48px]">
-              {content.ctaButton}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
+            <MagneticButton strength={0.25}>
+              <Button size="lg" variant="glow" className="group min-h-[48px]">
+                {content.ctaButton}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Button>
+            </MagneticButton>
           </Link>
         </motion.div>
       </Section>

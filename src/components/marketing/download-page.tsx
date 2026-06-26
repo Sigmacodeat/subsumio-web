@@ -23,10 +23,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { DOWNLOAD } from "@/content/download";
 import { SectionHeading } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
+import { GlowCard, ClipReveal, MagneticButton } from "./motion-system";
 
 const PLATFORM_ICONS: Record<string, LucideIcon> = { Apple, Smartphone, Monitor };
 
@@ -82,7 +83,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
           >
             <Search size={12} className="text-[var(--signal-blue)]" />
             <span className="text-xs [color:var(--mk-text-muted)]">
-              {lang === "en" ? "Ask your brain…" : "Frag dein Brain…"}
+              {UI_STRINGS[lang].askYourBrain}
             </span>
           </motion.div>
 
@@ -119,7 +120,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
               transition={{ delay: 1.9, duration: 0.4 }}
               className="mt-2 text-xs [color:var(--signal-amber)] opacity-80"
             >
-              {lang === "en" ? "⚠ Gap: Thu 2pm has no notes" : "⚠ Lücke: Do 14 Uhr ohne Notiz"}
+              {UI_STRINGS[lang].gapWarning}
             </motion.p>
           </motion.div>
 
@@ -132,7 +133,7 @@ function PhoneMockup({ lang }: { lang: Lang }) {
           >
             <WifiOff size={10} className="text-[var(--brand-secondary)]" />
             <span className="text-xs [color:var(--mk-text-muted)]">
-              {lang === "en" ? "Works offline" : "Funktioniert offline"}
+              {UI_STRINGS[lang].worksOffline}
             </span>
           </motion.div>
         </div>
@@ -174,11 +175,13 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
               <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--signal-blue)]" />
               {t.badge}
             </div>
-            <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
+            <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
               {t.h1a}
               <br />
               <span className="gradient-text glow-text">{t.h1b}</span>
             </h1>
+            </ClipReveal>
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
               {t.sub}
             </p>
@@ -192,18 +195,18 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                   onClick={() => installEvent.prompt()}
                 >
                   <DownloadIcon size={18} />
-                  {lang === "en" ? "Install Subsumio now" : "Subsumio jetzt installieren"}
+                  {UI_STRINGS[lang].installNow}
                 </Button>
               ) : (
-                <Link href={p(lang, "/signup")}>
+                <Link href={p(lang, "/signup")} className="inline-flex">
                   <Button size="xl" variant="glow">
-                    {lang === "en" ? "Get started" : "Jetzt starten"} <ArrowRight size={18} />
+                    {UI_STRINGS[lang].getStarted} <ArrowRight size={18} />
                   </Button>
                 </Link>
               )}
-              <Link href={p(lang, "/features")}>
+              <Link href={p(lang, "/features")} className="inline-flex">
                 <Button size="xl" variant="secondary">
-                  {lang === "en" ? "See features" : "Features ansehen"}
+                  {UI_STRINGS[lang].seeFeatures}
                 </Button>
               </Link>
             </div>
@@ -225,9 +228,9 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={viewport}
                 transition={{ delay: idx * 0.08, duration: 0.3 }}
-                className="flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]"
               >
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10">
+                <GlowCard glowColor="var(--signal-blue)" intensity={0.12} className="h-full flex flex-col rounded-2xl border [border-color:var(--mk-border)] p-7 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:border-[var(--brand-primary)]/40 hover:[background:var(--mk-hover)]">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--signal-blue)]/20 bg-[var(--signal-blue)]/10 transition-transform duration-300 hover:scale-110">
                   <Icon size={22} className="text-[var(--signal-blue)]" />
                 </div>
                 <h2 className="mb-1 text-lg font-bold [color:var(--mk-text)]">{platform.name}</h2>
@@ -252,6 +255,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                     {platform.note}
                   </p>
                 )}
+                </GlowCard>
               </motion.div>
             );
           })}
@@ -259,7 +263,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Store preview */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
             {t.storesTitle}
@@ -272,15 +276,15 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
             {[
               {
                 icon: Bell,
-                label: lang === "en" ? "Push notifications" : "Push-Benachrichtigungen",
+                label: UI_STRINGS[lang].pushNotifications,
               },
               {
                 icon: Fingerprint,
-                label: lang === "en" ? "Biometric unlock" : "Biometrische Entsperrung",
+                label: UI_STRINGS[lang].biometricUnlock,
               },
               {
                 icon: Share2,
-                label: lang === "en" ? "“Send to Subsumio”" : "„An Subsumio senden“",
+                label: UI_STRINGS[lang].sendToSubsumio,
               },
             ].map((f) => {
               const Icon = f.icon;
@@ -306,7 +310,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
                 <DownloadIcon size={16} className="[color:var(--mk-text-subtle)]" />
                 <div className="text-left">
                   <p className="text-xs tracking-wide [color:var(--mk-text-subtle)] uppercase">
-                    {lang === "en" ? "Coming soon to" : "Bald im"}
+                    {UI_STRINGS[lang].comingSoonTo}
                   </p>
                   <p className="text-sm font-semibold [color:var(--mk-text-muted)]">{store}</p>
                 </div>
@@ -320,7 +324,7 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-6 py-24">
+      <section className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.faqTitle} />
           <AnimatedFaqList items={t.faq} tone="light" />
@@ -328,16 +332,18 @@ export default function DownloadPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
-        <SubsumioMark size={64} className="mx-auto mb-8" />
+      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-4 py-28 text-center sm:px-6 lg:px-8">
+        <SubsumioMark size={56} className="mx-auto mb-7" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
           {t.ctaTitle}
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
-          <Button size="xl" variant="glow">
-            {t.ctaButton} <ArrowRight size={18} />
-          </Button>
+          <MagneticButton strength={0.25}>
+            <Button size="xl" variant="glow">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
+          </MagneticButton>
         </Link>
       </section>
     </div>

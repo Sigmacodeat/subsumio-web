@@ -46,7 +46,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioLogo, SubsumioMark } from "@/components/brand/subsumio-logo";
-import { NAV, FOOTER, p, altPath, type Lang } from "@/content/site";
+import { NAV, FOOTER, p, altPath, UI_STRINGS, type Lang } from "@/content/site";
+
+/** Persist the user's explicit language choice so the browser-language redirect doesn't override it. */
+function setLangPref(lang: "en" | "de") {
+  document.cookie = `sb_lang=${lang};path=/;max-age=${365 * 24 * 3600};samesite=lax`;
+}
 import { type SiteBrand } from "@/lib/brand";
 
 export function useSiteBrand(): SiteBrand {
@@ -506,8 +511,9 @@ export function MarketingNav({ lang }: { lang: Lang }) {
           <div className="flex items-center gap-2">
             <Link
               href={altPath(lang, pathname)}
+              onClick={() => setLangPref(lang === "en" ? "de" : "en")}
               className="hidden min-h-[44px] items-center gap-1.5 rounded-full px-3 py-1.5 text-xs [color:var(--mk-text-muted)] transition-colors duration-200 [background:var(--mk-surface)] hover:[color:var(--mk-text)] hover:[background:var(--mk-hover)] lg:flex"
-              aria-label={lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
+              aria-label={lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish}
             >
               <Globe size={12} /> {lang.toUpperCase()}
             </Link>
@@ -529,7 +535,7 @@ export function MarketingNav({ lang }: { lang: Lang }) {
               ref={hamburgerRef}
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 [color:var(--mk-text)] transition-colors hover:[background:var(--mk-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mk-surface)] focus-visible:outline-none lg:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={lang === "de" ? "Menü" : "Menu"}
+              aria-label={UI_STRINGS[lang].menuAria}
               aria-expanded={mobileOpen}
               aria-controls="mobile-nav-menu"
             >
@@ -633,10 +639,10 @@ export function MarketingNav({ lang }: { lang: Lang }) {
                   <Link
                     href={altPath(lang, pathname)}
                     className={mobileLinkCls(false)}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => { setMobileOpen(false); setLangPref(lang === "en" ? "de" : "en"); }}
                   >
                     <span className="flex items-center gap-1.5">
-                      <Globe size={13} /> {lang === "en" ? "Auf Deutsch lesen" : "Read in English"}
+                      <Globe size={13} /> {lang === "en" ? UI_STRINGS[lang].readInGerman : UI_STRINGS[lang].readInEnglish}
                     </span>
                   </Link>
                   <Link
@@ -684,7 +690,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
   const footer = FOOTER[lang];
   return (
     <footer
-      className="relative z-10 border-t [border-color:var(--mk-border)] px-6 py-14"
+      className="relative z-10 border-t [border-color:var(--mk-border)] px-4 py-14 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-surface)" }}
     >
       <div className="mx-auto max-w-7xl">
@@ -808,7 +814,7 @@ export function SectionHeading({
     >
       {badge && (
         <motion.span
-          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+          className="brand-soft brand-text brand-border mb-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "0px 0px 80px 0px" }}
@@ -874,7 +880,7 @@ export function DemoWindow({
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-6 py-3 [background:var(--mk-bg)]">
+      <div className="flex flex-wrap items-center gap-2 border-t [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)] sm:px-6 lg:px-8">
         <span className="text-xs [color:var(--mk-text)] opacity-60">{sourcesLabel}</span>
         {sources.map((slug) => (
           <span key={slug} className="brand-text brand-soft rounded px-2 py-0.5 font-mono text-xs">

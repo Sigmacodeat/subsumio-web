@@ -44,8 +44,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
-  // Auth + legal — bilingual, include DE variants
-  for (const page of ["/login", "/signup", "/privacy", "/imprint", "/terms"]) {
+  // Legal pages — bilingual, include DE variants (auth pages excluded: noindex)
+  for (const page of ["/privacy", "/imprint", "/terms"]) {
     entries.push({
       url: `${BASE}${page}`,
       lastModified: now,

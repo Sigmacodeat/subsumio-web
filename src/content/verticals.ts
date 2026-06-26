@@ -39,13 +39,13 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     legal: {
       slug: "legal",
       navLabel: "Law Firms",
-      metaTitle: "Subsumio — Law firm software Austria & Germany",
+      metaTitle: "Subsumio — Law firm software AT · DE · CH",
       metaDesc:
-        "AI legal software for lawyers: case files, deadlines per ZPO/BGB/ABGB, AI analysis with citations. GDPR-compliant, EU-hosted or self-hosted.",
-      badge: "Legal software for Austria & Germany",
+        "AI legal software for lawyers in Austria, Germany and Switzerland: case management, deadlines per ZPO/BGB/ABGB, AI analysis with page-level citations. GDPR-compliant, EU-hosted or self-hosted.",
+      badge: "Legal software for AT · DE · CH",
       h1a: "500 pages of case file.",
       h1b: "One question away.",
-      sub: "Subsumio is law firm software for Austria and Germany: manage files, automate deadlines per ZPO/BGB/ABGB, get AI legal analysis with page-level citations — GDPR-compliant, EU-hosted or self-hosted.",
+      sub: "Subsumio is law firm software for Austria, Germany and Switzerland: manage files, automate deadlines per ZPO/BGB/ABGB, get AI legal analysis with page-level citations — GDPR-compliant, EU-hosted or self-hosted.",
       painsTitle: "Sound familiar?",
       pains: [
         {
@@ -79,8 +79,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       features: [
         {
           icon: "CalendarClock",
-          title: "Deadline control (ZPO & BGB)",
-          desc: "Computes statutory and appeal deadlines with correct month arithmetic (§ 188 BGB) and weekend roll-forward (§ 222 ZPO) — with the governing statute cited. A daily email digest flags overdue and critical deadlines.",
+          title: "Deadline control (ZPO / BGB / ABGB / ZGB)",
+          desc: "Computes statutory and appeal deadlines with correct month arithmetic (§ 188 BGB / § 80 ABGB) and weekend roll-forward (§ 222 ZPO / § 84 ZPO) — with the governing statute cited. A daily email digest flags overdue and critical deadlines.",
         },
         {
           icon: "MessageSquare",
@@ -99,18 +99,18 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
         },
         {
           icon: "ShieldAlert",
-          title: "Conflict check (§ 43a BRAO)",
-          desc: "Screens every new client or opposing party server-side against the entire case base and flags conflicts of interest before the mandate is accepted.",
+          title: "Conflict check (§ 43a BRAO / § 10 RAO / BGFA)",
+          desc: "Screens every new client or opposing party server-side against the entire case base and flags conflicts of interest before the mandate is accepted. Covers § 43a BRAO (DE), § 10 RAO (AT) and BGFA (CH).",
         },
         {
           icon: "Calculator",
           title: "Time, expenses, invoices & DATEV",
-          desc: "Book minutes by lawyer/activity, capture billable expenses, create invoices from open work, mark billed entries and export a DATEV-ready accounting file.",
+          desc: "Book minutes by lawyer/activity, capture billable expenses, create invoices from open work, mark billed entries and export a DATEV-ready (DE) or ADATEV-ready (AT) accounting file.",
         },
         {
           icon: "Landmark",
-          title: "Case law DE & AT",
-          desc: "Live search across openlegaldata/BGH (DE) and RIS-OGD (AT) — relevant judgements land in the brain, citable, in one click.",
+          title: "Case law DE · AT · CH",
+          desc: "Live search across openlegaldata/BGH (DE), RIS-OGD (AT) and bger.ch (CH) — relevant judgements land in the brain, citable, in one click.",
         },
         {
           icon: "Shield",
@@ -173,13 +173,13 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
     legal: {
       slug: "legal",
       navLabel: "Kanzleien",
-      metaTitle: "Subsumio — Kanzleisoftware Österreich & Deutschland",
+      metaTitle: "Subsumio — Kanzleisoftware AT · DE · CH",
       metaDesc:
-        "KI-Kanzleisoftware für Rechtsanwälte: Akten verwalten, Fristen nach ZPO/ABGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder self-hosted.",
-      badge: "Kanzleisoftware für Österreich & Deutschland",
+        "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristen nach ZPO/BGB/ABGB, KI-Analysen mit seitengenauen Zitaten. DSGVO-konform, EU-gehostet oder self-hosted.",
+      badge: "Kanzleisoftware für AT · DE · CH",
       h1a: "500 Seiten Akte.",
       h1b: "Eine Frage entfernt.",
-      sub: "Subsumio ist Kanzleisoftware für Österreich und Deutschland: Akten verwalten, Fristen nach ZPO/BGB/ABGB automatisieren, KI-Analysen mit Zitaten erhalten — DSGVO-konform, EU-gehostet oder self-hosted.",
+      sub: "Subsumio ist Kanzleisoftware für Österreich, Deutschland und die Schweiz: Akten verwalten, Fristen nach ZPO/BGB/ABGB automatisieren, KI-Analysen mit seitengenauen Zitaten erhalten — DSGVO-konform, EU-gehostet oder self-hosted.",
       painsTitle: "Kommt dir bekannt vor?",
       pains: [
         {
@@ -213,8 +213,8 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
       features: [
         {
           icon: "CalendarClock",
-          title: "Fristenkontrolle nach ZPO & BGB",
-          desc: "Berechnet Notfristen, Berufungs- und Beschwerdefristen mit korrekter Monatsarithmetik (§ 188 BGB) und Wochenend-Verschiebung (§ 222 ZPO) — inkl. Normzitat. Täglicher E-Mail-Digest für überfällige und kritische Fristen.",
+          title: "Fristenkontrolle nach ZPO / BGB / ABGB / ZGB",
+          desc: "Berechnet Notfristen, Berufungs- und Beschwerdefristen mit korrekter Monatsarithmetik (§ 188 BGB / § 80 ABGB) und Wochenend-Verschiebung (§ 222 ZPO / § 84 ZPO) — inkl. Normzitat. Täglicher E-Mail-Digest für überfällige und kritische Fristen.",
         },
         {
           icon: "MessageSquare",
@@ -233,18 +233,18 @@ export const VERTICALS: Record<Lang, Record<VerticalSlug, VerticalContent>> = {
         },
         {
           icon: "ShieldAlert",
-          title: "Kollisionsprüfung (§ 43a BRAO)",
-          desc: "Prüft jeden neuen Mandanten oder Gegner serverseitig gegen den gesamten Aktenbestand und meldet Interessenkonflikte, bevor das Mandat angenommen wird.",
+          title: "Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+          desc: "Prüft jeden neuen Mandanten oder Gegner serverseitig gegen den gesamten Aktenbestand und meldet Interessenkonflikte, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
         },
         {
           icon: "Calculator",
           title: "Zeiten, Auslagen, Rechnungen & DATEV",
-          desc: "Minuten nach Anwalt/Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, Einträge als abgerechnet markieren und DATEV-ready exportieren.",
+          desc: "Minuten nach Anwalt/Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, Einträge als abgerechnet markieren und DATEV-ready (DE) bzw. ADATEV-ready (AT) exportieren.",
         },
         {
           icon: "Landmark",
-          title: "Rechtsprechung DE & AT",
-          desc: "Live-Recherche in openlegaldata/BGH (DE) und RIS-OGD (AT) — relevante Urteile landen mit einem Klick zitierfähig im Brain.",
+          title: "Rechtsprechung DE · AT · CH",
+          desc: "Live-Recherche in openlegaldata/BGH (DE), RIS-OGD (AT) und bger.ch (CH) — relevante Urteile landen mit einem Klick zitierfähig im Brain.",
         },
         {
           icon: "Shield",

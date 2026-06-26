@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Sign in",
   description:
     "Sign in to Subsumio to work with matters, documents, deadlines, cited AI answers and your legal dashboard.",
+  robots: { index: false },
   alternates: { canonical: "/login", languages: { en: "/login", de: "/de/login" } },
 };
 

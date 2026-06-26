@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     canonical: "/solutions/solo",
     languages: { en: "/solutions/solo", de: "/de/solutions/solo" },
   },
+  openGraph: {
+    title: content.metaTitle,
+    description: content.metaDesc,
+    url: "/solutions/solo",
+    type: "website",
+  },
 };
 
 export default function Page() {

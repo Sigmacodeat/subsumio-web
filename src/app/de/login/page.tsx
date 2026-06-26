@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Anmelden",
   description:
     "Bei Subsumio anmelden und mit Akten, Dokumenten, Fristen, belegten KI-Antworten und dem Kanzlei-Dashboard arbeiten.",
+  robots: { index: false },
   alternates: { canonical: "/de/login", languages: { en: "/login", de: "/de/login" } },
 };
 

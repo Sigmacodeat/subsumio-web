@@ -9,7 +9,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import {
   SOLUTION_SLUGS,
   SOLUTION_CROSS_LINKS,
@@ -24,7 +24,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
   const content = SOLUTIONS[lang][active];
 
   return (
-    <section data-tone="light" className="relative z-10 px-6 py-24">
+    <section data-tone="light" className="relative z-10 px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex flex-wrap items-center justify-center gap-2">
           {SOLUTION_SLUGS.map((slug) => {
@@ -58,7 +58,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="rounded-2xl border [border-color:var(--mk-border)] p-8 [background:var(--mk-surface)] md:p-10"
           >
-            <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold">
+            <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold">
               {content.badge}
             </span>
             <h3 className="mb-3 text-2xl font-black tracking-tight [color:var(--mk-text)] md:text-3xl">
@@ -71,7 +71,7 @@ export default function AudienceTabs({ lang }: { lang: Lang }) {
               href={p(lang, `/solutions/${active}`)}
               className="brand-text group inline-flex items-center gap-1.5 text-sm font-semibold"
             >
-              {lang === "de" ? "Lösung ansehen" : "See the solution"}
+              {UI_STRINGS[lang].seeSolution}
               <ArrowRight
                 size={14}
                 className="transition-transform duration-200 group-hover:translate-x-0.5"

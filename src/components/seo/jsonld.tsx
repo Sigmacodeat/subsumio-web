@@ -102,3 +102,20 @@ export function faqPageLd(faq: readonly { q: string; a: string }[]) {
     })),
   };
 }
+
+export function howToLd(steps: readonly { title: string; desc: string }[], lang: Lang) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: lang === "de" ? "So funktioniert Subsumio: vom Dokument zur belegten Antwort" : "How Subsumio works: from document to cited answer",
+    description: lang === "de"
+      ? "Vier Schritte von der Frage zur belegten KI-Antwort mit Fundstellen."
+      : "Four steps from question to cited AI answer with page-level citations.",
+    step: steps.map((step, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: step.title,
+      text: step.desc,
+    })),
+  };
+}

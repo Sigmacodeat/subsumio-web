@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: SECURITY.de.metaTitle,
   description: SECURITY.de.metaDesc,
   alternates: { canonical: "/de/security", languages: { en: "/security", de: "/de/security" } },
+  openGraph: {
+    title: SECURITY.de.metaTitle,
+    description: SECURITY.de.metaDesc,
+    url: "/de/security",
+    type: "website",
+  },
 };
 
 export default function Page() {

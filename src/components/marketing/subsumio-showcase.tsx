@@ -11,10 +11,11 @@ import { Paperclip, Mic, Clock, Check, FileText, ShieldCheck } from "lucide-reac
 import { ICONS } from "./chrome";
 import { VERTICALS } from "@/content/verticals";
 import type { Lang } from "@/content/site";
+import { GradientMesh } from "./motion-system";
 
 const COPY = {
   de: {
-    waEyebrow: "Der Winning USP",
+    waEyebrow: "Das stärkste Argument",
     waTitle: "Subsumio-Copilot — direkt in WhatsApp",
     waSub:
       "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain.",
@@ -60,7 +61,7 @@ const COPY = {
       "Self-hosted oder EU-Cloud. Jede Antwort mit Fundstelle. Jede Funktion auf deiner Infrastruktur.",
   },
   en: {
-    waEyebrow: "The winning USP",
+    waEyebrow: "The standout advantage",
     waTitle: "Subsumio Copilot — right inside WhatsApp",
     waSub:
       "Book time, file documents, query matters — from your phone, no app switch, no training. The copilot understands the matter and files everything for confirmation in the brain.",
@@ -211,12 +212,13 @@ export function WhatsAppSpotlight({ lang, children }: { lang: Lang; children?: R
   return (
     <section
       data-tone="dark"
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-6 py-28"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 sm:px-6 lg:px-8"
       style={{ background: "linear-gradient(180deg, rgba(13,25,45,0.35), var(--mk-bg))" }}
     >
+      <GradientMesh className="opacity-40" />
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
         <motion.div {...reveal(0)}>
-          <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold">
+          <span className="brand-text brand-soft brand-border mb-5 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold">
             <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[var(--brand-secondary)]" />{" "}
             {c.waEyebrow}
           </span>
@@ -260,7 +262,7 @@ export function FeatureBento({ lang }: { lang: Lang }) {
   const c = COPY[lang];
   const features = VERTICALS[lang].legal.features;
   return (
-    <div className="relative z-10 mx-auto max-w-6xl px-6 py-28">
+    <div className="relative z-10 mx-auto max-w-6xl px-4 py-28 sm:px-6 lg:px-8">
       <motion.div {...reveal(0)} className="mb-14 text-center">
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
           {c.bentoEyebrow}

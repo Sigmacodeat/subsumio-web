@@ -1,13 +1,26 @@
 import type { Metadata } from "next";
 import ContactPage from "@/components/marketing/contact-page";
+import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Kontakt — sprich mit unserem Team",
+  title: "Kontakt — Subsumio KI-Kanzleisoftware",
   description:
-    "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Erreiche unser Team — wir sprechen deine Sprache, auch die deines Datenschutzbeauftragten.",
+    "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV und technisch-organisatorischen Maßnahmen.",
   alternates: { canonical: "/de/contact", languages: { en: "/contact", de: "/de/contact" } },
+  openGraph: {
+    title: "Kontakt — Subsumio KI-Kanzleisoftware",
+    description:
+      "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV und technisch-organisatorischen Maßnahmen.",
+    url: "/de/contact",
+    type: "website",
+  },
 };
 
 export default function Page() {
-  return <ContactPage lang="de" />;
+  return (
+    <>
+      <JsonLd data={breadcrumbLd([{ name: "Subsumio", url: "/de" }, { name: "Kontakt", url: "/de/contact" }])} />
+      <ContactPage lang="de" />
+    </>
+  );
 }

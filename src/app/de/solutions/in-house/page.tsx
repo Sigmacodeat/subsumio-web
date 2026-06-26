@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     canonical: "/de/solutions/in-house",
     languages: { en: "/solutions/in-house", de: "/de/solutions/in-house" },
   },
+  openGraph: {
+    title: content.metaTitle,
+    description: content.metaDesc,
+    url: "/de/solutions/in-house",
+    type: "website",
+  },
 };
 
 export default function Page() {

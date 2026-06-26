@@ -3,10 +3,17 @@ import { WhatsAppPage } from "@/components/marketing/subsumio-subpages";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "WhatsApp Copilot — your firm in your pocket",
+  title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
   description:
-    "Book time, file documents, query cases — from your phone, no app switch, no training. The copilot understands the case file and files everything with confirmation.",
+    "Book time, file documents, query cases from WhatsApp — no app switch, no training required. The copilot understands your case file and files everything confirmation-gated, nothing unreviewed.",
   alternates: { canonical: "/whatsapp", languages: { en: "/whatsapp", de: "/de/whatsapp" } },
+  openGraph: {
+    title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
+    description:
+      "Book time, file documents, query cases from WhatsApp — no app switch, no training required. The copilot understands your case file and files everything confirmation-gated, nothing unreviewed.",
+    url: "/whatsapp",
+    type: "website",
+  },
 };
 
 export default function Page() {

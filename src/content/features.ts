@@ -30,9 +30,9 @@ export interface FeaturesContent {
 
 export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
   en: {
-    metaTitle: "Subsumio Features — AI knowledge graph for law firms",
+    metaTitle: "Subsumio Features — AI legal software capabilities for law firms",
     metaDesc:
-      "Synthesis with citations, self-wiring knowledge graph, hybrid retrieval, Dream Cycle, MCP integrations. Every claim ships in the product.",
+      "Cited AI answers, self-wiring knowledge graph, hybrid retrieval, Dream Cycle automation, WhatsApp copilot. Every capability ships in the product — no hallucinations, every answer sourced.",
     badge: "Full capability tour",
     h1a: "Everything it does.",
     h1b: "Nothing hidden.",
@@ -59,8 +59,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             desc: "The answer ends with what the brain does NOT know yet — so silence never masquerades as certainty.",
           },
           {
-            title: "Meeting prep mode",
-            desc: "Ask about a person before a meeting: last contact, open commitments, what changed since.",
+            title: "Hearing & meeting prep",
+            desc: "Ask before a client call or hearing: last contact, open commitments, contradictions found, what changed since. Walk in briefed, not hunting.",
           },
         ],
         demo: {
@@ -170,8 +170,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             desc: "Conflicting facts across documents get flagged with both sources — gold for case files and due diligence.",
           },
           {
-            title: "Scheduled jobs",
-            desc: "Cron-based ingestion, enrichment and reports. The production deployment runs 66 autonomous jobs.",
+            title: "Automated overnight jobs",
+            desc: "Cron-based ingestion, enrichment and reports. The production deployment runs 66 autonomous jobs — the brain is always current when you sit down in the morning.",
           },
         ],
         demo: {
@@ -192,7 +192,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         label: "Integrations",
         title: "Meets your tools where they are",
         intro:
-          "Built agent-first: your AI assistant operates the brain directly. Humans get a dashboard; agents get a protocol.",
+          "Built agent-first: your AI assistant, Claude or Cursor operates the brain directly via MCP. Humans get a dashboard; agents get a protocol. Same data, same citations, same isolation rules.",
         items: [
           {
             title: "MCP server",
@@ -223,8 +223,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         },
       },
     ],
-    ctaTitle: "Seen enough?",
-    ctaSub: "Up and running in minutes. First answer the same day.",
+    ctaTitle: "Ready to see it in your firm?",
+    ctaSub: "Up and running in minutes. First cited answer the same day.",
     ctaButton: "Get started",
     faqTitle: "Questions, answered",
     faq: [
@@ -247,13 +247,13 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
     ],
   },
   de: {
-    metaTitle: "Subsumio Features — KI-Wissensgraph für Anwaltskanzleien",
+    metaTitle: "Subsumio Features — KI-Kanzleisoftware Funktionen für Anwälte",
     metaDesc:
-      "Synthese mit Zitaten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, Dream Cycle, MCP-Integrationen. Jede Aussage steckt im Produkt.",
-    badge: "Die komplette Capability-Tour",
+      "Belegte KI-Antworten, selbstverdrahtender Wissensgraph, Hybrid-Retrieval, Dream Cycle, WhatsApp-Copilot. Jede Funktion steckt im Produkt — keine Halluzination, jede Antwort mit Quellenangabe.",
+    badge: "Alle Funktionen im Überblick",
     h1a: "Alles, was es kann.",
     h1b: "Nichts versteckt.",
-    sub: "Fünf Fähigkeits-Bereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit deterministischen Zitaten, die du prüfen kannst.",
+    sub: "Fünf Funktionsbereiche, eine Engine. Klick dich durch — jede Aussage steckt im Produkt, mit nachprüfbaren Zitaten an jeder Antwort.",
     categories: [
       {
         id: "synthesis",
@@ -276,8 +276,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             desc: "Die Antwort endet mit dem, was das Brain NICHT weiß — Schweigen tarnt sich nie als Gewissheit.",
           },
           {
-            title: "Meeting-Prep-Modus",
-            desc: "Frag vor dem Termin nach einer Person: letzter Kontakt, offene Zusagen, was sich geändert hat.",
+            title: "Verhandlungs- und Terminvorbereitung",
+            desc: "Frag vor dem Mandantengespräch oder der Verhandlung: letzter Kontakt, offene Zusagen, gefundene Widersprüche, was sich geändert hat. Vorbereitet in die Verhandlung, nicht suchend.",
           },
         ],
         demo: {
@@ -387,8 +387,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
             desc: "Widersprüchliche Fakten über Dokumente hinweg werden mit beiden Quellen markiert — Gold für Akten und Due Diligence.",
           },
           {
-            title: "Geplante Jobs",
-            desc: "Cron-basierte Ingestion, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs.",
+            title: "Automatisierte Nacht-Jobs",
+            desc: "Cron-basierte Aufnahme, Anreicherung und Reports. Das Produktions-Deployment fährt 66 autonome Jobs — das Brain ist aktuell, wenn du morgens den Rechner aufmachst.",
           },
         ],
         demo: {
@@ -409,7 +409,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         label: "Integrationen",
         title: "Holt deine Tools dort ab, wo sie sind",
         intro:
-          "Agent-first gebaut: Dein KI-Assistent bedient das Brain direkt. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll.",
+          "Agent-first gebaut: Dein KI-Assistent, Claude oder Cursor nutzen das Brain direkt per MCP. Menschen bekommen ein Dashboard; Agenten bekommen ein Protokoll. Gleiche Daten, gleiche Zitate, gleiche Isolation.",
         items: [
           {
             title: "MCP-Server",
@@ -440,8 +440,8 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
         },
       },
     ],
-    ctaTitle: "Genug gesehen?",
-    ctaSub: "In Minuten startklar. Erste Antwort am selben Tag.",
+    ctaTitle: "Bereit, es in deiner Kanzlei zu sehen?",
+    ctaSub: "In Minuten startklar. Erste belegte Antwort am selben Tag.",
     ctaButton: "Jetzt starten",
     faqTitle: "Fragen, beantwortet",
     faq: [
@@ -451,7 +451,7 @@ export const FEATURES_PAGE: Record<Lang, FeaturesContent> = {
       },
       {
         q: "Funktioniert es mit meinen bestehenden Tools?",
-        a: "Ja. Subsumio integriert sich über MCP (Model Context Protocol), REST-API und eine vollwertige CLI. Es funktioniert alongside Claude, Cursor und jedem MCP-kompatiblen Agent.",
+        a: "Ja. Subsumio integriert sich über MCP (Model Context Protocol), REST-API und eine vollwertige CLI. Es arbeitet zusammen mit Claude, Cursor und jedem MCP-kompatiblen Agent.",
       },
       {
         q: "Wie genau sind die Zitate?",

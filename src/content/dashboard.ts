@@ -3552,8 +3552,8 @@ export const D = {
   // ── Kollisionspruefung page ──
   "conflict.title": { de: "Kollisionsprüfung", en: "Conflict Check" },
   "conflict.description": {
-    de: "Interessenkonflikte nach § 43a BRAO prüfen",
-    en: "Check for conflicts of interest under § 43a BRAO",
+    de: "Interessenkonflikte nach § 43a BRAO / § 10 RAO / BGFA prüfen",
+    en: "Check for conflicts of interest under § 43a BRAO (DE) / § 10 RAO (AT) / BGFA (CH)",
   },
   "conflict.breadcrumb": { de: "Kollisionsprüfung", en: "Conflict Check" },
   "conflict.intro": {
@@ -3581,8 +3581,8 @@ export const D = {
   "conflict.role_client": { de: "Mandant", en: "Client" },
   "conflict.role_opponent": { de: "Gegner", en: "Opponent" },
   "conflict.disclaimer": {
-    de: "Hinweis: Diese Kollisionsprüfung ist ein Unterstützungstool und ersetzt nicht die anwaltliche Pflichtprüfung nach § 43a BRAO. Sie prüft ausschließlich die im Brain erfassten Akten. Bei Unsicherheit konsultieren Sie die Berufsregeln Ihrer Rechtsanwaltskammer.",
-    en: "Note: This conflict check is a support tool and does not replace the attorney's duty to check under § 43a BRAO. It only checks cases recorded in the brain. If in doubt, consult your bar association's professional rules.",
+    de: "Hinweis: Diese Kollisionsprüfung ist ein Unterstützungstool und ersetzt nicht die anwaltliche Pflichtprüfung nach § 43a BRAO (DE) / § 10 RAO (AT) / BGFA (CH). Sie prüft ausschließlich die im Brain erfassten Akten. Bei Unsicherheit konsultieren Sie die Berufsregeln Ihrer Rechtsanwaltskammer.",
+    en: "Note: This conflict check is a support tool and does not replace the attorney's duty to check under § 43a BRAO (DE) / § 10 RAO (AT) / BGFA (CH). It only checks cases recorded in the brain. If in doubt, consult your bar association's professional rules.",
   },
 
   // ── Process Strategy page ──
@@ -4023,8 +4023,8 @@ export const D = {
   // ── Anonymize page ──
   "anonymize.title": { de: "Anonymisierung", en: "Anonymization" },
   "anonymize.description": {
-    de: "Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB)",
-    en: "Remove identifying data before sharing or cloud processing (§ 203 StGB)",
+    de: "Identifizierende Daten entfernen vor Weitergabe oder Cloud-Verarbeitung (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
+    en: "Remove identifying data before sharing or cloud processing (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
   },
   "anonymize.breadcrumb": { de: "Anonymisierung", en: "Anonymization" },
   "anonymize.placeholder_input": {

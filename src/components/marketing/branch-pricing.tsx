@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PRICING, p, type Lang } from "@/content/site";
+import { PRICING, p, UI_STRINGS, type Lang } from "@/content/site";
 import { pricingForIndustry } from "@/content/vertical-pricing";
 
 export default function BranchPricing({ lang, industry }: { lang: Lang; industry: string }) {
@@ -38,7 +38,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
     <div className="mx-auto max-w-6xl">
       <div className="mb-12 text-center">
         <span className="brand-soft brand-text brand-border mb-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium">
-          Pricing
+          {UI_STRINGS[lang].pricingBadge}
         </span>
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">{title}</h2>
         <p className="mx-auto max-w-2xl text-lg [color:var(--mk-text-muted)]">{sub}</p>
@@ -66,7 +66,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
             >
               {tier.highlight && (
                 <span className="brand-bg absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-xs font-semibold text-white">
-                  {lang === "en" ? "Most popular" : "Beliebt"}
+                  {UI_STRINGS[lang].mostPopular}
                 </span>
               )}
               <p className="mb-1 text-sm font-medium [color:var(--mk-text-muted)]">{tier.name}</p>
@@ -106,7 +106,7 @@ export default function BranchPricing({ lang, industry }: { lang: Lang; industry
       <p className="mt-6 text-center text-xs [color:var(--mk-text-subtle)]">
         {PRICING[lang].footnote}{" "}
         <Link href={p(lang, "/pricing")} className="brand-text hover:underline">
-          {lang === "en" ? "Full pricing & FAQ" : "Alle Preise & FAQ"}
+          {UI_STRINGS[lang].fullPricingFaq}
         </Link>
       </p>
     </div>

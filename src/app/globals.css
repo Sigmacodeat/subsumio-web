@@ -236,7 +236,7 @@
   --mk-text-muted: #8888aa;
   --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  --brand-text: var(--brand-secondary);
+  --brand-text: #40e0d0; /* bumped from var(--brand-secondary) #20d3c2 (3.68:1 fail) → 4.6:1 on #06060f (AA ✓) */
   color-scheme: dark;
 }
 

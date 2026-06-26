@@ -5,8 +5,14 @@ export const metadata: Metadata = {
   title: "Impressum",
   description: "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
   alternates: { canonical: "/de/imprint", languages: { en: "/imprint", de: "/de/imprint" } },
+  openGraph: {
+    title: "Impressum — Subsumio",
+    description: "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+    url: "/de/imprint",
+    type: "website",
+  },
 };
 
 export default function ImprintPage() {
-  return <ImprintContent home="/de" />;
+  return <ImprintContent home="/de" lang="de" />;
 }

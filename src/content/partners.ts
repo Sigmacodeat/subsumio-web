@@ -46,11 +46,11 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         id: "affiliate",
         icon: "Megaphone",
         name: "Affiliates",
-        headline: "30% lifetime recurring",
-        desc: "For creators, newsletters, course authors and communities whose audience runs on knowledge.",
+        headline: "25% lifetime recurring (up to 30%)",
+        desc: "For legal-tech bloggers, bar association communities, law firm consultants and anyone with a DACH legal audience.",
         points: [
-          "25% of every payment for as long as your referred customer stays",
-          "+5% override on customers referred by affiliates you recruit — grow your passive income",
+          "25% of every payment for as long as your referred customer stays — no cutoff, no cap",
+          "+5% override on customers referred by affiliates you recruit (total up to 30%) — build passive income",
           "90-day cookie window",
           "Monthly payouts from €50, real-time dashboard",
           "Ready-made assets: demos, screenshots, comparison pages",
@@ -92,7 +92,7 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
     ],
     calcTitle: "What lifetime recurring actually means",
     calcSub:
-      "Refer 10 Team seats (€390/seat/month). At 30%, that's €1,170 every month — for as long as they stay. Year one alone is €14,040. And it keeps compounding.",
+      "Refer 10 Team seats (€1,290/seat/month). At 25%, that's €3,225 every month — for as long as they stay. Year one alone is €38,700. And it keeps compounding.",
     calcNote:
       "We pay at the top of the industry range because early partners matter most. The more successful your referrals, the more we all grow.",
     howTitle: "How it works",
@@ -140,8 +140,8 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         a: "Apply as a Regional Launch Partner — performance-gated priority in your region and the full 5% override on every affiliate you recruit locally.",
       },
     ],
-    ctaTitle: "Your audience needs a brain. You need recurring revenue.",
-    ctaSub: "Applications reviewed within 48 hours.",
+    ctaTitle: "Your audience needs a legal brain. You need recurring revenue.",
+    ctaSub: "Applications reviewed within 48 hours. No exclusivity required to start.",
     ctaButton: "Apply now",
   },
   de: {
@@ -157,11 +157,11 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         id: "affiliate",
         icon: "Megaphone",
         name: "Affiliates",
-        headline: "30 % lebenslang wiederkehrend",
-        desc: "Für Creator, Newsletter, Kurs-Anbieter und Communities, deren Publikum von Wissen lebt.",
+        headline: "25 % lebenslang wiederkehrend (bis zu 30 %)",
+        desc: "Für Legal-Tech-Blogger, Anwaltsverbands-Communities, Kanzlei-Berater und alle mit einem DACH-Rechts-Publikum.",
         points: [
-          "25 % jeder Zahlung, solange dein geworbener Kunde bleibt",
-          "+5 % Override auf Kunden von Affiliates, die du rekrutiert hast — baue dir passives Einkommen auf",
+          "25 % jeder Zahlung, solange dein geworbener Kunde bleibt — kein Stichtag, keine Obergrenze",
+          "+5 % Override auf Kunden von Affiliates, die du rekrutiert hast (gesamt bis zu 30 %) — passives Einkommen aufbauen",
           "90 Tage Cookie-Fenster",
           "Monatliche Auszahlung ab 50 €, Echtzeit-Dashboard",
           "Fertige Assets: Demos, Screenshots, Vergleichsseiten",
@@ -203,7 +203,7 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
     ],
     calcTitle: "Was lebenslang wiederkehrend wirklich heißt",
     calcSub:
-      "Wirb 10 Team-Seats (390 €/Seat/Monat). Bei 30 % sind das 1.170 € jeden Monat — solange sie bleiben. Allein im ersten Jahr sind das 14.040 €. Und es läuft weiter.",
+      "Wirb 10 Team-Seats (1.290 €/Seat/Monat). Bei 25 % sind das 3.225 € jeden Monat — solange sie bleiben. Allein im ersten Jahr sind das 38.700 €. Und es läuft weiter.",
     calcNote:
       "Wir zahlen am oberen Ende der Branche, weil frühe Partner am meisten zählen. Je erfolgreicher deine Empfehlungen, desto mehr wachsen wir gemeinsam.",
     howTitle: "So funktioniert's",
@@ -251,8 +251,8 @@ export const PARTNERS: Record<Lang, PartnersContent> = {
         a: "Bewirb dich als Regional Launch Partner — leistungsgebundener Vorrang in deiner Region und der volle 5-%-Override auf jeden Affiliate, den du lokal rekrutierst.",
       },
     ],
-    ctaTitle: "Dein Publikum braucht ein Brain. Du brauchst wiederkehrenden Umsatz.",
-    ctaSub: "Bewerbungen werden innerhalb von 48 Stunden geprüft.",
+    ctaTitle: "Dein Publikum braucht ein Kanzlei-Brain. Du brauchst wiederkehrenden Umsatz.",
+    ctaSub: "Bewerbungen werden innerhalb von 48 Stunden geprüft. Keine Exklusivität erforderlich.",
     ctaButton: "Jetzt bewerben",
   },
 };

@@ -26,7 +26,7 @@ export default function Error({
   return (
     <div
       data-tone="dark"
-      className="flex min-h-screen items-center justify-center px-6 [background:var(--mk-bg)]"
+      className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8 [background:var(--mk-bg)]"
     >
       <div className="max-w-md text-center">
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-600/20">

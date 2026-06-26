@@ -66,7 +66,7 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "Overview",
             href: "/subsumio",
-            description: "AI legal software for law firms in DACH",
+            description: "AI legal software — cited answers, zero hallucinations",
             icon: "Layers",
           },
           {
@@ -84,7 +84,7 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "WhatsApp Copilot",
             href: "/whatsapp",
-            description: "Book time, file docs from your phone",
+            description: "Book time, file documents from your phone",
             icon: "MessageSquare",
           },
           {
@@ -173,13 +173,13 @@ export const NAV: Record<Lang, NavContent> = {
           {
             label: "Übersicht",
             href: "/subsumio",
-            description: "KI-Kanzleisoftware für DACH",
+            description: "KI-Kanzleisoftware — belegte Antworten, keine Halluzination",
             icon: "Layers",
           },
           {
             label: "Features",
             href: "/features",
-            description: "Jede Funktion, nichts verborgen",
+            description: "Alle Funktionen auf einen Blick",
             icon: "Zap",
           },
           {
@@ -323,10 +323,10 @@ export const FOOTER = {
         ],
       },
     ],
-    note: "Your data, your keys — self-hosted on your hardware or our EU cloud. Built for confidentiality-first work.",
+    note: "Your data, your keys. Self-hosted on your hardware or our EU cloud — GDPR-ready, end-to-end encrypted, zero training on your data.",
   },
   de: {
-    tagline: "Die Wissensbasis deiner Kanzlei.",
+    tagline: "Das KI-Gehirn für deine Kanzlei.",
     columns: [
       {
         title: "Plattform",
@@ -372,7 +372,7 @@ export const FOOTER = {
         ],
       },
     ],
-    note: "Deine Daten, deine Schlüssel — On-Premise auf deiner Hardware oder in unserer EU-Cloud. Gebaut für vertraulichkeitskritische Arbeit.",
+    note: "Deine Daten. Deine Schlüssel. On-Premise auf eigener Hardware oder EU-Cloud — DSGVO-konform, Ende-zu-Ende verschlüsselt, kein Training auf deinen Daten.",
   },
 } as const;
 
@@ -403,13 +403,30 @@ export const PRICING: Record<
     sub: "Per seat, billed annually. Your firm's brain on infrastructure you control — EU-hosted or on-premise.",
     tiers: [
       {
+        id: "community",
+        name: "Community",
+        price: "€0",
+        period: "forever",
+        blurb: "For solo lawyers exploring AI-assisted case work. Free forever, no credit card required.",
+        features: [
+          "Self-hosted — your server, your keys",
+          "50 AI queries/mo included",
+          "5 GB local storage",
+          "Case Q&A with page-level citations",
+          "Deadline tracking (ZPO/BGB/ABGB)",
+          "Community support",
+        ],
+        cta: "Start free",
+        href: "/signup",
+      },
+      {
         id: "pro",
         name: "Pro",
         price: "€890",
         priceMonthly: "€1,113",
         period: "/seat/mo",
         periodMonthly: "/seat/mo",
-        blurb: "For the lawyer who lives on their knowledge. Annual billing saves 20%.",
+        blurb: "For the lawyer who can't afford to miss anything. Annual billing saves 20%.",
         features: [
           "Fully managed — no API keys needed",
           "1,000 AI queries/seat/mo included",
@@ -431,7 +448,7 @@ export const PRICING: Record<
         priceMonthly: "€1,613",
         period: "/seat/mo",
         periodMonthly: "/seat/mo",
-        blurb: "One shared brain, scoped per user. From 5 seats. Annual billing saves 20%.",
+        blurb: "One shared brain, every lawyer's matters indexed together. From 5 seats. Annual billing saves 20%.",
         features: [
           "Everything in Pro",
           "Shared institutional memory",
@@ -451,7 +468,7 @@ export const PRICING: Record<
         name: "Enterprise",
         price: "from €1,890",
         period: "/seat/mo",
-        blurb: "Compliance-grade. From 20 seats, your infrastructure or EU cloud.",
+        blurb: "Compliance-grade for regulated firms. From 20 seats, on your infrastructure or EU cloud.",
         features: [
           "15,000 AI queries/seat/mo (Fair Use beyond)",
           "5,000 WhatsApp messages/seat/mo",
@@ -475,6 +492,23 @@ export const PRICING: Record<
     sub: "Pro Nutzer, jährliche Abrechnung. Dein Kanzleiwissen auf Infrastruktur, die du kontrollierst — EU-gehostet oder On-Premise.",
     tiers: [
       {
+        id: "community",
+        name: "Community",
+        price: "0 €",
+        period: "für immer",
+        blurb: "Für Einzelanwälte, die KI-gestützte Aktenarbeit erkunden. Kostenlos für immer, keine Kreditkarte nötig.",
+        features: [
+          "Self-hosted — dein Server, deine Keys",
+          "50 KI-Anfragen/Mon. inklusive",
+          "5 GB lokaler Speicher",
+          "Akten-Q&A mit seitengenauen Zitaten",
+          "Fristenverwaltung (ZPO/BGB/ABGB)",
+          "Community-Support",
+        ],
+        cta: "Kostenlos starten",
+        href: "/signup",
+      },
+      {
         id: "pro",
         name: "Pro",
         price: "890 €",
@@ -482,7 +516,7 @@ export const PRICING: Record<
         period: "/Nutzer/Mon.",
         periodMonthly: "/Nutzer/Mon.",
         blurb:
-          "Für Anwälte, die ihr Kanzleiwissen täglich produktiv nutzen. Jahreszahlung spart 20 %.",
+          "Für Anwälte, die es sich nicht leisten können, etwas zu übersehen. Jahreszahlung spart 20 %.",
         features: [
           "Voll verwaltet — keine API-Keys nötig",
           "1.000 KI-Anfragen/Nutzer/Mon. inklusive",
@@ -505,7 +539,7 @@ export const PRICING: Record<
         period: "/Nutzer/Mon.",
         periodMonthly: "/Nutzer/Mon.",
         blurb:
-          "Ein gemeinsames Kanzleiwissen mit rollenbasierten Zugriffsrechten. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
+          "Ein gemeinsames Brain — jede Akte jedes Anwalts, gemeinsam abfragbar. Ab 5 Nutzern. Jahreszahlung spart 20 %.",
         features: [
           "Alles aus Pro",
           "Geteiltes Kanzleiwissen",
@@ -526,7 +560,7 @@ export const PRICING: Record<
         price: "ab 1.890 €",
         period: "/Nutzer/Mon.",
         blurb:
-          "Für hohe Compliance-Anforderungen. Ab 20 Nutzern, auf deiner Infrastruktur oder in der EU-Cloud.",
+          "Compliance-Klasse für regulierte Kanzleien. Ab 20 Nutzern, auf deiner Infrastruktur oder in der EU-Cloud.",
         features: [
           "15.000 KI-Anfragen/Nutzer/Mon. (Fair Use darüber)",
           "5.000 WhatsApp-Nachrichten/Nutzer/Mon.",
@@ -613,9 +647,9 @@ export const LANDING = {
     badge: "AI legal software",
     h1a: "Every matter,",
     h1b: "one cited answer.",
-    sub: "Subsumio is the AI legal software that turns matters, deadlines, emails, documents and research into one cited workspace — built for DACH law firms.",
+    sub: "Subsumio turns matters, deadlines, emails and documents into cited answers you can trust — AI legal software built for law firms in AT, DE and CH.",
     ctaPrimary: "Get started",
-    ctaSecondary: "See it answer",
+    ctaSecondary: "See it live",
     demo: {
       windowTitle: "subsumio — ask",
       you: "You",
@@ -637,10 +671,10 @@ export const LANDING = {
       { value: "3", label: "jurisdictions — AT · DE · CH" },
       { value: "0", label: "client-data leaks, by design" },
     ],
-    statsNote: "Engine-class retrieval, not a chat wrapper — every AI answer names its source.",
-    featuresTitle: "Built for law firms",
+    statsNote: "Not a chat wrapper — engine-class retrieval where every AI answer cites its exact source.",
+    featuresTitle: "Built for law firms. Not adapted for them.",
     featuresSub:
-      "From deadline control to contradiction detection — every answer cited, every deadline tracked.",
+      "From deadline control to contradiction detection — every answer cited, every deadline tracked, no hallucinations.",
     features: [
       {
         icon: "Brain",
@@ -663,14 +697,14 @@ export const LANDING = {
       {
         icon: "ShieldAlert",
         color: "rose",
-        title: "Conflict check (§ 43a BRAO)",
-        desc: "Every new client or opponent is checked server-side against your entire matter database — conflicts flagged before the mandate is accepted.",
+        title: "Conflict check (§ 43a BRAO / § 10 RAO / BGFA)",
+        desc: "Every new client or opponent is checked server-side against your entire matter database — conflicts flagged before the mandate is accepted. Covers § 43a BRAO (DE), § 10 RAO (AT) and BGFA (CH).",
       },
       {
         icon: "Calculator",
         color: "blue",
         title: "Time, expenses, invoices & DATEV",
-        desc: "Book minutes by lawyer and activity, track billable expenses, generate invoices from open work, export DATEV-ready.",
+        desc: "Book minutes by lawyer and activity, track billable expenses, generate invoices from open work, export DATEV-ready (DE) or ADATEV (AT).",
       },
       {
         icon: "Shield",
@@ -679,7 +713,7 @@ export const LANDING = {
         desc: "The full engine on your hardware with your keys — or managed EU cloud with DPA. Client data never leaves your control.",
       },
     ],
-    howTitle: "From document to cited answer",
+    howTitle: "How it works: from document to cited answer",
     how: [
       {
         step: "01",
@@ -706,8 +740,8 @@ export const LANDING = {
         desc: "A synthesized answer with page-level citations — plus an honest note on what the file is still missing.",
       },
     ],
-    scenariosTitle: "Use cases",
-    scenariosSub: "Real workflows from the engine — not mockups.",
+    scenariosTitle: "Real workflows",
+    scenariosSub: "From the engine, not a mockup — three workflows your team will recognize.",
     scenarios: [
       {
         role: "Incoming post",
@@ -745,17 +779,17 @@ export const LANDING = {
         a: "Never. Your knowledge is yours alone — never used to train shared models. Self-hosted, nothing leaves your building; on our EU cloud it stays encrypted and isolated per customer.",
       },
     ],
-    ctaTitle: "Your brain is waiting.",
-    ctaSub: "Three minutes to first answer. No credit card.",
+    ctaTitle: "Your matters deserve better.",
+    ctaSub: "Three minutes to first cited answer. No credit card.",
     ctaButton: "Get started with Subsumio",
   },
   de: {
     badge: "KI-Kanzleisoftware",
     h1a: "Jede Akte,",
     h1b: "eine belegte Antwort.",
-    sub: "Subsumio ist die KI-Kanzleisoftware, die Akten, Fristen, E-Mails, Dokumente und Recherche in eine belegbare Kanzlei-Arbeitsoberfläche bringt — gebaut für DACH-Kanzleien.",
+    sub: "Subsumio bringt Akten, Fristen, Mails und Dokumente in eine KI-Kanzleisoftware — jede Antwort mit Quellenangabe, keine Halluzination. Gebaut für Kanzleien in AT, DE und CH.",
     ctaPrimary: "Jetzt starten",
-    ctaSecondary: "Antwort ansehen",
+    ctaSecondary: "Demo ansehen",
     demo: {
       windowTitle: "subsumio — fragen",
       you: "Du",
@@ -777,10 +811,10 @@ export const LANDING = {
       { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
       { value: "0", label: "bekannte Mandantendaten-Leaks" },
     ],
-    statsNote: "Engine-Klasse Retrieval, kein Chat-Wrapper — jede KI-Antwort nennt ihre Quelle.",
-    featuresTitle: "Für Kanzleien gebaut",
+    statsNote: "Kein Chat-Wrapper. Engine-Klasse Retrieval — jede KI-Antwort nennt die exakte Quellenangabe.",
+    featuresTitle: "Für Kanzleien gebaut. Nicht nachträglich angepasst.",
     featuresSub:
-      "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort belegt, jede Frist im Blick.",
+      "Von Fristenkontrolle bis Widerspruchserkennung — jede Antwort belegt, jede Frist im Blick, keine Halluzination.",
     features: [
       {
         icon: "Brain",
@@ -803,14 +837,14 @@ export const LANDING = {
       {
         icon: "ShieldAlert",
         color: "rose",
-        title: "Kollisionsprüfung (§ 43a BRAO)",
-        desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird.",
+        title: "Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+        desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft — Konflikte werden gemeldet, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
       },
       {
         icon: "Calculator",
         color: "blue",
         title: "Zeiten, Auslagen, Rechnungen & DATEV",
-        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, DATEV-ready exportieren.",
+        desc: "Minuten nach Anwalt und Tätigkeit buchen, abrechenbare Auslagen erfassen, Rechnungen aus offener Arbeit erstellen, DATEV-ready exportieren (DE) bzw. ADATEV (AT).",
       },
       {
         icon: "Shield",
@@ -819,7 +853,7 @@ export const LANDING = {
         desc: "Die vollständige Engine auf eigener Kanzlei-Infrastruktur — oder verwaltete EU-Cloud mit AVV. Mandantendaten bleiben unter deiner Kontrolle.",
       },
     ],
-    howTitle: "Vom Dokument zur belegten Antwort",
+    howTitle: "So funktioniert's: vom Dokument zur belegten Antwort",
     how: [
       {
         step: "01",
@@ -846,8 +880,8 @@ export const LANDING = {
         desc: "Synthetisierte Antwort mit seitengenauen Zitaten — plus ehrlicher Hinweis, was in der Akte noch fehlt.",
       },
     ],
-    scenariosTitle: "Praxis-Workflows",
-    scenariosSub: "Echte Kanzleiabläufe aus dem Produkt — keine Marketing-Mockups.",
+    scenariosTitle: "Kanzlei-Workflows aus der Praxis",
+    scenariosSub: "Echte Abläufe aus dem Produkt — drei Szenarien, die jeder Anwalt kennt.",
     scenarios: [
       {
         role: "Eingangspost",
@@ -885,8 +919,255 @@ export const LANDING = {
         a: "Niemals. Dein Kanzleiwissen gehört allein dir und wird nicht zum Training geteilter Modelle genutzt. On-Premise bleibt alles auf deiner Infrastruktur; in der EU-Cloud wird es verschlüsselt und mandantensepariert verarbeitet.",
       },
     ],
-    ctaTitle: "Dein Kanzleiwissen wird abfragbar.",
-    ctaSub: "Drei Minuten bis zur ersten Antwort. Keine Kreditkarte.",
+    ctaTitle: "Deine Kanzlei. Endlich abfragbar.",
+    ctaSub: "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte.",
     ctaButton: "Mit Subsumio starten",
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// UI_STRINGS — shared bilingual strings used across marketing components.
+// Single source of truth for inline labels, badges, aria-labels, CTAs.
+// ---------------------------------------------------------------------------
+
+export const UI_STRINGS: Record<Lang, Record<string, string>> = {
+  en: {
+    // Landing — trust signals
+    noCreditCard: "No credit card",
+    threeMinAnswer: "3 min to first cited answer",
+    euHosted: "EU-hosted or self-hosted",
+    liveDemoAria: "Live demo",
+    inActionBadge: "In action",
+    dashboardTitle: "Attach a file. Ask. Cited answer.",
+    dashboardSub:
+      "Bring files in via upload, Google Drive or your practice software — then ask in chat, with page-level sources.",
+    seeFullPricing: "See full pricing details",
+    gdprReady: "GDPR-ready",
+    professionalSecrecy: "Professional secrecy by design",
+    // Pricing page
+    transparentFair: "Transparent & fair",
+    noGamesTitle: "No games with pricing",
+    noGamesSub: "No fine print, no surprises on the bill.",
+    stillQuestions: "Still have questions?",
+    writeUs: "Write to us — we reply personally.",
+    startFree: "Start free",
+    // Solution page
+    seePlatform: "See the platform",
+    questionsAnswered: "Questions, answered",
+    notQuiteRight: "Not quite the right fit?",
+    // Audience tabs
+    seeSolution: "See the solution",
+    // Subsumio subpages
+    backToOverview: "Back to overview",
+    timeExpenses: "Time & expenses in seconds",
+    timeExpensesDesc:
+      '"Time 0.5h matter Müller, call" → captured, linked to the matter, one tap to confirm.',
+    receiptPhoto: "Receipt photo → right matter",
+    receiptPhotoDesc:
+      "Document or photo with matter code in the caption lands audit-proof in the vault.",
+    voiceNote: "Voice note on the go",
+    voiceNoteDesc:
+      "Dictate after the hearing — transcribed and attached to the matter before you're back at the office.",
+    // Docs page
+    dashboardNotDatasheet: "Dashboard, not a datasheet",
+    docsTitle: "Every description points to a real legal workflow.",
+    docsSub:
+      "The docs are not a raw API inventory. They show which dashboard surface exists, which legal workflow it improves and which security assumption sits underneath it.",
+    // Back to top
+    backToTopAria: "Back to top",
+    // Product workflow showcase
+    followContext: "Follow context",
+    // Chrome / nav
+    menuAria: "Menu",
+    readInGerman: "Auf Deutsch lesen",
+    readInEnglish: "Read in English",
+    // Branch pricing
+    pricingBadge: "Pricing",
+    mostPopular: "Most popular",
+    fullPricingFaq: "Full pricing & FAQ",
+    // Dashboard reel
+    openMatter: "Open matter",
+    sendQuestion: "Send question",
+    checkDeadline: "Check deadline",
+    searchPlaceholder: "Search…",
+    timeLabel: "9:42 AM",
+    mattersLabel: "Matters",
+    mattersCount: "matters",
+    deadlinesLabel: "Deadlines",
+    urgentLabel: "urgent",
+    // Vertical page
+    signatureLabel: "signature",
+    strengthsLabel: "Stärken",
+    capabilitiesBadge: "Capabilities",
+    seeAllCapabilities: "See all capabilities",
+    whatsappDetail: "Explore the WhatsApp copilot",
+    securityDetail: "Security & GDPR in depth",
+    // Live demo
+    liveDemoRegion: "Live demo",
+    // Features page
+    matterLabel: "Matter",
+    copilotLabel: "Copilot",
+    reviewLabel: "Review",
+    inDashboard: "Dashboard-native",
+    commandCenter: "Command center",
+    liveMatterContext: "Live matter context",
+    verifiableLabel: "verifiable",
+    exploreSecurity: "Explore security",
+    exploreLabel: "Explore",
+    // Partners page
+    // Download page
+    askYourBrain: "Ask your brain…",
+    gapWarning: "⚠ Gap: Thu 2pm has no notes",
+    worksOffline: "Works offline",
+    installNow: "Install Subsumio now",
+    getStarted: "Get started",
+    seeFeatures: "See features",
+    pushNotifications: "Push notifications",
+    biometricUnlock: "Biometric unlock",
+    sendToSubsumio: "“Send to Subsumio”",
+    comingSoonTo: "Coming soon to",
+  },
+  de: {
+    // Landing — trust signals
+    noCreditCard: "Keine Kreditkarte",
+    threeMinAnswer: "3 Min. zur ersten belegten Antwort",
+    euHosted: "EU-gehostet oder On-Premise",
+    liveDemoAria: "Live-Demo",
+    inActionBadge: "In Aktion",
+    dashboardTitle: "Datei anhängen. Fragen. Zitierte Antwort.",
+    dashboardSub:
+      "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Quellen.",
+    seeFullPricing: "Alle Preisdetails ansehen",
+    gdprReady: "DSGVO-konform",
+    professionalSecrecy: "Berufsgeheimnis per Architektur",
+    // Pricing page
+    transparentFair: "Transparent & fair",
+    noGamesTitle: "Keine Spielchen bei den Preisen",
+    noGamesSub: "Kein Kleingedrucktes, keine Überraschungen auf der Rechnung.",
+    stillQuestions: "Noch Fragen?",
+    writeUs: "Schreib uns — wir antworten persönlich.",
+    startFree: "Kostenlos starten",
+    // Solution page
+    seePlatform: "Plattform ansehen",
+    questionsAnswered: "Fragen, beantwortet",
+    notQuiteRight: "Nicht ganz das Richtige für dich?",
+    // Audience tabs
+    seeSolution: "Lösung ansehen",
+    // Subsumio subpages
+    backToOverview: "Zur Übersicht",
+    timeExpenses: "Zeit & Auslagen in Sekunden",
+    timeExpensesDesc:
+      "„Zeit 0,5h Akte Müller, Telefonat“ → erfasst, der Akte zugeordnet, ein Tipp zum Bestätigen.",
+    receiptPhoto: "Beleg-Foto → richtige Akte",
+    receiptPhotoDesc:
+      "Dokument oder Foto mit Akten-Kürzel in der Caption landet revisionssicher im Vault.",
+    voiceNote: "Sprachnotiz unterwegs",
+    voiceNoteDesc:
+      "Diktat nach dem Termin — transkribiert und der Akte angehängt, bevor du im Büro bist.",
+    // Docs page
+    dashboardNotDatasheet: "Dashboard statt Datenblatt",
+    docsTitle: "Jede Beschreibung zeigt auf einen echten Kanzlei-Workflow.",
+    docsSub:
+      "Die Docs sind nicht als rohe API-Liste gedacht. Sie erklären, welche Funktion im Dashboard sichtbar ist, welchen Kanzlei-Prozess sie verbessert und welche Sicherheitsannahme dahintersteht.",
+    // Back to top
+    backToTopAria: "Zurück nach oben",
+    // Product workflow showcase
+    followContext: "Kontext folgen",
+    // Chrome / nav
+    menuAria: "Menü",
+    readInGerman: "Auf Deutsch lesen",
+    readInEnglish: "Read in English",
+    // Branch pricing
+    pricingBadge: "Preise",
+    mostPopular: "Beliebteste Wahl",
+    fullPricingFaq: "Alle Preise & FAQ",
+    // Dashboard reel
+    openMatter: "Akte öffnen",
+    sendQuestion: "Frage senden",
+    checkDeadline: "Frist prüfen",
+    searchPlaceholder: "Suchen…",
+    timeLabel: "09:42",
+    mattersLabel: "Akten",
+    mattersCount: "Akten",
+    deadlinesLabel: "Fristen",
+    urgentLabel: "dringend",
+    // Vertical page
+    signatureLabel: "Stärken",
+    strengthsLabel: "Stärken",
+    capabilitiesBadge: "Funktionen",
+    seeAllCapabilities: "Alle Funktionen ansehen",
+    whatsappDetail: "WhatsApp-Copilot im Detail",
+    securityDetail: "Sicherheit & DSGVO im Detail",
+    // Live demo
+    liveDemoRegion: "Live-Demo",
+    // Features page
+    matterLabel: "Akte",
+    copilotLabel: "Copilot",
+    reviewLabel: "Freigabe",
+    inDashboard: "Im Dashboard",
+    commandCenter: "Command Center",
+    liveMatterContext: "Live-Aktenkontext",
+    verifiableLabel: "prüfbar",
+    exploreSecurity: "Sicherheit ansehen",
+    exploreLabel: "Ansehen",
+    // Partners page
+    // Download page
+    askYourBrain: "Frag dein Brain…",
+    gapWarning: "⚠ Lücke: Do 14 Uhr ohne Notiz",
+    worksOffline: "Funktioniert offline",
+    installNow: "Subsumio jetzt installieren",
+    getStarted: "Jetzt starten",
+    seeFeatures: "Features ansehen",
+    pushNotifications: "Push-Benachrichtigungen",
+    biometricUnlock: "Biometrische Entsperrung",
+    sendToSubsumio: "„An Subsumio senden“",
+    comingSoonTo: "Bald im",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// VALUE_PROPS — pricing page value propositions (bilingual).
+// Used by pricing-page.tsx. Moved here for single-source-of-truth.
+// ---------------------------------------------------------------------------
+
+export const VALUE_PROPS: Record<
+  Lang,
+  { title: string; desc: string }[]
+> = {
+  en: [
+    {
+      title: "No hidden costs",
+      desc: "What you see is what you pay. No surprises on the bill.",
+    },
+    {
+      title: "Self-hosted or cloud",
+      desc: "You decide where your data lives. EU cloud or your own hardware.",
+    },
+    {
+      title: "Open-source engine",
+      desc: "The engine is open source. No vendor lock-in, full control.",
+    },
+    {
+      title: "Start free",
+      desc: "The Community plan is free. Upgrade anytime, downgrade too.",
+    },
+  ],
+  de: [
+    {
+      title: "Keine versteckten Kosten",
+      desc: "Was auf der Preisliste steht, zahlst du. Keine Überraschungen bei der Rechnung.",
+    },
+    {
+      title: "Self-hosted oder Cloud",
+      desc: "Du entscheidest, wo deine Daten liegen. EU-Cloud oder auf eigener Hardware.",
+    },
+    {
+      title: "Open-Source Engine",
+      desc: "Die Engine ist Open Source. Kein Vendor Lock-in, volle Kontrolle.",
+    },
+    {
+      title: "Kostenlos starten",
+      desc: "Der Community-Plan ist kostenlos. Upgrade jederzeit, downgrade auch.",
+    },
+  ],
+};

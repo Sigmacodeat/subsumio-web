@@ -489,7 +489,7 @@ const DE: DocsContent = {
       {
         icon: "Lock",
         title: "End-to-End-Verschlüsselung",
-        desc: "At-Rest und In-Transit. Kein Training auf Mandantendaten. § 203 StGB im Systemdesign.",
+        desc: "At-Rest und In-Transit. Kein Training auf Mandantendaten. § 203 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH) im Systemdesign.",
       },
       {
         icon: "Zap",
@@ -499,8 +499,8 @@ const DE: DocsContent = {
     ],
   },
   cta: {
-    title: "Keine Funktion verstanden?",
-    sub: "Jedes Feature ist im Dashboard ausprobiert — nicht nur dokumentiert.",
+    title: "Fragen zu einer Funktion?",
+    sub: "Jede Funktion ist im Dashboard ausprobierbar — nicht nur dokumentiert.",
     button: "Dashboard öffnen",
   },
 };
@@ -975,7 +975,7 @@ const EN: DocsContent = {
       {
         icon: "Lock",
         title: "End-to-End Encryption",
-        desc: "At-rest and in-transit. No training on client data. Professional secrecy by design.",
+        desc: "At-rest and in-transit. No training on client data. Professional secrecy by design — § 203 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH).",
       },
       {
         icon: "Zap",

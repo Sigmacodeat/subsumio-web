@@ -23,10 +23,10 @@ export const PRODUCTS: Record<Lang, Record<ProductSlug, ProductContent>> = {
       industry: "legal",
       name: "Subsumio",
       claim: "The law firm's brain.",
-      poweredBy: "Legal software for Austria & Germany",
-      metaTitle: "Subsumio — Law firm software Austria & Germany",
+      poweredBy: "Legal software for AT · DE · CH",
+      metaTitle: "Subsumio — Law firm software AT · DE · CH",
       metaDesc:
-        "AI legal software for lawyers: case files, deadlines per ZPO/BGB/ABGB, AI analysis with citations. GDPR-compliant, EU-hosted or self-hosted.",
+        "AI legal software for law firms in Austria, Germany and Switzerland: case files, deadlines per ZPO/BGB/ABGB, cited AI answers. GDPR-compliant, EU-hosted or self-hosted.",
     },
   },
   de: {
@@ -36,10 +36,10 @@ export const PRODUCTS: Record<Lang, Record<ProductSlug, ProductContent>> = {
       industry: "legal",
       name: "Subsumio",
       claim: "Das Kanzlei-Gehirn.",
-      poweredBy: "Kanzleisoftware für Österreich & Deutschland",
-      metaTitle: "Subsumio — Kanzleisoftware Österreich & Deutschland",
+      poweredBy: "Kanzleisoftware für AT · DE · CH",
+      metaTitle: "Subsumio — Kanzleisoftware AT · DE · CH",
       metaDesc:
-        "KI-Kanzleisoftware für Rechtsanwälte: Akten verwalten, Fristen nach ZPO/ABGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder On-Premise.",
+        "KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Akten verwalten, Fristen nach ZPO/ABGB/ZGB, KI-Analysen mit Zitaten. DSGVO-konform, EU-gehostet oder On-Premise.",
     },
   },
 };

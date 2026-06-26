@@ -9,10 +9,11 @@ import Link from "next/link";
 import { ArrowRight, Check, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 import { PARTNERS } from "@/content/partners";
 import { SectionHeading, ICONS } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { Reveal, StaggerContainer, StaggerItem, GlowCard } from "./motion-system";
+import { Reveal, StaggerContainer, StaggerItem, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
 
 export default function PartnersPage({ lang }: { lang: Lang }) {
   const t = PARTNERS[lang];
@@ -34,12 +35,14 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             <span className="badge-pulse h-1.5 w-1.5 rounded-full [background:var(--signal-amber)]" />
             {t.badge}
           </span>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
           <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
             {t.h1a}
             <span className="sr-only"> </span>
             <br />
             <span className="gradient-text-gold glow-text">{t.h1b}</span>
           </h1>
+          </ClipReveal>
           <p className="mx-auto mb-4 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
             {t.sub}
           </p>
@@ -64,8 +67,8 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                 >
                   {tier.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="brand-bg rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap text-white">
-                        {lang === "en" ? "Most popular" : "Beliebteste Wahl"}
+                      <span className="brand-bg rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
+                        {UI_STRINGS[lang].mostPopular}
                       </span>
                     </div>
                   )}
@@ -132,7 +135,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Earnings illustration */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <Reveal variant="up" className="mx-auto max-w-3xl text-center">
           <TrendingUp size={28} className="mx-auto mb-6 [color:var(--signal-amber)]" />
           <h2 className="mb-5 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
@@ -146,14 +149,14 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* How it works */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 py-24">
+      <section className="relative z-10 mx-auto max-w-5xl px-4 py-24 sm:px-6 lg:px-8">
         <Reveal variant="up">
           <SectionHeading title={t.howTitle} />
         </Reveal>
         <StaggerContainer className="grid gap-6 md:grid-cols-3" stagger={0.12}>
           {t.how.map((item) => (
             <StaggerItem key={item.step}>
-              <div className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg">
+              <GlowCard className="h-full rounded-xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:shadow-lg">
                 <span className="mb-4 block font-mono text-xs [color:var(--mk-text-subtle)]">
                   {item.step}
                 </span>
@@ -161,14 +164,14 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   {item.title}
                 </h3>
                 <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{item.desc}</p>
-              </div>
+              </GlowCard>
             </StaggerItem>
           ))}
         </StaggerContainer>
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Reveal variant="up">
             <SectionHeading title={t.faqTitle} />
@@ -180,16 +183,18 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl px-6 py-24 text-center">
+      <section className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8">
         <Reveal variant="upLg">
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
           <a href="mailto:partners@subsum.eu?subject=Partner%20application">
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
+            <MagneticButton strength={0.25}>
+              <Button size="xl" variant="glow">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </MagneticButton>
           </a>
         </Reveal>
       </section>

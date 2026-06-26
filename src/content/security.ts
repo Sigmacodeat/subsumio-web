@@ -34,9 +34,9 @@ export interface SecurityContent {
 
 export const SECURITY: Record<Lang, SecurityContent> = {
   en: {
-    metaTitle: "Subsumio — GDPR-compliant legal software security",
+    metaTitle: "Subsumio Security — GDPR-compliant AI legal software, EU cloud or self-hosted",
     metaDesc:
-      "Self-host the full engine or use EU cloud with DPA. Per-user scoped access, fuzz-tested. Honest about what we have and what's on the roadmap.",
+      "Self-host the full engine on your hardware, or use EU cloud with DPA. No training on client data, per-user scoped access fuzz-tested for zero leaks. Honest about what we have and what's on the roadmap.",
     badge: "Security & data protection",
     h1a: "Your data is the product's value.",
     h1b: "So it stays under your control.",
@@ -92,8 +92,8 @@ export const SECURITY: Record<Lang, SecurityContent> = {
         desc: "DPA for hosted plans, EU data location, documented subprocessors, deletion on request. Self-hosted deployments process nothing on our side at all.",
       },
       {
-        title: "Professional secrecy (§ 203 StGB, § 43e BRAO)",
-        desc: "Self-hosting means no third party is involved — the cleanest answer to professional-secrecy rules for lawyers. Hosted plans add a contractual confidentiality commitment on top of the DPA, covering involved parties under § 43e BRAO / § 203 (4) StGB.",
+        title: "Professional secrecy (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
+        desc: "Self-hosting means no third party is involved — the cleanest answer to professional-secrecy rules for lawyers in DE (§ 203 StGB, § 43e BRAO), AT (§ 9 RAO) and CH (Art. 321 StGB). Hosted plans add a contractual confidentiality commitment on top of the DPA, covering involved parties under § 43e BRAO / § 203 (4) StGB (DE) and equivalent provisions in AT/CH.",
       },
       {
         title: "Built-in anonymization before the cloud",
@@ -157,9 +157,9 @@ export const SECURITY: Record<Lang, SecurityContent> = {
     ctaButton: "Talk to us",
   },
   de: {
-    metaTitle: "Subsumio — DSGVO-konforme Kanzleisoftware Sicherheit",
+    metaTitle: "Subsumio Sicherheit — DSGVO-konforme KI-Kanzleisoftware, EU-Cloud oder On-Premise",
     metaDesc:
-      "Volle Engine self-hosted oder EU-Cloud mit AVV. Zugriff pro Nutzer gescoped, fuzz-getestet. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
+      "Volle Engine self-hosted auf deiner Hardware oder EU-Cloud mit AVV. Kein Training mit Mandantendaten, Zugriff pro Nutzer fuzz-getestet auf null Leaks. Ehrlich über das, was wir haben — und was auf der Roadmap steht.",
     badge: "Sicherheit & Datenschutz",
     h1a: "Deine Daten sind der Wert des Produkts.",
     h1b: "Deshalb bleiben sie unter deiner Kontrolle.",
@@ -193,7 +193,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
         title: "Self-hosted / On-Premise (Enterprise)",
         points: [
           "Deine Hardware, deine Jurisdiktion, deine Keys",
-          "Kein Dritter verarbeitet Mandantendaten — relevant für § 203 StGB: keine mitwirkende Person",
+          "Kein Dritter verarbeitet Mandantendaten — relevant für § 203 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH): keine mitwirkende Person",
           "Die komplette Engine, auditierbar, auf deiner Infrastruktur",
           "Updates und Backups verwaltest du selbst",
         ],
@@ -202,7 +202,7 @@ export const SECURITY: Record<Lang, SecurityContent> = {
         title: "Verwaltete EU-Cloud (Pro/Team/Enterprise)",
         points: [
           "EU-Hosting mit Auftragsverarbeitungsvertrag (AVV, Art. 28 DSGVO)",
-          "Verschwiegenheitsverpflichtung nach § 203 Abs. 4 StGB für Berufsgeheimnisträger verfügbar",
+          "Verschwiegenheitsverpflichtung nach § 203 Abs. 4 StGB (DE) / § 9 RAO (AT) / Art. 321 StGB (CH) für Berufsgeheimnisträger verfügbar",
           "Verschlüsselung bei Übertragung und Speicherung",
           "Löschanfragen an einer Stelle erledigt",
         ],
@@ -215,8 +215,8 @@ export const SECURITY: Record<Lang, SecurityContent> = {
         desc: "AVV für gehostete Pläne, EU-Datenstandort, dokumentierte Subprozessoren, Löschung auf Anfrage. Self-Hosted-Deployments verarbeiten auf unserer Seite gar nichts.",
       },
       {
-        title: "Berufsgeheimnisschutz (§ 203 StGB, § 43e BRAO)",
-        desc: "Self-Hosting heißt: kein Dritter ist beteiligt — die sauberste Antwort auf die Verschwiegenheitspflicht, ganz ohne mitwirkende Person. Gehostete Pläne ergänzen die AVV um eine vertragliche Verschwiegenheitsverpflichtung nach § 43e BRAO / § 203 Abs. 4 StGB.",
+        title: "Berufsgeheimnisschutz (§ 203 StGB / § 9 RAO / Art. 321 StGB)",
+        desc: "Self-Hosting heißt: kein Dritter ist beteiligt — die sauberste Antwort auf die Verschwiegenheitspflicht in DE (§ 203 StGB, § 43e BRAO), AT (§ 9 RAO) und CH (Art. 321 StGB), ganz ohne mitwirkende Person. Gehostete Pläne ergänzen die AVV um eine vertragliche Verschwiegenheitsverpflichtung nach § 43e BRAO / § 203 Abs. 4 StGB (DE) und entsprechenden Regelungen in AT/CH.",
       },
       {
         title: "Eingebaute Anonymisierung vor der Cloud",

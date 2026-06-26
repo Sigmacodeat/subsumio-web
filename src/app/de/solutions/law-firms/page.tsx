@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     canonical: "/de/solutions/law-firms",
     languages: { en: "/solutions/law-firms", de: "/de/solutions/law-firms" },
   },
+  openGraph: {
+    title: content.metaTitle,
+    description: content.metaDesc,
+    url: "/de/solutions/law-firms",
+    type: "website",
+  },
 };
 
 export default function Page() {

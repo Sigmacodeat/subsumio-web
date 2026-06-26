@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Send, Loader2, CheckCircle2 } from "lucide-react";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
 import type { Lang } from "@/content/site";
+import { UI_STRINGS } from "@/content/site";
 
 interface DemoResult {
   slug?: string;
@@ -103,7 +104,7 @@ export default function LiveDemo({
     <div
       className="overflow-hidden rounded-2xl border [border-color:var(--mk-border)] text-left shadow-2xl shadow-black/10 [background:var(--mk-surface)]"
       role="region"
-      aria-label={lang === "de" ? "Live-Demo" : "Live demo"}
+      aria-label={UI_STRINGS[lang].liveDemoRegion}
     >
       {/* window bar */}
       <div className="flex items-center gap-2 border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-bg)]">
@@ -208,7 +209,7 @@ export default function LiveDemo({
           <span className="text-xs [color:var(--mk-text-subtle)]">
             {lang === "en"
               ? "Read-only demo brain · your data stays yours"
-              : "Read-only Demo-Brain · deine Daten bleiben deine"}
+              : "Read-only Demo-Brain · deine Daten bleiben bei dir"}
           </span>
         )}
       </div>

@@ -4,10 +4,17 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — Kanzleisoftware Preise pro Nutzer",
+  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
   description:
-    "Kanzleisoftware ab 890 €/Nutzer/Mon., jährlich abgerechnet. EU-Cloud oder On-Premise, transparente Mehrkosten, kein Lock-in, 14-Tage-Reverse-Trial.",
+    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14-Tage-Reverse-Trial, keine Überraschungsrechnung, kein Lock-in.",
   alternates: { canonical: "/de/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
+  openGraph: {
+    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
+    description:
+      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14-Tage-Reverse-Trial, keine Überraschungsrechnung.",
+    url: "/de/pricing",
+    type: "website",
+  },
 };
 
 export default function Page() {

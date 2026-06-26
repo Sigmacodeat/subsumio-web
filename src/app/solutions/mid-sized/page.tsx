@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     canonical: "/solutions/mid-sized",
     languages: { en: "/solutions/mid-sized", de: "/de/solutions/mid-sized" },
   },
+  openGraph: {
+    title: content.metaTitle,
+    description: content.metaDesc,
+    url: "/solutions/mid-sized",
+    type: "website",
+  },
 };
 
 export default function Page() {

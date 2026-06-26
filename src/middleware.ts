@@ -85,6 +85,10 @@ function isWebhookCsrfExempt(pathname: string): boolean {
   });
 }
 
+// Language preference cookie set when user explicitly switches language.
+// Prevents the browser-language redirect from overriding an explicit choice.
+const LANG_PREF_COOKIE = "sb_lang";
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
@@ -110,6 +114,31 @@ export async function middleware(req: NextRequest) {
     const dashboard = req.nextUrl.clone();
     dashboard.pathname = "/dashboard";
     return NextResponse.redirect(dashboard);
+  }
+
+  // --- Browser language detection: redirect German speakers to /de ---
+  // Only on the root path, only for GET requests.
+  // Skipped when the user has explicitly set a language preference (sb_lang cookie).
+  if (pathname === "/" && method === "GET") {
+    const langPref = req.cookies.get(LANG_PREF_COOKIE)?.value;
+    if (langPref !== "en") {
+      const acceptLang = req.headers.get("accept-language") ?? "";
+      // Primary language tag only (before first comma), strip quality weight
+      const primaryLang = acceptLang.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
+      const isGerman =
+        primaryLang === "de" ||
+        primaryLang.startsWith("de-") ||
+        // Fallback: any de-* among top languages (handles de,en-US;q=0.9)
+        acceptLang
+          .split(",")
+          .slice(0, 3)
+          .some((s) => s.trim().toLowerCase().startsWith("de"));
+      if (isGerman) {
+        const deUrl = req.nextUrl.clone();
+        deUrl.pathname = "/de";
+        return NextResponse.redirect(deUrl, { status: 302 });
+      }
+    }
   }
 
   // --- CSRF validation for state-changing API requests ---

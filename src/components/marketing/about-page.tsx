@@ -6,6 +6,7 @@ import { ArrowRight, Shield, Brain, Globe, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
+import { GlowCard, AnimatedCounter, ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
 
 const CONTENT = {
   en: {
@@ -57,7 +58,7 @@ const CONTENT = {
     sub: "Subsumio ist die Kanzleisoftware mit Assistent, gebaut für die Verschwiegenheit, Präzision und regulatorischen Anforderungen von Kanzleien in Österreich, Deutschland und der Schweiz.",
     missionTitle: "Unsere Mission",
     missionText:
-      "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst, nicht fremder Cloud.",
+      "Jeder Kanzlei eine Wissensbasis geben, die nie vergisst — jede Akte, Frist und Schriftsatz indiziert und abfragbar, mit Zitaten, die du überprüfen kannst, bevor du dich darauf verlässt. Auf Infrastruktur, die du kontrollierst — nicht auf fremder Cloud.",
     valuesTitle: "Woran wir glauben",
     values: [
       {
@@ -77,8 +78,8 @@ const CONTENT = {
       },
       {
         icon: "Heart",
-        title: "Anwalt-zentriertes Design",
-        desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, Mobile-First. Nicht ein weiteres System, das sie meiden.",
+        title: "Für Anwälte gemacht",
+        desc: "Tools, die deine Anwälte täglich nutzen — WhatsApp-Copilot, Sprachnotizen, mobil. Nicht ein weiteres System, das sie meiden.",
       },
     ],
     statsTitle: "In Zahlen",
@@ -86,7 +87,7 @@ const CONTENT = {
       { value: "14.713", label: "Gesetzesparagraphen, zitierbar" },
       { value: "3", label: "Jurisdiktionen — AT · DE · CH" },
       { value: "97,9 %", label: "Recall@5 Retrieval-Benchmark" },
-      { value: "0", label: "Mandantendaten-Leaks, by Design" },
+      { value: "0", label: "Mandantendaten-Leaks — garantiert" },
     ],
     ctaTitle: "Sprich mit uns",
     ctaSub: "Ob Einzelanwalt oder Managing Partner — wir freuen uns, von dir zu hören.",
@@ -103,7 +104,7 @@ export default function AboutPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span
-            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
@@ -111,16 +112,15 @@ export default function AboutPage({ lang }: { lang: Lang }) {
             <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {c.badge}
           </motion.span>
-          <motion.h1
-            className="text-4xl font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-          >
-            {c.h1a}
-            <br />
-            <span className="brand-text">{c.h1b}</span>
-          </motion.h1>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1
+              className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
+            >
+              {c.h1a}
+              <br />
+              <span className="brand-text">{c.h1b}</span>
+            </h1>
+          </ClipReveal>
           <motion.p
             className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]"
             initial={{ opacity: 0, y: 20 }}
@@ -156,17 +156,18 @@ export default function AboutPage({ lang }: { lang: Lang }) {
               return (
                 <motion.div
                   key={v.title}
-                  className="rounded-2xl border [border-color:var(--mk-border)] p-6 [background:var(--mk-surface)]"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.45, delay: i * 0.08 }}
                 >
-                  <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
-                    <Icon size={22} className="brand-text" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{v.title}</h3>
-                  <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{v.desc}</p>
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--mk-border-strong)] hover:shadow-xl">
+                    <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 hover:scale-110">
+                      <Icon size={22} className="brand-text" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold [color:var(--mk-text)]">{v.title}</h3>
+                    <p className="text-sm leading-relaxed [color:var(--mk-text-muted)]">{v.desc}</p>
+                  </GlowCard>
                 </motion.div>
               );
             })}
@@ -174,28 +175,41 @@ export default function AboutPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section tone="dark" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="dark" className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+        <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.statsTitle} tone="dark" />
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            {c.stats.map((s, i) => (
-              <motion.div
-                key={s.label}
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.45, delay: i * 0.06 }}
-              >
-                <div className="brand-text text-3xl font-black md:text-4xl">{s.value}</div>
-                <div className="mt-1 text-xs [color:var(--mk-text-muted)]">{s.label}</div>
-              </motion.div>
-            ))}
+            {c.stats.map((s, i) => {
+              const num = parseFloat(s.value.replace(/[^0-9.]/g, ""));
+              const suffix = s.value.replace(/[0-9.,]/g, "");
+              const prefix = s.value.match(/^[^0-9]*/)?.[0] ?? "";
+              const isNumeric = !isNaN(num) && num > 0;
+              return (
+                <motion.div
+                  key={s.label}
+                  className="text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ duration: 0.45, delay: i * 0.06 }}
+                >
+                  <div className="brand-text text-3xl font-black md:text-4xl">
+                    {isNumeric ? (
+                      <AnimatedCounter to={num} prefix={prefix} suffix={suffix} decimals={s.value.includes(".") ? 1 : 0} />
+                    ) : (
+                      s.value
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs [color:var(--mk-text-muted)]">{s.label}</div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </Section>
 
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-28 sm:px-6 lg:px-8">
         <motion.div
           className="mx-auto max-w-3xl text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -208,13 +222,15 @@ export default function AboutPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mx-auto mb-8 max-w-xl text-lg [color:var(--mk-text-muted)]">{c.ctaSub}</p>
           <Link href={p(lang, "/contact")}>
-            <Button size="lg" variant="glow" className="group min-h-[48px]">
-              {c.ctaButton}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
+            <MagneticButton strength={0.25}>
+              <Button size="lg" variant="glow" className="group min-h-[48px]">
+                {c.ctaButton}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Button>
+            </MagneticButton>
           </Link>
         </motion.div>
       </Section>

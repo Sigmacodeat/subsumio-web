@@ -35,7 +35,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     badge: "iOS · iPadOS · Android · Desktop",
     h1a: "Your brain,",
     h1b: "in your pocket.",
-    sub: "Subsumio installs as a full-screen app on every device you own — straight from the browser, no app store, no waiting. Native store apps are on the way.",
+    sub: "Subsumio installs as a full-screen app on every device you own — straight from the browser, no app store, no waiting. One account, every screen. Native store apps are on the way.",
     platforms: [
       {
         id: "ios",
@@ -100,8 +100,8 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         a: "After the hosted cloud is live — Apple's review requires a complete signup flow. The Capacitor build setup is already in the repository (mobile/README.md).",
       },
     ],
-    ctaTitle: "Install it now, thank yourself in the next meeting.",
-    ctaSub: "Set up in minutes, first answer the same day — on whatever device is in your hand.",
+    ctaTitle: "Install now. Use it in your next hearing.",
+    ctaSub: "Set up in under five minutes. First cited answer the same day — on whatever device is in your hand.",
     ctaButton: "Get started",
   },
   de: {
@@ -111,7 +111,7 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
     badge: "iOS · iPadOS · Android · Desktop",
     h1a: "Dein Brain,",
     h1b: "in deiner Tasche.",
-    sub: "Subsumio installiert sich als Vollbild-App auf jedem deiner Geräte — direkt aus dem Browser, ohne App Store, ohne Wartezeit. Native Store-Apps sind in Arbeit.",
+    sub: "Subsumio installiert sich als Vollbild-App auf jedem deiner Geräte — direkt aus dem Browser, ohne App Store, ohne Wartezeit. Ein Konto, jeder Bildschirm. Native Store-Apps sind in Arbeit.",
     platforms: [
       {
         id: "ios",
@@ -176,9 +176,9 @@ export const DOWNLOAD: Record<Lang, DownloadContent> = {
         a: "Nach dem Cloud-Launch — Apples Review verlangt einen vollständigen Signup-Flow. Das Capacitor-Build-Setup liegt bereits im Repository (mobile/README.md).",
       },
     ],
-    ctaTitle: "Jetzt installieren, im nächsten Meeting dafür danken.",
+    ctaTitle: "Jetzt installieren. In der nächsten Verhandlung nutzen.",
     ctaSub:
-      "In Minuten eingerichtet, erste Antwort am selben Tag — auf dem Gerät, das gerade in deiner Hand liegt.",
+      "In unter fünf Minuten eingerichtet. Erste belegte Antwort am selben Tag — auf dem Gerät, das gerade in deiner Hand liegt.",
     ctaButton: "Jetzt starten",
   },
 };

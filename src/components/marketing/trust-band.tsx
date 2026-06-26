@@ -89,7 +89,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
   return (
     <section
       data-tone="slate"
-      className="relative z-10 px-6 py-28"
+      className="relative z-10 px-4 py-28 sm:px-6 lg:px-8"
       style={{ background: "var(--mk-bg)" }}
     >
       <div className="mx-auto max-w-6xl">
@@ -101,7 +101,7 @@ export default function TrustBand({ lang, industry }: { lang: Lang; industry?: s
           className="mb-14 text-center"
         >
           <span
-            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
+            className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
             style={{ color: "#60a5fa", background: "rgba(96,165,250,0.10)" }}
           >
             <span

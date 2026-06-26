@@ -10,7 +10,7 @@ import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { ChevronRight, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { LANDING, PRICING, p, type Lang } from "@/content/site";
+import { LANDING, PRICING, UI_STRINGS, p, type Lang } from "@/content/site";
 import { PricingGrid } from "./pricing-grid";
 import LiveDemo from "./live-demo";
 import DashboardReel from "./dashboard-reel";
@@ -19,7 +19,7 @@ import TrustBand from "./trust-band";
 import AudienceTabs from "./audience-tabs";
 import { SectionHeading, ICONS, accentTile } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GlowCard, StaggerContainer, StaggerItem, EASE, ScrollProgress } from "./motion-system";
+import { GlowCard, StaggerContainer, StaggerItem, EASE, ScrollProgress, AnimatedCounter, MagneticButton, MagneticCard, TextReveal } from "./motion-system";
 
 const viewport = { once: true, margin: "0px 0px 80px 0px", amount: 0.12 } as const;
 
@@ -78,6 +78,7 @@ const trustItem: Variants = {
 export default function LandingPage({ lang }: { lang: Lang }) {
   const t = LANDING[lang];
   const pricing = PRICING[lang];
+  const ui = UI_STRINGS[lang];
   const reduce = useReducedMotion();
 
   return (
@@ -91,7 +92,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Hero band — hero on the light page surface */}
         <div className="relative">
           {/* Hero */}
-          <section className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-24 text-center md:pt-36 md:pb-28">
+          <section className="relative z-10 mx-auto max-w-7xl px-4 pt-28 pb-24 text-center sm:px-6 lg:px-8 md:pt-36 md:pb-28">
             {/* Aurora wash — local to hero */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
               <div
@@ -139,7 +140,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </motion.div>
               <motion.div variants={heroItem}>
                 <motion.h1
-                  className="mb-8 text-[clamp(2.75rem,12vw,4.5rem)] leading-[1.05] font-bold tracking-tight text-balance [color:var(--mk-text)] md:text-7xl"
+                  className="mb-8 text-[clamp(2.75rem,12vw,4.5rem)] leading-[1.05] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-7xl"
                   variants={h1Container}
                 >
                   {reduce ? (
@@ -172,25 +173,24 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               </motion.div>
               <motion.div variants={heroItem}>
                 <div className="mb-10 flex flex-col justify-center gap-4 sm:flex-row">
-                  <motion.div
-                    whileHover={reduce ? undefined : { scale: 1.03, y: -2 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
+                  <MagneticButton strength={0.25}>
                     <Link href={p(lang, "/signup")}>
                       <Button size="xl" variant="glow" className="min-w-[200px]">
                         {t.ctaPrimary} <SubsumioMark size={18} tile={false} />
                       </Button>
                     </Link>
-                  </motion.div>
-                  <a href="#demo">
-                    <Button
-                      size="xl"
-                      variant="secondary"
-                      className="min-w-[200px] border-[color:var(--mk-border-strong)]"
-                    >
-                      {t.ctaSecondary} <ChevronRight size={18} />
-                    </Button>
-                  </a>
+                  </MagneticButton>
+                  <MagneticButton strength={0.2}>
+                    <a href="#demo">
+                      <Button
+                        size="xl"
+                        variant="secondary"
+                        className="min-w-[200px] border-[color:var(--mk-border-strong)]"
+                      >
+                        {t.ctaSecondary} <ChevronRight size={18} />
+                      </Button>
+                    </a>
+                  </MagneticButton>
                 </div>
               </motion.div>
               {/* Micro-trust signals below CTAs — Stripe/Linear pattern */}
@@ -200,9 +200,9 @@ export default function LandingPage({ lang }: { lang: Lang }) {
                   variants={trustContainer}
                 >
                   {[
-                    lang === "de" ? "Keine Kreditkarte" : "No credit card",
-                    lang === "de" ? "3 Min. zur ersten Antwort" : "3 min to first answer",
-                    lang === "de" ? "EU-gehostet oder On-Premise" : "EU-hosted or self-hosted",
+                    ui.noCreditCard,
+                    ui.threeMinAnswer,
+                    ui.euHosted,
                   ].map((label) => (
                     <motion.span
                       key={label}
@@ -227,7 +227,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
               role="region"
-              aria-label={lang === "de" ? "Live-Demo" : "Live demo"}
+              aria-label={ui.liveDemoAria}
             >
               {/* Pin the demo mockup to slate so it keeps its terminal look
                 without a harsh black-to-light contrast jump. */}
@@ -242,21 +242,31 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <motion.section
           {...reveal}
           data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]"
+          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8"
         >
           <div className="mx-auto max-w-4xl">
             <StaggerContainer
               className="mb-6 grid grid-cols-2 gap-8 text-center md:grid-cols-4"
               stagger={0.09}
             >
-              {t.stats.map((stat) => (
+              {t.stats.map((stat) => {
+                const num = parseFloat(stat.value.replace(/[^0-9.]/g, ""));
+                const suffix = stat.value.replace(/[0-9.,]/g, "");
+                const prefix = stat.value.match(/^[^0-9]*/)?.[0] ?? "";
+                const isNumeric = !isNaN(num) && num > 0;
+                return (
                 <StaggerItem key={stat.label}>
                   <p className="mb-1 text-3xl font-black [color:var(--signal-blue)]">
-                    {stat.value}
+                    {isNumeric ? (
+                      <AnimatedCounter to={num} prefix={prefix} suffix={suffix} decimals={stat.value.includes(".") ? 1 : 0} />
+                    ) : (
+                      stat.value
+                    )}
                   </p>
                   <p className="text-sm [color:var(--mk-text-muted)]">{stat.label}</p>
                 </StaggerItem>
-              ))}
+                );
+              })}
             </StaggerContainer>
             <p className="text-center text-xs [color:var(--mk-text-subtle)]">{t.statsNote}</p>
           </div>
@@ -265,31 +275,25 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <SuperbrainAdvantage lang={lang} />
 
         {/* Dashboard in action — light section with dark mockup spotlight */}
-        <section data-tone="light" className="relative z-10 mx-auto max-w-5xl px-6 py-28">
+        <section data-tone="light" className="relative z-10 mx-auto max-w-5xl px-4 py-28 sm:px-6 lg:px-8">
           <motion.div {...reveal}>
             <SectionHeading
-              badge={lang === "de" ? "In Aktion" : "In action"}
-              title={
-                lang === "de"
-                  ? "Datei anhängen. Fragen. Zitierte Antwort."
-                  : "Attach a file. Ask. Cited answer."
-              }
-              sub={
-                lang === "de"
-                  ? "Dateien per Upload, Google Drive oder Anwaltssoftware in die Wissensbasis — dann im Chat fragen, mit seitengenauen Quellen."
-                  : "Bring files in via upload, Google Drive or your practice software — then ask in chat, with page-level sources."
-              }
+              badge={ui.inActionBadge}
+              title={ui.dashboardTitle}
+              sub={ui.dashboardSub}
             />
           </motion.div>
           <motion.div {...reveal}>
-            <div data-tone="slate">
-              <DashboardReel lang={lang} />
-            </div>
+            <MagneticCard lift={8} tilt={2} className="rounded-2xl">
+              <div data-tone="slate">
+                <DashboardReel lang={lang} />
+              </div>
+            </MagneticCard>
           </motion.div>
         </section>
 
         {/* Features — alternating surface band */}
-        <section id="features" data-tone="light" className="relative z-10 px-6 py-28">
+        <section id="features" data-tone="light" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
               <SectionHeading badge="Features" title={t.featuresTitle} sub={t.featuresSub} />
@@ -329,7 +333,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* Use cases — real workflows, not fake testimonials */}
         <section
           data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
+          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
         >
           <div className="mx-auto max-w-7xl">
             <motion.div {...reveal}>
@@ -361,7 +365,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* How it works — alternating surface band */}
         <section
           data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
+          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
         >
           <div className="mx-auto max-w-6xl">
             <motion.div {...reveal}>
@@ -406,14 +410,14 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <TrustBand lang={lang} />
 
         {/* Pricing */}
-        <section id="pricing" data-tone="light" className="relative z-10 px-6 py-28">
+        <section id="pricing" data-tone="light" className="relative z-10 px-4 py-28 sm:px-6 lg:px-8">
           <motion.div {...reveal} className="mx-auto max-w-6xl">
             <SectionHeading badge="Pricing" title={pricing.title} sub={pricing.sub} />
             <PricingGrid lang={lang} />
             <div className="mt-10 text-center">
               <Link href={p(lang, "/pricing")}>
                 <Button size="lg" variant="secondary">
-                  {lang === "de" ? "Alle Preisdetails ansehen" : "See full pricing details"}{" "}
+                  {ui.seeFullPricing}{" "}
                   <ArrowRight size={16} />
                 </Button>
               </Link>
@@ -424,7 +428,7 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         {/* FAQ — subtle surface band */}
         <section
           data-tone="light"
-          className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-24 [background:var(--mk-surface)]"
+          className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-24 [background:var(--mk-surface)] sm:px-6 lg:px-8"
         >
           <motion.div {...reveal} className="mx-auto max-w-5xl">
             <SectionHeading title={t.faqTitle} />
@@ -436,30 +440,35 @@ export default function LandingPage({ lang }: { lang: Lang }) {
         <motion.section
           {...reveal}
           data-tone="light"
-          className="relative z-10 mx-auto max-w-3xl px-6 py-32 text-center"
+          className="relative z-10 mx-auto max-w-3xl px-4 py-28 text-center sm:px-6 lg:px-8"
         >
-          <SubsumioMark size={64} className="mx-auto mb-8" />
-          <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
-            {t.ctaTitle}
-          </h2>
+          <SubsumioMark size={56} className="mx-auto mb-7" />
+          <TextReveal
+            as="h2"
+            text={t.ctaTitle}
+            className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl"
+            wordClassName="inline-block"
+          />
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <Link href={p(lang, "/signup")}>
-            <Button size="xl" variant="glow">
-              <SubsumioMark size={18} tile={false} /> {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
+          <MagneticButton strength={0.25}>
+            <Link href={p(lang, "/signup")}>
+              <Button size="xl" variant="glow">
+                <SubsumioMark size={18} tile={false} /> {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </Link>
+          </MagneticButton>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs [color:var(--mk-text-subtle)]">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-emerald-500" />
-              {lang === "de" ? "Keine Kreditkarte" : "No credit card"}
+              {ui.noCreditCard}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-emerald-500" />
-              {lang === "de" ? "DSGVO-konform" : "GDPR-ready"}
+              {ui.gdprReady}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-emerald-500" />
-              {lang === "de" ? "§ 203 StGB im Blick" : "Professional secrecy by design"}
+              {ui.professionalSecrecy}
             </span>
           </div>
         </motion.section>

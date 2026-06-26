@@ -14,12 +14,12 @@ import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-mot
 import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { FEATURES_PAGE } from "@/content/features";
 import SubsumioShowcase from "./subsumio-showcase";
 import { ICONS, useSiteBrand } from "./chrome";
 import { AnimatedFaqList } from "./animated-faq";
-import { GuidedCursor } from "./motion-system";
+import { GuidedCursor, GlowCard, ClipReveal, MagneticButton } from "./motion-system";
 
 const viewport = { once: true, margin: "-60px" } as const;
 
@@ -235,7 +235,7 @@ const HOW = {
 function HowItWorks({ lang }: { lang: Lang }) {
   const h = HOW[lang];
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -361,22 +361,22 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
     {
       x: "22%",
       y: "31%",
-      label: lang === "de" ? "Akte" : "Matter",
+      label: UI_STRINGS[lang].matterLabel,
     },
     {
       x: "24%",
       y: "48%",
-      label: lang === "de" ? "Copilot" : "Copilot",
+      label: UI_STRINGS[lang].copilotLabel,
     },
     {
       x: "24%",
       y: "64%",
-      label: lang === "de" ? "Freigabe" : "Review",
+      label: UI_STRINGS[lang].reviewLabel,
     },
   ];
 
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+    <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
       <div className="grid items-center gap-9 lg:grid-cols-[0.85fr_1.15fr]">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -385,11 +385,11 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           transition={{ duration: 0.4 }}
         >
           <p className="brand-text mb-3 text-xs font-semibold tracking-[0.16em] uppercase">
-            {lang === "de" ? "Wie im Dashboard" : "Dashboard-native"}
+            {UI_STRINGS[lang].inDashboard}
           </p>
           <h2 className="mb-4 text-3xl leading-tight font-black text-balance [color:var(--mk-text)] md:text-4xl">
             {lang === "de"
-              ? "Features laufen als Kanzlei-Workflow."
+              ? "Jede Funktion läuft als Kanzlei-Workflow."
               : "Features run as a legal workflow."}
           </h2>
           <p className="max-w-xl text-base leading-relaxed [color:var(--mk-text-muted)]">
@@ -410,14 +410,14 @@ function FeatureCommandCenter({ lang }: { lang: Lang }) {
           <div className="flex items-center justify-between border-b [border-color:var(--mk-border)] px-4 py-3 [background:var(--mk-surface)]">
             <div>
               <p className="text-xs font-semibold [color:var(--mk-text)]">
-                {lang === "de" ? "Command Center" : "Command center"}
+                {UI_STRINGS[lang].commandCenter}
               </p>
               <p className="text-xs [color:var(--mk-text-subtle)]">
-                {lang === "de" ? "Live-Aktenkontext" : "Live matter context"}
+                {UI_STRINGS[lang].liveMatterContext}
               </p>
             </div>
             <span className="brand-text brand-soft rounded-full px-2 py-1 text-xs font-medium">
-              {lang === "de" ? "prüfbar" : "verifiable"}
+              {UI_STRINGS[lang].verifiableLabel}
             </span>
           </div>
           <div className="grid gap-4 p-4 md:grid-cols-[1fr_1.15fr]">
@@ -551,7 +551,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       lang={lang}
     >
       {/* Hero — copy left, animated graph right */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-16">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -563,12 +563,14 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
               <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
               {t.badge}
             </div>
-            <h1 className="mb-6 text-[clamp(2.35rem,10.5vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
+            <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1 className="mb-6 text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.08] font-black tracking-tight text-balance [color:var(--mk-text)] md:text-6xl">
               {t.h1a}
               <span className="sr-only"> </span>
               <br />
               <span className="gradient-text glow-text">{t.h1b}</span>
             </h1>
+            </ClipReveal>
             <p className="mx-auto mb-8 max-w-xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl lg:mx-0">
               {t.sub}
             </p>
@@ -601,7 +603,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Stats band */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {stats.map((s, i) => (
             <motion.div
@@ -633,7 +635,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       {isSubsumio && <SubsumioShowcase lang={lang} />}
 
       {/* Category explorer */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
         <div
           role="tablist"
           aria-label="Feature categories"
@@ -768,7 +770,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Security cross-link — replaces former Security & Teams category */}
-      <section className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
+      <section className="relative z-10 mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -784,7 +786,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             <h2 className="mb-3 text-2xl font-black [color:var(--mk-text)] md:text-3xl">
               {lang === "en"
                 ? "Built for confidentiality-first work"
-                : "Gebaut für Verschwiegenheit zuerst"}
+                : "Gebaut für vertrauliche Arbeit"}
             </h2>
             <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed [color:var(--mk-text-muted)]">
               {lang === "en"
@@ -793,7 +795,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
             </p>
             <Link href={p(lang, "/security")}>
               <Button size="lg" variant="secondary">
-                {lang === "en" ? "Explore security" : "Sicherheit ansehen"} <ArrowRight size={16} />
+                {UI_STRINGS[lang].exploreSecurity} <ArrowRight size={16} />
               </Button>
             </Link>
           </div>
@@ -801,11 +803,11 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* Everything at a glance */}
-      <section className="relative z-10 mx-auto max-w-6xl px-6 pb-24">
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
         <h2 className="mb-12 text-center text-2xl font-black [color:var(--mk-text)] md:text-3xl">
           {lang === "en"
             ? "Five capability areas, one engine"
-            : "Fünf Fähigkeits-Bereiche, eine Engine"}
+            : "Fünf Funktionsbereiche, eine Engine"}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {t.categories.map((c, i) => {
@@ -822,18 +824,20 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={viewport}
                 transition={{ duration: 0.35, delay: (i % 3) * 0.08 }}
-                className="group hover:brand-border rounded-2xl border [border-color:var(--mk-border)] p-6 text-left transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)]"
+                className="group rounded-2xl text-left transition-all"
               >
-                <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
-                  {Icon && <Icon size={20} className="brand-text" />}
-                </div>
-                <h3 className="mb-1.5 text-base font-bold [color:var(--mk-text)]">{c.title}</h3>
-                <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
-                  {c.intro}
-                </p>
-                <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-                  {lang === "en" ? "Explore" : "Ansehen"} <ArrowRight size={12} />
-                </span>
+                <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:-translate-y-1 hover:[background:var(--mk-hover)] hover:brand-border">
+                  <div className="brand-soft brand-border mb-4 flex h-11 w-11 items-center justify-center rounded-xl border transition-transform group-hover:scale-110">
+                    {Icon && <Icon size={20} className="brand-text" />}
+                  </div>
+                  <h3 className="mb-1.5 text-base font-bold [color:var(--mk-text)]">{c.title}</h3>
+                  <p className="line-clamp-3 text-sm leading-relaxed [color:var(--mk-text-muted)]">
+                    {c.intro}
+                  </p>
+                  <span className="brand-text mt-4 inline-flex items-center gap-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                    {UI_STRINGS[lang].exploreLabel} <ArrowRight size={12} />
+                  </span>
+                </GlowCard>
               </motion.button>
             );
           })}
@@ -841,7 +845,7 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-6 py-20 [background:var(--mk-surface)]">
+      <section className="relative z-10 border-y [border-color:var(--mk-border)] px-4 py-20 [background:var(--mk-surface)] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -857,16 +861,18 @@ export default function FeaturesPage({ lang }: { lang: Lang }) {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-6 py-24 text-center">
-        <SubsumioMark size={64} className="glow mx-auto mb-8 rounded-[15px]" />
+      <section className="relative z-10 mx-auto max-w-3xl border-t [border-color:var(--mk-border)] px-4 py-28 text-center sm:px-6 lg:px-8">
+        <SubsumioMark size={56} className="glow mx-auto mb-7 rounded-[15px]" />
         <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
           {t.ctaTitle}
         </h2>
         <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
         <Link href={p(lang, "/signup")}>
-          <Button size="xl" variant="glow">
-            {t.ctaButton} <ArrowRight size={18} />
-          </Button>
+          <MagneticButton strength={0.25}>
+            <Button size="xl" variant="glow">
+              {t.ctaButton} <ArrowRight size={18} />
+            </Button>
+          </MagneticButton>
         </Link>
       </section>
     </div>

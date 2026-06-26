@@ -1,7 +1,34 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const CRITICAL_PAGES = ["/", "/de", "/de/features", "/de/pricing", "/de/login", "/de/signup"];
+const CRITICAL_PAGES = [
+  "/",
+  "/de",
+  "/de/features",
+  "/de/pricing",
+  "/de/login",
+  "/de/signup",
+  "/de/security",
+  "/de/about",
+  "/de/contact",
+  "/de/download",
+  "/de/docs",
+  "/de/partners",
+  "/de/solutions/law-firms",
+  "/de/solutions/solo",
+  "/de/solutions/in-house",
+  "/features",
+  "/pricing",
+  "/security",
+  "/about",
+  "/contact",
+  "/download",
+  "/docs",
+  "/partners",
+  "/solutions/law-firms",
+  "/solutions/solo",
+  "/solutions/in-house",
+];
 
 for (const path of CRITICAL_PAGES) {
   test(`a11y scan: ${path}`, async ({ page }) => {

@@ -16,6 +16,12 @@ export const metadata: Metadata = {
     canonical,
     languages: { en: subsumioCanonical("en"), de: subsumioCanonical("de") },
   },
+  openGraph: {
+    title: product.metaTitle,
+    description: product.metaDesc,
+    url: canonical,
+    type: "website",
+  },
 };
 
 export default function Page() {

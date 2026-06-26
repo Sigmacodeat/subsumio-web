@@ -295,7 +295,7 @@ export function AnimatedCounter({
   return (
     <span ref={ref} className={className}>
       {prefix}
-      {val.toFixed(decimals)}
+      {val >= 1000 ? Math.floor(val).toLocaleString("en-US") : val.toFixed(decimals)}
       {suffix}
     </span>
   );
@@ -341,7 +341,7 @@ export function ClipReveal({
     <motion.div
       initial={initial}
       whileInView={animate}
-      viewport={VIEWPORT.gentle}
+      viewport={{ once: true, amount: 0 }}
       transition={{
         duration,
         delay,
@@ -375,7 +375,7 @@ export function GlowCard({
   className = "",
   style,
   glowColor = "var(--brand-primary)",
-  intensity = 0.18,
+  intensity = 0.22,
 }: GlowCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
@@ -540,7 +540,7 @@ export function MagneticCard({ children, className = "", lift = 6, tilt = 3 }: M
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      style={{ rotateX, rotateY, y: translateY, transformStyle: "preserve-3d" }}
+      style={{ rotateX, rotateY, y: translateY, transformStyle: "preserve-3d", perspective: 800, willChange: "transform" }}
       transition={{ type: "spring", stiffness: 250, damping: 20 }}
       className={className}
     >
@@ -626,5 +626,92 @@ export function ScrollProgress() {
           "linear-gradient(90deg, var(--brand-gradient-from), var(--brand-gradient-via), var(--brand-gradient-to))",
       }}
     />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MagneticButton — magnetic CTA that follows cursor with spring physics
+// ---------------------------------------------------------------------------
+
+interface MagneticButtonProps {
+  children: ReactNode;
+  className?: string;
+  strength?: number;
+}
+
+export function MagneticButton({ children, className = "", strength = 0.3 }: MagneticButtonProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
+
+  const x = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
+  const y = useSpring(useMotionValue(0), { stiffness: 300, damping: 20 });
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (reduce || !ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      x.set((e.clientX - cx) * strength);
+      y.set((e.clientY - cy) * strength);
+    },
+    [reduce, strength, x, y]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    x.set(0);
+    y.set(0);
+  }, [x, y]);
+
+  if (reduce) return <div className={`inline-flex [&>a]:inline-flex ${className}`}>{children}</div>;
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ x, y, willChange: "transform" }}
+      className={`inline-flex [&>a]:inline-flex ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GradientMesh — animated gradient mesh for dark section backgrounds
+// ---------------------------------------------------------------------------
+
+interface GradientMeshProps {
+  className?: string;
+  colors?: string[];
+  duration?: number;
+}
+
+export function GradientMesh({
+  className = "",
+  colors = ["var(--brand-primary)", "var(--brand-secondary)", "var(--brand-tertiary)"],
+  duration = 12,
+}: GradientMeshProps) {
+  const reduce = useReducedMotion();
+  if (reduce) return null;
+
+  return (
+    <div className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`} aria-hidden>
+      <motion.div
+        className="absolute inset-[-20%]"
+        style={{
+          background: `radial-gradient(ellipse 50% 50% at 20% 30%, ${colors[0]}12, transparent 60%),
+                       radial-gradient(ellipse 40% 40% at 80% 70%, ${colors[1]}10, transparent 60%),
+                       radial-gradient(ellipse 35% 35% at 50% 50%, ${colors[2]}08, transparent 60%)`,
+        }}
+        animate={{
+          x: [0, 30, -20, 0],
+          y: [0, -20, 30, 0],
+          scale: [1, 1.05, 0.98, 1],
+        }}
+        transition={{ duration, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
   );
 }

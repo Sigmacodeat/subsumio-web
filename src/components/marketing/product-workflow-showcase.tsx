@@ -12,10 +12,10 @@ import {
   Search,
   ShieldCheck,
 } from "lucide-react";
-import { type Lang } from "@/content/site";
+import { type Lang, UI_STRINGS } from "@/content/site";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
-import { GuidedCursor } from "./motion-system";
+import { GuidedCursor, MagneticCard } from "./motion-system";
 
 const copy = {
   en: {
@@ -76,7 +76,7 @@ export default function ProductWorkflowShowcase({
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-6 py-28"
+      className="relative z-10 overflow-hidden border-y [border-color:var(--mk-border)] px-4 py-28 sm:px-6 lg:px-8"
       style={industry ? styleForIndustry(industry) : undefined}
     >
       <div className="brand-glow-bg absolute inset-x-0 top-1/3 h-64 opacity-40 blur-3xl" />
@@ -117,6 +117,7 @@ export default function ProductWorkflowShowcase({
         </motion.div>
 
         <motion.div style={{ y: yPanel }} className="relative">
+          <MagneticCard lift={6} tilt={1.5} className="relative">
           <div className="brand-glow-bg absolute -inset-6 rounded-full blur-3xl" />
           <div
             data-tone="slate"
@@ -125,7 +126,7 @@ export default function ProductWorkflowShowcase({
             <GuidedCursor
               x={["63%", "35%", "74%", "58%"]}
               y={["24%", "45%", "53%", "82%"]}
-              label={lang === "de" ? "Kontext folgen" : "Follow context"}
+              label={UI_STRINGS[lang].followContext}
               className="hidden md:flex"
               duration={7.2}
             />
@@ -284,6 +285,7 @@ export default function ProductWorkflowShowcase({
               </div>
             </div>
           </div>
+          </MagneticCard>
         </motion.div>
       </div>
     </section>

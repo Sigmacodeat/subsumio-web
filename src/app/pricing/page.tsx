@@ -4,10 +4,17 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — Legal software pricing, per seat",
+  title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
   description:
-    "Hosted plans from €890/seat/mo, billed annually. Self-hosted or EU cloud. No surprise bills, no vendor lock-in, 14-day reverse trial.",
+    "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo billed annually — EU cloud or self-hosted, 14-day reverse trial, no surprise bills, no vendor lock-in.",
   alternates: { canonical: "/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
+  openGraph: {
+    title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
+    description:
+      "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo — EU cloud or self-hosted, 14-day reverse trial, no surprise bills.",
+    url: "/pricing",
+    type: "website",
+  },
 };
 
 export default function Page() {

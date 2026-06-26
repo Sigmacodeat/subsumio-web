@@ -76,7 +76,7 @@ export function PricingGrid({ lang }: { lang: Lang }) {
               >
                 {tier.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="brand-bg rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap text-white">
+                    <span className="brand-bg rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
                       {isDE ? "Beliebteste Wahl" : "Most popular"}
                     </span>
                   </div>

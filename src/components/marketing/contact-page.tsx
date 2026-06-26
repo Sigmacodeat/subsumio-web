@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { p, type Lang } from "@/content/site";
 import { Section, SectionHeading } from "./chrome";
+import { GlowCard, ClipReveal, MagneticButton } from "./motion-system";
 
 const CONTENT = {
   en: {
@@ -99,7 +100,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
       <Section tone="light" className="px-4 pt-20 pb-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <motion.span
-            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            className="brand-soft brand-text brand-border mb-6 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
@@ -107,16 +108,15 @@ export default function ContactPage({ lang }: { lang: Lang }) {
             <span className="brand-bg badge-pulse h-1.5 w-1.5 rounded-full" />
             {c.badge}
           </motion.span>
-          <motion.h1
-            className="text-4xl font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-          >
-            {c.h1a}
-            <br />
-            <span className="brand-text">{c.h1b}</span>
-          </motion.h1>
+          <ClipReveal delay={0.1} duration={0.7} direction="up">
+            <h1
+              className="text-[clamp(2.5rem,10vw,3.75rem)] leading-[1.07] font-black tracking-tight [color:var(--mk-text)] md:text-5xl lg:text-6xl"
+            >
+              {c.h1a}
+              <br />
+              <span className="brand-text">{c.h1b}</span>
+            </h1>
+          </ClipReveal>
           <motion.p
             className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)]"
             initial={{ opacity: 0, y: 20 }}
@@ -128,7 +128,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={c.channelsTitle} tone="light" />
           <div className="grid gap-4 md:grid-cols-3">
@@ -138,18 +138,20 @@ export default function ContactPage({ lang }: { lang: Lang }) {
                 <motion.a
                   key={ch.title}
                   href={ch.href}
-                  className="group rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all [background:var(--mk-surface)] hover:border-[var(--brand-primary)] hover:shadow-lg"
+                  className="group rounded-2xl transition-all"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.45, delay: i * 0.08 }}
                 >
-                  <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border">
-                    <Icon size={22} className="brand-text" />
-                  </div>
-                  <h3 className="mb-1 text-sm font-semibold [color:var(--mk-text)]">{ch.title}</h3>
-                  <p className="brand-text mb-2 font-mono text-sm">{ch.value}</p>
-                  <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{ch.desc}</p>
+                  <GlowCard className="h-full rounded-2xl border [border-color:var(--mk-border)] p-6 transition-all duration-300 [background:var(--mk-surface)] hover:-translate-y-1 hover:[border-color:var(--brand-primary)] hover:shadow-xl">
+                    <div className="brand-soft brand-border mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:scale-110">
+                      <Icon size={22} className="brand-text" />
+                    </div>
+                    <h3 className="mb-1 text-base font-semibold [color:var(--mk-text)]">{ch.title}</h3>
+                    <p className="brand-text mb-2 font-mono text-sm">{ch.value}</p>
+                    <p className="text-xs leading-relaxed [color:var(--mk-text-muted)]">{ch.desc}</p>
+                  </GlowCard>
                 </motion.a>
               );
             })}
@@ -157,7 +159,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section tone="light" className="px-4 py-16 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl">
           <SectionHeading title={c.formTitle} tone="light" />
           <motion.form
@@ -215,7 +217,7 @@ export default function ContactPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
+      <Section tone="light" className="px-4 py-28 sm:px-6 lg:px-8">
         <motion.div
           className="mx-auto max-w-3xl text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -228,13 +230,15 @@ export default function ContactPage({ lang }: { lang: Lang }) {
           </h2>
           <p className="mx-auto mb-8 max-w-xl text-lg [color:var(--mk-text-muted)]">{c.ctaSub}</p>
           <Link href={p(lang, "/signup")}>
-            <Button size="lg" variant="glow" className="group min-h-[48px]">
-              {c.ctaButton}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-0.5"
-              />
-            </Button>
+            <MagneticButton strength={0.25}>
+              <Button size="lg" variant="glow" className="group min-h-[48px]">
+                {c.ctaButton}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Button>
+            </MagneticButton>
           </Link>
         </motion.div>
       </Section>

@@ -49,13 +49,13 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
   en: {
     "law-firms": {
       slug: "law-firms",
-      metaTitle: "Subsumio for Law Firms — AI legal software for established practices",
+      metaTitle: "Subsumio for Law Firms — AI legal software with cited answers & deadline control",
       metaDesc:
-        "Give your firm a shared brain: case files, deadlines, AI analysis with citations, conflict checks, and WhatsApp copilot. EU-hosted or self-hosted.",
+        "Shared case brain, automated deadline control, AI analysis with citations, conflict checks and WhatsApp copilot — GDPR-ready, EU-hosted or self-hosted for DACH law firms.",
       badge: "For established law firms",
       h1a: "Your firm's knowledge,",
       h1b: "finally answerable.",
-      sub: "Subsumio turns decades of matters, briefs and deadlines into one cited workspace your whole team can query — with confidentiality by architecture.",
+      sub: "Subsumio turns decades of matters, briefs and deadlines into one queryable brain your whole team can ask — every answer cited, confidentiality by architecture.",
       painsTitle: "What keeps managing partners up at night",
       pains: [
         {
@@ -76,7 +76,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         {
           icon: "Brain",
           title: "Shared institutional memory",
-          desc: "Every matter, brief, email and deadline indexed and queryable. New associates get up to speed in minutes, not months.",
+          desc: "Every matter, brief, email and deadline indexed and queryable — by every lawyer in the firm. New associates get up to speed in minutes, not months.",
         },
         {
           icon: "CalendarClock",
@@ -85,8 +85,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           icon: "ShieldAlert",
-          title: "Conflict check (§ 43a BRAO)",
-          desc: "Every new client or opposing party screened server-side against the entire case base before the mandate is accepted.",
+          title: "Conflict check (§ 43a BRAO / § 10 RAO / BGFA)",
+          desc: "Every new client or opposing party screened server-side against the entire case base before the mandate is accepted. Covers § 43a BRAO (DE), § 10 RAO (AT) and BGFA (CH).",
         },
         {
           icon: "Layers",
@@ -141,9 +141,9 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     },
     solo: {
       slug: "solo",
-      metaTitle: "Subsumio for Solo Lawyers — one seat, one brain, zero overhead",
+      metaTitle: "Subsumio for Solo Lawyers — AI legal software, no IT required",
       metaDesc:
-        "AI legal software for solo practitioners: case files, deadlines, AI analysis with citations, WhatsApp copilot. EU-hosted, no server needed.",
+        "AI legal software for solo practitioners: case brain, automated deadlines, cited AI answers, WhatsApp copilot. EU-hosted, no server, no API keys, no IT overhead.",
       badge: "For solo practitioners",
       h1a: "Your entire practice,",
       h1b: "one question away.",
@@ -213,8 +213,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           a: "Upgrade to Team at any time. Your brain and all indexed data carry over — no migration, no downtime.",
         },
       ],
-      ctaTitle: "Your brain is waiting.",
-      ctaSub: "Three minutes to first answer. No credit card, no server, no IT.",
+      ctaTitle: "Your practice. Your brain.",
+      ctaSub: "Three minutes to first cited answer. No credit card, no server, no IT.",
       ctaButton: "Get started",
     },
     "in-house": {
@@ -225,7 +225,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       badge: "For in-house legal teams",
       h1a: "Your legal department,",
       h1b: "with a memory.",
-      sub: "Subsumio gives in-house counsel what they've never had: every contract, compliance document and legal opinion indexed, answerable and audit-ready — with page-level citations.",
+      sub: "Subsumio gives in-house counsel what they've never had: every contract, compliance document and legal opinion indexed, answerable and audit-ready — cited answers in seconds, not days of document hunting.",
       painsTitle: "The in-house reality",
       pains: [
         {
@@ -291,7 +291,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           a: "Subsumio provides source citations on every answer, gap analysis for transparency, and full audit logs. This aligns with AI Act transparency requirements for internal tools.",
         },
       ],
-      ctaTitle: "Give your legal team a brain.",
+      ctaTitle: "Give your legal team an answer machine.",
       ctaSub:
         "Start with one contract portfolio as a pilot. No data needs to leave your infrastructure.",
       ctaButton: "Talk to us",
@@ -317,7 +317,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           title: "IT is a constraint, not an enabler",
-          desc: "No dedicated IT team for legal tech. You need tools that work out of the box, not projects that need a six-month implementation cycle.",
+          desc: "No dedicated IT team for legal tech. You need tools that work out of the box, not projects that need a six-week implementation cycle.",
         },
       ],
       featuresTitle: "Outsized impact for lean teams",
@@ -378,9 +378,9 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
   de: {
     "law-firms": {
       slug: "law-firms",
-      metaTitle: "Subsumio für Kanzleien — KI-Kanzleisoftware für etablierte Praxen",
+      metaTitle: "Subsumio für Kanzleien — KI-Kanzleisoftware mit belegten Antworten & Fristenkontrolle",
       metaDesc:
-        "Gib deiner Kanzlei ein gemeinsames Brain: Akten, Fristen, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot. EU-gehostet oder self-hosted.",
+        "Gemeinsames Kanzlei-Brain, automatische Fristenkontrolle, KI-Analysen mit Zitaten, Kollisionsprüfung und WhatsApp-Copilot — DSGVO-konform, EU-gehostet oder self-hosted.",
       badge: "Für etablierte Kanzleien",
       h1a: "Das Wissen deiner Kanzlei,",
       h1b: "endlich abfragbar.",
@@ -404,8 +404,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       features: [
         {
           icon: "Brain",
-          title: "Geteiltes Firmen-Gedächtnis",
-          desc: "Jede Akte, jeder Schriftsatz, jede Mail und Frist indiziert und abfragbar. Neue Associates sind in Minuten statt Monaten up to speed.",
+          title: "Gemeinsames Kanzlei-Gedächtnis",
+          desc: "Jede Akte, jeder Schriftsatz, jede Mail und Frist indiziert und von jedem Anwalt der Kanzlei abfragbar. Neue Mitarbeiter sind in Minuten statt Monaten eingearbeitet.",
         },
         {
           icon: "CalendarClock",
@@ -414,8 +414,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
         },
         {
           icon: "ShieldAlert",
-          title: "Kollisionsprüfung (§ 43a BRAO)",
-          desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft, bevor das Mandat angenommen wird.",
+          title: "Kollisionsprüfung (§ 43a BRAO / § 10 RAO / BGFA)",
+          desc: "Jeder neue Mandant oder Gegner wird serverseitig gegen den gesamten Aktenbestand geprüft, bevor das Mandat angenommen wird. Deckt § 43a BRAO (DE), § 10 RAO (AT) und BGFA (CH) ab.",
         },
         {
           icon: "Layers",
@@ -449,7 +449,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       faq: [
         {
           q: "Wie lange dauert die Einführung?",
-          a: "Ein Pilot mit einer abgeschlossenen Akte dauert unter einer Stunde. Die volle Kanzlei-Rollout dauert typischerweise eine Woche — dein Team indiziert bestehende Akten im eigenen Tempo.",
+          a: "Ein Pilot mit einer abgeschlossenen Akte dauert unter einer Stunde. Das volle Kanzlei-Rollout dauert typischerweise eine Woche — dein Team indiziert bestehende Akten im eigenen Tempo.",
         },
         {
           q: "Können wir auf eigenen Servern laufen?",
@@ -471,9 +471,9 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
     },
     solo: {
       slug: "solo",
-      metaTitle: "Subsumio für Einzelanwälte — ein Seat, ein Brain, null Overhead",
+      metaTitle: "Subsumio für Einzelanwälte — KI-Anwaltssoftware, keine IT nötig",
       metaDesc:
-        "KI-Kanzleisoftware für Einzelanwälte: Akten, Fristen, KI-Analysen mit Zitaten, WhatsApp-Copilot. EU-gehostet, kein Server nötig.",
+        "KI-Anwaltssoftware für Einzelkanzleien: Akten-Brain, automatische Fristenkontrolle, belegte KI-Antworten, WhatsApp-Copilot. EU-gehostet, kein Server, kein IT-Aufwand.",
       badge: "Für Einzelanwälte",
       h1a: "Deine gesamte Praxis,",
       h1b: "eine Frage entfernt.",
@@ -543,8 +543,8 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           a: "Upgraden auf Team jederzeit möglich. Dein Brain und alle indizierten Daten bleiben — keine Migration, kein Downtime.",
         },
       ],
-      ctaTitle: "Dein Brain wartet.",
-      ctaSub: "Drei Minuten bis zur ersten Antwort. Keine Kreditkarte, kein Server, keine IT.",
+      ctaTitle: "Deine Praxis. Dein Brain.",
+      ctaSub: "Drei Minuten bis zur ersten belegten Antwort. Keine Kreditkarte, kein Server, keine IT.",
       ctaButton: "Jetzt starten",
     },
     "in-house": {
@@ -555,7 +555,7 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
       badge: "Für Justiziariate und Rechtsabteilungen",
       h1a: "Deine Rechtsabteilung,",
       h1b: "mit Gedächtnis.",
-      sub: "Subsumio gibt Justiziariaten, was sie nie hatten: jeden Vertrag, jedes Compliance-Dokument und jede Rechtsmeinung indiziert, abfragbar und audit-ready — mit seitengenauen Zitaten.",
+      sub: "Subsumio gibt Justiziariaten, was sie nie hatten: jeden Vertrag, jedes Compliance-Dokument und jede Rechtsmeinung indiziert, abfragbar und audit-fähig — belegte Antworten in Sekunden statt tagelanger Dokumentensuche.",
       painsTitle: "Der Justiziariats-Alltag",
       pains: [
         {
@@ -621,14 +621,14 @@ export const SOLUTIONS: Record<Lang, Record<SolutionSlug, SolutionContent>> = {
           a: "Subsumio liefert Quellzitate für jede Antwort, Gap-Analyse für Transparenz und vollständige Audit-Logs. Das aligniert mit AI-Act-Transparenzanforderungen für interne Tools.",
         },
       ],
-      ctaTitle: "Gib deinem Rechts-Team ein Brain.",
+      ctaTitle: "Gib deinem Rechtsteam eine Antwortmaschine.",
       ctaSub:
         "Starte mit einem Vertragsportfolio als Pilot. Keine Daten müssen deine Infrastruktur verlassen.",
       ctaButton: "Sprich mit uns",
     },
     "mid-sized": {
       slug: "mid-sized",
-      metaTitle: "Subsumio für Mittelständische Kanzleien — schlanke Teams, outsized Wirkung",
+      metaTitle: "Subsumio für Mittelständische Kanzleien — schlanke Teams, überproportionale Wirkung",
       metaDesc:
         "KI-Kanzleisoftware für mittelständische Kanzleien: gemeinsames Brain, Fristenautomatisierung, WhatsApp-Copilot, Kollisionsprüfung. EU-gehostet oder self-hosted.",
       badge: "Für mittelständische Kanzleien",

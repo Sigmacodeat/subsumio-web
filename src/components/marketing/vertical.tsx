@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SubsumioMark } from "@/components/brand/subsumio-logo";
-import { p, type Lang } from "@/content/site";
+import { p, UI_STRINGS, type Lang } from "@/content/site";
 import { VERTICALS, type VerticalSlug } from "@/content/verticals";
 import { profileForIndustry } from "@/lib/industry-pack";
 import { styleForIndustry } from "@/lib/industry-theme";
@@ -18,6 +18,7 @@ import IndustryHeroMotif from "./industry-hero-motif";
 import ProductWorkflowShowcase from "./product-workflow-showcase";
 import { WhatsAppSpotlight } from "./subsumio-showcase";
 import { AnimatedFaqList } from "./animated-faq";
+import { ClipReveal, MagneticButton, GradientMesh } from "./motion-system";
 
 /** Subsumio product branding — funnel body, hero, and signup deep-links. */
 export interface ProductBrand {
@@ -41,7 +42,7 @@ function SignatureBand({ industry, lang }: { industry: string; lang: Lang }) {
         <div className="relative grid gap-6 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
             <p className="brand-text mb-3 font-mono text-xs tracking-wider uppercase">
-              {profile.brand} signature
+              {profile.brand} {UI_STRINGS[lang].signatureLabel}
             </p>
             <h2 className="text-2xl leading-tight font-black [color:var(--mk-text)] md:text-3xl">
               {signature.title[locale]}
@@ -104,27 +105,33 @@ export default function VerticalPage({
               {product ? product.poweredBy : t.badge}
             </div>
             {product ? (
+              <ClipReveal delay={0.1} duration={0.7} direction="up">
               <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
                 {product.name}
                 <br />
                 <span className="gradient-text glow-text">{product.claim}</span>
               </h1>
+              </ClipReveal>
             ) : (
+              <ClipReveal delay={0.1} duration={0.7} direction="up">
               <h1 className="mb-6 text-4xl leading-[1.08] font-black tracking-tight [color:var(--mk-text)] md:text-6xl">
                 {t.h1a}
                 <br />
                 <span className="gradient-text glow-text">{t.h1b}</span>
               </h1>
+              </ClipReveal>
             )}
             <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
               {t.sub}
             </p>
             <div className="mb-4 flex flex-col justify-center gap-4 sm:flex-row">
-              <Link href={signupHref}>
-                <Button size="xl" variant="glow" className="min-w-[220px]">
-                  <SubsumioMark size={18} tile={false} /> {t.ctaButton}
-                </Button>
-              </Link>
+              <MagneticButton strength={0.25}>
+                <Link href={signupHref}>
+                  <Button size="xl" variant="glow" className="min-w-[220px]">
+                    <SubsumioMark size={18} tile={false} /> {t.ctaButton}
+                  </Button>
+                </Link>
+              </MagneticButton>
               <a href={isSubsumio ? "#pricing" : "#demo"}>
                 <Button size="xl" variant="ghost" className="min-w-[200px]">
                   {isSubsumio
@@ -166,7 +173,7 @@ export default function VerticalPage({
             href={sub("/whatsapp")}
             className="brand-text mt-8 inline-flex items-center gap-1.5 text-sm font-semibold transition-all hover:gap-2.5"
           >
-            {lang === "de" ? "WhatsApp-Copilot im Detail" : "Explore the WhatsApp copilot"}{" "}
+            {UI_STRINGS[lang].whatsappDetail}{" "}
             <ArrowRight size={15} />
           </Link>
         </WhatsAppSpotlight>
@@ -183,7 +190,7 @@ export default function VerticalPage({
       </div>
 
       {/* Pains — LIGHT section for credibility + contrast rhythm */}
-      <Section tone="light" className="px-6 py-20">
+      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title={t.painsTitle} />
           <div className="grid gap-5 md:grid-cols-3">
@@ -213,10 +220,10 @@ export default function VerticalPage({
           full /subsumio page (keeps the homepage focused); other verticals keep
           their full grid inline. */}
       {isSubsumio ? (
-        <Section tone="light" className="px-6 py-24">
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <SectionHeading
-              badge={lang === "de" ? "Funktionen" : "Capabilities"}
+              badge={UI_STRINGS[lang].capabilitiesBadge}
               title={t.featuresTitle}
               sub={
                 lang === "de"
@@ -252,7 +259,7 @@ export default function VerticalPage({
             <div className="mt-10 text-center">
               <Link href={p(lang, "/subsumio")}>
                 <Button size="lg" variant="secondary">
-                  {lang === "de" ? "Alle Funktionen ansehen" : "See all capabilities"}{" "}
+                  {UI_STRINGS[lang].seeAllCapabilities}{" "}
                   <ArrowRight size={16} />
                 </Button>
               </Link>
@@ -260,7 +267,7 @@ export default function VerticalPage({
           </div>
         </Section>
       ) : (
-        <Section tone="light" className="px-6 py-24">
+        <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <SectionHeading title={t.featuresTitle} />
             <div className="grid gap-5 md:grid-cols-2">
@@ -297,7 +304,7 @@ export default function VerticalPage({
       )}
 
       {/* Proof — LIGHT section with visual flair */}
-      <Section tone="light" className="px-6 py-20">
+      <Section tone="light" className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -328,19 +335,19 @@ export default function VerticalPage({
             href={p(lang, "/security")}
             className="brand-text inline-flex items-center gap-1.5 text-sm font-semibold transition-all hover:gap-2.5"
           >
-            {lang === "de" ? "Sicherheit & DSGVO im Detail" : "Security & GDPR in depth"}{" "}
+            {UI_STRINGS[lang].securityDetail}{" "}
             <ArrowRight size={15} />
           </Link>
         </div>
       )}
 
       {/* Pricing — this branch's own tiers (or global fallback) */}
-      <Section tone="light" id="pricing" className="scroll-mt-20 px-6 py-20">
+      <Section tone="light" id="pricing" className="scroll-mt-20 px-4 py-20 sm:px-6 lg:px-8">
         <BranchPricing lang={lang} industry={product?.industry ?? slug} />
       </Section>
 
       {/* FAQ — animated accordion, light */}
-      <Section tone="light" className="px-6 py-24">
+      <Section tone="light" className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <SectionHeading title="FAQ" />
           <AnimatedFaqList items={t.faq} tone="light" />
@@ -348,18 +355,21 @@ export default function VerticalPage({
       </Section>
 
       {/* CTA — dark spotlight close */}
-      <Section tone="dark" className="px-6 py-24 text-center">
+      <Section tone="dark" className="relative overflow-hidden px-4 py-28 text-center sm:px-6 lg:px-8">
+        <GradientMesh className="opacity-40" />
         <div className="mx-auto max-w-3xl">
           <SubsumioMark size={56} className="mx-auto mb-7" />
           <h2 className="mb-4 text-3xl font-black [color:var(--mk-text)] md:text-4xl">
             {t.ctaTitle}
           </h2>
           <p className="mb-10 text-lg [color:var(--mk-text-muted)]">{t.ctaSub}</p>
-          <Link href={signupHref}>
-            <Button size="xl" variant="glow">
-              {t.ctaButton} <ArrowRight size={18} />
-            </Button>
-          </Link>
+          <MagneticButton strength={0.25}>
+            <Link href={signupHref}>
+              <Button size="xl" variant="glow">
+                {t.ctaButton} <ArrowRight size={18} />
+              </Button>
+            </Link>
+          </MagneticButton>
         </div>
       </Section>
     </div>

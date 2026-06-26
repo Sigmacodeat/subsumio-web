@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: FEATURES_PAGE.en.metaTitle,
   description: FEATURES_PAGE.en.metaDesc,
   alternates: { canonical: "/features", languages: { en: "/features", de: "/de/features" } },
+  openGraph: {
+    title: FEATURES_PAGE.en.metaTitle,
+    description: FEATURES_PAGE.en.metaDesc,
+    url: "/features",
+    type: "website",
+  },
 };
 
 export default function Page() {
