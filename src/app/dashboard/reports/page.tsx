@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 import { renderMarkdown } from "@/lib/markdown";
@@ -207,7 +207,7 @@ function StatsBar({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
 }
 
 // ── Rundown Panel ──────────────────────────────────────────────
-function RundownPanel({ t }: { t: TFunc }) {
+function RundownPanel({ t, onView }: { t: TFunc; onView: (job: AgentJob) => void }) {
   const rundownQuery = useRundown();
   const triggerMutation = useTriggerRundown();
   const jobs = rundownQuery.data ?? [];
@@ -250,6 +250,16 @@ function RundownPanel({ t }: { t: TFunc }) {
         </Button>
       </div>
 
+      {/* Error feedback */}
+      {triggerMutation.isError && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2">
+          <AlertCircle size={14} className="shrink-0 text-red-500" />
+          <span className="text-xs text-red-600">
+            {triggerMutation.error instanceof Error ? triggerMutation.error.message : "Error"}
+          </span>
+        </div>
+      )}
+
       {/* Latest Rundown Result */}
       {latest && (
         <div className="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4">
@@ -258,15 +268,29 @@ function RundownPanel({ t }: { t: TFunc }) {
             <span className="text-sm font-semibold text-[color:var(--ds-text)]">
               {t("reports.rundown_latest")}
             </span>
-            <span className="ml-auto text-xs text-[color:var(--ds-text-subtle)]">
-              {timeAgo(latest.completedAt ?? latest.startedAt, t)}
+            <span className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-[color:var(--ds-text-subtle)]">
+                {timeAgo(latest.completedAt ?? latest.startedAt, t)}
+              </span>
+              {latest.result && (
+                <button
+                  onClick={() => onView(latest)}
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+                  title={t("reports.btn_view")}
+                >
+                  <Eye size={12} />
+                </button>
+              )}
             </span>
           </div>
           {latest.result ? (
-            <div
-              className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
-            />
+            <div className="relative max-h-48 overflow-hidden">
+              <div
+                className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(latest.result) }}
+              />
+              <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-12 bg-gradient-to-t from-[color:var(--ds-surface)] to-transparent" />
+            </div>
           ) : (
             <p className="text-sm text-[color:var(--ds-text-subtle)]">
               {t("reports.rundown_none")}
@@ -366,6 +390,18 @@ function ReportRow({
 
 // ── Job Detail Modal ───────────────────────────────────────────
 function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
@@ -574,7 +610,7 @@ export default function ReportsPage() {
       <StatsBar jobs={jobs} t={t} />
 
       {/* Rundown Panel */}
-      <RundownPanel t={t} />
+      <RundownPanel t={t} onView={setViewJob} />
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-[color:var(--ds-border)]">
