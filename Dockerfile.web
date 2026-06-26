@@ -13,8 +13,8 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES=$NEXT_PUBLIC_DIRECT_UPLOAD_MAX_BYTES \
     NEXT_PUBLIC_ENGINE_URL=$NEXT_PUBLIC_ENGINE_URL
 
-COPY package.json ./
-RUN bun install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 RUN bun run build
