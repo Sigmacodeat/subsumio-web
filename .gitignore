@@ -29,7 +29,7 @@ eval/data/amara-life-v1/_cache/
 test/.cache/
 
 .claude/
-export/
+/export/
 
 # Conductor workspace-local agent artifacts: plans, todos, run-unit-parallel
 # failure logs and per-shard test output. v0.26.4 (run-unit-parallel.sh)
