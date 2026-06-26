@@ -79,7 +79,9 @@ export type RouteAction =
   | "push.unregister" // DELETE /api/push/register — all authenticated roles
   | "presence.update" // POST /api/realtime/presence — all authenticated roles
   | "presence.list" // GET /api/realtime/presence — all authenticated roles
-  | "admin.*"; // nur admin
+  | "admin.*" // nur admin
+  | "admin.user_update"
+  | "admin.user_deactivate"; // nur admin
 
 const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "brain.read": ["admin", "lawyer", "assistant", "client_viewer"],
@@ -123,10 +125,13 @@ const ACTION_ROLES: Record<RouteAction, KanzleiRole[]> = {
   "presence.update": ["admin", "lawyer", "assistant", "client_viewer"],
   "presence.list": ["admin", "lawyer", "assistant", "client_viewer"],
   "admin.*": ["admin"],
+  "admin.user_update": ["admin"],
+  "admin.user_deactivate": ["admin"],
 };
 
 /** Prüft, ob ein User eine Aktion ausführen darf. */
 export function can(user: User, action: RouteAction): boolean {
+  if (action.startsWith("admin.") && user.role === "admin") return true;
   const allowed = ACTION_ROLES[action];
   if (!allowed) return false;
   return allowed.includes(user.role);
@@ -187,6 +192,8 @@ export function auditActionFor(routeAction: RouteAction): AuditAction {
     "presence.update": "case.view",
     "presence.list": "case.view",
     "admin.*": "settings.update",
+    "admin.user_update": "admin.user_update",
+    "admin.user_deactivate": "admin.user_deactivate",
   };
   return map[routeAction] ?? "settings.update";
 }

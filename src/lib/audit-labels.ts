@@ -80,7 +80,9 @@ export type AuditAction =
   | "whatsapp.outbound_blocked"
   | "whatsapp.briefing_feedback"
   | "feedback.submit"
-  | "time.auto_extract";
+  | "time.auto_extract"
+  | "admin.user_update"
+  | "admin.user_deactivate";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -141,6 +143,8 @@ const ACTION_LABELS: Record<string, string> = {
   "whatsapp.briefing_feedback": "WhatsApp-Briefing-Feedback",
   "time.auto_extract": "KI-Zeiterfassung generiert",
   "feedback.submit": "Retrieval-Feedback",
+  "admin.user_update": "Admin: Benutzer aktualisiert",
+  "admin.user_deactivate": "Admin: Benutzer deaktiviert",
 };
 
 export function auditLabel(action: string): string {
