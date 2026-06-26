@@ -21,7 +21,7 @@ import {
   Upload,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useBrainStats, usePages, useRecentQueries } from "@/lib/queries/brain";
+import { useBrainStats, useCockpitData } from "@/lib/queries/brain";
 import { useRecentMatters } from "@/lib/use-recent-matters";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/content/site";
@@ -83,50 +83,29 @@ function pageHref(page: DashboardPageLike, fallback: string) {
   return fallback;
 }
 
-function useKanzleiCockpitData() {
-  const statsQuery = useBrainStats();
-  const recentQuery = useRecentQueries(5);
-  const casesQuery = usePages({ type: "legal_case", limit: 50 });
-  const deadlinesQuery = usePages({ type: "legal_deadline", limit: 50 });
-  const invoicesQuery = usePages({ type: "invoice", limit: 50 });
-  const intakeQuery = usePages({ type: "intake_request", limit: 20 });
-  const beaQuery = usePages({ type: "bea_draft", limit: 20 });
-  const beaMessagesQuery = usePages({ type: "bea_message", limit: 20 });
-  const documentRequestsQuery = usePages({ type: "document_request", limit: 50 });
-  const signaturesQuery = usePages({ type: "signature_request", limit: 50 });
-  const reviewQuery = usePages({ type: "review_item", limit: 20 });
-  const agentActionsQuery = usePages({ type: "agent_action", limit: 50 });
-  const docsQuery = usePages({ type: "document", limit: 100 });
-  const legalDocsQuery = usePages({ type: "legal_document", limit: 100 });
+export type CockpitData = ReturnType<typeof useKanzleiCockpitData>;
 
-  const cases = Array.isArray(casesQuery.data) ? (casesQuery.data as DashboardPageLike[]) : [];
-  const deadlines = Array.isArray(deadlinesQuery.data)
-    ? (deadlinesQuery.data as DashboardPageLike[])
-    : [];
-  const invoices = Array.isArray(invoicesQuery.data)
-    ? (invoicesQuery.data as DashboardPageLike[])
-    : [];
-  const intake = Array.isArray(intakeQuery.data) ? (intakeQuery.data as DashboardPageLike[]) : [];
-  const bea = Array.isArray(beaQuery.data) ? (beaQuery.data as DashboardPageLike[]) : [];
-  const beaMessages = Array.isArray(beaMessagesQuery.data)
-    ? (beaMessagesQuery.data as DashboardPageLike[])
-    : [];
-  const documentRequests = Array.isArray(documentRequestsQuery.data)
-    ? (documentRequestsQuery.data as DashboardPageLike[])
-    : [];
-  const signatures = Array.isArray(signaturesQuery.data)
-    ? (signaturesQuery.data as DashboardPageLike[])
-    : [];
-  const reviews = Array.isArray(reviewQuery.data) ? (reviewQuery.data as DashboardPageLike[]) : [];
-  const agentActions = Array.isArray(agentActionsQuery.data)
-    ? (agentActionsQuery.data as DashboardPageLike[])
-    : [];
+export function useKanzleiCockpitData() {
+  const cockpitQuery = useCockpitData({ recentLimit: 5 });
+  const statsQuery = useBrainStats();
+
+  const pages = cockpitQuery.data?.pages ?? {};
+  const cases = (pages.legal_case ?? []) as DashboardPageLike[];
+  const deadlines = (pages.legal_deadline ?? []) as DashboardPageLike[];
+  const invoices = (pages.invoice ?? []) as DashboardPageLike[];
+  const intake = (pages.intake_request ?? []) as DashboardPageLike[];
+  const bea = (pages.bea_draft ?? []) as DashboardPageLike[];
+  const beaMessages = (pages.bea_message ?? []) as DashboardPageLike[];
+  const documentRequests = (pages.document_request ?? []) as DashboardPageLike[];
+  const signatures = (pages.signature_request ?? []) as DashboardPageLike[];
+  const reviews = (pages.review_item ?? []) as DashboardPageLike[];
+  const agentActions = (pages.agent_action ?? []) as DashboardPageLike[];
   const docs = [
-    ...(Array.isArray(docsQuery.data) ? (docsQuery.data as DashboardPageLike[]) : []),
-    ...(Array.isArray(legalDocsQuery.data) ? (legalDocsQuery.data as DashboardPageLike[]) : []),
+    ...((pages.document ?? []) as DashboardPageLike[]),
+    ...((pages.legal_document ?? []) as DashboardPageLike[]),
   ];
-  const recent = (recentQuery.data ?? []) as RecentQuery[];
-  const stats = (statsQuery.data ?? null) as BrainStats | null;
+  const recent = (cockpitQuery.data?.recent ?? []) as RecentQuery[];
+  const stats = (statsQuery.data ?? cockpitQuery.data?.stats ?? null) as BrainStats | null;
 
   const activeCases = cases.filter((p) => isOpenStatus(p.frontmatter?.status));
   const deadlineItems = deadlines
@@ -226,7 +205,7 @@ function useKanzleiCockpitData() {
   };
 }
 
-function EmptyLine({ text, icon: Icon = Inbox }: { text: string; icon?: typeof Inbox }) {
+export function EmptyLine({ text, icon: Icon = Inbox }: { text: string; icon?: typeof Inbox }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-4 py-6 text-center">
       <Icon size={20} className="text-[color:var(--ds-text-subtle)]" />
@@ -235,7 +214,7 @@ function EmptyLine({ text, icon: Icon = Inbox }: { text: string; icon?: typeof I
   );
 }
 
-function QueuePanel({
+export function QueuePanel({
   icon: Icon,
   title,
   href,
@@ -270,7 +249,7 @@ function QueuePanel({
   );
 }
 
-function QueueRow({
+export function QueueRow({
   href,
   icon: Icon,
   title,
@@ -355,7 +334,7 @@ function QueueRow({
   );
 }
 
-function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitData>["deadlines"] }) {
+export function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitData>["deadlines"] }) {
   const { t, lang } = useLang();
   return (
     <QueuePanel
@@ -397,7 +376,7 @@ function DeadlineList({ items }: { items: ReturnType<typeof useKanzleiCockpitDat
   );
 }
 
-function InboxList({ items }: { items: DashboardPageLike[] }) {
+export function InboxList({ items }: { items: DashboardPageLike[] }) {
   const { t, lang } = useLang();
   return (
     <QueuePanel
@@ -437,7 +416,7 @@ function titleFromSlug(slug: string) {
   return tail.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
+export function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
   const { t } = useLang();
   const { pinned, recent, togglePin, isPinned } = useRecentMatters();
 
@@ -495,7 +474,7 @@ function PinnedMatters({ cases }: { cases: DashboardPageLike[] }) {
   );
 }
 
-function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
+export function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
   const { t } = useLang();
   const { togglePin, isPinned } = useRecentMatters();
   return (
@@ -540,12 +519,12 @@ function ActiveCasesList({ cases }: { cases: DashboardPageLike[] }) {
   );
 }
 
-function QuickActions() {
+export function QuickActions() {
   const { t } = useLang();
   const actions = [
-    { href: "/dashboard/cases/new", icon: Briefcase, label: t("cockpit.action_case") },
+    { href: "#", event: "subsumio:create-case", icon: Briefcase, label: t("cockpit.action_case"), isButton: true },
     { href: "/dashboard/kollisionspruefung", icon: Scale, label: t("cockpit.action_conflict") },
-    { href: "/dashboard/deadlines", icon: CalendarClock, label: t("cockpit.action_deadline") },
+    { href: "#", event: "subsumio:create-deadline", icon: CalendarClock, label: t("cockpit.action_deadline"), isButton: true },
     { href: "/dashboard/intake", icon: Inbox, label: t("cockpit.action_intake") },
     { href: "/dashboard/drafting", icon: PenTool, label: t("cockpit.action_draft") },
     { href: "/dashboard/upload", icon: Upload, label: t("cockpit.action_upload") },
@@ -556,6 +535,18 @@ function QuickActions() {
     <div className="flex flex-wrap items-center gap-1.5">
       {actions.map((action) => {
         const Icon = action.icon;
+        if (action.isButton) {
+          return (
+            <button
+              key={action.label}
+              onClick={() => window.dispatchEvent(new CustomEvent(action.event!))}
+              className="inline-flex items-center gap-1.5 rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-2.5 py-1.5 text-[13px] font-medium text-[color:var(--ds-text-muted)] transition-colors hover:border-[color:var(--ds-border-strong)] hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            >
+              <Icon size={13} className="shrink-0" />
+              <span className="min-w-0 truncate">{action.label}</span>
+            </button>
+          );
+        }
         return (
           <Link
             key={action.href}
@@ -575,7 +566,7 @@ function QuickActions() {
 
 type DeadlineItem = ReturnType<typeof useKanzleiCockpitData>["deadlines"][number];
 
-function HeutePanel({
+export function HeutePanel({
   loading,
   criticalDeadlines,
   deadlines,
@@ -711,7 +702,7 @@ function HeutePanel({
 
 // ── AIActivityFeed — Attio-style background activity (✓ ⟳ ○) ──────────
 
-function AIActivityFeed({
+export function AIActivityFeed({
   reviews,
   agentActions,
 }: {
@@ -788,7 +779,7 @@ function AIActivityFeed({
   );
 }
 
-function SecondaryStats({
+export function SecondaryStats({
   loading,
   items,
 }: {
