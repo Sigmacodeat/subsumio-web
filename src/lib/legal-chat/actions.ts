@@ -10,6 +10,7 @@ import type { WhatsAppIdentity } from "@/lib/whatsapp/types";
 import { phoneHash } from "@/lib/whatsapp/verify";
 import { identityCanAccessMatter } from "@/lib/whatsapp/identity";
 import { logAudit } from "@/lib/audit";
+import { naturalWhatsAppReply } from "@/lib/whatsapp-natural-chat";
 import { calculateRvg } from "@/lib/rvg";
 import { calculateDeadline, DEADLINE_RULES, type Bundesland } from "@/lib/legal-deadlines";
 
@@ -2968,18 +2969,13 @@ async function processIntent(ctx: ChatContext, intent: ParsedIntent): Promise<st
   }
 
   if (intent.kind === "free_text") {
-    // Treat unrecognized input as a natural language question to the brain
-    const recentMessages = await getRecentContext(ctx.sender.brainId, ctx.fromPhone);
-    const contextPrefix =
-      recentMessages.length > 0
-        ? `[Kontext: Letzte Nachrichten — ${recentMessages.slice(0, 3).join(" | ")}]\n\n`
-        : "";
-    const answer = await think(
-      ctx.sender.brainId,
-      `${contextPrefix}${intent.text}`,
-      ctx.sender.matterScope
-    );
-    return answer.slice(0, 3500);
+    // Natural-language WhatsApp chat: personalized, context-aware, with conversation history
+    return naturalWhatsAppReply({
+      sender: ctx.sender,
+      fromPhone: ctx.fromPhone,
+      messageId: ctx.messageId,
+      text: intent.text,
+    });
   }
 
   if (intent.kind === "unknown") {

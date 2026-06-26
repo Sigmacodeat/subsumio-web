@@ -1,9 +1,9 @@
-// Subsumio service worker v4.
+// Subsumio service worker v5.
 // Stale-while-revalidate caching for dashboard API calls + static assets.
 // Background sync for offline mutations (POST/PUT/DELETE to Brain API).
 
-const STATIC_CACHE = "subsumio-static-v4";
-const API_CACHE = "subsumio-api-v4";
+const STATIC_CACHE = "subsumio-static-v5";
+const API_CACHE = "subsumio-api-v5";
 const PRECACHE = ["/offline.html", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -79,6 +79,12 @@ async function processSyncQueue() {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
+
+  // Only handle http(s) requests — ignore chrome-extension://, moz-extension://, etc.
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  // Only handle same-origin requests; let cross-origin pass through untouched.
+  if (url.origin !== self.location.origin) return;
 
   // Navigation fallback
   if (req.mode === "navigate") {
