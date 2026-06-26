@@ -126,7 +126,11 @@ function mapJob(j: Record<string, unknown>): AgentJob {
     completedAt: j.finishedAt ? String(j.finishedAt) : undefined,
     parentId: j.parentId ? Number(j.parentId) : undefined,
     subagentDef,
-    result: j.result ? JSON.stringify(j.result).slice(0, 500) : undefined,
+    result: j.result
+      ? typeof j.result === "string"
+        ? j.result
+        : JSON.stringify(j.result)
+      : undefined,
     isRundown: Boolean(j.is_rundown ?? name.toLowerCase().includes("rundown")),
   };
 }
@@ -270,7 +274,10 @@ export function useTriggerRundown() {
   return useMutation({
     mutationFn: async () => {
       const res = await csrfFetch("/api/agents/rundown", { method: "POST" });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
       const data = await res.json();
       return data.jobId as number | null;
     },

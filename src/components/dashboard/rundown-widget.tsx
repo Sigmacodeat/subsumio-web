@@ -58,6 +58,11 @@ export function RundownWidget() {
             {t("reports.btn_rundown")}
           </Button>
         </div>
+        {triggerMutation.isError && (
+          <p className="mt-2 text-xs text-red-500">
+            {triggerMutation.error instanceof Error ? triggerMutation.error.message : "Error"}
+          </p>
+        )}
       </div>
     );
   }

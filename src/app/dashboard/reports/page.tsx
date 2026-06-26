@@ -23,6 +23,8 @@ import {
   Activity,
   Zap,
   Sparkles,
+  X,
+  Eye,
 } from "lucide-react";
 import {
   useAgents,
@@ -281,11 +283,13 @@ function ReportRow({
   job,
   t,
   onReplay,
+  onView,
   replaying,
 }: {
   job: AgentJob;
   t: TFunc;
   onReplay: (id: number) => void;
+  onView: (job: AgentJob) => void;
   replaying: boolean;
 }) {
   const Icon = ROLE_ICONS[job.role] ?? Bot;
@@ -309,7 +313,14 @@ function ReportRow({
             </span>
           )}
         </div>
-        <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">{job.prompt}</p>
+        <p className="mt-0.5 truncate text-xs text-[color:var(--ds-text-muted)]">
+          {job.result
+            ? job.result
+                .replace(/[#*\n]/g, " ")
+                .trim()
+                .slice(0, 120)
+            : job.prompt.slice(0, 120)}
+        </p>
       </div>
 
       {/* Status */}
@@ -327,6 +338,15 @@ function ReportRow({
 
       {/* Actions */}
       <div className="flex items-center gap-1">
+        {job.result && (
+          <button
+            onClick={() => onView(job)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+            title={t("reports.btn_view")}
+          >
+            <Eye size={12} />
+          </button>
+        )}
         {(job.status === "completed" ||
           job.status === "failed" ||
           job.status === "partial_success") && (
@@ -339,6 +359,89 @@ function ReportRow({
             {replaying ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Job Detail Modal ───────────────────────────────────────────
+function JobDetailModal({ job, t, onClose }: { job: AgentJob; t: TFunc; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+          <div className="flex items-center gap-2">
+            {statusIcon(job.status)}
+            <h2 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              {roleLabel(job.role, t)}{" "}
+              <span className="font-mono text-[color:var(--ds-text-subtle)]">#{job.id}</span>
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--ds-text-muted)] transition-colors hover:bg-[color:var(--ds-hover)] hover:text-[color:var(--ds-text)]"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Metadata bar */}
+        <div className="flex flex-wrap items-center gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-5 py-2.5">
+          <span className="flex items-center gap-1.5 text-xs text-[color:var(--ds-text-muted)]">
+            {statusIcon(job.status)}
+            {statusLabel(job.status, t)}
+          </span>
+          {job.model && (
+            <span className="font-mono text-xs text-[color:var(--ds-text-muted)]">{job.model}</span>
+          )}
+          {job.tokens && (
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              {job.tokens.input.toLocaleString()} in · {job.tokens.output.toLocaleString()} out
+              {job.tokens.cache > 0 && ` · ${job.tokens.cache.toLocaleString()} cache`}
+            </span>
+          )}
+          {job.cost !== undefined && job.cost > 0 && (
+            <span className="text-xs text-[color:var(--ds-text-muted)]">
+              ${job.cost.toFixed(4)}
+            </span>
+          )}
+          <span className="ml-auto text-xs text-[color:var(--ds-text-subtle)]">
+            {formatDuration(job.startedAt, job.completedAt, t)}
+          </span>
+        </div>
+
+        {/* Content */}
+        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+          {job.result ? (
+            <div
+              className="prose prose-sm max-w-none text-[color:var(--ds-text-muted)] [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-[color:var(--ds-text)] [&_li]:text-sm [&_li]:leading-relaxed [&_p]:text-sm [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-4"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(job.result) }}
+            />
+          ) : (
+            <p className="text-sm text-[color:var(--ds-text-subtle)]">
+              {job.status === "active" || job.status === "waiting"
+                ? t("rundown.widget_loading")
+                : t("reports.rundown_none")}
+            </p>
+          )}
+
+          {/* Prompt (collapsible) */}
+          <details className="mt-4 border-t border-[color:var(--ds-border)] pt-3">
+            <summary className="cursor-pointer text-xs font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase">
+              Prompt
+            </summary>
+            <pre className="mt-2 max-h-40 overflow-y-auto rounded-lg bg-[color:var(--ds-surface-2)] p-3 text-xs whitespace-pre-wrap text-[color:var(--ds-text-muted)]">
+              {job.prompt}
+            </pre>
+          </details>
+        </div>
       </div>
     </div>
   );
@@ -429,6 +532,7 @@ export default function ReportsPage() {
   const agentsQuery = useAgents();
   const replayMutation = useReplayAgent();
   const [replayingId, setReplayingId] = useState<number | null>(null);
+  const [viewJob, setViewJob] = useState<AgentJob | null>(null);
 
   const jobs = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
 
@@ -534,11 +638,15 @@ export default function ReportsPage() {
               job={job}
               t={t}
               onReplay={handleReplay}
+              onView={setViewJob}
               replaying={replayingId === job.id}
             />
           ))}
         </div>
       )}
+
+      {/* Job Detail Modal */}
+      {viewJob && <JobDetailModal job={viewJob} t={t} onClose={() => setViewJob(null)} />}
     </div>
   );
 }
