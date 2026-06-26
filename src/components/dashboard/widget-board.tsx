@@ -29,6 +29,7 @@ import {
   EyeOff,
   FileText,
   GripVertical,
+  Loader2,
   MessageSquare,
   RotateCcw,
   Settings2,
@@ -295,7 +296,7 @@ function RecentQueriesPanel({ data }: { data: CockpitData }) {
 export function WidgetBoard() {
   const { t } = useLang();
   const data = useKanzleiCockpitData();
-  const { prefs, toggleVisible, reorder, reset } = useWidgetPrefs();
+  const { prefs, loaded, toggleVisible, reorder, reset } = useWidgetPrefs();
   const [editMode, setEditMode] = useState(false);
   const [activeId, setActiveId] = useState<WidgetId | null>(null);
 
@@ -433,7 +434,11 @@ export function WidgetBoard() {
         </div>
       )}
 
-      {!hasVisible && !editMode ? (
+      {!loaded ? (
+        <div className="flex min-h-[200px] items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-[color:var(--ds-text-subtle)]" />
+        </div>
+      ) : !hasVisible && !editMode ? (
         <EmptyDashboard onReset={reset} />
       ) : (
         <DndContext
