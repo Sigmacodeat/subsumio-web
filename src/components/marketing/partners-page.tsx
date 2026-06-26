@@ -31,8 +31,8 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <span className="mb-8 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium [color:var(--signal-amber)]">
-            <span className="badge-pulse h-1.5 w-1.5 rounded-full [background:var(--signal-amber)]" />
+          <span className="mb-8 inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-tertiary)]/30 bg-[color:var(--brand-tertiary)]/10 px-3 py-1.5 text-xs font-medium text-[color:var(--brand-tertiary)]">
+            <span className="badge-pulse h-1.5 w-1.5 rounded-full bg-[color:var(--brand-tertiary)]" />
             {t.badge}
           </span>
           <ClipReveal delay={0.1} duration={0.7} direction="up">
@@ -40,7 +40,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             {t.h1a}
             <span className="sr-only"> </span>
             <br />
-            <span className="gradient-text-gold glow-text">{t.h1b}</span>
+            <span className="gradient-text-premium glow-text">{t.h1b}</span>
           </h1>
           </ClipReveal>
           <p className="mx-auto mb-4 max-w-2xl text-lg leading-relaxed [color:var(--mk-text-muted)] md:text-xl">
@@ -57,11 +57,11 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
             return (
               <StaggerItem key={tier.id}>
                 <GlowCard
-                  glowColor={tier.highlight ? "#f59e0b" : "var(--brand-primary)"}
+                  glowColor={tier.highlight ? "var(--brand-tertiary)" : "var(--brand-primary)"}
                   intensity={tier.highlight ? 0.22 : 0.12}
                   className={`relative flex h-full flex-col rounded-2xl border p-7 transition-all duration-200 ${
                     tier.highlight
-                      ? "border-amber-500/40 bg-gradient-to-b from-amber-500/10 to-[var(--mk-surface)] shadow-xl shadow-amber-900/10"
+                      ? "border-[color:var(--brand-tertiary)]/40 bg-gradient-to-b from-[color:var(--brand-tertiary)]/10 to-[var(--mk-surface)] shadow-xl shadow-[color:var(--brand-tertiary)]/10"
                       : "[border-color:var(--mk-border)] [background:var(--mk-surface)] hover:[border-color:var(--mk-border-strong)]"
                   }`}
                 >
@@ -75,7 +75,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                   <div
                     className={`mb-5 flex h-11 w-11 items-center justify-center rounded-lg border ${
                       tier.highlight
-                        ? "border-amber-500/20 bg-amber-500/10 [color:var(--signal-amber)]"
+                        ? "border-[color:var(--brand-tertiary)]/20 bg-[color:var(--brand-tertiary)]/10 text-[color:var(--brand-tertiary)]"
                         : "brand-text border-[var(--brand-primary)]/20 bg-[var(--brand-primary)]/10"
                     }`}
                   >
@@ -85,7 +85,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                     {tier.name}
                   </p>
                   <p
-                    className={`mb-3 text-xl font-bold ${tier.highlight ? "gradient-text-gold" : "[color:var(--mk-text)]"}`}
+                    className={`mb-3 text-xl font-bold ${tier.highlight ? "gradient-text-premium" : "[color:var(--mk-text)]"}`}
                   >
                     {tier.headline}
                   </p>
@@ -100,7 +100,7 @@ export default function PartnersPage({ lang }: { lang: Lang }) {
                       >
                         <Check
                           size={13}
-                          className={`mt-0.5 shrink-0 ${tier.highlight ? "[color:var(--signal-amber)]" : "brand-text"}`}
+                          className={`mt-0.5 shrink-0 ${tier.highlight ? "text-[color:var(--brand-tertiary)]" : "brand-text"}`}
                         />
                         {point}
                       </li>

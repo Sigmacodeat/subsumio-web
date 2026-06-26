@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, apiError } from "@/lib/api-handler";
 
 const recentQuerySchema = z.object({
   limit: z
@@ -20,12 +20,13 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/queries/recent?limit=${query.limit}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(8_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
       console.error("[queries/recent] failed:", err instanceof Error ? err.message : String(err));
-      return Response.json([]);
+      return apiError("service_unavailable", "Engine nicht erreichbar", 503);
     }
   }
 );

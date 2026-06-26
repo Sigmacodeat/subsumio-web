@@ -159,20 +159,8 @@ export function useKanzleiCockpitData() {
     isOpenStatus(p.frontmatter?.status)
   );
 
-  const degraded =
-    statsQuery.isError ||
-    casesQuery.isError ||
-    deadlinesQuery.isError ||
-    invoicesQuery.isError ||
-    intakeQuery.isError ||
-    beaQuery.isError ||
-    beaMessagesQuery.isError ||
-    documentRequestsQuery.isError ||
-    signaturesQuery.isError ||
-    reviewQuery.isError ||
-    agentActionsQuery.isError ||
-    docsQuery.isError ||
-    legalDocsQuery.isError;
+  const degraded = cockpitQuery.isError;
+  const loading = cockpitQuery.isLoading;
 
   return {
     stats,
@@ -188,19 +176,7 @@ export function useKanzleiCockpitData() {
     pendingReviews,
     openDocumentRequests,
     pendingSignatures,
-    loading:
-      casesQuery.isLoading ||
-      deadlinesQuery.isLoading ||
-      invoicesQuery.isLoading ||
-      intakeQuery.isLoading ||
-      beaQuery.isLoading ||
-      beaMessagesQuery.isLoading ||
-      documentRequestsQuery.isLoading ||
-      signaturesQuery.isLoading ||
-      reviewQuery.isLoading ||
-      agentActionsQuery.isLoading ||
-      docsQuery.isLoading ||
-      legalDocsQuery.isLoading,
+    loading,
     degraded,
   };
 }

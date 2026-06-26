@@ -148,16 +148,16 @@
 :root {
   --brand-primary: #2f6bff;
   --brand-primary-hover: #4f80ff;
-  --brand-secondary: #20d3c2;
-  --brand-tertiary: #8b5cf6;
+  --brand-secondary: #3b82f6;
+  --brand-tertiary: #6366f1;
   --brand-glow: rgba(47, 107, 255, 0.24);
-  --brand-gradient-from: #20d3c2;
-  --brand-gradient-via: #2f6bff;
-  --brand-gradient-to: #8b5cf6;
+  --brand-gradient-from: #1e40af;
+  --brand-gradient-via: #3b82f6;
+  --brand-gradient-to: #6366f1;
   --brand-text: var(--brand-secondary);
-  --accent-gold: #b8860b;
-  --accent-gold-soft: rgba(184, 134, 11, 0.08);
-  --accent-gold-border: rgba(184, 134, 11, 0.2);
+  --accent-premium: #6366f1;
+  --accent-premium-soft: rgba(99, 102, 241, 0.08);
+  --accent-premium-border: rgba(99, 102, 241, 0.2);
 
   /* ────────────────────────────────────────────────────────────────
      Design-system neutral scale (--ds-*) — the SINGLE source of truth
@@ -238,7 +238,7 @@
   --mk-text-muted: #94a3b8;
   --mk-text-subtle: #7a8ca6; /* bumped from #64748b (4.1:1 fail) → 5.8:1 on #0f172a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-  --brand-text: #5eead4; /* lifted from var(--brand-secondary) #20d3c2 → 6.6:1 on slate brand-soft (was 3.38:1 fail) */
+  --brand-text: #60a5fa; /* blue-400, 4.7:1 on slate #1e293b (AA ✓) */
   color-scheme: dark;
 }
 [data-tone="dark"] {
@@ -252,7 +252,7 @@
   --mk-text-muted: #8888aa;
   --mk-text-subtle: #8282a6; /* bumped from #7878a0 → 4.6:1 on #0d0d1a (AA ✓) */
   --mk-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  --brand-text: #40e0d0; /* bumped from var(--brand-secondary) #20d3c2 (3.68:1 fail) → 4.6:1 on #06060f (AA ✓) */
+  --brand-text: #60a5fa; /* blue-400, 6.5:1 on #06060f (AA ✓) */
   color-scheme: dark;
 }
 
@@ -342,16 +342,16 @@
   --ds-accent: var(--brand-primary);
   --brand-primary: #1a365d;
   --brand-primary-hover: #274d7a;
-  --brand-secondary: #9a7a1f;
-  --brand-tertiary: #475569;
+  --brand-secondary: #3b82f6;
+  --brand-tertiary: #6366f1;
   --brand-glow: rgba(26, 54, 93, 0.1);
-  --brand-gradient-from: #1a365d;
-  --brand-gradient-via: #9a7a1f;
-  --brand-gradient-to: #0f172a;
+  --brand-gradient-from: #1e40af;
+  --brand-gradient-via: #3b82f6;
+  --brand-gradient-to: #6366f1;
   --brand-text: var(--brand-primary);
-  --accent-gold: #9a7a1f;
-  --accent-gold-soft: rgba(154, 122, 31, 0.08);
-  --accent-gold-border: rgba(154, 122, 31, 0.2);
+  --accent-premium: #4f46e5;
+  --accent-premium-soft: rgba(79, 70, 229, 0.08);
+  --accent-premium-border: rgba(79, 70, 229, 0.2);
   --card-shadow: 0 1px 1px rgba(15, 23, 42, 0.035), 0 8px 24px rgba(15, 23, 42, 0.035);
   --card-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.05), 0 14px 34px rgba(15, 23, 42, 0.065);
   --card-shadow-elevated: 0 1px 2px rgba(15, 23, 42, 0.06), 0 18px 48px rgba(15, 23, 42, 0.1);
@@ -390,7 +390,7 @@
      All AA-verified as non-text contrast (3:1) on white. */
   --nav-cat-cases: #1a365d;
   --nav-cat-comm: #0f766e;
-  --nav-cat-docs: #9a7a1f;
+  --nav-cat-docs: #4f46e5;
   --nav-cat-research: #6d28d9;
   --nav-cat-ops: #475569;
   --nav-cat-billing: #1d6b54;
@@ -427,16 +427,16 @@
   --ds-accent: var(--brand-primary);
   --brand-primary: #3a6db5;
   --brand-primary-hover: #4a7dc5;
-  --brand-secondary: #c9a42f;
-  --brand-tertiary: #7b8fa8;
+  --brand-secondary: #60a5fa;
+  --brand-tertiary: #a78bfa;
   --brand-glow: rgba(58, 109, 181, 0.12);
-  --brand-gradient-from: #c9a42f;
-  --brand-gradient-via: #3a6db5;
-  --brand-gradient-to: #0a0c10;
-  --brand-text: #7ba8e0;
-  --accent-gold: #d4b146;
-  --accent-gold-soft: rgba(201, 164, 47, 0.1);
-  --accent-gold-border: rgba(201, 164, 47, 0.22);
+  --brand-gradient-from: #3b82f6;
+  --brand-gradient-via: #6366f1;
+  --brand-gradient-to: #4f46e5;
+  --brand-text: #60a5fa;
+  --accent-premium: #a78bfa;
+  --accent-premium-soft: rgba(167, 139, 250, 0.1);
+  --accent-premium-border: rgba(167, 139, 250, 0.22);
   --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 12px 34px rgba(0, 0, 0, 0.18);
   --card-shadow-hover: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 18px 48px rgba(0, 0, 0, 0.24);
   --card-shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 24px 72px rgba(0, 0, 0, 0.34);
@@ -477,7 +477,7 @@
      All AA-verified as non-text contrast (3:1) on #11151c. */
   --nav-cat-cases: #7ba8e0;
   --nav-cat-comm: #5eead4;
-  --nav-cat-docs: #d4b146;
+  --nav-cat-docs: #a78bfa;
   --nav-cat-research: #a78bfa;
   --nav-cat-ops: #94a3b8;
   --nav-cat-billing: #6fc9a6;
@@ -1400,35 +1400,32 @@ body {
   color: var(--brand-text);
 }
 
-/* Gradient text */
+/* Gradient text — premium blue-violet */
 .gradient-text {
-  background: linear-gradient(135deg, #5eead4 0%, #93c5fd 52%, #c4b5fd 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 52%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Light-tone override: use darker brand colors for AA contrast on light bg.
-   Default --brand-gradient-from (#20d3c2) is ~1.5:1 on #eef0f4 — fail.
-   Override to --signal-blue shades which achieve 7:1+ on light. */
+/* Light-tone override: darker blue-violet for AA contrast on light bg. */
 [data-tone="light"] .gradient-text {
-  background: linear-gradient(135deg, var(--signal-blue, #1e40af) 0%, #1e3a5f 52%, #0f766e 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 52%, #6366f1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.gradient-text-gold {
-  background: linear-gradient(135deg, var(--color-warning) 0%, #f59e0b 50%, #d97706 100%);
+.gradient-text-premium {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Light-tone override: gold gradient (#fbbf24→#f59e0b) is ~2:1 on light — fail.
-   Use darker amber shades for AA. */
-[data-tone="light"] .gradient-text-gold {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
+/* Light-tone override: darker indigo-violet for AA on light. */
+[data-tone="light"] .gradient-text-premium {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #1e40af 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1597,7 +1594,7 @@ pre {
 
 /* Animated gradient text — for hero taglines */
 .gradient-text-animated {
-  background: linear-gradient(135deg, #5eead4 0%, #93c5fd 52%, #c4b5fd 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 52%, #a78bfa 100%);
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;
@@ -1606,7 +1603,7 @@ pre {
 }
 
 .hero-gradient-text {
-  background: linear-gradient(135deg, var(--signal-blue, #1e40af) 0%, #1e3a5f 52%, #0f766e 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 52%, #6366f1 100%);
   background-size: 200% 200%;
   animation: gradient-border-spin 5s ease infinite;
   -webkit-background-clip: text;
@@ -1719,21 +1716,21 @@ pre {
   }
 }
 
-/* ── Gold accent utilities (dashboard scope) ── */
-[data-app="dashboard"] .accent-gold-text {
-  color: var(--accent-gold);
+/* ── Premium accent utilities (dashboard scope) ── */
+[data-app="dashboard"] .accent-premium-text {
+  color: var(--accent-premium);
 }
-[data-app="dashboard"] .accent-gold-bg {
-  background-color: var(--accent-gold);
+[data-app="dashboard"] .accent-premium-bg {
+  background-color: var(--accent-premium);
 }
-[data-app="dashboard"] .accent-gold-soft {
-  background-color: var(--accent-gold-soft);
+[data-app="dashboard"] .accent-premium-soft {
+  background-color: var(--accent-premium-soft);
 }
-[data-app="dashboard"] .accent-gold-border {
-  border-color: var(--accent-gold-border);
+[data-app="dashboard"] .accent-premium-border {
+  border-color: var(--accent-premium-border);
 }
-[data-app="dashboard"] .hover\:accent-gold-text:hover {
-  color: var(--accent-gold);
+[data-app="dashboard"] .hover\:accent-premium-text:hover {
+  color: var(--accent-premium);
 }
 
 /* ── Premium card shadows (dashboard scope) ── */

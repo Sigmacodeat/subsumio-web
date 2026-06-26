@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Trash2, Copy, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "@/lib/queries/settings";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
@@ -75,11 +76,10 @@ export default function ApiKeysPage() {
           Neuen API-Key erstellen
         </h2>
         <div className="flex gap-2">
-          <input
+          <Input
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             placeholder={t("apikeys.placeholder_name")}
-            className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
             onKeyDown={(e) => e.key === "Enter" && createKey()}
           />
           <Button

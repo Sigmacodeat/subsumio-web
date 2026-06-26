@@ -33,6 +33,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { SearchBar } from "@/components/dashboard/search-bar";
 import { RotateCcw, GitCompare } from "lucide-react";
 import { ContractRedlineViewer } from "@/components/contract-redline-viewer";
+import { ContractQuickCreateDialog } from "@/components/legal/ContractQuickCreateDialog";
 
 interface ContractItem {
   slug: string;
@@ -120,13 +121,7 @@ export default function ContractsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [creating, setCreating] = useState(false);
-
-  const [newTitle, setNewTitle] = useState("");
-  const [newType, setNewType] = useState("Kaufvertrag");
-  const [newParties, setNewParties] = useState("");
-  const [newContent, setNewContent] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
   const [analyzingSlug, setAnalyzingSlug] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
@@ -155,6 +150,12 @@ export default function ContractsPage() {
 
   useEffect(() => {
     loadContracts();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-contract", handler);
+    return () => window.removeEventListener("subsumio:create-contract", handler);
   }, []);
 
   async function loadContracts() {
@@ -190,57 +191,6 @@ export default function ContractsPage() {
         (c.contractType?.toLowerCase().includes(q) ?? false)
     );
   }, [contracts, query]);
-
-  async function createContract() {
-    if (!newTitle.trim() || !newContent.trim()) {
-      setCreateError("Titel und Vertragstext sind erforderlich.");
-      return;
-    }
-    setCreateError(null);
-    try {
-      const slug = `legal/contracts/${newTitle.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`;
-      const payload = {
-        slug,
-        title: newTitle,
-        type: "legal_contract",
-        content: newContent,
-        frontmatter: {
-          contract_type: newType,
-          parties: newParties,
-          contract_status: "draft",
-          risk_level: null,
-          risk_score: null,
-        },
-      };
-      if (isOnline()) {
-        await api.brain.createPage(payload);
-      } else {
-        await enqueueMutation({ type: "createPage", payload });
-      }
-      const nextContracts = [
-        parseContract({
-          slug,
-          title: newTitle,
-          type: "legal_contract",
-          content: newContent,
-          frontmatter: payload.frontmatter,
-          tags: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as BrainPage),
-        ...contracts,
-      ];
-      setContracts(nextContracts);
-      await setCache(OFFLINE_KEYS.contracts, nextContracts);
-      setNewTitle("");
-      setNewParties("");
-      setNewContent("");
-      setNewType("Kaufvertrag");
-      setCreating(false);
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : t("contracts.error_create"));
-    }
-  }
 
   async function analyzeContract(contract: ContractItem) {
     setAnalyzingSlug(contract.slug);
@@ -398,7 +348,7 @@ export default function ContractsPage() {
               <Table2 size={14} /> Massen-Review
             </Button>
             <Button
-              onClick={() => setCreating(!creating)}
+              onClick={() => setQuickCreateOpen(true)}
               className="brand-bg brand-bg gap-2 text-white"
             >
               <Plus size={14} /> Vertrag anlegen
@@ -418,71 +368,12 @@ export default function ContractsPage() {
         <HubLink href="/dashboard/drafting" icon={PenTool} label={t("nav.drafting")} />
       </div>
 
-      {creating && (
-        <div className="brand-border space-y-4 rounded-xl border bg-[color:var(--ds-surface)] p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Neuer Vertrag</h3>
-            <button
-              onClick={() => setCreating(false)}
-              className="text-[color:var(--ds-text-muted)] hover:text-[color:var(--ds-text)]"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <input
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Vertragsbezeichnung"
-              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-            />
-            <input
-              value={newParties}
-              onChange={(e) => setNewParties(e.target.value)}
-              placeholder="Parteien (z.B. Käufer A — Verkäufer B)"
-              className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-            />
-          </div>
-          <select
-            value={newType}
-            onChange={(e) => setNewType(e.target.value)}
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:outline-none md:w-auto"
-          >
-            {[
-              "Kaufvertrag",
-              "Dienstvertrag",
-              "Werkvertrag",
-              "Mietvertrag",
-              "NDA / Geheimhaltung",
-              "Arbeitsvertrag",
-              "Lizenzvertrag",
-              "GmbH-Vertrag",
-              "Sonstige",
-            ].map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <textarea
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            rows={8}
-            placeholder="Vertragstext hier einfügen…"
-            className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-[color:var(--brand-primary)] focus:outline-none"
-          />
-          {createError && <p className="text-xs text-red-600">{createError}</p>}
-          <div className="flex justify-end">
-            <Button
-              onClick={createContract}
-              disabled={!newTitle.trim()}
-              className="brand-bg brand-bg gap-2 text-white"
-            >
-              <Save size={14} /> Speichern
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Quick create dialog */}
+      <ContractQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => void loadContracts()}
+      />
 
       {showReview && (
         <div className="space-y-4 rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-5">

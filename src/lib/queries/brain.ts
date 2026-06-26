@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { BrainStats, BrainPage, SearchResult, GraphNode, GraphLink } from "@/lib/types";
+import type { BrainStats, BrainPage, SearchResult, GraphNode, GraphLink, RecentQuery } from "@/lib/types";
 import { api } from "@/lib/api";
 
 // ── Queries ──
@@ -95,6 +95,7 @@ export function useCreatePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       qc.invalidateQueries({ queryKey: ["brain", "stats"] });
+      qc.invalidateQueries({ queryKey: ["brain", "cockpit"] });
     },
   });
 }
@@ -112,6 +113,7 @@ export function useUpdatePage() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       qc.invalidateQueries({ queryKey: ["brain", "page", vars.slug] });
+      qc.invalidateQueries({ queryKey: ["brain", "cockpit"] });
     },
   });
 }
@@ -123,6 +125,7 @@ export function useDeletePage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["brain", "pages"] });
       qc.invalidateQueries({ queryKey: ["brain", "stats"] });
+      qc.invalidateQueries({ queryKey: ["brain", "cockpit"] });
     },
   });
 }

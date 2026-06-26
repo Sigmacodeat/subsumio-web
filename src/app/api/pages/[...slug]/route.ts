@@ -29,6 +29,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -70,6 +71,7 @@ export const PATCH = createHandler(
       try {
         const getRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
           headers: ctx.headers,
+          signal: AbortSignal.timeout(10_000),
         });
         if (getRes.ok) {
           const currentPage = (await getRes.json()) as { frontmatter?: { version?: number } };
@@ -112,6 +114,7 @@ export const PATCH = createHandler(
         try {
           const checkRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
             headers: ctx.headers,
+            signal: AbortSignal.timeout(10_000),
           });
           if (checkRes.ok) {
             const currentPage = (await checkRes.json()) as { frontmatter?: { status?: string } };
@@ -161,6 +164,7 @@ export const PATCH = createHandler(
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...ctx.headers },
         body: JSON.stringify(patchBody),
+        signal: AbortSignal.timeout(15_000),
       });
       if (res.status === 404) return apiNotFound("not_found");
       if (!res.ok) {
@@ -187,6 +191,7 @@ export const PATCH = createHandler(
         try {
           const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
             headers: ctx.headers,
+            signal: AbortSignal.timeout(15_000),
           });
           if (!docsRes.ok) {
             restoreCascade = {
@@ -285,6 +290,7 @@ export const PATCH = createHandler(
               method: "POST",
               headers: { "Content-Type": "application/json", ...ctx.headers },
               body: JSON.stringify({ name }),
+              signal: AbortSignal.timeout(15_000),
             });
             if (checkRes.ok) {
               const checkData = (await checkRes.json()) as {
@@ -382,6 +388,7 @@ export const DELETE = createHandler(
       // 1. Fetch the case page to check if it's a legal_case
       const getRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
       });
       if (getRes.status === 404) return apiNotFound("not_found");
       if (!getRes.ok) throw new Error(`HTTP ${getRes.status}`);
@@ -450,6 +457,7 @@ export const DELETE = createHandler(
             },
             merge: true,
           }),
+          signal: AbortSignal.timeout(15_000),
         });
         if (!archiveRes.ok) throw new Error(`Archive PATCH failed: HTTP ${archiveRes.status}`);
 
@@ -461,6 +469,7 @@ export const DELETE = createHandler(
         try {
           const docsRes = await fetch(`${ENGINE_URL}/api/pages?type=document&limit=1000`, {
             headers: ctx.headers,
+            signal: AbortSignal.timeout(15_000),
           });
           if (!docsRes.ok) {
             cascade = {
@@ -539,6 +548,7 @@ export const DELETE = createHandler(
         const delRes = await fetch(`${ENGINE_URL}/api/pages/${path}`, {
           method: "DELETE",
           headers: ctx.headers,
+          signal: AbortSignal.timeout(10_000),
         });
         if (delRes.status === 404) return apiNotFound("not_found");
         if (!delRes.ok) throw new Error(`HTTP ${delRes.status}`);

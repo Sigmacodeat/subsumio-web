@@ -418,17 +418,18 @@ export default function VaultPage() {
           </span>
           <div className="flex items-center gap-1.5">
             <ArrowUpDown size={12} className="text-[color:var(--ds-text-subtle)]" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="rounded-md border border-[color:var(--ds-border)] bg-[color:var(--ds-surface-2)] px-2 py-1 text-xs text-[color:var(--ds-text)] focus:border-[color:var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)] focus:outline-none"
-            >
-              <option value="date_desc">{t("vault.sort_date_desc")}</option>
-              <option value="date_asc">{t("vault.sort_date_asc")}</option>
-              <option value="title_asc">{t("vault.sort_title_asc")}</option>
-              <option value="title_desc">{t("vault.sort_title_desc")}</option>
-              <option value="size_desc">{t("vault.sort_size_desc")}</option>
-            </select>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+              <SelectTrigger className="h-7 w-auto gap-1 rounded-md px-2 py-1 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date_desc">{t("vault.sort_date_desc")}</SelectItem>
+                <SelectItem value="date_asc">{t("vault.sort_date_asc")}</SelectItem>
+                <SelectItem value="title_asc">{t("vault.sort_title_asc")}</SelectItem>
+                <SelectItem value="title_desc">{t("vault.sort_title_desc")}</SelectItem>
+                <SelectItem value="size_desc">{t("vault.sort_size_desc")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}
@@ -567,7 +568,7 @@ export default function VaultPage() {
             size={15}
             className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-subtle)]"
           />
-          <input
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("vault.search_placeholder")}

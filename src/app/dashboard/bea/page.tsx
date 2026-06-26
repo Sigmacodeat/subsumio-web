@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Save, FileText, Info, Loader2, Inbox, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { AI_BADGE_LABEL, AI_FRONTMATTER } from "@/lib/ai-act";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -271,68 +273,53 @@ export default function BeaPage() {
         >
           <h2 className="text-sm font-semibold text-blue-600">{t("bea.compose_title")}</h2>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label
-                htmlFor="bea-recipient"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+            <div className="space-y-1">
+              <Label htmlFor="bea-recipient" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("bea.recipient_label")}
-              </label>
-              <input
+              </Label>
+              <Input
                 id="bea-recipient"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
                 placeholder={t("bea.recipient_placeholder")}
                 required
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
               />
             </div>
-            <div>
-              <label
-                htmlFor="bea-case"
-                className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-              >
+            <div className="space-y-1">
+              <Label htmlFor="bea-case" className="text-xs text-[color:var(--ds-text-muted)]">
                 {t("bea.case_label")}
-              </label>
-              <input
+              </Label>
+              <Input
                 id="bea-case"
                 value={caseNumber}
                 onChange={(e) => setCaseNumber(e.target.value)}
                 placeholder="2026-001"
-                className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
               />
             </div>
           </div>
-          <div>
-            <label
-              htmlFor="bea-subject"
-              className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-            >
+          <div className="space-y-1">
+            <Label htmlFor="bea-subject" className="text-xs text-[color:var(--ds-text-muted)]">
               {t("bea.subject_label")}
-            </label>
-            <input
+            </Label>
+            <Input
               id="bea-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder={t("bea.subject_placeholder")}
               required
-              className="w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
             />
           </div>
-          <div>
-            <label
-              htmlFor="bea-body"
-              className="mb-1 block text-xs text-[color:var(--ds-text-muted)]"
-            >
+          <div className="space-y-1">
+            <Label htmlFor="bea-body" className="text-xs text-[color:var(--ds-text-muted)]">
               {t("bea.body_label")}
-            </label>
+            </Label>
             <textarea
               id="bea-body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={6}
               placeholder={t("bea.body_placeholder")}
-              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"
+              className="w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:border-blue-500/50 focus:outline-none"
             />
           </div>
           {/* EU AI Act Art. 50: Nutzer markiert KI-generierten Inhalt, damit der

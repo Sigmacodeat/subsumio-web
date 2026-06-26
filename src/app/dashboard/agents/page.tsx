@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useLang } from "@/lib/use-lang";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Bot,
   Play,
@@ -631,14 +632,13 @@ function JobDetail({
         {(job.status === "active" || job.status === "waiting" || job.status === "paused") && (
           <div className="border-t border-[color:var(--ds-border)] p-3">
             <div className="flex gap-2">
-              <input
+              <Input
                 value={inboxInput}
                 onChange={(e) => setInboxInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
                 placeholder={t("agents.inbox_input_placeholder")}
                 aria-label={t("agents.message")}
                 disabled={sendMutation.isPending}
-                className="flex-1 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] transition-colors placeholder:text-[color:var(--ds-text-subtle)] focus:border-[color:var(--brand-primary)] focus:outline-none disabled:opacity-50"
               />
               <Button
                 size="sm"

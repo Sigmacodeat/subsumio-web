@@ -74,6 +74,7 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/pages?${params.toString()}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -85,7 +86,7 @@ export const GET = createHandler(
       return Response.json(data);
     } catch (err) {
       console.error("[pages] list failed:", err instanceof Error ? err.message : String(err));
-      return Response.json([]);
+      return apiError("service_unavailable", "Seiten derzeit nicht verfügbar", 503);
     }
   }
 );

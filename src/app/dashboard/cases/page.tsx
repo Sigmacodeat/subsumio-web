@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -40,6 +39,7 @@ import { useRealtime } from "@/lib/realtime";
 import { useLang } from "@/lib/use-lang";
 import { useMe } from "@/lib/queries/auth";
 import type { DashboardKey } from "@/content/dashboard";
+import { CaseQuickCreateDialog } from "@/components/legal/CaseQuickCreateDialog";
 
 interface LegalCaseItem {
   slug: string;
@@ -141,6 +141,7 @@ export default function CasesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
   const loadCases = useCallback(async () => {
     setLoading(true);
@@ -657,12 +658,10 @@ export default function CasesPage() {
         description={`${cases.length} ${t("cases.count")}`}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: t("cases.title") }]}
         actions={
-          <Link href="/dashboard/cases/new">
-            <Button variant="glow" className="gap-2">
-              <Plus size={16} />
-              {t("cases.new")}
-            </Button>
-          </Link>
+          <Button variant="glow" className="gap-2" onClick={() => setQuickCreateOpen(true)}>
+            <Plus size={16} />
+            {t("cases.new")}
+          </Button>
         }
       />
 
@@ -737,7 +736,7 @@ export default function CasesPage() {
         }
         emptyIcon={Briefcase}
         emptyActionLabel={cases.length === 0 ? t("cases.empty_create") : undefined}
-        onEmptyAction={cases.length === 0 ? () => router.push("/dashboard/cases/new") : undefined}
+        onEmptyAction={cases.length === 0 ? () => setQuickCreateOpen(true) : undefined}
         onRowClick={(c) => router.push(`/dashboard/cases/${encodeSlugPath(c.slug)}`)}
         rowKey={(c) => c.slug}
         pageSize={20}
@@ -754,6 +753,15 @@ export default function CasesPage() {
         }
         bulkActionIcon={statusFilter === "archived" ? RotateCcw : Trash2}
         bulkActionLoading={bulkLoading}
+      />
+
+      <CaseQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => {
+          void loadCases();
+          setQuickCreateOpen(false);
+        }}
       />
     </div>
   );

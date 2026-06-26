@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler } from "@/lib/api-handler";
+import { createHandler, apiError } from "@/lib/api-handler";
 
 const graphQuerySchema = z.object({
   limit: z
@@ -20,12 +20,13 @@ export const GET = createHandler(
     try {
       const res = await fetch(`${ENGINE_URL}/api/graph?limit=${query.limit}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return Response.json(await res.json());
     } catch (err) {
       console.error("[graph] failed:", err instanceof Error ? err.message : String(err));
-      return Response.json({ nodes: [], links: [] });
+      return apiError("service_unavailable", "Graph derzeit nicht verfügbar", 503);
     }
   }
 );

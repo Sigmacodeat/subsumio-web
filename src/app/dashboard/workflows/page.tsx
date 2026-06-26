@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { usePages, useCreatePage } from "@/lib/queries/brain";
 import { useMe } from "@/lib/queries/auth";
@@ -290,36 +292,30 @@ export default function WorkflowsPage() {
 
                     {/* Custom prompt */}
                     <div className="space-y-2">
-                      <label
-                        htmlFor="wf-prompt"
-                        className="text-xs font-medium text-[color:var(--ds-text)]"
-                      >
+                      <Label htmlFor="wf-prompt" className="text-xs font-medium text-[color:var(--ds-text)]">
                         Aufgabe (optional anpassen)
-                      </label>
+                      </Label>
                       <textarea
                         id="wf-prompt"
                         value={customPrompt}
                         onChange={(e) => setCustomPrompt(e.target.value)}
                         rows={3}
                         placeholder={template.prompt}
-                        className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+                        className="focus:brand-border/40 w-full resize-y rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 text-sm leading-relaxed text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
                       />
                     </div>
 
                     {/* Case slug */}
                     <div className="space-y-2">
-                      <label
-                        htmlFor="wf-case"
-                        className="text-xs font-medium text-[color:var(--ds-text)]"
-                      >
+                      <Label htmlFor="wf-case" className="text-xs font-medium text-[color:var(--ds-text)]">
                         Zugehörige Akte (optional)
-                      </label>
-                      <input
+                      </Label>
+                      <Input
                         id="wf-case"
                         value={caseSlug}
                         onChange={(e) => setCaseSlug(e.target.value)}
                         placeholder="z.B. cases/2024-001"
-                        className="focus:brand-border/40 w-full rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 font-mono text-sm text-[color:var(--ds-text)] placeholder:text-[color:var(--ds-text-muted)] focus:outline-none"
+                        className="font-mono"
                       />
                     </div>
 

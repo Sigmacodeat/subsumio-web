@@ -108,6 +108,14 @@ export const api = {
       return request(`/api/pages/${path}`);
     },
 
+    getPages(slugs: string[]): Promise<Record<string, BrainPage>> {
+      if (slugs.length === 0) return Promise.resolve({});
+      return request<{ pages: Record<string, BrainPage> }>("/api/pages/batch", {
+        method: "POST",
+        body: JSON.stringify({ slugs }),
+      }).then((r) => r.pages);
+    },
+
     listPages(options?: {
       limit?: number;
       offset?: number;

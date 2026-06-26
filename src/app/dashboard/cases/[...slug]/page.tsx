@@ -70,6 +70,7 @@ import {
   ContactCreateDialog,
   type ContactCreateResult,
 } from "@/components/legal/ContactCreateDialog";
+import { CaseOverviewWidgets } from "@/components/legal/CaseOverviewWidgets";
 import {
   checkInternalConflict,
   type ContactRef,
@@ -121,7 +122,7 @@ import {
   type ExpenseFormData,
 } from "@/lib/schemas/case-detail";
 
-interface CaseDetail {
+export interface CaseDetail {
   slug: string;
   title: string;
   caseNumber: string;
@@ -904,51 +905,50 @@ export default function CaseDetailPage() {
       setAiEvidenceLoading(true);
       try {
         const cards: typeof aiEvidenceCards = [];
-        await Promise.all(
-          docsWithSlugs.slice(0, 20).map(async (doc) => {
-            try {
-              const page = await api.brain.getPage(doc.slug || doc.url!);
-              const fm = page.frontmatter ?? {};
-              const meta = fm.meta as Record<string, unknown> | undefined;
-              const analysis = meta?.auto_analysis as Record<string, unknown> | undefined;
-              if (!analysis) return;
-              const keyFacts = Array.isArray(analysis.key_facts)
-                ? (analysis.key_facts as string[]).slice(0, 5)
-                : [];
-              const parties = Array.isArray(analysis.parties)
-                ? (analysis.parties as Array<Record<string, unknown>>)
-                    .map((p) => ({
-                      name: String(p.name ?? p.party ?? ""),
-                      role: String(p.role ?? ""),
-                    }))
-                    .filter((p) => p.name)
-                : [];
-              const evidenceRefs = Array.isArray(analysis.evidence_references)
-                ? (analysis.evidence_references as string[]).slice(0, 5)
-                : [];
-              const citedStatutes = Array.isArray(analysis.cited_statutes)
-                ? (analysis.cited_statutes as Array<Record<string, unknown>>)
-                    .map((c) => String(c.section ?? c.statute ?? ""))
-                    .filter(Boolean)
-                    .slice(0, 5)
-                : [];
-              const documentType = String(analysis.document_type ?? doc.kind ?? "");
-              if (keyFacts.length > 0 || evidenceRefs.length > 0 || parties.length > 0) {
-                cards.push({
-                  docName: doc.name,
-                  docSlug: doc.slug || doc.url || "",
-                  documentType,
-                  keyFacts,
-                  parties,
-                  evidenceRefs,
-                  citedStatutes,
-                });
-              }
-            } catch {
-              // skip individual doc errors
-            }
-          })
-        );
+        const slugsToFetch = docsWithSlugs.slice(0, 20).map((d) => d.slug || d.url!);
+        const pagesMap = await api.brain.getPages(slugsToFetch);
+
+        for (const doc of docsWithSlugs.slice(0, 20)) {
+          const slug = doc.slug || doc.url!;
+          const page = pagesMap[slug];
+          if (!page) continue;
+          const fm = page.frontmatter ?? {};
+          const meta = fm.meta as Record<string, unknown> | undefined;
+          const analysis = meta?.auto_analysis as Record<string, unknown> | undefined;
+          if (!analysis) continue;
+          const keyFacts = Array.isArray(analysis.key_facts)
+            ? (analysis.key_facts as string[]).slice(0, 5)
+            : [];
+          const parties = Array.isArray(analysis.parties)
+            ? (analysis.parties as Array<Record<string, unknown>>)
+                .map((p) => ({
+                  name: String(p.name ?? p.party ?? ""),
+                  role: String(p.role ?? ""),
+                }))
+                .filter((p) => p.name)
+            : [];
+          const evidenceRefs = Array.isArray(analysis.evidence_references)
+            ? (analysis.evidence_references as string[]).slice(0, 5)
+            : [];
+          const citedStatutes = Array.isArray(analysis.cited_statutes)
+            ? (analysis.cited_statutes as Array<Record<string, unknown>>)
+                .map((c) => String(c.section ?? c.statute ?? ""))
+                .filter(Boolean)
+                .slice(0, 5)
+            : [];
+          const documentType = String(analysis.document_type ?? doc.kind ?? "");
+          if (keyFacts.length > 0 || evidenceRefs.length > 0 || parties.length > 0) {
+            cards.push({
+              docName: doc.name,
+              docSlug: doc.slug || doc.url || "",
+              documentType,
+              keyFacts,
+              parties,
+              evidenceRefs,
+              citedStatutes,
+            });
+          }
+        }
         if (!cancelled) setAiEvidenceCards(cards);
       } finally {
         if (!cancelled) setAiEvidenceLoading(false);
@@ -1931,6 +1931,11 @@ export default function CaseDetailPage() {
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {activeTab === "overview" && (
           <div className="max-w-3xl space-y-4">
+            <CaseOverviewWidgets
+              caseData={caseData}
+              onTabChange={(tab) => setActiveTab(tab)}
+            />
+
             {/* Quick Actions */}
             <div className="flex gap-2">
               <Button

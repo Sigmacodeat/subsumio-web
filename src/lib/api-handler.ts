@@ -596,6 +596,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
           method: "POST",
           headers: { "Content-Type": "application/json", ...ctx.headers },
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(options.stream ? 300_000 : 30_000),
         });
 
         if (!upstream.ok) {

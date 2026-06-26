@@ -95,11 +95,11 @@ export function SubsumioLogo({
               reduce
                 ? undefined
                 : {
-                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 1, 0.5],
                   }
             }
             transition={{
-              duration: 3,
+              duration: 4,
               repeat: Infinity,
               ease: "easeInOut",
             }}

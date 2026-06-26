@@ -20,6 +20,7 @@ import type { BrainPage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { useLang } from "@/lib/use-lang";
+import { ClauseQuickCreateDialog } from "@/components/legal/ClauseQuickCreateDialog";
 
 const CATEGORY_LABELS: Record<string, string> = {
   nda: "NDA",
@@ -41,11 +42,7 @@ export default function ClauseLibraryPage() {
   const [search, setSearch] = useState("");
   const [selectedClause, setSelectedClause] = useState<BrainPage | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("general");
-  const [newContent, setNewContent] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
   const loadClauses = useCallback(async () => {
     setLoading(true);
@@ -64,6 +61,12 @@ export default function ClauseLibraryPage() {
     void loadClauses();
   }, [loadClauses]);
 
+  useEffect(() => {
+    const handler = () => setQuickCreateOpen(true);
+    window.addEventListener("subsumio:create-clause", handler);
+    return () => window.removeEventListener("subsumio:create-clause", handler);
+  }, []);
+
   const filtered = useMemo(() => {
     if (!search.trim()) return clauses;
     const q = search.toLowerCase();
@@ -78,28 +81,6 @@ export default function ClauseLibraryPage() {
           ))
     );
   }, [clauses, search]);
-
-  async function createClause() {
-    if (!newTitle.trim() || !newContent.trim()) return;
-    setCreating(true);
-    try {
-      await api.brain.createPage({
-        slug: `clause/${newCategory}/${Date.now()}`,
-        title: newTitle.trim(),
-        type: "clause_library",
-        content: newContent.trim(),
-        frontmatter: { category: newCategory, tags: [newCategory] },
-      });
-      setNewTitle("");
-      setNewContent("");
-      setShowCreate(false);
-      await loadClauses();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("clauses.toast_create_failed"));
-    } finally {
-      setCreating(false);
-    }
-  }
 
   function copyClause(clause: BrainPage) {
     void navigator.clipboard.writeText(clause.content);
@@ -132,7 +113,7 @@ export default function ClauseLibraryPage() {
         ]}
         actions={
           <Button
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => setQuickCreateOpen(true)}
             className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
           >
             <Plus size={15} /> {t("clauses.btn_create")}
@@ -140,47 +121,12 @@ export default function ClauseLibraryPage() {
         }
       />
 
-      {/* Create form */}
-      {showCreate && (
-        <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={t("clauses.placeholder_title")}
-            className="border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] text-[color:var(--ds-text)]"
-          />
-          <select
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-3 py-2 text-sm text-[color:var(--ds-text)]"
-          >
-            {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-          <textarea
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            placeholder={t("clauses.placeholder_body")}
-            className="h-32 w-full resize-none rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] px-4 py-3 font-mono text-sm leading-relaxed text-[color:var(--ds-text)] focus:border-emerald-500/50 focus:outline-none"
-          />
-          <div className="flex gap-2">
-            <Button
-              onClick={createClause}
-              disabled={creating || !newTitle.trim() || !newContent.trim()}
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-500"
-            >
-              {creating ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-              {t("clauses.btn_create")}
-            </Button>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>
-              {t("clauses.btn_delete")}
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Quick create dialog */}
+      <ClauseQuickCreateDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        onCreated={() => void loadClauses()}
+      />
 
       {/* Search */}
       <div className="relative">

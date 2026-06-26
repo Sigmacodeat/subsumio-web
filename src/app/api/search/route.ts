@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
 import { recordQuery } from "@/lib/usage";
 import { sanitizeTypeFilter, buildSearchParams } from "@/lib/search-params";
-import { createHandler, recordQuota } from "@/lib/api-handler";
+import { createHandler, recordQuota, apiError } from "@/lib/api-handler";
 
 const searchQuerySchema = z.object({
   q: z.string().default(""),
@@ -40,6 +40,7 @@ export const GET = createHandler(
 
       const res = await fetch(`${ENGINE_URL}/api/search?${params.toString()}`, {
         headers: ctx.headers,
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -49,7 +50,7 @@ export const GET = createHandler(
         "[search] engine search failed:",
         err instanceof Error ? err.message : String(err)
       );
-      return Response.json([]);
+      return apiError("service_unavailable", "Suche derzeit nicht verfügbar", 503);
     }
   }
 );
