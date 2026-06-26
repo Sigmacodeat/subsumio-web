@@ -705,7 +705,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                   >
                     {collapsed && active && (
                       <span
-                        className="absolute top-1/2 left-0 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                        className="absolute top-1/2 left-0 h-5 w-[2px] -translate-y-1/2 rounded-r-full"
+                        style={{ backgroundColor: `var(${colorVar})` }}
                         aria-hidden
                       />
                     )}
@@ -767,7 +768,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                           >
                             {active && (
                               <span
-                                className="absolute top-1/2 left-0 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-[var(--brand-primary)]"
+                                className="absolute top-1/2 left-0 h-4 w-[2px] -translate-y-1/2 rounded-r-full"
+                                style={{ backgroundColor: `var(${catVar})` }}
                                 aria-hidden
                               />
                             )}
@@ -814,28 +816,29 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                       <button
                         type="button"
                         onClick={() => toggleSection(section.titleKey)}
-                        className="flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
+                        className="group flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] font-semibold text-[color:var(--ds-text)] transition-colors hover:text-[color:var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ds-surface)] focus-visible:outline-none"
                         aria-expanded={isOpen}
                         aria-controls={panelId}
                       >
                         <SectionIcon
                           size={15}
-                          className="shrink-0 transition-[color] duration-150"
+                          className="shrink-0 transition-[color] duration-150 group-hover:[color:var(--ds-text)]"
                           style={{ color: sectionActive || isOpen ? `var(${catVar})` : `color-mix(in srgb, var(${catVar}) 55%, var(--ds-text-muted))` }}
                         />
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate",
+                            "min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-wider",
                             sectionActive || isOpen
                               ? "text-[color:var(--ds-text)]"
-                              : "text-[color:var(--ds-text-muted)]"
+                              : "text-[color:var(--ds-text-subtle)]"
                           )}
                         >
                           {t(section.titleKey)}
                         </span>
                         {sectionActive && !isOpen && (
                           <span
-                            className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand-primary)]"
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: `var(${catVar})` }}
                             aria-hidden
                           />
                         )}
