@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 const messageSchema = z.object({
   role: z.enum(["client", "lawyer", "assistant", "system"]),
-  text: z.string(),
+  text: z.string().max(10_000),
   timestamp: z.string().optional(),
   has_media: z.boolean().optional(),
   media_type: z.enum(["voice", "document", "image", "audio", "video"]).optional(),
@@ -32,7 +32,7 @@ const messageSchema = z.object({
 });
 
 const autoExtractSchema = z.object({
-  messages: z.array(messageSchema).min(1, "messages_required"),
+  messages: z.array(messageSchema).min(1, "messages_required").max(100, "too_many_messages"),
   case_slug: z.string().optional(),
   case_title: z.string().optional(),
   lawyer_name: z.string().optional(),

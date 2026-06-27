@@ -25,12 +25,12 @@
  * admin/dist without regenerating the embedded module fail loud.
  */
 
-import { readdirSync, statSync, writeFileSync, existsSync, readFileSync } from 'fs';
-import { join, relative, posix } from 'path';
+import { readdirSync, statSync, writeFileSync, existsSync, readFileSync } from "fs";
+import { join, relative, posix } from "path";
 
-const REPO = join(import.meta.dir, '..');
-const DIST = join(REPO, 'admin', 'dist');
-const OUT = join(REPO, 'src', 'admin-embedded.ts');
+const REPO = join(import.meta.dir, "..");
+const DIST = join(REPO, "admin", "dist");
+const OUT = join(REPO, "src", "admin-embedded.ts");
 
 function walk(dir: string, base: string = dir): string[] {
   if (!existsSync(dir)) return [];
@@ -47,34 +47,34 @@ function walk(dir: string, base: string = dir): string[] {
 }
 
 const MIME: Record<string, string> = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".txt": "text/plain; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
 };
 
 function mimeFor(filename: string): string {
-  const dot = filename.lastIndexOf('.');
-  if (dot === -1) return 'application/octet-stream';
-  return MIME[filename.slice(dot).toLowerCase()] ?? 'application/octet-stream';
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1) return "application/octet-stream";
+  return MIME[filename.slice(dot).toLowerCase()] ?? "application/octet-stream";
 }
 
 function safeIdent(rel: string, idx: number): string {
   // Stable, collision-free identifier per relative path. The numeric
   // suffix prevents collisions between filenames that normalize to the
   // same identifier (e.g. `foo.bar.js` and `foo-bar.js`).
-  const cleaned = rel.replace(/[^a-zA-Z0-9]/g, '_').replace(/^_+/, '');
+  const cleaned = rel.replace(/[^a-zA-Z0-9]/g, "_").replace(/^_+/, "");
   return `A_${idx}_${cleaned}`;
 }
 
@@ -82,7 +82,9 @@ const files = walk(DIST);
 
 let content: string;
 if (files.length === 0) {
-  console.warn('[build-admin-embedded] admin/dist not present — generating empty stub. /admin will return 404; brain API is unaffected.');
+  console.warn(
+    "[build-admin-embedded] admin/dist not present — generating empty stub. /admin will return 404; brain API is unaffected."
+  );
   content = `// AUTO-GENERATED — do not edit by hand.
 // Run \`bun run scripts/build-admin-embedded.ts\` to regenerate.
 // Source: admin/dist/ MISSING at ${new Date().toISOString().slice(0, 10)}.
@@ -109,14 +111,16 @@ export const ADMIN_ASSET_COUNT = 0;
   for (let i = 0; i < files.length; i++) {
     const rel = files[i];
     // POSIX-style relative path for the import (works on Windows too).
-    const importRel = `../admin/dist/${rel.split(/[\\/]/).join('/')}`;
+    const importRel = `../admin/dist/${rel.split(/[\\/]/).join("/")}`;
     const ident = safeIdent(rel, i);
     // @ts-ignore — `with { type: 'file' }` is Bun syntax not in lib.d.ts;
     // same pattern as src/core/chunkers/code.ts wasm imports.
     imports.push(`// @ts-ignore — type: 'file' is Bun ESM, not in lib.d.ts`);
     imports.push(`import ${ident} from '${importRel}' with { type: 'file' };`);
-    const requestPath = '/admin/' + rel.split(/[\\/]/).join('/');
-    manifestEntries.push(`  ${JSON.stringify(requestPath)}: { path: ${ident} as unknown as string, mime: ${JSON.stringify(mimeFor(rel))} },`);
+    const requestPath = "/admin/" + rel.split(/[\\/]/).join("/");
+    manifestEntries.push(
+      `  ${JSON.stringify(requestPath)}: { path: ${ident} as unknown as string, mime: ${JSON.stringify(mimeFor(rel))} },`
+    );
   }
 
   content = `// AUTO-GENERATED — do not edit by hand.
@@ -127,7 +131,7 @@ export const ADMIN_ASSET_COUNT = 0;
 // inside a compiled binary (\`bun build --compile\`). The manifest maps
 // the request path the express handler sees to (resolved-path, mime).
 
-${imports.join('\n')}
+${imports.join("\n")}
 
 export interface AdminAsset {
   path: string;
@@ -135,7 +139,7 @@ export interface AdminAsset {
 }
 
 export const ADMIN_ASSETS: Record<string, AdminAsset> = {
-${manifestEntries.join('\n')}
+${manifestEntries.join("\n")}
 };
 
 /** Index entry point for SPA fallback. */
@@ -145,10 +149,10 @@ export const ADMIN_ASSET_COUNT = ${files.length};
 `;
 }
 
-const existing = existsSync(OUT) ? readFileSync(OUT, 'utf-8') : '';
+const existing = existsSync(OUT) ? readFileSync(OUT, "utf-8") : "";
 if (existing === content) {
   console.log(`[build-admin-embedded] up to date (${files.length} files)`);
 } else {
-  writeFileSync(OUT, content, 'utf-8');
+  writeFileSync(OUT, content, "utf-8");
   console.log(`[build-admin-embedded] wrote ${OUT} (${files.length} files)`);
 }

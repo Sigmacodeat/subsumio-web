@@ -12,7 +12,7 @@ import type { EvalCategory } from "@/lib/rag-eval";
 
 const reviewSchema = z.object({
   source_endpoint: z.string().min(1),
-  query: z.string().min(1),
+  query: z.string().min(1).max(2_000),
   answer_excerpt: z.string().max(2000),
   verdict: z.enum(["correct", "incorrect", "incomplete"]) as z.ZodType<ReviewVerdict>,
   comment: z.string().max(2000).optional(),

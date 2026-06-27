@@ -7,9 +7,9 @@ export const maxDuration = 60;
 const postSchema = z.object({
   case_slug: z.string().optional(),
   table_title: z.string().optional(),
-  query: z.string().min(1),
-  columns: z.array(z.string()),
-  rows: z.array(z.record(z.unknown())),
+  query: z.string().min(1).max(5_000),
+  columns: z.array(z.string().max(200)).max(50),
+  rows: z.array(z.record(z.unknown())).max(500),
 });
 
 function formatTableForPrompt(columns: string[], rows: Array<Record<string, unknown>>): string {

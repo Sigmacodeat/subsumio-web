@@ -70,9 +70,10 @@ export type HandlerContext = EngineContext;
  * Must be structurally identical to the type Next.js emits in
  * .next/types/.../route.ts for the build-time Diff check to pass.
  */
-type SegmentParams<T extends object = object> = T extends Record<string, unknown>
-  ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }
-  : T;
+type SegmentParams<T extends object = object> =
+  T extends Record<string, unknown>
+    ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }
+    : T;
 
 export type RouteContext = { params: Promise<SegmentParams> };
 
@@ -438,13 +439,13 @@ export function createPublicHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (
-  req: NextRequest,
-  routeContext: RouteContext
-) => Promise<Response> {
+): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   return createHandler(
     { ...options, action: "public" as RouteAction, public: true },
-    async (ctx, body, query, req) => handler(req, body, query, { params: (req as unknown as { params?: Promise<Record<string, unknown>> }).params })
+    async (ctx, body, query, req) =>
+      handler(req, body, query, {
+        params: (req as unknown as { params?: Promise<Record<string, unknown>> }).params,
+      })
   );
 }
 
@@ -465,10 +466,7 @@ export function createScimHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (
-  req: NextRequest,
-  routeContext: RouteContext
-) => Promise<Response> {
+): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   return createHandler(
     { ...options, action: "scim" as RouteAction, skipCsrf: true, customAuth: options.customAuth },
     async (ctx, body, query, req) =>
@@ -490,10 +488,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     audit?: (body: ValidatedBody<B>) => AuditSpec | AuditSpec[];
   },
   handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>
-): (
-  req: NextRequest,
-  routeContext: RouteContext
-) => Promise<Response> {
+): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, options.cors ?? false);
@@ -561,10 +556,7 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
 export function createCronHandler(
   handler: (req: NextRequest) => Promise<Response>,
   _options?: { maxDuration?: number }
-): (
-  req: NextRequest,
-  routeContext: RouteContext
-) => Promise<Response> {
+): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, false);
@@ -636,10 +628,7 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
-}): (
-  req: NextRequest,
-  routeContext: RouteContext
-) => Promise<Response> {
+}): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
     {

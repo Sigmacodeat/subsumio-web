@@ -9,7 +9,7 @@ import { mapQueryModeToEngineMode } from "@/lib/matter-context";
 export const maxDuration = 300;
 
 const thinkSchema = z.object({
-  query: z.string().min(1, "query_required"),
+  query: z.string().min(1, "query_required").max(10_000, "query_too_long"),
   mode: z.enum(["conservative", "balanced", "tokenmax"]).default("balanced"),
   query_mode: z.enum(["conservative", "balanced", "deep_matter"]).default("balanced"),
   case_slug: z.string().optional(),

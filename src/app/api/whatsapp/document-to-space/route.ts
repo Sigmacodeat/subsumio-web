@@ -24,7 +24,10 @@ export const POST = createHandler(
       ({
         action: "whatsapp.document_to_space",
         entityType: "whatsapp_document_mapping",
-        details: { whatsapp_message_id: body.whatsapp_message_id, shared_space_id: body.shared_space_id },
+        details: {
+          whatsapp_message_id: body.whatsapp_message_id,
+          shared_space_id: body.shared_space_id,
+        },
       }) as AuditSpec,
   },
   async (ctx, body, _query, _req) => {
@@ -97,10 +100,12 @@ export const POST = createHandler(
   }
 );
 
-const listMappingsQuerySchema = z.object({
-  unmapped_only: z.string().optional(),
-  date_range: z.string().optional(),
-}).passthrough();
+const listMappingsQuerySchema = z
+  .object({
+    unmapped_only: z.string().optional(),
+    date_range: z.string().optional(),
+  })
+  .passthrough();
 
 export const GET = createHandler(
   {

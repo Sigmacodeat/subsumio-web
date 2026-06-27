@@ -12,7 +12,7 @@ import {
 } from "@/lib/retrieval-feedback";
 
 const feedbackSchema = z.object({
-  query: z.string().min(1, "query_required"),
+  query: z.string().min(1, "query_required").max(2_000),
   result_slug: z.string().min(1, "result_slug_required"),
   result_title: z.string().default(""),
   feedback_type: z.enum(["relevant", "irrelevant", "outdated", "wrong"]),

@@ -13,7 +13,7 @@ export const maxDuration = 120;
 const analyzeSchema = z
   .object({
     document_slug: z.string().optional(),
-    text: z.string().optional(),
+    text: z.string().max(512_000).optional(),
     jurisdiction: z.string().optional(),
     brain_id: z.string().optional(),
   })

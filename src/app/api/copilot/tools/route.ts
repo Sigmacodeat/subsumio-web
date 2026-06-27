@@ -98,7 +98,7 @@ function isAllowedDashboardRoute(route: string): boolean {
 }
 
 const searchCasesSchema = z.object({
-  query: z.string().min(1),
+  query: z.string().min(1).max(2_000),
   limit: z.number().min(1).max(50).default(10),
 });
 
@@ -109,7 +109,7 @@ const searchDeadlinesSchema = z.object({
 });
 
 const searchKnowledgeSchema = z.object({
-  query: z.string().min(1),
+  query: z.string().min(1).max(2_000),
   limit: z.number().min(1).max(20).default(5),
 });
 

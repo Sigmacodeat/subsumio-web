@@ -9,7 +9,7 @@ export const maxDuration = 120;
 
 const datevImportSchema = z.object({
   filename: z.string().min(1).max(240).default("datev-import.csv"),
-  content: z.string().min(1, "content_required"),
+  content: z.string().min(1, "content_required").max(10_000_000, "content_too_large"),
   source: z.enum(["upload", "watch_dir", "manual"]).default("upload"),
   dry_run: z.boolean().default(false),
 });

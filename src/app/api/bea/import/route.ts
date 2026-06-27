@@ -9,7 +9,7 @@ export const maxDuration = 120;
 
 const beaFileSchema = z.object({
   filename: z.string().min(1).max(240),
-  content: z.string().min(1, "content_required"),
+  content: z.string().min(1, "content_required").max(10_000_000, "content_too_large"),
 });
 
 const beaImportSchema = z.object({

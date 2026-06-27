@@ -3,10 +3,11 @@ import { createHandler, apiError, apiSuccess } from "@/lib/api-handler";
 import { getConnector } from "@/lib/dms";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const pushSchema = z.object({
   filename: z.string().min(1).max(240),
-  content_base64: z.string().min(1),
+  content_base64: z.string().min(1).max(10_000_000, "content_too_large"),
   folder_id: z.string().max(200).optional(),
   metadata: z.record(z.string(), z.string()).optional(),
 });

@@ -11,13 +11,15 @@ const updateSpaceSchema = z.object({
   title: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
   expires_at: z.string().optional(),
-  settings: z.object({
-    allow_upload: z.boolean().optional(),
-    allow_download: z.boolean().optional(),
-    max_file_size: z.number().optional(),
-    allowed_file_types: z.array(z.string()).optional(),
-    require_auth: z.boolean().optional(),
-  }).optional(),
+  settings: z
+    .object({
+      allow_upload: z.boolean().optional(),
+      allow_download: z.boolean().optional(),
+      max_file_size: z.number().optional(),
+      allowed_file_types: z.array(z.string()).optional(),
+      require_auth: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 async function getIdFromParams(req: NextRequest): Promise<string> {
