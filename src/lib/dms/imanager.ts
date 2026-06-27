@@ -7,6 +7,7 @@ import {
   type DMSConnector,
   type DMSDocument,
   type DMSSearchResult,
+  type DMSPushResult,
   DMS_BASE,
   dmsAuthHeaders,
   dmsFetchJson,
@@ -112,5 +113,37 @@ export const iManageConnector: DMSConnector = {
       "iManage Work",
       `${DMS_BASE}/api/v2/documents/${doc.id}/content`
     );
+  },
+
+  async pushToDms(
+    filename: string,
+    contentBase64: string,
+    opts: { folderId?: string; metadata?: Record<string, string> }
+  ): Promise<DMSPushResult> {
+    try {
+      const body: Record<string, unknown> = {
+        name: filename,
+        content: contentBase64,
+        ...(opts.folderId ? { parent_id: opts.folderId } : {}),
+        ...(opts.metadata ? { custom_attributes: opts.metadata } : {}),
+      };
+      const result = await dmsFetchJson<{ id?: string; error?: string }>(
+        `${DMS_BASE}/api/v2/documents`,
+        {
+          method: "POST",
+          headers: dmsAuthHeaders(),
+          body: JSON.stringify(body),
+        }
+      );
+      if (result.id) {
+        return { success: true, documentId: result.id };
+      }
+      return { success: false, error: result.error ?? "Unknown iManage error" };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   },
 };

@@ -57,7 +57,7 @@ export function OcrWarningBanner() {
         <span className="ml-1.5 text-[color:var(--ds-text-muted)]">
           Gescannte Dokumente und Bilder werden nicht text-extrahiert. Aktivieren Sie{" "}
           <code className="rounded bg-[color:var(--ds-surface-2)] px-1 py-0.5 text-xs text-[color:var(--ds-text)]">
-            GBRAIN_EMBEDDING_IMAGE_OCR=true
+            SUBSUMIO_EMBEDDING_IMAGE_OCR=true
           </code>{" "}
           in der Engine-Konfiguration.
         </span>

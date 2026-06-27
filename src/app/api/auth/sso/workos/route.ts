@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthorizationUrl, isConfigured } from "@/lib/workos";
 import { createPublicHandler } from "@/lib/api-handler";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export const GET = createPublicHandler(
 
     const { provider, orgId: organizationId } = query;
 
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/api/auth/sso/callback`;
+    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/auth/sso/callback`;
 
     // State token to prevent CSRF — stored as httpOnly cookie for callback validation
     const state = crypto.randomUUID();
@@ -45,7 +46,7 @@ export const GET = createPublicHandler(
     res.cookies.set(SSO_STATE_COOKIE, state, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: env("NODE_ENV") === "production",
       maxAge: SSO_STATE_TTL,
       path: "/",
     });

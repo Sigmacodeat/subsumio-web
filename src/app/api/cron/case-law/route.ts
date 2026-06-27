@@ -5,6 +5,7 @@ import { searchJudgements, type JudgementHit } from "@/lib/judgements";
 import { createCronHandler } from "@/lib/api-handler";
 import { filterNewHitIds } from "@/lib/caselaw-dedup";
 import { getRecipientsByBrain } from "@/lib/cron-utils";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -118,7 +119,7 @@ function renderDigest(
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
   const from = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
   const recipientsByBrain = await getRecipientsByBrain();

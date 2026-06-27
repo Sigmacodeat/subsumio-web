@@ -9,6 +9,7 @@ import { isValidIndustry } from "@/lib/industry-pack";
 import { provisionBrainAsync } from "@/lib/provision";
 import { signupSchema } from "@/lib/api-validation";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 // Extended schema with trimmed email and name for internal validation
@@ -21,7 +22,7 @@ export const POST = createPublicHandler(
   {
     body: signupSchemaInternal,
     rateLimitKey: (req) => `signup:ip:${clientIp(req.headers)}`,
-    rateLimitMax: process.env.NODE_ENV === "production" ? 5 : 100,
+    rateLimitMax: env("NODE_ENV") === "production" ? 5 : 100,
     rateLimitWindowMs: 60 * 60_000,
   },
   async (req, body) => {
@@ -96,7 +97,7 @@ export const POST = createPublicHandler(
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: env("NODE_ENV") === "production",
       maxAge: SESSION_TTL_SECONDS,
       path: "/",
     });

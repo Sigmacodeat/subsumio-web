@@ -22,10 +22,20 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
 const updateUserSchema = z.object({
   schemas: z.array(z.string()),
   userName: z.string().optional(),
-  emails: z.array(z.object({ value: z.string(), type: z.string().optional(), primary: z.boolean().optional() })).optional(),
+  emails: z
+    .array(
+      z.object({ value: z.string(), type: z.string().optional(), primary: z.boolean().optional() })
+    )
+    .optional(),
   externalId: z.string().optional(),
   id: z.string().optional(),
-  name: z.object({ givenName: z.string().optional(), familyName: z.string().optional(), formatted: z.string().optional() }).optional(),
+  name: z
+    .object({
+      givenName: z.string().optional(),
+      familyName: z.string().optional(),
+      formatted: z.string().optional(),
+    })
+    .optional(),
   displayName: z.string().optional(),
   active: z.boolean().optional(),
   title: z.string().optional(),
@@ -35,11 +45,15 @@ const updateUserSchema = z.object({
 
 const patchRequestSchema = z.object({
   schemas: z.array(z.string()),
-  Operations: z.array(z.object({
-    op: z.string(),
-    path: z.string().optional(),
-    value: z.any().optional(),
-  })).optional(),
+  Operations: z
+    .array(
+      z.object({
+        op: z.string(),
+        path: z.string().optional(),
+        value: z.any().optional(),
+      })
+    )
+    .optional(),
 });
 
 /**

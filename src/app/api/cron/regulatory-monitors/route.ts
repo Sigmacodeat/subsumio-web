@@ -17,6 +17,7 @@ import {
   inferChangeType,
   monitorSlug,
 } from "@/lib/regulatory-monitors";
+import { env } from "@/lib/env";
 import type { BrainPage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -200,7 +201,7 @@ function legacyToMonitor(page: BrainPage): RegulatoryMonitor | null {
 }
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
   const from = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
 
   const recipientsByBrain = await getRecipientsByBrain();

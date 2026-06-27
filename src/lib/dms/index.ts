@@ -28,6 +28,12 @@ export interface DMSSearchResult {
   totalCount: number;
 }
 
+export interface DMSPushResult {
+  success: boolean;
+  documentId?: string;
+  error?: string;
+}
+
 export interface DMSConnector {
   name: string;
   isConfigured(): boolean;
@@ -39,6 +45,11 @@ export interface DMSConnector {
     brainId: string,
     headers: Record<string, string>
   ): Promise<{ slug: string; success: boolean }>;
+  pushToDms(
+    filename: string,
+    contentBase64: string,
+    opts: { folderId?: string; metadata?: Record<string, string> }
+  ): Promise<DMSPushResult>;
 }
 
 // --- Shared config helpers --------------------------------------------------

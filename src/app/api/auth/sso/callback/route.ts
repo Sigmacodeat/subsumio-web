@@ -4,6 +4,7 @@ import { authenticateWithCode } from "@/lib/workos";
 import { getStore, buildNewUser } from "@/lib/auth/store";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export const GET = createPublicHandler(
     // Clear the state cookie — single use
     jar.delete(SSO_STATE_COOKIE);
 
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/api/auth/sso/callback`;
+    const redirectUri = `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/api/auth/sso/callback`;
 
     try {
       const auth = await authenticateWithCode(code, redirectUri);
@@ -86,7 +87,7 @@ export const GET = createPublicHandler(
 
       // Redirect to dashboard
       return Response.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu"}/dashboard`,
+        `${env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu"}/dashboard`,
         302
       );
     } catch (err) {

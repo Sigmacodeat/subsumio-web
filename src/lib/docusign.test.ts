@@ -143,6 +143,14 @@ describe("getAuthUrl", () => {
     expect(url.searchParams.get("state")).toBe("random-state-123");
   });
 
+  test("state is URL-encoded to survive round-trip", async () => {
+    vi.resetModules();
+    const { getAuthUrl: fresh } = await import("./docusign");
+    const state = "state+with/special=chars";
+    const url = new URL(fresh("https://app.example.com/callback", state));
+    expect(url.searchParams.get("state")).toBe(state);
+  });
+
   test("omits state when not provided", async () => {
     vi.resetModules();
     const { getAuthUrl: fresh } = await import("./docusign");

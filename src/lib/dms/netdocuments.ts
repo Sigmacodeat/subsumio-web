@@ -7,6 +7,7 @@ import {
   type DMSConnector,
   type DMSDocument,
   type DMSSearchResult,
+  type DMSPushResult,
   DMS_BASE,
   dmsAuthHeaders,
   dmsFetchJson,
@@ -128,5 +129,37 @@ export const netDocumentsConnector: DMSConnector = {
       "NetDocuments",
       `${DMS_BASE}/v1/Documents/${doc.id}/content`
     );
+  },
+
+  async pushToDms(
+    filename: string,
+    contentBase64: string,
+    opts: { folderId?: string; metadata?: Record<string, string> }
+  ): Promise<DMSPushResult> {
+    try {
+      const body: Record<string, unknown> = {
+        name: filename,
+        content: contentBase64,
+        ...(opts.folderId ? { cabinet: opts.folderId } : {}),
+        ...(opts.metadata ? { attributes: opts.metadata } : {}),
+      };
+      const result = await dmsFetchJson<{ id?: string; error?: string }>(
+        `${DMS_BASE}/v1/Documents`,
+        {
+          method: "POST",
+          headers: dmsAuthHeaders(),
+          body: JSON.stringify(body),
+        }
+      );
+      if (result.id) {
+        return { success: true, documentId: result.id };
+      }
+      return { success: false, error: result.error ?? "Unknown NetDocuments error" };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   },
 };

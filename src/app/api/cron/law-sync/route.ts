@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -10,12 +11,12 @@ export const maxDuration = 300;
  *
  * Ruft den Engine-Endpunkt /api/admin/law-sync auf, der die Markdown-Dateien
  * aus law-corpus/ in die Shared Read Sources (law-de, law-at, law-ch) importiert.
- * Die Shared Sources werden von allen Mandanten über GBRAIN_SHARED_READ_SOURCES
+ * Die Shared Sources werden von allen Mandanten über SUBSUMIO_SHARED_READ_SOURCES
  * in Suche und Think federiert.
  */
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const apiKey = process.env.SUBSUMIO_WEB_API_KEY;
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
   const headers: Record<string, string> = {};
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
 

@@ -8,6 +8,7 @@ import {
   type BriefingCase,
 } from "@/lib/whatsapp/daily-briefing";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { env } from "@/lib/env";
 import type { QuietHours } from "@/lib/whatsapp/outbound-gate";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export const dynamic = "force-dynamic";
 const dedupBriefing = createDailyDedup(BRIEFING_DEDUP_TABLE);
 
 function quietHoursFromEnv(now: Date): QuietHours | undefined {
-  const raw = process.env.WHATSAPP_BRIEFING_QUIET_HOURS; // e.g. "21-7"
+  const raw = env("WHATSAPP_BRIEFING_QUIET_HOURS"); // e.g. "21-7"
   if (!raw) return undefined;
   const m = raw.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
   if (!m) return undefined;
@@ -43,7 +44,7 @@ function quietHoursFromEnv(now: Date): QuietHours | undefined {
 export const GET = createCronHandler(async (_req: NextRequest) => {
   const now = new Date();
   const senders = loadAllowedSenders().filter((s) => s.role !== "assistant");
-  const briefingTemplate = process.env.WHATSAPP_BRIEFING_TEMPLATE;
+  const briefingTemplate = env("WHATSAPP_BRIEFING_TEMPLATE");
   const quietHours = quietHoursFromEnv(now);
 
   let sent = 0;

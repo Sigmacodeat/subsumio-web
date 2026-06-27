@@ -65,6 +65,17 @@ import { verifyApiKey } from "@/lib/auth/api-key-auth";
 
 export type HandlerContext = EngineContext;
 
+/**
+ * Next.js 15.5 generated route context type.
+ * Must be structurally identical to the type Next.js emits in
+ * .next/types/.../route.ts for the build-time Diff check to pass.
+ */
+type SegmentParams<T extends object = object> = T extends Record<string, unknown>
+  ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }
+  : T;
+
+export type RouteContext = { params: Promise<SegmentParams> };
+
 export interface AuditSpec {
   action: AuditAction;
   entityType: string;
@@ -104,7 +115,8 @@ export interface HandlerOptions<
   audit?: (
     ctx: HandlerContext,
     body: ValidatedBody<B>,
-    query: ValidatedQuery<Q>
+    query: ValidatedQuery<Q>,
+    req?: NextRequest
   ) => AuditSpec | AuditSpec[];
 }
 
@@ -220,11 +232,11 @@ export function createHandler<
     query: ValidatedQuery<Q>,
     req: NextRequest
   ) => Promise<Response>
-): (req: NextRequest) => Promise<Response> {
-  return async (req: NextRequest, routeContext?: { params?: Promise<Record<string, unknown>> }) => {
+): (req: NextRequest, routeContext: RouteContext) => Promise<Response> {
+  return async (req: NextRequest, routeContext: RouteContext) => {
     // Attach params from Next.js route context to req so handlers can access them
     if (routeContext?.params) {
-      (req as unknown as { params: Promise<Record<string, unknown>> }).params = routeContext.params;
+      (req as unknown as RouteContext).params = routeContext.params;
     }
 
     // 0. CORS preflight
@@ -272,7 +284,7 @@ export function createHandler<
     let ctx: EngineContext;
     let isApiKeyAuth = false;
     let customContext: Record<string, unknown> | null = null;
-    
+
     if (internalContext) {
       ctx = internalContext;
     } else if (options.customAuth) {
@@ -319,7 +331,8 @@ export function createHandler<
           referredBy: null,
           brainId: "public",
           stripeCustomerId: null,
-        } as EngineContext["user"],
+          createdAt: new Date().toISOString(),
+        } as unknown as EngineContext["user"],
         headers: {},
       } as EngineContext;
     } else {
@@ -384,7 +397,7 @@ export function createHandler<
     // 6. Audit log (fire-and-forget, only on success)
     if (response.ok && options.audit) {
       try {
-        const spec = options.audit(ctx, body, query);
+        const spec = options.audit(ctx, body, query, req);
         const specs = Array.isArray(spec) ? spec : [spec];
         for (const s of specs) {
           void logAudit(s.action, s.entityType, {
@@ -425,10 +438,13 @@ export function createPublicHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (req: NextRequest, routeContext?: { params?: Promise<Record<string, unknown>> }) => Promise<Response> {
+): (
+  req: NextRequest,
+  routeContext: RouteContext
+) => Promise<Response> {
   return createHandler(
-    { ...options, action: "public" as any, public: true },
-    async (ctx, body, query, req) => handler(req, body, query, { params: (req as any).params })
+    { ...options, action: "public" as RouteAction, public: true },
+    async (ctx, body, query, req) => handler(req, body, query, { params: (req as unknown as { params?: Promise<Record<string, unknown>> }).params })
   );
 }
 
@@ -449,10 +465,16 @@ export function createScimHandler<
     query: ValidatedQuery<Q>,
     extra: { params?: Promise<Record<string, unknown>> }
   ) => Promise<Response>
-): (req: NextRequest, routeContext: { params: Promise<Record<string, unknown>> }) => Promise<Response> {
+): (
+  req: NextRequest,
+  routeContext: RouteContext
+) => Promise<Response> {
   return createHandler(
-    { ...options, action: "scim" as any, skipCsrf: true, customAuth: options.customAuth },
-    async (ctx, body, query, req) => handler(ctx as unknown as Record<string, unknown>, body, query, { params: (req as any).params })
+    { ...options, action: "scim" as RouteAction, skipCsrf: true, customAuth: options.customAuth },
+    async (ctx, body, query, req) =>
+      handler(ctx as unknown as Record<string, unknown>, body, query, {
+        params: (req as unknown as { params?: Promise<Record<string, unknown>> }).params,
+      })
   );
 }
 
@@ -468,7 +490,10 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
     audit?: (body: ValidatedBody<B>) => AuditSpec | AuditSpec[];
   },
   handler: (body: ValidatedBody<B>, req: NextRequest) => Promise<Response>
-): (req: NextRequest) => Promise<Response> {
+): (
+  req: NextRequest,
+  routeContext: RouteContext
+) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, options.cors ?? false);
@@ -536,7 +561,10 @@ export function createWebhookHandler<B extends z.ZodTypeAny | undefined = undefi
 export function createCronHandler(
   handler: (req: NextRequest) => Promise<Response>,
   _options?: { maxDuration?: number }
-): (req: NextRequest) => Promise<Response> {
+): (
+  req: NextRequest,
+  routeContext: RouteContext
+) => Promise<Response> {
   return async (req: NextRequest) => {
     // CORS preflight
     const corsResponse = handleCors(req, false);
@@ -608,7 +636,10 @@ export function createEngineProxy<B extends z.ZodTypeAny>(options: {
   audit?: (ctx: HandlerContext, body: z.infer<B>) => AuditSpec | AuditSpec[];
   /** Cache-Control max-age for GET responses (seconds). */
   cacheMaxAge?: number;
-}): (req: NextRequest) => Promise<Response> {
+}): (
+  req: NextRequest,
+  routeContext: RouteContext
+) => Promise<Response> {
   const label = options.label ?? options.enginePath;
   return createHandler(
     {

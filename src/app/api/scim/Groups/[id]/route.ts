@@ -24,11 +24,15 @@ const updateGroupSchema = z.object({
 
 const patchRequestSchema = z.object({
   schemas: z.array(z.string()),
-  Operations: z.array(z.object({
-    op: z.string(),
-    path: z.string().optional(),
-    value: z.any().optional(),
-  })).optional(),
+  Operations: z
+    .array(
+      z.object({
+        op: z.string(),
+        path: z.string().optional(),
+        value: z.any().optional(),
+      })
+    )
+    .optional(),
 });
 
 /**

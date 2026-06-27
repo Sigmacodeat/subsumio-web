@@ -6,6 +6,7 @@ import { sendMail, isMailConfigured } from "@/lib/mail";
 import { renderMarkdown } from "@/lib/markdown";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -173,13 +174,14 @@ export const GET = createCronHandler(async (_req: NextRequest): Promise<Response
         const brainSenders = senders.filter((s) => s.brainId === brainId);
         for (const sender of brainSenders) {
           try {
+            const templateName = env("WHATSAPP_BRIEFING_TEMPLATE");
             const waResult = await sendProactiveMessage({
               to: sender.phone,
               brainId,
               scope: "daily_briefing",
               freeform: `✨ Subsumio Rundown ist bereit!\n\nIhr tägliches Kanzlei-Briefing wurde generiert.\n\n👉 https://subsum.io/dashboard/reports`,
-              template: process.env.WHATSAPP_BRIEFING_TEMPLATE
-                ? { name: process.env.WHATSAPP_BRIEFING_TEMPLATE, language: { code: "de" } }
+              template: templateName
+                ? { name: templateName, language: { code: "de" } }
                 : undefined,
             });
             if (waResult.sent) whatsapped++;

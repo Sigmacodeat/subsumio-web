@@ -7,6 +7,7 @@ import {
   getRecipientsByBrain,
   createDailyDedup,
 } from "@/lib/cron-utils";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -55,7 +56,7 @@ function classifyRetention(closedAt: string): RetentionItem["action"] | null {
 const alreadyNotifiedToday = createDailyDedup("subsumio_retention_notify_log");
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
 
   const recipientsByBrain = await getRecipientsByBrain();
 

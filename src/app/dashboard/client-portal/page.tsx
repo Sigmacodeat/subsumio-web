@@ -10,6 +10,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  Share2,
+  Upload,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +33,16 @@ interface ClientCase {
   messages: number;
 }
 
+interface SharedSpace {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  status: string;
+  document_count: number;
+  expires_at?: string;
+}
+
 export default function ClientPortalPage() {
   const { t, lang } = useLang();
   // Vorschau-Modus: Diese Seite zeigt dem ANWALT, wie das Mandanten-Portal
@@ -38,6 +51,7 @@ export default function ClientPortalPage() {
   // ein clientseitiger PIN wäre Scheinsicherheit und wurde entfernt.
   const [previewing, setPreviewing] = useState(false);
   const [cases, setCases] = useState<ClientCase[]>([]);
+  const [sharedSpaces, setSharedSpaces] = useState<SharedSpace[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -83,9 +97,17 @@ export default function ClientPortalPage() {
           };
         });
       setCases(loaded);
+
+      // Load shared spaces
+      const spacesRes = await fetch("/api/shared-spaces");
+      if (spacesRes.ok) {
+        const spacesData = await spacesRes.json();
+        setSharedSpaces(spacesData.data || []);
+      }
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : t("client_portal.error_load"));
       setCases([]);
+      setSharedSpaces([]);
     } finally {
       setLoading(false);
     }
@@ -165,6 +187,77 @@ export default function ClientPortalPage() {
       {loadError && (
         <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-700">
           {loadError}
+        </div>
+      )}
+
+      {/* Shared Spaces */}
+      {sharedSpaces.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Share2 size={16} className="text-[color:var(--ds-text-muted)]" />
+            <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">
+              Shared Spaces
+            </h3>
+          </div>
+          {sharedSpaces.map((space) => (
+            <div
+              key={space.id}
+              className="rounded-xl border border-[color:var(--ds-border)] bg-[color:var(--ds-surface)] p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-[color:var(--ds-text)]">
+                    {space.name}
+                  </h4>
+                  {space.description && (
+                    <p className="text-xs text-[color:var(--ds-text-muted)]">
+                      {space.description}
+                    </p>
+                  )}
+                </div>
+                <Badge
+                  variant="default"
+                  className={`text-xs ${
+                    space.status === "active"
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                      : "border-gray-500/20 bg-gray-500/10 text-gray-400"
+                  }`}
+                >
+                  {space.status === "active" ? "Aktiv" : "Abgelaufen"}
+                </Badge>
+              </div>
+              <div className="mt-3 flex items-center gap-4 text-xs text-[color:var(--ds-text-muted)]">
+                <span className="flex items-center gap-1">
+                  <FileText size={10} />
+                  {space.document_count} Dokumente
+                </span>
+                {space.expires_at && (
+                  <span className="flex items-center gap-1">
+                    <CalendarClock size={10} />
+                    {new Date(space.expires_at).toLocaleDateString(lang === "en" ? "en-GB" : "de-DE")}
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <Link href={`/dashboard/shared-spaces/${space.slug}`} className="flex-1">
+                  <Button
+                    variant="secondary"
+                    className="w-full border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                  >
+                    <Download size={12} className="mr-1.5" />
+                    Dokumente
+                  </Button>
+                </Link>
+                <Button
+                  variant="secondary"
+                  className="flex-1 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-xs text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
+                >
+                  <Upload size={12} className="mr-1.5" />
+                  Hochladen
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

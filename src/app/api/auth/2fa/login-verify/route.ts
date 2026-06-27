@@ -7,6 +7,7 @@ import { verifyBackupCode } from "@/lib/auth/backup-codes";
 import { clientIp, hit } from "@/lib/auth/rate-limit";
 import { logAudit } from "@/lib/audit";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +87,7 @@ export const POST = createPublicHandler(
     res.cookies.set(SESSION_COOKIE, sessionToken, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: env("NODE_ENV") === "production",
       maxAge: SESSION_TTL_SECONDS,
       path: "/",
     });

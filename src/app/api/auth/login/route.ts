@@ -8,6 +8,7 @@ import { loginSchema } from "@/lib/api-validation";
 import { isAccountLocked, recordFailedLogin, clearLockout } from "@/lib/auth/lockout";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
 import { logAudit } from "@/lib/audit";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 // Extended schema with trimmed email for internal validation
@@ -84,7 +85,7 @@ export const POST = createPublicHandler(
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: env("NODE_ENV") === "production",
       maxAge: SESSION_TTL_SECONDS,
       path: "/",
     });

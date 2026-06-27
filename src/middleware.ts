@@ -10,10 +10,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
+import { env } from "@/lib/env";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const APP_HOSTS = new Set(
-  ["app.subsum.io", "cockpit.subsum.io", ...(process.env.SUBSUMIO_APP_HOSTS?.split(",") ?? [])]
+  ["app.subsum.io", "cockpit.subsum.io", ...(env("SUBSUMIO_APP_HOSTS")?.split(",") ?? [])]
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean)
 );
@@ -25,7 +26,7 @@ const APP_HOSTS = new Set(
 const HEALTH_PATHS = new Set(["/api/health", "/api/readiness", "/health", "/healthz"]);
 
 function getIpAllowlist(): string[] {
-  return (process.env.SUBSUMIO_IP_ALLOWLIST ?? "")
+  return (env("SUBSUMIO_IP_ALLOWLIST") ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -196,7 +197,7 @@ export async function middleware(req: NextRequest) {
       res.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
         httpOnly: false,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: env("NODE_ENV") === "production",
         path: "/",
         maxAge: 30 * 24 * 3600,
       });

@@ -17,5 +17,5 @@ export const GET = createHandler(
   async (_ctx, _body, _query, _req) => {
     const status = await getSyncStatus();
     return apiSuccess(status);
-  },
+  }
 );

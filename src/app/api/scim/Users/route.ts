@@ -26,10 +26,20 @@ const listQuerySchema = z.object({
 const createUserSchema = z.object({
   schemas: z.array(z.string()),
   userName: z.string().optional(),
-  emails: z.array(z.object({ value: z.string(), type: z.string().optional(), primary: z.boolean().optional() })).optional(),
+  emails: z
+    .array(
+      z.object({ value: z.string(), type: z.string().optional(), primary: z.boolean().optional() })
+    )
+    .optional(),
   externalId: z.string().optional(),
   id: z.string().optional(),
-  name: z.object({ givenName: z.string().optional(), familyName: z.string().optional(), formatted: z.string().optional() }).optional(),
+  name: z
+    .object({
+      givenName: z.string().optional(),
+      familyName: z.string().optional(),
+      formatted: z.string().optional(),
+    })
+    .optional(),
   displayName: z.string().optional(),
   active: z.boolean().optional(),
   title: z.string().optional(),

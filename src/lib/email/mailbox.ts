@@ -8,6 +8,7 @@ import { sendMail, type MailInput } from "@/lib/mail";
 import { generateTrackingId, logTrackingEvent } from "@/lib/email/tracking";
 import { createSchemaInit } from "@/lib/schema-init";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 const log = logger("mailbox");
 
@@ -98,8 +99,6 @@ interface ResendWebhookEvent {
   };
 }
 
-import { env } from "@/lib/env";
-
 const MAILBOX_DATA_DIR = env("SUBSUMIO_DATA_DIR") || path.join(process.cwd(), ".data");
 const MAILBOX_FILE = path.join(MAILBOX_DATA_DIR, "mailbox.json");
 const allowFileMailbox = env("SUBSUMIO_ALLOW_FILE_MAILBOX_IN_PRODUCTION") === "true";
@@ -161,7 +160,7 @@ const ensureMailboxSchema = createSchemaInit([
 async function ensureMailboxReady(): Promise<void> {
   const pool = getSharedPgPool();
   if (!pool) {
-    if (process.env.NODE_ENV === "production" && !allowFileMailbox) {
+    if (env("NODE_ENV") === "production" && !allowFileMailbox) {
       throw new Error("mailbox_database_not_configured");
     }
     return;
@@ -248,7 +247,7 @@ function mailboxBrainId(to: string[]): string | null {
   const first = to[0]?.toLowerCase() ?? "";
   const plus = first.match(/^[^+@]+\+([^@]+)@/);
   if (plus?.[1]) return plus[1].replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80) || null;
-  return process.env.EMAIL_INBOUND_DEFAULT_BRAIN_ID || null;
+  return env("EMAIL_INBOUND_DEFAULT_BRAIN_ID") || null;
 }
 
 export function normalizeMailRecipients(value: unknown, field: string): string[] {
@@ -290,7 +289,7 @@ export function buildMailDraft(body: unknown, replyToMessageId?: string): MailDr
 }
 
 async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail | null> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = env("RESEND_API_KEY");
   if (!apiKey) return null;
   const res = await fetch(
     `https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`,
@@ -312,7 +311,7 @@ async function fetchReceivedEmail(emailId: string): Promise<ResendReceivedEmail 
 }
 
 export function verifyResendWebhook(payload: string, headers: Headers): ResendWebhookEvent {
-  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  const secret = env("RESEND_WEBHOOK_SECRET");
   if (!secret) throw new Error("resend_webhook_secret_not_configured");
   const wh = new Webhook(secret);
   return wh.verify(payload, {
@@ -534,16 +533,16 @@ export async function sendMailboxMessage(
     subject: parent && !/^re:/i.test(input.subject) ? `Re: ${input.subject}` : input.subject,
     text: input.text,
     html: input.html,
-    replyTo: process.env.MAIL_REPLY_TO || process.env.MAIL_FROM,
+    replyTo: env("MAIL_REPLY_TO") || env("MAIL_FROM"),
     headers: Object.keys(headers).length > 0 ? headers : undefined,
     trackingId,
   };
   const result = await sendMail(mailInput);
 
-  const from = parseAddress(process.env.MAIL_FROM || "Subsumio <hello@subsum.io>");
+  const from = parseAddress(env("MAIL_FROM") || "Subsumio <hello@subsum.io>");
   const pool = getSharedPgPool();
   if (!pool) {
-    if (process.env.NODE_ENV === "production" && !allowFileMailbox) {
+    if (env("NODE_ENV") === "production" && !allowFileMailbox) {
       throw new Error("mailbox_database_not_configured");
     }
     const messages = await loadLocalMailbox();

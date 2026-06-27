@@ -8,6 +8,7 @@
 
 import { externalFetchTimeout } from "@/lib/retry";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 const log = logger("mail");
 
@@ -114,6 +115,6 @@ export async function sendMail({
 /** Absolute base URL for links in emails. */
 export function siteUrl(): string {
   return (
-    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+    env("NEXT_PUBLIC_APP_URL") || env("NEXT_PUBLIC_SITE_URL") || "http://localhost:3000"
   );
 }

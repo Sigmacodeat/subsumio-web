@@ -103,10 +103,109 @@ jobs:
         working-directory: server
         run: bun run release-gate:eval
 
+  security-scan:
+    name: Security Scan (Snyk)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+      - name: Snyk Server Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=server/package.json
+          command: monitor
+
+  lighthouse-ci:
+    name: Lighthouse CI (Performance)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/pricing
+            http://localhost:3000/dashboard
+          budgetPath: .github/lighthouse-budget.json
+          serverBaseUrl: http://localhost:3000
+          serverCommand: bun run start
+
+  load-test:
+    name: Load Test (k6)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Start server in background
+        run: bun run start &
+        env:
+          PORT: 3000
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      - name: Run smoke load test
+        run: k6 run tests/load/smoke-load.js
+        env:
+          BASE_URL: http://localhost:3000
+      - name: Run stress load test
+        run: k6 run tests/load/stress-load.js
+        env:
+          BASE_URL: http://localhost:3000
+
   production-gate:
     name: Production Gate (all checks must pass)
     runs-on: ubuntu-latest
-    needs: [lint, format-check, build, typecheck, test, check-resolvable, e2e, server-verify, release-gate-eval]
+    needs:
+      [
+        lint,
+        format-check,
+        build,
+        typecheck,
+        test,
+        check-resolvable,
+        e2e,
+        server-verify,
+        release-gate-eval,
+        security-scan,
+        lighthouse-ci,
+        load-test,
+      ]
     if: always()
     steps:
       - name: Check all jobs
@@ -120,7 +219,10 @@ jobs:
                 "${{ needs.check-resolvable.result }}" != "success" || \
                 "${{ needs.e2e.result }}" != "success" || \
                 "${{ needs.server-verify.result }}" != "success" || \
-                "${{ needs.release-gate-eval.result }}" != "success" ]]; then
+                "${{ needs.release-gate-eval.result }}" != "success" || \
+                "${{ needs.security-scan.result }}" != "success" || \
+                "${{ needs.lighthouse-ci.result }}" != "success" || \
+                "${{ needs.load-test.result }}" != "success" ]]; then
             echo "❌ One or more required jobs failed"
             exit 1
           fi

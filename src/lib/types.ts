@@ -336,3 +336,60 @@ export interface ObligationExtractionResult {
   warnings: string[];
   attorney_review_required: true;
 }
+
+// ── Shared Spaces Types ─────────────────────────────────────────────────────
+
+export interface SharedSpace {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  organization_id: string;
+  created_by: string;
+  created_at: string;
+  expires_at?: string;
+  status: "active" | "expired" | "archived";
+  access_token: string;
+  settings: {
+    allow_upload: boolean;
+    allow_download: boolean;
+    max_file_size: number;
+    allowed_file_types: string[];
+    require_auth: boolean;
+  };
+}
+
+export interface SharedSpaceParticipant {
+  id: string;
+  shared_space_id: string;
+  user_id?: string;
+  email?: string;
+  role: "owner" | "editor" | "viewer";
+  invited_by: string;
+  invited_at: string;
+  accepted_at?: string;
+}
+
+export interface SharedSpaceDocument {
+  id: string;
+  shared_space_id: string;
+  uploaded_by: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  storage_path: string;
+  uploaded_at: string;
+  metadata?: {
+    whatsapp_message_id?: string;
+    client_portal_upload?: boolean;
+  };
+}
+
+export interface WhatsAppDocumentMapping {
+  id: string;
+  whatsapp_message_id: string;
+  shared_space_id?: string;
+  document_id?: string;
+  mapped_at: string;
+  mapped_by: "system" | "user";
+}

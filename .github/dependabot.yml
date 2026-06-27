@@ -1,0 +1,76 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "msc"
+    assignees:
+      - "msc"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore some updates for major versions that may break things
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for npm in server directory
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "msc"
+    assignees:
+      - "msc"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "server"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "msc"
+    assignees:
+      - "msc"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"

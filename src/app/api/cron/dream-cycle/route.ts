@@ -1,12 +1,13 @@
 import { NextRequest } from "next/server";
 import { createCronHandler } from "@/lib/api-handler";
 import { ENGINE_URL } from "@/lib/engine";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * GET /api/cron/dream-cycle — nightly gbrain dream cycle.
+ * GET /api/cron/dream-cycle — nightly Subsumio engine dream cycle.
  *
  * Triggers the engine's internal dream/maintenance cycle which runs
  * all phases: extract, embed stale, consolidate, legal phases, orphans, etc.
@@ -14,7 +15,7 @@ export const maxDuration = 300;
  */
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const apiKey = process.env.SUBSUMIO_WEB_API_KEY;
+  const apiKey = env("SUBSUMIO_WEB_API_KEY");
   const headers: Record<string, string> = {};
   if (apiKey) headers["x-subsumio-api-key"] = apiKey;
   headers["x-subsumio-source"] = "law-de";

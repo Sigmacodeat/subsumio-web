@@ -5,6 +5,7 @@ import { createCronHandler } from "@/lib/api-handler";
 import { batchFetchPages, getRecipientsByBrain, createDailyDedup } from "@/lib/cron-utils";
 import { sendProactiveMessage } from "@/lib/whatsapp/proactive-send";
 import { loadAllowedSenders } from "@/lib/whatsapp/verify";
+import { env } from "@/lib/env";
 import type { WhatsAppTemplateMessage } from "@/lib/whatsapp/types";
 
 export const dynamic = "force-dynamic";
@@ -131,7 +132,7 @@ function renderDigest(items: DeadlineItem[], appUrl: string): { subject: string;
 const alreadyNotifiedToday = createDailyDedup("subsumio_notify_log");
 
 export const GET = createCronHandler(async (_req: NextRequest) => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://subsum.eu";
+  const appUrl = env("NEXT_PUBLIC_APP_URL") || "https://subsum.eu";
 
   const recipientsByBrain = await getRecipientsByBrain();
 
@@ -167,7 +168,7 @@ export const GET = createCronHandler(async (_req: NextRequest) => {
     const waPhones = whatsappSendersByBrain.get(brainId);
     if (waPhones && waPhones.length > 0) {
       const waText = `⚖️ Fristen-Übersicht:\n\n${text}`;
-      const templateName = process.env.WHATSAPP_DEADLINE_TEMPLATE;
+      const templateName = env("WHATSAPP_DEADLINE_TEMPLATE");
       const template: WhatsAppTemplateMessage | undefined = templateName
         ? {
             name: templateName,

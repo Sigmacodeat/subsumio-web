@@ -89,7 +89,11 @@ export type AuditAction =
   | "acl.remove_member"
   | "acl.delete_group"
   | "acl.set_permission"
-  | "acl.remove_permission";
+  | "acl.remove_permission"
+  | "dms.push"
+  | "space.update"
+  | "space.delete"
+  | "whatsapp.document_to_space";
 
 const ACTION_LABELS: Record<string, string> = {
   "user.login": "Login",
@@ -154,6 +158,10 @@ const ACTION_LABELS: Record<string, string> = {
   "feedback.submit": "Retrieval-Feedback",
   "admin.user_update": "Admin: Benutzer aktualisiert",
   "admin.user_deactivate": "Admin: Benutzer deaktiviert",
+  "dms.push": "Dokument an DMS gepusht",
+  "space.update": "Shared Space aktualisiert",
+  "space.delete": "Shared Space gelöscht",
+  "whatsapp.document_to_space": "WhatsApp-Dokument zugeordnet",
 };
 
 export function auditLabel(action: string): string {

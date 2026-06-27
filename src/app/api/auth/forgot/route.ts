@@ -4,6 +4,7 @@ import { signActionToken, bindFragment, RESET_TOKEN_TTL_SECONDS } from "@/lib/au
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sendMail, siteUrl } from "@/lib/mail";
 import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { env } from "@/lib/env";
 import { z } from "zod";
 
 const forgotSchema = z.object({
@@ -43,7 +44,7 @@ export const POST = createPublicHandler(
 
     // Dev convenience: without a mail provider, hand the link to the UI so
     // local / first-customer testing works end to end. NEVER in production.
-    if (!result.sent && process.env.NODE_ENV !== "production") {
+    if (!result.sent && env("NODE_ENV") !== "production") {
       return NextResponse.json({ ok: true, devResetUrl: resetUrl });
     }
     return NextResponse.json({ ok: true });
