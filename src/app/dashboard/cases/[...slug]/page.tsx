@@ -82,13 +82,7 @@ const ChatPanel = lazy(() =>
 const MatterContextPanel = lazy(() =>
   import("@/components/legal/MatterContextPanel").then((m) => ({ default: m.MatterContextPanel }))
 );
-import {
-  STATUS_TEXT,
-  STATUS_BG,
-  STATUS_BORDER,
-  statusBadgeClasses,
-  type StatusColor,
-} from "@/lib/status-colors";
+import { statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import {
   caseFrontmatter,
   type EvidenceEntry,
@@ -202,16 +196,6 @@ const STATUS_CONFIG: Record<
   dormant: { labelKey: "cases.status_dormant", icon: PauseCircle, color: "gray" },
   archived: { labelKey: "cases.status_archived", icon: Archive, color: "gray" },
 };
-
-const TABS = [
-  { key: "overview", labelKey: "cases.detail_tab_overview", icon: FileText },
-  { key: "documents", labelKey: "cases.detail_tab_documents", icon: FileText },
-  { key: "deadlines_tasks", labelKey: "cases.detail_tab_deadlines_tasks", icon: ListChecks },
-  { key: "evidence", labelKey: "cases.detail_tab_evidence", icon: ShieldAlert },
-  { key: "strategy", labelKey: "cases.detail_tab_strategy", icon: Lightbulb },
-  { key: "billing", labelKey: "cases.detail_tab_billing", icon: Receipt },
-  { key: "activity", labelKey: "cases.detail_tab_activity", icon: ShieldCheck },
-];
 
 const WORKSPACE_TABS_DE: Array<{ key: string; label: string; icon: React.ElementType }> = [
   { key: "overview", label: "Übersicht", icon: FileText },
@@ -631,7 +615,7 @@ export default function CaseDetailPage() {
       meQuery.data?.user
         ? { id: meQuery.data.user.id, email: meQuery.data.user.email || "" }
         : null,
-    [meQuery.data?.user?.id, meQuery.data?.user?.email]
+    [meQuery.data?.user]
   );
   const activeUsers = usePresence(slug, presenceUser);
 
@@ -1518,7 +1502,6 @@ export default function CaseDetailPage() {
   }
 
   const statusCfg = STATUS_CONFIG[caseData.status] || STATUS_CONFIG.open;
-  const StatusIcon = statusCfg.icon;
   const evidenceDocumentPattern =
     /beweis|evidence|gutachten|expert|vertrag|contract|korrespondenz|email|e-mail|foto|photo|video|zeug/i;
   const evidenceDocuments = caseData.documents.filter((doc) =>

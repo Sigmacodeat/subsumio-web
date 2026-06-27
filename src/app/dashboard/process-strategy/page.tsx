@@ -113,7 +113,7 @@ export default function ProcessStrategyPage() {
         setCasesError(e instanceof Error ? e.message : t("strategy.error_load_cases"));
       })
       .finally(() => setLoadingCases(false));
-  }, []);
+  }, [t]);
 
   const selectedCase = cases.find((c) => c.slug === selectedSlug);
 
@@ -199,7 +199,7 @@ Erstelle eine strukturierte Analyse im JSON-Format mit folgenden Feldern:
     } finally {
       setAnalyzing(false);
     }
-  }, [selectedCase]);
+  }, [selectedCase, t]);
 
   const generateDrafts = useCallback(async () => {
     if (!selectedCase || !strategy) return;
@@ -262,7 +262,7 @@ Erstelle 2-3 Schriftsatz-Entwürfe im JSON-Format als Array:
     } finally {
       setGeneratingDrafts(false);
     }
-  }, [selectedCase, strategy]);
+  }, [selectedCase, strategy, t]);
 
   async function saveStrategyToCase() {
     if (!selectedCase || !strategy) return;

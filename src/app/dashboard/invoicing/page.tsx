@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import type { BrainPage } from "@/lib/types";
 import { csrfFetch } from "@/lib/csrf";
 import { useMe } from "@/lib/queries/auth";
 import { STATUS_TEXT, STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";

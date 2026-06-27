@@ -9,7 +9,6 @@ import {
   Users,
   FileText,
   Settings,
-  Trash2,
   Shield,
   Clock,
   CheckCircle2,

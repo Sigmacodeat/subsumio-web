@@ -574,7 +574,7 @@ export function HeutePanel({
   reviewCount,
   documentRequestCount,
   signatureCount,
-  gapsCount,
+  gapsCount: _gapsCount,
 }: {
   loading: boolean;
   criticalDeadlines: DeadlineItem[];
@@ -651,7 +651,7 @@ export function HeutePanel({
         </p>
       ) : (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          {items.map((item, i) => (
+          {items.map((item, _i) => (
             <Link
               key={item.href}
               href={item.href}

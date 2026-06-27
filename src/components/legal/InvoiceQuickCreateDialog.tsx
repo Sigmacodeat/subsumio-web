@@ -35,7 +35,6 @@ import {
 import { sha256Hex, gobdFrontmatter, invoiceContentString } from "@/lib/gobd";
 import { loadKanzleiSettings, type KanzleiSettings } from "@/lib/kanzlei-settings";
 import { calculateRvg, type RvgResult } from "@/lib/rvg";
-import type { BrainPage } from "@/lib/types";
 
 interface InvoiceQuickCreateDialogProps {
   open: boolean;

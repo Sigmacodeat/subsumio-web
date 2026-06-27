@@ -55,7 +55,7 @@ export default function ClauseLibraryPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadClauses();

@@ -105,7 +105,7 @@ describe("dunning escalation logic", () => {
   describe("incrementFailure (in-memory fallback)", () => {
     test("increments failure count and updates timestamps", async () => {
       delete process.env.DATABASE_URL;
-      const { incrementFailure, getDunningState } = await import("./dunning");
+      const { incrementFailure } = await import("./dunning");
       const orgId = `test-org-${Date.now()}`;
       const result = await incrementFailure(orgId, new Date("2026-07-01"));
       expect(result.failureCount).toBe(1);

@@ -5,7 +5,6 @@ import { Download, CalendarClock, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import type { BrainPage } from "@/lib/types";
 import { STATUS_BG, statusBadgeClasses, type StatusColor } from "@/lib/status-colors";
 import { cn } from "@/lib/utils";
 import { caseFrontmatter } from "@/lib/legal-types";

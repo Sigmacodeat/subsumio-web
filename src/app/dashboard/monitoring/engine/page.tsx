@@ -15,32 +15,10 @@ import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Activity,
-  Zap,
-  Database,
-  Search,
-  AlertTriangle,
-  CheckCircle2,
-  RefreshCw,
-  Clock,
-  TrendingUp,
-  BarChart3,
-  Server,
-  Cpu,
-  HardDrive,
-  ArrowLeft,
-} from "lucide-react";
+import { Zap, Database, Search, RefreshCw, Clock, TrendingUp, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 // ── Types ─────────────────────────────────────────────────────────────
-
-interface LatencyBucket {
-  label: string;
-  p50: number;
-  p95: number;
-  p99: number;
-}
 
 interface SearchStats {
   totalQueries: number;

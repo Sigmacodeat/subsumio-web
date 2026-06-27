@@ -79,7 +79,7 @@ export default function WhatsAppTemplatesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     reload();

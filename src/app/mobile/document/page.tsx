@@ -7,15 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  FileText,
-  Share2,
-  ChevronLeft,
-  Loader2,
-  ExternalLink,
-  Download,
-} from "lucide-react";
+import { Search, FileText, Share2, ChevronLeft, Loader2, ExternalLink } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface BrainPage {
@@ -37,22 +29,23 @@ export default function MobileDocumentPage() {
   const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const debounce = setTimeout(async () => {
       if (!query.trim()) {
-        setResults([]);
+        if (!cancelled) setResults([]);
         return;
       }
-      setLoading(true);
+      if (!cancelled) setLoading(true);
       try {
         const pages = await api.brain.search(query, 30);
-        setResults(pages as unknown as BrainPage[]);
+        if (!cancelled) setResults(pages as unknown as BrainPage[]);
       } catch (e) {
-        console.error(e);
+        if (!cancelled) console.error(e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }, 400);
-    return () => clearTimeout(debounce);
+    return () => { cancelled = true; clearTimeout(debounce); };
   }, [query]);
 
   const openDocument = async (page: BrainPage) => {

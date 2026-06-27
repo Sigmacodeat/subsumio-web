@@ -11,7 +11,7 @@
  * The shell is also accessible as a PWA on mobile browsers at /mobile.
  */
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { FolderOpen, CalendarClock, PenLine, Clock, FileText } from "lucide-react";
 

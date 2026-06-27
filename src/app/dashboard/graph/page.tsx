@@ -85,7 +85,7 @@ export default function GraphPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     // Deferred so the loading-state flip is not a synchronous setState

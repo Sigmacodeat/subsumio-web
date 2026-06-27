@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   FileSearch,
   Loader2,
   AlertCircle,
   FileText,
-  Shield,
   AlertTriangle,
   TrendingUp,
   Quote,

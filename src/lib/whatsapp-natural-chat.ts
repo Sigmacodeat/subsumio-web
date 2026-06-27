@@ -314,8 +314,6 @@ function buildGreeting(sender: WhatsAppIdentity, ctx: DashboardContext): string 
   else if (hour >= 18) timeGreeting = "Guten Abend";
 
   const name = sender.name || "Sie";
-  const roleLabel =
-    sender.role === "lawyer" ? "Rechtsanwalt" : sender.role === "admin" ? "Admin" : "Kollege";
 
   let reply = `${timeGreeting}, ${name}. Ich bin dein Subsumio Kanzlei-Assistent. `;
 

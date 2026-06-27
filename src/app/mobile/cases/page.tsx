@@ -6,15 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  Search,
-  FolderOpen,
-  Clock,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { Search, FolderOpen, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface Matter {
@@ -41,9 +33,11 @@ export default function MobileCasesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const pages = await api.brain.search("Akte Mandat Fall Klient", 100);
+        if (cancelled) return;
         const parsed: Matter[] = pages.map((p) => {
           const r = p as unknown as Record<string, unknown>;
           const fm = (r.frontmatter ?? {}) as Record<string, unknown>;
@@ -57,13 +51,14 @@ export default function MobileCasesPage() {
             urgent: Boolean(fm.urgent ?? false),
           };
         });
-        setMatters(parsed);
+        if (!cancelled) setMatters(parsed);
       } catch (e) {
-        console.error(e);
+        if (!cancelled) console.error(e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = useMemo(() => {

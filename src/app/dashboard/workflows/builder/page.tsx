@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
-  Settings,
   X,
   FileText,
   AlertTriangle,
@@ -17,13 +16,8 @@ import {
   Zap,
   Eye,
   Edit3,
-  Link,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/dashboard/page-header";
 import { csrfFetch } from "@/lib/csrf";
 import Link2 from "next/link";
 
@@ -270,7 +264,7 @@ export default function WorkflowBuilderPage() {
         description: meta.description,
         prompt_template: steps.map((s) => s.prompt).join("\n\n"),
         steps: steps
-          .map((s, i) => ({
+          .map((s) => ({
             id: s.id,
             specialist: s.type,
             prompt: s.prompt,

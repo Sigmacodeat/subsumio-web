@@ -4,7 +4,10 @@ import { createEngineProxy } from "@/lib/api-handler";
 export const maxDuration = 300;
 
 const tabularReviewSchema = z.object({
-  questions: z.array(z.string().max(2000)).min(1, "questions_required").max(50, "too_many_questions"),
+  questions: z
+    .array(z.string().max(2000))
+    .min(1, "questions_required")
+    .max(50, "too_many_questions"),
   document_slugs: z.array(z.string().max(300)).max(50).optional(),
   case_slug: z.string().optional(),
 });

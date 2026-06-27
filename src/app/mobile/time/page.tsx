@@ -7,17 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Play,
-  Pause,
-  Square,
-  Clock,
-  Save,
-  Loader2,
-  CheckCircle2,
-  Plus,
-  FolderOpen,
-} from "lucide-react";
+import { Play, Pause, Square, Save, Loader2, CheckCircle2, FolderOpen } from "lucide-react";
 import { api } from "@/lib/api";
 
 function formatDuration(seconds: number): string {

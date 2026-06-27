@@ -38,6 +38,8 @@ const eslintConfig = defineConfig([
     "templates/**",
     "mobile/**",
     "law-corpus/**",
+    "outlook-addin/dist/**",
+    "word-addin/dist/**",
   ]),
 ]);
 

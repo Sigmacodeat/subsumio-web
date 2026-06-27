@@ -73,7 +73,7 @@ function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 mb-2 text-lg font-semibold [color:var(--mk-text)]">{children}</h2>;
 }
 
-function DraftBanner({ lang, children }: { lang: Lang; children: React.ReactNode }) {
+function DraftBanner({ lang: _lang, children }: { lang: Lang; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-xs text-amber-300">
       {children}

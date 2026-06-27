@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   BarChart3,
@@ -13,12 +12,7 @@ import {
   BookOpen,
   Calendar,
   RefreshCw,
-  Download,
-  Filter,
-  ChevronDown,
   Landmark,
-  AlertTriangle,
-  CheckCircle2,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";

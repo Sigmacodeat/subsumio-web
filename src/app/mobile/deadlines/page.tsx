@@ -7,14 +7,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  CalendarClock,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 
 interface Deadline {
   id: string;
@@ -40,6 +33,7 @@ export default function MobileDeadlinesPage() {
   const [filter, setFilter] = useState<"all" | "overdue" | "today" | "week">("all");
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/legal/ai-deadlines?limit=100", {
@@ -47,18 +41,18 @@ export default function MobileDeadlinesPage() {
         });
         if (res.ok) {
           const data = (await res.json()) as { deadlines?: Deadline[]; results?: Deadline[] };
-          setDeadlines(data.deadlines ?? data.results ?? []);
+          if (!cancelled) setDeadlines(data.deadlines ?? data.results ?? []);
         }
       } catch (e) {
-        console.error(e);
+        if (!cancelled) console.error(e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = useMemo(() => {
-    const now = Date.now();
     return deadlines
       .filter((d) => {
         if (d.done) return false;

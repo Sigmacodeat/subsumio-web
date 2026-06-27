@@ -48,7 +48,7 @@ import type { RateTier } from "@/lib/rate-limit-api";
 import type { QuotaType } from "@/lib/plans";
 import { validateCsrf, CSRF_COOKIE_NAME } from "@/lib/csrf";
 import { logAudit, type AuditAction } from "@/lib/audit";
-import { apiError, apiRateLimited, apiStream } from "@/lib/api-response";
+import { apiError, apiStream } from "@/lib/api-response";
 import { isAppError } from "@/lib/errors";
 import {
   createCitationGateStream,

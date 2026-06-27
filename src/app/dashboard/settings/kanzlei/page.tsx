@@ -28,7 +28,7 @@ export default function KanzleiSettingsPage() {
         setError(err instanceof Error ? err.message : t("settings.kanzlei.error_save"));
         setLoading(false);
       });
-  }, []);
+  }, [t]);
 
   const update = (field: keyof KanzleiSettings, value: string) => {
     setSettings((s) => (s ? { ...s, [field]: value } : s));

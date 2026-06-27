@@ -120,7 +120,7 @@ export default function ExperiencePage() {
     } finally {
       setLoading(false);
     }
-  }, [practiceArea, minLevel, includeExternal, language]);
+  }, [practiceArea, minLevel, includeExternal, language, t]);
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -137,7 +137,7 @@ export default function ExperiencePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
@@ -154,7 +154,7 @@ export default function ExperiencePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (tab === "who_knows") fetchWhoKnows();

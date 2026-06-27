@@ -150,7 +150,6 @@ function StatsBar({ jobs, t }: { jobs: AgentJob[]; t: TFunc }) {
   const total = jobs.length;
   const completed = jobs.filter((j) => j.status === "completed").length;
   const active = jobs.filter((j) => j.status === "active" || j.status === "waiting").length;
-  const failed = jobs.filter((j) => j.status === "failed").length;
   const successRate = total > 0 ? Math.round((completed / total) * 100) : 0;
   const totalCost = jobs.reduce((sum, j) => sum + (j.cost ?? 0), 0);
 
