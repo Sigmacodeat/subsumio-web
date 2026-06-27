@@ -3,14 +3,14 @@ import ContactPage from "@/components/marketing/contact-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Contact Subsumio — talk to our team",
+  title: "Kontakt — Subsumio KI-Kanzleisoftware",
   description:
-    "Questions about Subsumio, self-hosting, enterprise or partnerships? Reach our team about AI legal software, DSGVO compliance, AVV, professional secrecy and partner programs. Reply within one business day.",
-  alternates: { canonical: "/contact", languages: { en: "/contact", de: "/de/contact" } },
+    "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV, Berufsgeheimnis (§ 203 StGB) und technisch-organisatorischen Maßnahmen.",
+  alternates: { canonical: "/contact", languages: { de: "/contact", en: "/en/contact" } },
   openGraph: {
-    title: "Contact Subsumio — talk to our team",
+    title: "Kontakt — Subsumio KI-Kanzleisoftware",
     description:
-      "Questions about Subsumio, self-hosting, enterprise or partnerships? Reach our team about AI legal software, security and partner programs.",
+      "Fragen zu Subsumio, Self-Hosting, Enterprise oder Partnerschaften? Unser Team antwortet innerhalb eines Werktages — auch zu DSGVO, AVV und Berufsgeheimnis.",
     url: "/contact",
     type: "website",
   },
@@ -22,10 +22,10 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },
-          { name: "Contact", url: "/contact" },
+          { name: "Kontakt", url: "/contact" },
         ])}
       />
-      <ContactPage lang="en" />
+      <ContactPage lang="de" />
     </>
   );
 }

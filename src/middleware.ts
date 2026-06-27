@@ -21,7 +21,7 @@ function generateCspNonce(): string {
 }
 
 function buildCspHeader(nonce: string): string {
-  const isDev = process.env.NODE_ENV !== "production";
+  const isDev = env("NODE_ENV") !== "production";
   return [
     "default-src 'self'",
     isDev
@@ -58,6 +58,40 @@ function getIpAllowlist(): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function getTrustedProxyHops(): number {
+  const raw = env("SUBSUMIO_TRUSTED_PROXY_HOPS");
+  if (!raw) return 0;
+  const n = parseInt(raw, 10);
+  return isNaN(n) || n < 0 ? 0 : n;
+}
+
+function getClientIp(req: NextRequest): string | undefined {
+  // x-real-ip is set by the outermost trusted load balancer. Prefer it when present.
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (!forwarded) return undefined;
+
+  const hops = forwarded
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (hops.length === 0) return undefined;
+
+  // Without trusted-proxy configuration the first hop is the client IP
+  // (single-proxy setup). With N trusted proxies, the client is the hop just
+  // before the trusted proxy chain (i.e. drop the last N entries).
+  const trusted = getTrustedProxyHops();
+  if (trusted > 0) {
+    // With N trusted proxies behind us, skip the last N hops and pick the
+    // next one as the client-facing IP. Guard against over-trusting (idx < 0).
+    const idx = Math.max(0, hops.length - trusted - 1);
+    return hops[idx];
+  }
+  return hops[0];
 }
 
 function ipInAllowlist(ip: string, allowlist: string[]): boolean {
@@ -138,10 +172,7 @@ export async function middleware(req: NextRequest) {
   // Block non-whitelisted IPs from all paths except health endpoints.
   const allowlist = getIpAllowlist();
   if (allowlist.length > 0 && !HEALTH_PATHS.has(pathname)) {
-    const clientIp =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      req.headers.get("x-real-ip")?.trim() ??
-      "";
+    const clientIp = getClientIp(req) ?? "";
     if (clientIp && !ipInAllowlist(clientIp, allowlist)) {
       return applyCsp(
         NextResponse.json(
@@ -158,12 +189,12 @@ export async function middleware(req: NextRequest) {
     return applyCsp(NextResponse.redirect(dashboard));
   }
 
-  // --- Browser language detection: redirect German speakers to /de ---
+  // --- Browser language detection: redirect non-German speakers to /en ---
   // Only on the root path, only for GET requests.
   // Skipped when the user has explicitly set a language preference (sb_lang cookie).
   if (pathname === "/" && method === "GET") {
     const langPref = req.cookies.get(LANG_PREF_COOKIE)?.value;
-    if (langPref !== "en") {
+    if (langPref !== "de") {
       const acceptLang = req.headers.get("accept-language") ?? "";
       // Primary language tag only (before first comma), strip quality weight
       const primaryLang = acceptLang.split(",")[0]?.split(";")[0]?.trim().toLowerCase() ?? "";
@@ -175,10 +206,10 @@ export async function middleware(req: NextRequest) {
           .split(",")
           .slice(0, 3)
           .some((s) => s.trim().toLowerCase().startsWith("de"));
-      if (isGerman) {
-        const deUrl = req.nextUrl.clone();
-        deUrl.pathname = "/de";
-        return applyCsp(NextResponse.redirect(deUrl, { status: 302 }));
+      if (!isGerman) {
+        const enUrl = req.nextUrl.clone();
+        enUrl.pathname = "/en";
+        return applyCsp(NextResponse.redirect(enUrl, { status: 302 }));
       }
     }
   }
@@ -204,24 +235,18 @@ export async function middleware(req: NextRequest) {
       const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
       const headerToken = req.headers.get(CSRF_HEADER_NAME);
       if (!cookieToken || !headerToken) {
-        return applyCsp(
-          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
-        );
+        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
       }
       // Timing-safe comparison (same pattern as csrf.ts validateCsrf)
       if (cookieToken.length !== headerToken.length) {
-        return applyCsp(
-          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
-        );
+        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
       }
       let diff = 0;
       for (let i = 0; i < cookieToken.length; i++) {
         diff |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
       }
       if (diff !== 0) {
-        return applyCsp(
-          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
-        );
+        return applyCsp(NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 }));
       }
     }
   }

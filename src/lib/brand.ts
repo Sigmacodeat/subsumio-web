@@ -41,7 +41,7 @@ export function isExternalUrl(url: string): boolean {
 export function subsumioCanonical(lang: "en" | "de"): string {
   if (isExternalUrl(SUBSUMIO_SITE_URL)) {
     const root = SUBSUMIO_SITE_URL.replace(/\/$/, "");
-    return lang === "de" ? `${root}/de` : root;
+    return lang === "en" ? `${root}/en` : root;
   }
-  return lang === "de" ? "/de" : "/";
+  return lang === "en" ? "/en" : "/";
 }

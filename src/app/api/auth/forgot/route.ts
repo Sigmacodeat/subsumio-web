@@ -32,7 +32,7 @@ export const POST = createPublicHandler(
       RESET_TOKEN_TTL_SECONDS
     );
     const lang = user.locale === "de" ? "de" : "en";
-    const resetUrl = `${siteUrl()}${lang === "de" ? "/de" : ""}/reset?token=${encodeURIComponent(token)}`;
+    const resetUrl = `${siteUrl()}${lang === "en" ? "/en" : ""}/reset?token=${encodeURIComponent(token)}`;
 
     const subject =
       lang === "de" ? "Subsumio — Passwort zurücksetzen" : "Subsumio — reset your password";

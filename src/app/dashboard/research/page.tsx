@@ -95,7 +95,7 @@ export default function ResearchPage() {
     setCurrentGrounding(null);
 
     try {
-      const prompt = `Recherchiere präzise zur folgenden Rechtsfrage unter Berücksichtigung des ${jurisdiction.toUpperCase()}-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: "Diese Information ersetzt keine anwaltliche Prüfung."\n\nRECHTSFRAGE: ${query}`;
+      const prompt = `${t("research.prompt_prefix")} ${jurisdiction.toUpperCase()}${t("research.prompt_suffix")}\n\n${lang === "de" ? "RECHTSFRAGE" : "LEGAL QUESTION"}: ${query}`;
       const result = await api.query.think(prompt, {
         mode: "balanced",
         queryMode: "conservative",
@@ -120,7 +120,7 @@ export default function ResearchPage() {
       };
       setSessions((s) => [session, ...s]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Recherche fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : lang === "de" ? "Recherche fehlgeschlagen." : "Research failed.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +135,7 @@ export default function ResearchPage() {
         .slice(0, 40)}-${Date.now()}`;
       const payload = {
         slug,
-        title: `Recherche: ${query.slice(0, 80)}`,
+        title: `${lang === "de" ? "Recherche" : "Research"}: ${query.slice(0, 80)}`,
         type: "legal_research",
         content: currentAnswer,
         frontmatter: {
@@ -172,7 +172,7 @@ export default function ResearchPage() {
       await api.legal.judgementsSync({ jurisdiction: jurisdiction as "at" | "de" | "all", query });
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sync fehlgeschlagen.");
+      setError(err instanceof Error ? err.message : lang === "de" ? "Sync fehlgeschlagen." : "Sync failed.");
     } finally {
       setLoading(false);
     }
@@ -180,8 +180,8 @@ export default function ResearchPage() {
 
   async function deleteResearch(slug: string) {
     const ok = await confirm({
-      title: "Recherche löschen",
-      message: "Möchten Sie diese Recherche wirklich löschen?",
+      title: t("research.confirm_delete_title"),
+      message: t("research.confirm_delete_msg"),
       confirmLabel: t("research.btn_delete"),
       variant: "danger",
     });
@@ -256,7 +256,7 @@ export default function ResearchPage() {
             className="brand-bg brand-bg gap-2 text-white"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-            {loading ? "Recherchiert…" : "Recherchieren"}
+            {loading ? t("research.btn_searching") : t("research.btn_search")}
           </Button>
           <Button
             variant="secondary"
@@ -264,7 +264,7 @@ export default function ResearchPage() {
             disabled={loading}
             className="gap-2 border border-[color:var(--ds-border)] bg-[color:var(--ds-hover)] text-[color:var(--ds-text)] hover:bg-[color:var(--ds-hover)]"
           >
-            <Landmark size={14} /> Urteile-Sync
+            <Landmark size={14} /> {t("research.btn_judgements_sync")}
           </Button>
         </div>
         {error && (
@@ -280,7 +280,7 @@ export default function ResearchPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Scale size={16} className="brand-text" />
-              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Ergebnis</h3>
+              <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("research.result_title")}</h3>
               <Badge
                 variant="default"
                 className="brand-border brand-soft brand-text border text-xs"
@@ -292,7 +292,7 @@ export default function ResearchPage() {
               onClick={saveResearch}
               className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
             >
-              <Save size={14} /> Als Brain-Page speichern
+              <Save size={14} /> {t("research.btn_save_brain")}
             </Button>
           </div>
           <div
@@ -353,7 +353,7 @@ export default function ResearchPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Scale size={16} className="brand-text" />
-                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">Ergebnis</h3>
+                  <h3 className="text-sm font-semibold text-[color:var(--ds-text)]">{t("research.result_title")}</h3>
                   <Badge
                     variant="default"
                     className="brand-border brand-soft brand-text border text-xs"
@@ -365,7 +365,7 @@ export default function ResearchPage() {
                   onClick={saveResearch}
                   className="gap-2 bg-emerald-600 text-xs text-white hover:bg-emerald-500"
                 >
-                  <Save size={14} /> Als Brain-Page speichern
+                  <Save size={14} /> {t("research.btn_save_brain")}
                 </Button>
               </div>
               <div
@@ -390,7 +390,7 @@ export default function ResearchPage() {
             <div className="space-y-3">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-[color:var(--ds-text)]">
                 <Clock size={16} className="brand-text" />
-                Sitzungs-Verlauf
+                {t("research.session_history")}
               </h2>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {sessions.map((s) => (
@@ -436,7 +436,7 @@ export default function ResearchPage() {
                 className="absolute top-1/2 left-3 -translate-y-1/2 text-[color:var(--ds-text-muted)]"
               />
               <label htmlFor="saved-research-search" className="sr-only">
-                Gespeicherte Recherchen durchsuchen
+                {t("research.placeholder_search").replace("…", "")}
               </label>
               <input
                 id="saved-research-search"
@@ -472,15 +472,15 @@ export default function ResearchPage() {
           </div>
 
           {savedLoading ? (
-            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">Lade…</div>
+            <div className="py-8 text-center text-[color:var(--ds-text-muted)]">{t("research.saved_loading")}</div>
           ) : savedPages.length === 0 ? (
             <div className="space-y-3 py-16 text-center">
               <FolderOpen size={40} className="mx-auto text-[color:var(--ds-border)]" />
               <p className="text-sm text-[color:var(--ds-text-muted)]">
-                Noch keine Recherchen gespeichert.
+                {t("research.saved_empty_title")}
               </p>
               <p className="text-xs text-[color:var(--ds-text-muted)]">
-                Starte eine neue Recherche und speichere das Ergebnis.
+                {t("research.saved_empty_desc")}
               </p>
             </div>
           ) : (
@@ -504,7 +504,7 @@ export default function ResearchPage() {
                 if (filtered.length === 0) {
                   return (
                     <div className="py-12 text-center text-sm text-[color:var(--ds-text-muted)]">
-                      Keine Recherchen passen zu den Filtern.
+                      {t("research.saved_no_match")}
                     </div>
                   );
                 }

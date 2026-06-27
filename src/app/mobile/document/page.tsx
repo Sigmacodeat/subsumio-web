@@ -45,7 +45,10 @@ export default function MobileDocumentPage() {
         if (!cancelled) setLoading(false);
       }
     }, 400);
-    return () => { cancelled = true; clearTimeout(debounce); };
+    return () => {
+      cancelled = true;
+      clearTimeout(debounce);
+    };
   }, [query]);
 
   const openDocument = async (page: BrainPage) => {

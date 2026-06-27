@@ -765,7 +765,7 @@ export function MarketingFooter({ lang }: { lang: Lang }) {
                       </a>
                     ) : (
                       // App-Routen (/dashboard…) sind nicht lokalisiert —
-                      // niemals den Sprachpräfix anhängen (/de/dashboard = 404).
+                      // niemals den Sprachpräfix anhängen (/en/dashboard = 404).
                       <Link
                         href={link.href.startsWith("/dashboard") ? link.href : p(lang, link.href)}
                         className="text-xs [color:var(--mk-text-subtle)] hover:[color:var(--mk-text-muted)]"

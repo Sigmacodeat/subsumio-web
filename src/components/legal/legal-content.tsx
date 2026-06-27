@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Lang } from "@/content/site";
 
 // Bilingual legal content (EN + DE) — used by /privacy, /terms, /imprint
-// AND the /de/* routes. `home` sets the back-link per language path.
+// AND the /en/* routes. `home` sets the back-link per language path.
 // `lang` selects the language version. Drafts: professionally complete,
 // but have a lawyer review before launch.
 

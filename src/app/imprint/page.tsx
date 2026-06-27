@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { ImprintContent } from "@/components/legal/legal-content";
 
 export const metadata: Metadata = {
-  title: "Imprint",
+  title: "Impressum",
   description:
-    "Legal notice and operator information for Subsumio — the AI legal workspace for DACH law firms.",
-  alternates: { canonical: "/imprint", languages: { en: "/imprint", de: "/de/imprint" } },
+    "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
+  alternates: { canonical: "/imprint", languages: { de: "/imprint", en: "/en/imprint" } },
   openGraph: {
-    title: "Imprint — Subsumio",
+    title: "Impressum — Subsumio",
     description:
-      "Legal notice and operator information for Subsumio — the AI legal workspace for DACH law firms.",
+      "Impressum und Betreiberinformationen für Subsumio — der AI Legal Workspace für Kanzleien in DACH.",
     url: "/imprint",
     type: "website",
   },
 };
 
 export default function ImprintPage() {
-  return <ImprintContent home="/" lang="en" />;
+  return <ImprintContent home="/" lang="de" />;
 }

@@ -4,12 +4,12 @@ import { FEATURES_PAGE } from "@/content/features";
 import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: FEATURES_PAGE.en.metaTitle,
-  description: FEATURES_PAGE.en.metaDesc,
-  alternates: { canonical: "/features", languages: { en: "/features", de: "/de/features" } },
+  title: FEATURES_PAGE.de.metaTitle,
+  description: FEATURES_PAGE.de.metaDesc,
+  alternates: { canonical: "/features", languages: { de: "/features", en: "/en/features" } },
   openGraph: {
-    title: FEATURES_PAGE.en.metaTitle,
-    description: FEATURES_PAGE.en.metaDesc,
+    title: FEATURES_PAGE.de.metaTitle,
+    description: FEATURES_PAGE.de.metaDesc,
     url: "/features",
     type: "website",
   },
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={softwareApplicationLd("en")} />
-      <FeaturesPage lang="en" />
+      <JsonLd data={softwareApplicationLd("de")} />
+      <FeaturesPage lang="de" />
     </>
   );
 }

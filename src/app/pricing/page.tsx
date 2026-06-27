@@ -4,21 +4,21 @@ import { JsonLd, softwareApplicationLd } from "@/components/seo/jsonld";
 import { PRICING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
+  title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
   description:
-    "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo billed annually — EU cloud or self-hosted, 14-day full trial, no surprise bills, no vendor lock-in. DATEV export, conflict check, deadline tracking included.",
-  alternates: { canonical: "/pricing", languages: { en: "/pricing", de: "/de/pricing" } },
+    "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. jährlich — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung, kein Lock-in. DATEV-Export, Kollisionsprüfung, Fristenkontrolle inklusive.",
+  alternates: { canonical: "/pricing", languages: { de: "/pricing", en: "/en/pricing" } },
   openGraph: {
-    title: "Subsumio Pricing — AI legal software from €890/seat/mo | No lock-in",
+    title: "Subsumio Preise — KI-Kanzleisoftware ab 890 €/Nutzer/Mon. | Kein Lock-in",
     description:
-      "Transparent per-seat pricing for AI legal software. Hosted plans from €890/seat/mo — EU cloud or self-hosted, 14-day full trial, no surprise bills.",
+      "Transparente Preise pro Nutzer für KI-Kanzleisoftware. Gehostete Pläne ab 890 €/Nutzer/Mon. — EU-Cloud oder On-Premise, 14 Tage volle Testversion, keine Überraschungsrechnung.",
     url: "/pricing",
     type: "website",
   },
 };
 
 export default function Page() {
-  const offers = PRICING.en.tiers
+  const offers = PRICING.de.tiers
     .filter((t) => t.id !== "ent")
     .map((t) => ({
       "@type": "Offer" as const,
@@ -32,7 +32,7 @@ export default function Page() {
     <>
       <JsonLd
         data={{
-          ...softwareApplicationLd("en"),
+          ...softwareApplicationLd("de"),
           offers: [
             ...offers,
             {
@@ -42,12 +42,12 @@ export default function Page() {
                 "@type": "PriceSpecification",
                 priceCurrency: "EUR",
               },
-              description: PRICING.en.tiers.find((t) => t.id === "ent")?.blurb,
+              description: PRICING.de.tiers.find((t) => t.id === "ent")?.blurb,
             },
           ],
         }}
       />
-      <PricingPage lang="en" />
+      <PricingPage lang="de" />
     </>
   );
 }

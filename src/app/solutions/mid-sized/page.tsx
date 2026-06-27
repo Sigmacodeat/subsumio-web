@@ -3,14 +3,14 @@ import { SolutionPage } from "@/components/marketing/solution-page";
 import { SOLUTIONS } from "@/content/solutions";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
-const content = SOLUTIONS.en["mid-sized"];
+const content = SOLUTIONS.de["mid-sized"];
 
 export const metadata: Metadata = {
   title: content.metaTitle,
   description: content.metaDesc,
   alternates: {
     canonical: "/solutions/mid-sized",
-    languages: { en: "/solutions/mid-sized", de: "/de/solutions/mid-sized" },
+    languages: { de: "/solutions/mid-sized", en: "/en/solutions/mid-sized" },
   },
   openGraph: {
     title: content.metaTitle,
@@ -27,11 +27,11 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },
-          { name: "Solutions", url: "/solutions/mid-sized" },
-          { name: "Mid-Sized Firms", url: "/solutions/mid-sized" },
+          { name: "Lösungen", url: "/solutions/mid-sized" },
+          { name: "Mittelständische", url: "/solutions/mid-sized" },
         ])}
       />
-      <SolutionPage lang="en" content={content} />
+      <SolutionPage lang="de" content={content} />
     </>
   );
 }

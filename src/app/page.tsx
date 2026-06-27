@@ -10,14 +10,14 @@ import {
 import { LANDING } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
+  title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
   description:
-    "AI legal software for DACH law firms: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
-  alternates: { canonical: "/", languages: { en: "/", de: "/de" } },
+    "KI-Kanzleisoftware für Kanzleien in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
+  alternates: { canonical: "/", languages: { de: "/", en: "/en" } },
   openGraph: {
-    title: "Subsumio — AI Legal Software for Law Firms | AT · DE · CH",
+    title: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
     description:
-      "Matter management, deadline tracking and cited AI answers for law firms in Austria, Germany and Switzerland. GDPR-ready, EU cloud or on-premise. Every answer cites its source.",
+      "Aktenverwaltung, Fristenkontrolle und belegte KI-Antworten für Kanzleien in Österreich, Deutschland und der Schweiz. DSGVO-konform, EU-Cloud oder On-Premise. Jede Antwort mit Fundstelle.",
     url: "/",
     type: "website",
   },
@@ -27,10 +27,10 @@ export default function Page() {
   return (
     <>
       <JsonLd data={organizationLd()} />
-      <JsonLd data={softwareApplicationLd("en")} />
-      <JsonLd data={faqPageLd(LANDING.en.faq)} />
-      <JsonLd data={howToLd(LANDING.en.how, "en")} />
-      <LandingPage lang="en" />
+      <JsonLd data={softwareApplicationLd("de")} />
+      <JsonLd data={faqPageLd(LANDING.de.faq)} />
+      <JsonLd data={howToLd(LANDING.de.how, "de")} />
+      <LandingPage lang="de" />
     </>
   );
 }

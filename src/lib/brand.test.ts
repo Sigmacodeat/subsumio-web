@@ -83,41 +83,41 @@ describe("subsumioCanonical", () => {
     return await import("./brand");
   }
 
-  test("returns /de for German (default env)", async () => {
+  test("returns root for German (default env)", async () => {
     delete process.env.NEXT_PUBLIC_SUBSUMIO_URL;
     const { subsumioCanonical } = await freshImport();
     // Default SUBSUMIO_SITE_URL is https://subsum.eu
-    expect(subsumioCanonical("de")).toBe("https://subsum.eu/de");
+    expect(subsumioCanonical("de")).toBe("https://subsum.eu");
   });
 
-  test("returns / for English (default env)", async () => {
+  test("returns /en for English (default env)", async () => {
     delete process.env.NEXT_PUBLIC_SUBSUMIO_URL;
     const { subsumioCanonical } = await freshImport();
-    expect(subsumioCanonical("en")).toBe("https://subsum.eu");
+    expect(subsumioCanonical("en")).toBe("https://subsum.eu/en");
   });
 
-  test("returns relative /de when site URL is not external", async () => {
+  test("returns relative / when site URL is not external (de)", async () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "/local";
     const { subsumioCanonical } = await freshImport();
-    expect(subsumioCanonical("de")).toBe("/de");
+    expect(subsumioCanonical("de")).toBe("/");
   });
 
-  test("returns relative / when site URL is not external", async () => {
+  test("returns relative /en when site URL is not external", async () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "/local";
     const { subsumioCanonical } = await freshImport();
-    expect(subsumioCanonical("en")).toBe("/");
+    expect(subsumioCanonical("en")).toBe("/en");
   });
 
   test("returns full URL when SUBSUMIO_SITE_URL is external", async () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "https://subsum.eu";
     const { subsumioCanonical } = await freshImport();
-    expect(subsumioCanonical("de")).toBe("https://subsum.eu/de");
-    expect(subsumioCanonical("en")).toBe("https://subsum.eu");
+    expect(subsumioCanonical("de")).toBe("https://subsum.eu");
+    expect(subsumioCanonical("en")).toBe("https://subsum.eu/en");
   });
 
   test("strips trailing slash from site URL", async () => {
     process.env.NEXT_PUBLIC_SUBSUMIO_URL = "https://subsum.eu/";
     const { subsumioCanonical } = await freshImport();
-    expect(subsumioCanonical("en")).toBe("https://subsum.eu");
+    expect(subsumioCanonical("de")).toBe("https://subsum.eu");
   });
 });

@@ -7,7 +7,7 @@ import type { Lang } from "@/content/site";
 
 export type { Lang };
 
-type BiString = { de: string; en: string };
+type BiString = Record<Lang, string>;
 
 export const D = {
   // ── Sidebar: section titles ──
@@ -3295,6 +3295,33 @@ export const D = {
     de: "Die Subsumio Engine muss laufen",
     en: "The Subsumio engine must be running",
   },
+  "upload.mode_case": { de: "Dokument zu Akte", en: "Document to case" },
+  "upload.mode_knowledge": { de: "Kanzlei-Wissen", en: "Firm knowledge" },
+  "upload.case_required": { de: "Akte (Pflichtfeld)", en: "Case (required)" },
+  "upload.case_loading": { de: "Akten werden geladen…", en: "Loading cases…" },
+  "upload.case_select": { de: "— Bitte Akte auswählen —", en: "— Select a case —" },
+  "upload.err_too_large": {
+    de: "Datei zu groß",
+    en: "File too large",
+  },
+  "upload.err_max_channel": {
+    de: "Maximum für diesen Upload-Kanal:",
+    en: "Maximum for this upload channel:",
+  },
+  "upload.err_unsupported_type": { de: "Dateityp wird nicht unterstützt.", en: "File type is not supported." },
+  "upload.err_rejected": { de: "Datei wurde abgelehnt.", en: "File was rejected." },
+  "upload.source_kanzleiwissen": { de: "Kanzleiwissen", en: "Firm knowledge" },
+  "upload.source_kanzleiwissen_desc": { de: "Playbooks, Vorlagen, Präzedenzfälle, interne Standards", en: "Playbooks, templates, precedents, internal standards" },
+  "upload.source_wiki": { de: "Kanzlei-Wiki", en: "Firm wiki" },
+  "upload.source_wiki_desc": { de: "Allgemeines Wissen, FAQs, Handbücher", en: "General knowledge, FAQs, manuals" },
+  "upload.source_meetings": { de: "Besprechungen", en: "Meetings" },
+  "upload.source_meetings_desc": { de: "Team-Meetings, Notizen", en: "Team meetings, notes" },
+  "upload.source_people": { de: "Kontakte", en: "Contacts" },
+  "upload.source_people_desc": { de: "Mandanten, Gegenseite, Experten", en: "Clients, opposing party, experts" },
+  "upload.source_companies": { de: "Unternehmen", en: "Companies" },
+  "upload.source_companies_desc": { de: "Firmen, Behörden, Institutionen", en: "Companies, authorities, institutions" },
+  "upload.source_ideas": { de: "Ideen", en: "Ideas" },
+  "upload.source_ideas_desc": { de: "Strategien, Verbesserungsvorschläge", en: "Strategies, improvement suggestions" },
 
   // ── Contacts page ──
   "contacts.role_client": { de: "Mandant", en: "Client" },
@@ -4874,6 +4901,41 @@ export const D = {
   "research.description": {
     de: "KI-gestützte Recherche mit Rechtsprechung, Normen, Quellenprüfung und Kanzleiwissen.",
     en: "AI-assisted research with case law, statutes, source checking, and firm knowledge.",
+  },
+  "research.btn_search": { de: "Recherchieren", en: "Research" },
+  "research.btn_searching": { de: "Recherchiert…", en: "Searching…" },
+  "research.btn_judgements_sync": { de: "Urteile-Sync", en: "Judgements Sync" },
+  "research.result_title": { de: "Ergebnis", en: "Result" },
+  "research.btn_save_brain": { de: "Als Brain-Page speichern", en: "Save as Brain Page" },
+  "research.session_history": { de: "Sitzungs-Verlauf", en: "Session History" },
+  "research.saved_loading": { de: "Lade…", en: "Loading…" },
+  "research.saved_empty_title": { de: "Noch keine Recherchen gespeichert.", en: "No research saved yet." },
+  "research.saved_empty_desc": {
+    de: "Starte eine neue Recherche und speichere das Ergebnis.",
+    en: "Start a new research and save the result.",
+  },
+  "research.saved_no_match": {
+    de: "Keine Recherchen passen zu den Filtern.",
+    en: "No research matches the filters.",
+  },
+  "research.confirm_delete_title": { de: "Recherche löschen", en: "Delete research" },
+  "research.confirm_delete_msg": {
+    de: "Möchten Sie diese Recherche wirklich löschen?",
+    en: "Do you really want to delete this research?",
+  },
+  "research.label_jurisdiction": { de: "Rechtsraum", en: "Jurisdiction" },
+  "research.label_query": { de: "Rechtsfrage", en: "Legal question" },
+  "research.placeholder_query": {
+    de: "z.B. Was ist die Verjährungsfrist für Gewährleistungsansprüche nach ABGB?",
+    en: "e.g. What is the statute of limitations for warranty claims under ABGB?",
+  },
+  "research.prompt_prefix": {
+    de: "Recherchiere präzise zur folgenden Rechtsfrage unter Berücksichtigung des",
+    en: "Research precisely the following legal question considering",
+  },
+  "research.prompt_suffix": {
+    de: "-Rechts (Gesetze, Rechtsprechung, Literatur). Zitiere immer mit §, Absatz und Gesetzesabkürzung. Gib am Ende an: \"Diese Information ersetzt keine anwaltliche Prüfung.\"",
+    en: " law (statutes, case law, literature). Always cite with §, paragraph and statute abbreviation. End with: \"This information does not replace legal advice.\"",
   },
 
   // ── Drafting page strings ──

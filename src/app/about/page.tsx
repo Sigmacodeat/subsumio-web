@@ -3,14 +3,14 @@ import AboutPage from "@/components/marketing/about-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "About Subsumio — AI legal software built in Austria for DACH law firms",
+  title: "Über Subsumio — KI-Kanzleisoftware aus Österreich für AT · DE · CH",
   description:
-    "Subsumio is built in Austria for law firms in AT, DE and CH. Our mission: cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted. No training on client data.",
-  alternates: { canonical: "/about", languages: { en: "/about", de: "/de/about" } },
+    "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Unsere Mission: belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise. Kein Training mit Mandantendaten.",
+  alternates: { canonical: "/about", languages: { de: "/about", en: "/en/about" } },
   openGraph: {
-    title: "About Subsumio — AI legal software built in Austria for DACH law firms",
+    title: "Über Subsumio — KI-Kanzleisoftware aus Österreich für AT · DE · CH",
     description:
-      "Subsumio is built in Austria for law firms in AT, DE and CH. Cited AI answers for legal work, with confidentiality by architecture — EU cloud or self-hosted.",
+      "Subsumio wird in Österreich für Kanzleien in AT, DE und CH gebaut. Belegte KI-Antworten für Rechtsarbeit, mit Vertraulichkeit per Architektur — EU-Cloud oder On-Premise.",
     url: "/about",
     type: "website",
   },
@@ -22,10 +22,10 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },
-          { name: "About", url: "/about" },
+          { name: "Über uns", url: "/about" },
         ])}
       />
-      <AboutPage lang="en" />
+      <AboutPage lang="de" />
     </>
   );
 }

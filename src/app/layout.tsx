@@ -32,11 +32,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Subsumio — AI Legal Software for Law Firms in AT · DE · CH",
+    default: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte | AT · DE · CH",
     template: "%s — Subsumio",
   },
   description:
-    "Subsumio is AI legal software for law firms in Austria, Germany and Switzerland: matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export, conflict check. GDPR-ready, EU cloud or self-hosted.",
+    "Subsumio ist die KI-Kanzleisoftware für Rechtsanwälte in Österreich, Deutschland und der Schweiz: Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export, Kollisionsprüfung. DSGVO-konform, EU-Cloud oder On-Premise.",
   keywords: [
     // Cluster A: Kanzleisoftware
     "Kanzleisoftware",
@@ -87,10 +87,14 @@ export const metadata: Metadata = {
     "Subsumio",
   ],
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://subsum.eu"),
+  alternates: {
+    canonical: "/",
+    languages: { de: "/", en: "/en" },
+  },
   openGraph: {
-    title: "Subsumio — AI Legal Software for DACH Law Firms",
+    title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
     description:
-      "Matter management, deadline tracking per ZPO/BGB/ABGB, cited AI answers with page-level sources, DATEV export and conflict check for law firms in AT, DE and CH.",
+      "Aktenverwaltung, Fristenkontrolle nach ZPO/BGB/ABGB, belegte KI-Antworten mit Fundstellen, DATEV-Export und Kollisionsprüfung für Kanzleien in AT, DE und CH.",
     type: "website",
     siteName: "Subsumio",
     images: [
@@ -98,15 +102,15 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Subsumio — AI Legal Software for Law Firms in AT, DE and CH",
+        alt: "Subsumio — KI-Kanzleisoftware für Rechtsanwälte in AT, DE und CH",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Subsumio — AI Legal Software for DACH Law Firms",
+    title: "Subsumio — KI-Kanzleisoftware für DACH-Rechtsanwälte",
     description:
-      "AI legal software for law firms in AT, DE and CH: matters, deadlines, cited answers, DATEV export, conflict check.",
+      "KI-Kanzleisoftware für Rechtsanwälte in AT, DE und CH: Akten, Fristen, belegte KI-Antworten, DATEV-Export, Kollisionsprüfung.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -137,7 +141,7 @@ export default async function RootLayout({
 }>) {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
-  const lang = pathname.startsWith("/de") ? "de" : "en";
+  const lang = pathname.startsWith("/en") ? "en" : "de";
   // Dashboard and portal render their own <main> landmark; wrap other routes here.
   const hasOwnMain = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
@@ -150,6 +154,10 @@ export default async function RootLayout({
     !pathname.startsWith("/signup") &&
     !pathname.startsWith("/reset") &&
     !pathname.startsWith("/forgot") &&
+    !pathname.startsWith("/en/login") &&
+    !pathname.startsWith("/en/signup") &&
+    !pathname.startsWith("/en/reset") &&
+    !pathname.startsWith("/en/forgot") &&
     !pathname.startsWith("/api");
 
   const pageContent = hasOwnMain ? children : <main role="main">{children}</main>;

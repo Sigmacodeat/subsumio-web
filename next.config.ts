@@ -15,15 +15,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Fix double-locale prefix bug: /de/de -> /de
-      { source: "/de/de/:path*", destination: "/de/:path*", permanent: true },
-      { source: "/de/de", destination: "/de", permanent: true },
+      // German is the default locale at root (/); /de/* routes are not part of
+      // the current App Router structure, so any double-locale cleanup that
+      // targets /de would point to a non-existent route. The canonical German
+      // URLs are the root paths below.
       // Deduplicate: canonical product page is /subsumio
       { source: "/produkt", destination: "/subsumio", permanent: true },
-      { source: "/de/produkt", destination: "/de/subsumio", permanent: true },
       // Deduplicate: canonical security page is /security
       { source: "/sicherheit", destination: "/security", permanent: true },
-      { source: "/de/sicherheit", destination: "/de/security", permanent: true },
     ];
   },
   async headers() {

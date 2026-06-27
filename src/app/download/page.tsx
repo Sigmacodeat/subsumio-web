@@ -4,12 +4,12 @@ import { DOWNLOAD } from "@/content/download";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: DOWNLOAD.en.metaTitle,
-  description: DOWNLOAD.en.metaDesc,
-  alternates: { canonical: "/download", languages: { en: "/download", de: "/de/download" } },
+  title: DOWNLOAD.de.metaTitle,
+  description: DOWNLOAD.de.metaDesc,
+  alternates: { canonical: "/download", languages: { de: "/download", en: "/en/download" } },
   openGraph: {
-    title: DOWNLOAD.en.metaTitle,
-    description: DOWNLOAD.en.metaDesc,
+    title: DOWNLOAD.de.metaTitle,
+    description: DOWNLOAD.de.metaDesc,
     url: "/download",
     type: "website",
   },
@@ -24,7 +24,7 @@ export default function Page() {
           { name: "Download", url: "/download" },
         ])}
       />
-      <DownloadPage lang="en" />
+      <DownloadPage lang="de" />
     </>
   );
 }

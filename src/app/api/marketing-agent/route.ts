@@ -65,7 +65,7 @@ function langOf(input: AdvisorContext): Lang {
 
 function localizedPath(lang: Lang, href: string): string {
   if (href.startsWith("mailto:")) return href;
-  return lang === "de" ? `/de${href}` : href;
+  return lang === "en" ? `/en${href}` : href;
 }
 
 function latestUserText(messages: AdvisorMessage[] | undefined): string {
@@ -74,7 +74,7 @@ function latestUserText(messages: AdvisorMessage[] | undefined): string {
 
 function inferIndustry(ctx: AdvisorContext, text: string): string | null {
   if (ctx.industry && profileForIndustry(ctx.industry)) return ctx.industry;
-  const path = (ctx.path ?? "").replace(/^\/de/, "") || "/";
+  const path = (ctx.path ?? "").replace(/^\/en/, "") || "/";
   for (const [prefix, industry] of Object.entries(ROUTE_INDUSTRY)) {
     if (path.startsWith(prefix)) return industry;
   }

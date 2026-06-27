@@ -4,12 +4,12 @@ import { SECURITY } from "@/content/security";
 import { JsonLd, faqPageLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: SECURITY.en.metaTitle,
-  description: SECURITY.en.metaDesc,
-  alternates: { canonical: "/security", languages: { en: "/security", de: "/de/security" } },
+  title: SECURITY.de.metaTitle,
+  description: SECURITY.de.metaDesc,
+  alternates: { canonical: "/security", languages: { de: "/security", en: "/en/security" } },
   openGraph: {
-    title: SECURITY.en.metaTitle,
-    description: SECURITY.en.metaDesc,
+    title: SECURITY.de.metaTitle,
+    description: SECURITY.de.metaDesc,
     url: "/security",
     type: "website",
   },
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <JsonLd data={faqPageLd(SECURITY.en.faq)} />
-      <SecurityPage lang="en" />
+      <JsonLd data={faqPageLd(SECURITY.de.faq)} />
+      <SecurityPage lang="de" />
     </>
   );
 }

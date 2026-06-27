@@ -3,14 +3,14 @@ import DocsPage from "@/components/marketing/docs-page";
 import { JsonLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio Docs — AI legal software handbook",
+  title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
   description:
-    "Product handbook for Subsumio: matters, deadlines, documents, cited AI answers, security, integrations and the dashboard workflows behind them.",
-  alternates: { canonical: "/docs", languages: { en: "/docs", de: "/de/docs" } },
+    "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
+  alternates: { canonical: "/docs", languages: { de: "/docs", en: "/en/docs" } },
   openGraph: {
-    title: "Subsumio Docs — AI legal software handbook",
+    title: "Subsumio Handbuch — KI-Kanzleisoftware Funktionen",
     description:
-      "Product handbook for Subsumio: matters, deadlines, documents, cited AI answers, security, integrations and the dashboard workflows behind them.",
+      "Produkt-Handbuch für Subsumio: Akten, Fristen, Dokumente, belegte KI-Antworten, Sicherheit, Integrationen und die Dashboard-Workflows dahinter.",
     url: "/docs",
     type: "website",
   },
@@ -22,10 +22,10 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },
-          { name: "Docs", url: "/docs" },
+          { name: "Handbuch", url: "/docs" },
         ])}
       />
-      <DocsPage lang="en" />
+      <DocsPage lang="de" />
     </>
   );
 }

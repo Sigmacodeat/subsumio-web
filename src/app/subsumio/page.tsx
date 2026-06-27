@@ -11,11 +11,10 @@ import {
 } from "@/components/seo/jsonld";
 import { subsumioCanonical } from "@/lib/brand";
 
-const product = PRODUCTS.en.subsumio;
-const canonical = subsumioCanonical("en");
+const product = PRODUCTS.de.subsumio;
+const canonical = subsumioCanonical("de");
 
 export const metadata: Metadata = {
-  // absolute → skip the "%s — Subsumio" template (metaTitle already brands it)
   title: { absolute: product.metaTitle },
   description: product.metaDesc,
   alternates: {
@@ -48,8 +47,8 @@ export default function Page() {
           { name: product.name, url: canonical },
         ])}
       />
-      <JsonLd data={faqPageLd(VERTICALS.en[product.vertical].faq)} />
-      <VerticalPage lang="en" slug={product.vertical} product={product} />
+      <JsonLd data={faqPageLd(VERTICALS.de[product.vertical].faq)} />
+      <VerticalPage lang="de" slug={product.vertical} product={product} />
     </>
   );
 }

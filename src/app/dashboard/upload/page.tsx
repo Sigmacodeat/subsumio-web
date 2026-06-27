@@ -110,18 +110,20 @@ function formatEta(seconds?: number) {
 
 type UploadMode = "case" | "knowledge";
 
-const KNOWLEDGE_SOURCES = [
-  {
-    value: "kanzleiwissen",
-    label: "Kanzleiwissen",
-    desc: "Playbooks, Vorlagen, Präzedenzfälle, interne Standards",
-  },
-  { value: "wiki", label: "Kanzlei-Wiki", desc: "Allgemeines Wissen, FAQs, Handbücher" },
-  { value: "meetings", label: "Besprechungen", desc: "Team-Meetings, Notizen" },
-  { value: "people", label: "Kontakte", desc: "Mandanten, Gegenseite, Experten" },
-  { value: "companies", label: "Unternehmen", desc: "Firmen, Behörden, Institutionen" },
-  { value: "ideas", label: "Ideen", desc: "Strategien, Verbesserungsvorschläge" },
-];
+function getKnowledgeSources(t: (key: import("@/content/dashboard").DashboardKey) => string) {
+  return [
+    {
+      value: "kanzleiwissen",
+      label: t("upload.source_kanzleiwissen"),
+      desc: t("upload.source_kanzleiwissen_desc"),
+    },
+    { value: "wiki", label: t("upload.source_wiki"), desc: t("upload.source_wiki_desc") },
+    { value: "meetings", label: t("upload.source_meetings"), desc: t("upload.source_meetings_desc") },
+    { value: "people", label: t("upload.source_people"), desc: t("upload.source_people_desc") },
+    { value: "companies", label: t("upload.source_companies"), desc: t("upload.source_companies_desc") },
+    { value: "ideas", label: t("upload.source_ideas"), desc: t("upload.source_ideas_desc") },
+  ];
+}
 
 export default function UploadPage() {
   return (
@@ -540,7 +542,7 @@ function UploadPageInner() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[color:var(--ds-text)]">
-                Kanzlei-Wissen
+                {t("upload.mode_knowledge")}
               </span>
               <BookOpen size={11} className="text-[color:var(--ds-text-subtle)]" />
             </div>
@@ -560,7 +562,7 @@ function UploadPageInner() {
             className="mb-2 flex items-center gap-2 text-[0.6875rem] font-semibold tracking-wider text-[color:var(--ds-text-muted)] uppercase"
           >
             <Briefcase size={13} />
-            Akte (Pflichtfeld)
+            {t("upload.case_required")}
           </Label>
           <Select
             value={selectedCaseSlug}
@@ -569,7 +571,7 @@ function UploadPageInner() {
           >
             <SelectTrigger id="upload-case" className="w-full">
               <SelectValue
-                placeholder={casesLoading ? "Akten werden geladen…" : "— Bitte Akte auswählen —"}
+                placeholder={casesLoading ? t("upload.case_loading") : t("upload.case_select")}
               />
             </SelectTrigger>
             <SelectContent>
@@ -610,7 +612,7 @@ function UploadPageInner() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {KNOWLEDGE_SOURCES.map((s) => (
+              {getKnowledgeSources(t).map((s) => (
                 <SelectItem key={s.value} value={s.value}>
                   {s.label} — {s.desc}
                 </SelectItem>

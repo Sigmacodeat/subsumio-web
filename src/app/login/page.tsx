@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import AuthForm from "@/components/auth/auth-form";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Anmelden",
   description:
-    "Sign in to Subsumio to work with matters, documents, deadlines, cited AI answers and your legal dashboard.",
+    "Bei Subsumio anmelden und mit Akten, Dokumenten, Fristen, belegten KI-Antworten und dem Kanzlei-Dashboard arbeiten.",
   robots: { index: false },
-  alternates: { canonical: "/login", languages: { en: "/login", de: "/de/login" } },
+  alternates: { canonical: "/login", languages: { de: "/login", en: "/en/login" } },
 };
 
 export default function Page() {
-  return <AuthForm mode="login" lang="en" />;
+  return <AuthForm mode="login" lang="de" />;
 }

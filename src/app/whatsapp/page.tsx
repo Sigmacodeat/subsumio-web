@@ -3,14 +3,14 @@ import { WhatsAppPage } from "@/components/marketing/subsumio-subpages";
 import { JsonLd, organizationLd, breadcrumbLd } from "@/components/seo/jsonld";
 
 export const metadata: Metadata = {
-  title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
+  title: "Subsumio WhatsApp-Copilot — die Kanzlei in der Hosentasche",
   description:
-    "Book time, file documents, query cases from WhatsApp — no app switch, no training required. The copilot understands your case file and files everything confirmation-gated, nothing unreviewed. GoBD-compliant.",
-  alternates: { canonical: "/whatsapp", languages: { en: "/whatsapp", de: "/de/whatsapp" } },
+    "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel, ohne Schulung. Der Copilot versteht die Akte und legt alles bestätigungspflichtig ins Brain. GoBD-konform dokumentiert.",
+  alternates: { canonical: "/whatsapp", languages: { de: "/whatsapp", en: "/en/whatsapp" } },
   openGraph: {
-    title: "Subsumio WhatsApp Copilot — book time, file documents, query cases from your phone",
+    title: "Subsumio WhatsApp-Copilot — die Kanzlei in der Hosentasche",
     description:
-      "Book time, file documents, query cases from WhatsApp — no app switch, no training required. Confirmation-gated, nothing unreviewed. GoBD-compliant.",
+      "Zeit buchen, Belege ablegen, Akten befragen — vom Handy, ohne App-Wechsel. Bestätigungspflichtig, nichts ungesehen. GoBD-konform.",
     url: "/whatsapp",
     type: "website",
   },
@@ -23,10 +23,10 @@ export default function Page() {
       <JsonLd
         data={breadcrumbLd([
           { name: "Subsumio", url: "/" },
-          { name: "WhatsApp copilot", url: "/whatsapp" },
+          { name: "WhatsApp-Copilot", url: "/whatsapp" },
         ])}
       />
-      <WhatsAppPage lang="en" />
+      <WhatsAppPage lang="de" />
     </>
   );
 }

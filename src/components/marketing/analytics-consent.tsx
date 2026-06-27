@@ -57,7 +57,7 @@ export default function AnalyticsConsentBanner() {
   const [isGerman, setIsGerman] = useState(false);
 
   useEffect(() => {
-    setIsGerman(window.location.pathname === "/de" || window.location.pathname.startsWith("/de/"));
+    setIsGerman(!window.location.pathname.startsWith("/en"));
   }, []);
 
   if (!showBanner) return null;

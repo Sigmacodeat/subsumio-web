@@ -31,7 +31,7 @@ export default function RefConsentBanner() {
       if (localStorage.getItem(DECISION_KEY)) return;
       setBanner({
         code: ref,
-        isGerman: window.location.pathname === "/de" || window.location.pathname.startsWith("/de/"),
+        isGerman: !window.location.pathname.startsWith("/en"),
       });
     }, 0);
     return () => clearTimeout(timer);

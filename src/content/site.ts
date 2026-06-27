@@ -1,8 +1,12 @@
 // Subsumio — central bilingual content system.
-// EN is the default locale (global market), DE lives under /de.
+// DE is the default locale (DACH market), EN lives under /en.
 // One source of truth: layouts render from these objects, never duplicate copy in JSX.
+// To add a new language: add it to SUPPORTED_LANGS, DEFAULT_LANG stays "de",
+// create /{lang}/* route folder, and add {lang} keys to all content objects below.
 
-export type Lang = "en" | "de";
+export const SUPPORTED_LANGS = ["de", "en"] as const;
+export type Lang = (typeof SUPPORTED_LANGS)[number];
+export const DEFAULT_LANG: Lang = "de";
 
 // Öffentliche Repo-URL der Open-Source-Engine. EINE Stelle zum Ändern —
 // per NEXT_PUBLIC_ENGINE_REPO_URL überschreibbar. Auf den eigenen
@@ -11,16 +15,20 @@ export const ENGINE_REPO_URL =
   process.env.NEXT_PUBLIC_ENGINE_REPO_URL || "https://github.com/subsumio/subsumio";
 export const ENGINE_REPO_INSTALL = ENGINE_REPO_URL.replace("https://github.com/", "github:");
 
-/** Build a locale-aware path. p("de", "/pricing") => "/de/pricing"; p("en", "") => "/" */
+/** Build a locale-aware path. p("de", "/pricing") => "/pricing"; p("en", "/pricing") => "/en/pricing" */
 export function p(lang: Lang, path: string): string {
-  if (lang === "de") return path === "" || path === "/" ? "/de" : `/de${path}`;
-  return path === "" ? "/" : path;
+  if (lang === DEFAULT_LANG) return path === "" ? "/" : path;
+  return path === "" || path === "/" ? `/${lang}` : `/${lang}${path}`;
 }
 
 /** The same page in the other language (for the language switcher). */
 export function altPath(lang: Lang, pathname: string): string {
-  if (lang === "en") return pathname === "/" ? "/de" : `/de${pathname}`;
-  const stripped = pathname.replace(/^\/de/, "");
+  if (lang === DEFAULT_LANG) {
+    // Currently on default (de) — switch to en
+    return pathname === "/" ? "/en" : `/en${pathname}`;
+  }
+  // Currently on non-default (en) — switch to de (root)
+  const stripped = pathname.replace(/^\/en/, "");
   return stripped === "" ? "/" : stripped;
 }
 

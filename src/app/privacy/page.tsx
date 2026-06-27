@@ -2,19 +2,19 @@ import type { Metadata } from "next";
 import { PrivacyContent } from "@/components/legal/legal-content";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
+  title: "Datenschutz",
   description:
-    "How Subsumio handles data: GDPR compliance, encryption, EU data residency, and your rights.",
-  alternates: { canonical: "/privacy", languages: { en: "/privacy", de: "/de/privacy" } },
+    "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und eure Rechte.",
+  alternates: { canonical: "/privacy", languages: { de: "/privacy", en: "/en/privacy" } },
   openGraph: {
-    title: "Privacy Policy — Subsumio",
+    title: "Datenschutz — Subsumio",
     description:
-      "How Subsumio handles data: GDPR compliance, encryption, EU data residency, and your rights.",
+      "Wie Subsumio mit Daten umgeht: DSGVO-Konformität, Verschlüsselung, EU-Datenhoheit und eure Rechte.",
     url: "/privacy",
     type: "website",
   },
 };
 
 export default function PrivacyPage() {
-  return <PrivacyContent home="/" lang="en" />;
+  return <PrivacyContent home="/" lang="de" />;
 }

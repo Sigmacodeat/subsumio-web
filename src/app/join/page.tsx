@@ -4,16 +4,13 @@ import { getSessionUser } from "@/lib/auth/server";
 import JoinForm from "@/components/auth/join-form";
 
 export const metadata: Metadata = {
-  title: "Join team",
-  description: "Accept your Subsumio team invitation and join your firm's secure legal workspace.",
+  title: "Team beitreten",
   robots: { index: false },
-  alternates: { canonical: "/join", languages: { en: "/join", de: "/de/join" } },
+  alternates: { canonical: "/join", languages: { de: "/join", en: "/en/join" } },
 };
 
-// Invite landing page. Not signed in → through signup first, then back here
-// (the `next` param survives the auth flow). The actual join is an explicit
-// POST from the confirm button — a mail scanner prefetching this GET can
-// never join anyone to anything.
+// Einladungs-Landingpage. Nicht angemeldet → zuerst zur Registrierung,
+// dann zurück hier (der `next`-Parameter überlebt den Auth-Flow).
 
 export default async function JoinPage({
   searchParams,
@@ -36,7 +33,7 @@ export default async function JoinPage({
       org={params.org ?? ""}
       email={params.email ?? ""}
       myEmail={me.email}
-      lang={me.locale === "de" ? "de" : "en"}
+      lang="de"
     />
   );
 }
