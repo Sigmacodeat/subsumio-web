@@ -14,22 +14,23 @@ function decodedSlug(raw: string): string | null {
 
 const playbookPatchSchema = z
   .object({
-    title: z.string().min(1).optional(),
+    title: z.string().min(1).max(500).optional(),
     jurisdiction: z.enum(["at", "de", "ch", "all"]).optional(),
-    contract_types: z.array(z.string()).optional(),
+    contract_types: z.array(z.string().max(100)).max(50).optional(),
     rules: z
       .array(
         z.object({
-          id: z.string(),
-          clause_type: z.string().min(1),
+          id: z.string().max(200),
+          clause_type: z.string().min(1).max(500),
           required_position: z.enum(["favorable", "neutral", "exclude", "must_include"]),
-          deviation_flag: z.string().min(1),
+          deviation_flag: z.string().min(1).max(500),
           severity: z.enum(["low", "medium", "high", "critical"]),
-          notes: z.string().optional(),
+          notes: z.string().max(5_000).optional(),
         })
       )
+      .max(200)
       .optional(),
-    description: z.string().optional(),
+    description: z.string().max(5_000).optional(),
   })
   .passthrough();
 

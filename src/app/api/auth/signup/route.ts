@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { hashPassword } from "@/lib/auth/password";
 import { getStore, buildNewUser, toPublic } from "@/lib/auth/store";
 import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS, REF_COOKIE } from "@/lib/auth/session";

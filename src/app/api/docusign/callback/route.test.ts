@@ -20,8 +20,6 @@ function makeRequest(url: string, cookieState?: string): NextRequest {
   return new NextRequest(url, { headers });
 }
 
-import { cookies } from "next/headers";
-
 // Mock next/headers cookies() — return a minimal cookie store so engineContext runs.
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({ get: () => undefined })),

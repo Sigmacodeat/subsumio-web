@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/server";
+import { NextResponse } from "next/server";
 import { SESSION_COOKIE, revokeAllSessions } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 import { createHandler } from "@/lib/api-handler";

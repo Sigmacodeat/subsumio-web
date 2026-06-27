@@ -296,5 +296,5 @@ export function renderMetricGlossaryMarkdown(): string {
   );
   lines.push("");
 
-  return lines.join("\n") + "\n";
+  return lines.join("\n");
 }

@@ -205,11 +205,11 @@ describe("runRetypeCore", () => {
       await seed("tweets/a", "tweet-single");
       await expect(
         runRetypeCore(ctxOf(), {
-          // @ts-expect-error: deliberately bypassing the type-level allowlist
           rules: [
             {
               from_type: "tweet-single",
               to_type: "tweet",
+              // @ts-expect-error: deliberately bypassing the type-level allowlist
               subtype_field: "title",
               subtype: "PWNED",
             },

@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
 import { getStore, buildNewUser, toPublic, type PublicUser } from "@/lib/auth/store";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession, SESSION_COOKIE } from "@/lib/auth/session";

@@ -15,7 +15,7 @@ const reviewSchema = z.object({
   answer_excerpt: z.string().max(2000),
   verdict: z.enum(["correct", "incorrect", "incomplete"]) as z.ZodType<ReviewVerdict>,
   comment: z.string().max(2000).optional(),
-  flagged_citations: z.array(z.string()).optional(),
+  flagged_citations: z.array(z.string().max(500)).max(50).optional(),
   suggested_correction: z.string().max(5000).optional(),
   category: z.enum([
     "statute",

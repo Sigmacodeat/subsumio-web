@@ -129,7 +129,7 @@ const emailDraftSchema = z.object({
   recipient: z.string().optional(),
   subject: z.string().min(1),
   tone: z.enum(["formal", "neutral", "urgent"]).default("formal"),
-  key_points: z.array(z.string()).default([]),
+  key_points: z.array(z.string().max(500)).max(20).default([]),
 });
 
 const deadlineExtractSchema = z.object({

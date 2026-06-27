@@ -5,11 +5,11 @@ import { buildChronology, exportChronologyMarkdown } from "@/lib/legal/chronolog
 export const maxDuration = 60;
 
 const postSchema = z.object({
-  case_slug: z.string().min(1),
+  case_slug: z.string().min(1).max(200),
   forensic_report: z.unknown().optional(),
-  on_table: z.array(z.unknown()).optional(),
-  damage_table: z.array(z.unknown()).optional(),
-  deadline_calendar: z.array(z.unknown()).optional(),
+  on_table: z.array(z.unknown()).max(500).optional(),
+  damage_table: z.array(z.unknown()).max(500).optional(),
+  deadline_calendar: z.array(z.unknown()).max(500).optional(),
 });
 
 export const POST = createHandler(

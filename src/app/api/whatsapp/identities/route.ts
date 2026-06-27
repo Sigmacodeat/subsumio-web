@@ -12,7 +12,9 @@ const identityPostSchema = z.object({
   name: z.string().max(120).optional(),
   role: z.enum(["admin", "lawyer", "assistant", "client", "external", "intake"]).default("lawyer"),
   status: z.enum(["active", "suspended", "revoked"]).default("active"),
-  matter_scope: z.union([z.literal("all"), z.array(z.string().min(1))]).default("all"),
+  matter_scope: z
+    .union([z.literal("all"), z.array(z.string().min(1).max(200)).max(100)])
+    .default("all"),
 });
 
 const identityPatchSchema = z.object({
@@ -20,7 +22,9 @@ const identityPatchSchema = z.object({
   name: z.string().max(120).optional(),
   role: z.enum(["admin", "lawyer", "assistant", "client", "external", "intake"]).optional(),
   status: z.enum(["active", "suspended", "revoked"]).optional(),
-  matter_scope: z.union([z.literal("all"), z.array(z.string().min(1))]).optional(),
+  matter_scope: z
+    .union([z.literal("all"), z.array(z.string().min(1).max(200)).max(100)])
+    .optional(),
 });
 
 const identityDeleteSchema = z.object({

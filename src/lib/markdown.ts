@@ -31,13 +31,11 @@ export function renderMarkdown(text: string): string {
     .replace(/^\s*[-*+]\s+(.*$)/gim, "<li>$1</li>")
     // Ordered lists
     .replace(/^\s*\d+\.\s+(.*$)/gim, "<li>$1</li>")
-    // Links (sanitize href to block javascript:/data: URLs)
+    // Links (sanitize href to block javascript:/data: URLs and attribute injection)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, href) => {
-      const safe = /^(https?:|mailto:|\/|#)/i.test(href);
+      const safe = /^(https?:|mailto:|\/(?!\/)|#)/i.test(href) && !/["'<>\s]/.test(href);
       if (!safe) return match;
-      // Escape quotes to prevent attribute injection (href is already HTML-escaped for & < >)
-      const safeHref = href.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     })
     // Horizontal rule
     .replace(/^---+$/gim, "<hr/>");

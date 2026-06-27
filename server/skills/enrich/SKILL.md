@@ -99,7 +99,7 @@ For each entity:
 
 - `gbrain search "name"` -- does a page already exist?
 - **If yes:** UPDATE path (add new signal, update compiled truth if material)
-- **If no:** CREATE path (check notability gate first, then create)
+- **If no:** CREATE path (check notability gate — see `skills/_brain-filing-rules.md` — first, then create)
 
 ### Step 3: Extract signal from source
 

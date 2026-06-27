@@ -10,7 +10,7 @@ const MAILBOX_FILE = path.join(DATA_DIR, "mailbox.json");
 
 const devEmailSchema = z.object({
   from: z.string().optional(),
-  to: z.union([z.string(), z.array(z.string())]).optional(),
+  to: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
   subject: z.string().optional(),
   text: z.string().nullable().optional(),
   html: z.string().nullable().optional(),

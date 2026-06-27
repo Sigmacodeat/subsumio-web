@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { hashPassword } from "@/lib/auth/password";
 import { getStore } from "@/lib/auth/store";
 import { verifyActionToken, bindFragment } from "@/lib/auth/tokens";

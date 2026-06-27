@@ -19,20 +19,21 @@ const playbookCreateSchema = z
   .object({
     title: z.string().min(1, "title_required"),
     jurisdiction: z.enum(["at", "de", "ch", "all"]).default("all"),
-    contract_types: z.array(z.string()).default([]),
+    contract_types: z.array(z.string().max(100)).max(50).default([]),
     rules: z
       .array(
         z.object({
-          id: z.string(),
-          clause_type: z.string().min(1),
+          id: z.string().max(200),
+          clause_type: z.string().min(1).max(500),
           required_position: z.enum(["favorable", "neutral", "exclude", "must_include"]),
-          deviation_flag: z.string().min(1),
+          deviation_flag: z.string().min(1).max(500),
           severity: z.enum(["low", "medium", "high", "critical"]),
-          notes: z.string().optional(),
+          notes: z.string().max(5_000).optional(),
         })
       )
+      .max(200)
       .default([]),
-    description: z.string().optional(),
+    description: z.string().max(5_000).optional(),
   })
   .passthrough();
 

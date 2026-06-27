@@ -38,7 +38,7 @@ export const DELETE = createHandler(
     rateTier: "standard",
     body: z.object({ token: z.string().min(10) }),
   },
-  async (ctx, body) => {
+  async (ctx, _body) => {
     if (process.env.NODE_ENV !== "production") {
       console.debug(`[push-unregister] user=${ctx.user.id}`);
     }

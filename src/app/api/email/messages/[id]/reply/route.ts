@@ -7,9 +7,9 @@ const replySchema = z
     subject: z.string().trim().min(1, "subject_required").max(500),
     text: z.string().trim().max(100_000).optional(),
     html: z.string().trim().max(500_000).optional(),
-    to: z.union([z.string(), z.array(z.string())]).optional(),
-    cc: z.union([z.string(), z.array(z.string())]).optional(),
-    bcc: z.union([z.string(), z.array(z.string())]).optional(),
+    to: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
+    cc: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
+    bcc: z.union([z.string().max(500), z.array(z.string().max(500)).max(50)]).optional(),
   })
   .passthrough()
   .refine((data) => data.text || data.html, {

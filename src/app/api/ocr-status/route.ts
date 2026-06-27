@@ -1,5 +1,5 @@
 import { createHandler } from "@/lib/api-handler";
-import { ENGINE_URL, engineHeadersForBrain } from "@/lib/engine";
+import { ENGINE_URL } from "@/lib/engine";
 
 export const GET = createHandler(
   {

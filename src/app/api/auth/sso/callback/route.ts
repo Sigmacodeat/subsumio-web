@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { authenticateWithCode } from "@/lib/workos";
 import { getStore, buildNewUser } from "@/lib/auth/store";

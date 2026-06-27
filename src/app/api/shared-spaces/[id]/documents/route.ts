@@ -29,9 +29,7 @@ export const GET = createHandler(
       limit: z.string().optional(),
     }),
   },
-  async (ctx, _body, query, req) => {
-    const routeParams = await (req as unknown as { params: Promise<{ id: string }> }).params;
-    const id = routeParams.id;
+  async (ctx, _body, query) => {
     const { type, search, page = "1", limit = "50" } = query;
 
     const params = new URLSearchParams();

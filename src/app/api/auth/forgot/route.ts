@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getStore } from "@/lib/auth/store";
 import { signActionToken, bindFragment, RESET_TOKEN_TTL_SECONDS } from "@/lib/auth/tokens";
 import { clientIp } from "@/lib/auth/rate-limit";
 import { sendMail, siteUrl } from "@/lib/mail";
-import { createPublicHandler, apiError } from "@/lib/api-handler";
+import { createPublicHandler } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { z } from "zod";
 

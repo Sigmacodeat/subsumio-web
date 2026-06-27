@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ENGINE_URL } from "@/lib/engine";
-import { createHandler, apiError } from "@/lib/api-handler";
+import { createHandler } from "@/lib/api-handler";
 
 const batchListSchema = z.object({
   types: z.array(z.string().min(1).max(64)).min(1).max(20),
