@@ -42,25 +42,8 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(self), microphone=(), geolocation=(), interest-cohort=()",
           },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              process.env.NODE_ENV === "production"
-                ? "script-src 'self' 'unsafe-inline' https://js.stripe.com"
-                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com https://api.subsum.io",
-              "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
-              "frame-ancestors 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self' https://checkout.stripe.com",
-              "upgrade-insecure-requests",
-            ].join("; "),
-          },
+          // CSP is set per-request in middleware with a cryptographic nonce
+          // to eliminate 'unsafe-inline' from script-src.
         ],
       },
     ];

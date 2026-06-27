@@ -12,6 +12,34 @@ import { verifySessionCore, SESSION_COOKIE } from "@/lib/auth/session-core";
 import { generateCsrfToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/csrf";
 import { env } from "@/lib/env";
 
+// --- CSP nonce generation ---
+function generateCspNonce(): string {
+  // Edge runtime supports crypto.getRandomValues
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
+
+function buildCspHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV !== "production";
+  return [
+    "default-src 'self'",
+    isDev
+      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com`
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://api.stripe.com https://*.sentry.io https://app.posthog.com https://api.subsum.io",
+    "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https://checkout.stripe.com",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const APP_HOSTS = new Set(
   ["app.subsum.io", "cockpit.subsum.io", ...(env("SUBSUMIO_APP_HOSTS")?.split(",") ?? [])]
@@ -95,6 +123,17 @@ export async function middleware(req: NextRequest) {
   const method = req.method.toUpperCase();
   const host = req.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
 
+  // --- CSP nonce: generate per-request and pass to Next.js via request headers ---
+  const nonce = generateCspNonce();
+  const cspHeader = buildCspHeader(nonce);
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  function applyCsp(response: NextResponse): NextResponse {
+    response.headers.set("Content-Security-Policy", cspHeader);
+    return response;
+  }
+
   // --- IP Allow-listing (G8) ---
   // Block non-whitelisted IPs from all paths except health endpoints.
   const allowlist = getIpAllowlist();
@@ -104,9 +143,11 @@ export async function middleware(req: NextRequest) {
       req.headers.get("x-real-ip")?.trim() ??
       "";
     if (clientIp && !ipInAllowlist(clientIp, allowlist)) {
-      return NextResponse.json(
-        { error: "ip_not_allowed", message: "Access denied: IP not in allowlist." },
-        { status: 403 }
+      return applyCsp(
+        NextResponse.json(
+          { error: "ip_not_allowed", message: "Access denied: IP not in allowlist." },
+          { status: 403 }
+        )
       );
     }
   }
@@ -114,7 +155,7 @@ export async function middleware(req: NextRequest) {
   if (APP_HOSTS.has(host) && pathname === "/") {
     const dashboard = req.nextUrl.clone();
     dashboard.pathname = "/dashboard";
-    return NextResponse.redirect(dashboard);
+    return applyCsp(NextResponse.redirect(dashboard));
   }
 
   // --- Browser language detection: redirect German speakers to /de ---
@@ -137,7 +178,7 @@ export async function middleware(req: NextRequest) {
       if (isGerman) {
         const deUrl = req.nextUrl.clone();
         deUrl.pathname = "/de";
-        return NextResponse.redirect(deUrl, { status: 302 });
+        return applyCsp(NextResponse.redirect(deUrl, { status: 302 }));
       }
     }
   }
@@ -163,18 +204,24 @@ export async function middleware(req: NextRequest) {
       const cookieToken = req.cookies.get(CSRF_COOKIE_NAME)?.value;
       const headerToken = req.headers.get(CSRF_HEADER_NAME);
       if (!cookieToken || !headerToken) {
-        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
+        return applyCsp(
+          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
+        );
       }
       // Timing-safe comparison (same pattern as csrf.ts validateCsrf)
       if (cookieToken.length !== headerToken.length) {
-        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
+        return applyCsp(
+          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
+        );
       }
       let diff = 0;
       for (let i = 0; i < cookieToken.length; i++) {
         diff |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
       }
       if (diff !== 0) {
-        return NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 });
+        return applyCsp(
+          NextResponse.json({ error: "csrf_token_invalid" }, { status: 403 })
+        );
       }
     }
   }
@@ -185,14 +232,14 @@ export async function middleware(req: NextRequest) {
     if (!session) {
       const login = new URL("/login", req.url);
       login.searchParams.set("next", pathname);
-      return NextResponse.redirect(login);
+      return applyCsp(NextResponse.redirect(login));
     }
     if (pathname.startsWith("/admin") && session.role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return applyCsp(NextResponse.redirect(new URL("/dashboard", req.url)));
     }
 
     // Set CSRF cookie if not present
-    const res = NextResponse.next();
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
     if (!req.cookies.has(CSRF_COOKIE_NAME)) {
       res.cookies.set(CSRF_COOKIE_NAME, generateCsrfToken(), {
         httpOnly: false,
@@ -205,14 +252,14 @@ export async function middleware(req: NextRequest) {
     // Set x-pathname header so server components (root layout) can read the
     // current path to determine if MarketingShell should wrap the page.
     res.headers.set("x-pathname", pathname);
-    return res;
+    return applyCsp(res);
   }
 
   // Set x-pathname header so server components (root layout) can read the
   // current path to set <html lang> correctly for SEO without client-side JS.
-  const res = NextResponse.next();
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("x-pathname", pathname);
-  return res;
+  return applyCsp(res);
 }
 
 export const config = {
